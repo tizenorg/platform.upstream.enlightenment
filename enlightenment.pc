@@ -1,0 +1,19 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+datadir=${prefix}/share
+includedir=${prefix}/include/enlightenment
+modules=${exec_prefix}/lib/enlightenment/modules
+pkgdatadir=${prefix}/share/enlightenment/data
+themes=${pkgdatadir}/themes
+backgrounds=${pkgdatadir}/backgrounds
+config_apps=/usr/local/share/enlightenment/config-apps
+release=ver-pre-svn-08
+
+Name: enlightenment
+Description: Enlightenmnt Window Manager
+Requires: evas >= 1.7.0 ecore >= 1.7.0 ecore-x >= 1.7.0 ecore-evas >= 1.7.0 ecore-con >= 1.7.0 ecore-ipc >= 1.7.0 ecore-file >= 1.7.0 eet >= 1.7.0 edje >= 1.7.0 efreet >= 1.7.0 efreet-mime >= 1.7.0 eina >= 1.7.0 dbus-1 edbus >= 1.7.0 eio >= 1.7.0 ehal >= 1.2.0, edbus >= 1.2.0 eukit >= 1.2.0  eeze elementary > 1.6.9.0 emotion > 1.7.0
+Version: 0.16.999.77927
+Libs: -L${libdir}
+Libs.private:  -lm
+Cflags: -I${includedir} -DUSE_E_CONFIG_H

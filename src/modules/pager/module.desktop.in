@@ -1,0 +1,27 @@
+[Desktop Entry]
+Type=Link
+Name=Pager
+Name[ru]=Пейджер
+Name[cs]=Přepínač ploch
+Name[de]=Pager
+Name[eo]=Tabulpaĝilo
+Name[hu]=Lapozó
+Name[tr]=Sayfalayıcı
+Name[pt]=Paginador
+Icon=e-module-pager
+X-Enlightenment-ModuleType=utils
+Comment=Gadget to allow you to visualize your virtual desktops and the windows they contain.
+Comment[ru]=Гаджет для показа виртуальных столов и окон, которые они содержат.
+Comment[cs]=Gadget pro zobrazení/přepínání virtuálních ploch a oken, které obsahují.
+Comment[de]=Visualisiert die virtuellen Desktops und die enthaltenen Fenster.
+Comment[eo]=Vidigi siajn virtualajn labortablojn kaj ties fenestrojn.
+Comment[es]=Dispositivo que permite visualizar los escritorios virtuales y las ventanas que contienen.
+Comment[fr]=Visualise les bureaux virtuels et les fenêtres qu'ils contiennent.
+Comment[hu]=Ez a modul lehetővé teszi számunkra a látványos, virtuális munkaasztalok közötti váltást.
+Comment[it]=Modulo che permette di visualizzare i desktop virtuali e le finestre che contengono.
+Comment[ja]=
+Comment[pt]=Permite-lhe visualizar as áreas virtuais e as janelas que nelas existem
+Comment[pt_BR]=
+Comment[tr]=Sanal masaüstlerini ve içerisindeki pencereleri görselleştirmenizi sağlayan araç.
+Comment[zh_CN]=
+Comment[zh_TW]=

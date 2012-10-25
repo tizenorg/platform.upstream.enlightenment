@@ -1,0 +1,26 @@
+[Desktop Entry]
+Type=Link
+Name=Window Switcher
+Name[ru]=Список переключения окон
+Name[cs]=Přepínač oken
+Name[de]=Fensterwechsel-Liste
+Name[el]=Λίστα εναλλαγής παραθύρων
+Name[eo]=Interŝanĝilo de fenestroj
+Name[hu]=Ablak lista/váltó
+Name[it]=Commutatore finestre
+Name[fr]=Liste de commutation
+Name[tr]=Pencere Değiştirici Listesi
+Name[pt]=Alternador de janelas
+Icon=e-module-winlist
+Comment=A module to show the list of client applications presently running.
+Comment[ru]=Модуль для показа списка запущенных приложений (список клиентов).
+Comment[cs]=Modul pro zobrazení seznamu běžících aplikací.
+Comment[de]=Zeigt eine Liste aktuell laufender Client-Anwendungen.
+Comment[el]=Ένα άρθρωμα που εμφανίζει τη λίστα των εφαρμογών που εκτελούνται.
+Comment[eo]=Vidigi liston de klientaj aplikaĵoj nune funkciantaj.
+Comment[hu]=A modul megmutatja az éppen futó alkalmazások ablakainak listáját.
+Comment[it]=Un modulo che mostra un elenco delle applicazioni in esecuzione.
+Comment[fr]=Affiche la liste des applications ouvertes et permet de basculer d'une application à l'autre.
+Comment[tr]=Mevcut çalışan istemci uygulamaların listesini gösteren modül.
+Comment[pt]=Módulo que exibe a lista de aplicações abertas
+X-Enlightenment-ModuleType=core

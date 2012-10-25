@@ -1,0 +1,361 @@
+#include "e.h"
+#include "e_mod_main.h"
+
+/* actual module specifics */
+static void _e_mod_action_winlist_cb(E_Object *obj, const char *params);
+static void _e_mod_action_winlist_mouse_cb(E_Object *obj, const char *params,
+                                           Ecore_Event_Mouse_Button *ev);
+static void _e_mod_action_winlist_key_cb(E_Object *obj, const char *params,
+                                         Ecore_Event_Key *ev);
+
+static E_Module *conf_module = NULL;
+const char *_winlist_act = NULL;
+E_Action *_act_winlist = NULL;
+
+/* module setup */
+EAPI E_Module_Api e_modapi =
+{
+   E_MODULE_API_VERSION,
+   "Winlist"
+};
+
+EAPI void *
+e_modapi_init(E_Module *m)
+{
+   conf_module = m;
+   e_configure_registry_category_add("windows", 50, _("Windows"), NULL, "preferences-system-windows");
+   e_configure_registry_item_add("windows/window_list", 70, _("Window Switcher"), NULL, "preferences-winlist", e_int_config_winlist);
+   e_winlist_init();
+   _winlist_act = eina_stringshare_add("winlist");
+   /* add module supplied action */
+   _act_winlist = e_action_add(_winlist_act);
+   if (_act_winlist)
+     {
+        _act_winlist->func.go = _e_mod_action_winlist_cb;
+        _act_winlist->func.go_mouse = _e_mod_action_winlist_mouse_cb;
+        _act_winlist->func.go_key = _e_mod_action_winlist_key_cb;
+        e_action_predef_name_set(_("Window : List"), _("Next Window"),
+                                 "winlist", "next", NULL, 0);
+        e_action_predef_name_set(_("Window : List"), _("Previous Window"),
+                                 "winlist", "prev", NULL, 0);
+        e_action_predef_name_set(_("Window : List"),
+                                 _("Next window of same class"), "winlist",
+                                 "class-next", NULL, 0);
+        e_action_predef_name_set(_("Window : List"),
+                                 _("Previous window of same class"),
+                                 "winlist", "class-prev", NULL, 0);
+        e_action_predef_name_set(_("Window : List"),
+                                 _("Next window class"), "winlist",
+                                 "classes-next", NULL, 0);
+        e_action_predef_name_set(_("Window : List"),
+                                 _("Previous window class"),
+                                 "winlist", "classes-prev", NULL, 0);
+        e_action_predef_name_set(_("Window : List"), _("Window on the Left"),
+                                 "winlist", "left", NULL, 0);
+        e_action_predef_name_set(_("Window : List"), _("Window Down"),
+                                 "winlist", "down", NULL, 0);
+        e_action_predef_name_set(_("Window : List"), _("Window Up"),
+                                 "winlist", "up", NULL, 0);
+        e_action_predef_name_set(_("Window : List"), _("Window on the Right"),
+                                 "winlist", "right", NULL, 0);
+     }
+   e_module_delayed_set(m, 1);
+   return m;
+}
+
+EAPI int
+e_modapi_shutdown(E_Module *m __UNUSED__)
+{
+   E_Config_Dialog *cfd;
+
+   /* remove module-supplied action */
+   if (_act_winlist)
+     {
+        e_action_predef_name_del(_("Window : List"), _("Previous Window"));
+        e_action_predef_name_del(_("Window : List"), _("Next Window"));
+        e_action_predef_name_del(_("Window : List"),
+                                 _("Previous window of same class"));
+        e_action_predef_name_del(_("Window : List"),
+                                 _("Next window of same class"));
+        e_action_predef_name_del(_("Window : List"), _("Window on the Left"));
+        e_action_predef_name_del(_("Window : List"), _("Window Down"));
+        e_action_predef_name_del(_("Window : List"), _("Window Up"));
+        e_action_predef_name_del(_("Window : List"), _("Window on the Right"));
+        e_action_del("winlist");
+        _act_winlist = NULL;
+     }
+   e_winlist_shutdown();
+
+   while ((cfd = e_config_dialog_get("E", "windows/window_list")))
+     e_object_del(E_OBJECT(cfd));
+   e_configure_registry_item_del("windows/window_list");
+   e_configure_registry_category_del("windows");
+   conf_module = NULL;
+   eina_stringshare_replace(&_winlist_act, NULL);
+   return 1;
+}
+
+EAPI int
+e_modapi_save(E_Module *m __UNUSED__)
+{
+   return 1;
+}
+
+/* action callback */
+static void
+_e_mod_action_winlist_cb(E_Object *obj, const char *params)
+{
+   E_Zone *zone = NULL;
+
+   if (obj)
+     {
+        if (obj->type == E_MANAGER_TYPE)
+          zone = e_util_zone_current_get((E_Manager *)obj);
+        else if (obj->type == E_CONTAINER_TYPE)
+          zone = e_util_zone_current_get(((E_Container *)obj)->manager);
+        else if (obj->type == E_ZONE_TYPE)
+          zone = e_util_zone_current_get(((E_Zone *)obj)->container->manager);
+        else
+          zone = e_util_zone_current_get(e_manager_current_get());
+     }
+   if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
+   if (zone)
+     {
+        if (params)
+          {
+             if (!strcmp(params, "next"))
+               {
+                  if (!e_winlist_show(zone, E_WINLIST_FILTER_NONE))
+                    e_winlist_next();
+               }
+             else if (!strcmp(params, "prev"))
+               {
+                  if (!e_winlist_show(zone, E_WINLIST_FILTER_NONE))
+                    e_winlist_prev();
+               }
+             else if (!strcmp(params, "class-next"))
+               {
+                  if (!e_winlist_show(zone, E_WINLIST_FILTER_CLASS_WINDOWS))
+                    e_winlist_next();
+               }
+             else if (!strcmp(params, "class-prev"))
+               {
+                  if (!e_winlist_show(zone, E_WINLIST_FILTER_CLASS_WINDOWS))
+                    e_winlist_prev();
+               }
+             else if (!strcmp(params, "classes-next"))
+               {
+                  if (!e_winlist_show(zone, E_WINLIST_FILTER_CLASSES))
+                    e_winlist_next();
+               }
+             else if (!strcmp(params, "classes-prev"))
+               {
+                  if (!e_winlist_show(zone, E_WINLIST_FILTER_CLASSES))
+                    e_winlist_prev();
+               }
+             else if (!strcmp(params, "left"))
+               {
+                  e_winlist_left(zone);
+               }
+             else if (!strcmp(params, "down"))
+               {
+                  e_winlist_down(zone);
+               }
+             else if (!strcmp(params, "up"))
+               {
+                  e_winlist_up(zone);
+               }
+             else if (!strcmp(params, "right"))
+               {
+                  e_winlist_right(zone);
+               }
+          }
+        else
+          {
+             if (!e_winlist_show(zone, E_WINLIST_FILTER_NONE))
+               e_winlist_next();
+          }
+     }
+}
+
+static void
+_e_mod_action_winlist_mouse_cb(E_Object *obj, const char *params,
+                               Ecore_Event_Mouse_Button *ev)
+{
+   E_Zone *zone = NULL;
+
+   if (obj)
+     {
+        if (obj->type == E_MANAGER_TYPE)
+          zone = e_util_zone_current_get((E_Manager *)obj);
+        else if (obj->type == E_CONTAINER_TYPE)
+          zone = e_util_zone_current_get(((E_Container *)obj)->manager);
+        else if (obj->type == E_ZONE_TYPE)
+          zone = e_util_zone_current_get(((E_Zone *)obj)->container->manager);
+        else
+          zone = e_util_zone_current_get(e_manager_current_get());
+     }
+   if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
+   if (zone)
+     {
+        if (params)
+          {
+             if (!strcmp(params, "next"))
+               {
+                  if (e_winlist_show(zone, E_WINLIST_FILTER_NONE))
+                    e_winlist_modifiers_set(ev->modifiers);
+                  else
+                    e_winlist_next();
+               }
+             else if (!strcmp(params, "prev"))
+               {
+                  if (e_winlist_show(zone, E_WINLIST_FILTER_NONE))
+                    e_winlist_modifiers_set(ev->modifiers);
+                  else
+                    e_winlist_prev();
+               }
+             else if (!strcmp(params, "class-next"))
+               {
+                  if (e_winlist_show(zone, E_WINLIST_FILTER_CLASS_WINDOWS))
+                    e_winlist_modifiers_set(ev->modifiers);
+                  else
+                    e_winlist_next();
+               }
+             else if (!strcmp(params, "class-prev"))
+               {
+                  if (e_winlist_show(zone, E_WINLIST_FILTER_CLASS_WINDOWS))
+                    e_winlist_modifiers_set(ev->modifiers);
+                  else
+                    e_winlist_prev();
+               }
+             else if (!strcmp(params, "classes-next"))
+               {
+                  if (e_winlist_show(zone, E_WINLIST_FILTER_CLASSES))
+                    e_winlist_modifiers_set(ev->modifiers);
+                  else
+                    e_winlist_next();
+               }
+             else if (!strcmp(params, "classes-prev"))
+               {
+                  if (e_winlist_show(zone, E_WINLIST_FILTER_CLASSES))
+                    e_winlist_modifiers_set(ev->modifiers);
+                  else
+                    e_winlist_prev();
+               }
+             else if (!strcmp(params, "left"))
+               {
+                  e_winlist_left(zone);
+               }
+             else if (!strcmp(params, "down"))
+               {
+                  e_winlist_down(zone);
+               }
+             else if (!strcmp(params, "up"))
+               {
+                  e_winlist_up(zone);
+               }
+             else if (!strcmp(params, "right"))
+               {
+                  e_winlist_right(zone);
+               }
+          }
+        else
+          {
+             if (e_winlist_show(zone, E_WINLIST_FILTER_NONE))
+               e_winlist_modifiers_set(ev->modifiers);
+             else
+               e_winlist_next();
+          }
+     }
+}
+
+static void
+_e_mod_action_winlist_key_cb(E_Object *obj, const char *params, Ecore_Event_Key *ev)
+{
+   E_Zone *zone = NULL;
+
+   if (obj)
+     {
+        if (obj->type == E_MANAGER_TYPE)
+          zone = e_util_zone_current_get((E_Manager *)obj);
+        else if (obj->type == E_CONTAINER_TYPE)
+          zone = e_util_zone_current_get(((E_Container *)obj)->manager);
+        else if (obj->type == E_ZONE_TYPE)
+          zone = e_util_zone_current_get(((E_Zone *)obj)->container->manager);
+        else
+          zone = e_util_zone_current_get(e_manager_current_get());
+     }
+   if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
+   if (zone)
+     {
+        if (params)
+          {
+             if (!strcmp(params, "next"))
+               {
+                  if (e_winlist_show(zone, E_WINLIST_FILTER_NONE))
+                    e_winlist_modifiers_set(ev->modifiers);
+                  else
+                    e_winlist_next();
+               }
+             else if (!strcmp(params, "prev"))
+               {
+                  if (e_winlist_show(zone, E_WINLIST_FILTER_NONE))
+                    e_winlist_modifiers_set(ev->modifiers);
+                  else
+                    e_winlist_prev();
+               }
+             else if (!strcmp(params, "class-next"))
+               {
+                  if (e_winlist_show(zone, E_WINLIST_FILTER_CLASS_WINDOWS))
+                    e_winlist_modifiers_set(ev->modifiers);
+                  else
+                    e_winlist_next();
+               }
+             else if (!strcmp(params, "class-prev"))
+               {
+                  if (e_winlist_show(zone, E_WINLIST_FILTER_CLASS_WINDOWS))
+                    e_winlist_modifiers_set(ev->modifiers);
+                  else
+                    e_winlist_prev();
+               }
+             else if (!strcmp(params, "classes-next"))
+               {
+                  if (e_winlist_show(zone, E_WINLIST_FILTER_CLASSES))
+                    e_winlist_modifiers_set(ev->modifiers);
+                  else
+                    e_winlist_next();
+               }
+             else if (!strcmp(params, "classes-prev"))
+               {
+                  if (e_winlist_show(zone, E_WINLIST_FILTER_CLASSES))
+                    e_winlist_modifiers_set(ev->modifiers);
+                  else
+                    e_winlist_prev();
+               }
+             else if (!strcmp(params, "left"))
+               {
+                  e_winlist_left(zone);
+               }
+             else if (!strcmp(params, "down"))
+               {
+                  e_winlist_down(zone);
+               }
+             else if (!strcmp(params, "up"))
+               {
+                  e_winlist_up(zone);
+               }
+             else if (!strcmp(params, "right"))
+               {
+                  e_winlist_right(zone);
+               }
+          }
+        else
+          {
+             if (e_winlist_show(zone, E_WINLIST_FILTER_NONE))
+               e_winlist_modifiers_set(ev->modifiers);
+             else
+               e_winlist_next();
+          }
+     }
+}
+

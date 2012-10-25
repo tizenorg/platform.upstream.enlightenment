@@ -1,0 +1,24 @@
+[Desktop Entry]
+Type=Link
+Name=IBar
+Name[ru]=IBar
+Name[cs]=Lišta spouštěčů
+Name[de]=IBar
+Name[eo]=Breto IBar
+Icon=e-module-ibar
+X-Enlightenment-ModuleType=utils
+Comment=Iconic application launcher.
+Comment[ru]=Меню запуска приложений, отображение в виде иконок.
+Comment[cs]=Lišta se spouštěči.
+Comment[de]=Symbolbasierter Anwendungsstarter.
+Comment[eo]=Lanĉilo de piktograma aplikaĵo.
+Comment[es]=Lanzador de aplicaciones con íconos.
+Comment[fr]=Barre d'icones permettant de lancer des applications.
+Comment[hu]=Ikonokkal bővíthető alkalmazásindító modul.
+Comment[it]=Una barra di icone per il lancio di applicazioni.
+Comment[ja]=
+Comment[pt]=Barra para iniciar aplicações
+Comment[pt_BR]=
+Comment[tr]=Uygulama başlatıcı.
+Comment[zh_CN]=
+Comment[zh_TW]=
