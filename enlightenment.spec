@@ -46,11 +46,9 @@ rm -f `find $RPM_BUILD_ROOT/usr/lib/enlightenment -name "*.la" -print`
 %clean
 test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 
-%post
-/sbin/ldconfig
+%post -p /sbin/ldconfig
 
-%postun
-/sbin/ldconfig
+%postun -p /sbin/ldconfig
 
 %files
 %defattr(-, root, root)
