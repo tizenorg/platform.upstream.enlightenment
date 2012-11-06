@@ -1,11 +1,11 @@
 Name:           enlightenment
-Version:        0.17.0-alpha
+Version:        0.17.0
 Release:        1
 License:        BSD 2-clause
 Summary:        The Enlightenment window manager
 Url:            http://www.enlightenment.org/
 Group:          Graphics/X11
-Source0:        enlightenment-%{version}.tar.bz2
+Source0:        enlightenment-%{version}-alpha.tar.bz2
 BuildRequires:  doxygen
 #BuildRequires:  valgrind
 BuildRequires:  fdupes
