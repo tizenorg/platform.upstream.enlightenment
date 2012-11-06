@@ -443,6 +443,8 @@ e_ilist_remove_num(Evas_Object *obj, int n)
 {
    E_Ilist_Item *si = NULL;
    Eina_List *item;
+   int w, h;
+   Eina_Bool resize = EINA_FALSE;
 
    API_ENTRY return;
    if (!sd->items) return;
@@ -453,12 +455,24 @@ e_ilist_remove_num(Evas_Object *obj, int n)
    sd->items = eina_list_remove_list(sd->items, item);
    if (si->selected) sd->selected_items = eina_list_remove(sd->selected_items, si);
 
+   evas_object_geometry_get(sd->o_box, NULL, NULL, &w, &h);
+   if ((sd->w == w) && (sd->h == h))
+     resize = e_box_item_size_get(si->o_base, &w, &h);
+
    if (sd->selected == n) sd->selected = -1;
    if (si->o_icon) evas_object_del(si->o_icon);
    if (si->o_end) evas_object_del(si->o_end);
    if (si->label) eina_stringshare_del(si->label);
    evas_object_del(si->o_base);
    E_FREE(si);
+
+   /* if ilist size is size of box (e_widget_ilist),
+    * autoresize here to prevent skewed perspective as in ticket #1678
+    */
+   if (!resize) return;
+   if (!sd->items) return;
+   si = eina_list_data_get(sd->items);
+   evas_object_resize(sd->o_smart, w, sd->h - h);
 }
 
 EAPI const char *
@@ -483,6 +497,14 @@ e_ilist_nth_label_get(Evas_Object *obj, int n)
 }
 
 EAPI void
+e_ilist_item_label_set(E_Ilist_Item *si, const char *label)
+{
+   EINA_SAFETY_ON_NULL_RETURN(si);
+   eina_stringshare_replace(&si->label, label);
+   edje_object_part_text_set(si->o_base, "e.text.label", label);
+}
+
+EAPI void
 e_ilist_nth_label_set(Evas_Object *obj, int n, const char *label)
 {
    E_Ilist_Item *si = NULL;
@@ -493,11 +515,7 @@ e_ilist_nth_label_set(Evas_Object *obj, int n, const char *label)
    API_ENTRY return;
    if (!sd->items) return;
    si = eina_list_nth(sd->items, n);
-   if (si)
-     {
-        if (eina_stringshare_replace(&si->label, label))
-          edje_object_part_text_set(si->o_base, "e.text.label", label);
-     }
+   if (si) e_ilist_item_label_set(si, label);
 }
 
 EAPI Evas_Object *

@@ -7,7 +7,7 @@ plugindir=${exec_prefix}/lib/enlightenment/modules/everything/plugins
 Name: e17-everything
 Description: Everything Module for Enlightenment
 Requires: enlightenment
-Version: 0.16.999.77927
+Version: 0.17.0-alpha
 Libs: -L${libdir}
 Libs.private: 
 Cflags: -I${includedir}

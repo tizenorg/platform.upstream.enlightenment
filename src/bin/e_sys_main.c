@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <pwd.h>
 #include <grp.h>
 #include <fnmatch.h>
@@ -44,11 +45,13 @@ main(int argc,
    int i, gn;
    int test = 0;
    char *action = NULL, *cmd;
+   char *output = NULL;
 #ifdef HAVE_EEZE_MOUNT
    Eina_Bool mnt = EINA_FALSE;
    const char *act;
 #endif
    gid_t gid, gl[65536], egid;
+   int pid = 0;
 
    for (i = 1; i < argc; i++)
      {
@@ -70,6 +73,21 @@ main(int argc,
              test = 1;
              action = argv[2];
           }
+   else if (!strcmp(argv[1], "gdb"))
+     {
+        if (argc != 4) exit(1);
+        char *end = NULL;
+
+        action = argv[1];
+        pid = strtoul(argv[2], &end, 10);
+        if (end == NULL || *end != '\0')
+          {
+             printf("Invalid pid for '%s'.\n", argv[3]);
+             exit(0);
+          }
+
+        output = argv[3];
+     }
 #ifdef HAVE_EEZE_MOUNT
         else
           {
@@ -94,6 +112,7 @@ main(int argc,
         exit(1);
      }
    if (!action) exit(1);
+   fprintf(stderr, "action %s %i\n", action, argc);
 
    uid = getuid();
    gid = getgid();
@@ -133,6 +152,26 @@ main(int argc,
      {
         printf("ERROR: UNDEFINED ACTION: %s\n", action);
         exit(20);
+     }
+
+   if (!strcmp(action, "gdb"))
+     {
+        char buffer[4096];
+        int r;
+
+	snprintf(buffer, 4096,
+                 "%s --pid=%i "
+		 "-ex 'set logging file %s' "
+		 "-ex 'set logging on' "
+		 "-ex 'thread apply all backtrace full' "
+		 "-ex detach -ex quit > /dev/null 2> /dev/null",
+                 cmd,
+		 pid,
+		 output);
+
+        r = system(buffer);
+
+        exit(WEXITSTATUS(r));
      }
    if ((!test)
 #ifdef HAVE_EEZE_MOUNT

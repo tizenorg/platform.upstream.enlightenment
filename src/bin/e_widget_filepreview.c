@@ -30,6 +30,8 @@ struct _E_Widget_Data
    Evas_Coord   preview_w, preview_h;
    int w, h;
    Ecore_Thread *preview_text_file_thread;
+   Eio_Monitor *monitor;
+   Eina_List *handlers;
    char        *preview_extra_text;
    char        *preview_size_text;
    char        *preview_owner_text;
@@ -130,7 +132,13 @@ _e_wid_fprev_img_update(E_Widget_Data *wd, const char *path, const char *key)
 {
    if (!path) return;
    if (wd->is_dir || wd->is_txt) return;
-   e_widget_preview_thumb_set(wd->o_preview_preview, path, key, wd->w, wd->h);
+   if (eina_str_has_extension(path, ".gif"))
+     {
+        e_widget_preview_file_set(wd->o_preview_preview, path, key);
+        _e_wid_fprev_preview_update(wd, wd->o_preview_preview, NULL);
+     }
+   else
+     e_widget_preview_thumb_set(wd->o_preview_preview, path, key, wd->w, wd->h);
 }
 
 static void
@@ -226,8 +234,8 @@ _e_wid_fprev_preview_video_widgets(E_Widget_Data *wd)
    emotion_object_file_set(o, wd->path);
    emotion_object_play_set(o, EINA_TRUE);
    evas_object_size_hint_aspect_set(o, EVAS_ASPECT_CONTROL_BOTH, wd->w, wd->h);
-   /* this works through sheer because e_icon doesn't fail */
-   wd->o_preview_preview = e_widget_image_add_from_object(evas, o, wd->w, wd->h);
+   wd->o_preview_preview = e_widget_preview_add(evas, wd->w, wd->h);
+   e_widget_preview_extern_object_set(wd->o_preview_preview, o);
    e_widget_table_object_append(wd->o_preview_properties_table,
                                 wd->o_preview_preview, 0, 0, 2, 2, 1, 1, 1, 1);
    
@@ -269,7 +277,7 @@ _e_wid_fprev_preview_video_widgets(E_Widget_Data *wd)
 #endif
 
 static void
-_e_wid_fprev_preview_fs_widgets(E_Widget_Data *wd)
+_e_wid_fprev_preview_fs_widgets(E_Widget_Data *wd, Eina_Bool mount_point)
 {
    Evas *evas = evas_object_evas_get(wd->obj);
    Evas_Object *o;
@@ -304,7 +312,8 @@ _e_wid_fprev_preview_fs_widgets(E_Widget_Data *wd)
    WIDROW(_("Size:"), o_preview_size, o_preview_size_entry, 100);
    WIDROW(_("Reserved:"), o_preview_owner, o_preview_owner_entry, 100);
    WIDROW(_("Mount status:"), o_preview_perms, o_preview_perms_entry, 100);
-   WIDROW(_("Type:"), o_preview_time, o_preview_time_entry, 100);
+   if (mount_point)
+     WIDROW(_("Type:"), o_preview_time, o_preview_time_entry, 100);
 
    e_widget_list_object_append(wd->o_preview_list,
                                wd->o_preview_properties_table,
@@ -472,7 +481,7 @@ _e_wid_fprev_preview_file(E_Widget_Data *wd)
 #ifdef ST_RDONLY                                 
                             if (stfs.f_flag & ST_RDONLY) rdonly = EINA_TRUE;
 #endif                                 
-                            _e_wid_fprev_preview_fs_widgets(wd);
+                            _e_wid_fprev_preview_fs_widgets(wd, EINA_TRUE);
                             
                             //-------------------
                             if (mbused > 1024.0)
@@ -508,12 +517,11 @@ _e_wid_fprev_preview_file(E_Widget_Data *wd)
                     }
                   if (!is_fs)
                     {
-                       _e_wid_fprev_preview_fs_widgets(wd);
+                       _e_wid_fprev_preview_fs_widgets(wd, EINA_FALSE);
                        e_widget_entry_text_set(wd->o_preview_extra_entry, _("Unknown"));
                        e_widget_entry_text_set(wd->o_preview_size_entry, _("Unknown"));
                        e_widget_entry_text_set(wd->o_preview_owner_entry, _("Unknown"));
                        e_widget_entry_text_set(wd->o_preview_perms_entry, _("Unmounted"));
-                       e_widget_entry_text_set(wd->o_preview_time_entry, _("Unknown"));
                        is_fs = EINA_TRUE;
                     }
                   eina_stringshare_del(file);
@@ -712,6 +720,8 @@ _e_wid_del_hook(Evas_Object *obj)
    eina_stringshare_del(wd->mime);
    if (wd->preview_text_file_thread) ecore_thread_cancel(wd->preview_text_file_thread);
    wd->preview_text_file_thread = NULL;
+   if (wd->monitor) eio_monitor_del(wd->monitor);
+   E_FREE_LIST(wd->handlers, ecore_event_handler_del);
    free(wd);
 }
 
@@ -832,6 +842,8 @@ _e_wid_fprev_preview_txt(E_Widget_Data *wd)
          * themes to be updated
          */
         e_theme_edje_object_set(o, "base/theme/dialog", "e/widgets/dialog/text");
+        edje_object_signal_emit(o, "e,state,left", "e");
+        edje_object_message_signal_process(o);
         edje_object_part_text_set(wd->o_preview_preview, "e.textblock.message", "");
         wd->o_preview_preview = o;
         wd->prev_is_txt = EINA_TRUE;
@@ -929,6 +941,25 @@ _e_wid_fprev_preview_fm(E_Widget_Data *wd)
    e_fm2_path_set(wd->o_preview_preview, "/", wd->path);
 }
 
+static Eina_Bool
+_e_wid_fprev_cb_del(E_Widget_Data *wd, int type __UNUSED__, Eio_Monitor_Event *ev)
+{
+   if (wd->monitor != ev->monitor) return ECORE_CALLBACK_RENEW;
+   _e_wid_fprev_clear_widgets(wd);
+   eio_monitor_del(wd->monitor);
+   wd->monitor = NULL;
+   E_FREE_LIST(wd->handlers, ecore_event_handler_del);
+   return ECORE_CALLBACK_RENEW;
+}
+
+static Eina_Bool
+_e_wid_fprev_cb_mod(E_Widget_Data *wd, int type __UNUSED__, Eio_Monitor_Event *ev)
+{
+   if (wd->monitor != ev->monitor) return ECORE_CALLBACK_RENEW;
+   _e_wid_fprev_preview_file(wd);
+   return ECORE_CALLBACK_RENEW;
+}
+
 EAPI Evas_Object *
 e_widget_filepreview_add(Evas *evas, int w, int h, int horiz)
 {
@@ -980,6 +1011,15 @@ e_widget_filepreview_path_set(Evas_Object *obj, const char *path, const char *mi
    if (!wd) return;
    eina_stringshare_replace(&wd->path, path);
    eina_stringshare_replace(&wd->mime, mime);
+   if (wd->monitor) eio_monitor_del(wd->monitor);
+   wd->monitor = eio_monitor_stringshared_add(wd->path);
+   if (!wd->handlers)
+     {
+        E_LIST_HANDLER_APPEND(wd->handlers, EIO_MONITOR_FILE_MODIFIED, _e_wid_fprev_cb_mod, wd);
+        E_LIST_HANDLER_APPEND(wd->handlers, EIO_MONITOR_FILE_DELETED, _e_wid_fprev_cb_del, wd);
+        E_LIST_HANDLER_APPEND(wd->handlers, EIO_MONITOR_ERROR, _e_wid_fprev_cb_del, wd);
+        E_LIST_HANDLER_APPEND(wd->handlers, EIO_MONITOR_SELF_DELETED, _e_wid_fprev_cb_del, wd);
+     }
    _e_wid_fprev_preview_file(wd);
 }
 

@@ -37,7 +37,7 @@ typedef struct _E_Event_Config_Icon_Theme   E_Event_Config_Icon_Theme;
 /* increment this whenever a new set of config values are added but the users
  * config doesn't need to be wiped - simply new values need to be put in
  */
-#define E_CONFIG_FILE_GENERATION 0x0159
+#define E_CONFIG_FILE_GENERATION 0x0161
 #define E_CONFIG_FILE_VERSION    ((E_CONFIG_FILE_EPOCH << 16) | E_CONFIG_FILE_GENERATION)
 
 struct _E_Config
@@ -70,6 +70,7 @@ struct _E_Config
    const char *language; // GUI
    const char *desklock_language; // GUI
    Eina_List  *modules; // GUI
+   Eina_List  *bad_modules; // GUI
    Eina_List  *font_fallbacks; // GUI
    Eina_List  *font_defaults; // GUI
    Eina_List  *themes; // GUI
@@ -93,6 +94,7 @@ struct _E_Config
    int         focus_policy; // GUI
    int         focus_setting; // GUI
    int         pass_click_on; // GUI
+   int         window_activehint_policy; // GUI
    int         always_click_to_raise; // GUI
    int         always_click_to_focus; // GUI
    int         use_auto_raise; // GUI
@@ -252,8 +254,7 @@ struct _E_Config
    Eina_List                *mime_icons; // GUI
    int                       desk_auto_switch; // GUI;
    
-   int                       window_out_of_vscreen_limits;
-   int                       window_out_of_vscreen_limits_partly;
+   int                       screen_limits;
 
    int                       thumb_nice;
 

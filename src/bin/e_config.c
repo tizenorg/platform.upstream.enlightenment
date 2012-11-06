@@ -661,6 +661,7 @@ e_config_init(void)
    E_CONFIG_VAL(D, T, no_module_delay, INT); /**/
    E_CONFIG_VAL(D, T, desklock_language, STR); /**/
    E_CONFIG_LIST(D, T, modules, _e_config_module_edd); /**/
+   EET_DATA_DESCRIPTOR_ADD_LIST_STRING(D, T, "bad_modules", bad_modules);
    E_CONFIG_LIST(D, T, font_fallbacks, _e_config_font_fallback_edd); /**/
    E_CONFIG_LIST(D, T, font_defaults, _e_config_font_default_edd); /**/
    E_CONFIG_LIST(D, T, themes, _e_config_theme_edd); /**/
@@ -683,6 +684,7 @@ e_config_init(void)
    E_CONFIG_VAL(D, T, focus_policy, INT); /**/
    E_CONFIG_VAL(D, T, focus_setting, INT); /**/
    E_CONFIG_VAL(D, T, pass_click_on, INT); /**/
+   E_CONFIG_VAL(D, T, window_activehint_policy, INT); /**/
    E_CONFIG_VAL(D, T, always_click_to_raise, INT); /**/
    E_CONFIG_VAL(D, T, always_click_to_focus, INT); /**/
    E_CONFIG_VAL(D, T, use_auto_raise, INT); /**/
@@ -838,8 +840,7 @@ e_config_init(void)
 
    E_CONFIG_VAL(D, T, desk_auto_switch, INT);
 
-   E_CONFIG_VAL(D, T, window_out_of_vscreen_limits, INT);
-   E_CONFIG_VAL(D, T, window_out_of_vscreen_limits_partly, INT);
+   E_CONFIG_VAL(D, T, screen_limits,  INT);
 
    E_CONFIG_VAL(D, T, thumb_nice, INT);
 
@@ -1254,6 +1255,10 @@ e_config_load(void)
           e_config->xkb.desklock_layout = NULL;
           IFCFGEND;
 
+          IFCFG(0x0160);
+          e_config->window_activehint_policy = 2;
+          IFCFGEND;
+
           e_config->config_version = E_CONFIG_FILE_VERSION;
           _e_config_free(tcfg);
        }
@@ -1282,6 +1287,7 @@ e_config_load(void)
      E_CONFIG_LIMIT(e_config->focus_policy, 0, 2);
      E_CONFIG_LIMIT(e_config->focus_setting, 0, 3);
      E_CONFIG_LIMIT(e_config->pass_click_on, 0, 1);
+     E_CONFIG_LIMIT(e_config->window_activehint_policy, 0, 2);
      E_CONFIG_LIMIT(e_config->always_click_to_raise, 0, 1);
      E_CONFIG_LIMIT(e_config->always_click_to_focus, 0, 1);
      E_CONFIG_LIMIT(e_config->use_auto_raise, 0, 1);
@@ -1357,8 +1363,7 @@ e_config_load(void)
      E_CONFIG_LIMIT(e_config->remember_internal_windows, 0, 3);
      E_CONFIG_LIMIT(e_config->desk_auto_switch, 0, 1);
 
-     E_CONFIG_LIMIT(e_config->window_out_of_vscreen_limits, 0, 1);
-     E_CONFIG_LIMIT(e_config->window_out_of_vscreen_limits_partly, 0, 1);
+     E_CONFIG_LIMIT(e_config->screen_limits, 0, 2);
 
      E_CONFIG_LIMIT(e_config->dpms_enable, 0, 1);
      E_CONFIG_LIMIT(e_config->dpms_standby_enable, 0, 1);
@@ -2001,10 +2006,9 @@ _e_config_free(E_Config *ecf)
 
    if (!ecf) return;
 
-   if (e_config->xkb.default_model)
-     eina_stringshare_del(e_config->xkb.default_model);
+   eina_stringshare_del(ecf->xkb.default_model);
 
-   EINA_LIST_FREE(e_config->xkb.used_layouts, cl)
+   EINA_LIST_FREE(ecf->xkb.used_layouts, cl)
      {
         eina_stringshare_del(cl->name);
         eina_stringshare_del(cl->model);
@@ -2012,7 +2016,7 @@ _e_config_free(E_Config *ecf)
         E_FREE(cl);
      }
 
-   EINA_LIST_FREE(e_config->xkb.used_options, op)
+   EINA_LIST_FREE(ecf->xkb.used_options, op)
      {
         eina_stringshare_del(op->name);
         E_FREE(op);

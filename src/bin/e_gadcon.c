@@ -1757,7 +1757,12 @@ e_gadcon_client_util_menu_items_append(E_Gadcon_Client *gcc, E_Menu *menu_gadget
              e_util_menu_item_theme_icon_set(mi, "enlightenment/plain");
              e_menu_item_radio_group_set(mi, 1);
              e_menu_item_radio_set(mi, 1);
-             if ((gcc->style) && (!strcmp(gcc->style, E_GADCON_CLIENT_STYLE_PLAIN)))
+             if ((gcc->style) && 
+                 (!strcmp(gcc->style, E_GADCON_CLIENT_STYLE_PLAIN)))
+               e_menu_item_toggle_set(mi, 1);
+             else if ((gcc->client_class->default_style) && 
+                      (!strcmp(gcc->client_class->default_style, 
+                               E_GADCON_CLIENT_STYLE_PLAIN)))
                e_menu_item_toggle_set(mi, 1);
              e_menu_item_callback_set(mi, _e_gadcon_client_cb_menu_style_plain, gcc);
 
@@ -1766,7 +1771,12 @@ e_gadcon_client_util_menu_items_append(E_Gadcon_Client *gcc, E_Menu *menu_gadget
              e_util_menu_item_theme_icon_set(mi, "enlightenment/inset");
              e_menu_item_radio_group_set(mi, 1);
              e_menu_item_radio_set(mi, 1);
-             if ((gcc->style) && (!strcmp(gcc->style, E_GADCON_CLIENT_STYLE_INSET)))
+             if ((gcc->style) && 
+                 (!strcmp(gcc->style, E_GADCON_CLIENT_STYLE_INSET)))
+               e_menu_item_toggle_set(mi, 1);
+             else if ((gcc->client_class->default_style) && 
+                      (!strcmp(gcc->client_class->default_style, 
+                               E_GADCON_CLIENT_STYLE_INSET)))
                e_menu_item_toggle_set(mi, 1);
              e_menu_item_callback_set(mi, _e_gadcon_client_cb_menu_style_inset, gcc);
 
@@ -2575,7 +2585,7 @@ _e_gadcon_client_move_go(E_Gadcon_Client *gcc)
           }
 
         /* DRAG RIGHT */
-        if (x > 0 && (cx + gcc->drag.x > gcc->config.pos + gcc->config.size / 2))
+        if (x > 0 && (cx + gcc->drag.x > gcc->config.pos))
           {
              if (gcc->state_info.state != E_LAYOUT_ITEM_STATE_POS_INC)
                gcc->state_info.resist = 0;
@@ -2588,7 +2598,6 @@ _e_gadcon_client_move_go(E_Gadcon_Client *gcc)
              if (gcc->state_info.state != E_LAYOUT_ITEM_STATE_POS_DEC)
                gcc->state_info.resist = 0;
              gcc->state_info.state = E_LAYOUT_ITEM_STATE_POS_DEC;
-             cx = -cx;
              changes = 1;
           }
 
@@ -2984,14 +2993,8 @@ _e_gadcon_cb_dnd_move(void *data, const char *type __UNUSED__, void *event)
 
    o = gcc->o_frame ? gcc->o_frame : gcc->o_base;
    if (o)
-     {
-        if (e_gadcon_layout_orientation_get(gc->o_container))
-          e_gadcon_layout_pack_request_set(o, gcc->config.pos,
-                                           gcc->config.size);
-        else
-          e_gadcon_layout_pack_request_set(o, gcc->config.pos,
-                                           gcc->config.size);
-     }
+     e_gadcon_layout_pack_request_set(o, gcc->config.pos,
+                                      gcc->config.size);
    e_gadcon_layout_thaw(gc->o_container);
    if (gc->dnd_move_cb) gc->dnd_move_cb(gc, gcc);
 }
@@ -3301,7 +3304,9 @@ _e_gadcon_client_cb_menu_pre(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi)
      {
         // e menu ASSUMES... EXPECTS the icon to be an.... e_icon!
         // if it's not, spankies for whoever wrote the icon callback!
-        mi->icon_object = gcc->client_class->func.icon ((E_Gadcon_Client_Class *)gcc->client_class, mi->menu->evas);
+        mi->icon_object = 
+          gcc->client_class->func.icon((E_Gadcon_Client_Class *)gcc->client_class, 
+                                       mi->menu->evas);
      }
    else
      e_util_menu_item_theme_icon_set(mi, "preferences-gadget");  // FIXME: Needs icon in theme

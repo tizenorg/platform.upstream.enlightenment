@@ -2,7 +2,7 @@
 
 Summary: The Enlightenment window manager
 Name: enlightenment
-Version: 0.16.999.77927
+Version: 0.17.0-alpha
 Release: %{_rel}
 License: BSD
 Group: User Interface/Desktops

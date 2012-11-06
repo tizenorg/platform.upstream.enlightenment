@@ -300,7 +300,7 @@ _fill_data(E_Config_Dialog_Data *cfdata)
 
    c = e_theme_config_get("theme");
    if (c)
-     cfdata->theme = eina_stringshare_add(c->file);
+     cfdata->theme = eina_stringshare_ref(c->file);
    else
      {
         e_prefix_data_concat_static(path, "data/themes/default.edj");
@@ -395,7 +395,7 @@ _create_data(E_Config_Dialog *cfd)
 
    /* Grab the "System" themes. */
    e_prefix_data_concat_static(theme_dir, "data/themes");
-   cfdata->init[1] = eio_eet_open(theme_dir, EET_FILE_MODE_READ, _open_done_cb, _open_error_cb, cfdata);
+   cfdata->init[1] = eio_file_ls(theme_dir, _eio_filter_cb, _init_main_cb, _init_done_cb, _init_error_cb, cfdata);
    return cfdata;
 }
 

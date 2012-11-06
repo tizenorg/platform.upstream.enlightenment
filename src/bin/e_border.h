@@ -1,5 +1,12 @@
 #ifdef E_TYPEDEFS
 
+typedef enum _E_Screen_Limits
+{
+    E_SCREEN_LIMITS_PARTLY = 0,
+    E_SCREEN_LIMITS_COMPLETELY = 1,
+    E_SCREEN_LIMITS_WITHIN = 2
+} E_Screen_Limits;
+
 typedef enum _E_Icon_Preference
 {
    E_ICON_PREF_E_DEFAULT,
@@ -41,6 +48,13 @@ typedef enum _E_Focus_Policy
    E_FOCUS_MOUSE,
    E_FOCUS_SLOPPY
 } E_Focus_Policy;
+
+typedef enum _E_Urgency_Policy
+{
+   E_ACTIVEHINT_POLICY_IGNORE,
+   E_ACTIVEHINT_POLICY_ANIMATE,
+   E_ACTIVEHINT_POLICY_ACTIVATE
+} E_Urgency_Policy;
 
 typedef enum _E_Focus_Setting
 {
@@ -636,6 +650,7 @@ struct _E_Border
    unsigned char              post_move   : 1;
    unsigned char              post_resize : 1;
    unsigned char              post_show : 1;
+   unsigned char              during_lost : 1;
 
    Ecore_Idle_Enterer        *post_job;
 

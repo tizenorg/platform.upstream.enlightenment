@@ -62,6 +62,7 @@ struct _E_Smart_Data
    unsigned char vbar_visible : 1;
    unsigned char extern_pan : 1;
    unsigned char one_dir_at_a_time : 1;
+   Eina_Bool key_nav : 1;
 };
 
 /* local subsystem functions */
@@ -264,13 +265,18 @@ e_scrollframe_child_pos_get(Evas_Object *obj, Evas_Coord *x, Evas_Coord *y)
 EAPI void
 e_scrollframe_child_region_show(Evas_Object *obj, Evas_Coord x, Evas_Coord y, Evas_Coord w, Evas_Coord h)
 {
-   Evas_Coord mx = 0, my = 0, cw = 0, ch = 0, px = 0, py = 0, nx, ny;
+   Evas_Coord mx = 0, my = 0, cw = 0, ch = 0, px = 0, py = 0, nx, ny, vw, vh;
 
    API_ENTRY return;
    if (!sd->pan_obj) return;
    sd->pan_func.max_get(sd->pan_obj, &mx, &my);
    sd->pan_func.child_size_get(sd->pan_obj, &cw, &ch);
    sd->pan_func.get(sd->pan_obj, &px, &py);
+   e_scrollframe_child_viewport_size_get(obj, &vw, &vh);
+
+   /* Abort if the request region is already shown */
+   if ((px <= x) && (py <= y) && (x + w <= px + vw) && (y + h <= py + vh))
+      return;
 
    nx = px;
    if (x < px) nx = x;
@@ -379,6 +385,22 @@ e_scrollframe_thumbscroll_force(Evas_Object *obj, Eina_Bool forced)
 {
    API_ENTRY return;
    sd->thumbscroll.forced = forced;
+}
+
+EAPI void
+e_scrollframe_key_navigation_set(Evas_Object *obj, Eina_Bool enabled)
+{
+   API_ENTRY return;
+   if (enabled == sd->key_nav)
+      return;
+
+   sd->key_nav = enabled;
+   if (sd->key_nav)
+      evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN,
+            _e_smart_event_key_down, sd);
+   else
+      evas_object_event_callback_del_full(obj, EVAS_CALLBACK_KEY_DOWN,
+            _e_smart_event_key_down, sd);
 }
 
 /* local subsystem functions */
@@ -636,24 +658,28 @@ _e_smart_event_mouse_move(void *data, Evas *e, Evas_Object *obj __UNUSED__, void
                   (e_config->thumbscroll_threshhold *
                    e_config->thumbscroll_threshhold)))
                {
-                  if (!sd->down.dragged)
-                    evas_event_feed_hold(e, 1, ev->timestamp, ev->data);
-                  ev->event_flags |= EVAS_EVENT_FLAG_ON_HOLD;
-                  sd->down.dragged = 1;
-                  x = sd->down.sx - (ev->cur.canvas.x - sd->down.x);
-                  y = sd->down.sy - (ev->cur.canvas.y - sd->down.y);
-                  if ((sd->down.dir_x) || (sd->down.dir_y))
+                  if ((e_config->thumbscroll_enable) ||
+                      (sd->thumbscroll.forced))
                     {
-                       if (!sd->down.locked)
+                       if (!sd->down.dragged)
+                         evas_event_feed_hold(e, 1, ev->timestamp, ev->data);
+                       ev->event_flags |= EVAS_EVENT_FLAG_ON_HOLD;
+                       sd->down.dragged = 1;
+                       x = sd->down.sx - (ev->cur.canvas.x - sd->down.x);
+                       y = sd->down.sy - (ev->cur.canvas.y - sd->down.y);
+                       if ((sd->down.dir_x) || (sd->down.dir_y))
                          {
-                            sd->down.locked_x = x;
-                            sd->down.locked_y = y;
-                            sd->down.locked = 1;
+                            if (!sd->down.locked)
+                              {
+                                 sd->down.locked_x = x;
+                                 sd->down.locked_y = y;
+                                 sd->down.locked = 1;
+                              }
+                            if (sd->down.dir_x) y = sd->down.locked_y;
+                            else x = sd->down.locked_x;
                          }
-                       if (sd->down.dir_x) y = sd->down.locked_y;
-                       else x = sd->down.locked_x;
+                       e_scrollframe_child_pos_set(sd->smart_obj, x, y);
                     }
-                  e_scrollframe_child_pos_set(sd->smart_obj, x, y);
                }
           }
      }
@@ -992,6 +1018,7 @@ _e_smart_add(Evas_Object *obj)
    sd->vbar_flags = E_SCROLLFRAME_POLICY_AUTO;
    sd->hbar_visible = 1;
    sd->vbar_visible = 1;
+   sd->key_nav = EINA_TRUE;
 
    evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN,
                                   _e_smart_event_key_down, sd);

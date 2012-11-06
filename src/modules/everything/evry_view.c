@@ -495,14 +495,18 @@ _e_smart_reconfigure_do(void *data)
    if (!sd)
      return ECORE_CALLBACK_CANCEL;
 
-   sd->idle_enter = NULL;
-
    if (sd->w < 1)
-     return ECORE_CALLBACK_CANCEL;
-
+     {
+        sd->idle_enter = NULL;
+        return ECORE_CALLBACK_CANCEL;
+     }
+   
    if (sd->view->hiding)
-     return ECORE_CALLBACK_CANCEL;
-
+     {
+        sd->idle_enter = NULL;
+        return ECORE_CALLBACK_CANCEL;
+     }
+   
    if (sd->cx > (sd->cw - sd->w)) sd->cx = sd->cw - sd->w;
    if (sd->cy > (sd->ch - sd->h)) sd->cy = sd->ch - sd->h;
    if (sd->cx < 0) sd->cx = 0;
@@ -510,6 +514,7 @@ _e_smart_reconfigure_do(void *data)
 
    if (sd->place && _place_items(sd))
      {
+        sd->place = EINA_FALSE;
         evas_object_smart_callback_call(obj, "changed", NULL);
         return ECORE_CALLBACK_RENEW;
      }
@@ -536,7 +541,7 @@ _e_smart_reconfigure_do(void *data)
           }
         it->changed = EINA_FALSE;
 
-        if (ecore_time_get() - t > 0.03)
+        if (ecore_time_get() - t > 0.01)
           return ECORE_CALLBACK_RENEW;
      }
 
@@ -772,6 +777,8 @@ _animator(void *data)
         e_scrollframe_child_pos_set(sd->view->sframe,
                                     0, sd->scroll_align);
      }
+
+   sd->place = EINA_TRUE;
 
    if (wait)
      return ECORE_CALLBACK_RENEW;

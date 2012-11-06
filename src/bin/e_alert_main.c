@@ -50,10 +50,13 @@ static int fa = 0, fh = 0, fw = 0;
 static const char *title = NULL, *str1 = NULL, *str2 = NULL;
 static int ret = 0, sig = 0;
 static pid_t pid;
+static Eina_Bool tainted = EINA_TRUE;
+static const char *backtrace_str = NULL;
 
 int
 main(int argc, char **argv)
 {
+   const char *tmp;
    int i = 0;
 
    for (i = 1; i < argc; i++)
@@ -70,9 +73,13 @@ main(int argc, char **argv)
           sig = atoi(argv[i]); // signal
         else if (i == 2)
           pid = atoi(argv[i]); // E's pid
-        else if (i == 3)
-          comp_win = atoi(argv[i]); // Composite Alert Window
+	else if (i == 3)
+	  backtrace_str = argv[i];
      }
+
+   tmp = getenv("E17_TAINTED");
+   if (tmp && !strcmp(tmp, "NO"))
+     tainted = EINA_FALSE;
 
    if (!ecore_init()) return EXIT_FAILURE;
    ecore_app_args_set(argc, (const char **)argv);
@@ -175,6 +182,69 @@ _e_alert_create(void)
    xcb_create_gc(conn, gc, win, mask, mask_list);
 }
 
+static int
+_e_alert_atom_get(const char *name)
+{
+   xcb_intern_atom_cookie_t cookie;
+   xcb_intern_atom_reply_t *reply;
+   int a;
+
+   cookie = xcb_intern_atom_unchecked(conn, 0, strlen(name), name);
+   reply = xcb_intern_atom_reply(conn, cookie, NULL);
+   if (!reply) return XCB_ATOM_NONE;
+   a = reply->atom;
+   free(reply);
+   return a;
+}
+
+static int
+_e_alert_comp_win_get(void)
+{
+   xcb_get_property_cookie_t cookie;
+   xcb_get_property_reply_t *reply;
+   uint32_t *v;
+   int atom_cardinal, atom_composite_win;
+   int r;
+
+   atom_cardinal = _e_alert_atom_get("CARDINAL");
+   atom_composite_win = _e_alert_atom_get("_E_COMP_WINDOW");
+
+   cookie = xcb_get_property_unchecked(conn, 0, screen->root, atom_composite_win,
+                                       atom_cardinal, 0, 0x7fffffff);
+   reply = xcb_get_property_reply(conn, cookie, NULL);
+   if (!reply) return -1;
+
+   v = xcb_get_property_value(reply);
+   r = v[0];
+
+   free(reply);
+   return r;
+}
+
+static Eina_Bool
+_e_alert_root_tainted_get(void)
+{
+   xcb_get_property_cookie_t cookie;
+   xcb_get_property_reply_t *reply;
+   uint32_t *v;
+   int atom_cardinal, atom_tainted;
+   int r;
+
+   atom_cardinal = _e_alert_atom_get("CARDINAL");
+   atom_tainted = _e_alert_atom_get("_E_TAINTED");
+
+   cookie = xcb_get_property_unchecked(conn, 0, screen->root, atom_tainted,
+                                       atom_cardinal, 0, 0x7fffffff);
+   reply = xcb_get_property_reply(conn, cookie, NULL);
+   if (!reply) return EINA_TRUE;
+
+   v = xcb_get_property_value(reply);
+   r = v[0];
+
+   free(reply);
+   return !!r;
+}
+
 static void
 _e_alert_display(void)
 {
@@ -182,6 +252,8 @@ _e_alert_display(void)
    xcb_query_text_extents_cookie_t cookie;
    xcb_query_text_extents_reply_t *reply;
    int x = 0, w = 0;
+
+   tainted = _e_alert_root_tainted_get();
 
    str = _e_alert_build_string(title);
 
@@ -207,6 +279,7 @@ _e_alert_display(void)
    _e_alert_button_move_resize(btn2, x, WINDOW_HEIGHT - 20 - (fh + 20),
                                w, (fh + 20));
 
+   comp_win = _e_alert_comp_win_get();
    if (comp_win)
      {
         xcb_rectangle_t rect;
@@ -447,15 +520,46 @@ _e_alert_draw_text(void)
    char warn[1024], msg[4096], line[1024];
    unsigned int i = 0, j = 0, k = 0;
 
-   snprintf(msg, sizeof(msg),
-            "This is not meant to happen and is likely a sign of \n"
-            "a bug in Enlightenment or the libraries it relies \n"
-            "on. You can gdb attach to this process (%d) now \n"
-            "to try debug it or you could exit, or just hit \n"
-            "restart to try and get your desktop back the way \n"
-            "it was.\n"
-            "\n"
-            "Please compile everything with -g in your CFLAGS.", pid);
+   if (!tainted)
+     {
+        if (backtrace_str)
+          {
+             snprintf(msg, sizeof(msg),
+                      "This is not meant to happen and is likely a sign of \n"
+                      "a bug in Enlightenment or the libraries it relies \n"
+                      "on. You will find an backtrace of E17 (%d) in :\n"
+                      "'%s'\n"
+                      "Before reporting issue, compile latest E17 and EFL\n"
+                      "from svn with '-g -ggdb3' in your CFLAGS.\n"
+                      "You can then report this crash on :\n"
+                      "http://trac.enlightenment.org/e/.\n",
+                      pid, backtrace_str);
+          }
+        else
+          {
+             snprintf(msg, sizeof(msg),
+                      "This is not meant to happen and is likely a sign of \n"
+                      "a bug in Enlightenment or the libraries it relies \n"
+                      "on. You can gdb attach to this process (%d) now \n"
+                      "to try debug it or you could exit, or just hit \n"
+                      "restart to try and get your desktop back the way \n"
+                      "it was.\n"
+                      "\n"
+                      "Please compile latest svn E17 and EFL with\n"
+                      "-g and -ggdb3 in your CFLAGS.\n", pid);
+
+          }
+     }
+   else
+     {
+        snprintf(msg, sizeof(msg),
+                 "This is not meant to happen and is likely\n"
+                 "a sign of a bug, but you are using unsupported\n"
+                 "modules; before reporting this issue, please\n"
+                 "unload them and try to see if the bug is still\n"
+                 "there. Also update to latest svn and be sure to\n"
+		 "compile E17 and EFL with -g and -ggdb3 in your CFLAGS");
+     }
 
    strcpy(warn, "");
 
@@ -470,7 +574,7 @@ _e_alert_draw_text(void)
    xcb_image_text_8(conn, strlen(warn), win, gc,
                     4, (k + fa), warn);
    k += (2 * (fh + 2));
-   while (msg[i])
+   for (i = 0; msg[i]; )
      {
         line[j++] = msg[i++];
         if (line[j - 1] == '\n')

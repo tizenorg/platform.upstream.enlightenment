@@ -90,6 +90,40 @@ _e_int_menus_augmentation_find(const char *key)
    return eina_hash_find(_e_int_menus_augmentation, key);
 }
 
+#ifdef ISCOMFITOR
+static void
+_TEST_ADD(void *data, E_Dialog *dia __UNUSED__)
+{
+   char buf[4096];
+
+   snprintf(buf, sizeof(buf), "ITEM %d", e_widget_ilist_count(data) + 1);
+   e_widget_ilist_append(data, NULL, buf, NULL, NULL, NULL);
+}
+
+static void
+_TEST_DEL(void *data, E_Dialog *dia __UNUSED__)
+{
+   e_widget_ilist_remove_num(data, e_widget_ilist_selected_get(data));
+}
+
+static void
+_TEST(void *d __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
+{
+   E_Dialog *dia;
+   Evas_Object *o_list;
+   Evas *e;
+
+   dia = e_dialog_normal_win_new(m->zone->container, "E", "_widget_playground_dialog");
+   e = e_win_evas_get(dia->win);
+   o_list = e_widget_ilist_add(e, 32, 32, NULL);
+   e_dialog_button_add(dia, "Add", NULL, _TEST_ADD, o_list);
+   e_dialog_button_add(dia, "Del", NULL, _TEST_DEL, o_list);
+   e_dialog_content_set(dia, o_list, 100, 300);
+   e_dialog_resizable_set(dia, 1);
+   e_dialog_show(dia);
+}
+#endif
+
 /* externally accessible functions */
 EAPI E_Menu *
 e_int_menus_main_new(void)
@@ -108,6 +142,12 @@ e_int_menus_main_new(void)
    e_object_del_attach_func_set(E_OBJECT(m), _e_int_menus_main_del_hook);
 
    e_menu_category_set(m, "main");
+
+#ifdef ISCOMFITOR
+   mi = e_menu_item_new(m);
+   e_menu_item_label_set(mi, "TEST");
+   e_menu_item_callback_set(mi, _TEST, NULL);
+#endif
 
    l = _e_int_menus_augmentation_find("main/0");
    if (l) _e_int_menus_augmentation_add(m, l);
@@ -1299,7 +1339,7 @@ _e_int_menus_clients_pre_cb(void *data __UNUSED__, E_Menu *m)
    e_util_menu_item_theme_icon_set(mi, "preferences-system-windows");
    e_menu_item_callback_set(mi, _e_int_menus_clients_cleanup_cb, zone);
 
-   if ((dat) && (e_config->window_out_of_vscreen_limits))
+   if ((dat) && (e_config->screen_limits == E_SCREEN_LIMITS_COMPLETELY))
      {
         mi = e_menu_item_new(m);
         e_menu_item_separator_set(mi, 1);
@@ -1320,26 +1360,28 @@ _e_int_menus_clients_pre_cb(void *data __UNUSED__, E_Menu *m)
 static const char *
 _e_int_menus_clients_title_abbrv(const char *title)
 {
-   int max_len;
+   static char abbv[E_CLIENTLIST_MAX_CAPTION_LEN + 4];
+   char *p;
+   int len, len2, max_len;
 
+   if (!e_config->clientlist_limit_caption_len) return title;
+
+   len = eina_unicode_utf8_get_len(title);
    max_len = e_config->clientlist_max_caption_len;
-   if ((e_config->clientlist_limit_caption_len) && ((int)strlen(title) > max_len))
-     {
-        char *abbv;
-        const char *left, *right;
+   if (len <= max_len) return title;
 
-        abbv = calloc(E_CLIENTLIST_MAX_CAPTION_LEN + 4, sizeof(char));
-        left = title;
-        right = title + (strlen(title) - (max_len / 2));
+   abbv[0] = 0;
+   len2 = max_len / 2;
+   p = (char*)title;
+   eina_unicode_utf8_get_prev(p, &len2);
+   strncpy(abbv, title, len2);
+   len2 = len - (max_len / 2);
+   p = (char*)title;
+   eina_unicode_utf8_get_next(p, &len2);
+   strcat(abbv, "...");
+   strncat(abbv, title + len2, len - len2);
 
-        strncpy(abbv, left, max_len / 2);
-        strncat(abbv, "...", 3);
-        strncat(abbv, right, max_len / 2);
-
-        return abbv;
-     }
-   else
-     return title;
+   return abbv;
 }
 
 static void

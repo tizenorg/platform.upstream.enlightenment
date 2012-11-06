@@ -25,6 +25,7 @@ struct _E_Widget_Data
    void         (*chg_func)(void *data, Evas_Object *obj);
    void        *chg_data;
    int          preview;
+   Eina_Bool   nochange : 1; // block changing of entry
 };
 
 static void  _e_wid_del_hook(Evas_Object *obj);
@@ -40,8 +41,6 @@ _e_wid_fsel_button_up(void *data1, void *data2 __UNUSED__)
      e_fm2_parent_go(wd->o_files_fm);
    if (wd->o_files_frame)
      e_widget_scrollframe_child_pos_set(wd->o_files_frame, 0, 0);
-//   e_widget_entry_text_set(wd->o_entry,
-//			   e_fm2_real_path_get(wd->o_files_fm));
 }
 
 static void
@@ -132,7 +131,6 @@ _e_wid_fsel_favorites_files_changed(void *data, Evas_Object *obj __UNUSED__, voi
           }
      }
 done:
-//   e_widget_entry_text_set(wd->o_entry, rp);
    E_FREE(p1);
    eina_list_free(icons);
 }
@@ -156,8 +154,6 @@ _e_wid_fsel_favorites_selected(void *data, Evas_Object *obj __UNUSED__, void *ev
      e_fm2_path_set(wd->o_files_fm, NULL, ici->real_link);
    eina_list_free(selected);
    e_widget_scrollframe_child_pos_set(wd->o_files_frame, 0, 0);
-//   e_widget_entry_text_set(wd->o_entry,
-//			   e_fm2_real_path_get(wd->o_files_fm));
 }
 
 static void
@@ -168,7 +164,9 @@ _e_wid_fsel_files_changed(void *data, Evas_Object *obj __UNUSED__, void *event_i
    wd = data;
    if (!wd->o_files_fm) return;
    if (e_fm2_selected_count(wd->o_files_fm)) return;
+   wd->nochange = EINA_TRUE;
    e_fm2_first_sel(wd->o_files_fm);
+   wd->nochange = EINA_FALSE;
 }
 
 static void
@@ -190,8 +188,6 @@ _e_wid_fsel_files_dir_changed(void *data, Evas_Object *obj __UNUSED__, void *eve
      }
    if (wd->o_files_frame)
      e_widget_scrollframe_child_pos_set(wd->o_files_frame, 0, 0);
-//   if ((wd->path) && (stat(wd->path, &st) == 0))
-//     e_widget_entry_text_set(wd->o_entry, ecore_file_file_get(wd->path));
    eina_stringshare_replace(&wd->path, NULL);
    if (wd->chg_func) wd->chg_func(wd->chg_data, wd->obj);
 }
@@ -212,6 +208,7 @@ _e_wid_fsel_sel_chg(E_Widget_Data *wd, Evas_Object *fm)
    struct stat st;
    Eina_Bool preview;
 
+   if (wd->nochange) return;
    preview = !!fm;
    fm = fm ?: wd->o_files_fm;
    selected = e_fm2_selected_list_get(fm);
@@ -233,8 +230,6 @@ _e_wid_fsel_sel_chg(E_Widget_Data *wd, Evas_Object *fm)
           e_widget_filepreview_path_set(wd->o_preview, wd->path, ici->mime);
         if (!S_ISDIR(st.st_mode))
           e_widget_entry_text_set(wd->o_entry, ici->file);
-//	else
-//	  e_widget_entry_text_set(wd->o_entry, wd->path);
      }
    eina_list_free(selected);
    if (wd->chg_func) wd->chg_func(wd->chg_data, wd->obj);
@@ -486,7 +481,9 @@ e_widget_fsel_add(Evas *evas, const char *dev, const char *path, char *selected,
    evas_object_show(wd->o_entry);
    evas_object_show(wd->o_table2);
    evas_object_show(wd->o_table);
+   wd->nochange = EINA_TRUE;
    if (!selected) e_fm2_first_sel(wd->o_files_fm);
+   wd->nochange = EINA_FALSE;
    evas_object_focus_set(wd->o_files_fm, EINA_TRUE);
    return obj;
 }

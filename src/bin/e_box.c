@@ -79,18 +79,19 @@ _e_box_item_nth_get(E_Smart_Data *sd, unsigned int n)
    unsigned int x;
    E_Box_Item *bi;
 
+   if (!sd->items) return NULL;
    if (n > sd->item_count / 2)
      {
         x = sd->item_count - 1;
-        EINA_INLIST_REVERSE_FOREACH(EINA_INLIST_GET(sd->items)->last, bi)
+        EINA_INLIST_REVERSE_FOREACH(EINA_INLIST_GET(sd->items), bi)
           {
              if (n == x) return bi->obj;
-             x++;
+             x--;
           }
         return NULL;
      }
    x = 0;
-   EINA_INLIST_FOREACH(EINA_INLIST_GET(sd->items)->last, bi)
+   EINA_INLIST_FOREACH(EINA_INLIST_GET(sd->items), bi)
      {
         if (n == x) return bi->obj;
         x++;
@@ -451,6 +452,18 @@ e_box_item_at_xy_get(Evas_Object *obj, Evas_Coord x, Evas_Coord y)
         if (E_INSIDE(x, y, bi->x, bi->y, bi->w, bi->h)) return bi->obj;
      }
    return NULL;
+}
+
+EAPI Eina_Bool
+e_box_item_size_get(Evas_Object *obj, int *w, int *h)
+{
+   E_Box_Item *bi;
+
+   bi = evas_object_data_get(obj, "e_box_data");
+   EINA_SAFETY_ON_NULL_RETURN_VAL(bi, EINA_FALSE);
+   if (w) *w = bi->w;
+   if (h) *h = bi->h;
+   return EINA_TRUE;
 }
 
 /* local subsystem functions */
