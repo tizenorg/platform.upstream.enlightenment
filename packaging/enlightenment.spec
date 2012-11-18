@@ -49,7 +49,7 @@ Requires:       %{name} = %{version}
 Development files for enlightenment
 
 %prep
-%setup -q -n %{name}-%{version}-alpha
+%setup -q -n %{name}-%{version}-alpha3
 
 
 %build
