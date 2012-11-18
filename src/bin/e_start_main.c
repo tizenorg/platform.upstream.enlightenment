@@ -8,7 +8,9 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
-#include <sys/ptrace.h>
+#ifdef HAVE_SYS_PTRACE_H
+# include <sys/ptrace.h>
+#endif
 #include <limits.h>
 #include <fcntl.h>
 #ifdef HAVE_ALLOCA_H
@@ -18,7 +20,7 @@
 
 #include <Eina.h>
 
-static Eina_Bool tainted = EINA_FALSE;
+static Eina_Bool stop_ptrace = EINA_FALSE;
 
 static void env_set(const char *var, const char *val);
 EAPI int    prefix_determine(char *argv0);
@@ -216,6 +218,20 @@ _env_path_append(const char *env, const char *path)
      }
 }
 
+static void
+_sigusr1(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__)
+{
+   struct sigaction action;
+
+   /* release ptrace */
+   stop_ptrace = EINA_TRUE;
+
+   action.sa_sigaction = _sigusr1;
+   action.sa_flags = SA_RESETHAND;
+   sigemptyset(&action.sa_mask);
+   sigaction(SIGUSR1, &action, NULL);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -226,13 +242,22 @@ main(int argc, char **argv)
    char valgrind_path[PATH_MAX] = "";
    const char *valgrind_log = NULL;
    Eina_Bool really_know = EINA_FALSE;
+   struct sigaction action;
+#if !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__FreeBSD__) && \
+   !(defined (__MACH__) && defined (__APPLE__))
    Eina_Bool restart = EINA_TRUE;
+#endif
+
+   action.sa_sigaction = _sigusr1;
+   action.sa_flags = SA_RESETHAND;
+   sigemptyset(&action.sa_mask);
+   sigaction(SIGUSR1, &action, NULL);
 
    eina_init();
 
    /* reexcute myself with dbus-launch if dbus-launch is not running yet */
    if ((!getenv("DBUS_SESSION_BUS_ADDRESS")) &&
-       (!getenv("DBUS_LAUNCHD_SESSION_BUS_SOCKET"))) 
+       (!getenv("DBUS_LAUNCHD_SESSION_BUS_SOCKET")))
      {
         char **dbus_argv;
 
@@ -376,81 +401,115 @@ main(int argc, char **argv)
    args[i++] = buf;
    copy_args(args + i, argv + 1, argc - 1);
    args[i + argc - 1] = NULL;
-   /* execv(args[0], args); */
+
+#if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || \
+   (defined (__MACH__) && defined (__APPLE__))
+   execv(args[0], args);
+#endif
 
    /* not run at the moment !! */
 
-
+#if !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__FreeBSD__) && \
+   !(defined (__MACH__) && defined (__APPLE__))
    /* Now looping until */
    while (restart)
      {
         pid_t child;
 
-        tainted = EINA_FALSE;
         child = fork();
 
         if (child < 0) /* failed attempt */
           return -1;
         else if (child == 0)
           {
-             /* in the child */
-             ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-
+#ifdef HAVE_SYS_PTRACE_H
+             if (!really_know)
+               /* in the child */
+               ptrace(PT_TRACE_ME, 0, NULL, NULL);
+#endif
              execv(args[0], args);
              return 0; /* We failed, 0 mean normal exit from E with no restart or crash so let exit */
           }
         else
           {
+             env_set("E_RESTART", "1");
              /* in the parent */
              pid_t result;
              int status;
              Eina_Bool done = EINA_FALSE;
-
-             ptrace(PTRACE_ATTACH, child, NULL, NULL);
-
+#ifdef HAVE_SYS_PTRACE_H
+             if (!really_know)
+               ptrace(PT_ATTACH, child, NULL, NULL);
+#endif
              result = waitpid(child, &status, 0);
-
-             if (WIFSTOPPED(status))
-               ptrace(PTRACE_CONT, child, NULL, NULL);
-
+#ifdef HAVE_SYS_PTRACE_H
+             if ((!really_know) && (!stop_ptrace))
+               {
+                  if (WIFSTOPPED(status))
+                    ptrace(PT_CONTINUE, child, NULL, NULL);
+               }
+#endif
              while (!done)
                {
+                  Eina_Bool remember_sigill = EINA_FALSE;
+                  Eina_Bool remember_sigusr1 = EINA_FALSE;
+
                   result = waitpid(child, &status, 0);
 
                   if (result == child)
                     {
-                       if (WIFSTOPPED(status))
+                       if ((WIFSTOPPED(status)) && (!stop_ptrace))
                          {
                             char buffer[4096];
                             char *backtrace_str = NULL;
                             siginfo_t sig;
-                            int r;
+                            int r = 0;
                             int back;
 
-                            r = ptrace(PTRACE_GETSIGINFO, child, NULL, &sig);
+#ifdef HAVE_SYS_PTRACE_H
+                            if (!really_know)
+                              r = ptrace(PTRACE_GETSIGINFO, child, NULL, &sig);
+#endif
                             back = r == 0 &&
                               sig.si_signo != SIGTRAP ? sig.si_signo : 0;
 
+                            if (sig.si_signo == SIGUSR1)
+                              {
+                                 if (remember_sigill)
+                                   remember_sigusr1 = EINA_TRUE;
+                              }
+                            else if (sig.si_signo == SIGILL)
+                              {
+                                 remember_sigill = EINA_TRUE;
+                              }
+                            else
+                              {
+                                 remember_sigill = EINA_FALSE;
+                              }
+
                             if (r != 0 ||
                                 (sig.si_signo != SIGSEGV &&
-                                 sig.si_signo != SIGILL &&
                                  sig.si_signo != SIGFPE &&
                                  sig.si_signo != SIGBUS &&
                                  sig.si_signo != SIGABRT))
                               {
-                                 ptrace(PTRACE_CONT, child, NULL, back);
-                                 continue ;
+#ifdef HAVE_SYS_PTRACE_H
+                                 if (!really_know)
+                                   ptrace(PT_CONTINUE, child, NULL, back);
+#endif
+                                 continue;
                               }
-
-                            /* E17 should be in pause, we can detach */
-                            ptrace(PTRACE_DETACH, child, NULL, back);
-
+#ifdef HAVE_SYS_PTRACE_H
+                            if (!really_know)
+                              /* E17 should be in pause, we can detach */
+                              ptrace(PT_DETACH, child, NULL, back);
+#endif
                             /* And call gdb if available */
                             if (home)
                               {
                                  /* call e_sys gdb */
                                  snprintf(buffer, 4096,
-                                          "%s/enlightenment/utils/enlightenment_sys gdb %i %s/.xsession-errors",
+                                          "%s/enlightenment/utils/enlightenment_sys gdb %i %s/.e-crashdump.txt",
                                           eina_prefix_lib_get(pfx),
                                           child,
                                           home);
@@ -460,7 +519,7 @@ main(int argc, char **argv)
                                          buffer, WEXITSTATUS(r));
 
                                  snprintf(buffer, 4096,
-                                          "%s/.xsession-errors",
+                                          "%s/.e-crashdump.txt",
                                           home);
 
                                  backtrace_str = strdup(buffer);
@@ -470,7 +529,7 @@ main(int argc, char **argv)
                             snprintf(buffer, 4096,
                                      backtrace_str ? "%s/enlightenment/utils/enlightenment_alert %i %i %s" : "%s/enlightenment/utils/enlightenment_alert %i %i %s",
                                      eina_prefix_lib_get(pfx),
-                                     sig.si_signo,
+                                     sig.si_signo == SIGSEGV && remember_sigusr1 ? SIGILL : sig.si_signo,
                                      child,
                                      backtrace_str);
                             r = system(buffer);
@@ -487,16 +546,35 @@ main(int argc, char **argv)
                          {
                             done = EINA_TRUE;
                          }
+                       else if (stop_ptrace)
+                         {
+                            done = EINA_TRUE;
+                         }
                     }
-                  else if (result == - 1)
+                  else if (result == -1)
                     {
-                       done = EINA_TRUE;
-                       restart = EINA_FALSE;
+                       if (errno != EINTR)
+                         {
+                            done = EINA_TRUE;
+                            restart = EINA_FALSE;
+                         }
+                       else
+                         {
+                            if (stop_ptrace)
+                              {
+                                 kill(child, SIGSTOP);
+                                 usleep(200000);
+#ifdef HAVE_SYS_PTRACE_H
+                                 if (!really_know)
+                                   ptrace(PT_DETACH, child, NULL, NULL);
+#endif
+                              }
+                         }
                     }
                }
           }
-          
      }
+#endif
 
    return -1;
 }

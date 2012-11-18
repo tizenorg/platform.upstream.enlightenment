@@ -358,6 +358,7 @@ e_int_menus_favorite_apps_new(void)
 
    e_user_dir_concat_static(buf, "applications/menu/favorite.menu");
    if (ecore_file_exists(buf)) m = e_int_menus_apps_new(buf);
+   if (m) _e_int_menus_apps_start(NULL, m);
    return m;
 }
 
@@ -523,6 +524,13 @@ e_int_menus_init(void)
 {
    if (e_config->menu_apps_show)
      _e_int_menus_apps_thread_new(NULL, NULL);
+   else
+     {
+        char buf[PATH_MAX];
+
+        e_user_dir_concat_static(buf, "applications/menu/favorite.menu");
+        _e_int_menus_apps_thread_new(NULL, eina_stringshare_add(buf));
+     }
 }
 
 EINTERN void
@@ -729,9 +737,21 @@ _e_int_menus_app_thread_notify_cb(void *data, Ecore_Thread *eth __UNUSED__, void
 }
 
 static void
-_e_int_menus_app_thread_end_cb(void *data __UNUSED__, Ecore_Thread *eth)
+_e_int_menus_app_thread_end_cb(void *data, Ecore_Thread *eth)
 {
+   char buf[PATH_MAX];
+   const char *dir;
+
    _e_int_menus_app_threads = eina_list_remove(_e_int_menus_app_threads, eth);
+   if (data || (!e_config->menu_apps_show)) return;
+
+   e_user_dir_concat_static(buf, "applications/menu/favorite.menu");
+   dir = eina_stringshare_add(buf);
+
+   if (eina_hash_find(_e_int_menus_app_menus, dir))
+     eina_stringshare_del(dir);
+   else
+     _e_int_menus_apps_thread_new(NULL, dir);
 }
 
 static void
@@ -787,7 +807,7 @@ _e_int_menus_apps_thread_new(E_Menu *m, const char *dir)
    if (mn) return NULL;
    if (dir && m)
      eina_hash_add(_e_int_menus_app_menus_waiting, dir, m);
-   else
+   else if (!dir)
      _e_int_menus_app_menu_default_waiting = m;
 
    eth = ecore_thread_feedback_run(_e_int_menus_app_thread_cb, _e_int_menus_app_thread_notify_cb,
@@ -1361,25 +1381,34 @@ static const char *
 _e_int_menus_clients_title_abbrv(const char *title)
 {
    static char abbv[E_CLIENTLIST_MAX_CAPTION_LEN + 4];
-   char *p;
-   int len, len2, max_len;
+   char *abbvptr = abbv;
+   int str_len, len, len2, max_len;
 
    if (!e_config->clientlist_limit_caption_len) return title;
 
-   len = eina_unicode_utf8_get_len(title);
    max_len = e_config->clientlist_max_caption_len;
-   if (len <= max_len) return title;
+   if (eina_unicode_utf8_get_len(title) <= max_len) return title;
 
-   abbv[0] = 0;
-   len2 = max_len / 2;
-   p = (char*)title;
-   eina_unicode_utf8_get_prev(p, &len2);
-   strncpy(abbv, title, len2);
-   len2 = len - (max_len / 2);
-   p = (char*)title;
-   eina_unicode_utf8_get_next(p, &len2);
-   strcat(abbv, "...");
-   strncat(abbv, title + len2, len - len2);
+   memset(&abbv, 0, sizeof(abbv));
+   /* Advance to the end of the first half of the string. */
+   len = 0;
+   for (len2 = (max_len / 2) ; len2 ; len2--)
+      eina_unicode_utf8_get_next(title, &len);
+
+   strncat(abbvptr, title, len);
+   abbvptr += len;
+
+   /* Append the ellipsis char. */
+   strcpy(abbvptr, "\xE2\x80\xA6");
+   abbvptr += 3;
+
+   /* Advance to the start of the second half of the string */
+   len = str_len = strlen(title);
+   for (len2 = (max_len / 2) ; len2 ; len2--)
+      eina_unicode_utf8_get_prev(title, &len);
+
+   strncpy(abbvptr, title + len, str_len);
+   abbvptr[str_len] = '\0';
 
    return abbv;
 }

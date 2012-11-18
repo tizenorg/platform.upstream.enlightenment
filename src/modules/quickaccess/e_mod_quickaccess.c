@@ -301,7 +301,7 @@ _e_qa_entry_relaunch_setup_help(void *data, E_Dialog *dia)
    entry->dia = dia = e_dialog_new(NULL, "E", "_quickaccess_cmd_help_dialog");
 
    snprintf(buf, sizeof(buf), "%s<br>%s/e-module-quickaccess.edj<br>%s<br>"
-                               "data.item: \"%s\" \"--OPT\";", _("The reopen option is meant to be used<br>"
+                               "data.item: \"%s\" \"--OPT\";", _("The relaunch option is meant to be used<br>"
                                "with terminal applications to create a persistent<br>"
                                "terminal which reopens when closed, generally seen<br>"
                                "in quake-style drop-down terminals.<br>"
@@ -1041,7 +1041,7 @@ _e_qa_help_qa_added_cb(void *data __UNUSED__)
         _e_qa_help_timeout(NULL);
         return;
      }
-   entry = eina_list_data_get(eina_list_last(qa_config->transient_entries));
+   entry = eina_list_last_data_get(qa_config->transient_entries);
    entry->help_watch = EINA_TRUE;
    ecore_job_add(_e_qa_help4, NULL);
    e_object_del(qa_mod->help_dia);

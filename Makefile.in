@@ -66,9 +66,67 @@ subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(srcdir)/enlightenment.pc.in $(srcdir)/enlightenment.spec.in \
-	$(top_srcdir)/configure ABOUT-NLS AUTHORS COPYING ChangeLog \
-	INSTALL NEWS compile config.guess config.rpath config.sub \
-	depcomp install-sh ltmain.sh missing
+	$(top_srcdir)/configure \
+	$(top_srcdir)/src/modules/access/module.desktop.in \
+	$(top_srcdir)/src/modules/backlight/module.desktop.in \
+	$(top_srcdir)/src/modules/battery/module.desktop.in \
+	$(top_srcdir)/src/modules/clock/module.desktop.in \
+	$(top_srcdir)/src/modules/comp/module.desktop.in \
+	$(top_srcdir)/src/modules/conf/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_applications/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_dialogs/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_display/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_edgebindings/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_interaction/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_intl/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_keybindings/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_menus/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_paths/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_performance/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_randr/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_shelves/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_theme/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_wallpaper2/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_window_manipulation/module.desktop.in \
+	$(top_srcdir)/src/modules/conf_window_remembers/module.desktop.in \
+	$(top_srcdir)/src/modules/connman/module.desktop.in \
+	$(top_srcdir)/src/modules/cpufreq/module.desktop.in \
+	$(top_srcdir)/src/modules/dropshadow/module.desktop.in \
+	$(top_srcdir)/src/modules/everything/everything.pc.in \
+	$(top_srcdir)/src/modules/everything/module.desktop.in \
+	$(top_srcdir)/src/modules/fileman/module.desktop.in \
+	$(top_srcdir)/src/modules/fileman_opinfo/module.desktop.in \
+	$(top_srcdir)/src/modules/gadman/module.desktop.in \
+	$(top_srcdir)/src/modules/ibar/module.desktop.in \
+	$(top_srcdir)/src/modules/ibox/module.desktop.in \
+	$(top_srcdir)/src/modules/illume-bluetooth/module.desktop.in \
+	$(top_srcdir)/src/modules/illume-home-toggle/module.desktop.in \
+	$(top_srcdir)/src/modules/illume-home/module.desktop.in \
+	$(top_srcdir)/src/modules/illume-indicator/module.desktop.in \
+	$(top_srcdir)/src/modules/illume-kbd-toggle/module.desktop.in \
+	$(top_srcdir)/src/modules/illume-keyboard/module.desktop.in \
+	$(top_srcdir)/src/modules/illume-mode-toggle/module.desktop.in \
+	$(top_srcdir)/src/modules/illume-softkey/module.desktop.in \
+	$(top_srcdir)/src/modules/illume2/doc/illume.dox.in \
+	$(top_srcdir)/src/modules/illume2/module.desktop.in \
+	$(top_srcdir)/src/modules/mixer/module.desktop.in \
+	$(top_srcdir)/src/modules/msgbus/module.desktop.in \
+	$(top_srcdir)/src/modules/notification/module.desktop.in \
+	$(top_srcdir)/src/modules/pager/module.desktop.in \
+	$(top_srcdir)/src/modules/physics/module.desktop.in \
+	$(top_srcdir)/src/modules/quickaccess/module.desktop.in \
+	$(top_srcdir)/src/modules/shot/module.desktop.in \
+	$(top_srcdir)/src/modules/start/module.desktop.in \
+	$(top_srcdir)/src/modules/syscon/module.desktop.in \
+	$(top_srcdir)/src/modules/systray/module.desktop.in \
+	$(top_srcdir)/src/modules/tasks/module.desktop.in \
+	$(top_srcdir)/src/modules/temperature/module.desktop.in \
+	$(top_srcdir)/src/modules/tiling/module.desktop.in \
+	$(top_srcdir)/src/modules/winlist/module.desktop.in \
+	$(top_srcdir)/src/modules/xkbswitch/module.desktop.in \
+	ABOUT-NLS AUTHORS COPYING ChangeLog INSTALL NEWS compile \
+	config.guess config.rpath config.sub install-sh ltmain.sh \
+	missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac-plugins.m4 \
 	$(top_srcdir)/m4/ac_attribute.m4 \
@@ -88,7 +146,64 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES = enlightenment.spec enlightenment.pc
+CONFIG_CLEAN_FILES = enlightenment.spec enlightenment.pc \
+	src/modules/ibar/module.desktop \
+	src/modules/dropshadow/module.desktop \
+	src/modules/clock/module.desktop \
+	src/modules/pager/module.desktop \
+	src/modules/battery/module.desktop \
+	src/modules/temperature/module.desktop \
+	src/modules/notification/module.desktop \
+	src/modules/cpufreq/module.desktop \
+	src/modules/ibox/module.desktop \
+	src/modules/start/module.desktop \
+	src/modules/winlist/module.desktop \
+	src/modules/fileman/module.desktop \
+	src/modules/fileman_opinfo/module.desktop \
+	src/modules/conf/module.desktop \
+	src/modules/conf_wallpaper2/module.desktop \
+	src/modules/conf_theme/module.desktop \
+	src/modules/conf_intl/module.desktop \
+	src/modules/conf_applications/module.desktop \
+	src/modules/conf_display/module.desktop \
+	src/modules/conf_shelves/module.desktop \
+	src/modules/conf_keybindings/module.desktop \
+	src/modules/conf_edgebindings/module.desktop \
+	src/modules/conf_window_remembers/module.desktop \
+	src/modules/conf_window_manipulation/module.desktop \
+	src/modules/conf_menus/module.desktop \
+	src/modules/conf_dialogs/module.desktop \
+	src/modules/conf_performance/module.desktop \
+	src/modules/conf_paths/module.desktop \
+	src/modules/conf_interaction/module.desktop \
+	src/modules/msgbus/module.desktop \
+	src/modules/conf_randr/module.desktop \
+	src/modules/gadman/module.desktop \
+	src/modules/mixer/module.desktop \
+	src/modules/connman/module.desktop \
+	src/modules/illume2/doc/illume.dox \
+	src/modules/illume2/module.desktop \
+	src/modules/illume-home/module.desktop \
+	src/modules/illume-home-toggle/module.desktop \
+	src/modules/illume-softkey/module.desktop \
+	src/modules/illume-keyboard/module.desktop \
+	src/modules/illume-indicator/module.desktop \
+	src/modules/illume-kbd-toggle/module.desktop \
+	src/modules/illume-mode-toggle/module.desktop \
+	src/modules/illume-bluetooth/module.desktop \
+	src/modules/syscon/module.desktop \
+	src/modules/everything/module.desktop \
+	src/modules/everything/everything.pc \
+	src/modules/systray/module.desktop \
+	src/modules/comp/module.desktop \
+	src/modules/physics/module.desktop \
+	src/modules/quickaccess/module.desktop \
+	src/modules/shot/module.desktop \
+	src/modules/backlight/module.desktop \
+	src/modules/tasks/module.desktop \
+	src/modules/xkbswitch/module.desktop \
+	src/modules/tiling/module.desktop \
+	src/modules/access/module.desktop
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -557,6 +672,120 @@ distclean-hdr:
 enlightenment.spec: $(top_builddir)/config.status $(srcdir)/enlightenment.spec.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 enlightenment.pc: $(top_builddir)/config.status $(srcdir)/enlightenment.pc.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/ibar/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/ibar/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/dropshadow/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/dropshadow/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/clock/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/clock/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/pager/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/pager/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/battery/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/battery/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/temperature/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/temperature/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/notification/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/notification/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/cpufreq/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/cpufreq/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/ibox/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/ibox/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/start/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/start/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/winlist/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/winlist/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/fileman/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/fileman/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/fileman_opinfo/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/fileman_opinfo/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_wallpaper2/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_wallpaper2/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_theme/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_theme/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_intl/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_intl/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_applications/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_applications/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_display/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_display/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_shelves/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_shelves/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_keybindings/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_keybindings/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_edgebindings/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_edgebindings/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_window_remembers/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_window_remembers/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_window_manipulation/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_window_manipulation/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_menus/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_menus/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_dialogs/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_dialogs/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_performance/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_performance/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_paths/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_paths/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_interaction/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_interaction/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/msgbus/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/msgbus/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/conf_randr/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/conf_randr/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/gadman/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/gadman/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/mixer/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/mixer/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/connman/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/connman/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/illume2/doc/illume.dox: $(top_builddir)/config.status $(top_srcdir)/src/modules/illume2/doc/illume.dox.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/illume2/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/illume2/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/illume-home/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/illume-home/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/illume-home-toggle/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/illume-home-toggle/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/illume-softkey/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/illume-softkey/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/illume-keyboard/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/illume-keyboard/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/illume-indicator/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/illume-indicator/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/illume-kbd-toggle/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/illume-kbd-toggle/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/illume-mode-toggle/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/illume-mode-toggle/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/illume-bluetooth/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/illume-bluetooth/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/syscon/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/syscon/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/everything/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/everything/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/everything/everything.pc: $(top_builddir)/config.status $(top_srcdir)/src/modules/everything/everything.pc.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/systray/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/systray/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/comp/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/comp/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/physics/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/physics/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/quickaccess/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/quickaccess/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/shot/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/shot/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/backlight/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/backlight/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/tasks/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/tasks/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/xkbswitch/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/xkbswitch/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/tiling/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/tiling/module.desktop.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/modules/access/module.desktop: $(top_builddir)/config.status $(top_srcdir)/src/modules/access/module.desktop.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 mostlyclean-libtool:

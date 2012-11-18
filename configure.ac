@@ -7,6 +7,7 @@ m4_define([v_rev], m4_esyscmd([(svnversion "${SVN_REPO_PATH:-.}" | grep -v '\(ex
 m4_if(v_rev, [0], [m4_define([v_rev], m4_esyscmd([git log 2> /dev/null | (grep -m1 git-svn-id || echo 0) | sed -e 's/.*@\([0-9]*\).*/\1/' | tr -d '\n']))])
 ##--   When released, remove the dnl on the below line
 m4_undefine([v_rev])
+m4_define([relname], [0.17.0-alpha3])
 ##--   When doing snapshots - change soname. remove dnl on below line
 dnl m4_define([relname], [ver-pre-svn-08])
 dnl m4_define([v_rel], [-release relname])
@@ -18,7 +19,7 @@ m4_define([lt_age], v_min)
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 
-AC_INIT([enlightenment], [v_ver-alpha], [enlightenment-devel@lists.sourceforge.net])
+AC_INIT([enlightenment], [v_ver-alpha3], [enlightenment-devel@lists.sourceforge.net])
 AC_PREREQ([2.52])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_MACRO_DIR([m4])
@@ -35,7 +36,7 @@ AH_BOTTOM([
 #endif /* EFL_CONFIG_H__ */
 ])
 
-AM_INIT_AUTOMAKE([1.6 dist-bzip2])
+AM_INIT_AUTOMAKE([1.11 dist-bzip2 -Wno-portability])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_GNU_SOURCE
@@ -75,7 +76,7 @@ AC_CHECK_FUNCS(unsetenv)
 
 efl_version="1.7.0"
 
-AC_CHECK_HEADERS([sys/timerfd.h])
+AC_CHECK_HEADERS([sys/timerfd.h sys/ptrace.h])
 
 dnl AC_CHECK_HEADERS(X11/extensions/shape.h,, AC_MSG_ERROR([Cannot find X11/extensions/shape.h. Make sure your CFLAGS environment variable contains include lines for the location of this file]))
 
@@ -338,8 +339,8 @@ test "x${device_backend}" = "xeeze" || AC_DEFINE_UNQUOTED([HAVE_HAL],[1],[enable
 
 DBUS_MOUNT_CONFIG=1
 dbus_mount="dbus-1"
-hal_mount="ehal >= 1.2.0, edbus >= 1.2.0"
-udisks_mount="eukit >= 1.2.0"
+hal_mount="ehal >= 1.7.0, edbus >= 1.7.0"
+udisks_mount="eukit >= 1.7.0"
 AC_ARG_ENABLE([mount-hal],
   AS_HELP_STRING([--enable-mount-hal],[enable hal mounting support @<:@default=enabled@:>@]),
   [e_cv_want_mount_hal=$enableval],
@@ -403,7 +404,7 @@ if test "x$e_cv_want_mount_eeze" != "xno" && test -z "$dbus_mount" ; then
       LIBS="$EEZE_LIBS $LIBS"
       AC_CHECK_LIB([eeze], [eeze_disk_function],
         [
-           eeze_mount="eeze >= 1.2.0 ecore-con >= 1.2.0"
+           eeze_mount="eeze >= 1.7.0 ecore-con >= 1.7.0"
            EEZE_MOUNT_CONFIG=1
            AC_DEFINE_UNQUOTED([HAVE_EEZE_MOUNT], [1], [enable eeze mounting])
            AC_MSG_NOTICE([eeze mounting enabled])
@@ -471,13 +472,13 @@ PKG_CHECK_MODULES(E_GRABBER, [
 ])
 
 efm_requires="\
-ecore >= 1.2.0 \
-ecore-file >= 1.2.0 \
-ecore-ipc >= 1.2.0 \
-eet >= 1.6.0 \
-efreet >= 1.2.0 \
-edbus >= 1.2.0 \
-eina >= 1.2.0"
+ecore >= 1.7.0 \
+ecore-file >= 1.7.0 \
+ecore-ipc >= 1.7.0 \
+eet >= 1.7.0 \
+efreet >= 1.7.0 \
+edbus >= 1.7.0 \
+eina >= 1.7.0"
 efm_requires="$efm_requires $eeze_mount $dbus_mount $hal_mount $udisks_mount"
 
 AC_MSG_WARN([EFM requirements : $efm_requires])
@@ -522,6 +523,7 @@ PKG_CHECK_MODULES(E_INIT, [
 PKG_CHECK_MODULES(E_ALERT, [
   xcb
   xcb-shape
+  xcb-keysyms
   eina >= ${efl_version}
   ecore >= ${efl_version}
   ecore-ipc >= ${efl_version}
@@ -563,6 +565,7 @@ eet >= ${efl_version} \
 edje >= ${efl_version} \
 efreet >= ${efl_version} \
 efreet-mime >= ${efl_version} \
+efreet-trash >= ${efl_version} \
 eina >= ${efl_version} \
 dbus-1 \
 edbus >= ${efl_version} \
@@ -667,7 +670,7 @@ AC_DEFINE(E_INTERNAL, 1, "This define can be used to wrap internal E stuff, as c
 AM_CONDITIONAL(HAVE_BATTERY, false)
 define([CHECK_MODULE_BATTERY],
 [
-  AC_E_CHECK_PKG(BATTERY, [ ecore >= 1.2.0 ecore-file >= 1.2.0 ecore-con >= 1.2.0 eina >= 1.2.0 ], [], [BATTERY=false])
+  AC_E_CHECK_PKG(BATTERY, [ ecore >= 1.7.0 ecore-file >= 1.7.0 ecore-con >= 1.7.0 eina >= 1.7.0 ], [], [BATTERY=false])
 ])
 
 have_openbsd="no"
@@ -687,7 +690,7 @@ AM_CONDITIONAL([HAVE_OPENBSD], [test "x${have_openbsd}" = "xyes"])
 AM_CONDITIONAL(HAVE_TEMPERATURE, false)
 define([CHECK_MODULE_TEMPERATURE],
 [
-  AC_E_CHECK_PKG(TEMPERATURE, [ ecore >= 1.2.0 ecore-file >= 1.2.0 eina >= 1.2.0 ], [], [TEMPERATURE=false])
+  AC_E_CHECK_PKG(TEMPERATURE, [ ecore >= 1.7.0 ecore-file >= 1.7.0 eina >= 1.7.0 ], [], [TEMPERATURE=false])
 ])
 
 ##have_exchange=no
@@ -716,7 +719,7 @@ AC_ARG_ENABLE([enotify],
   AC_CACHE_VAL([e_cv_want_enotify], [e_cv_want_enotify=yes])
 )
 if test "x$e_cv_want_enotify" != "xno" ; then
-  AC_E_CHECK_PKG(ENOTIFY, [ edbus >= 1.2.0 enotify >= 1.2.0 ], 
+  AC_E_CHECK_PKG(ENOTIFY, [ edbus >= 1.7.0 enotify >= 1.7.0 ], 
   [
     AC_DEFINE_UNQUOTED([HAVE_ENOTIFY], [1], [enable enotify])
   ], 
@@ -802,7 +805,7 @@ AM_CONDITIONAL(HAVE_ECONNMAN, false)
 AM_CONDITIONAL(HAVE_DUMMY, false)
 define([CHECK_MODULE_CONNMAN],
 [
-  AC_E_CHECK_PKG(ECONNMAN, [ edbus >= 1.2.0 ], [], [CONNMAN=false])
+  AC_E_CHECK_PKG(ECONNMAN, [ edbus >= 1.7.0 ], [], [CONNMAN=false])
 dnl  AC_E_CHECK_PKG(DUMMY, [ connman >= 1.0 ], [], [CONNMAN=false])
 ])
 AC_SUBST(ECONNMAN_CFLAGS)
@@ -927,129 +930,62 @@ src/bin/Makefile
 src/bin/e_fm_shared_types.h
 src/bin/e_fm/Makefile
 src/modules/Makefile
-src/modules/ibar/Makefile
 src/modules/ibar/module.desktop
-src/modules/dropshadow/Makefile
 src/modules/dropshadow/module.desktop
-src/modules/clock/Makefile
 src/modules/clock/module.desktop
-src/modules/pager/Makefile
 src/modules/pager/module.desktop
-src/modules/battery/Makefile
 src/modules/battery/module.desktop
-src/modules/temperature/Makefile
 src/modules/temperature/module.desktop
-src/modules/notification/Makefile
 src/modules/notification/module.desktop
-src/modules/cpufreq/Makefile
 src/modules/cpufreq/module.desktop
-src/modules/ibox/Makefile
 src/modules/ibox/module.desktop
-src/modules/start/Makefile
 src/modules/start/module.desktop
-src/modules/winlist/Makefile
 src/modules/winlist/module.desktop
-src/modules/fileman/Makefile
 src/modules/fileman/module.desktop
-src/modules/fileman_opinfo/Makefile
 src/modules/fileman_opinfo/module.desktop
-src/modules/wizard/Makefile
-src/modules/conf/Makefile
 src/modules/conf/module.desktop
-src/modules/conf_wallpaper2/Makefile
 src/modules/conf_wallpaper2/module.desktop
-src/modules/conf_theme/Makefile
 src/modules/conf_theme/module.desktop
-src/modules/conf_intl/Makefile
 src/modules/conf_intl/module.desktop
-src/modules/conf_applications/Makefile
 src/modules/conf_applications/module.desktop
-src/modules/conf_display/Makefile
 src/modules/conf_display/module.desktop
-src/modules/conf_shelves/Makefile
 src/modules/conf_shelves/module.desktop
-src/modules/conf_keybindings/Makefile
 src/modules/conf_keybindings/module.desktop
-src/modules/conf_edgebindings/Makefile
 src/modules/conf_edgebindings/module.desktop
-src/modules/conf_window_remembers/Makefile
 src/modules/conf_window_remembers/module.desktop
-src/modules/conf_window_manipulation/Makefile
 src/modules/conf_window_manipulation/module.desktop
-src/modules/conf_menus/Makefile
 src/modules/conf_menus/module.desktop
-src/modules/conf_dialogs/Makefile
 src/modules/conf_dialogs/module.desktop
-src/modules/conf_performance/Makefile
 src/modules/conf_performance/module.desktop
-src/modules/conf_paths/Makefile
 src/modules/conf_paths/module.desktop
-src/modules/conf_interaction/Makefile
 src/modules/conf_interaction/module.desktop
-src/modules/msgbus/Makefile
 src/modules/msgbus/module.desktop
-src/modules/conf_randr/Makefile
 src/modules/conf_randr/module.desktop
-src/modules/gadman/Makefile
 src/modules/gadman/module.desktop
-src/modules/mixer/Makefile
 src/modules/mixer/module.desktop
-src/modules/connman/Makefile
 src/modules/connman/module.desktop
-src/modules/illume2/Makefile
 src/modules/illume2/doc/illume.dox
-src/modules/illume2/doc/Makefile
-src/modules/illume2/images/Makefile
 src/modules/illume2/module.desktop
-src/modules/illume2/keyboards/Makefile
-src/modules/illume2/policies/Makefile
-src/modules/illume2/policies/illume/Makefile
-src/modules/illume2/policies/tablet/Makefile
-src/modules/illume-home/Makefile
 src/modules/illume-home/module.desktop
-src/modules/illume-home-toggle/Makefile
 src/modules/illume-home-toggle/module.desktop
-src/modules/illume-softkey/Makefile
 src/modules/illume-softkey/module.desktop
-src/modules/illume-softkey/images/Makefile
-src/modules/illume-keyboard/Makefile
 src/modules/illume-keyboard/module.desktop
-src/modules/illume-keyboard/keyboards/Makefile
-src/modules/illume-keyboard/dicts/Makefile
-src/modules/illume-keyboard/images/Makefile
-src/modules/illume-indicator/Makefile
 src/modules/illume-indicator/module.desktop
-src/modules/illume-indicator/images/Makefile
-src/modules/illume-kbd-toggle/Makefile
 src/modules/illume-kbd-toggle/module.desktop
-src/modules/illume-mode-toggle/Makefile
 src/modules/illume-mode-toggle/module.desktop
-src/modules/illume-bluetooth/Makefile
 src/modules/illume-bluetooth/module.desktop
-src/modules/syscon/Makefile
 src/modules/syscon/module.desktop
-src/modules/everything/Makefile
 src/modules/everything/module.desktop
 src/modules/everything/everything.pc
-src/modules/systray/Makefile
 src/modules/systray/module.desktop
-src/modules/comp/Makefile
 src/modules/comp/module.desktop
-src/modules/physics/Makefile
 src/modules/physics/module.desktop
-src/modules/quickaccess/Makefile
 src/modules/quickaccess/module.desktop
-src/modules/shot/Makefile
 src/modules/shot/module.desktop
-src/modules/backlight/Makefile
 src/modules/backlight/module.desktop
-src/modules/tasks/Makefile
 src/modules/tasks/module.desktop
-src/modules/xkbswitch/Makefile
 src/modules/xkbswitch/module.desktop
-src/modules/tiling/Makefile
 src/modules/tiling/module.desktop
-src/modules/access/Makefile
 src/modules/access/module.desktop
 data/Makefile
 data/images/Makefile

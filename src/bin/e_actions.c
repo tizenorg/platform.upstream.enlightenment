@@ -1,9 +1,5 @@
 #include "e.h"
 
-#ifndef MAX
-# define MAX(x, y) (((x) > (y)) ? (x) : (y))
-#endif
-
 #define INITS
 #define ACT_GO(name)                                      \
   {                                                       \
@@ -348,11 +344,7 @@ ACT_FN_GO(window_kill, __UNUSED__)
 
    if (!obj) obj = E_OBJECT(e_border_focused_get());
    if (!obj) return;
-   if (obj->type != E_BORDER_TYPE)
-     {
-        obj = E_OBJECT(e_border_focused_get());
-        if (!obj) return;
-     }
+   if (obj->type != E_BORDER_TYPE) return;
    bd = (E_Border *)obj;
    if ((bd->lock_close) || (bd->internal)) return;
 
@@ -1440,6 +1432,16 @@ ACT_FN_GO(desk_flip_to, )
                e_zone_desk_flip_to(zone, dx, dy);
           }
      }
+}
+
+/***************************************************************************/
+ACT_FN_GO(desk_flip_prev, __UNUSED__)
+{
+   E_Zone *zone;
+
+   zone = _e_actions_zone_get(obj);
+   if (!zone) return;
+   e_zone_desk_flip_to(zone, zone->desk_x_prev, zone->desk_y_prev);
 }
 
 /***************************************************************************/
@@ -3110,6 +3112,11 @@ e_actions_init(void)
    e_action_predef_name_set(N_("Desktop"), N_("Flip Desktop By..."),
                             "desk_flip_by", NULL,
                             "syntax: X-offset Y-offset, example: -1 0", 1);
+
+   /* desk_flip_prev */
+   ACT_GO(desk_flip_prev);
+   e_action_predef_name_set(N_("Desktop"), N_("Flip To Previous Desktop"),
+                            "desk_flip_prev", NULL, NULL, 0);
 
    /* desk_deskshow_toggle */
    ACT_GO(desk_deskshow_toggle);

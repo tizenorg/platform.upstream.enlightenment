@@ -4854,7 +4854,7 @@ _e_fm2_icon_select(E_Fm2_Icon *ic)
 {
    E_Fm2_Icon *prev;
    if (ic->selected) return;
-   prev = eina_list_data_get(eina_list_last(ic->sd->selected_icons));
+   prev = eina_list_last_data_get(ic->sd->selected_icons);
    if (prev) prev->last_selected = EINA_FALSE;
    ic->selected = EINA_TRUE;
    ic->sd->last_selected = ic;
@@ -5205,7 +5205,7 @@ _e_fm2_icon_sel_last(Evas_Object *obj, Eina_Bool add)
    if (!sd->icons) return;
    if ((!add) || sd->config->selection.single)
      _e_fm2_icon_desel_any(obj);
-   ic = eina_list_data_get(eina_list_last(sd->icons));
+   ic = eina_list_last_data_get(sd->icons);
    _e_fm2_icon_select(ic);
    evas_object_smart_callback_call(sd->obj, "selection_change", NULL);
    _e_fm2_icon_make_visible(ic);
@@ -5693,6 +5693,8 @@ _e_fm2_typebuf_match(Evas_Object *obj, int next)
                   if (!sd->typebuf.wildcard) break;
                }
           }
+        if (eina_list_count(sel) == 1)
+          ic_match = eina_list_data_get(sel);
      }
    else
      {
@@ -6255,7 +6257,7 @@ _e_fm2_cb_dnd_move(void *data, const char *type, void *event)
              /* if there is a .order file - we can re-order files */
              if (sd->order_file)
                {
-                  ic = eina_list_data_get(eina_list_last(sd->icons));
+                  ic = eina_list_last_data_get(sd->icons);
                   if (ic)
                     {
                        if (!ic->drag.dnd)
@@ -6501,7 +6503,7 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
                     {
                        args = e_util_string_append_char(args, &size, &length, ' ');
                        if (!args) memerr = EINA_TRUE;
-                       else ic->drag.hidden = EINA_TRUE;
+                       else if (ic) ic->drag.hidden = EINA_TRUE;
                     }
                }
              eina_stringshare_del(fp);

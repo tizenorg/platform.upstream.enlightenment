@@ -2519,6 +2519,13 @@ e_border_unshade(E_Border *bd,
                                         bd->h - (bd->client_inset.t + bd->client_inset.b) -
                                         bd->client.h,
                                         bd->client.w, bd->client.h);
+             if (bd->client.lock_win)
+               {
+                  ecore_x_window_move_resize(bd->client.lock_win, 0,
+                                             bd->h - (bd->client_inset.t + bd->client_inset.b) -
+                                             bd->client.h,
+                                             bd->client.w, bd->client.h);
+               }
           }
         else if (bd->shade.dir == E_DIRECTION_LEFT)
           {
@@ -2527,6 +2534,13 @@ e_border_unshade(E_Border *bd,
                                         bd->w - (bd->client_inset.l + bd->client_inset.r) -
                                         bd->client.h,
                                         0, bd->client.w, bd->client.h);
+             if (bd->client.lock_win)
+               {
+                  ecore_x_window_move_resize(bd->client.lock_win,
+                                             bd->w - (bd->client_inset.l + bd->client_inset.r) -
+                                             bd->client.h,
+                                             0, bd->client.w, bd->client.h);
+               }
           }
         else
           ecore_x_window_gravity_set(bd->client.win, ECORE_X_GRAVITY_NE);
@@ -2829,8 +2843,14 @@ e_border_maximize(E_Border *bd,
    /* Add new maximization. It must be added, so that VERTICAL + HORIZONTAL == BOTH */
    bd->maximized |= max;
 
-   e_hints_window_maximized_set(bd, bd->maximized & E_MAXIMIZE_HORIZONTAL,
-                                bd->maximized & E_MAXIMIZE_VERTICAL);
+   if ((bd->maximized & E_MAXIMIZE_DIRECTION) > E_MAXIMIZE_BOTH)
+     /* left/right maximize */
+     e_hints_window_maximized_set(bd, 0,
+                                  ((bd->maximized & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_LEFT) ||
+                                  ((bd->maximized & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_RIGHT));
+   else
+     e_hints_window_maximized_set(bd, bd->maximized & E_MAXIMIZE_HORIZONTAL,
+                                  bd->maximized & E_MAXIMIZE_VERTICAL);
    e_remember_update(bd);
 }
 
@@ -3455,7 +3475,16 @@ e_border_idler_before(void)
                        bd->changes.visible = 0;
                     }
 
-                  if (bd->zone && (!E_INSIDE(bd->x, bd->y, 0, 0, bd->zone->w, bd->zone->h)) && ((!E_INSIDE(bd->w, bd->h, 0, 0, bd->zone->w, bd->zone->h))))
+                  if (bd->zone && (!bd->new_client) &&
+                      (!E_INSIDE(bd->x, bd->y, 0, 0, bd->zone->w, bd->zone->h)) &&
+                      /* upper left */
+                      (!E_INSIDE(bd->x, bd->y, 0 - bd->w + 5, 0 - bd->h + 5, bd->zone->w, bd->zone->h)) &&
+                      /* upper right */
+                      (!E_INSIDE(bd->x, bd->y, 0, 0 - bd->h + 5, bd->zone->w + bd->w - 5, bd->zone->h)) &&
+                      /* lower left */
+                      (!E_INSIDE(bd->x, bd->y, 0 - bd->w + 5, 0, bd->zone->w, bd->zone->h + bd->h - 5)) &&
+                      (!E_INSIDE(bd->x, bd->y, 0, 0, bd->zone->w + bd->w - 5, bd->zone->h + bd->h - 5))
+                     )
                     {
                        if (e_config->screen_limits != E_SCREEN_LIMITS_COMPLETELY)
                           _e_border_move_lost_window_to_center(bd);
@@ -5060,10 +5089,13 @@ _e_border_del(E_Border *bd)
         bd->parent->transients = eina_list_remove(bd->parent->transients, bd);
         if (bd->parent->modal == bd)
           {
-             ecore_x_event_mask_unset(bd->parent->client.win, ECORE_X_EVENT_MASK_WINDOW_DAMAGE | ECORE_X_EVENT_MASK_WINDOW_PROPERTY);
-             ecore_x_event_mask_set(bd->parent->client.win, bd->parent->saved.event_mask);
+             if (bd->parent->client.lock_win)
+               {
+                  ecore_x_window_hide(bd->parent->client.lock_win);
+                  ecore_x_window_free(bd->parent->client.lock_win);
+                  bd->parent->client.lock_win = 0;
+               }
              bd->parent->lock_close = 0;
-             bd->parent->saved.event_mask = 0;
              bd->parent->modal = NULL;
           }
         bd->parent = NULL;
@@ -7356,13 +7388,13 @@ _e_border_eval0(E_Border *bd)
              e_border_layer_set(bd, bd->parent->layer);
              if ((e_config->modal_windows) && (bd->client.netwm.state.modal))
                {
-                  Ecore_X_Window_Attributes attr;
                   bd->parent->modal = bd;
-                  ecore_x_window_attributes_get(bd->parent->client.win, &attr);
-                  bd->parent->saved.event_mask = attr.event_mask.mine;
                   bd->parent->lock_close = 1;
-                  ecore_x_event_mask_unset(bd->parent->client.win, attr.event_mask.mine);
-                  ecore_x_event_mask_set(bd->parent->client.win, ECORE_X_EVENT_MASK_WINDOW_DAMAGE | ECORE_X_EVENT_MASK_WINDOW_PROPERTY);
+                  if (!bd->client.lock_win)
+                    {
+                       bd->client.lock_win = ecore_x_window_input_new(bd->client.shell_win, 0, 0, bd->client.w, bd->client.h);
+                       ecore_x_window_show(bd->client.lock_win);
+                    }
                }
 
              if (e_config->focus_setting == E_FOCUS_NEW_DIALOG ||
@@ -8508,7 +8540,10 @@ _e_border_eval(E_Border *bd)
         if (bd->internal_ecore_evas)
           ecore_evas_move_resize(bd->internal_ecore_evas, x, y, bd->client.w, bd->client.h);
         else if (!bd->client.e.state.video)
-          ecore_x_window_move_resize(bd->client.win, x, y, bd->client.w, bd->client.h);
+          {
+             ecore_x_window_move_resize(bd->client.win, x, y, bd->client.w, bd->client.h);
+             ecore_x_window_move_resize(bd->client.lock_win, x, y, bd->client.w, bd->client.h);
+          }
 
         ecore_evas_move_resize(bd->bg_ecore_evas, 0, 0, bd->w, bd->h);
         evas_object_resize(bd->bg_object, bd->w, bd->h);

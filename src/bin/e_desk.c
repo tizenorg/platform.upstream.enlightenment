@@ -251,6 +251,8 @@ e_desk_show(E_Desk *desk)
           }
      }
 
+   desk->zone->desk_x_prev = desk->zone->desk_x_current;
+   desk->zone->desk_y_prev = desk->zone->desk_y_current;
    desk->zone->desk_x_current = desk->x;
    desk->zone->desk_y_current = desk->y;
    desk->visible = 1;
@@ -418,7 +420,7 @@ e_desk_current_get(E_Zone *zone)
 {
    E_OBJECT_CHECK_RETURN(zone, NULL);
    E_OBJECT_TYPE_CHECK_RETURN(zone, E_ZONE_TYPE, NULL);
-
+   
    return e_desk_at_xy_get(zone, zone->desk_x_current, zone->desk_y_current);
 }
 
@@ -433,6 +435,7 @@ e_desk_at_xy_get(E_Zone *zone, int x, int y)
    else if ((x < 0) || (y < 0))
      return NULL;
 
+   if (!zone->desks) return NULL;
    return zone->desks[x + (y * zone->desk_x_count)];
 }
 

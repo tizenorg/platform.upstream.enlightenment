@@ -36,8 +36,8 @@
 /* Define if the ALSA output plugin should be built */
 #undef HAVE_ALSA
 
-/* Package BATTERY ( ecore >= 1.2.0 ecore-file >= 1.2.0 ecore-con >= 1.2.0
-   eina >= 1.2.0 ) found. */
+/* Package BATTERY ( ecore >= 1.7.0 ecore-file >= 1.7.0 ecore-con >= 1.7.0
+   eina >= 1.7.0 ) found. */
 #undef HAVE_BATTERY
 
 /* Define to 1 if you have the <CFBase.h> header file. */
@@ -58,7 +58,7 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
-/* Package ECONNMAN ( edbus >= 1.2.0 ) found. */
+/* Package ECONNMAN ( edbus >= 1.7.0 ) found. */
 #undef HAVE_ECONNMAN
 
 /* Package ECORE_IMF ( ecore-imf >= ${efl_version} ecore-imf-evas >=
@@ -77,7 +77,7 @@
 /* "Have emotion support" */
 #undef HAVE_EMOTION
 
-/* Package ENOTIFY ( edbus >= 1.2.0 enotify >= 1.2.0 ) found. */
+/* Package ENOTIFY ( edbus >= 1.7.0 enotify >= 1.7.0 ) found. */
 #undef HAVE_ENOTIFY
 
 /* Package EPHYSICS ( ephysics ) found. */
@@ -131,6 +131,9 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
+/* Define to 1 if you have the <sys/ptrace.h> header file. */
+#undef HAVE_SYS_PTRACE_H
+
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
@@ -140,7 +143,7 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
-/* Package TEMPERATURE ( ecore >= 1.2.0 ecore-file >= 1.2.0 eina >= 1.2.0 )
+/* Package TEMPERATURE ( ecore >= 1.7.0 ecore-file >= 1.7.0 eina >= 1.7.0 )
    found. */
 #undef HAVE_TEMPERATURE
 

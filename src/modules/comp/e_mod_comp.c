@@ -585,10 +585,10 @@ _e_mod_comp_win_update(E_Comp_Win *cw)
      {
         Ecore_X_Pixmap pm = 0;
 
-#ifdef HAVE_WAYLAND_CLIENTS
-        if ((cw->bd) && (cw->bd->borderless))
-          pm = e_mod_comp_wl_pixmap_get(cw->win);
-#endif
+/* #ifdef HAVE_WAYLAND_CLIENTS */
+/*         if ((cw->bd) && (cw->bd->borderless)) */
+/*           pm = e_mod_comp_wl_pixmap_get(cw->win); */
+/* #endif */
         if (!pm) pm = ecore_x_composite_name_window_pixmap_get(cw->win);
         if (pm)
           {
@@ -1012,7 +1012,7 @@ _e_mod_comp_win_release(E_Comp_Win *cw)
         cw->pw = 0;
         cw->ph = 0;
         ecore_x_e_comp_pixmap_set(cw->win, cw->pixmap);
-        cw->show_ready = 0; // hmm maybe not needed?
+        //cw->show_ready = 0; // hmm maybe not needed?
      }
    if (cw->redirected)
      {
@@ -2238,10 +2238,10 @@ _e_mod_comp_win_show(E_Comp_Win *cw)
      {
         // we redirect all subwindows anyway
         //        ecore_x_composite_redirect_window(cw->win, ECORE_X_COMPOSITE_UPDATE_MANUAL);
-#ifdef HAVE_WAYLAND_CLIENTS
-        if ((cw->bd) && (cw->bd->borderless))
-          cw->pixmap = e_mod_comp_wl_pixmap_get(cw->win);
-#endif
+/* #ifdef HAVE_WAYLAND_CLIENTS */
+/*         if ((cw->bd) && (cw->bd->borderless)) */
+/*           cw->pixmap = e_mod_comp_wl_pixmap_get(cw->win); */
+/* #endif */
         if (!cw->pixmap)
           cw->pixmap = ecore_x_composite_name_window_pixmap_get(cw->win);
         if (cw->pixmap)

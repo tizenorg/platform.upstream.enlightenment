@@ -1,9 +1,6 @@
-/* Ask about compositing */
+/* Ask about updates checking */
 #include "e.h"
 #include "e_mod_main.h"
-
-#define ENGINE_SW 1
-#define ENGINE_GL 2
 
 static int do_up = 1;
 
@@ -30,7 +27,7 @@ wizard_page_show(E_Wizard_Page *pg)
    of = e_widget_framelist_add(pg->evas, _("Check for available updates"), 0);
 
    ob = e_widget_textblock_add(pg->evas);
-   e_widget_size_min_set(ob, 200 * e_scale, 180 * e_scale);
+   e_widget_size_min_set(ob, 260 * e_scale, 280 * e_scale);
    e_widget_textblock_markup_set
      (ob,
      _("Enlightenment can check for new<br>"

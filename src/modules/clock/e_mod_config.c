@@ -96,6 +96,14 @@ _basic_create_widgets(E_Config_Dialog *cfd __UNUSED__,
    e_widget_frametable_object_append(of, ob, 0, 4, 1, 1, 1, 1, 0, 0);
    ob = e_widget_check_add(evas, _("Seconds"), &(cfdata->cfg.show_seconds));
    e_widget_frametable_object_append(of, ob, 0, 6, 1, 1, 1, 1, 0, 0);
+   
+   rg = e_widget_radio_group_new(&(cfdata->cfg.show_date));
+   ob = e_widget_radio_add(evas, _("No Date"), 0, rg);
+   e_widget_frametable_object_append(of, ob, 0, 7, 1, 1, 1, 1, 0, 0);
+   ob = e_widget_radio_add(evas, _("Words"), 1, rg);
+   e_widget_frametable_object_append(of, ob, 0, 8, 1, 1, 1, 1, 0, 0);
+   ob = e_widget_radio_add(evas, _("Numbers"), 2, rg);
+   e_widget_frametable_object_append(of, ob, 0, 9, 1, 1, 1, 1, 0, 0);
 
    e_widget_table_object_append(tab, of, 0, 0, 1, 1, 1, 1, 1, 1);
 
@@ -153,7 +161,9 @@ _basic_apply_data(E_Config_Dialog *cfd  __UNUSED__,
 
    ci = cfd->data;
    memcpy(ci, &(cfdata->cfg), sizeof(Config_Item));
-   e_int_clock_instances_redo();
+   ci->changed = EINA_TRUE;
+   e_int_clock_instances_redo(EINA_FALSE);
+   ci->changed = EINA_FALSE;
    e_config_save_queue();
    return 1;
 }

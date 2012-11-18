@@ -20,7 +20,7 @@ struct _Instance
    int              madj;
 
    char             year[8];
-   char             month[32];
+   char             month[64];
    const char      *daynames[7];
    unsigned char    daynums[7][6];
    Eina_Bool        dayweekends[7][6];
@@ -75,6 +75,35 @@ _clear_timestrs(Instance *inst)
              eina_stringshare_del(inst->daynames[x]);
              inst->daynames[x] = NULL;
           }
+     }
+}
+
+static void
+_todaystr_eval(Instance *inst, char *buf, int bufsz)
+{
+   if (!inst->cfg->show_date)
+     {
+        buf[0] = 0;
+     }
+   else
+     {
+        struct timeval timev;
+        struct tm *tm;
+        time_t tt;
+
+        tzset();
+        gettimeofday(&timev, NULL);
+        tt = (time_t)(timev.tv_sec);
+        tm = localtime(&tt);
+        if (tm)
+          {
+             if (inst->cfg->show_date == 1)
+               strftime(buf, bufsz, "%a, %e %b, %Y", (const struct tm *)tm);
+             else if (inst->cfg->show_date == 2)
+               strftime(buf, bufsz, "%a, %x", (const struct tm *)tm);
+          }
+        else
+          buf[0] = 0;
      }
 }
 
@@ -283,15 +312,11 @@ _clock_popup_new(Instance *inst)
    Evas *evas;
    Evas_Object *o, *oi;
    Evas_Coord mw = 128, mh = 128;
-   char todaystr[32];
-   time_t t;
-   struct tm *tm;
-
-   t = time(NULL);
-   tm = localtime(&t);
-   strftime(todaystr, sizeof(todaystr) - 1, "%a, %x", tm);
+   char todaystr[128];
 
    if (inst->popup) return;
+
+   _todaystr_eval(inst, todaystr, sizeof(todaystr) - 1);
 
    inst->madj = 0;
 
@@ -310,6 +335,10 @@ _clock_popup_new(Instance *inst)
    else
      e_theme_edje_object_set(oi, "base/theme/modules/clock",
                              "e/modules/clock/main");
+   if (inst->cfg->show_date)
+     edje_object_signal_emit(oi, "e,state,date,on", "e");
+   else
+     edje_object_signal_emit(oi, "e,state,date,off", "e");
    if (inst->cfg->digital_24h)
      edje_object_signal_emit(oi, "e,state,24h,on", "e");
    else
@@ -430,28 +459,28 @@ _eval_instance_size(Instance *inst)
 }
 
 void
-e_int_clock_instances_redo(void)
+e_int_clock_instances_redo(Eina_Bool all)
 {
    Eina_List *l;
    Instance *inst;
-   char todaystr[32];
-   time_t t;
-   struct tm *tm;
-
-   t = time(NULL);
-   tm = localtime(&t);
-   strftime(todaystr, sizeof(todaystr) - 1, "%a, %x", tm);
+   char todaystr[128];
 
    EINA_LIST_FOREACH(clock_instances, l, inst)
      {
         Evas_Object *o = inst->o_clock;
 
+         if ((!all) && (!inst->cfg->changed)) continue;
+        _todaystr_eval(inst, todaystr, sizeof(todaystr) - 1);
         if (inst->cfg->digital_clock)
           e_theme_edje_object_set(o, "base/theme/modules/clock",
                                   "e/modules/clock/digital");
         else
           e_theme_edje_object_set(o, "base/theme/modules/clock",
                                   "e/modules/clock/main");
+        if (inst->cfg->show_date)
+          edje_object_signal_emit(o, "e,state,date,on", "e");
+        else
+          edje_object_signal_emit(o, "e,state,date,off", "e");
         if (inst->cfg->digital_24h)
           edje_object_signal_emit(o, "e,state,24h,on", "e");
         else
@@ -464,7 +493,7 @@ e_int_clock_instances_redo(void)
         edje_object_part_text_set(o, "e.text.today", todaystr);
         edje_object_message_signal_process(o);
         _eval_instance_size(inst);
-
+        
         if (inst->o_popclock)
           {
              o = inst->o_popclock;
@@ -475,6 +504,10 @@ e_int_clock_instances_redo(void)
              else
                e_theme_edje_object_set(o, "base/theme/modules/clock",
                                        "e/modules/clock/main");
+             if (inst->cfg->show_date)
+               edje_object_signal_emit(o, "e,state,date,on", "e");
+             else
+               edje_object_signal_emit(o, "e,state,date,off", "e");
              if (inst->cfg->digital_24h)
                edje_object_signal_emit(o, "e,state,24h,on", "e");
              else
@@ -497,7 +530,7 @@ _update_today_timer(void *data __UNUSED__)
    const struct tm *now;
    struct tm today;
 
-   e_int_clock_instances_redo();
+   e_int_clock_instances_redo(EINA_TRUE);
    if (!clock_instances)
      {
         update_today = NULL;
@@ -591,17 +624,13 @@ _gc_init(E_Gadcon *gc, const char *name, const char *id, const char *style)
    Evas_Object *o;
    E_Gadcon_Client *gcc;
    Instance *inst;
-   char todaystr[32];
-   time_t t;
-   struct tm *tm;
-
-   t = time(NULL);
-   tm = localtime(&t);
-   strftime(todaystr, sizeof(todaystr) - 1, "%a, %x", tm);
+   char todaystr[128];
 
    inst = E_NEW(Instance, 1);
    inst->cfg = _conf_item_get(id);
 
+   _todaystr_eval(inst, todaystr, sizeof(todaystr) - 1);
+   
    o = edje_object_add(gc->evas);
    edje_object_signal_callback_add(o, "e,state,sizing,changed", "*",
                                    _clock_sizing_changed_cb, inst);
@@ -611,6 +640,10 @@ _gc_init(E_Gadcon *gc, const char *name, const char *id, const char *style)
    else
      e_theme_edje_object_set(o, "base/theme/modules/clock",
                              "e/modules/clock/main");
+   if (inst->cfg->show_date)
+     edje_object_signal_emit(o, "e,state,date,on", "e");
+   else
+     edje_object_signal_emit(o, "e,state,date,off", "e");
    if (inst->cfg->digital_24h)
      edje_object_signal_emit(o, "e,state,24h,on", "e");
    else
@@ -710,6 +743,7 @@ _conf_item_get(const char *id)
    ci->digital_clock = 0;
    ci->digital_24h = 0;
    ci->show_seconds = 1;
+   ci->show_date = 0;
 
    clock_config->items = eina_list_append(clock_config->items, ci);
    e_config_save_queue();
@@ -760,7 +794,7 @@ _e_mod_action_cb_mouse(E_Object *obj __UNUSED__, const char *params, Ecore_Event
 static Eina_Bool
 _clock_eio_update(void *d __UNUSED__, int type __UNUSED__, void *event __UNUSED__)
 {
-   e_int_clock_instances_redo();
+   e_int_clock_instances_redo(EINA_TRUE);
    return ECORE_CALLBACK_RENEW;
 }
 
@@ -778,7 +812,7 @@ _clock_fd_update(void *d __UNUSED__, Ecore_Fd_Handler *fdh)
    char buf[64];
 
    read(ecore_main_fd_handler_fd_get(fdh), buf, sizeof(buf));
-   e_int_clock_instances_redo();
+   e_int_clock_instances_redo(EINA_TRUE);
    return EINA_TRUE;
 }
 
@@ -804,6 +838,7 @@ e_modapi_init(E_Module *m)
    E_CONFIG_VAL(D, T, digital_clock, INT);
    E_CONFIG_VAL(D, T, digital_24h, INT);
    E_CONFIG_VAL(D, T, show_seconds, INT);
+   E_CONFIG_VAL(D, T, show_date, INT);
 
    conf_edd = E_CONFIG_DD_NEW("Config", Config);
 #undef T
