@@ -15,4 +15,7 @@ notification_module_la_SOURCES  = notification/e_mod_main.h \
 				  notification/e_mod_popup.c
 
 notification_module_la_LIBADD = @ENOTIFY_LIBS@
-notification_module_la_DEPENDENCIES = $(MDEPENDENCIES)
+
+.PHONY: notification install-notification
+notification: $(notificationpkg_LTLIBRARIES) $(notification_DATA)
+install-notification: install-notificationDATA install-notificationpkgLTLIBRARIES

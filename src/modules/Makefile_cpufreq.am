@@ -10,8 +10,6 @@ cpufreqpkg_LTLIBRARIES = cpufreq/module.la
 cpufreq_module_la_SOURCES  = cpufreq/e_mod_main.h \
 			     cpufreq/e_mod_main.c
 
-cpufreq_module_la_DEPENDENCIES = $(MDEPENDENCIES)
-
 freqsetdir = $(cpufreqpkgdir)
 freqset_PROGRAMS = cpufreq/freqset
 
@@ -27,3 +25,7 @@ cpufreq-install-data-hook:
 	@chmod $(cpufreq_setuid_root_mode) $(DESTDIR)$(freqsetdir)/freqset$(EXEEXT) || true
 
 INSTALL_DATA_HOOKS += cpufreq-install-data-hook
+
+.PHONY: cpufreq install-cpufreq
+cpufreq: $(cpufreqpkg_LTLIBRARIES) $(cpufreq_DATA) $(freqset_PROGRAMS)
+install-cpufreq: install-cpufreqDATA install-cpufreqpkgLTLIBRARIES install-freqsetPROGRAMS

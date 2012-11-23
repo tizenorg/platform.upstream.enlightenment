@@ -17,6 +17,7 @@ struct _E_Entry_Smart_Data
    Evas_Coord theme_height;
    int preedit_start_pos;
    int preedit_end_pos;
+   int changing;
    Eina_Bool enabled : 1;
    Eina_Bool noedit : 1;
    Eina_Bool focused : 1;
@@ -105,6 +106,7 @@ e_entry_text_set(Evas_Object *entry, const char *_text)
 {
    E_Entry_Smart_Data *sd;
    char *text = NULL;
+   const char *otext;
 
    if (evas_object_smart_smart_get(entry) != _e_entry_smart) SMARTERRNR();
    if ((!entry) || (!(sd = evas_object_smart_data_get(entry))))
@@ -113,10 +115,15 @@ e_entry_text_set(Evas_Object *entry, const char *_text)
    text = evas_textblock_text_utf8_to_markup(
          edje_object_part_object_get(sd->entry_object, ENTRY_PART_NAME),
          _text);
+   otext = edje_object_part_text_get(sd->entry_object, ENTRY_PART_NAME);
+   if ((text) && (otext) && (!strcmp(text, otext))) return;
+   if ((!text) && (!otext)) return;
    edje_object_part_text_set(sd->entry_object, ENTRY_PART_NAME, text);
+   sd->changing++;
+   edje_object_message_signal_process(sd->entry_object);
+   sd->changing--;
    evas_object_smart_callback_call(entry, "changed", NULL);
-   if (text)
-      free(text);
+   if (text) free(text);
 }
 
 /**
@@ -631,7 +638,7 @@ static void
 _entry_recalc_size(Evas_Object *object)
 {
    E_Entry_Smart_Data *sd;
-   Evas_Coord vw, vh, w, h;
+   Evas_Coord vw, vh, w, h, pw = 0, ph = 0;
 
    if ((!object) || !(sd = evas_object_smart_data_get(object)))
      return;
@@ -639,7 +646,8 @@ _entry_recalc_size(Evas_Object *object)
    e_scrollframe_child_viewport_size_get(sd->scroll_object, &vw, &vh);
    w = (sd->min_width < vw) ? vw : sd->min_width;
    h = (sd->height < vh) ? vh : sd->height;
-
+   evas_object_geometry_get(sd->entry_object, NULL, NULL, &pw, &ph);
+   if ((w == pw) && (h == ph)) return;
    evas_object_resize(sd->entry_object, w, h);
 }
 
@@ -654,7 +662,7 @@ _entry_changed_signal_cb(void *data,
 
    if ((!object) || !(sd = evas_object_smart_data_get(object)))
      return;
-
+   if (sd->changing) return;
    evas_object_smart_callback_call(object, "changed", NULL);
    edje_object_size_min_calc(sd->entry_object, &sd->min_width, &sd->height);
    _entry_recalc_size(object);

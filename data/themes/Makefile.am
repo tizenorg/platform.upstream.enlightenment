@@ -16,20 +16,26 @@ files_DATA = default.edj
 EXTRA_DIST = \
 default.edc \
 macros.edc \
+edc/about-e.edc \
+edc/about-theme.edc \
 edc/background.edc \
 edc/border.edc \
 edc/button.edc \
 edc/check.edc \
 edc/clock.edc \
+edc/colors.edc \
 edc/colorwell.edc \
 edc/comp.edc \
 edc/conf.edc \
 edc/connman.edc \
+edc/cslider.edc \
 edc/desklock.edc \
 edc/deskpreview.edc \
 edc/dialog.edc \
+edc/edgebindings.edc \
 edc/entry.edc \
 edc/fileman.edc \
+edc/fontpreview.edc\
 edc/frame.edc \
 edc/gadman.edc \
 edc/ibar-ibox.edc \
@@ -44,6 +50,7 @@ edc/radio.edc \
 edc/scrollframe.edc \
 edc/shelf.edc \
 edc/slider.edc \
+edc/spectrum.edc \
 edc/start.edc \
 edc/sys.edc \
 edc/syscon.edc \
@@ -51,6 +58,7 @@ edc/systray.edc \
 edc/tasks.edc \
 edc/textblock.edc \
 edc/toolbar.edc \
+edc/transitions.edc \
 edc/winlist.edc \
 edc/wizard.edc \
 edc/xkbswitch.edc \
@@ -150,6 +158,10 @@ img/clock_ss5.png \
 img/clock_ss6.png \
 img/clock_ss7.png \
 img/clock_ss.png \
+img/col_sel_end_bottom.png \
+img/col_sel_end_left.png \
+img/col_sel_end_right.png \
+img/col_sel_end_top.png \
 img/darken_rounded_square.png \
 img/diagonal_stripes.png \
 img/digit_0.png \
@@ -164,9 +176,13 @@ img/digit_8.png \
 img/digit_9.png \
 img/digit_am.png \
 img/digit_na.png \
+img/digit_nm.png \
 img/digit_pm.png \
 img/dot_pattern.png \
 img/downlight_glow.png \
+img/downlight_glow_left.png \
+img/downlight_glow_right.png \
+img/downlight_glow_up.png \
 img/eth.png \
 img/exlclam.png \
 img/glow_lock_double.png \
@@ -193,6 +209,8 @@ img/inset_circle_tiny.png \
 img/inset_shadow_circle_tiny.png \
 img/inset_shadow.png \
 img/inset_shadow_tiny.png \
+img/img_example_1.png \
+img/img_example_2.png \
 img/knob_round_busy.png \
 img/knob_round_small_busy.png \
 img/knob_round_small_normal.png \
@@ -217,6 +235,7 @@ img/led_square_glow.png \
 img/led_square_shading.png \
 img/led_square_shadow.png \
 img/led_square_shine.png \
+img/logo_blue_bottom.png \
 img/logo_blue_small.png \
 img/logo_blue_small_glow.png \
 img/media_busy_progress.png \
@@ -283,6 +302,7 @@ img/vgrad_med_darker.png \
 img/vgrad_med_dark.png \
 img/vgrad_med_lighter.png \
 img/vgrad_med.png \
+img/vgrad_shadow_bi.png \
 img/vgrad_tall.png \
 img/white_bar_vert_glow.png \
 img/wifi_base.png \

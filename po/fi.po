@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Enlightenment (e17) CVS\n"
 "Report-Msgid-Bugs-To: enlightenment-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2012-11-16 14:54+0000\n"
+"POT-Creation-Date: 2012-11-23 18:04+0000\n"
 "PO-Revision-Date: 2009-12-31 07:00+0000\n"
 "Last-Translator: Jussi Aalto <jta_lnx@dnainternet.net>\n"
 "Language-Team: Finnish <fi@li.org>\n"
@@ -17,20 +17,20 @@ msgstr ""
 "X-Launchpad-Export-Date: 2010-01-01 05:02+0000\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
-#: src/bin/e_about.c:14
+#: src/bin/e_about.c:15
 msgid "About Enlightenment"
 msgstr "Tietoa Enlightenmentista"
 
-#: src/bin/e_about.c:17 src/bin/e_actions.c:3000 src/bin/e_config_dialog.c:288
+#: src/bin/e_about.c:18 src/bin/e_actions.c:3000 src/bin/e_config_dialog.c:288
 #: src/bin/e_fm.c:1029 src/bin/e_int_border_menu.c:194
-#: src/bin/e_int_border_prop.c:81 src/bin/e_theme_about.c:17
+#: src/bin/e_int_border_prop.c:81 src/bin/e_theme_about.c:24
 #: src/modules/conf/e_conf.c:179
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:880
 #: src/modules/fileman/e_fwin.c:2510 src/modules/mixer/app_mixer.c:521
 msgid "Close"
 msgstr "Sulje"
 
-#: src/bin/e_about.c:18 src/bin/e_actions.c:3375 src/bin/e_actions.c:3379
+#: src/bin/e_about.c:19 src/bin/e_actions.c:3375 src/bin/e_actions.c:3379
 #: src/bin/e_actions.c:3383 src/bin/e_int_menus.c:228 src/bin/e_main.c:620
 #: src/modules/conf_interaction/e_int_config_mouse.c:192
 #: src/modules/conf_window_remembers/e_int_config_remembers.c:221
@@ -38,29 +38,15 @@ msgstr "Sulje"
 msgid "Enlightenment"
 msgstr "Enlightenment"
 
-#: src/bin/e_about.c:23
-#, fuzzy
+#: src/bin/e_about.c:24
 msgid ""
-"<title>Copyright &copy; 1999-2012, by the Enlightenment Development Team</"
+"<title>Copyright &copy; 2000-2012, by the Enlightenment Development Team</"
 "><br><br>We hope you enjoy using this software as much as we enjoyed writing "
-"it.<br><br>This software is provided as-is with no explicit or implied "
-"warranty. This software is governed by licensing conditions, so please see "
-"the COPYING and COPYING-PLAIN licence files installed on your system."
-"<br><br>Enlightenment is under <hilight>HEAVY DEVELOPMENT</> and it is not "
-"stable. Many features are incomplete or even non-existent yet and may have "
-"many bugs. You have been <hilight>WARNED!</>"
+"it.<br><br>To contact us please visit:<br><hilight>http://www.enlightenment."
+"org</><br><br>"
 msgstr ""
-"Tekijänoikeudet &copy; 1999-2009, Englightenmentin kehitystiimi."
-"<br><br>Toivomme että nautit tämän ohjelmiston käyttämisestä yhtä paljon "
-"kuin me nautimme sen kirjoittamisesta.<br><br>Tämä ohjelmisto tarjotaan "
-"sellaisenaan ilman minkäänlaista takuuta. Tämä ohjelmisto on lisenssin "
-"alainen, joten lue COPYING- ja COPYING-PLAIN-lisenssitiedostot, jotka on "
-"asennettu järjestelmääsi.<br><br>Enlightenment on <hilight>RASKAAN "
-"KEHITYKSEN</hilight> alla eikä ole vakaa. Monet ominaisuudet ovat "
-"keskeneräisiä tai eivät edes olemassa ja saattavat sisältää useita bugeja. "
-"Sinua on <hilight>VAROITETTU!</hilight>"
 
-#: src/bin/e_about.c:50
+#: src/bin/e_about.c:71
 #, fuzzy
 msgid "<title>The Team</><br><br>"
 msgstr "<title>Tiimi</title>"
@@ -88,7 +74,7 @@ msgstr "Tapa"
 #: src/bin/e_actions.c:377 src/bin/e_actions.c:2223 src/bin/e_actions.c:2286
 #: src/bin/e_actions.c:2349 src/bin/e_actions.c:2417 src/bin/e_actions.c:2485
 #: src/bin/e_confirm_dialog.c:53 src/bin/e_desklock.c:1313
-#: src/bin/e_fm.c:10021 src/bin/e_fm.c:10385 src/bin/e_screensaver.c:167
+#: src/bin/e_fm.c:10026 src/bin/e_fm.c:10390 src/bin/e_screensaver.c:167
 msgid "No"
 msgstr "Ei"
 
@@ -108,7 +94,8 @@ msgstr "Poistu"
 
 #: src/bin/e_actions.c:2126 src/bin/e_color_dialog.c:47
 #: src/bin/e_eap_editor.c:862 src/bin/e_eap_editor.c:926
-#: src/bin/e_entry_dialog.c:64 src/bin/e_fm.c:9558 src/bin/e_fm_prop.c:625
+#: src/bin/e_entry_dialog.c:64 src/bin/e_fm.c:9561 src/bin/e_fm_prop.c:625
+#: src/bin/e_import_dialog.c:189 src/bin/e_import_config_dialog.c:531
 #: src/modules/conf_intl/e_int_config_imc_import.c:124
 #: src/modules/conf_theme/e_int_config_theme_import.c:124
 #: src/modules/fileman/e_int_config_mime_edit.c:316
@@ -186,6 +173,7 @@ msgstr ""
 "lepotilaan?"
 
 #: src/bin/e_actions.c:2483 src/bin/e_actions.c:3434
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:379
 msgid "Hibernate"
 msgstr "Lepotila"
 
@@ -197,7 +185,7 @@ msgstr "Lepotila"
 msgid "Window : Actions"
 msgstr "Ikkuna : Toiminnot"
 
-#: src/bin/e_actions.c:2960 src/bin/e_fm.c:11145
+#: src/bin/e_actions.c:2960 src/bin/e_fm.c:11150
 #: src/bin/e_int_border_menu.c:665
 msgid "Move"
 msgstr "Siirrä"
@@ -936,11 +924,11 @@ msgstr ""
 #: src/bin/e_config.c:1697 src/bin/e_config.c:2323
 #: src/bin/e_config_dialog.c:278 src/bin/e_eap_editor.c:860
 #: src/bin/e_eap_editor.c:924 src/bin/e_entry_dialog.c:63 src/bin/e_exec.c:608
-#: src/bin/e_fm.c:9557 src/bin/e_fm.c:10291 src/bin/e_fm_prop.c:624
-#: src/bin/e_int_border_remember.c:318 src/bin/e_int_border_remember.c:507
-#: src/bin/e_module.c:425 src/bin/e_module.c:792 src/bin/e_sys.c:618
-#: src/bin/e_sys.c:659 src/bin/e_utils.c:700
-#: src/modules/comp/e_mod_config.c:918
+#: src/bin/e_fm.c:9560 src/bin/e_fm.c:10296 src/bin/e_fm_prop.c:624
+#: src/bin/e_import_config_dialog.c:530 src/bin/e_int_border_remember.c:318
+#: src/bin/e_int_border_remember.c:507 src/bin/e_module.c:425
+#: src/bin/e_module.c:792 src/bin/e_sys.c:618 src/bin/e_sys.c:659
+#: src/bin/e_utils.c:692 src/modules/comp/e_mod_config.c:918
 #: src/modules/conf_intl/e_int_config_imc_import.c:120
 #: src/modules/conf_theme/e_int_config_theme_import.c:120
 #: src/modules/cpufreq/e_mod_main.c:428 src/modules/cpufreq/e_mod_main.c:457
@@ -1112,7 +1100,7 @@ msgid "Preferences"
 msgstr "Kuvakkeen ominaisuudet"
 
 #: src/bin/e_confirm_dialog.c:52 src/bin/e_desklock.c:1311
-#: src/bin/e_fm.c:10024 src/bin/e_screensaver.c:165
+#: src/bin/e_fm.c:10029 src/bin/e_screensaver.c:165
 msgid "Yes"
 msgstr "Kyllä"
 
@@ -1283,7 +1271,7 @@ msgstr "Aja päätteessä"
 msgid "Show in Menus"
 msgstr "Näytä valikoissa"
 
-#: src/bin/e_eap_editor.c:790 src/bin/e_fm.c:8422 src/bin/e_fm.c:8582
+#: src/bin/e_eap_editor.c:790 src/bin/e_fm.c:8425 src/bin/e_fm.c:8585
 #: src/bin/e_int_border_remember.c:763
 #: src/modules/xkbswitch/e_mod_config.c:332
 msgid "Options"
@@ -1298,11 +1286,12 @@ msgstr "Valitse kuvake"
 msgid "Select an Executable"
 msgstr "Valitse suoritettava ohjelma"
 
-#: src/bin/e_entry.c:436 src/bin/e_fm.c:8767 src/bin/e_fm.c:10384
+#: src/bin/e_entry.c:443 src/bin/e_fm.c:8770 src/bin/e_fm.c:10389
 #: src/bin/e_shelf.c:1785 src/bin/e_shelf.c:2428
 #: src/modules/conf_dialogs/e_int_config_profiles.c:134
 #: src/modules/conf_dialogs/e_int_config_profiles.c:335
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:266
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:201
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:246
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:294
 #: src/modules/conf_paths/e_int_config_env.c:315
@@ -1313,24 +1302,24 @@ msgstr "Valitse suoritettava ohjelma"
 msgid "Delete"
 msgstr "Poista"
 
-#: src/bin/e_entry.c:446 src/bin/e_fm.c:8678
+#: src/bin/e_entry.c:453 src/bin/e_fm.c:8681
 msgid "Cut"
 msgstr "Leikkaa"
 
-#: src/bin/e_entry.c:455 src/bin/e_fm.c:8692 src/bin/e_fm.c:11140
+#: src/bin/e_entry.c:462 src/bin/e_fm.c:8695 src/bin/e_fm.c:11145
 msgid "Copy"
 msgstr "Kopioi"
 
-#: src/bin/e_entry.c:465 src/bin/e_fm.c:8483 src/bin/e_fm.c:8705
+#: src/bin/e_entry.c:472 src/bin/e_fm.c:8486 src/bin/e_fm.c:8708
 msgid "Paste"
 msgstr "Liitä"
 
-#: src/bin/e_entry.c:476
+#: src/bin/e_entry.c:483
 msgid "Select All"
 msgstr "Valitse kaikki"
 
 #: src/bin/e_exec.c:397 src/bin/e_exec.c:405 src/bin/e_exec.c:416
-#: src/bin/e_exec.c:468 src/bin/e_utils.c:196
+#: src/bin/e_exec.c:468 src/bin/e_utils.c:188
 #: src/modules/conf_intl/e_int_config_imc.c:273
 #: src/modules/conf_intl/e_int_config_imc.c:522
 msgid "Run Error"
@@ -1513,283 +1502,283 @@ msgstr "Virhe poistettaessa"
 msgid "Can't eject device"
 msgstr "Laitetta ei voida poistaa"
 
-#: src/bin/e_fm.c:8340 src/modules/fileman/e_mod_config.c:356
+#: src/bin/e_fm.c:8343 src/modules/fileman/e_mod_config.c:356
 msgid "Case Sensitive"
 msgstr "Huomioi kirjainkoko"
 
-#: src/bin/e_fm.c:8346 src/modules/fileman/e_mod_config.c:359
+#: src/bin/e_fm.c:8349 src/modules/fileman/e_mod_config.c:359
 #, fuzzy
 msgid "Sort By Extension"
 msgstr "Näytä kuvakelaajennus"
 
-#: src/bin/e_fm.c:8352 src/modules/fileman/e_mod_config.c:362
+#: src/bin/e_fm.c:8355 src/modules/fileman/e_mod_config.c:362
 msgid "Sort By Modification Time"
 msgstr ""
 
-#: src/bin/e_fm.c:8358 src/modules/fileman/e_mod_config.c:365
+#: src/bin/e_fm.c:8361 src/modules/fileman/e_mod_config.c:365
 #, fuzzy
 msgid "Sort By Size"
 msgstr "Lajittele nyt"
 
-#: src/bin/e_fm.c:8367 src/modules/fileman/e_mod_config.c:373
+#: src/bin/e_fm.c:8370 src/modules/fileman/e_mod_config.c:373
 #, fuzzy
 msgid "Directories First"
 msgstr "Etsi hakemistoista"
 
-#: src/bin/e_fm.c:8373 src/modules/fileman/e_mod_config.c:377
+#: src/bin/e_fm.c:8376 src/modules/fileman/e_mod_config.c:377
 #, fuzzy
 msgid "Directories Last"
 msgstr "Etsi hakemistoista"
 
-#: src/bin/e_fm.c:8406 src/bin/e_fm.c:8566
+#: src/bin/e_fm.c:8409 src/bin/e_fm.c:8569
 #: src/modules/fileman/e_mod_config.c:303
 msgid "View Mode"
 msgstr "Näkymän tila"
 
-#: src/bin/e_fm.c:8415 src/bin/e_fm.c:8575
+#: src/bin/e_fm.c:8418 src/bin/e_fm.c:8578
 #: src/modules/everything/evry_config.c:503
 #: src/modules/fileman/e_mod_config.c:381
 #, fuzzy
 msgid "Sorting"
 msgstr "Aloitetaan"
 
-#: src/bin/e_fm.c:8433 src/bin/e_fm.c:8593
+#: src/bin/e_fm.c:8436 src/bin/e_fm.c:8596
 msgid "Refresh View"
 msgstr "Päivitä näkymä"
 
-#: src/bin/e_fm.c:8444 src/bin/e_fm.c:8605
+#: src/bin/e_fm.c:8447 src/bin/e_fm.c:8608
 msgid "New..."
 msgstr ""
 
-#: src/bin/e_fm.c:8464 src/bin/e_fm.c:8626 src/bin/e_fm.c:8657
+#: src/bin/e_fm.c:8467 src/bin/e_fm.c:8629 src/bin/e_fm.c:8660
 #, fuzzy
 msgid "Actions..."
 msgstr "Toiminto"
 
-#: src/bin/e_fm.c:8491 src/bin/e_fm.c:8713 src/bin/e_fm.c:11153
+#: src/bin/e_fm.c:8494 src/bin/e_fm.c:8716 src/bin/e_fm.c:11158
 msgid "Link"
 msgstr "Tee linkki"
 
-#: src/bin/e_fm.c:8775 src/bin/e_fm.c:10023 src/bin/e_shelf.c:2423
+#: src/bin/e_fm.c:8778 src/bin/e_fm.c:10028 src/bin/e_shelf.c:2423
 #: src/modules/conf_shelves/e_int_config_shelf.c:138
 msgid "Rename"
 msgstr "Nimeä uudelleen"
 
-#: src/bin/e_fm.c:8794
+#: src/bin/e_fm.c:8797
 msgid "Unmount"
 msgstr "Irrota"
 
-#: src/bin/e_fm.c:8799
+#: src/bin/e_fm.c:8802
 msgid "Mount"
 msgstr "Liitä"
 
-#: src/bin/e_fm.c:8804
+#: src/bin/e_fm.c:8807
 msgid "Eject"
 msgstr "Poista"
 
-#: src/bin/e_fm.c:8819 src/bin/e_int_border_remember.c:742
+#: src/bin/e_fm.c:8822 src/bin/e_int_border_remember.c:742
 #: src/modules/ibar/e_mod_main.c:871
 msgid "Properties"
 msgstr "Ominaisuudet"
 
-#: src/bin/e_fm.c:8827
+#: src/bin/e_fm.c:8830
 #, fuzzy
 msgid "Application Properties"
 msgstr "Käytä sovelluksen tarjoamaa kuvaketta "
 
-#: src/bin/e_fm.c:8835 src/bin/e_fm_prop.c:115
+#: src/bin/e_fm.c:8838 src/bin/e_fm_prop.c:115
 msgid "File Properties"
 msgstr "Tiedoston ominaisuudet"
 
-#: src/bin/e_fm.c:9051
+#: src/bin/e_fm.c:9054
 msgid "Use default"
 msgstr "Käytä oletusta"
 
-#: src/bin/e_fm.c:9081 src/modules/fileman/e_mod_config.c:308
+#: src/bin/e_fm.c:9084 src/modules/fileman/e_mod_config.c:308
 msgid "Grid Icons"
 msgstr "Ruudukoidut kuvakkeet"
 
-#: src/bin/e_fm.c:9089 src/modules/fileman/e_mod_config.c:310
+#: src/bin/e_fm.c:9092 src/modules/fileman/e_mod_config.c:310
 msgid "Custom Icons"
 msgstr "Mukautetut kuvakkeet"
 
-#: src/bin/e_fm.c:9097 src/modules/everything/evry_config.c:430
+#: src/bin/e_fm.c:9100 src/modules/everything/evry_config.c:430
 #: src/modules/everything/evry_config.c:460
 #: src/modules/fileman/e_mod_config.c:318
 msgid "List"
 msgstr "Listaa"
 
-#: src/bin/e_fm.c:9105 src/modules/everything/evry_config.c:458
+#: src/bin/e_fm.c:9108 src/modules/everything/evry_config.c:458
 #, fuzzy
 msgid "Default View"
 msgstr "Oletusmoottori"
 
-#: src/bin/e_fm.c:9127
+#: src/bin/e_fm.c:9130
 #, c-format
 msgid "Icon Size (%d)"
 msgstr "Kuvakkeen koko (%d)"
 
-#: src/bin/e_fm.c:9152 src/bin/e_fm.c:9230 src/bin/e_fm.c:9235
-#: src/bin/e_fm.c:9980 src/bin/e_fm.c:10192 src/bin/e_fm_prop.c:254
+#: src/bin/e_fm.c:9155 src/bin/e_fm.c:9233 src/bin/e_fm.c:9238
+#: src/bin/e_fm.c:9985 src/bin/e_fm.c:10197 src/bin/e_fm_prop.c:254
 #: src/bin/e_shelf.c:2298
 msgid "Error"
 msgstr "Virhe"
 
-#: src/bin/e_fm.c:9152
+#: src/bin/e_fm.c:9155
 #, fuzzy
 msgid "Could not create a file!"
 msgstr "Virhe moduulin lataamisessa"
 
-#: src/bin/e_fm.c:9166 src/bin/e_fm.c:9184
+#: src/bin/e_fm.c:9169 src/bin/e_fm.c:9187
 #, fuzzy
 msgid "New File"
 msgstr "Tiedosto:"
 
-#: src/bin/e_fm.c:9230
+#: src/bin/e_fm.c:9233
 msgid "Already creating a new file for this directory!"
 msgstr ""
 
-#: src/bin/e_fm.c:9235
+#: src/bin/e_fm.c:9238
 #, c-format
 msgid "%s is not able to be written to!"
 msgstr ""
 
-#: src/bin/e_fm.c:9254
+#: src/bin/e_fm.c:9257
 #, fuzzy
 msgid "Directory"
 msgstr "Uusi hakemisto"
 
-#: src/bin/e_fm.c:9259
+#: src/bin/e_fm.c:9262
 #: src/modules/conf_applications/e_int_config_defapps.c:311
 #, fuzzy
 msgid "File"
 msgstr "Tiedosto:"
 
-#: src/bin/e_fm.c:9290
+#: src/bin/e_fm.c:9293
 msgid "Inherit parent settings"
 msgstr "Käytä ylemmän tason asetuksia"
 
-#: src/bin/e_fm.c:9299
+#: src/bin/e_fm.c:9302
 msgid "Show Hidden Files"
 msgstr "Näytä piilotiedostot"
 
-#: src/bin/e_fm.c:9311
+#: src/bin/e_fm.c:9314
 msgid "Remember Ordering"
 msgstr "Muista järjestys"
 
-#: src/bin/e_fm.c:9320
+#: src/bin/e_fm.c:9323
 msgid "Sort Now"
 msgstr "Lajittele nyt"
 
-#: src/bin/e_fm.c:9328
+#: src/bin/e_fm.c:9331
 #, fuzzy
 msgid "Single Click Activation"
 msgstr "Käytä kertanapsautusta"
 
-#: src/bin/e_fm.c:9339 src/modules/fileman/e_mod_config.c:393
+#: src/bin/e_fm.c:9342 src/modules/fileman/e_mod_config.c:393
 #, fuzzy
 msgid "Secure Deletion"
 msgstr "Näytön tarkkuus"
 
-#: src/bin/e_fm.c:9352
+#: src/bin/e_fm.c:9355
 #, fuzzy
 msgid "File Manager Settings"
 msgstr "Filemanin asetukset"
 
-#: src/bin/e_fm.c:9357
+#: src/bin/e_fm.c:9360
 #, fuzzy
 msgid "File Icon Settings"
 msgstr "Filemanin asetukset"
 
-#: src/bin/e_fm.c:9435 src/bin/e_fm.c:9651
+#: src/bin/e_fm.c:9438 src/bin/e_fm.c:9654
 msgid "Set background..."
 msgstr "Aseta taustakuva..."
 
-#: src/bin/e_fm.c:9443
+#: src/bin/e_fm.c:9446
 #, fuzzy
 msgid "Clear background"
 msgstr "Aseta taustakuva..."
 
-#: src/bin/e_fm.c:9450 src/bin/e_fm.c:9679
+#: src/bin/e_fm.c:9453 src/bin/e_fm.c:9682
 msgid "Set overlay..."
 msgstr "Aseta peitto..."
 
-#: src/bin/e_fm.c:9456
+#: src/bin/e_fm.c:9459
 #, fuzzy
 msgid "Clear overlay"
 msgstr "Aseta peitto..."
 
-#: src/bin/e_fm.c:9768
+#: src/bin/e_fm.c:9771
 msgid "Create a new Directory"
 msgstr "Luo uusi hakemisto"
 
-#: src/bin/e_fm.c:9769
+#: src/bin/e_fm.c:9772
 msgid "New Directory Name:"
 msgstr "Uuden hakemiston nimi:"
 
-#: src/bin/e_fm.c:9824 src/bin/e_fm.c:10118
+#: src/bin/e_fm.c:9827 src/bin/e_fm.c:10123
 #, c-format
 msgid "Rename %s to:"
 msgstr "Uudelleennimeä %s:"
 
-#: src/bin/e_fm.c:9826 src/bin/e_fm.c:10119
+#: src/bin/e_fm.c:9829 src/bin/e_fm.c:10124
 msgid "Rename File"
 msgstr "Uudelleennimeä tiedosto"
 
-#: src/bin/e_fm.c:9976 src/bin/e_fm.c:10184
+#: src/bin/e_fm.c:9981 src/bin/e_fm.c:10189
 msgid "Retry"
 msgstr "Yritä uudelleen"
 
-#: src/bin/e_fm.c:9977 src/bin/e_fm.c:10185 src/bin/e_fm.c:11161
+#: src/bin/e_fm.c:9982 src/bin/e_fm.c:10190 src/bin/e_fm.c:11166
 msgid "Abort"
 msgstr "Keskeytä"
 
-#: src/bin/e_fm.c:10022
+#: src/bin/e_fm.c:10027
 msgid "No to all"
 msgstr "Ei kaikkiin"
 
-#: src/bin/e_fm.c:10025
+#: src/bin/e_fm.c:10030
 msgid "Yes to all"
 msgstr "Kyllä kaikkiin"
 
-#: src/bin/e_fm.c:10028
+#: src/bin/e_fm.c:10033
 msgid "Warning"
 msgstr "Varoitus"
 
-#: src/bin/e_fm.c:10031
+#: src/bin/e_fm.c:10036
 #, c-format
 msgid "File already exists, overwrite?<br><hilight>%s</hilight>"
 msgstr ""
 "Tiedosto on jo olemassa, haluatko korvata sen?<br><hilight>%s</hilight>"
 
-#: src/bin/e_fm.c:10187
+#: src/bin/e_fm.c:10192
 #, fuzzy
 msgid "Move Source"
 msgstr "Ikkunan siirtoteksti"
 
-#: src/bin/e_fm.c:10188
+#: src/bin/e_fm.c:10193
 msgid "Ignore this"
 msgstr "Ohita tämä"
 
-#: src/bin/e_fm.c:10189
+#: src/bin/e_fm.c:10194
 msgid "Ignore all"
 msgstr "Ohita kaikki"
 
-#: src/bin/e_fm.c:10194
+#: src/bin/e_fm.c:10199
 #, c-format
 msgid "An error occurred while performing an operation.<br>%s"
 msgstr "Toimintoa suoritettaessa tapahtui virhe.<br>%s"
 
-#: src/bin/e_fm.c:10387
+#: src/bin/e_fm.c:10392
 msgid "Confirm Delete"
 msgstr "Vahvista poisto"
 
-#: src/bin/e_fm.c:10397
+#: src/bin/e_fm.c:10402
 #, fuzzy, c-format
 msgid "Are you sure you want to delete<br><hilight>%s</hilight>?"
 msgstr "Haluatko varmasti poistaa tiedoston<br><hilight>%s</hilight> ?"
 
-#: src/bin/e_fm.c:10402
+#: src/bin/e_fm.c:10407
 #, fuzzy, c-format
 msgid ""
 "Are you sure you want to delete<br><hilight>all</hilight> the %d files "
@@ -1798,7 +1787,7 @@ msgstr ""
 "Haluatko varmasti poistaa<br>%d valittu(a) tiedostoa hakemistossa:"
 "<br><hilight>%s</hilight> ?"
 
-#: src/bin/e_fm.c:10412
+#: src/bin/e_fm.c:10417
 #, fuzzy, c-format
 msgid ""
 "Are you sure you want to delete<br>the %d selected file in<br><hilight>%s</"
@@ -1909,7 +1898,8 @@ msgstr "Ryhmittelyn peruste"
 msgid "Others:"
 msgstr "Muut"
 
-#: src/bin/e_fm_prop.c:480 src/bin/e_widget_fsel.c:343
+#: src/bin/e_fm_prop.c:480 src/bin/e_import_config_dialog.c:468
+#: src/bin/e_widget_fsel.c:343
 #: src/modules/conf_theme/e_int_config_transitions.c:218
 #: src/modules/conf_theme/e_int_config_theme.c:1135
 #: src/modules/conf_theme/e_int_config_xsettings.c:497
@@ -1984,6 +1974,33 @@ msgstr "Poista"
 msgid "Stop moving"
 msgstr "Lopeta liikkuvat"
 
+#: src/bin/e_grab_dialog.c:3
+#: src/modules/conf_keybindings/e_int_config_keybindings.c:4
+msgid ""
+"Please press key sequence,<br><br>or <hilight>Escape</hilight> to abort."
+msgstr ""
+"Painele näppäinsarja,<br><br>tai paina <hilight>Esc</hilight>iä "
+"keskeyttääksesi, kiitos."
+
+#: src/bin/e_grab_dialog.c:5
+#: src/modules/conf_keybindings/e_int_config_mousebindings.c:7
+msgid ""
+"Please hold any modifier you want<br>and press any button on your mouse,<br> "
+"or roll a wheel, to assign mouse binding.<br>Press <hilight>Escape</"
+"highlight> to abort."
+msgstr ""
+"Pidä pohjassa mitä tahansa haluamaasi vaihtonäppäintä<br>ja paina mitä "
+"tahansa<br>hiiresi näppäintä tai pyöräytä rullaa määrittääksesi "
+"hiiritoiminnon, kiitos.<br>Paina <hilight>ESC</hilight>iä keskeyttääksesi."
+
+#: src/bin/e_grab_dialog.c:128
+msgid "Mouse Binding Sequence"
+msgstr "Hiiritoiminnon sekvenssi"
+
+#: src/bin/e_grab_dialog.c:135
+msgid "Key Binding Sequence"
+msgstr "Näppäimistötoiminnon sekvenssi"
+
 #: src/bin/e_hints.c:152
 msgid ""
 "A previous instance of Enlightenment is still active\n"
@@ -1991,6 +2008,98 @@ msgid ""
 msgstr ""
 "Enlightenmentin edellinen istunto on yhä aktiivinen\n"
 "tällä näytöllä. Keskeytetään käynnistys.\n"
+
+#: src/bin/e_import_dialog.c:74 src/bin/e_import_dialog.c:84
+#: src/bin/e_import_config_dialog.c:348 src/bin/e_import_config_dialog.c:358
+#, fuzzy
+msgid "Import Error"
+msgstr "Teeman tuontivirhe"
+
+#: src/bin/e_import_dialog.c:75 src/bin/e_import_config_dialog.c:349
+#, fuzzy
+msgid "Enlightenment was unable to import the image<br>due to a copy error."
+msgstr "Enlightenment ei voinut tuoda teemaa<br>kopiointivirheen vuoksi."
+
+#: src/bin/e_import_dialog.c:85 src/bin/e_import_config_dialog.c:359
+#, fuzzy
+msgid ""
+"Enlightenment was unable to import the image.<br><br>Are you sure this is a "
+"valid image?"
+msgstr ""
+"Enlightenment ei voinut tuoda teemaa.<br><br>Oletko varma, että tämä on "
+"todella teematiedosto?"
+
+#: src/bin/e_import_dialog.c:156
+msgid "Select a Picture..."
+msgstr "Valitse kuva..."
+
+#: src/bin/e_import_dialog.c:188
+#, fuzzy
+msgid "Use"
+msgstr "Upotettu"
+
+#: src/bin/e_import_config_dialog.c:291
+msgid "Picture Import Error"
+msgstr "Kuvan tuontivirhe"
+
+#: src/bin/e_import_config_dialog.c:292
+msgid ""
+"Enlightenment was unable to import the picture<br>due to conversion errors."
+msgstr "Enlightenment ei voinut tuoda kuvaa<br>muunnosvirheen vuoksi."
+
+#: src/bin/e_import_config_dialog.c:448
+#, fuzzy
+msgid "Import Settings..."
+msgstr "Image Tuontiasetukset"
+
+#: src/bin/e_import_config_dialog.c:482
+msgid "Fill and Stretch Options"
+msgstr "Täytön ja venytyksen valinnat"
+
+#: src/bin/e_import_config_dialog.c:484
+msgid "Stretch"
+msgstr "Täytä"
+
+#: src/bin/e_import_config_dialog.c:488 src/bin/e_int_border_prop.c:237
+#, c-format
+msgid "Center"
+msgstr "Keskitä"
+
+#: src/bin/e_import_config_dialog.c:492
+msgid "Tile"
+msgstr "Vierekkäin"
+
+#: src/bin/e_import_config_dialog.c:496
+#, fuzzy
+msgid "Within"
+msgstr "Sisäkkäin"
+
+#: src/bin/e_import_config_dialog.c:500
+msgid "Fill"
+msgstr "Täytä"
+
+#: src/bin/e_import_config_dialog.c:504
+#, fuzzy
+msgid "Pan"
+msgstr "Vieritys sivuilta"
+
+#: src/bin/e_import_config_dialog.c:512
+msgid "File Quality"
+msgstr "Tiedoston laatu"
+
+#: src/bin/e_import_config_dialog.c:513
+msgid "Use original file"
+msgstr "Käytä alkuperäistä tiedostoa"
+
+#: src/bin/e_import_config_dialog.c:515
+#, c-format
+msgid "%3.0f%%"
+msgstr "%3.0f%%"
+
+#: src/bin/e_import_config_dialog.c:520
+#, fuzzy
+msgid "Fill Color"
+msgstr "Värit"
 
 #: src/bin/e_int_border_locks.c:66
 msgid "Window Locks"
@@ -2333,11 +2442,6 @@ msgstr ""
 msgid "West"
 msgstr ""
 
-#: src/bin/e_int_border_prop.c:237
-#, c-format
-msgid "Center"
-msgstr "Keskitä"
-
 #: src/bin/e_int_border_prop.c:241
 #, c-format
 msgid "East"
@@ -2363,7 +2467,8 @@ msgstr ""
 msgid "Static"
 msgstr "Tila"
 
-#: src/bin/e_int_border_prop.c:299 src/modules/clock/e_mod_config.c:137
+#: src/bin/e_int_border_prop.c:299 src/modules/clock/e_mod_config.c:103
+#: src/modules/clock/e_mod_config.c:141
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:360
 #: src/modules/conf_performance/e_int_config_powermanagement.c:196
 #: src/modules/conf_theme/e_int_config_fonts.c:689
@@ -2503,16 +2608,18 @@ msgstr "Vaadi sijaintia"
 #: src/bin/e_int_border_prop.c:480 src/bin/e_int_border_prop.c:515
 #: src/bin/e_int_config_modules.c:57 src/bin/e_int_menus.c:276
 #: src/bin/e_shelf.c:2394 src/modules/battery/e_mod_main.c:194
-#: src/modules/clock/e_mod_main.c:358 src/modules/clock/e_mod_main.c:601
+#: src/modules/clock/e_mod_main.c:360 src/modules/clock/e_mod_main.c:603
 #: src/modules/conf/e_conf.c:136 src/modules/conf/e_conf.c:146
 #: src/modules/conf/e_mod_main.c:101 src/modules/conf_dialogs/e_mod_main.c:17
 #: src/modules/conf_interaction/e_int_config_mouse.c:170
 #: src/modules/conf_shelves/e_int_config_shelf.c:145
-#: src/modules/ibar/e_mod_main.c:379 src/modules/ibar/e_mod_main.c:864
-#: src/modules/ibox/e_mod_main.c:302 src/modules/ibox/e_mod_main.c:678
-#: src/modules/pager/e_mod_main.c:875 src/modules/temperature/e_mod_main.c:230
-#: src/modules/mixer/e_mod_main.c:776 src/modules/connman/e_mod_main.c:441
-#: src/modules/tasks/e_mod_main.c:716 src/modules/xkbswitch/e_mod_main.c:327
+#: src/modules/everything/evry_gadget.c:511
+#: src/modules/everything/evry_gadget.c:696 src/modules/ibar/e_mod_main.c:379
+#: src/modules/ibar/e_mod_main.c:864 src/modules/ibox/e_mod_main.c:302
+#: src/modules/ibox/e_mod_main.c:678 src/modules/pager/e_mod_main.c:875
+#: src/modules/temperature/e_mod_main.c:230 src/modules/mixer/e_mod_main.c:776
+#: src/modules/connman/e_mod_main.c:441 src/modules/tasks/e_mod_main.c:716
+#: src/modules/xkbswitch/e_mod_main.c:327
 #: src/modules/xkbswitch/e_mod_main.c:369
 #: src/modules/notification/e_mod_box.c:477
 #: src/modules/notification/e_mod_box.c:616
@@ -2601,7 +2708,7 @@ msgid "Size, Position and Locks"
 msgstr "Koko, sijainti ja lukot"
 
 #: src/bin/e_int_border_remember.c:609 src/modules/conf/e_mod_main.c:252
-#: src/modules/shot/e_mod_main.c:703
+#: src/modules/everything/evry_gadget.c:645 src/modules/shot/e_mod_main.c:703
 #, fuzzy
 msgid "All"
 msgstr "Salli"
@@ -2805,13 +2912,9 @@ msgstr "Kadonneet ikkunat"
 msgid "About"
 msgstr "Tietoa"
 
-#: src/bin/e_int_menus.c:238
-#: src/modules/conf_interaction/e_int_config_mouse.c:183
-#: src/modules/conf_theme/e_mod_main.c:163
-#: src/modules/conf_theme/e_mod_main.c:234
-#: src/modules/conf_theme/e_mod_main.c:263
-msgid "Theme"
-msgstr "Teema"
+#: src/bin/e_int_menus.c:238 src/bin/e_theme_about.c:21
+msgid "About Theme"
+msgstr "Tietoja teemasta"
 
 #: src/bin/e_int_menus.c:329
 msgid "Virtual"
@@ -3875,9 +3978,10 @@ msgstr "Asetutaan lepotilaan"
 msgid "Hibernating.<br><hilight>Please wait.</hilight>"
 msgstr "Asetutaan lepotilaan.<br><hilight>Odota hetki.</hilight>"
 
-#: src/bin/e_theme_about.c:14
-msgid "About Theme"
-msgstr "Tietoja teemasta"
+#: src/bin/e_theme_about.c:25
+#, fuzzy
+msgid "Select Theme"
+msgstr "Valitse teema..."
 
 #: src/bin/e_theme.c:37
 msgid "Set As Theme"
@@ -3895,17 +3999,17 @@ msgstr "Aloita kohteiden siirtäminen/koon muuttaminen"
 msgid "Set Toolbar Contents"
 msgstr "Määritä työkalurivin sisältö"
 
-#: src/bin/e_utils.c:197 src/modules/conf_intl/e_int_config_imc.c:274
+#: src/bin/e_utils.c:189 src/modules/conf_intl/e_int_config_imc.c:274
 #: src/modules/conf_intl/e_int_config_imc.c:523
 #, c-format
 msgid "Enlightenment was unable to fork a child process:<br><br>%s<br>"
 msgstr "Enlightenment ei pystynyt alustamaan lapsiprosessia:<br><br>%s<br>"
 
-#: src/bin/e_utils.c:250
+#: src/bin/e_utils.c:242
 msgid "Cannot exit - immortal windows."
 msgstr "Ei voi poistua - kuolemattomia ikkunoita."
 
-#: src/bin/e_utils.c:251
+#: src/bin/e_utils.c:243
 msgid ""
 "Some windows are left still around with the Lifespan lock enabled. This "
 "means<br>that Enlightenment will not allow itself to exit until these "
@@ -3915,95 +4019,96 @@ msgstr ""
 "Tämä tarkoittaa sitä,<br>että Enlightenment ei salli itseään suljettavan "
 "ennen kuin nämä ikkunat on<br>suljettu tai elinaikalukko poistettu.<br>"
 
-#: src/bin/e_utils.c:865
+#: src/bin/e_utils.c:857
 #, fuzzy, c-format
 msgid "%'.0f bytes"
 msgstr "%'.0f tavua"
 
-#: src/bin/e_utils.c:869
+#: src/bin/e_utils.c:861
 #, fuzzy, c-format
 msgid "%'.0f KiB"
 msgstr "%'.0f kt"
 
-#: src/bin/e_utils.c:873
+#: src/bin/e_utils.c:865
 #, fuzzy, c-format
 msgid "%'.1f MiB"
 msgstr "%'.1f Gt"
 
-#: src/bin/e_utils.c:877
+#: src/bin/e_utils.c:869
 #, fuzzy, c-format
 msgid "%'.1f GiB"
 msgstr "%'.1f Gt"
 
-#: src/bin/e_utils.c:881
+#: src/bin/e_utils.c:873
 #, fuzzy, c-format
 msgid "%'.1f TiB"
 msgstr "%'.1f Gt"
 
-#: src/bin/e_utils.c:900
+#: src/bin/e_utils.c:892
 #, fuzzy, c-format
 msgid "In the future"
 msgstr "Tulevaisuudessa"
 
-#: src/bin/e_utils.c:904
+#: src/bin/e_utils.c:896
 #, fuzzy, c-format
 msgid "In the last minute"
 msgstr "Viimeisimmän minuutin aikana"
 
-#: src/bin/e_utils.c:908
+#: src/bin/e_utils.c:900
 #, fuzzy, c-format
 msgid "Last year"
 msgid_plural "%li Years ago"
 msgstr[0] "Viimeksi muokattu:"
 msgstr[1] "Viimeksi muokattu:"
 
-#: src/bin/e_utils.c:913
+#: src/bin/e_utils.c:905
 #, c-format
 msgid "Last month"
 msgid_plural "%li Months ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/bin/e_utils.c:918
+#: src/bin/e_utils.c:910
 #, fuzzy, c-format
 msgid "Last week"
 msgid_plural "%li Weeks ago"
 msgstr[0] "Viimeksi muokattu:"
 msgstr[1] "Viimeksi muokattu:"
 
-#: src/bin/e_utils.c:923
+#: src/bin/e_utils.c:915
 #, c-format
 msgid "Yesterday"
 msgid_plural "%li Days ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/bin/e_utils.c:928
+#: src/bin/e_utils.c:920
 #, fuzzy, c-format
 msgid "An hour ago"
 msgid_plural "%li Hours ago"
 msgstr[0] "%li tuntia sitten"
 msgstr[1] "%li tuntia sitten"
 
-#: src/bin/e_utils.c:933
+#: src/bin/e_utils.c:925
 #, fuzzy, c-format
 msgid "A minute ago"
 msgid_plural "%li Minutes ago"
 msgstr[0] "%li minuuttia sitten"
 msgstr[1] "%li minuuttia sitten"
 
-#: src/bin/e_utils.c:940 src/bin/e_widget_filepreview.c:513
+#: src/bin/e_utils.c:932 src/bin/e_widget_filepreview.c:513
 #: src/bin/e_widget_filepreview.c:514 src/bin/e_widget_filepreview.c:515
 #: src/bin/e_widget_filepreview.c:546 src/bin/e_widget_filepreview.c:557
 #: src/modules/comp/e_mod_config.c:516
 #: src/modules/conf_dialogs/e_int_config_profiles.c:295
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:1220
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:395
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:1122
 #: src/modules/wizard/page_020.c:25
 msgid "Unknown"
 msgstr "Tuntematon"
 
-#: src/bin/e_utils.c:1177
+#: src/bin/e_utils.c:1169
 #, fuzzy
 msgid ""
 "Configuration data needed upgrading. Your old configuration<br>has been "
@@ -4023,12 +4128,12 @@ msgstr ""
 "asettaa asetukset uudelleen<br>mieleiseksesi. Anteeksi asetuksiesi "
 "sorkkiminen.<br>"
 
-#: src/bin/e_utils.c:1186 src/bin/e_utils.c:1210
+#: src/bin/e_utils.c:1178 src/bin/e_utils.c:1202
 #, fuzzy, c-format
 msgid "%s Configuration Updated"
 msgstr "Filemanin asetukset päivitetty"
 
-#: src/bin/e_utils.c:1199
+#: src/bin/e_utils.c:1191
 #, fuzzy
 msgid ""
 "Your module configuration is NEWER than the module version. This is "
@@ -4044,72 +4149,72 @@ msgstr ""
 "ja<br> varotoimena asetuksesi on palautettu oletus arvoihin.<br>Pahoittelut "
 "aiheutetusta vaivasta.<br>"
 
-#: src/bin/e_utils.c:1292
+#: src/bin/e_utils.c:1284
 #, c-format
 msgid "Never"
 msgstr ""
 
-#: src/bin/e_utils.c:1296
+#: src/bin/e_utils.c:1288
 #, fuzzy, c-format
 msgid "%li Seconds"
 msgstr "%.1f sekuntia"
 
-#: src/bin/e_utils.c:1301
+#: src/bin/e_utils.c:1293
 #, c-format
 msgid "One year"
 msgstr ""
 
-#: src/bin/e_utils.c:1303
+#: src/bin/e_utils.c:1295
 #, fuzzy, c-format
 msgid "%li Years"
 msgstr "%li vuotta sitten"
 
-#: src/bin/e_utils.c:1309
+#: src/bin/e_utils.c:1301
 #, c-format
 msgid "One month"
 msgstr ""
 
-#: src/bin/e_utils.c:1311
+#: src/bin/e_utils.c:1303
 #, fuzzy, c-format
 msgid "%li Months"
 msgstr "%li kuukautta sitten"
 
-#: src/bin/e_utils.c:1317
+#: src/bin/e_utils.c:1309
 #, c-format
 msgid "One week"
 msgstr ""
 
-#: src/bin/e_utils.c:1319
+#: src/bin/e_utils.c:1311
 #, fuzzy, c-format
 msgid "%li Weeks"
 msgstr "%li viikkoa sitten"
 
-#: src/bin/e_utils.c:1325
+#: src/bin/e_utils.c:1317
 #, c-format
 msgid "One day"
 msgstr ""
 
-#: src/bin/e_utils.c:1327
+#: src/bin/e_utils.c:1319
 #, fuzzy, c-format
 msgid "%li Days"
 msgstr "%li päivää sitten"
 
-#: src/bin/e_utils.c:1333
+#: src/bin/e_utils.c:1325
 #, c-format
 msgid "An hour"
 msgstr ""
 
-#: src/bin/e_utils.c:1335
+#: src/bin/e_utils.c:1327
 #, fuzzy, c-format
 msgid "%li Hours"
 msgstr "%li tuntia sitten"
 
-#: src/bin/e_utils.c:1341
+#: src/bin/e_utils.c:1333
 #, fuzzy, c-format
 msgid "A minute"
 msgstr "%1.0f minuuttia"
 
-#: src/bin/e_utils.c:1343
+#: src/bin/e_utils.c:1335
 #, fuzzy, c-format
 msgid "%li Minutes"
 msgstr "%li minuuttia sitten"
@@ -4120,6 +4225,7 @@ msgstr "%li minuuttia sitten"
 #: src/modules/conf_applications/e_int_config_apps_personal.c:91
 #: src/modules/conf_dialogs/e_int_config_profiles.c:132
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:263
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:197
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:243
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:292
 #: src/modules/conf_paths/e_int_config_env.c:309
@@ -4141,32 +4247,32 @@ msgstr "Ylös"
 msgid "Down"
 msgstr "Alas"
 
-#: src/bin/e_widget_csel.c:198
+#: src/bin/e_widget_csel.c:195
 msgid "R"
 msgstr ""
 
-#: src/bin/e_widget_csel.c:198
+#: src/bin/e_widget_csel.c:195
 msgid "G"
 msgstr ""
 
-#: src/bin/e_widget_csel.c:198
+#: src/bin/e_widget_csel.c:195
 #, fuzzy
 msgid "B"
 msgstr "mennessä"
 
-#: src/bin/e_widget_csel.c:198
+#: src/bin/e_widget_csel.c:195
 msgid "H"
 msgstr ""
 
-#: src/bin/e_widget_csel.c:198
+#: src/bin/e_widget_csel.c:195
 msgid "S"
 msgstr ""
 
-#: src/bin/e_widget_csel.c:198
+#: src/bin/e_widget_csel.c:195
 msgid "V"
 msgstr ""
 
-#: src/bin/e_widget_csel.c:272
+#: src/bin/e_widget_csel.c:274
 msgid "Alpha"
 msgstr ""
 
@@ -4379,6 +4485,7 @@ msgid "Hardware"
 msgstr "Laitteisto"
 
 #: src/modules/battery/e_mod_main.c:152 src/modules/battery/e_mod_main.c:455
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:354
 msgid "Battery"
 msgstr "Akku"
 
@@ -4413,8 +4520,8 @@ msgstr "Akkumittari"
 msgid "Clock Settings"
 msgstr "Aktivoinnin asetukset"
 
-#: src/modules/clock/e_mod_config.c:83 src/modules/clock/e_mod_main.c:706
-#: src/modules/clock/e_mod_main.c:863 src/modules/clock/e_mod_main.c:895
+#: src/modules/clock/e_mod_config.c:83 src/modules/clock/e_mod_main.c:708
+#: src/modules/clock/e_mod_main.c:865 src/modules/clock/e_mod_main.c:897
 msgid "Clock"
 msgstr "Kello"
 
@@ -4428,6 +4535,11 @@ msgstr "Valintaikkunat"
 msgid "Digital"
 msgstr "Digitaalikello"
 
+#: src/modules/clock/e_mod_config.c:90
+#, fuzzy
+msgid "Seconds"
+msgstr "%.1f sekuntia"
+
 #: src/modules/clock/e_mod_config.c:93
 msgid "12 h"
 msgstr ""
@@ -4436,41 +4548,41 @@ msgstr ""
 msgid "24 h"
 msgstr ""
 
-#: src/modules/clock/e_mod_config.c:97
-#, fuzzy
-msgid "Seconds"
-msgstr "%.1f sekuntia"
-
-#: src/modules/clock/e_mod_config.c:101
-msgid "No Date"
-msgstr ""
-
-#: src/modules/clock/e_mod_config.c:103
-msgid "Words"
+#: src/modules/clock/e_mod_config.c:100
+msgid "Date"
 msgstr ""
 
 #: src/modules/clock/e_mod_config.c:105
+msgid "Full"
+msgstr ""
+
+#: src/modules/clock/e_mod_config.c:107
 msgid "Numbers"
 msgstr ""
 
-#: src/modules/clock/e_mod_config.c:110
+#: src/modules/clock/e_mod_config.c:109
+#, fuzzy
+msgid "Date Only"
+msgstr "Vain luku"
+
+#: src/modules/clock/e_mod_config.c:114
 msgid "Week"
 msgstr ""
 
-#: src/modules/clock/e_mod_config.c:112 src/modules/clock/e_mod_config.c:125
+#: src/modules/clock/e_mod_config.c:116 src/modules/clock/e_mod_config.c:129
 #: src/modules/start/e_mod_main.c:158
 msgid "Start"
 msgstr "Aloita"
 
-#: src/modules/clock/e_mod_config.c:123
+#: src/modules/clock/e_mod_config.c:127
 msgid "Weekend"
 msgstr ""
 
-#: src/modules/clock/e_mod_config.c:134
+#: src/modules/clock/e_mod_config.c:138
 msgid "Days"
 msgstr ""
 
-#: src/modules/clock/e_mod_main.c:863 src/modules/clock/e_mod_main.c:895
+#: src/modules/clock/e_mod_main.c:865 src/modules/clock/e_mod_main.c:897
 #, fuzzy
 msgid "Show calendar"
 msgstr "Näytä työkalurivi"
@@ -5649,6 +5761,7 @@ msgstr "Työpöytä"
 
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:4
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:11
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:462
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:3
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:7
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:3
@@ -5696,6 +5809,7 @@ msgid "Restore Default Bindings"
 msgstr "Palauta oletusnäppäimet"
 
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:283
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:209
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:263
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:312
 msgid "Action"
@@ -5707,6 +5821,7 @@ msgid "Mouse Button"
 msgstr "Hiiren asetukset"
 
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:296
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:216
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:270
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:319
 msgid "Action Params"
@@ -5878,6 +5993,13 @@ msgstr "Hiiren asetukset"
 msgid "Show Cursor"
 msgstr "Näytä kursori"
 
+#: src/modules/conf_interaction/e_int_config_mouse.c:183
+#: src/modules/conf_theme/e_mod_main.c:163
+#: src/modules/conf_theme/e_mod_main.c:234
+#: src/modules/conf_theme/e_mod_main.c:263
+msgid "Theme"
+msgstr "Teema"
+
 #: src/modules/conf_interaction/e_int_config_mouse.c:187
 #, fuzzy
 msgid "X"
@@ -6036,9 +6158,124 @@ msgstr "Lokaali"
 msgid "Language"
 msgstr "Kieli"
 
-#: src/modules/conf_keybindings/e_int_config_keybindings.c:4
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:71
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:190
+#: src/modules/conf_keybindings/e_mod_main.c:29
+#, fuzzy
+msgid "ACPI Bindings"
+msgstr "Lisää toiminto"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:349
+msgid "AC Adapter Unplugged"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:350
+msgid "AC Adapter Plugged"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:351
+msgid "Ac Adapter"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:356
+#, fuzzy
+msgid "Button"
+msgstr "Painikkeet"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:358
+#, fuzzy
+msgid "Fan"
+msgstr "Kaukana"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:361
+#, fuzzy
+msgid "Lid Unknown"
+msgstr "Tuntematon"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:362
+#, fuzzy
+msgid "Lid Closed"
+msgstr "Sulje"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:363
+msgid "Lid Opened"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:364
+msgid "Lid"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:367
+#, fuzzy
+msgid "Power Button"
+msgstr "Hiiren asetukset"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:369
+msgid "Processor"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:371
+#, fuzzy
+msgid "Sleep Button"
+msgstr "Hiiren asetukset"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:373
+#, fuzzy
+msgid "Thermal"
+msgstr "Normaali"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:375
+msgid "Video"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:377
+#, fuzzy
+msgid "Wifi"
+msgstr "Wifi"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:381
+#, fuzzy
+msgid "Zoom Out"
+msgstr "Uloskirjaudu"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:383
+#, fuzzy
+msgid "Zoom In"
+msgstr "Vieritys kulmista"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:385
+#, fuzzy
+msgid "Brightness Down"
+msgstr "Sammuta"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:387
+#, fuzzy
+msgid "Brightness Up"
+msgstr "Taustavalo Up"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:389
+#, fuzzy
+msgid "Assist"
+msgstr "Ota käyttöön"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:391
+msgid "S1"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:393
+msgid "Vaio"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:497
+#, fuzzy
+msgid "ACPI Binding"
+msgstr "Lisää toiminto"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:500
+#, fuzzy
 msgid ""
-"Please press key sequence,<br><br>or <hilight>Escape</hilight> to abort."
+"Please trigger the ACPI event you wish to bind to, <br><br>or "
+"<hilight>Escape</hilight> to abort."
 msgstr ""
 "Painele näppäinsarja,<br><br>tai paina <hilight>Esc</hilight>iä "
 "keskeyttääksesi, kiitos."
@@ -6070,16 +6307,6 @@ msgid ""
 msgstr ""
 "Valitsemasi näppäinyhdistelmä on jo toiminnon<br><hilight>%s</hilight> "
 "käytössä.<br>Valitse jokin toinen näppäinyhdistelmä, kiitos."
-
-#: src/modules/conf_keybindings/e_int_config_mousebindings.c:7
-msgid ""
-"Please hold any modifier you want<br>and press any button on your mouse,<br> "
-"or roll a wheel, to assign mouse binding.<br>Press <hilight>Escape</"
-"highlight> to abort."
-msgstr ""
-"Pidä pohjassa mitä tahansa haluamaasi vaihtonäppäintä<br>ja paina mitä "
-"tahansa<br>hiiresi näppäintä tai pyöräytä rullaa määrittääksesi "
-"hiiritoiminnon, kiitos.<br>Paina <hilight>ESC</hilight>iä keskeyttääksesi."
 
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:109
 #, fuzzy
@@ -6179,11 +6406,6 @@ msgstr ""
 #, c-format
 msgid "Extra Wheel (%d) Down"
 msgstr ""
-
-#: src/modules/conf_keybindings/e_mod_main.c:29
-#, fuzzy
-msgid "ACPI Bindings"
-msgstr "Lisää toiminto"
 
 #: src/modules/conf_menus/e_int_config_menus.c:38
 #: src/modules/conf_menus/e_mod_main.c:18
@@ -8299,6 +8521,21 @@ msgstr "Ikkunageometria"
 msgid "Everything Collection"
 msgstr "Uudelleenkäynnistyksen sovellukset"
 
+#: src/modules/everything/evry_gadget.c:169
+#, fuzzy
+msgid "Everything Starter"
+msgstr "Päätteen asetukset"
+
+#: src/modules/everything/evry_gadget.c:587
+#, fuzzy
+msgid "Everything Gadgets"
+msgstr "Kaikki"
+
+#: src/modules/everything/evry_gadget.c:686
+#, fuzzy
+msgid "Plugin"
+msgstr "Paljas"
+
 #: src/modules/everything/evry_plug_aggregator.c:122
 #, c-format
 msgid "%d item"
@@ -10080,6 +10317,27 @@ msgid "Levels of urgency to store:"
 msgstr ""
 
 #, fuzzy
+#~ msgid ""
+#~ "<title>Copyright &copy; 1999-2012, by the Enlightenment Development Team</"
+#~ "><br><br>We hope you enjoy using this software as much as we enjoyed "
+#~ "writing it.<br><br>This software is provided as-is with no explicit or "
+#~ "implied warranty. This software is governed by licensing conditions, so "
+#~ "please see the COPYING and COPYING-PLAIN licence files installed on your "
+#~ "system.<br><br>Enlightenment is under <hilight>HEAVY DEVELOPMENT</> and "
+#~ "it is not stable. Many features are incomplete or even non-existent yet "
+#~ "and may have many bugs. You have been <hilight>WARNED!</>"
+#~ msgstr ""
+#~ "Tekijänoikeudet &copy; 1999-2009, Englightenmentin kehitystiimi."
+#~ "<br><br>Toivomme että nautit tämän ohjelmiston käyttämisestä yhtä paljon "
+#~ "kuin me nautimme sen kirjoittamisesta.<br><br>Tämä ohjelmisto tarjotaan "
+#~ "sellaisenaan ilman minkäänlaista takuuta. Tämä ohjelmisto on lisenssin "
+#~ "alainen, joten lue COPYING- ja COPYING-PLAIN-lisenssitiedostot, jotka on "
+#~ "asennettu järjestelmääsi.<br><br>Enlightenment on <hilight>RASKAAN "
+#~ "KEHITYKSEN</hilight> alla eikä ole vakaa. Monet ominaisuudet ovat "
+#~ "keskeneräisiä tai eivät edes olemassa ja saattavat sisältää useita "
+#~ "bugeja. Sinua on <hilight>VAROITETTU!</hilight>"
+
+#, fuzzy
 #~ msgid "Using"
 #~ msgstr "Valikot"
 
@@ -10436,30 +10694,8 @@ msgstr ""
 #~ msgstr "%'.0f Mt"
 
 #, fuzzy
-#~ msgid "Image Import Settings"
-#~ msgstr "Image Tuontiasetukset"
-
-#, fuzzy
 #~ msgid "Import"
 #~ msgstr "Tuo..."
-
-#~ msgid "Fill and Stretch Options"
-#~ msgstr "Täytön ja venytyksen valinnat"
-
-#~ msgid "Stretch"
-#~ msgstr "Täytä"
-
-#~ msgid "Fill"
-#~ msgstr "Täytä"
-
-#~ msgid "File Quality"
-#~ msgstr "Tiedoston laatu"
-
-#~ msgid "Use original file"
-#~ msgstr "Käytä alkuperäistä tiedostoa"
-
-#~ msgid "%3.0f%%"
-#~ msgstr "%3.0f%%"
 
 #, fuzzy
 #~ msgid ""
@@ -10564,36 +10800,12 @@ msgstr ""
 #~ msgid "Binding Edge Error"
 #~ msgstr "Reunatoimintovirhe"
 
-#~ msgid "Key Binding Sequence"
-#~ msgstr "Näppäimistötoiminnon sekvenssi"
-
-#~ msgid "Mouse Binding Sequence"
-#~ msgstr "Hiiritoiminnon sekvenssi"
-
 #, fuzzy
 #~ msgid "Power management"
 #~ msgstr "Virranhallinta"
 
 #~ msgid "Wallpaper settings..."
 #~ msgstr "Taustakuvan asetukset..."
-
-#~ msgid "Tile"
-#~ msgstr "Vierekkäin"
-
-#, fuzzy
-#~ msgid "Pan"
-#~ msgstr "Vieritys sivuilta"
-
-#~ msgid "Select a Picture..."
-#~ msgstr "Valitse kuva..."
-
-#~ msgid "Picture Import Error"
-#~ msgstr "Kuvan tuontivirhe"
-
-#~ msgid ""
-#~ "Enlightenment was unable to import the picture<br>due to conversion "
-#~ "errors."
-#~ msgstr "Enlightenment ei voinut tuoda kuvaa<br>muunnosvirheen vuoksi."
 
 #~ msgid "Wallpaper Import Error"
 #~ msgstr "Taustakuvan tuontivirhe"

@@ -98,13 +98,11 @@ DIST_COMMON = $(am__dist_everything_headers_DATA_DIST) \
 	$(srcdir)/Makefile_winlist.am $(srcdir)/Makefile_wizard.am \
 	$(srcdir)/Makefile_xkbswitch.am $(top_srcdir)/depcomp
 @USE_MODULE_CONNMAN_TRUE@am__append_1 = $(connman_DATA)
-@USE_MODULE_CONNMAN_FALSE@connman_module_la_DEPENDENCIES =
 @USE_MODULE_IBAR_TRUE@am__append_2 = $(ibar_DATA)
 @USE_MODULE_DROPSHADOW_TRUE@am__append_3 = $(dropshadow_DATA)
 @USE_MODULE_CLOCK_TRUE@am__append_4 = $(clock_DATA)
 @USE_MODULE_PAGER_TRUE@am__append_5 = $(pager_DATA)
 @USE_MODULE_BATTERY_TRUE@am__append_6 = $(battery_DATA)
-@USE_MODULE_BATTERY_FALSE@battery_module_la_DEPENDENCIES =
 @HAVE_EEZE_TRUE@@USE_MODULE_BATTERY_TRUE@am__append_7 = battery/e_mod_udev.c
 @HAVE_EEZE_FALSE@@HAVE_OPENBSD_TRUE@@USE_MODULE_BATTERY_TRUE@am__append_8 = battery/e_mod_openbsd.c
 @HAVE_EEZE_FALSE@@HAVE_OPENBSD_FALSE@@USE_MODULE_BATTERY_TRUE@am__append_9 = battery/e_mod_dbus.c
@@ -115,7 +113,6 @@ DIST_COMMON = $(am__dist_everything_headers_DATA_DIST) \
 @USE_MODULE_TEMPERATURE_TRUE@tempget_PROGRAMS =  \
 @USE_MODULE_TEMPERATURE_TRUE@	temperature/tempget$(EXEEXT)
 @USE_MODULE_NOTIFICATION_TRUE@am__append_13 = $(notification_DATA)
-@USE_MODULE_NOTIFICATION_FALSE@notification_module_la_DEPENDENCIES =
 @USE_MODULE_CPUFREQ_TRUE@am__append_14 = $(cpufreq_DATA)
 @USE_MODULE_CPUFREQ_TRUE@freqset_PROGRAMS = cpufreq/freqset$(EXEEXT)
 @USE_MODULE_CPUFREQ_TRUE@am__append_15 = cpufreq-install-data-hook
@@ -126,8 +123,6 @@ DIST_COMMON = $(am__dist_everything_headers_DATA_DIST) \
 @USE_MODULE_FILEMAN_OPINFO_TRUE@am__append_20 = $(fileman_opinfo_DATA)
 @USE_MODULE_WIZARD_TRUE@am__append_21 = $(wizard_DATA) $(wizard_desks_DATA) $(wizard_desktop_DATA)
 @USE_MODULE_CONNMAN_TRUE@@USE_MODULE_WIZARD_TRUE@am__append_22 = wizard/page_110.la
-@USE_MODULE_CONNMAN_FALSE@wizard_page_110_la_DEPENDENCIES =
-@USE_MODULE_WIZARD_FALSE@wizard_page_110_la_DEPENDENCIES =
 @USE_MODULE_WIZARD_TRUE@am__append_23 = wizard/e_mod_comp_cfdata.c \
 @USE_MODULE_WIZARD_TRUE@	      wizard/e_mod_comp_cfdata.h \
 @USE_MODULE_WIZARD_TRUE@	      wizard/e_mod_comp_main.h
@@ -191,7 +186,6 @@ DIST_COMMON = $(am__dist_everything_headers_DATA_DIST) \
 @HAVE_ENOTIFY_TRUE@@USE_MODULE_ILLUME2_TRUE@am__append_50 = illume-indicator/e_mod_notify.c \
 @HAVE_ENOTIFY_TRUE@@USE_MODULE_ILLUME2_TRUE@				      illume-indicator/e_mod_notify.h
 
-@USE_MODULE_ILLUME2_FALSE@illume_indicator_module_la_DEPENDENCIES =
 @USE_MODULE_SYSCON_TRUE@am__append_51 = $(syscon_DATA)
 @USE_MODULE_EVERYTHING_TRUE@am__append_52 = $(everything_DATA) \
 @USE_MODULE_EVERYTHING_TRUE@	everything/everything.pc.in
@@ -214,9 +208,7 @@ DIST_COMMON = $(am__dist_everything_headers_DATA_DIST) \
 @HAVE_WAYLAND_CLIENTS_TRUE@@USE_MODULE_COMP_TRUE@			  comp/e_mod_comp_wl_region.h \
 @HAVE_WAYLAND_CLIENTS_TRUE@@USE_MODULE_COMP_TRUE@			  comp/e_mod_comp_wl_region.c
 
-@USE_MODULE_COMP_FALSE@comp_module_la_DEPENDENCIES =
 @USE_MODULE_PHYSICS_TRUE@am__append_56 = $(physics_DATA)
-@USE_MODULE_PHYSICS_FALSE@physics_module_la_DEPENDENCIES =
 @USE_MODULE_QUICKACCESS_TRUE@am__append_57 = $(quickaccess_DATA)
 @USE_MODULE_SHOT_TRUE@am__append_58 = $(shot_DATA)
 @USE_MODULE_BACKLIGHT_TRUE@am__append_59 = $(backlight_DATA)
@@ -427,6 +419,7 @@ am__backlight_module_la_SOURCES_DIST = backlight/e_mod_main.c \
 backlight_module_la_OBJECTS = $(am_backlight_module_la_OBJECTS)
 @USE_MODULE_BACKLIGHT_TRUE@am_backlight_module_la_rpath = -rpath \
 @USE_MODULE_BACKLIGHT_TRUE@	$(backlightpkgdir)
+battery_module_la_DEPENDENCIES =
 am__battery_module_la_SOURCES_DIST = battery/e_mod_main.h \
 	battery/e_mod_main.c battery/e_mod_config.c \
 	battery/e_mod_udev.c battery/e_mod_openbsd.c \
@@ -454,6 +447,7 @@ am__clock_module_la_SOURCES_DIST = clock/e_mod_main.h \
 clock_module_la_OBJECTS = $(am_clock_module_la_OBJECTS)
 @USE_MODULE_CLOCK_TRUE@am_clock_module_la_rpath = -rpath \
 @USE_MODULE_CLOCK_TRUE@	$(clockpkgdir)
+comp_module_la_DEPENDENCIES =
 am__comp_module_la_SOURCES_DIST = comp/e_mod_main.h comp/e_mod_main.c \
 	comp/e_mod_config.c comp/e_mod_config.h comp/e_mod_comp.c \
 	comp/e_mod_comp.h comp/e_mod_comp_update.c \
@@ -762,6 +756,7 @@ conf_window_remembers_module_la_OBJECTS =  \
 @USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@am_conf_window_remembers_module_la_rpath =  \
 @USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@	-rpath \
 @USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@	$(conf_window_rememberspkgdir)
+connman_module_la_DEPENDENCIES =
 am__connman_module_la_SOURCES_DIST = connman/e_mod_main.h \
 	connman/e_mod_main.c connman/e_mod_config.c \
 	connman/e_connman.c connman/agent.c connman/agent.h \
@@ -922,6 +917,7 @@ am__illume_home_module_la_SOURCES_DIST = illume-home/e_mod_main.c \
 illume_home_module_la_OBJECTS = $(am_illume_home_module_la_OBJECTS)
 @USE_MODULE_ILLUME2_TRUE@am_illume_home_module_la_rpath = -rpath \
 @USE_MODULE_ILLUME2_TRUE@	$(illume_homepkgdir)
+illume_indicator_module_la_DEPENDENCIES =
 am__illume_indicator_module_la_SOURCES_DIST =  \
 	illume-indicator/e_mod_main.c illume-indicator/e_mod_main.h \
 	illume-indicator/e_mod_config.c \
@@ -1053,6 +1049,8 @@ illume2_policies_tablet_tablet_la_LINK = $(LIBTOOL) $(AM_V_lt) \
 @USE_MODULE_ILLUME2_TRUE@am_illume2_policies_tablet_tablet_la_rpath =  \
 @USE_MODULE_ILLUME2_TRUE@	-rpath $(illume2policytabletdir)
 am__DEPENDENCIES_1 =
+@USE_MODULE_MIXER_TRUE@mixer_module_la_DEPENDENCIES =  \
+@USE_MODULE_MIXER_TRUE@	$(am__DEPENDENCIES_1)
 am__mixer_module_la_SOURCES_DIST = mixer/e_mod_main.c \
 	mixer/e_mod_main.h mixer/app_mixer.c mixer/conf_gadget.c \
 	mixer/conf_module.c mixer/e_mod_system.h mixer/msg.c \
@@ -1092,6 +1090,7 @@ am__msgbus_module_la_SOURCES_DIST = msgbus/e_mod_main.h \
 msgbus_module_la_OBJECTS = $(am_msgbus_module_la_OBJECTS)
 @USE_MODULE_MSGBUS_TRUE@am_msgbus_module_la_rpath = -rpath \
 @USE_MODULE_MSGBUS_TRUE@	$(msgbuspkgdir)
+notification_module_la_DEPENDENCIES =
 am__notification_module_la_SOURCES_DIST = notification/e_mod_main.h \
 	notification/e_mod_main.c notification/e_mod_box.c \
 	notification/e_mod_config.c notification/e_mod_config_item.c \
@@ -1114,6 +1113,7 @@ am__pager_module_la_SOURCES_DIST = pager/e_mod_main.h \
 pager_module_la_OBJECTS = $(am_pager_module_la_OBJECTS)
 @USE_MODULE_PAGER_TRUE@am_pager_module_la_rpath = -rpath \
 @USE_MODULE_PAGER_TRUE@	$(pagerpkgdir)
+physics_module_la_DEPENDENCIES =
 am__physics_module_la_SOURCES_DIST = physics/e_mod_main.c \
 	physics/e_mod_main.h physics/e_mod_config.c \
 	physics/e_mod_config.h physics/e_mod_physics_cfdata.c \
@@ -1313,6 +1313,7 @@ am__wizard_page_100_la_SOURCES_DIST = wizard/page_100.c
 wizard_page_100_la_OBJECTS = $(am_wizard_page_100_la_OBJECTS)
 @USE_MODULE_WIZARD_TRUE@am_wizard_page_100_la_rpath = -rpath \
 @USE_MODULE_WIZARD_TRUE@	$(wizardpkgdir)
+wizard_page_110_la_DEPENDENCIES =
 am__wizard_page_110_la_SOURCES_DIST = wizard/page_110.c
 @USE_MODULE_CONNMAN_TRUE@@USE_MODULE_WIZARD_TRUE@am_wizard_page_110_la_OBJECTS = wizard/page_110.lo
 wizard_page_110_la_OBJECTS = $(am_wizard_page_110_la_OBJECTS)
@@ -1953,8 +1954,7 @@ EXTRA_DIST = $(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_61) $(am__append_63) $(am__append_64)
 INSTALL_DATA_HOOKS = $(am__append_15)
 MDIR = $(libdir)/enlightenment/modules
-MDEPENDENCIES = $(top_builddir)/config.h
-AM_LDFLAGS = -module -avoid-version -no-undefined
+AM_LDFLAGS = -module -avoid-version
 AM_CPPFLAGS = -I. \
 	      -I$(top_srcdir) \
 	      -I$(top_srcdir)/src/bin \
@@ -1987,7 +1987,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 
 @USE_MODULE_CONNMAN_TRUE@connman_module_la_CFLAGS = $(AM_CFLAGS) -Wno-unused-parameter
 @USE_MODULE_CONNMAN_TRUE@connman_module_la_LIBADD = @ECONNMAN_LIBS@
-@USE_MODULE_CONNMAN_TRUE@connman_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_IBAR_TRUE@ibardir = $(MDIR)/ibar
 @USE_MODULE_IBAR_TRUE@ibar_DATA = ibar/e-module-ibar.edj \
 @USE_MODULE_IBAR_TRUE@	    ibar/module.desktop
@@ -1998,7 +1997,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_IBAR_TRUE@			 ibar/e_mod_main.h \
 @USE_MODULE_IBAR_TRUE@			 ibar/e_mod_config.c
 
-@USE_MODULE_IBAR_TRUE@ibar_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_DROPSHADOW_TRUE@dropshadowdir = $(MDIR)/dropshadow
 @USE_MODULE_DROPSHADOW_TRUE@dropshadow_DATA = dropshadow/e-module-dropshadow.edj \
 @USE_MODULE_DROPSHADOW_TRUE@	       dropshadow/module.desktop
@@ -2010,7 +2008,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_DROPSHADOW_TRUE@			       dropshadow/e_mod_config.h \
 @USE_MODULE_DROPSHADOW_TRUE@			       dropshadow/e_mod_config.c
 
-@USE_MODULE_DROPSHADOW_TRUE@dropshadow_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CLOCK_TRUE@clockdir = $(MDIR)/clock
 @USE_MODULE_CLOCK_TRUE@clock_DATA = clock/e-module-clock.edj \
 @USE_MODULE_CLOCK_TRUE@	     clock/module.desktop
@@ -2021,7 +2018,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CLOCK_TRUE@			  clock/e_mod_main.c \
 @USE_MODULE_CLOCK_TRUE@			  clock/e_mod_config.c
 
-@USE_MODULE_CLOCK_TRUE@clock_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_PAGER_TRUE@pagerdir = $(MDIR)/pager
 @USE_MODULE_PAGER_TRUE@pager_DATA = pager/e-module-pager.edj \
 @USE_MODULE_PAGER_TRUE@	     pager/module.desktop
@@ -2032,14 +2028,12 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_PAGER_TRUE@			  pager/e_mod_main.c \
 @USE_MODULE_PAGER_TRUE@			  pager/e_mod_config.c
 
-@USE_MODULE_PAGER_TRUE@pager_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_BATTERY_TRUE@batterydir = $(MDIR)/battery
 @USE_MODULE_BATTERY_TRUE@battery_DATA = battery/e-module-battery.edj \
 @USE_MODULE_BATTERY_TRUE@	       battery/module.desktop
 
 @USE_MODULE_BATTERY_TRUE@batterypkgdir = $(MDIR)/battery/$(MODULE_ARCH)
 @USE_MODULE_BATTERY_TRUE@batterypkg_LTLIBRARIES = battery/module.la
-@USE_MODULE_BATTERY_TRUE@battery_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_BATTERY_TRUE@battery_module_la_CFLAGS = $(AM_CFLAGS) \
 @USE_MODULE_BATTERY_TRUE@	$(am__append_10)
 @USE_MODULE_BATTERY_TRUE@battery_module_la_SOURCES =  \
@@ -2059,7 +2053,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 
 @USE_MODULE_TEMPERATURE_TRUE@temperaturepkgdir = $(MDIR)/temperature/$(MODULE_ARCH)
 @USE_MODULE_TEMPERATURE_TRUE@temperaturepkg_LTLIBRARIES = temperature/module.la
-@USE_MODULE_TEMPERATURE_TRUE@temperature_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_TEMPERATURE_TRUE@temperature_module_la_SOURCES =  \
 @USE_MODULE_TEMPERATURE_TRUE@	temperature/e_mod_main.c \
 @USE_MODULE_TEMPERATURE_TRUE@	temperature/e_mod_main.h \
@@ -2084,7 +2077,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_NOTIFICATION_TRUE@				  notification/e_mod_popup.c
 
 @USE_MODULE_NOTIFICATION_TRUE@notification_module_la_LIBADD = @ENOTIFY_LIBS@
-@USE_MODULE_NOTIFICATION_TRUE@notification_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CPUFREQ_TRUE@cpufreqdir = $(MDIR)/cpufreq
 @USE_MODULE_CPUFREQ_TRUE@cpufreq_DATA = cpufreq/e-module-cpufreq.edj \
 @USE_MODULE_CPUFREQ_TRUE@	       cpufreq/module.desktop
@@ -2094,7 +2086,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CPUFREQ_TRUE@cpufreq_module_la_SOURCES = cpufreq/e_mod_main.h \
 @USE_MODULE_CPUFREQ_TRUE@			     cpufreq/e_mod_main.c
 
-@USE_MODULE_CPUFREQ_TRUE@cpufreq_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CPUFREQ_TRUE@freqsetdir = $(cpufreqpkgdir)
 @USE_MODULE_CPUFREQ_TRUE@cpufreq_freqset_SOURCES = cpufreq/freqset.c
 @USE_MODULE_CPUFREQ_TRUE@cpufreq_freqset_CFLAGS = @e_cflags@ @SUID_CFLAGS@
@@ -2111,7 +2102,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_IBOX_TRUE@			 ibox/e_mod_main.h \
 @USE_MODULE_IBOX_TRUE@			 ibox/e_mod_config.c
 
-@USE_MODULE_IBOX_TRUE@ibox_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_START_TRUE@startdir = $(MDIR)/start
 @USE_MODULE_START_TRUE@start_DATA = start/e-module-start.edj \
 @USE_MODULE_START_TRUE@	     start/module.desktop
@@ -2121,7 +2111,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_START_TRUE@start_module_la_SOURCES = start/e_mod_main.h \
 @USE_MODULE_START_TRUE@			  start/e_mod_main.c
 
-@USE_MODULE_START_TRUE@start_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WINLIST_TRUE@winlistdir = $(MDIR)/winlist
 @USE_MODULE_WINLIST_TRUE@winlist_DATA = winlist/e-module-winlist.edj \
 @USE_MODULE_WINLIST_TRUE@	       winlist/module.desktop
@@ -2135,7 +2124,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_WINLIST_TRUE@			    winlist/e_winlist.h \
 @USE_MODULE_WINLIST_TRUE@			    winlist/e_winlist.c
 
-@USE_MODULE_WINLIST_TRUE@winlist_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_FILEMAN_TRUE@filemandir = $(MDIR)/fileman
 @USE_MODULE_FILEMAN_TRUE@fileman_DATA = fileman/e-module-fileman.edj \
 @USE_MODULE_FILEMAN_TRUE@	       fileman/module.desktop
@@ -2156,7 +2144,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_FILEMAN_TRUE@			    fileman/e_mod_dbus.h \
 @USE_MODULE_FILEMAN_TRUE@			    fileman/e_mod_menu.c
 
-@USE_MODULE_FILEMAN_TRUE@fileman_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_FILEMAN_OPINFO_TRUE@fileman_opinfodir = $(MDIR)/fileman_opinfo
 @USE_MODULE_FILEMAN_OPINFO_TRUE@fileman_opinfo_DATA = fileman_opinfo/e-module-fileman_opinfo.edj \
 @USE_MODULE_FILEMAN_OPINFO_TRUE@		      fileman_opinfo/module.desktop
@@ -2166,7 +2153,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_FILEMAN_OPINFO_TRUE@fileman_opinfo_module_la_SOURCES = fileman_opinfo/e_mod_main.c \
 @USE_MODULE_FILEMAN_OPINFO_TRUE@				   fileman_opinfo/e_mod_main.h
 
-@USE_MODULE_FILEMAN_OPINFO_TRUE@fileman_opinfo_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizarddir = $(MDIR)/wizard
 @USE_MODULE_WIZARD_TRUE@wizard_DATA = wizard/data/def-ibar.txt
 @USE_MODULE_WIZARD_TRUE@wizard_desksdir = $(MDIR)/wizard/extra_desktops
@@ -2199,53 +2185,32 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_WIZARD_TRUE@			   wizard/e_wizard.c \
 @USE_MODULE_WIZARD_TRUE@			   wizard/e_wizard.h
 
-@USE_MODULE_WIZARD_TRUE@wizard_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_000_la_SOURCES = wizard/page_000.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_000_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_010_la_SOURCES = wizard/page_010.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_010_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_011_la_SOURCES = wizard/page_011.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_011_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_020_la_SOURCES = wizard/page_020.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_020_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_030_la_SOURCES = wizard/page_030.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_030_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_040_la_SOURCES = wizard/page_040.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_040_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_050_la_SOURCES = wizard/page_050.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_050_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_060_la_SOURCES = wizard/page_060.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_060_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_070_la_SOURCES = wizard/page_070.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_070_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_080_la_SOURCES = wizard/page_080.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_080_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_090_la_SOURCES = wizard/page_090.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_090_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_100_la_SOURCES = wizard/page_100.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_100_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONNMAN_TRUE@@USE_MODULE_WIZARD_TRUE@wizard_page_110_la_SOURCES = wizard/page_110.c
 @USE_MODULE_CONNMAN_TRUE@@USE_MODULE_WIZARD_TRUE@wizard_page_110_la_LIBADD = @ECONNMAN_LIBS@
-@USE_MODULE_CONNMAN_TRUE@@USE_MODULE_WIZARD_TRUE@wizard_page_110_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_120_la_SOURCES = wizard/page_120.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_120_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_130_la_SOURCES = wizard/page_130.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_130_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_140_la_SOURCES = wizard/page_140.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_140_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_150_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/wizard/
 @USE_MODULE_WIZARD_TRUE@wizard_page_150_la_SOURCES = wizard/page_150.c
 @USE_MODULE_WIZARD_TRUE@nodist_wizard_page_150_la_SOURCES = wizard/e_mod_comp_cfdata.c \
 @USE_MODULE_WIZARD_TRUE@				    wizard/e_mod_comp_cfdata.h \
 @USE_MODULE_WIZARD_TRUE@				    wizard/e_mod_comp_main.h
 
-@USE_MODULE_WIZARD_TRUE@wizard_page_150_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_160_la_SOURCES = wizard/page_160.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_160_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_170_la_SOURCES = wizard/page_170.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_170_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_WIZARD_TRUE@wizard_page_200_la_SOURCES = wizard/page_200.c
-@USE_MODULE_WIZARD_TRUE@wizard_page_200_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_TRUE@confdir = $(MDIR)/conf
 @USE_MODULE_CONF_TRUE@conf_DATA = conf/e-module-conf.edj \
 @USE_MODULE_CONF_TRUE@	    conf/module.desktop
@@ -2258,7 +2223,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_TRUE@			 conf/e_conf.h \
 @USE_MODULE_CONF_TRUE@			 conf/e_mod_config.c
 
-@USE_MODULE_CONF_TRUE@conf_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_WALLPAPER2_TRUE@conf_wallpaper2dir = $(MDIR)/conf_wallpaper2
 @USE_MODULE_CONF_WALLPAPER2_TRUE@conf_wallpaper2_DATA = conf_wallpaper2/module.desktop
 @USE_MODULE_CONF_WALLPAPER2_TRUE@conf_wallpaper2pkgdir = $(MDIR)/conf_wallpaper2/$(MODULE_ARCH)
@@ -2268,7 +2232,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_WALLPAPER2_TRUE@				    conf_wallpaper2/e_int_config_wallpaper.c \
 @USE_MODULE_CONF_WALLPAPER2_TRUE@				    conf_wallpaper2/e_int_config_wallpaper.h
 
-@USE_MODULE_CONF_WALLPAPER2_TRUE@conf_wallpaper2_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_THEME_TRUE@conf_themedir = $(MDIR)/conf_theme
 @USE_MODULE_CONF_THEME_TRUE@conf_theme_DATA = conf_theme/module.desktop
 @USE_MODULE_CONF_THEME_TRUE@conf_themepkgdir = $(MDIR)/conf_theme/$(MODULE_ARCH)
@@ -2295,7 +2258,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_THEME_TRUE@			       conf_theme/e_int_config_wallpaper.h \
 @USE_MODULE_CONF_THEME_TRUE@			       conf_theme/e_int_config_xsettings.c
 
-@USE_MODULE_CONF_THEME_TRUE@conf_theme_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_INTL_TRUE@conf_intldir = $(MDIR)/conf_intl
 @USE_MODULE_CONF_INTL_TRUE@conf_intl_DATA = conf_intl/module.desktop
 @USE_MODULE_CONF_INTL_TRUE@conf_intlpkgdir = $(MDIR)/conf_intl/$(MODULE_ARCH)
@@ -2309,7 +2271,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_INTL_TRUE@			      conf_intl/e_int_config_imc.c \
 @USE_MODULE_CONF_INTL_TRUE@			      conf_intl/e_int_config_imc.h
 
-@USE_MODULE_CONF_INTL_TRUE@conf_intl_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_MSGBUS_TRUE@msgbusdir = $(MDIR)/msgbus
 @USE_MODULE_MSGBUS_TRUE@msgbus_DATA = msgbus/e-module-msgbus.edj \
 @USE_MODULE_MSGBUS_TRUE@	      msgbus/module.desktop
@@ -2322,7 +2283,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_MSGBUS_TRUE@			   msgbus/msgbus_desktop.c \
 @USE_MODULE_MSGBUS_TRUE@			   msgbus/msgbus_lang.c
 
-@USE_MODULE_MSGBUS_TRUE@msgbus_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_APPLICATIONS_TRUE@conf_applicationsdir = $(MDIR)/conf_applications
 @USE_MODULE_CONF_APPLICATIONS_TRUE@conf_applications_DATA = conf_applications/e-module-conf_applications.edj \
 @USE_MODULE_CONF_APPLICATIONS_TRUE@			 conf_applications/module.desktop
@@ -2340,7 +2300,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_APPLICATIONS_TRUE@			      conf_applications/e_int_config_apps_personal.c \
 @USE_MODULE_CONF_APPLICATIONS_TRUE@			      conf_applications/e_int_config_apps_personal.h
 
-@USE_MODULE_CONF_APPLICATIONS_TRUE@conf_applications_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_DISPLAY_TRUE@conf_displaydir = $(MDIR)/conf_display
 @USE_MODULE_CONF_DISPLAY_TRUE@conf_display_DATA = conf_display/module.desktop
 @USE_MODULE_CONF_DISPLAY_TRUE@conf_displaypkgdir = $(MDIR)/conf_display/$(MODULE_ARCH)
@@ -2362,7 +2321,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_DISPLAY_TRUE@				 conf_display/e_int_config_desk.c \
 @USE_MODULE_CONF_DISPLAY_TRUE@				 conf_display/e_int_config_desk.h
 
-@USE_MODULE_CONF_DISPLAY_TRUE@conf_display_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_SHELVES_TRUE@conf_shelvesdir = $(MDIR)/conf_shelves
 @USE_MODULE_CONF_SHELVES_TRUE@conf_shelves_DATA = conf_shelves/e-module-conf_shelves.edj \
 @USE_MODULE_CONF_SHELVES_TRUE@		    conf_shelves/module.desktop
@@ -2374,7 +2332,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_SHELVES_TRUE@				 conf_shelves/e_int_config_shelf.c \
 @USE_MODULE_CONF_SHELVES_TRUE@				 conf_shelves/e_int_config_shelf.h
 
-@USE_MODULE_CONF_SHELVES_TRUE@conf_shelves_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_KEYBINDINGS_TRUE@conf_keybindingsdir = $(MDIR)/conf_keybindings
 @USE_MODULE_CONF_KEYBINDINGS_TRUE@conf_keybindings_DATA = conf_keybindings/module.desktop
 @USE_MODULE_CONF_KEYBINDINGS_TRUE@conf_keybindingspkgdir = $(MDIR)/conf_keybindings/$(MODULE_ARCH)
@@ -2388,7 +2345,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_KEYBINDINGS_TRUE@			     conf_keybindings/e_int_config_acpibindings.c \
 @USE_MODULE_CONF_KEYBINDINGS_TRUE@			     conf_keybindings/e_int_config_acpibindings.h
 
-@USE_MODULE_CONF_KEYBINDINGS_TRUE@conf_keybindings_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_EDGEBINDINGS_TRUE@conf_edgebindingsdir = $(MDIR)/conf_edgebindings
 @USE_MODULE_CONF_EDGEBINDINGS_TRUE@conf_edgebindings_DATA = conf_edgebindings/e-module-conf_edgebindings.edj \
 @USE_MODULE_CONF_EDGEBINDINGS_TRUE@			 conf_edgebindings/module.desktop
@@ -2401,7 +2357,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_EDGEBINDINGS_TRUE@			      conf_edgebindings/e_int_config_signalbindings.c \
 @USE_MODULE_CONF_EDGEBINDINGS_TRUE@			      conf_edgebindings/e_int_config_edgebindings.h
 
-@USE_MODULE_CONF_EDGEBINDINGS_TRUE@conf_edgebindings_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@conf_window_remembersdir = $(MDIR)/conf_window_remembers
 @USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@conf_window_remembers_DATA = conf_window_remembers/e-module-conf_window_remembers.edj \
 @USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@			     conf_window_remembers/module.desktop
@@ -2413,7 +2368,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@			      conf_window_remembers/e_int_config_remembers.c \
 @USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@			      conf_window_remembers/e_int_config_remembers.h
 
-@USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@conf_window_remembers_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_WINDOW_MANIPULATION_TRUE@conf_window_manipulationdir = $(MDIR)/conf_window_manipulation
 @USE_MODULE_CONF_WINDOW_MANIPULATION_TRUE@conf_window_manipulation_DATA = conf_window_manipulation/module.desktop
 @USE_MODULE_CONF_WINDOW_MANIPULATION_TRUE@conf_window_manipulationpkgdir = $(MDIR)/conf_window_manipulation/$(MODULE_ARCH)
@@ -2430,7 +2384,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_WINDOW_MANIPULATION_TRUE@		      conf_window_manipulation/e_int_config_clientlist.c \
 @USE_MODULE_CONF_WINDOW_MANIPULATION_TRUE@		      conf_window_manipulation/e_int_config_clientlist.h
 
-@USE_MODULE_CONF_WINDOW_MANIPULATION_TRUE@conf_window_manipulation_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_MENUS_TRUE@conf_menusdir = $(MDIR)/conf_menus
 @USE_MODULE_CONF_MENUS_TRUE@conf_menus_DATA = conf_menus/e-module-conf_menus.edj \
 @USE_MODULE_CONF_MENUS_TRUE@		  conf_menus/module.desktop
@@ -2442,7 +2395,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_MENUS_TRUE@			       conf_menus/e_int_config_menus.c \
 @USE_MODULE_CONF_MENUS_TRUE@			       conf_menus/e_int_config_menus.h
 
-@USE_MODULE_CONF_MENUS_TRUE@conf_menus_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_DIALOGS_TRUE@conf_dialogsdir = $(MDIR)/conf_dialogs
 @USE_MODULE_CONF_DIALOGS_TRUE@conf_dialogs_DATA = conf_dialogs/e-module-conf_dialogs.edj \
 @USE_MODULE_CONF_DIALOGS_TRUE@		    conf_dialogs/module.desktop
@@ -2456,7 +2408,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_DIALOGS_TRUE@				 conf_dialogs/e_int_config_profiles.c \
 @USE_MODULE_CONF_DIALOGS_TRUE@				 conf_dialogs/e_int_config_profiles.h
 
-@USE_MODULE_CONF_DIALOGS_TRUE@conf_dialogs_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_PERFORMANCE_TRUE@conf_performancedir = $(MDIR)/conf_performance
 @USE_MODULE_CONF_PERFORMANCE_TRUE@conf_performance_DATA = conf_performance/e-module-conf_performance.edj \
 @USE_MODULE_CONF_PERFORMANCE_TRUE@			conf_performance/module.desktop
@@ -2472,7 +2423,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_PERFORMANCE_TRUE@			     conf_performance/e_int_config_powermanagement.c \
 @USE_MODULE_CONF_PERFORMANCE_TRUE@			     conf_performance/e_int_config_powermanagement.h
 
-@USE_MODULE_CONF_PERFORMANCE_TRUE@conf_performance_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_PATHS_TRUE@conf_pathsdir = $(MDIR)/conf_paths
 @USE_MODULE_CONF_PATHS_TRUE@conf_paths_DATA = conf_paths/e-module-conf_paths.edj \
 @USE_MODULE_CONF_PATHS_TRUE@		  conf_paths/module.desktop
@@ -2486,7 +2436,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_PATHS_TRUE@			       conf_paths/e_int_config_env.c \
 @USE_MODULE_CONF_PATHS_TRUE@			       conf_paths/e_int_config_env.h
 
-@USE_MODULE_CONF_PATHS_TRUE@conf_paths_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_INTERACTION_TRUE@conf_interactiondir = $(MDIR)/conf_interaction
 @USE_MODULE_CONF_INTERACTION_TRUE@conf_interaction_DATA = conf_interaction/e-module-conf_interaction.edj \
 @USE_MODULE_CONF_INTERACTION_TRUE@			conf_interaction/module.desktop
@@ -2500,7 +2449,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_INTERACTION_TRUE@			     conf_interaction/e_int_config_mouse.c \
 @USE_MODULE_CONF_INTERACTION_TRUE@			     conf_interaction/e_int_config_mouse.h
 
-@USE_MODULE_CONF_INTERACTION_TRUE@conf_interaction_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_CONF_RANDR_TRUE@conf_randrdir = $(MDIR)/conf_randr
 @USE_MODULE_CONF_RANDR_TRUE@conf_randr_DATA = conf_randr/e-module-conf_randr.edj \
 @USE_MODULE_CONF_RANDR_TRUE@		  conf_randr/module.desktop
@@ -2516,7 +2464,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_CONF_RANDR_TRUE@			       conf_randr/e_smart_monitor.h \
 @USE_MODULE_CONF_RANDR_TRUE@			       conf_randr/e_smart_monitor.c
 
-@USE_MODULE_CONF_RANDR_TRUE@conf_randr_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_GADMAN_TRUE@gadmandir = $(MDIR)/gadman
 @USE_MODULE_GADMAN_TRUE@gadman_DATA = gadman/e-module-gadman.edj \
 @USE_MODULE_GADMAN_TRUE@	      gadman/module.desktop
@@ -2530,7 +2477,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_GADMAN_TRUE@			   gadman/e_mod_gadman.c \
 @USE_MODULE_GADMAN_TRUE@			   gadman/e_mod_gadman.h
 
-@USE_MODULE_GADMAN_TRUE@gadman_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_MIXER_TRUE@mixerdir = $(MDIR)/mixer
 @USE_MODULE_MIXER_TRUE@mixer_DATA = mixer/e-module-mixer.edj \
 @USE_MODULE_MIXER_TRUE@	     mixer/module.desktop
@@ -2549,18 +2495,17 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_MIXER_TRUE@	$(am__append_44) $(am__append_45)
 @USE_MODULE_MIXER_TRUE@mixer_module_la_LIBADD = @SOUND_LIBS@ \
 @USE_MODULE_MIXER_TRUE@	$(am__append_47)
-@USE_MODULE_MIXER_TRUE@mixer_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_ILLUME2_TRUE@illume2dir = $(MDIR)/illume2
 @USE_MODULE_ILLUME2_TRUE@illume2_DATA = illume2/e-module-illume2.edj \
 @USE_MODULE_ILLUME2_TRUE@	       illume2/module.desktop
 
 
 # keyboards
-@USE_MODULE_ILLUME2_TRUE@illume2keyboardsdir = $(MDIR)/keyboards
+@USE_MODULE_ILLUME2_TRUE@illume2keyboardsdir = $(MDIR)/illume2/keyboards
 @USE_MODULE_ILLUME2_TRUE@illume2keyboards_DATA = illume2/keyboards/ignore_built_in_keyboards
 
 # policies
-@USE_MODULE_ILLUME2_TRUE@illume2policyillumedir = $(MDIR)/policies
+@USE_MODULE_ILLUME2_TRUE@illume2policyillumedir = $(MDIR)/illume2/policies
 @USE_MODULE_ILLUME2_TRUE@illume2policyillume_LTLIBRARIES = illume2/policies/illume/illume.la
 @USE_MODULE_ILLUME2_TRUE@ILLUME2POLICYCPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src/modules/illume2
 @USE_MODULE_ILLUME2_TRUE@illume2_policies_illume_illume_la_CPPFLAGS = $(ILLUME2POLICYCPPFLAGS)
@@ -2570,7 +2515,7 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_ILLUME2_TRUE@					    illume2/policies/illume/illume.h
 
 @USE_MODULE_ILLUME2_TRUE@illume2_policies_illume_illume_la_LIBTOOLFLAGS = --tag=disable-static 
-@USE_MODULE_ILLUME2_TRUE@illume2policytabletdir = $(MDIR)/policies
+@USE_MODULE_ILLUME2_TRUE@illume2policytabletdir = $(MDIR)/illume2/policies
 @USE_MODULE_ILLUME2_TRUE@illume2policytablet_LTLIBRARIES = illume2/policies/tablet/tablet.la
 @USE_MODULE_ILLUME2_TRUE@illume2_policies_tablet_tablet_la_CPPFLAGS = $(ILLUME2POLICYCPPFLAGS)
 @USE_MODULE_ILLUME2_TRUE@illume2_policies_tablet_tablet_la_SOURCES = illume2/policies/tablet/policy.c \
@@ -2606,7 +2551,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_ILLUME2_TRUE@			    illume2/e_mod_config.h \
 @USE_MODULE_ILLUME2_TRUE@			    illume2/e_mod_config.c
 
-@USE_MODULE_ILLUME2_TRUE@illume2_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_ILLUME2_TRUE@illume_homedir = $(MDIR)/illume-home
 @USE_MODULE_ILLUME2_TRUE@illume_home_DATA = illume-home/e-module-illume-home.edj \
 @USE_MODULE_ILLUME2_TRUE@		   illume-home/module.desktop
@@ -2620,7 +2564,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_ILLUME2_TRUE@				illume-home/e_busycover.c \
 @USE_MODULE_ILLUME2_TRUE@				illume-home/e_busycover.h
 
-@USE_MODULE_ILLUME2_TRUE@illume_home_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_ILLUME2_TRUE@illume_home_toggledir = $(MDIR)/illume-home-toggle
 @USE_MODULE_ILLUME2_TRUE@illume_home_toggle_DATA = illume-home-toggle/e-module-illume-home-toggle.edj \
 @USE_MODULE_ILLUME2_TRUE@			  illume-home-toggle/module.desktop
@@ -2630,7 +2573,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_ILLUME2_TRUE@illume_home_toggle_module_la_SOURCES = illume-home-toggle/e_mod_main.c \
 @USE_MODULE_ILLUME2_TRUE@				       illume-home-toggle/e_mod_main.h
 
-@USE_MODULE_ILLUME2_TRUE@illume_home_toggle_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_ILLUME2_TRUE@illume_softkeydir = $(MDIR)/illume-softkey
 @USE_MODULE_ILLUME2_TRUE@illume_softkey_DATA = illume-softkey/e-module-illume-softkey.edj \
 @USE_MODULE_ILLUME2_TRUE@		      illume-softkey/module.desktop
@@ -2645,7 +2587,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_ILLUME2_TRUE@				   illume-softkey/e_mod_config.c \
 @USE_MODULE_ILLUME2_TRUE@				   illume-softkey/e_mod_config.h
 
-@USE_MODULE_ILLUME2_TRUE@illume_softkey_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_ILLUME2_TRUE@illume_keyboarddir = $(MDIR)/illume-keyboard
 @USE_MODULE_ILLUME2_TRUE@illume_keyboard_DATA = illume-keyboard/e-module-illume-keyboard.edj \
 @USE_MODULE_ILLUME2_TRUE@		       illume-keyboard/module.desktop
@@ -2691,7 +2632,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_ILLUME2_TRUE@				    illume-keyboard/e_mod_config.c \
 @USE_MODULE_ILLUME2_TRUE@				    illume-keyboard/e_mod_config.h
 
-@USE_MODULE_ILLUME2_TRUE@illume_keyboard_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_ILLUME2_TRUE@illume_indicatordir = $(MDIR)/illume-indicator
 @USE_MODULE_ILLUME2_TRUE@illume_indicator_DATA = illume-indicator/e-module-illume-indicator.edj \
 @USE_MODULE_ILLUME2_TRUE@			illume-indicator/module.desktop
@@ -2710,7 +2650,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_ILLUME2_TRUE@	illume-indicator/e_mod_ind_win.h \
 @USE_MODULE_ILLUME2_TRUE@	$(am__append_50)
 @USE_MODULE_ILLUME2_TRUE@illume_indicator_module_la_LIBADD = @ENOTIFY_LIBS@
-@USE_MODULE_ILLUME2_TRUE@illume_indicator_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_ILLUME2_TRUE@illume_kbd_toggledir = $(MDIR)/illume-kbd-toggle
 @USE_MODULE_ILLUME2_TRUE@illume_kbd_toggle_DATA = illume-kbd-toggle/e-module-illume-kbd-toggle.edj \
 @USE_MODULE_ILLUME2_TRUE@			 illume-kbd-toggle/module.desktop
@@ -2720,7 +2659,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_ILLUME2_TRUE@illume_kbd_toggle_module_la_SOURCES = illume-kbd-toggle/e_mod_main.c \
 @USE_MODULE_ILLUME2_TRUE@				      illume-kbd-toggle/e_mod_main.h
 
-@USE_MODULE_ILLUME2_TRUE@illume_kbd_toggle_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_ILLUME2_TRUE@illume_mode_toggledir = $(MDIR)/illume-mode-toggle
 @USE_MODULE_ILLUME2_TRUE@illume_mode_toggle_DATA = illume-mode-toggle/e-module-illume-mode-toggle.edj \
 @USE_MODULE_ILLUME2_TRUE@			 illume-mode-toggle/module.desktop
@@ -2730,7 +2668,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_ILLUME2_TRUE@illume_mode_toggle_module_la_SOURCES = illume-mode-toggle/e_mod_main.c \
 @USE_MODULE_ILLUME2_TRUE@				      illume-mode-toggle/e_mod_main.h
 
-@USE_MODULE_ILLUME2_TRUE@illume_mode_toggle_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_ILLUME2_TRUE@illume_bluetoothdir = $(MDIR)/illume-bluetooth
 @USE_MODULE_ILLUME2_TRUE@illume_bluetooth_DATA = illume-bluetooth/e-module-illume-bluetooth.edj \
 @USE_MODULE_ILLUME2_TRUE@			illume-bluetooth/module.desktop
@@ -2740,7 +2677,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_ILLUME2_TRUE@illume_bluetooth_module_la_SOURCES = illume-bluetooth/e_mod_main.c \
 @USE_MODULE_ILLUME2_TRUE@				     illume-bluetooth/e_mod_main.h
 
-@USE_MODULE_ILLUME2_TRUE@illume_bluetooth_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_SYSCON_TRUE@syscondir = $(MDIR)/syscon
 @USE_MODULE_SYSCON_TRUE@syscon_DATA = syscon/e-module-syscon.edj \
 @USE_MODULE_SYSCON_TRUE@	      syscon/module.desktop
@@ -2755,7 +2691,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_SYSCON_TRUE@			   syscon/e_syscon.h \
 @USE_MODULE_SYSCON_TRUE@			   syscon/e_syscon_gadget.c
 
-@USE_MODULE_SYSCON_TRUE@syscon_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_EVERYTHING_TRUE@everythingdir = $(MDIR)/everything
 @USE_MODULE_EVERYTHING_TRUE@everything_DATA = everything/e-module-everything.edj \
 @USE_MODULE_EVERYTHING_TRUE@		  everything/e-module-everything-start.edj \
@@ -2791,7 +2726,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_EVERYTHING_TRUE@			       everything/evry_plug_settings.c \
 @USE_MODULE_EVERYTHING_TRUE@			       everything/evry_plug_calc.c
 
-@USE_MODULE_EVERYTHING_TRUE@everything_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_EVERYTHING_TRUE@everything_headersdir = $(pkgincludedir)
 @USE_MODULE_EVERYTHING_TRUE@dist_everything_headers_DATA = $(EVRYHEADERS)
 @USE_MODULE_EVERYTHING_TRUE@everything_pkgconfigdir = $(libdir)/pkgconfig
@@ -2806,7 +2740,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_SYSTRAY_TRUE@systray_module_la_SOURCES = systray/e_mod_main.h \
 @USE_MODULE_SYSTRAY_TRUE@			    systray/e_mod_main.c
 
-@USE_MODULE_SYSTRAY_TRUE@systray_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_COMP_TRUE@compdir = $(MDIR)/comp
 @USE_MODULE_COMP_TRUE@comp_DATA = comp/e-module-comp.edj \
 @USE_MODULE_COMP_TRUE@	    comp/module.desktop
@@ -2823,7 +2756,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_COMP_TRUE@	comp/e_mod_comp_cfdata.h \
 @USE_MODULE_COMP_TRUE@	$(am__append_55)
 @USE_MODULE_COMP_TRUE@comp_module_la_LIBADD = @WAYLAND_LIBS@
-@USE_MODULE_COMP_TRUE@comp_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_PHYSICS_TRUE@physicsdir = $(MDIR)/physics
 @USE_MODULE_PHYSICS_TRUE@physics_DATA = physics/e-module-physics.edj \
 @USE_MODULE_PHYSICS_TRUE@	       physics/module.desktop
@@ -2840,7 +2772,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_PHYSICS_TRUE@			    physics/e_mod_physics.h
 
 @USE_MODULE_PHYSICS_TRUE@physics_module_la_LIBADD = @EPHYSICS_LIBS@
-@USE_MODULE_PHYSICS_TRUE@physics_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_QUICKACCESS_TRUE@quickaccessdir = $(MDIR)/quickaccess
 @USE_MODULE_QUICKACCESS_TRUE@quickaccess_DATA = quickaccess/e-module-quickaccess.edj \
 @USE_MODULE_QUICKACCESS_TRUE@		   quickaccess/module.desktop
@@ -2854,7 +2785,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_QUICKACCESS_TRUE@				quickaccess/e_quickaccess_bindings.c \
 @USE_MODULE_QUICKACCESS_TRUE@				quickaccess/e_quickaccess_db.c
 
-@USE_MODULE_QUICKACCESS_TRUE@quickaccess_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_SHOT_TRUE@shotdir = $(MDIR)/shot
 @USE_MODULE_SHOT_TRUE@shot_DATA = shot/e-module-shot.edj \
 @USE_MODULE_SHOT_TRUE@	    shot/module.desktop
@@ -2864,7 +2794,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_SHOT_TRUE@shot_module_la_SOURCES = shot/e_mod_main.c \
 @USE_MODULE_SHOT_TRUE@			 shot/e_mod_main.h
 
-@USE_MODULE_SHOT_TRUE@shot_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_BACKLIGHT_TRUE@backlightdir = $(MDIR)/backlight
 @USE_MODULE_BACKLIGHT_TRUE@backlight_DATA = backlight/e-module-backlight.edj \
 @USE_MODULE_BACKLIGHT_TRUE@		 backlight/module.desktop
@@ -2874,7 +2803,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_BACKLIGHT_TRUE@backlight_module_la_SOURCES = backlight/e_mod_main.c \
 @USE_MODULE_BACKLIGHT_TRUE@			      backlight/e_mod_main.h
 
-@USE_MODULE_BACKLIGHT_TRUE@backlight_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_TASKS_TRUE@tasksdir = $(MDIR)/tasks
 @USE_MODULE_TASKS_TRUE@tasks_DATA = tasks/e-module-tasks.edj \
 @USE_MODULE_TASKS_TRUE@	     tasks/module.desktop
@@ -2885,7 +2813,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_TASKS_TRUE@			  tasks/e_mod_main.h \
 @USE_MODULE_TASKS_TRUE@			  tasks/e_mod_config.c
 
-@USE_MODULE_TASKS_TRUE@tasks_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_XKBSWITCH_TRUE@xkbswitchdir = $(MDIR)/xkbswitch
 @USE_MODULE_XKBSWITCH_TRUE@xkbswitch_DATA = xkbswitch/e-module-xkbswitch.edj \
 @USE_MODULE_XKBSWITCH_TRUE@		 xkbswitch/module.desktop
@@ -2898,7 +2825,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_XKBSWITCH_TRUE@			      xkbswitch/e_mod_parse.c \
 @USE_MODULE_XKBSWITCH_TRUE@			      xkbswitch/e_mod_parse.h
 
-@USE_MODULE_XKBSWITCH_TRUE@xkbswitch_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_TILING_TRUE@tilingdir = $(MDIR)/tiling
 @USE_MODULE_TILING_TRUE@tiling_DATA = tiling/e-module-tiling.edj \
 @USE_MODULE_TILING_TRUE@	      tiling/module.desktop
@@ -2910,7 +2836,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_TILING_TRUE@			   tiling/e_mod_tiling.h \
 @USE_MODULE_TILING_TRUE@			   tiling/e_mod_config.c
 
-@USE_MODULE_TILING_TRUE@tiling_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 @USE_MODULE_ACCESS_TRUE@accessdir = $(MDIR)/access
 @USE_MODULE_ACCESS_TRUE@access_DATA = access/module.desktop
 @USE_MODULE_ACCESS_TRUE@accesspkgdir = $(MDIR)/access/$(MODULE_ARCH)
@@ -2919,7 +2844,6 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_ACCESS_TRUE@			   access/e_mod_main.h \
 @USE_MODULE_ACCESS_TRUE@			   access/e_mod_config.c
 
-@USE_MODULE_ACCESS_TRUE@access_module_la_DEPENDENCIES = $(MDEPENDENCIES)
 all: all-recursive
 
 .SUFFIXES:
@@ -8922,9 +8846,65 @@ uninstall-am: uninstall-accessDATA uninstall-accesspkgLTLIBRARIES \
 	uninstall-xkbswitchDATA uninstall-xkbswitchpkgLTLIBRARIES
 
 
+@USE_MODULE_CONNMAN_TRUE@.PHONY: connman install-connman
+@USE_MODULE_CONNMAN_TRUE@connman: $(connmanpkg_LTLIBRARIES) $(connman_DATA)
+@USE_MODULE_CONNMAN_TRUE@install-connman: install-connmanDATA install-connmanpkgLTLIBRARIES
+
+@USE_MODULE_IBAR_TRUE@.PHONY: ibar install-ibar
+@USE_MODULE_IBAR_TRUE@ibar: $(ibarpkg_LTLIBRARIES) $(ibar_DATA)
+@USE_MODULE_IBAR_TRUE@install-ibar: install-ibarDATA install-ibarpkgLTLIBRARIES
+
+@USE_MODULE_DROPSHADOW_TRUE@.PHONY: dropshadow install-dropshadow
+@USE_MODULE_DROPSHADOW_TRUE@dropshadow: $(dropshadowpkg_LTLIBRARIES) $(dropshadow_DATA)
+@USE_MODULE_DROPSHADOW_TRUE@install-dropshadow: install-dropshadowDATA install-dropshadowpkgLTLIBRARIES
+
+@USE_MODULE_CLOCK_TRUE@.PHONY: clock install-clock
+@USE_MODULE_CLOCK_TRUE@clock: $(clockpkg_LTLIBRARIES) $(clock_DATA)
+@USE_MODULE_CLOCK_TRUE@install-clock: install-clockDATA install-clockpkgLTLIBRARIES
+
+@USE_MODULE_PAGER_TRUE@.PHONY: pager install-pager
+@USE_MODULE_PAGER_TRUE@pager: $(pagerpkg_LTLIBRARIES) $(pager_DATA)
+@USE_MODULE_PAGER_TRUE@install-pager: install-pagerDATA install-pagerpkgLTLIBRARIES
+
+@USE_MODULE_BATTERY_TRUE@.PHONY: battery install-battery
+@USE_MODULE_BATTERY_TRUE@battery: $(batterypkg_LTLIBRARIES) $(battery_DATA) $(batget_PROGRAMS)
+@USE_MODULE_BATTERY_TRUE@install-battery: install-batteryDATA install-batterypkgLTLIBRARIES install-batgetPROGRAMS
+
+@USE_MODULE_TEMPERATURE_TRUE@.PHONY: temperature install-temperature
+@USE_MODULE_TEMPERATURE_TRUE@temperature: $(temperaturepkg_LTLIBRARIES) $(temperature_DATA) $(tempget_PROGRAMS)
+@USE_MODULE_TEMPERATURE_TRUE@install-temperature: install-temperatureDATA install-temperaturepkgLTLIBRARIES install-tempgetPROGRAMS
+
+@USE_MODULE_NOTIFICATION_TRUE@.PHONY: notification install-notification
+@USE_MODULE_NOTIFICATION_TRUE@notification: $(notificationpkg_LTLIBRARIES) $(notification_DATA)
+@USE_MODULE_NOTIFICATION_TRUE@install-notification: install-notificationDATA install-notificationpkgLTLIBRARIES
+
 @USE_MODULE_CPUFREQ_TRUE@cpufreq-install-data-hook:
 @USE_MODULE_CPUFREQ_TRUE@	@chown $(cpufreq_setuid_root_user) $(DESTDIR)$(freqsetdir)/freqset$(EXEEXT) || true
 @USE_MODULE_CPUFREQ_TRUE@	@chmod $(cpufreq_setuid_root_mode) $(DESTDIR)$(freqsetdir)/freqset$(EXEEXT) || true
+
+@USE_MODULE_CPUFREQ_TRUE@.PHONY: cpufreq install-cpufreq
+@USE_MODULE_CPUFREQ_TRUE@cpufreq: $(cpufreqpkg_LTLIBRARIES) $(cpufreq_DATA) $(freqset_PROGRAMS)
+@USE_MODULE_CPUFREQ_TRUE@install-cpufreq: install-cpufreqDATA install-cpufreqpkgLTLIBRARIES install-freqsetPROGRAMS
+
+@USE_MODULE_IBOX_TRUE@.PHONY: ibox install-ibox
+@USE_MODULE_IBOX_TRUE@ibox: $(iboxpkg_LTLIBRARIES) $(ibox_DATA)
+@USE_MODULE_IBOX_TRUE@install-ibox: install-iboxDATA install-iboxpkgLTLIBRARIES
+
+@USE_MODULE_START_TRUE@.PHONY: start install-start
+@USE_MODULE_START_TRUE@start: $(startpkg_LTLIBRARIES) $(start_DATA)
+@USE_MODULE_START_TRUE@install-start: install-startDATA install-startpkgLTLIBRARIES
+
+@USE_MODULE_WINLIST_TRUE@.PHONY: winlist install-winlist
+@USE_MODULE_WINLIST_TRUE@winlist: $(winlistpkg_LTLIBRARIES) $(winlist_DATA)
+@USE_MODULE_WINLIST_TRUE@install-winlist: install-winlistDATA install-winlistpkgLTLIBRARIES
+
+@USE_MODULE_FILEMAN_TRUE@.PHONY: fileman install-fileman
+@USE_MODULE_FILEMAN_TRUE@fileman: $(filemanpkg_LTLIBRARIES) $(fileman_DATA)
+@USE_MODULE_FILEMAN_TRUE@install-fileman: install-filemanDATA install-filemanpkgLTLIBRARIES
+
+@USE_MODULE_FILEMAN_OPINFO_TRUE@.PHONY: fileman_opinfo install-fileman_opinfo
+@USE_MODULE_FILEMAN_OPINFO_TRUE@fileman_opinfo: $(fileman_opinfopkg_LTLIBRARIES) $(fileman_opinfo_DATA)
+@USE_MODULE_FILEMAN_OPINFO_TRUE@install-fileman_opinfo: install-fileman_opinfoDATA install-fileman_opinfopkgLTLIBRARIES
 
 @USE_MODULE_WIZARD_TRUE@wizard/e_mod_comp_main.h: $(abs_top_srcdir)/src/modules/comp/e_mod_main.h
 @USE_MODULE_WIZARD_TRUE@	$(AM_V_GEN) $(LN_S) -f $< $@
@@ -8937,20 +8917,190 @@ uninstall-am: uninstall-accessDATA uninstall-accesspkgLTLIBRARIES \
 
 @USE_MODULE_WIZARD_TRUE@$(wizard_page_150_la_OBJECTS): wizard/e_mod_comp_cfdata.c
 
+@USE_MODULE_WIZARD_TRUE@.PHONY: wizard install-wizard
+@USE_MODULE_WIZARD_TRUE@wizard: $(wizardpkg_LTLIBRARIES) $(wizard_DATA)
+@USE_MODULE_WIZARD_TRUE@install-wizard: install-wizardDATA install-wizardpkgLTLIBRARIES
+
+@USE_MODULE_CONF_TRUE@.PHONY: conf install-conf
+@USE_MODULE_CONF_TRUE@conf: $(confpkg_LTLIBRARIES) $(conf_DATA)
+@USE_MODULE_CONF_TRUE@install-conf: install-confDATA install-confpkgLTLIBRARIES
+
+@USE_MODULE_CONF_WALLPAPER2_TRUE@.PHONY: conf_wallpaper2 install-conf_wallpaper2
+@USE_MODULE_CONF_WALLPAPER2_TRUE@conf_wallpaper2: $(conf_wallpaper2pkg_LTLIBRARIES) $(conf_wallpaper2_DATA)
+@USE_MODULE_CONF_WALLPAPER2_TRUE@install-conf_wallpaper2: install-conf_wallpaper2DATA install-conf_wallpaper2pkgLTLIBRARIES
+
+@USE_MODULE_CONF_THEME_TRUE@.PHONY: conf_theme install-conf_theme
+@USE_MODULE_CONF_THEME_TRUE@conf_theme: $(conf_themepkg_LTLIBRARIES) $(conf_theme_DATA)
+@USE_MODULE_CONF_THEME_TRUE@install-conf_theme: install-conf_themeDATA install-conf_themepkgLTLIBRARIES
+
+@USE_MODULE_CONF_INTL_TRUE@.PHONY: conf_intl install-conf_intl
+@USE_MODULE_CONF_INTL_TRUE@conf_intl: $(conf_intlpkg_LTLIBRARIES) $(conf_intl_DATA)
+@USE_MODULE_CONF_INTL_TRUE@install-conf_intl: install-conf_intlDATA install-conf_intlpkgLTLIBRARIES
+
+@USE_MODULE_MSGBUS_TRUE@.PHONY: msgbus install-msgbus
+@USE_MODULE_MSGBUS_TRUE@msgbus: $(msgbuspkg_LTLIBRARIES) $(msgbus_DATA)
+@USE_MODULE_MSGBUS_TRUE@install-msgbus: install-msgbusDATA install-msgbuspkgLTLIBRARIES
+
+@USE_MODULE_CONF_APPLICATIONS_TRUE@.PHONY: conf_applications install-conf_applications
+@USE_MODULE_CONF_APPLICATIONS_TRUE@conf_applications: $(conf_applicationspkg_LTLIBRARIES) $(conf_applications_DATA)
+@USE_MODULE_CONF_APPLICATIONS_TRUE@install-conf_applications: install-conf_applicationsDATA install-conf_applicationspkgLTLIBRARIES
+
+@USE_MODULE_CONF_DISPLAY_TRUE@.PHONY: conf_display install-conf_display
+@USE_MODULE_CONF_DISPLAY_TRUE@conf_display: $(conf_displaypkg_LTLIBRARIES) $(conf_display_DATA)
+@USE_MODULE_CONF_DISPLAY_TRUE@install-conf_display: install-conf_displayDATA install-conf_displaypkgLTLIBRARIES
+
+@USE_MODULE_CONF_SHELVES_TRUE@.PHONY: conf_shelves install-conf_shelves
+@USE_MODULE_CONF_SHELVES_TRUE@conf_shelves: $(conf_shelvespkg_LTLIBRARIES) $(conf_shelves_DATA)
+@USE_MODULE_CONF_SHELVES_TRUE@install-conf_shelves: install-conf_shelvesDATA install-conf_shelvespkgLTLIBRARIES
+
+@USE_MODULE_CONF_KEYBINDINGS_TRUE@.PHONY: conf_keybindings install-conf_keybindings
+@USE_MODULE_CONF_KEYBINDINGS_TRUE@conf_keybindings: $(conf_keybindingspkg_LTLIBRARIES) $(conf_keybindings_DATA)
+@USE_MODULE_CONF_KEYBINDINGS_TRUE@install-conf_keybindings: install-conf_keybindingsDATA install-conf_keybindingspkgLTLIBRARIES
+
+@USE_MODULE_CONF_EDGEBINDINGS_TRUE@.PHONY: conf_edgebindings install-conf_edgebindings
+@USE_MODULE_CONF_EDGEBINDINGS_TRUE@conf_edgebindings: $(conf_edgebindingspkg_LTLIBRARIES) $(conf_edgebindings_DATA)
+@USE_MODULE_CONF_EDGEBINDINGS_TRUE@install-conf_edgebindings: install-conf_edgebindingsDATA install-conf_edgebindingspkgLTLIBRARIES
+
+@USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@.PHONY: conf_window_remembers install-conf_window_remembers
+@USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@conf_window_remembers: $(conf_window_rememberspkg_LTLIBRARIES) $(conf_window_remembers_DATA)
+@USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@install-conf_window_remembers: install-conf_window_remembersDATA install-conf_window_rememberspkgLTLIBRARIES
+
+@USE_MODULE_CONF_WINDOW_MANIPULATION_TRUE@.PHONY: conf_window_manipulation install-conf_window_manipulation
+@USE_MODULE_CONF_WINDOW_MANIPULATION_TRUE@conf_window_manipulation: $(conf_window_manipulationpkg_LTLIBRARIES) $(conf_window_manipulation_DATA)
+@USE_MODULE_CONF_WINDOW_MANIPULATION_TRUE@install-conf_window_manipulation: install-conf_window_manipulationDATA install-conf_window_manipulationpkgLTLIBRARIES
+
+@USE_MODULE_CONF_MENUS_TRUE@.PHONY: conf_menus install-conf_menus
+@USE_MODULE_CONF_MENUS_TRUE@conf_menus: $(conf_menuspkg_LTLIBRARIES) $(conf_menus_DATA)
+@USE_MODULE_CONF_MENUS_TRUE@install-conf_menus: install-conf_menusDATA install-conf_menuspkgLTLIBRARIES
+
+@USE_MODULE_CONF_DIALOGS_TRUE@.PHONY: conf_dialogs install-conf_dialogs
+@USE_MODULE_CONF_DIALOGS_TRUE@conf_dialogs: $(conf_dialogspkg_LTLIBRARIES) $(conf_dialogs_DATA)
+@USE_MODULE_CONF_DIALOGS_TRUE@install-conf_dialogs: install-conf_dialogsDATA install-conf_dialogspkgLTLIBRARIES
+
+@USE_MODULE_CONF_PERFORMANCE_TRUE@.PHONY: conf_performance install-conf_performance
+@USE_MODULE_CONF_PERFORMANCE_TRUE@conf_performance: $(conf_performancepkg_LTLIBRARIES) $(conf_performance_DATA)
+@USE_MODULE_CONF_PERFORMANCE_TRUE@install-conf_performance: install-conf_performanceDATA install-conf_performancepkgLTLIBRARIES
+
+@USE_MODULE_CONF_PATHS_TRUE@.PHONY: conf_paths install-conf_paths
+@USE_MODULE_CONF_PATHS_TRUE@conf_paths: $(conf_pathspkg_LTLIBRARIES) $(conf_paths_DATA)
+@USE_MODULE_CONF_PATHS_TRUE@install-conf_paths: install-conf_pathsDATA install-conf_pathspkgLTLIBRARIES
+
+@USE_MODULE_CONF_INTERACTION_TRUE@.PHONY: conf_interaction install-conf_interaction
+@USE_MODULE_CONF_INTERACTION_TRUE@conf_interaction: $(conf_interactionpkg_LTLIBRARIES) $(conf_interaction_DATA)
+@USE_MODULE_CONF_INTERACTION_TRUE@install-conf_interaction: install-conf_interactionDATA install-conf_interactionpkgLTLIBRARIES
+
+@USE_MODULE_CONF_RANDR_TRUE@.PHONY: conf_randr install-conf_randr
+@USE_MODULE_CONF_RANDR_TRUE@conf_randr: $(conf_randrpkg_LTLIBRARIES) $(conf_randr_DATA)
+@USE_MODULE_CONF_RANDR_TRUE@install-conf_randr: install-conf_randrDATA install-conf_randrpkgLTLIBRARIES
+
+@USE_MODULE_GADMAN_TRUE@.PHONY: gadman install-gadman
+@USE_MODULE_GADMAN_TRUE@gadman: $(gadmanpkg_LTLIBRARIES) $(gadman_DATA)
+@USE_MODULE_GADMAN_TRUE@install-gadman: install-gadmanDATA install-gadmanpkgLTLIBRARIES
+
+@USE_MODULE_MIXER_TRUE@.PHONY: mixer install-mixer
+@USE_MODULE_MIXER_TRUE@mixer: $(mixerpkg_LTLIBRARIES) $(mixer_DATA)
+@USE_MODULE_MIXER_TRUE@install-mixer: install-mixerDATA install-mixerpkgLTLIBRARIES
+
 @USE_MODULE_ILLUME2_TRUE@illume2/%.edj: illume2/%.edc Makefile
 @USE_MODULE_ILLUME2_TRUE@	$(EDJE_CC) $(ILLUME2_EDJE_FLAGS) $< $@
+
+# TODO: incomplete
+@USE_MODULE_ILLUME2_TRUE@.PHONY: illume2 install-illume2
+@USE_MODULE_ILLUME2_TRUE@illume2: $(illume2pkg_LTLIBRARIES) $(illume2_DATA)
+@USE_MODULE_ILLUME2_TRUE@install-illume2: install-illume2DATA install-illume2pkgLTLIBRARIES
+
+@USE_MODULE_ILLUME2_TRUE@.PHONY: illume_home install-illume_home
+@USE_MODULE_ILLUME2_TRUE@illume_home: $(illume_homepkg_LTLIBRARIES) $(illume_home_DATA)
+@USE_MODULE_ILLUME2_TRUE@install-illume_home: install-illume_homeDATA install-illume_homepkgLTLIBRARIES
+
+@USE_MODULE_ILLUME2_TRUE@.PHONY: illume_home_toggle install-illume_home_toggle
+@USE_MODULE_ILLUME2_TRUE@illume_home_toggle: $(illume_home_togglepkg_LTLIBRARIES) $(illume_home_toggle_DATA)
+@USE_MODULE_ILLUME2_TRUE@install-illume_home_toggle: install-illume_home_toggleDATA install-illume_home_togglepkgLTLIBRARIES
 
 @USE_MODULE_ILLUME2_TRUE@illume-softkey/%.edj: illume-softkey/%.edc Makefile
 @USE_MODULE_ILLUME2_TRUE@	$(EDJE_CC) $(ILLUME_SOFTKEY_EDJE_FLAGS) $< $@
 
+@USE_MODULE_ILLUME2_TRUE@.PHONY: illume_softkey install-illume_softkey
+@USE_MODULE_ILLUME2_TRUE@illume_softkey: $(illume_softkeypkg_LTLIBRARIES) $(illume_softkey_DATA)
+@USE_MODULE_ILLUME2_TRUE@install-illume_softkey: install-illume_softkeyDATA install-illume_softkeypkgLTLIBRARIES
+
 @USE_MODULE_ILLUME2_TRUE@illume-keyboard/%.edj: illume-keyboard/%.edc Makefile
 @USE_MODULE_ILLUME2_TRUE@	$(EDJE_CC) $(ILLUME_KEYBOARD_EDJE_FLAGS) $< $@
+
+# TODO: incomplete
+@USE_MODULE_ILLUME2_TRUE@.PHONY: illume_keyboard install-illume_keyboard
+@USE_MODULE_ILLUME2_TRUE@illume_keyboard: $(illume_keyboardpkg_LTLIBRARIES) $(illume_keyboard_DATA)
+@USE_MODULE_ILLUME2_TRUE@install-illume_keyboard: install-illume_keyboardDATA install-illume_keyboardpkgLTLIBRARIES
 
 @USE_MODULE_ILLUME2_TRUE@illume-indicator/%.edj: illume-indicator/%.edc Makefile
 @USE_MODULE_ILLUME2_TRUE@	$(EDJE_CC) $(ILLUME_INDICATOR_EDJE_FLAGS) $< $@
 
+@USE_MODULE_ILLUME2_TRUE@.PHONY: illume_indicator install-illume_indicator
+@USE_MODULE_ILLUME2_TRUE@illume_indicator: $(illume_indicatorpkg_LTLIBRARIES) $(illume_indicator_DATA)
+@USE_MODULE_ILLUME2_TRUE@install-illume_indicator: install-illume_indicatorDATA install-illume_indicatorpkgLTLIBRARIES
+
+@USE_MODULE_ILLUME2_TRUE@.PHONY: illume_kbd_toggle install-illume_kbd_toggle
+@USE_MODULE_ILLUME2_TRUE@illume_kbd_toggle: $(illume_kbd_togglepkg_LTLIBRARIES) $(illume_kbd_toggle_DATA)
+@USE_MODULE_ILLUME2_TRUE@install-illume_kbd_toggle: install-illume_kbd_toggleDATA install-illume_kbd_togglepkgLTLIBRARIES
+
+@USE_MODULE_ILLUME2_TRUE@.PHONY: illume_mode_toggle install-illume_mode_toggle
+@USE_MODULE_ILLUME2_TRUE@illume_mode_toggle: $(illume_mode_togglepkg_LTLIBRARIES) $(illume_mode_toggle_DATA)
+@USE_MODULE_ILLUME2_TRUE@install-illume_mode_toggle: install-illume_mode_toggleDATA install-illume_mode_togglepkgLTLIBRARIES
+
+@USE_MODULE_ILLUME2_TRUE@.PHONY: illume_bluetooth install-illume_bluetooth
+@USE_MODULE_ILLUME2_TRUE@illume_bluetooth: $(illume_bluetoothpkg_LTLIBRARIES) $(illume_bluetooth_DATA)
+@USE_MODULE_ILLUME2_TRUE@install-illume_bluetooth: install-illume_bluetoothDATA install-illume_bluetoothpkgLTLIBRARIES
+
+@USE_MODULE_SYSCON_TRUE@.PHONY: syscon install-syscon
+@USE_MODULE_SYSCON_TRUE@syscon: $(sysconpkg_LTLIBRARIES) $(syscon_DATA)
+@USE_MODULE_SYSCON_TRUE@install-syscon: install-sysconDATA install-sysconpkgLTLIBRARIES
+
+@USE_MODULE_EVERYTHING_TRUE@.PHONY: everything install-everything
+@USE_MODULE_EVERYTHING_TRUE@everything: $(everythingpkg_LTLIBRARIES) $(everything_DATA)
+@USE_MODULE_EVERYTHING_TRUE@install-everything: install-everythingDATA install-everythingpkgLTLIBRARIES install-everything_pkgconfig_DATA
+
+@USE_MODULE_SYSTRAY_TRUE@.PHONY: systray install-systray
+@USE_MODULE_SYSTRAY_TRUE@systray: $(systraypkg_LTLIBRARIES) $(systray_DATA)
+@USE_MODULE_SYSTRAY_TRUE@install-systray: install-systrayDATA install-systraypkgLTLIBRARIES
+
+@USE_MODULE_COMP_TRUE@.PHONY: comp install-comp
+@USE_MODULE_COMP_TRUE@comp: $(comppkg_LTLIBRARIES) $(comp_DATA)
+@USE_MODULE_COMP_TRUE@install-comp: install-compDATA install-comppkgLTLIBRARIES
+
+@USE_MODULE_PHYSICS_TRUE@.PHONY: physics install-physics
+@USE_MODULE_PHYSICS_TRUE@physics: $(physicspkg_LTLIBRARIES) $(physics_DATA)
+@USE_MODULE_PHYSICS_TRUE@install-physics: install-physicsDATA install-physicspkgLTLIBRARIES
+
+@USE_MODULE_QUICKACCESS_TRUE@.PHONY: quickaccess install-quickaccess
+@USE_MODULE_QUICKACCESS_TRUE@quickaccess: $(quickaccesspkg_LTLIBRARIES) $(quickaccess_DATA)
+@USE_MODULE_QUICKACCESS_TRUE@install-quickaccess: install-quickaccessDATA install-quickaccesspkgLTLIBRARIES
+
+@USE_MODULE_SHOT_TRUE@.PHONY: shot install-shot
+@USE_MODULE_SHOT_TRUE@shot: $(shotpkg_LTLIBRARIES) $(shot_DATA)
+@USE_MODULE_SHOT_TRUE@install-shot: install-shotDATA install-shotpkgLTLIBRARIES
+
+@USE_MODULE_BACKLIGHT_TRUE@.PHONY: backlight install-backlight
+@USE_MODULE_BACKLIGHT_TRUE@backlight: $(backlightpkg_LTLIBRARIES) $(backlight_DATA)
+@USE_MODULE_BACKLIGHT_TRUE@install-backlight: install-backlightDATA install-backlightpkgLTLIBRARIES
+
+@USE_MODULE_TASKS_TRUE@.PHONY: tasks install-tasks
+@USE_MODULE_TASKS_TRUE@tasks: $(taskspkg_LTLIBRARIES) $(tasks_DATA)
+@USE_MODULE_TASKS_TRUE@install-tasks: install-tasksDATA install-taskspkgLTLIBRARIES
+
+@USE_MODULE_XKBSWITCH_TRUE@.PHONY: xkbswitch install-xkbswitch
+@USE_MODULE_XKBSWITCH_TRUE@xkbswitch: $(xkbswitchpkg_LTLIBRARIES) $(xkbswitch_DATA)
+@USE_MODULE_XKBSWITCH_TRUE@install-xkbswitch: install-xkbswitchDATA install-xkbswitchpkgLTLIBRARIES
+
 @USE_MODULE_TILING_TRUE@tiling/%.edj: tiling/%.edc Makefile
 @USE_MODULE_TILING_TRUE@	$(EDJE_CC) $(TILING_EDJE_FLAGS) $< $@
+
+@USE_MODULE_TILING_TRUE@.PHONY: tiling install-tiling
+@USE_MODULE_TILING_TRUE@tiling: $(tilingpkg_LTLIBRARIES) $(tiling_DATA)
+@USE_MODULE_TILING_TRUE@install-tiling: install-tilingDATA install-tilingpkgLTLIBRARIES
+
+@USE_MODULE_ACCESS_TRUE@.PHONY: access install-access
+@USE_MODULE_ACCESS_TRUE@access: $(accesspkg_LTLIBRARIES) $(access_DATA)
+@USE_MODULE_ACCESS_TRUE@install-access: install-accessDATA install-accesspkgLTLIBRARIES
 
 #if HAVE_WAYLAND_DRM
 #include Makefile_wl_drm.am

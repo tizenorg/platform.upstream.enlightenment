@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: enlightenment 0.17\n"
 "Report-Msgid-Bugs-To: enlightenment-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2012-11-16 14:54+0000\n"
+"POT-Creation-Date: 2012-11-23 18:04+0000\n"
 "PO-Revision-Date: 2011-03-18 13:15+0800\n"
 "Last-Translator: TeliuTe <teliute@163.com>\n"
 "Language-Team: Chinese (simplified) <i18n-zh@googlegroups.com>\n"
@@ -19,20 +19,20 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/bin/e_about.c:14
+#: src/bin/e_about.c:15
 msgid "About Enlightenment"
 msgstr "关于 Enlightenment"
 
-#: src/bin/e_about.c:17 src/bin/e_actions.c:3000 src/bin/e_config_dialog.c:288
+#: src/bin/e_about.c:18 src/bin/e_actions.c:3000 src/bin/e_config_dialog.c:288
 #: src/bin/e_fm.c:1029 src/bin/e_int_border_menu.c:194
-#: src/bin/e_int_border_prop.c:81 src/bin/e_theme_about.c:17
+#: src/bin/e_int_border_prop.c:81 src/bin/e_theme_about.c:24
 #: src/modules/conf/e_conf.c:179
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:880
 #: src/modules/fileman/e_fwin.c:2510 src/modules/mixer/app_mixer.c:521
 msgid "Close"
 msgstr "关闭"
 
-#: src/bin/e_about.c:18 src/bin/e_actions.c:3375 src/bin/e_actions.c:3379
+#: src/bin/e_about.c:19 src/bin/e_actions.c:3375 src/bin/e_actions.c:3379
 #: src/bin/e_actions.c:3383 src/bin/e_int_menus.c:228 src/bin/e_main.c:620
 #: src/modules/conf_interaction/e_int_config_mouse.c:192
 #: src/modules/conf_window_remembers/e_int_config_remembers.c:221
@@ -40,26 +40,22 @@ msgstr "关闭"
 msgid "Enlightenment"
 msgstr "Enlightenment"
 
-#: src/bin/e_about.c:23
+#: src/bin/e_about.c:24
 #, fuzzy
 msgid ""
-"<title>Copyright &copy; 1999-2012, by the Enlightenment Development Team</"
+"<title>Copyright &copy; 2000-2012, by the Enlightenment Development Team</"
 "><br><br>We hope you enjoy using this software as much as we enjoyed writing "
-"it.<br><br>This software is provided as-is with no explicit or implied "
-"warranty. This software is governed by licensing conditions, so please see "
-"the COPYING and COPYING-PLAIN licence files installed on your system."
-"<br><br>Enlightenment is under <hilight>HEAVY DEVELOPMENT</> and it is not "
-"stable. Many features are incomplete or even non-existent yet and may have "
-"many bugs. You have been <hilight>WARNED!</>"
+"it.<br><br>To contact us please visit:<br><hilight>http://www.enlightenment."
+"org</><br><br>"
 msgstr ""
-"版权所有 &copy; 1999-2010,  Enlightenment 开发团队。<br><br>我们希望您能像我"
-"们喜欢开发这款软件一样喜欢这款软件。<br><br>本软件不提供明确或隐含的保证。该"
-"软件是在软件许可下的，所以请在使用前阅读安装在您系统的 COPYING 和 COPYING-"
-"PLAIN 许可文件。<br><br>Enlightenment 进行了 <hilight>大量的开发</hilight> 并"
-"且并不稳定，很多功能尚未完成或并不存在，还有很多 bug。您已经被 <hilight>警告"
-"</hilight> 过了！"
+"这是 Enlightenment %s 。\n"
+"版权所有 © 1999-2005，Enlightenment 开发小组。\n"
+"\n"
+"我们希望您能像我们开发这个软件一样开心地使用它。\n"
+"\n"
+"请想想土豚们。它们也需要关爱。"
 
-#: src/bin/e_about.c:50
+#: src/bin/e_about.c:71
 #, fuzzy
 msgid "<title>The Team</><br><br>"
 msgstr "<title>开发组</title>"
@@ -86,7 +82,7 @@ msgstr "杀死"
 #: src/bin/e_actions.c:377 src/bin/e_actions.c:2223 src/bin/e_actions.c:2286
 #: src/bin/e_actions.c:2349 src/bin/e_actions.c:2417 src/bin/e_actions.c:2485
 #: src/bin/e_confirm_dialog.c:53 src/bin/e_desklock.c:1313
-#: src/bin/e_fm.c:10021 src/bin/e_fm.c:10385 src/bin/e_screensaver.c:167
+#: src/bin/e_fm.c:10026 src/bin/e_fm.c:10390 src/bin/e_screensaver.c:167
 msgid "No"
 msgstr "否"
 
@@ -105,7 +101,8 @@ msgstr "退出"
 
 #: src/bin/e_actions.c:2126 src/bin/e_color_dialog.c:47
 #: src/bin/e_eap_editor.c:862 src/bin/e_eap_editor.c:926
-#: src/bin/e_entry_dialog.c:64 src/bin/e_fm.c:9558 src/bin/e_fm_prop.c:625
+#: src/bin/e_entry_dialog.c:64 src/bin/e_fm.c:9561 src/bin/e_fm_prop.c:625
+#: src/bin/e_import_dialog.c:189 src/bin/e_import_config_dialog.c:531
 #: src/modules/conf_intl/e_int_config_imc_import.c:124
 #: src/modules/conf_theme/e_int_config_theme_import.c:124
 #: src/modules/fileman/e_int_config_mime_edit.c:316
@@ -177,6 +174,7 @@ msgid ""
 msgstr "您正要休眠计算机。<br><br>确定要休眠计算机吗？"
 
 #: src/bin/e_actions.c:2483 src/bin/e_actions.c:3434
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:379
 msgid "Hibernate"
 msgstr "休眠"
 
@@ -188,7 +186,7 @@ msgstr "休眠"
 msgid "Window : Actions"
 msgstr "窗口：动作"
 
-#: src/bin/e_actions.c:2960 src/bin/e_fm.c:11145
+#: src/bin/e_actions.c:2960 src/bin/e_fm.c:11150
 #: src/bin/e_int_border_menu.c:665
 msgid "Move"
 msgstr "移动"
@@ -911,11 +909,11 @@ msgstr ""
 #: src/bin/e_config.c:1697 src/bin/e_config.c:2323
 #: src/bin/e_config_dialog.c:278 src/bin/e_eap_editor.c:860
 #: src/bin/e_eap_editor.c:924 src/bin/e_entry_dialog.c:63 src/bin/e_exec.c:608
-#: src/bin/e_fm.c:9557 src/bin/e_fm.c:10291 src/bin/e_fm_prop.c:624
-#: src/bin/e_int_border_remember.c:318 src/bin/e_int_border_remember.c:507
-#: src/bin/e_module.c:425 src/bin/e_module.c:792 src/bin/e_sys.c:618
-#: src/bin/e_sys.c:659 src/bin/e_utils.c:700
-#: src/modules/comp/e_mod_config.c:918
+#: src/bin/e_fm.c:9560 src/bin/e_fm.c:10296 src/bin/e_fm_prop.c:624
+#: src/bin/e_import_config_dialog.c:530 src/bin/e_int_border_remember.c:318
+#: src/bin/e_int_border_remember.c:507 src/bin/e_module.c:425
+#: src/bin/e_module.c:792 src/bin/e_sys.c:618 src/bin/e_sys.c:659
+#: src/bin/e_utils.c:692 src/modules/comp/e_mod_config.c:918
 #: src/modules/conf_intl/e_int_config_imc_import.c:120
 #: src/modules/conf_theme/e_int_config_theme_import.c:120
 #: src/modules/cpufreq/e_mod_main.c:428 src/modules/cpufreq/e_mod_main.c:457
@@ -1063,7 +1061,7 @@ msgid "Preferences"
 msgstr "图标首选项"
 
 #: src/bin/e_confirm_dialog.c:52 src/bin/e_desklock.c:1311
-#: src/bin/e_fm.c:10024 src/bin/e_screensaver.c:165
+#: src/bin/e_fm.c:10029 src/bin/e_screensaver.c:165
 msgid "Yes"
 msgstr "是"
 
@@ -1224,7 +1222,7 @@ msgstr "在终端中运行"
 msgid "Show in Menus"
 msgstr "显示在菜单中"
 
-#: src/bin/e_eap_editor.c:790 src/bin/e_fm.c:8422 src/bin/e_fm.c:8582
+#: src/bin/e_eap_editor.c:790 src/bin/e_fm.c:8425 src/bin/e_fm.c:8585
 #: src/bin/e_int_border_remember.c:763
 #: src/modules/xkbswitch/e_mod_config.c:332
 msgid "Options"
@@ -1239,11 +1237,12 @@ msgstr "选择一个图标"
 msgid "Select an Executable"
 msgstr "选择一个可执行文件"
 
-#: src/bin/e_entry.c:436 src/bin/e_fm.c:8767 src/bin/e_fm.c:10384
+#: src/bin/e_entry.c:443 src/bin/e_fm.c:8770 src/bin/e_fm.c:10389
 #: src/bin/e_shelf.c:1785 src/bin/e_shelf.c:2428
 #: src/modules/conf_dialogs/e_int_config_profiles.c:134
 #: src/modules/conf_dialogs/e_int_config_profiles.c:335
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:266
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:201
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:246
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:294
 #: src/modules/conf_paths/e_int_config_env.c:315
@@ -1254,24 +1253,24 @@ msgstr "选择一个可执行文件"
 msgid "Delete"
 msgstr "删除"
 
-#: src/bin/e_entry.c:446 src/bin/e_fm.c:8678
+#: src/bin/e_entry.c:453 src/bin/e_fm.c:8681
 msgid "Cut"
 msgstr "剪切"
 
-#: src/bin/e_entry.c:455 src/bin/e_fm.c:8692 src/bin/e_fm.c:11140
+#: src/bin/e_entry.c:462 src/bin/e_fm.c:8695 src/bin/e_fm.c:11145
 msgid "Copy"
 msgstr "复制"
 
-#: src/bin/e_entry.c:465 src/bin/e_fm.c:8483 src/bin/e_fm.c:8705
+#: src/bin/e_entry.c:472 src/bin/e_fm.c:8486 src/bin/e_fm.c:8708
 msgid "Paste"
 msgstr "粘贴"
 
-#: src/bin/e_entry.c:476
+#: src/bin/e_entry.c:483
 msgid "Select All"
 msgstr "全选"
 
 #: src/bin/e_exec.c:397 src/bin/e_exec.c:405 src/bin/e_exec.c:416
-#: src/bin/e_exec.c:468 src/bin/e_utils.c:196
+#: src/bin/e_exec.c:468 src/bin/e_utils.c:188
 #: src/modules/conf_intl/e_int_config_imc.c:273
 #: src/modules/conf_intl/e_int_config_imc.c:522
 msgid "Run Error"
@@ -1451,279 +1450,279 @@ msgstr "弹出错误"
 msgid "Can't eject device"
 msgstr "无法弹出设备"
 
-#: src/bin/e_fm.c:8340 src/modules/fileman/e_mod_config.c:356
+#: src/bin/e_fm.c:8343 src/modules/fileman/e_mod_config.c:356
 msgid "Case Sensitive"
 msgstr "区分大小写"
 
-#: src/bin/e_fm.c:8346 src/modules/fileman/e_mod_config.c:359
+#: src/bin/e_fm.c:8349 src/modules/fileman/e_mod_config.c:359
 #, fuzzy
 msgid "Sort By Extension"
 msgstr "显示图标扩展"
 
-#: src/bin/e_fm.c:8352 src/modules/fileman/e_mod_config.c:362
+#: src/bin/e_fm.c:8355 src/modules/fileman/e_mod_config.c:362
 msgid "Sort By Modification Time"
 msgstr ""
 
-#: src/bin/e_fm.c:8358 src/modules/fileman/e_mod_config.c:365
+#: src/bin/e_fm.c:8361 src/modules/fileman/e_mod_config.c:365
 #, fuzzy
 msgid "Sort By Size"
 msgstr "按日期排列"
 
-#: src/bin/e_fm.c:8367 src/modules/fileman/e_mod_config.c:373
+#: src/bin/e_fm.c:8370 src/modules/fileman/e_mod_config.c:373
 #, fuzzy
 msgid "Directories First"
 msgstr "搜索目录"
 
-#: src/bin/e_fm.c:8373 src/modules/fileman/e_mod_config.c:377
+#: src/bin/e_fm.c:8376 src/modules/fileman/e_mod_config.c:377
 #, fuzzy
 msgid "Directories Last"
 msgstr "搜索目录"
 
-#: src/bin/e_fm.c:8406 src/bin/e_fm.c:8566
+#: src/bin/e_fm.c:8409 src/bin/e_fm.c:8569
 #: src/modules/fileman/e_mod_config.c:303
 msgid "View Mode"
 msgstr "显示模式"
 
-#: src/bin/e_fm.c:8415 src/bin/e_fm.c:8575
+#: src/bin/e_fm.c:8418 src/bin/e_fm.c:8578
 #: src/modules/everything/evry_config.c:503
 #: src/modules/fileman/e_mod_config.c:381
 msgid "Sorting"
 msgstr "排序"
 
-#: src/bin/e_fm.c:8433 src/bin/e_fm.c:8593
+#: src/bin/e_fm.c:8436 src/bin/e_fm.c:8596
 msgid "Refresh View"
 msgstr "刷新视图"
 
-#: src/bin/e_fm.c:8444 src/bin/e_fm.c:8605
+#: src/bin/e_fm.c:8447 src/bin/e_fm.c:8608
 msgid "New..."
 msgstr ""
 
-#: src/bin/e_fm.c:8464 src/bin/e_fm.c:8626 src/bin/e_fm.c:8657
+#: src/bin/e_fm.c:8467 src/bin/e_fm.c:8629 src/bin/e_fm.c:8660
 #, fuzzy
 msgid "Actions..."
 msgstr "动作"
 
-#: src/bin/e_fm.c:8491 src/bin/e_fm.c:8713 src/bin/e_fm.c:11153
+#: src/bin/e_fm.c:8494 src/bin/e_fm.c:8716 src/bin/e_fm.c:11158
 msgid "Link"
 msgstr "连接"
 
-#: src/bin/e_fm.c:8775 src/bin/e_fm.c:10023 src/bin/e_shelf.c:2423
+#: src/bin/e_fm.c:8778 src/bin/e_fm.c:10028 src/bin/e_shelf.c:2423
 #: src/modules/conf_shelves/e_int_config_shelf.c:138
 msgid "Rename"
 msgstr "重命名"
 
-#: src/bin/e_fm.c:8794
+#: src/bin/e_fm.c:8797
 msgid "Unmount"
 msgstr "卸载"
 
-#: src/bin/e_fm.c:8799
+#: src/bin/e_fm.c:8802
 msgid "Mount"
 msgstr "挂载"
 
-#: src/bin/e_fm.c:8804
+#: src/bin/e_fm.c:8807
 msgid "Eject"
 msgstr "弹出"
 
-#: src/bin/e_fm.c:8819 src/bin/e_int_border_remember.c:742
+#: src/bin/e_fm.c:8822 src/bin/e_int_border_remember.c:742
 #: src/modules/ibar/e_mod_main.c:871
 msgid "Properties"
 msgstr "属性"
 
-#: src/bin/e_fm.c:8827
+#: src/bin/e_fm.c:8830
 msgid "Application Properties"
 msgstr "应用程序属性"
 
-#: src/bin/e_fm.c:8835 src/bin/e_fm_prop.c:115
+#: src/bin/e_fm.c:8838 src/bin/e_fm_prop.c:115
 msgid "File Properties"
 msgstr "文件属性"
 
-#: src/bin/e_fm.c:9051
+#: src/bin/e_fm.c:9054
 msgid "Use default"
 msgstr "使用默认"
 
-#: src/bin/e_fm.c:9081 src/modules/fileman/e_mod_config.c:308
+#: src/bin/e_fm.c:9084 src/modules/fileman/e_mod_config.c:308
 msgid "Grid Icons"
 msgstr "网格图标"
 
-#: src/bin/e_fm.c:9089 src/modules/fileman/e_mod_config.c:310
+#: src/bin/e_fm.c:9092 src/modules/fileman/e_mod_config.c:310
 msgid "Custom Icons"
 msgstr "自定义图标"
 
-#: src/bin/e_fm.c:9097 src/modules/everything/evry_config.c:430
+#: src/bin/e_fm.c:9100 src/modules/everything/evry_config.c:430
 #: src/modules/everything/evry_config.c:460
 #: src/modules/fileman/e_mod_config.c:318
 msgid "List"
 msgstr "列表"
 
-#: src/bin/e_fm.c:9105 src/modules/everything/evry_config.c:458
+#: src/bin/e_fm.c:9108 src/modules/everything/evry_config.c:458
 msgid "Default View"
 msgstr "默认查看器"
 
-#: src/bin/e_fm.c:9127
+#: src/bin/e_fm.c:9130
 #, c-format
 msgid "Icon Size (%d)"
 msgstr "图标大小  (%d)"
 
-#: src/bin/e_fm.c:9152 src/bin/e_fm.c:9230 src/bin/e_fm.c:9235
-#: src/bin/e_fm.c:9980 src/bin/e_fm.c:10192 src/bin/e_fm_prop.c:254
+#: src/bin/e_fm.c:9155 src/bin/e_fm.c:9233 src/bin/e_fm.c:9238
+#: src/bin/e_fm.c:9985 src/bin/e_fm.c:10197 src/bin/e_fm_prop.c:254
 #: src/bin/e_shelf.c:2298
 msgid "Error"
 msgstr "错误"
 
-#: src/bin/e_fm.c:9152
+#: src/bin/e_fm.c:9155
 #, fuzzy
 msgid "Could not create a file!"
 msgstr "载入模块时出错"
 
-#: src/bin/e_fm.c:9166 src/bin/e_fm.c:9184
+#: src/bin/e_fm.c:9169 src/bin/e_fm.c:9187
 #, fuzzy
 msgid "New File"
 msgstr "文件："
 
-#: src/bin/e_fm.c:9230
+#: src/bin/e_fm.c:9233
 msgid "Already creating a new file for this directory!"
 msgstr ""
 
-#: src/bin/e_fm.c:9235
+#: src/bin/e_fm.c:9238
 #, c-format
 msgid "%s is not able to be written to!"
 msgstr ""
 
-#: src/bin/e_fm.c:9254
+#: src/bin/e_fm.c:9257
 #, fuzzy
 msgid "Directory"
 msgstr "上一级目录"
 
-#: src/bin/e_fm.c:9259
+#: src/bin/e_fm.c:9262
 #: src/modules/conf_applications/e_int_config_defapps.c:311
 #, fuzzy
 msgid "File"
 msgstr "文件："
 
-#: src/bin/e_fm.c:9290
+#: src/bin/e_fm.c:9293
 msgid "Inherit parent settings"
 msgstr "继承上一级设定"
 
-#: src/bin/e_fm.c:9299
+#: src/bin/e_fm.c:9302
 msgid "Show Hidden Files"
 msgstr "显示隐藏文件"
 
-#: src/bin/e_fm.c:9311
+#: src/bin/e_fm.c:9314
 msgid "Remember Ordering"
 msgstr "记住顺序"
 
-#: src/bin/e_fm.c:9320
+#: src/bin/e_fm.c:9323
 msgid "Sort Now"
 msgstr "现在排序"
 
-#: src/bin/e_fm.c:9328
+#: src/bin/e_fm.c:9331
 #, fuzzy
 msgid "Single Click Activation"
 msgstr "启用单击"
 
-#: src/bin/e_fm.c:9339 src/modules/fileman/e_mod_config.c:393
+#: src/bin/e_fm.c:9342 src/modules/fileman/e_mod_config.c:393
 #, fuzzy
 msgid "Secure Deletion"
 msgstr "屏幕分辨率"
 
-#: src/bin/e_fm.c:9352
+#: src/bin/e_fm.c:9355
 #, fuzzy
 msgid "File Manager Settings"
 msgstr "Fileman 设置"
 
-#: src/bin/e_fm.c:9357
+#: src/bin/e_fm.c:9360
 #, fuzzy
 msgid "File Icon Settings"
 msgstr "Fileman 设置"
 
-#: src/bin/e_fm.c:9435 src/bin/e_fm.c:9651
+#: src/bin/e_fm.c:9438 src/bin/e_fm.c:9654
 msgid "Set background..."
 msgstr "设置背景..."
 
-#: src/bin/e_fm.c:9443
+#: src/bin/e_fm.c:9446
 #, fuzzy
 msgid "Clear background"
 msgstr "设置背景..."
 
-#: src/bin/e_fm.c:9450 src/bin/e_fm.c:9679
+#: src/bin/e_fm.c:9453 src/bin/e_fm.c:9682
 msgid "Set overlay..."
 msgstr "设定覆盖..."
 
-#: src/bin/e_fm.c:9456
+#: src/bin/e_fm.c:9459
 #, fuzzy
 msgid "Clear overlay"
 msgstr "设定覆盖..."
 
-#: src/bin/e_fm.c:9768
+#: src/bin/e_fm.c:9771
 msgid "Create a new Directory"
 msgstr "创建新文件夹"
 
-#: src/bin/e_fm.c:9769
+#: src/bin/e_fm.c:9772
 msgid "New Directory Name:"
 msgstr "新文件夹名称："
 
-#: src/bin/e_fm.c:9824 src/bin/e_fm.c:10118
+#: src/bin/e_fm.c:9827 src/bin/e_fm.c:10123
 #, c-format
 msgid "Rename %s to:"
 msgstr "重命名 %s 为："
 
-#: src/bin/e_fm.c:9826 src/bin/e_fm.c:10119
+#: src/bin/e_fm.c:9829 src/bin/e_fm.c:10124
 msgid "Rename File"
 msgstr "重命名文件"
 
-#: src/bin/e_fm.c:9976 src/bin/e_fm.c:10184
+#: src/bin/e_fm.c:9981 src/bin/e_fm.c:10189
 msgid "Retry"
 msgstr "重试"
 
-#: src/bin/e_fm.c:9977 src/bin/e_fm.c:10185 src/bin/e_fm.c:11161
+#: src/bin/e_fm.c:9982 src/bin/e_fm.c:10190 src/bin/e_fm.c:11166
 msgid "Abort"
 msgstr "关于"
 
-#: src/bin/e_fm.c:10022
+#: src/bin/e_fm.c:10027
 msgid "No to all"
 msgstr "全部选否"
 
-#: src/bin/e_fm.c:10025
+#: src/bin/e_fm.c:10030
 msgid "Yes to all"
 msgstr "全部选是"
 
-#: src/bin/e_fm.c:10028
+#: src/bin/e_fm.c:10033
 msgid "Warning"
 msgstr "警告"
 
-#: src/bin/e_fm.c:10031
+#: src/bin/e_fm.c:10036
 #, c-format
 msgid "File already exists, overwrite?<br><hilight>%s</hilight>"
 msgstr "文件已经存在，覆盖吗？<br><hilight>%s</hilight>"
 
-#: src/bin/e_fm.c:10187
+#: src/bin/e_fm.c:10192
 #, fuzzy
 msgid "Move Source"
 msgstr "移动到"
 
-#: src/bin/e_fm.c:10188
+#: src/bin/e_fm.c:10193
 msgid "Ignore this"
 msgstr "忽略"
 
-#: src/bin/e_fm.c:10189
+#: src/bin/e_fm.c:10194
 msgid "Ignore all"
 msgstr "忽略所有"
 
-#: src/bin/e_fm.c:10194
+#: src/bin/e_fm.c:10199
 #, c-format
 msgid "An error occurred while performing an operation.<br>%s"
 msgstr "执行操作时产生一个错误。<br>%s"
 
-#: src/bin/e_fm.c:10387
+#: src/bin/e_fm.c:10392
 msgid "Confirm Delete"
 msgstr "确认删除"
 
-#: src/bin/e_fm.c:10397
+#: src/bin/e_fm.c:10402
 #, fuzzy, c-format
 msgid "Are you sure you want to delete<br><hilight>%s</hilight>?"
 msgstr "您确定要删除 <br><hilight>%s</hilight> 吗？"
 
-#: src/bin/e_fm.c:10402
+#: src/bin/e_fm.c:10407
 #, fuzzy, c-format
 msgid ""
 "Are you sure you want to delete<br><hilight>all</hilight> the %d files "
@@ -1732,7 +1731,7 @@ msgstr ""
 "您确定要删除 <br>被选中的 %d 个文件吗？它们位于：<br><hilight>%s</hilight> "
 "中。"
 
-#: src/bin/e_fm.c:10412
+#: src/bin/e_fm.c:10417
 #, fuzzy, c-format
 msgid ""
 "Are you sure you want to delete<br>the %d selected file in<br><hilight>%s</"
@@ -1843,7 +1842,8 @@ msgstr "分组"
 msgid "Others:"
 msgstr "其它"
 
-#: src/bin/e_fm_prop.c:480 src/bin/e_widget_fsel.c:343
+#: src/bin/e_fm_prop.c:480 src/bin/e_import_config_dialog.c:468
+#: src/bin/e_widget_fsel.c:343
 #: src/modules/conf_theme/e_int_config_transitions.c:218
 #: src/modules/conf_theme/e_int_config_theme.c:1135
 #: src/modules/conf_theme/e_int_config_xsettings.c:497
@@ -1916,6 +1916,30 @@ msgstr "删除"
 msgid "Stop moving"
 msgstr ""
 
+#: src/bin/e_grab_dialog.c:3
+#: src/modules/conf_keybindings/e_int_config_keybindings.c:4
+msgid ""
+"Please press key sequence,<br><br>or <hilight>Escape</hilight> to abort."
+msgstr "请按下一个按键序列，或者按 <hilight>Esc 键</hilight> 中止。"
+
+#: src/bin/e_grab_dialog.c:5
+#: src/modules/conf_keybindings/e_int_config_mousebindings.c:7
+msgid ""
+"Please hold any modifier you want<br>and press any button on your mouse,<br> "
+"or roll a wheel, to assign mouse binding.<br>Press <hilight>Escape</"
+"highlight> to abort."
+msgstr ""
+"请按住想用的修饰键<br>，然后点一下任意鼠标按钮，<br>或者转一下滚轮，<br>来绑"
+"定鼠标按钮。<br>按 <hilight>Esc</highlight> 键取消。"
+
+#: src/bin/e_grab_dialog.c:128
+msgid "Mouse Binding Sequence"
+msgstr "鼠标绑定顺序"
+
+#: src/bin/e_grab_dialog.c:135
+msgid "Key Binding Sequence"
+msgstr "键绑定序列"
+
 #: src/bin/e_hints.c:152
 msgid ""
 "A previous instance of Enlightenment is still active\n"
@@ -1923,6 +1947,96 @@ msgid ""
 msgstr ""
 "已经有 Enlightenment 实例在此屏幕运行，\n"
 "中止启动。\n"
+
+#: src/bin/e_import_dialog.c:74 src/bin/e_import_dialog.c:84
+#: src/bin/e_import_config_dialog.c:348 src/bin/e_import_config_dialog.c:358
+#, fuzzy
+msgid "Import Error"
+msgstr "主题导入出错"
+
+#: src/bin/e_import_dialog.c:75 src/bin/e_import_config_dialog.c:349
+#, fuzzy
+msgid "Enlightenment was unable to import the image<br>due to a copy error."
+msgstr "Elightenment 无法导入该主题，复制错误。<br><br>"
+
+#: src/bin/e_import_dialog.c:85 src/bin/e_import_config_dialog.c:359
+#, fuzzy
+msgid ""
+"Enlightenment was unable to import the image.<br><br>Are you sure this is a "
+"valid image?"
+msgstr "Elightenment 无法导入该主题。<br><br>您确定那是一个有效的主题吗？"
+
+#: src/bin/e_import_dialog.c:156
+msgid "Select a Picture..."
+msgstr "选择图片..."
+
+#: src/bin/e_import_dialog.c:188
+#, fuzzy
+msgid "Use"
+msgstr "用户"
+
+#: src/bin/e_import_config_dialog.c:291
+msgid "Picture Import Error"
+msgstr "图片导入出错"
+
+#: src/bin/e_import_config_dialog.c:292
+msgid ""
+"Enlightenment was unable to import the picture<br>due to conversion errors."
+msgstr "由于转换出错，Enlightenment 未能导入图片。"
+
+#: src/bin/e_import_config_dialog.c:448
+#, fuzzy
+msgid "Import Settings..."
+msgstr "图像导入设定"
+
+#: src/bin/e_import_config_dialog.c:482
+msgid "Fill and Stretch Options"
+msgstr "填充拉伸选项"
+
+#: src/bin/e_import_config_dialog.c:484
+msgid "Stretch"
+msgstr "拉伸"
+
+#: src/bin/e_import_config_dialog.c:488 src/bin/e_int_border_prop.c:237
+#, c-format
+msgid "Center"
+msgstr "居中"
+
+#: src/bin/e_import_config_dialog.c:492
+msgid "Tile"
+msgstr "平铺"
+
+#: src/bin/e_import_config_dialog.c:496
+#, fuzzy
+msgid "Within"
+msgstr "内部"
+
+#: src/bin/e_import_config_dialog.c:500
+msgid "Fill"
+msgstr "填充"
+
+#: src/bin/e_import_config_dialog.c:504
+#, fuzzy
+msgid "Pan"
+msgstr "框"
+
+#: src/bin/e_import_config_dialog.c:512
+msgid "File Quality"
+msgstr "文件质量"
+
+#: src/bin/e_import_config_dialog.c:513
+msgid "Use original file"
+msgstr "使用源文件"
+
+#: src/bin/e_import_config_dialog.c:515
+#, c-format
+msgid "%3.0f%%"
+msgstr "%3.0f%%"
+
+#: src/bin/e_import_config_dialog.c:520
+#, fuzzy
+msgid "Fill Color"
+msgstr "颜色"
 
 #: src/bin/e_int_border_locks.c:66
 msgid "Window Locks"
@@ -2264,11 +2378,6 @@ msgstr ""
 msgid "West"
 msgstr ""
 
-#: src/bin/e_int_border_prop.c:237
-#, c-format
-msgid "Center"
-msgstr "居中"
-
 #: src/bin/e_int_border_prop.c:241
 #, c-format
 msgid "East"
@@ -2294,7 +2403,8 @@ msgstr ""
 msgid "Static"
 msgstr "状态"
 
-#: src/bin/e_int_border_prop.c:299 src/modules/clock/e_mod_config.c:137
+#: src/bin/e_int_border_prop.c:299 src/modules/clock/e_mod_config.c:103
+#: src/modules/clock/e_mod_config.c:141
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:360
 #: src/modules/conf_performance/e_int_config_powermanagement.c:196
 #: src/modules/conf_theme/e_int_config_fonts.c:689
@@ -2433,16 +2543,18 @@ msgstr "请求位置"
 #: src/bin/e_int_border_prop.c:480 src/bin/e_int_border_prop.c:515
 #: src/bin/e_int_config_modules.c:57 src/bin/e_int_menus.c:276
 #: src/bin/e_shelf.c:2394 src/modules/battery/e_mod_main.c:194
-#: src/modules/clock/e_mod_main.c:358 src/modules/clock/e_mod_main.c:601
+#: src/modules/clock/e_mod_main.c:360 src/modules/clock/e_mod_main.c:603
 #: src/modules/conf/e_conf.c:136 src/modules/conf/e_conf.c:146
 #: src/modules/conf/e_mod_main.c:101 src/modules/conf_dialogs/e_mod_main.c:17
 #: src/modules/conf_interaction/e_int_config_mouse.c:170
 #: src/modules/conf_shelves/e_int_config_shelf.c:145
-#: src/modules/ibar/e_mod_main.c:379 src/modules/ibar/e_mod_main.c:864
-#: src/modules/ibox/e_mod_main.c:302 src/modules/ibox/e_mod_main.c:678
-#: src/modules/pager/e_mod_main.c:875 src/modules/temperature/e_mod_main.c:230
-#: src/modules/mixer/e_mod_main.c:776 src/modules/connman/e_mod_main.c:441
-#: src/modules/tasks/e_mod_main.c:716 src/modules/xkbswitch/e_mod_main.c:327
+#: src/modules/everything/evry_gadget.c:511
+#: src/modules/everything/evry_gadget.c:696 src/modules/ibar/e_mod_main.c:379
+#: src/modules/ibar/e_mod_main.c:864 src/modules/ibox/e_mod_main.c:302
+#: src/modules/ibox/e_mod_main.c:678 src/modules/pager/e_mod_main.c:875
+#: src/modules/temperature/e_mod_main.c:230 src/modules/mixer/e_mod_main.c:776
+#: src/modules/connman/e_mod_main.c:441 src/modules/tasks/e_mod_main.c:716
+#: src/modules/xkbswitch/e_mod_main.c:327
 #: src/modules/xkbswitch/e_mod_main.c:369
 #: src/modules/notification/e_mod_box.c:477
 #: src/modules/notification/e_mod_box.c:616
@@ -2526,7 +2638,7 @@ msgid "Size, Position and Locks"
 msgstr "尺寸、位置和锁定"
 
 #: src/bin/e_int_border_remember.c:609 src/modules/conf/e_mod_main.c:252
-#: src/modules/shot/e_mod_main.c:703
+#: src/modules/everything/evry_gadget.c:645 src/modules/shot/e_mod_main.c:703
 msgid "All"
 msgstr "全部"
 
@@ -2723,13 +2835,9 @@ msgstr "丢失的窗口"
 msgid "About"
 msgstr "关于"
 
-#: src/bin/e_int_menus.c:238
-#: src/modules/conf_interaction/e_int_config_mouse.c:183
-#: src/modules/conf_theme/e_mod_main.c:163
-#: src/modules/conf_theme/e_mod_main.c:234
-#: src/modules/conf_theme/e_mod_main.c:263
-msgid "Theme"
-msgstr "主题"
+#: src/bin/e_int_menus.c:238 src/bin/e_theme_about.c:21
+msgid "About Theme"
+msgstr "关于主题"
 
 #: src/bin/e_int_menus.c:329
 msgid "Virtual"
@@ -3763,9 +3871,10 @@ msgstr "休眠"
 msgid "Hibernating.<br><hilight>Please wait.</hilight>"
 msgstr "正在休眠。<br><hilight>请稍侯。</hilight>"
 
-#: src/bin/e_theme_about.c:14
-msgid "About Theme"
-msgstr "关于主题"
+#: src/bin/e_theme_about.c:25
+#, fuzzy
+msgid "Select Theme"
+msgstr "选择一个主题..."
 
 #: src/bin/e_theme.c:37
 msgid "Set As Theme"
@@ -3783,17 +3892,17 @@ msgstr "开始移动/缩放项目"
 msgid "Set Toolbar Contents"
 msgstr "设置工具条内容"
 
-#: src/bin/e_utils.c:197 src/modules/conf_intl/e_int_config_imc.c:274
+#: src/bin/e_utils.c:189 src/modules/conf_intl/e_int_config_imc.c:274
 #: src/modules/conf_intl/e_int_config_imc.c:523
 #, c-format
 msgid "Enlightenment was unable to fork a child process:<br><br>%s<br>"
 msgstr "Enlightenment 无法创建子进程：<br><br>%s<br>"
 
-#: src/bin/e_utils.c:250
+#: src/bin/e_utils.c:242
 msgid "Cannot exit - immortal windows."
 msgstr "无法退出--不死的窗口"
 
-#: src/bin/e_utils.c:251
+#: src/bin/e_utils.c:243
 msgid ""
 "Some windows are left still around with the Lifespan lock enabled. This "
 "means<br>that Enlightenment will not allow itself to exit until these "
@@ -3802,95 +3911,96 @@ msgstr ""
 "一些窗口仍然处在被生命周期锁定之中。<br>这意味着 Enlightenment 不允许它自己退"
 "出，除非这些窗口已经被关闭，<br>或者被去除生命周期锁。<br>"
 
-#: src/bin/e_utils.c:865
+#: src/bin/e_utils.c:857
 #, fuzzy, c-format
 msgid "%'.0f bytes"
 msgstr "%'.0f 字节"
 
-#: src/bin/e_utils.c:869
+#: src/bin/e_utils.c:861
 #, fuzzy, c-format
 msgid "%'.0f KiB"
 msgstr "%'.0f KB"
 
-#: src/bin/e_utils.c:873
+#: src/bin/e_utils.c:865
 #, fuzzy, c-format
 msgid "%'.1f MiB"
 msgstr "%'.1f GB"
 
-#: src/bin/e_utils.c:877
+#: src/bin/e_utils.c:869
 #, fuzzy, c-format
 msgid "%'.1f GiB"
 msgstr "%'.1f GB"
 
-#: src/bin/e_utils.c:881
+#: src/bin/e_utils.c:873
 #, fuzzy, c-format
 msgid "%'.1f TiB"
 msgstr "%'.1f GB"
 
-#: src/bin/e_utils.c:900
+#: src/bin/e_utils.c:892
 #, fuzzy, c-format
 msgid "In the future"
 msgstr "将来"
 
-#: src/bin/e_utils.c:904
+#: src/bin/e_utils.c:896
 #, fuzzy, c-format
 msgid "In the last minute"
 msgstr "在最近一分钟"
 
-#: src/bin/e_utils.c:908
+#: src/bin/e_utils.c:900
 #, fuzzy, c-format
 msgid "Last year"
 msgid_plural "%li Years ago"
 msgstr[0] "最近使用的"
 msgstr[1] "最近使用的"
 
-#: src/bin/e_utils.c:913
+#: src/bin/e_utils.c:905
 #, c-format
 msgid "Last month"
 msgid_plural "%li Months ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/bin/e_utils.c:918
+#: src/bin/e_utils.c:910
 #, fuzzy, c-format
 msgid "Last week"
 msgid_plural "%li Weeks ago"
 msgstr[0] "最近使用的"
 msgstr[1] "最近使用的"
 
-#: src/bin/e_utils.c:923
+#: src/bin/e_utils.c:915
 #, c-format
 msgid "Yesterday"
 msgid_plural "%li Days ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/bin/e_utils.c:928
+#: src/bin/e_utils.c:920
 #, fuzzy, c-format
 msgid "An hour ago"
 msgid_plural "%li Hours ago"
 msgstr[0] "%li 小时前"
 msgstr[1] "%li 小时前"
 
-#: src/bin/e_utils.c:933
+#: src/bin/e_utils.c:925
 #, fuzzy, c-format
 msgid "A minute ago"
 msgid_plural "%li Minutes ago"
 msgstr[0] "%li 分钟前"
 msgstr[1] "%li 分钟前"
 
-#: src/bin/e_utils.c:940 src/bin/e_widget_filepreview.c:513
+#: src/bin/e_utils.c:932 src/bin/e_widget_filepreview.c:513
 #: src/bin/e_widget_filepreview.c:514 src/bin/e_widget_filepreview.c:515
 #: src/bin/e_widget_filepreview.c:546 src/bin/e_widget_filepreview.c:557
 #: src/modules/comp/e_mod_config.c:516
 #: src/modules/conf_dialogs/e_int_config_profiles.c:295
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:1220
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:395
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:1122
 #: src/modules/wizard/page_020.c:25
 msgid "Unknown"
 msgstr "未知"
 
-#: src/bin/e_utils.c:1177
+#: src/bin/e_utils.c:1169
 #, fuzzy
 msgid ""
 "Configuration data needed upgrading. Your old configuration<br>has been "
@@ -3906,12 +4016,12 @@ msgstr ""
 "常工作，旧配置缺少了某些功能。<br>新配置增加了这些功能。现在您可以重新按照喜"
 "好修改您的设置了。<br>我们对此造成的打搅表示抱歉。"
 
-#: src/bin/e_utils.c:1186 src/bin/e_utils.c:1210
+#: src/bin/e_utils.c:1178 src/bin/e_utils.c:1202
 #, c-format
 msgid "%s Configuration Updated"
 msgstr "%s 配置已经更新"
 
-#: src/bin/e_utils.c:1199
+#: src/bin/e_utils.c:1191
 msgid ""
 "Your module configuration is NEWER than the module version. This is "
 "very<br>strange. This should not happen unless you downgraded<br>the module "
@@ -3924,72 +4034,72 @@ msgstr ""
 "该发生。这是不好的情况，为防万一您的配置文件已经被恢复到默认状态。<br>对此造"
 "成的的不便表示歉意。<br>"
 
-#: src/bin/e_utils.c:1292
+#: src/bin/e_utils.c:1284
 #, c-format
 msgid "Never"
 msgstr ""
 
-#: src/bin/e_utils.c:1296
+#: src/bin/e_utils.c:1288
 #, fuzzy, c-format
 msgid "%li Seconds"
 msgstr "%.1f 秒"
 
-#: src/bin/e_utils.c:1301
+#: src/bin/e_utils.c:1293
 #, c-format
 msgid "One year"
 msgstr ""
 
-#: src/bin/e_utils.c:1303
+#: src/bin/e_utils.c:1295
 #, fuzzy, c-format
 msgid "%li Years"
 msgstr "%li 年前"
 
-#: src/bin/e_utils.c:1309
+#: src/bin/e_utils.c:1301
 #, c-format
 msgid "One month"
 msgstr ""
 
-#: src/bin/e_utils.c:1311
+#: src/bin/e_utils.c:1303
 #, fuzzy, c-format
 msgid "%li Months"
 msgstr "%li 月前"
 
-#: src/bin/e_utils.c:1317
+#: src/bin/e_utils.c:1309
 #, c-format
 msgid "One week"
 msgstr ""
 
-#: src/bin/e_utils.c:1319
+#: src/bin/e_utils.c:1311
 #, fuzzy, c-format
 msgid "%li Weeks"
 msgstr "%li 星期前"
 
-#: src/bin/e_utils.c:1325
+#: src/bin/e_utils.c:1317
 #, c-format
 msgid "One day"
 msgstr ""
 
-#: src/bin/e_utils.c:1327
+#: src/bin/e_utils.c:1319
 #, fuzzy, c-format
 msgid "%li Days"
 msgstr "%li 天前"
 
-#: src/bin/e_utils.c:1333
+#: src/bin/e_utils.c:1325
 #, fuzzy, c-format
 msgid "An hour"
 msgstr "一小时"
 
-#: src/bin/e_utils.c:1335
+#: src/bin/e_utils.c:1327
 #, fuzzy, c-format
 msgid "%li Hours"
 msgstr "%li 小时前"
 
-#: src/bin/e_utils.c:1341
+#: src/bin/e_utils.c:1333
 #, fuzzy, c-format
 msgid "A minute"
 msgstr "%1.0f 分钟"
 
-#: src/bin/e_utils.c:1343
+#: src/bin/e_utils.c:1335
 #, fuzzy, c-format
 msgid "%li Minutes"
 msgstr "%li 分钟前"
@@ -4000,6 +4110,7 @@ msgstr "%li 分钟前"
 #: src/modules/conf_applications/e_int_config_apps_personal.c:91
 #: src/modules/conf_dialogs/e_int_config_profiles.c:132
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:263
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:197
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:243
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:292
 #: src/modules/conf_paths/e_int_config_env.c:309
@@ -4021,32 +4132,32 @@ msgstr "上"
 msgid "Down"
 msgstr "下"
 
-#: src/bin/e_widget_csel.c:198
+#: src/bin/e_widget_csel.c:195
 msgid "R"
 msgstr ""
 
-#: src/bin/e_widget_csel.c:198
+#: src/bin/e_widget_csel.c:195
 msgid "G"
 msgstr ""
 
-#: src/bin/e_widget_csel.c:198
+#: src/bin/e_widget_csel.c:195
 #, fuzzy
 msgid "B"
 msgstr "由"
 
-#: src/bin/e_widget_csel.c:198
+#: src/bin/e_widget_csel.c:195
 msgid "H"
 msgstr ""
 
-#: src/bin/e_widget_csel.c:198
+#: src/bin/e_widget_csel.c:195
 msgid "S"
 msgstr ""
 
-#: src/bin/e_widget_csel.c:198
+#: src/bin/e_widget_csel.c:195
 msgid "V"
 msgstr ""
 
-#: src/bin/e_widget_csel.c:272
+#: src/bin/e_widget_csel.c:274
 msgid "Alpha"
 msgstr ""
 
@@ -4255,6 +4366,7 @@ msgid "Hardware"
 msgstr "硬件"
 
 #: src/modules/battery/e_mod_main.c:152 src/modules/battery/e_mod_main.c:455
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:354
 msgid "Battery"
 msgstr "电池"
 
@@ -4289,8 +4401,8 @@ msgstr "电池标尺"
 msgid "Clock Settings"
 msgstr "焦点设置"
 
-#: src/modules/clock/e_mod_config.c:83 src/modules/clock/e_mod_main.c:706
-#: src/modules/clock/e_mod_main.c:863 src/modules/clock/e_mod_main.c:895
+#: src/modules/clock/e_mod_config.c:83 src/modules/clock/e_mod_main.c:708
+#: src/modules/clock/e_mod_main.c:865 src/modules/clock/e_mod_main.c:897
 msgid "Clock"
 msgstr "时钟"
 
@@ -4303,6 +4415,11 @@ msgstr "对话框"
 msgid "Digital"
 msgstr ""
 
+#: src/modules/clock/e_mod_config.c:90
+#, fuzzy
+msgid "Seconds"
+msgstr "%.1f 秒"
+
 #: src/modules/clock/e_mod_config.c:93
 msgid "12 h"
 msgstr ""
@@ -4311,41 +4428,41 @@ msgstr ""
 msgid "24 h"
 msgstr ""
 
-#: src/modules/clock/e_mod_config.c:97
-#, fuzzy
-msgid "Seconds"
-msgstr "%.1f 秒"
-
-#: src/modules/clock/e_mod_config.c:101
-msgid "No Date"
-msgstr ""
-
-#: src/modules/clock/e_mod_config.c:103
-msgid "Words"
+#: src/modules/clock/e_mod_config.c:100
+msgid "Date"
 msgstr ""
 
 #: src/modules/clock/e_mod_config.c:105
+msgid "Full"
+msgstr ""
+
+#: src/modules/clock/e_mod_config.c:107
 msgid "Numbers"
 msgstr ""
 
-#: src/modules/clock/e_mod_config.c:110
+#: src/modules/clock/e_mod_config.c:109
+#, fuzzy
+msgid "Date Only"
+msgstr "只读"
+
+#: src/modules/clock/e_mod_config.c:114
 msgid "Week"
 msgstr ""
 
-#: src/modules/clock/e_mod_config.c:112 src/modules/clock/e_mod_config.c:125
+#: src/modules/clock/e_mod_config.c:116 src/modules/clock/e_mod_config.c:129
 #: src/modules/start/e_mod_main.c:158
 msgid "Start"
 msgstr "开始"
 
-#: src/modules/clock/e_mod_config.c:123
+#: src/modules/clock/e_mod_config.c:127
 msgid "Weekend"
 msgstr ""
 
-#: src/modules/clock/e_mod_config.c:134
+#: src/modules/clock/e_mod_config.c:138
 msgid "Days"
 msgstr ""
 
-#: src/modules/clock/e_mod_main.c:863 src/modules/clock/e_mod_main.c:895
+#: src/modules/clock/e_mod_main.c:865 src/modules/clock/e_mod_main.c:897
 #, fuzzy
 msgid "Show calendar"
 msgstr "显示工具栏"
@@ -5497,6 +5614,7 @@ msgstr "桌面"
 
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:4
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:11
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:462
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:3
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:7
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:3
@@ -5541,6 +5659,7 @@ msgid "Restore Default Bindings"
 msgstr "恢复默认绑定"
 
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:283
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:209
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:263
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:312
 msgid "Action"
@@ -5552,6 +5671,7 @@ msgid "Mouse Button"
 msgstr "鼠标设置"
 
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:296
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:216
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:270
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:319
 msgid "Action Params"
@@ -5723,6 +5843,13 @@ msgstr "鼠标设置"
 msgid "Show Cursor"
 msgstr "显示光标"
 
+#: src/modules/conf_interaction/e_int_config_mouse.c:183
+#: src/modules/conf_theme/e_mod_main.c:163
+#: src/modules/conf_theme/e_mod_main.c:234
+#: src/modules/conf_theme/e_mod_main.c:263
+msgid "Theme"
+msgstr "主题"
+
 #: src/modules/conf_interaction/e_int_config_mouse.c:187
 msgid "X"
 msgstr "X"
@@ -5876,9 +6003,123 @@ msgstr "区域"
 msgid "Language"
 msgstr "语言"
 
-#: src/modules/conf_keybindings/e_int_config_keybindings.c:4
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:71
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:190
+#: src/modules/conf_keybindings/e_mod_main.c:29
+#, fuzzy
+msgid "ACPI Bindings"
+msgstr "添加绑定"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:349
+msgid "AC Adapter Unplugged"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:350
+msgid "AC Adapter Plugged"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:351
+msgid "Ac Adapter"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:356
+#, fuzzy
+msgid "Button"
+msgstr "按钮"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:358
+#, fuzzy
+msgid "Fan"
+msgstr "远"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:361
+#, fuzzy
+msgid "Lid Unknown"
+msgstr "未知"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:362
+#, fuzzy
+msgid "Lid Closed"
+msgstr "关闭"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:363
+msgid "Lid Opened"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:364
+msgid "Lid"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:367
+#, fuzzy
+msgid "Power Button"
+msgstr "鼠标设置"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:369
+msgid "Processor"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:371
+#, fuzzy
+msgid "Sleep Button"
+msgstr "鼠标设置"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:373
+#, fuzzy
+msgid "Thermal"
+msgstr "正常"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:375
+msgid "Video"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:377
+#, fuzzy
+msgid "Wifi"
+msgstr "无线网络 Wifi"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:381
+#, fuzzy
+msgid "Zoom Out"
+msgstr "退出"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:383
+#, fuzzy
+msgid "Zoom In"
+msgstr "缩放"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:385
+#, fuzzy
+msgid "Brightness Down"
+msgstr "关机"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:387
+msgid "Brightness Up"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:389
+#, fuzzy
+msgid "Assist"
+msgstr "指派"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:391
+msgid "S1"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:393
+msgid "Vaio"
+msgstr ""
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:497
+#, fuzzy
+msgid "ACPI Binding"
+msgstr "添加绑定"
+
+#: src/modules/conf_keybindings/e_int_config_acpibindings.c:500
+#, fuzzy
 msgid ""
-"Please press key sequence,<br><br>or <hilight>Escape</hilight> to abort."
+"Please trigger the ACPI event you wish to bind to, <br><br>or "
+"<hilight>Escape</hilight> to abort."
 msgstr "请按下一个按键序列，或者按 <hilight>Esc 键</hilight> 中止。"
 
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:8
@@ -5906,15 +6147,6 @@ msgid ""
 msgstr ""
 "您选择的按键绑定序列，<br>已经被<hilight>%s</hilight>动作使用。<br>请选择其他"
 "按键绑定序列。"
-
-#: src/modules/conf_keybindings/e_int_config_mousebindings.c:7
-msgid ""
-"Please hold any modifier you want<br>and press any button on your mouse,<br> "
-"or roll a wheel, to assign mouse binding.<br>Press <hilight>Escape</"
-"highlight> to abort."
-msgstr ""
-"请按住想用的修饰键<br>，然后点一下任意鼠标按钮，<br>或者转一下滚轮，<br>来绑"
-"定鼠标按钮。<br>按 <hilight>Esc</highlight> 键取消。"
 
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:109
 msgid "Mouse Bindings Settings"
@@ -6013,11 +6245,6 @@ msgstr ""
 #, c-format
 msgid "Extra Wheel (%d) Down"
 msgstr ""
-
-#: src/modules/conf_keybindings/e_mod_main.c:29
-#, fuzzy
-msgid "ACPI Bindings"
-msgstr "添加绑定"
 
 #: src/modules/conf_menus/e_int_config_menus.c:38
 #: src/modules/conf_menus/e_mod_main.c:18
@@ -8007,6 +8234,21 @@ msgstr "几何形状"
 msgid "Everything Collection"
 msgstr "任务中心集合"
 
+#: src/modules/everything/evry_gadget.c:169
+#, fuzzy
+msgid "Everything Starter"
+msgstr "设置任务中心"
+
+#: src/modules/everything/evry_gadget.c:587
+#, fuzzy
+msgid "Everything Gadgets"
+msgstr "任务中心文件"
+
+#: src/modules/everything/evry_gadget.c:686
+#, fuzzy
+msgid "Plugin"
+msgstr "插件"
+
 #: src/modules/everything/evry_plug_aggregator.c:122
 #, c-format
 msgid "%d item"
@@ -9709,6 +9951,24 @@ msgid "Levels of urgency to store:"
 msgstr ""
 
 #, fuzzy
+#~ msgid ""
+#~ "<title>Copyright &copy; 1999-2012, by the Enlightenment Development Team</"
+#~ "><br><br>We hope you enjoy using this software as much as we enjoyed "
+#~ "writing it.<br><br>This software is provided as-is with no explicit or "
+#~ "implied warranty. This software is governed by licensing conditions, so "
+#~ "please see the COPYING and COPYING-PLAIN licence files installed on your "
+#~ "system.<br><br>Enlightenment is under <hilight>HEAVY DEVELOPMENT</> and "
+#~ "it is not stable. Many features are incomplete or even non-existent yet "
+#~ "and may have many bugs. You have been <hilight>WARNED!</>"
+#~ msgstr ""
+#~ "版权所有 &copy; 1999-2010,  Enlightenment 开发团队。<br><br>我们希望您能像"
+#~ "我们喜欢开发这款软件一样喜欢这款软件。<br><br>本软件不提供明确或隐含的保"
+#~ "证。该软件是在软件许可下的，所以请在使用前阅读安装在您系统的 COPYING 和 "
+#~ "COPYING-PLAIN 许可文件。<br><br>Enlightenment 进行了 <hilight>大量的开发</"
+#~ "hilight> 并且并不稳定，很多功能尚未完成或并不存在，还有很多 bug。您已经被 "
+#~ "<hilight>警告</hilight> 过了！"
+
+#, fuzzy
 #~ msgid "Using"
 #~ msgstr "使用菜单"
 
@@ -10046,29 +10306,8 @@ msgstr ""
 #~ msgid "%'.0f MB"
 #~ msgstr "%'.0f MB"
 
-#~ msgid "Image Import Settings"
-#~ msgstr "图像导入设定"
-
 #~ msgid "Import"
 #~ msgstr "导入"
-
-#~ msgid "Fill and Stretch Options"
-#~ msgstr "填充拉伸选项"
-
-#~ msgid "Stretch"
-#~ msgstr "拉伸"
-
-#~ msgid "Fill"
-#~ msgstr "填充"
-
-#~ msgid "File Quality"
-#~ msgstr "文件质量"
-
-#~ msgid "Use original file"
-#~ msgstr "使用源文件"
-
-#~ msgid "%3.0f%%"
-#~ msgstr "%3.0f%%"
 
 #~ msgid ""
 #~ "Configuration Panel Module Configuration data needed upgrading. Your old "
@@ -10149,36 +10388,12 @@ msgstr ""
 #~ msgid "Binding Edge Error"
 #~ msgstr "边缘绑定出错"
 
-#~ msgid "Key Binding Sequence"
-#~ msgstr "键绑定序列"
-
-#~ msgid "Mouse Binding Sequence"
-#~ msgstr "鼠标绑定顺序"
-
 #, fuzzy
 #~ msgid "Power management"
 #~ msgstr "电源管理"
 
 #~ msgid "Wallpaper settings..."
 #~ msgstr "壁纸设定..."
-
-#~ msgid "Tile"
-#~ msgstr "平铺"
-
-#, fuzzy
-#~ msgid "Pan"
-#~ msgstr "框"
-
-#~ msgid "Select a Picture..."
-#~ msgstr "选择图片..."
-
-#~ msgid "Picture Import Error"
-#~ msgstr "图片导入出错"
-
-#~ msgid ""
-#~ "Enlightenment was unable to import the picture<br>due to conversion "
-#~ "errors."
-#~ msgstr "由于转换出错，Enlightenment 未能导入图片。"
 
 #~ msgid "Wallpaper Import Error"
 #~ msgstr "壁纸导入出错"
@@ -11579,9 +11794,6 @@ msgstr ""
 #~ msgid "Spain"
 #~ msgstr "西班牙"
 
-#~ msgid "User"
-#~ msgstr "用户"
-
 #~ msgid "Lifespan"
 #~ msgstr "生命周期"
 
@@ -11903,21 +12115,6 @@ msgstr ""
 #~ "\n"
 #~ "请安装 e_util_eapp_edit\n"
 #~ "或者确认它已经在您的路径设置中\n"
-
-#~ msgid ""
-#~ "This is Enlightenment %s.\n"
-#~ "Copyright © 1999-2005, by the Enlightenment Dev Team.\n"
-#~ "\n"
-#~ "We hope you enjoy using this software as much as we enjoyed writing it.\n"
-#~ "\n"
-#~ "Please think of the aardvarks. They need some love too."
-#~ msgstr ""
-#~ "这是 Enlightenment %s 。\n"
-#~ "版权所有 © 1999-2005，Enlightenment 开发小组。\n"
-#~ "\n"
-#~ "我们希望您能像我们开发这个软件一样开心地使用它。\n"
-#~ "\n"
-#~ "请想想土豚们。它们也需要关爱。"
 
 #~ msgid "(Empty)"
 #~ msgstr "(空)"

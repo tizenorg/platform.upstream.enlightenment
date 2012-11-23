@@ -14,4 +14,6 @@ quickaccess_module_la_SOURCES = quickaccess/e_mod_main.c \
 				quickaccess/e_quickaccess_bindings.c \
 				quickaccess/e_quickaccess_db.c
 
-quickaccess_module_la_DEPENDENCIES = $(MDEPENDENCIES)
+.PHONY: quickaccess install-quickaccess
+quickaccess: $(quickaccesspkg_LTLIBRARIES) $(quickaccess_DATA)
+install-quickaccess: install-quickaccessDATA install-quickaccesspkgLTLIBRARIES
