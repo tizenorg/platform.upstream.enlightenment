@@ -1590,6 +1590,7 @@ _e_gadcon_client_unpopulate(E_Gadcon_Client *gcc)
      {
         if (gcc->gadcon->shelf && (gcc->menu == gcc->gadcon->shelf->menu)) gcc->gadcon->shelf->menu = NULL;
         e_menu_post_deactivate_callback_set(gcc->menu, NULL, NULL);
+        e_menu_deactivate(gcc->menu);
         e_object_del(E_OBJECT(gcc->menu));
         gcc->menu = NULL;
      }
@@ -1645,8 +1646,8 @@ _e_gadcon_gadget_move_to_pre_cb(void *data, E_Menu *m)
    E_Gadcon_Client *gcc;
    int n = 0;
 
-   e_menu_pre_activate_callback_set(m, NULL, NULL);
    gcc = data;
+   e_menu_pre_activate_callback_set(m, NULL, NULL);
 
    if (!gcc->client_class->func.is_site || gcc->client_class->func.is_site(E_GADCON_SITE_SHELF))
      _e_gadcon_add_locations_menu_for_site(m, gcc, E_GADCON_SITE_SHELF, &n);
@@ -1675,8 +1676,8 @@ e_gadcon_client_add_location_menu(E_Gadcon_Client *gcc, E_Menu *menu)
         e_menu_item_label_set(mi, _("Move to"));
         e_util_menu_item_theme_icon_set(mi, "preferences-look");
         e_menu_item_submenu_set(mi, mn);
-        e_object_unref(E_OBJECT(mn));
         e_menu_pre_activate_callback_set(mn, _e_gadcon_gadget_move_to_pre_cb, gcc);
+        e_object_unref(E_OBJECT(mn));
      }
 }
 
@@ -2059,6 +2060,7 @@ _e_gadcon_client_delfn(void *d __UNUSED__, void *o)
      {
         if (gcc->gadcon->shelf && (gcc->menu == gcc->gadcon->shelf->menu)) gcc->gadcon->shelf->menu = NULL;
         e_menu_post_deactivate_callback_set(gcc->menu, NULL, NULL);
+        e_menu_deactivate(gcc->menu);
         e_object_del(E_OBJECT(gcc->menu));
         gcc->menu = NULL;
      }
@@ -2083,6 +2085,11 @@ _e_gadcon_client_free(E_Gadcon_Client *gcc)
    if (gcc->o_frame) evas_object_del(gcc->o_frame);
    eina_stringshare_del(gcc->name);
    eina_stringshare_del(gcc->style);
+   if (gcc->menu)
+     {
+        e_menu_deactivate(gcc->menu);
+        e_object_del(E_OBJECT(gcc->menu));
+     }
    free(gcc);
 }
 
@@ -2299,7 +2306,7 @@ _e_gadcon_client_inject(E_Gadcon *gc, E_Gadcon_Client *gcc, int x, int y)
 {
    Eina_List *l;
    E_Gadcon_Client *gcc2;
-   Evas_Coord cx, cy, cw, ch;
+   Evas_Coord cx = 0, cy = 0, cw = 0, ch = 0;
    int seq = 1;
 
    /* Check if the gadcon client is in place */
@@ -2844,6 +2851,7 @@ _e_gadcon_cb_dnd_enter(void *data, const char *type __UNUSED__, void *event)
    gc = data;
    //INF("DND ENTER");
    gcc = gc->drag_gcc;
+   if (!gcc) return; // dnd from efm or something
    if ((!gcc->hidden) && (gcc->gadcon == gc))
      {
         if (gc->dnd_enter_cb) gc->dnd_enter_cb(gc, gc->drag_gcc);
@@ -2957,7 +2965,7 @@ _e_gadcon_cb_dnd_move(void *data, const char *type __UNUSED__, void *event)
    E_Event_Dnd_Move *ev;
    E_Gadcon *gc;
    E_Gadcon_Client *gcc = NULL;
-   int dx, dy = 0;
+   int dx = 0, dy = 0;
    Evas_Object *o;
 
    ev = event;

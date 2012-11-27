@@ -7,6 +7,12 @@ static E_Popup *_e_wizard_extra_new(E_Zone *zone);
 static void     _e_wizard_cb_key_down(void *data, Evas *e, Evas_Object *obj, void *event);
 static void     _e_wizard_cb_next(void *data, Evas_Object *obj, const char *emission, const char *source);
 
+static Eina_Bool _e_wizard_check_xdg(void);
+static void      _e_wizard_next_xdg(void);
+static Eina_Bool _e_wizard_cb_next_page(void *data);
+static Eina_Bool _e_wizard_cb_desktops_update(void *data, int ev_type, void *ev);
+static Eina_Bool _e_wizard_cb_icons_update(void *data, int ev_type, void *ev);
+
 static E_Popup *pop = NULL;
 static Eina_List *pops = NULL;
 static Evas_Object *o_bg = NULL;
@@ -14,8 +20,16 @@ static Evas_Object *o_content = NULL;
 static Eina_List *pages = NULL;
 static E_Wizard_Page *curpage = NULL;
 static int next_ok = 1;
-static int next_can = 0;
 static int next_prev = 0;
+static int next_can = 0;
+
+static Eina_List *handlers = NULL;
+static Eina_Bool got_desktops = EINA_FALSE;
+static Eina_Bool got_icons = EINA_FALSE;
+static Eina_Bool need_xdg_desktops = EINA_FALSE;
+static Eina_Bool need_xdg_icons = EINA_FALSE;
+
+static Ecore_Timer *next_timer = NULL;
 
 EAPI int
 e_wizard_init(void)
@@ -42,6 +56,12 @@ e_wizard_init(void)
                }
           }
      }
+
+   E_LIST_HANDLER_APPEND(handlers, EFREET_EVENT_DESKTOP_CACHE_BUILD,
+                         _e_wizard_cb_desktops_update, NULL);
+
+   E_LIST_HANDLER_APPEND(handlers, EFREET_EVENT_ICON_CACHE_UPDATE,
+                         _e_wizard_cb_icons_update, NULL);
    return 1;
 }
 
@@ -61,6 +81,10 @@ e_wizard_shutdown(void)
      e_object_del(eo);
    EINA_LIST_FREE(pages, pg)
      e_wizard_page_del(pg);
+
+   if (next_timer) ecore_timer_del(next_timer);
+   next_timer = NULL;
+   E_FREE_LIST(handlers, ecore_event_handler_del);
    return 1;
 }
 
@@ -72,16 +96,18 @@ e_wizard_go(void)
         if (pages)
           {
              curpage = pages->data;
-             if (pages->next) next_can = 1;
           }
      }
    if (curpage)
      {
-        if ((!curpage->data) && (curpage->init)) curpage->init(curpage);
+        if (curpage->init) curpage->init(curpage, &need_xdg_desktops, &need_xdg_icons);
         _e_wizard_next_eval();
-        if ((curpage->show) && (!curpage->show(curpage)))
+        if (_e_wizard_check_xdg())
           {
-             e_wizard_next();
+             if ((curpage->show) && (!curpage->show(curpage)))
+               {
+                  e_wizard_next();
+               }
           }
      }
 }
@@ -118,17 +144,16 @@ e_wizard_next(void)
                          curpage->hide(curpage);
                     }
                   curpage = eina_list_data_get(eina_list_next(l));
-                  if (!curpage->data)
-                    {
-                       if (curpage->init)
-                         curpage->init(curpage);
-                    }
-                  next_can = 1;
+                  need_xdg_desktops = EINA_FALSE;
+                  need_xdg_icons = EINA_FALSE;
+                  if (curpage->init)
+                    curpage->init(curpage, &need_xdg_desktops, &need_xdg_icons);
+                  if (!_e_wizard_check_xdg())
+                    break;
+
                   _e_wizard_next_eval();
                   if ((curpage->show) && (curpage->show(curpage)))
-                    {
-                       break;
-                    }
+                    break;
                }
              else
                {
@@ -161,7 +186,7 @@ e_wizard_page_show(Evas_Object *obj)
 
 EAPI E_Wizard_Page *
 e_wizard_page_add(void *handle,
-                  int (*init_cb)(E_Wizard_Page *pg),
+                  int (*init_cb)(E_Wizard_Page *pg, Eina_Bool *need_xdg_desktops, Eina_Bool *need_xdg_icons),
                   int (*shutdown_cb)(E_Wizard_Page *pg),
                   int (*show_cb)(E_Wizard_Page *pg),
                   int (*hide_cb)(E_Wizard_Page *pg),
@@ -223,6 +248,12 @@ e_wizard_dir_get(void)
    return e_module_dir_get(wiz_module);
 }
 
+EAPI void
+e_wizard_xdg_desktops_reset(void)
+{
+   got_desktops = EINA_FALSE;
+}
+
 static void
 _e_wizard_next_eval(void)
 {
@@ -232,8 +263,16 @@ _e_wizard_next_eval(void)
    if (!next_ok) ok = 0;
    if (next_prev != ok)
      {
-        if (ok) edje_object_signal_emit(o_bg, "e,state,next,enable", "e");
-        else edje_object_signal_emit(o_bg, "e,state,next,disable", "e");
+        if (ok)
+          {
+             edje_object_part_text_set(o_bg, "e.text.label", _("Next"));
+             edje_object_signal_emit(o_bg, "e,state,next,enable", "e");
+          }
+        else
+          {
+             edje_object_part_text_set(o_bg, "e.text.label", _("Please Wait..."));
+             edje_object_signal_emit(o_bg, "e,state,next,disable", "e");
+          }
         next_prev = ok;
      }
 }
@@ -340,6 +379,73 @@ _e_wizard_cb_key_down(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *ob
 static void
 _e_wizard_cb_next(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const char *emission __UNUSED__, const char *source __UNUSED__)
 {
-   e_wizard_next();
+   /* TODO: Disable button in theme */
+   if (next_can)
+     e_wizard_next();
 }
 
+static Eina_Bool
+_e_wizard_check_xdg(void)
+{
+   if ((need_xdg_desktops) && (!got_desktops))
+     {
+        /* Advance within 15 secs if no xdg event */
+        if (!next_timer)
+          next_timer = ecore_timer_add(15.0, _e_wizard_cb_next_page, NULL);
+        next_can = 0;
+        _e_wizard_next_eval();
+        return 0;
+     }
+   if ((need_xdg_icons) && (!got_icons))
+     {
+        /* Advance within 15 secs if no xdg event */
+        if (!next_timer)
+          next_timer = ecore_timer_add(15.0, _e_wizard_cb_next_page, NULL);
+        next_can = 0;
+        _e_wizard_next_eval();
+        return 0;
+     }
+   next_can = 1;
+   need_xdg_desktops = EINA_FALSE;
+   need_xdg_icons = EINA_FALSE;
+   return 1;
+}
+
+static void
+_e_wizard_next_xdg(void)
+{
+   need_xdg_desktops = EINA_FALSE;
+   need_xdg_icons = EINA_FALSE;
+
+   if (next_timer) ecore_timer_del(next_timer);
+   next_timer = NULL;
+   if ((curpage->show) && (!curpage->show(curpage)))
+     e_wizard_next();
+}
+
+static Eina_Bool
+_e_wizard_cb_next_page(void *data __UNUSED__)
+{
+   next_timer = NULL;
+   _e_wizard_next_xdg();
+   return ECORE_CALLBACK_CANCEL;
+}
+
+
+static Eina_Bool
+_e_wizard_cb_desktops_update(void *data __UNUSED__, int ev_type __UNUSED__, void *ev __UNUSED__)
+{
+   got_desktops = EINA_TRUE;
+   if (_e_wizard_check_xdg())
+     _e_wizard_next_xdg();
+   return ECORE_CALLBACK_PASS_ON;
+}
+
+static Eina_Bool
+_e_wizard_cb_icons_update(void *data __UNUSED__, int ev_type __UNUSED__, void *ev __UNUSED__)
+{
+   got_icons = EINA_TRUE;
+   if (_e_wizard_check_xdg())
+     _e_wizard_next_xdg();
+   return ECORE_CALLBACK_PASS_ON;
+}

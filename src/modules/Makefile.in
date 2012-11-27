@@ -122,42 +122,41 @@ DIST_COMMON = $(am__dist_everything_headers_DATA_DIST) \
 @USE_MODULE_FILEMAN_TRUE@am__append_19 = $(fileman_DATA)
 @USE_MODULE_FILEMAN_OPINFO_TRUE@am__append_20 = $(fileman_opinfo_DATA)
 @USE_MODULE_WIZARD_TRUE@am__append_21 = $(wizard_DATA) $(wizard_desks_DATA) $(wizard_desktop_DATA)
-@USE_MODULE_CONNMAN_TRUE@@USE_MODULE_WIZARD_TRUE@am__append_22 = wizard/page_110.la
-@USE_MODULE_WIZARD_TRUE@am__append_23 = wizard/e_mod_comp_cfdata.c \
+@USE_MODULE_WIZARD_TRUE@am__append_22 = wizard/e_mod_comp_cfdata.c \
 @USE_MODULE_WIZARD_TRUE@	      wizard/e_mod_comp_cfdata.h \
 @USE_MODULE_WIZARD_TRUE@	      wizard/e_mod_comp_main.h
 
-@USE_MODULE_CONF_TRUE@am__append_24 = $(conf_DATA)
-@USE_MODULE_CONF_WALLPAPER2_TRUE@am__append_25 = $(conf_wallpaper2_DATA)
-@USE_MODULE_CONF_THEME_TRUE@am__append_26 = $(conf_theme_DATA)
-@USE_MODULE_CONF_INTL_TRUE@am__append_27 = $(conf_intl_DATA)
-@USE_MODULE_MSGBUS_TRUE@am__append_28 = $(msgbus_DATA)
-@USE_MODULE_CONF_APPLICATIONS_TRUE@am__append_29 = $(conf_applications_DATA)
-@USE_MODULE_CONF_DISPLAY_TRUE@am__append_30 = $(conf_display_DATA)
-@USE_MODULE_CONF_SHELVES_TRUE@am__append_31 = $(conf_shelves_DATA)
-@USE_MODULE_CONF_KEYBINDINGS_TRUE@am__append_32 = $(conf_keybindings_DATA)
-@USE_MODULE_CONF_EDGEBINDINGS_TRUE@am__append_33 = $(conf_edgebindings_DATA)
-@USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@am__append_34 = $(conf_window_remembers_DATA)
-@USE_MODULE_CONF_WINDOW_MANIPULATION_TRUE@am__append_35 = $(conf_window_manipulation_DATA)
-@USE_MODULE_CONF_MENUS_TRUE@am__append_36 = $(conf_menus_DATA)
-@USE_MODULE_CONF_DIALOGS_TRUE@am__append_37 = $(conf_dialogs_DATA)
-@USE_MODULE_CONF_PERFORMANCE_TRUE@am__append_38 = $(conf_performance_DATA)
-@USE_MODULE_CONF_PATHS_TRUE@am__append_39 = $(conf_paths_DATA)
-@USE_MODULE_CONF_INTERACTION_TRUE@am__append_40 = $(conf_interaction_DATA)
-@USE_MODULE_CONF_RANDR_TRUE@am__append_41 = $(conf_randr_DATA)
-@USE_MODULE_GADMAN_TRUE@am__append_42 = $(gadman_DATA)
-@USE_MODULE_MIXER_TRUE@am__append_43 = $(mixer_DATA)
-@HAVE_ALSA_TRUE@@USE_MODULE_MIXER_TRUE@am__append_44 = mixer/sys_alsa.c
-@HAVE_ALSA_FALSE@@USE_MODULE_MIXER_TRUE@am__append_45 = mixer/sys_dummy.c
-@HAVE_ENOTIFY_TRUE@@USE_MODULE_MIXER_TRUE@am__append_46 = @ENOTIFY_CFLAGS@
-@HAVE_ENOTIFY_TRUE@@USE_MODULE_MIXER_TRUE@am__append_47 = @ENOTIFY_LIBS@
+@USE_MODULE_CONF_TRUE@am__append_23 = $(conf_DATA)
+@USE_MODULE_CONF_WALLPAPER2_TRUE@am__append_24 = $(conf_wallpaper2_DATA)
+@USE_MODULE_CONF_THEME_TRUE@am__append_25 = $(conf_theme_DATA)
+@USE_MODULE_CONF_INTL_TRUE@am__append_26 = $(conf_intl_DATA)
+@USE_MODULE_MSGBUS_TRUE@am__append_27 = $(msgbus_DATA)
+@USE_MODULE_CONF_APPLICATIONS_TRUE@am__append_28 = $(conf_applications_DATA)
+@USE_MODULE_CONF_DISPLAY_TRUE@am__append_29 = $(conf_display_DATA)
+@USE_MODULE_CONF_SHELVES_TRUE@am__append_30 = $(conf_shelves_DATA)
+@USE_MODULE_CONF_KEYBINDINGS_TRUE@am__append_31 = $(conf_keybindings_DATA)
+@USE_MODULE_CONF_EDGEBINDINGS_TRUE@am__append_32 = $(conf_edgebindings_DATA)
+@USE_MODULE_CONF_WINDOW_REMEMBERS_TRUE@am__append_33 = $(conf_window_remembers_DATA)
+@USE_MODULE_CONF_WINDOW_MANIPULATION_TRUE@am__append_34 = $(conf_window_manipulation_DATA)
+@USE_MODULE_CONF_MENUS_TRUE@am__append_35 = $(conf_menus_DATA)
+@USE_MODULE_CONF_DIALOGS_TRUE@am__append_36 = $(conf_dialogs_DATA)
+@USE_MODULE_CONF_PERFORMANCE_TRUE@am__append_37 = $(conf_performance_DATA)
+@USE_MODULE_CONF_PATHS_TRUE@am__append_38 = $(conf_paths_DATA)
+@USE_MODULE_CONF_INTERACTION_TRUE@am__append_39 = $(conf_interaction_DATA)
+@USE_MODULE_CONF_RANDR_TRUE@am__append_40 = $(conf_randr_DATA)
+@USE_MODULE_GADMAN_TRUE@am__append_41 = $(gadman_DATA)
+@USE_MODULE_MIXER_TRUE@am__append_42 = $(mixer_DATA)
+@HAVE_ALSA_TRUE@@USE_MODULE_MIXER_TRUE@am__append_43 = mixer/sys_alsa.c
+@HAVE_ALSA_FALSE@@USE_MODULE_MIXER_TRUE@am__append_44 = mixer/sys_dummy.c
+@HAVE_ENOTIFY_TRUE@@USE_MODULE_MIXER_TRUE@am__append_45 = @ENOTIFY_CFLAGS@
+@HAVE_ENOTIFY_TRUE@@USE_MODULE_MIXER_TRUE@am__append_46 = @ENOTIFY_LIBS@
 
 # images
 
 # images
 
 # images
-@USE_MODULE_ILLUME2_TRUE@am__append_48 = illume2/e-module-illume2.edc \
+@USE_MODULE_ILLUME2_TRUE@am__append_47 = illume2/e-module-illume2.edc \
 @USE_MODULE_ILLUME2_TRUE@	illume2/module.desktop.in \
 @USE_MODULE_ILLUME2_TRUE@	illume2/images/module_icon.png \
 @USE_MODULE_ILLUME2_TRUE@	$(illume2keyboards_DATA) \
@@ -180,18 +179,18 @@ DIST_COMMON = $(am__dist_everything_headers_DATA_DIST) \
 @USE_MODULE_ILLUME2_TRUE@	$(illume_kbd_toggle_DATA) \
 @USE_MODULE_ILLUME2_TRUE@	$(illume_mode_toggle_DATA) \
 @USE_MODULE_ILLUME2_TRUE@	$(illume_bluetooth_DATA)
-@USE_MODULE_ILLUME2_TRUE@am__append_49 = illume2/e-module-illume2.edj \
+@USE_MODULE_ILLUME2_TRUE@am__append_48 = illume2/e-module-illume2.edj \
 @USE_MODULE_ILLUME2_TRUE@	illume-keyboard/e-module-illume-keyboard.edj \
 @USE_MODULE_ILLUME2_TRUE@	illume-indicator/e-module-illume-indicator.edj
-@HAVE_ENOTIFY_TRUE@@USE_MODULE_ILLUME2_TRUE@am__append_50 = illume-indicator/e_mod_notify.c \
+@HAVE_ENOTIFY_TRUE@@USE_MODULE_ILLUME2_TRUE@am__append_49 = illume-indicator/e_mod_notify.c \
 @HAVE_ENOTIFY_TRUE@@USE_MODULE_ILLUME2_TRUE@				      illume-indicator/e_mod_notify.h
 
-@USE_MODULE_SYSCON_TRUE@am__append_51 = $(syscon_DATA)
-@USE_MODULE_EVERYTHING_TRUE@am__append_52 = $(everything_DATA) \
+@USE_MODULE_SYSCON_TRUE@am__append_50 = $(syscon_DATA)
+@USE_MODULE_EVERYTHING_TRUE@am__append_51 = $(everything_DATA) \
 @USE_MODULE_EVERYTHING_TRUE@	everything/everything.pc.in
-@USE_MODULE_SYSTRAY_TRUE@am__append_53 = $(systray_DATA)
-@USE_MODULE_COMP_TRUE@am__append_54 = $(comp_DATA)
-@HAVE_WAYLAND_CLIENTS_TRUE@@USE_MODULE_COMP_TRUE@am__append_55 = comp/e_mod_comp_wl.h \
+@USE_MODULE_SYSTRAY_TRUE@am__append_52 = $(systray_DATA)
+@USE_MODULE_COMP_TRUE@am__append_53 = $(comp_DATA)
+@HAVE_WAYLAND_CLIENTS_TRUE@@USE_MODULE_COMP_TRUE@am__append_54 = comp/e_mod_comp_wl.h \
 @HAVE_WAYLAND_CLIENTS_TRUE@@USE_MODULE_COMP_TRUE@			  comp/e_mod_comp_wl.c \
 @HAVE_WAYLAND_CLIENTS_TRUE@@USE_MODULE_COMP_TRUE@			  comp/e_mod_comp_wl_comp.h \
 @HAVE_WAYLAND_CLIENTS_TRUE@@USE_MODULE_COMP_TRUE@			  comp/e_mod_comp_wl_comp.c \
@@ -208,14 +207,14 @@ DIST_COMMON = $(am__dist_everything_headers_DATA_DIST) \
 @HAVE_WAYLAND_CLIENTS_TRUE@@USE_MODULE_COMP_TRUE@			  comp/e_mod_comp_wl_region.h \
 @HAVE_WAYLAND_CLIENTS_TRUE@@USE_MODULE_COMP_TRUE@			  comp/e_mod_comp_wl_region.c
 
-@USE_MODULE_PHYSICS_TRUE@am__append_56 = $(physics_DATA)
-@USE_MODULE_QUICKACCESS_TRUE@am__append_57 = $(quickaccess_DATA)
-@USE_MODULE_SHOT_TRUE@am__append_58 = $(shot_DATA)
-@USE_MODULE_BACKLIGHT_TRUE@am__append_59 = $(backlight_DATA)
-@USE_MODULE_TASKS_TRUE@am__append_60 = $(tasks_DATA)
-@USE_MODULE_XKBSWITCH_TRUE@am__append_61 = $(xkbswitch_DATA)
-@USE_MODULE_TILING_TRUE@am__append_62 = tiling/e-module-tiling.edj
-@USE_MODULE_TILING_TRUE@am__append_63 = $(tiling_DATA) \
+@USE_MODULE_PHYSICS_TRUE@am__append_55 = $(physics_DATA)
+@USE_MODULE_QUICKACCESS_TRUE@am__append_56 = $(quickaccess_DATA)
+@USE_MODULE_SHOT_TRUE@am__append_57 = $(shot_DATA)
+@USE_MODULE_BACKLIGHT_TRUE@am__append_58 = $(backlight_DATA)
+@USE_MODULE_TASKS_TRUE@am__append_59 = $(tasks_DATA)
+@USE_MODULE_XKBSWITCH_TRUE@am__append_60 = $(xkbswitch_DATA)
+@USE_MODULE_TILING_TRUE@am__append_61 = tiling/e-module-tiling.edj
+@USE_MODULE_TILING_TRUE@am__append_62 = $(tiling_DATA) \
 @USE_MODULE_TILING_TRUE@	      tiling/e-module-tiling.edc \
 @USE_MODULE_TILING_TRUE@	      tiling/module.desktop.in \
 @USE_MODULE_TILING_TRUE@	      tiling/images/module_icon.png \
@@ -228,7 +227,7 @@ DIST_COMMON = $(am__dist_everything_headers_DATA_DIST) \
 @USE_MODULE_TILING_TRUE@	      tiling/images/arrow_sw.png \
 @USE_MODULE_TILING_TRUE@	      tiling/images/arrow_w.png
 
-@USE_MODULE_ACCESS_TRUE@am__append_64 = $(access_DATA)
+@USE_MODULE_ACCESS_TRUE@am__append_63 = $(access_DATA)
 subdir = src/modules
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac-plugins.m4 \
@@ -1315,11 +1314,11 @@ wizard_page_100_la_OBJECTS = $(am_wizard_page_100_la_OBJECTS)
 @USE_MODULE_WIZARD_TRUE@	$(wizardpkgdir)
 wizard_page_110_la_DEPENDENCIES =
 am__wizard_page_110_la_SOURCES_DIST = wizard/page_110.c
-@USE_MODULE_CONNMAN_TRUE@@USE_MODULE_WIZARD_TRUE@am_wizard_page_110_la_OBJECTS = wizard/page_110.lo
+@USE_MODULE_WIZARD_TRUE@am_wizard_page_110_la_OBJECTS =  \
+@USE_MODULE_WIZARD_TRUE@	wizard/page_110.lo
 wizard_page_110_la_OBJECTS = $(am_wizard_page_110_la_OBJECTS)
-@USE_MODULE_CONNMAN_TRUE@@USE_MODULE_WIZARD_TRUE@am_wizard_page_110_la_rpath =  \
-@USE_MODULE_CONNMAN_TRUE@@USE_MODULE_WIZARD_TRUE@	-rpath \
-@USE_MODULE_CONNMAN_TRUE@@USE_MODULE_WIZARD_TRUE@	$(wizardpkgdir)
+@USE_MODULE_WIZARD_TRUE@am_wizard_page_110_la_rpath = -rpath \
+@USE_MODULE_WIZARD_TRUE@	$(wizardpkgdir)
 wizard_page_120_la_LIBADD =
 am__wizard_page_120_la_SOURCES_DIST = wizard/page_120.c
 @USE_MODULE_WIZARD_TRUE@am_wizard_page_120_la_OBJECTS =  \
@@ -1363,6 +1362,13 @@ am__wizard_page_170_la_SOURCES_DIST = wizard/page_170.c
 @USE_MODULE_WIZARD_TRUE@	wizard/page_170.lo
 wizard_page_170_la_OBJECTS = $(am_wizard_page_170_la_OBJECTS)
 @USE_MODULE_WIZARD_TRUE@am_wizard_page_170_la_rpath = -rpath \
+@USE_MODULE_WIZARD_TRUE@	$(wizardpkgdir)
+wizard_page_180_la_LIBADD =
+am__wizard_page_180_la_SOURCES_DIST = wizard/page_180.c
+@USE_MODULE_WIZARD_TRUE@am_wizard_page_180_la_OBJECTS =  \
+@USE_MODULE_WIZARD_TRUE@	wizard/page_180.lo
+wizard_page_180_la_OBJECTS = $(am_wizard_page_180_la_OBJECTS)
+@USE_MODULE_WIZARD_TRUE@am_wizard_page_180_la_rpath = -rpath \
 @USE_MODULE_WIZARD_TRUE@	$(wizardpkgdir)
 wizard_page_200_la_LIBADD =
 am__wizard_page_200_la_SOURCES_DIST = wizard/page_200.c
@@ -1493,9 +1499,9 @@ SOURCES = $(access_module_la_SOURCES) $(backlight_module_la_SOURCES) \
 	$(wizard_page_140_la_SOURCES) $(wizard_page_150_la_SOURCES) \
 	$(nodist_wizard_page_150_la_SOURCES) \
 	$(wizard_page_160_la_SOURCES) $(wizard_page_170_la_SOURCES) \
-	$(wizard_page_200_la_SOURCES) $(xkbswitch_module_la_SOURCES) \
-	$(battery_batget_SOURCES) $(cpufreq_freqset_SOURCES) \
-	$(temperature_tempget_SOURCES)
+	$(wizard_page_180_la_SOURCES) $(wizard_page_200_la_SOURCES) \
+	$(xkbswitch_module_la_SOURCES) $(battery_batget_SOURCES) \
+	$(cpufreq_freqset_SOURCES) $(temperature_tempget_SOURCES)
 DIST_SOURCES = $(am__access_module_la_SOURCES_DIST) \
 	$(am__backlight_module_la_SOURCES_DIST) \
 	$(am__battery_module_la_SOURCES_DIST) \
@@ -1572,6 +1578,7 @@ DIST_SOURCES = $(am__access_module_la_SOURCES_DIST) \
 	$(am__wizard_page_150_la_SOURCES_DIST) \
 	$(am__wizard_page_160_la_SOURCES_DIST) \
 	$(am__wizard_page_170_la_SOURCES_DIST) \
+	$(am__wizard_page_180_la_SOURCES_DIST) \
 	$(am__wizard_page_200_la_SOURCES_DIST) \
 	$(am__xkbswitch_module_la_SOURCES_DIST) \
 	$(am__battery_batget_SOURCES_DIST) \
@@ -1935,23 +1942,23 @@ version_info = @version_info@
 MAINTAINERCLEANFILES = Makefile.in
 AUTOMAKE_OPTIONS = subdir-objects
 SUBDIRS = 
-CLEANFILES = $(am__append_23) $(am__append_49) $(am__append_62)
+CLEANFILES = $(am__append_22) $(am__append_48) $(am__append_61)
 EXTRA_DIST = $(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_4) $(am__append_5) $(am__append_6) \
 	$(am__append_11) $(am__append_13) $(am__append_14) \
 	$(am__append_16) $(am__append_17) $(am__append_18) \
 	$(am__append_19) $(am__append_20) $(am__append_21) \
-	$(am__append_24) $(am__append_25) $(am__append_26) \
-	$(am__append_27) $(am__append_28) $(am__append_29) \
-	$(am__append_30) $(am__append_31) $(am__append_32) \
-	$(am__append_33) $(am__append_34) $(am__append_35) \
-	$(am__append_36) $(am__append_37) $(am__append_38) \
-	$(am__append_39) $(am__append_40) $(am__append_41) \
-	$(am__append_42) $(am__append_43) $(am__append_48) \
-	$(am__append_51) $(am__append_52) $(am__append_53) \
-	$(am__append_54) $(am__append_56) $(am__append_57) \
-	$(am__append_58) $(am__append_59) $(am__append_60) \
-	$(am__append_61) $(am__append_63) $(am__append_64)
+	$(am__append_23) $(am__append_24) $(am__append_25) \
+	$(am__append_26) $(am__append_27) $(am__append_28) \
+	$(am__append_29) $(am__append_30) $(am__append_31) \
+	$(am__append_32) $(am__append_33) $(am__append_34) \
+	$(am__append_35) $(am__append_36) $(am__append_37) \
+	$(am__append_38) $(am__append_39) $(am__append_40) \
+	$(am__append_41) $(am__append_42) $(am__append_47) \
+	$(am__append_50) $(am__append_51) $(am__append_52) \
+	$(am__append_53) $(am__append_55) $(am__append_56) \
+	$(am__append_57) $(am__append_58) $(am__append_59) \
+	$(am__append_60) $(am__append_62) $(am__append_63)
 INSTALL_DATA_HOOKS = $(am__append_15)
 MDIR = $(libdir)/enlightenment/modules
 AM_LDFLAGS = -module -avoid-version
@@ -2170,16 +2177,28 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 #	      wizard/module.desktop
 @USE_MODULE_WIZARD_TRUE@wizardpkgdir = $(MDIR)/wizard/$(MODULE_ARCH)
 @USE_MODULE_WIZARD_TRUE@wizardpkg_LTLIBRARIES = wizard/module.la \
-@USE_MODULE_WIZARD_TRUE@	wizard/page_000.la wizard/page_010.la \
-@USE_MODULE_WIZARD_TRUE@	wizard/page_011.la wizard/page_020.la \
-@USE_MODULE_WIZARD_TRUE@	wizard/page_030.la wizard/page_040.la \
-@USE_MODULE_WIZARD_TRUE@	wizard/page_050.la wizard/page_060.la \
-@USE_MODULE_WIZARD_TRUE@	wizard/page_070.la wizard/page_080.la \
-@USE_MODULE_WIZARD_TRUE@	wizard/page_090.la wizard/page_100.la \
-@USE_MODULE_WIZARD_TRUE@	wizard/page_120.la wizard/page_130.la \
-@USE_MODULE_WIZARD_TRUE@	wizard/page_140.la wizard/page_150.la \
-@USE_MODULE_WIZARD_TRUE@	wizard/page_160.la wizard/page_170.la \
-@USE_MODULE_WIZARD_TRUE@	wizard/page_200.la $(am__append_22)
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_000.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_010.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_011.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_020.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_030.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_040.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_050.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_060.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_070.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_080.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_090.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_100.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_110.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_120.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_130.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_140.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_150.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_160.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_170.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_180.la \
+@USE_MODULE_WIZARD_TRUE@			 wizard/page_200.la
+
 @USE_MODULE_WIZARD_TRUE@wizard_module_la_SOURCES = wizard/e_mod_main.h \
 @USE_MODULE_WIZARD_TRUE@			   wizard/e_mod_main.c \
 @USE_MODULE_WIZARD_TRUE@			   wizard/e_wizard.c \
@@ -2197,7 +2216,7 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_WIZARD_TRUE@wizard_page_080_la_SOURCES = wizard/page_080.c
 @USE_MODULE_WIZARD_TRUE@wizard_page_090_la_SOURCES = wizard/page_090.c
 @USE_MODULE_WIZARD_TRUE@wizard_page_100_la_SOURCES = wizard/page_100.c
-@USE_MODULE_CONNMAN_TRUE@@USE_MODULE_WIZARD_TRUE@wizard_page_110_la_SOURCES = wizard/page_110.c
+@USE_MODULE_WIZARD_TRUE@wizard_page_110_la_SOURCES = wizard/page_110.c
 @USE_MODULE_CONNMAN_TRUE@@USE_MODULE_WIZARD_TRUE@wizard_page_110_la_LIBADD = @ECONNMAN_LIBS@
 @USE_MODULE_WIZARD_TRUE@wizard_page_120_la_SOURCES = wizard/page_120.c
 @USE_MODULE_WIZARD_TRUE@wizard_page_130_la_SOURCES = wizard/page_130.c
@@ -2210,6 +2229,7 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 
 @USE_MODULE_WIZARD_TRUE@wizard_page_160_la_SOURCES = wizard/page_160.c
 @USE_MODULE_WIZARD_TRUE@wizard_page_170_la_SOURCES = wizard/page_170.c
+@USE_MODULE_WIZARD_TRUE@wizard_page_180_la_SOURCES = wizard/page_180.c
 @USE_MODULE_WIZARD_TRUE@wizard_page_200_la_SOURCES = wizard/page_200.c
 @USE_MODULE_CONF_TRUE@confdir = $(MDIR)/conf
 @USE_MODULE_CONF_TRUE@conf_DATA = conf/e-module-conf.edj \
@@ -2484,7 +2504,7 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_MIXER_TRUE@mixerpkgdir = $(MDIR)/mixer/$(MODULE_ARCH)
 @USE_MODULE_MIXER_TRUE@mixerpkg_LTLIBRARIES = mixer/module.la
 @USE_MODULE_MIXER_TRUE@mixer_module_la_CFLAGS = $(AM_CFLAGS) \
-@USE_MODULE_MIXER_TRUE@	$(am__append_46)
+@USE_MODULE_MIXER_TRUE@	$(am__append_45)
 @USE_MODULE_MIXER_TRUE@mixer_module_la_SOURCES = mixer/e_mod_main.c \
 @USE_MODULE_MIXER_TRUE@	mixer/e_mod_main.h mixer/app_mixer.c \
 @USE_MODULE_MIXER_TRUE@	mixer/conf_gadget.c mixer/conf_module.c \
@@ -2492,9 +2512,9 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_MIXER_TRUE@	mixer/Pulse.h mixer/pa.h mixer/pa.c \
 @USE_MODULE_MIXER_TRUE@	mixer/serial.c mixer/sink.c \
 @USE_MODULE_MIXER_TRUE@	mixer/sys_pulse.c mixer/tag.c \
-@USE_MODULE_MIXER_TRUE@	$(am__append_44) $(am__append_45)
+@USE_MODULE_MIXER_TRUE@	$(am__append_43) $(am__append_44)
 @USE_MODULE_MIXER_TRUE@mixer_module_la_LIBADD = @SOUND_LIBS@ \
-@USE_MODULE_MIXER_TRUE@	$(am__append_47)
+@USE_MODULE_MIXER_TRUE@	$(am__append_46)
 @USE_MODULE_ILLUME2_TRUE@illume2dir = $(MDIR)/illume2
 @USE_MODULE_ILLUME2_TRUE@illume2_DATA = illume2/e-module-illume2.edj \
 @USE_MODULE_ILLUME2_TRUE@	       illume2/module.desktop
@@ -2648,7 +2668,7 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_ILLUME2_TRUE@	illume-indicator/e_mod_config.h \
 @USE_MODULE_ILLUME2_TRUE@	illume-indicator/e_mod_ind_win.c \
 @USE_MODULE_ILLUME2_TRUE@	illume-indicator/e_mod_ind_win.h \
-@USE_MODULE_ILLUME2_TRUE@	$(am__append_50)
+@USE_MODULE_ILLUME2_TRUE@	$(am__append_49)
 @USE_MODULE_ILLUME2_TRUE@illume_indicator_module_la_LIBADD = @ENOTIFY_LIBS@
 @USE_MODULE_ILLUME2_TRUE@illume_kbd_toggledir = $(MDIR)/illume-kbd-toggle
 @USE_MODULE_ILLUME2_TRUE@illume_kbd_toggle_DATA = illume-kbd-toggle/e-module-illume-kbd-toggle.edj \
@@ -2754,7 +2774,7 @@ EDJE_FLAGS = $(EDJE_FLAGS_VERBOSE_$(V)) @EDJE_DEF@
 @USE_MODULE_COMP_TRUE@	comp/e_mod_comp_update.h \
 @USE_MODULE_COMP_TRUE@	comp/e_mod_comp_cfdata.c \
 @USE_MODULE_COMP_TRUE@	comp/e_mod_comp_cfdata.h \
-@USE_MODULE_COMP_TRUE@	$(am__append_55)
+@USE_MODULE_COMP_TRUE@	$(am__append_54)
 @USE_MODULE_COMP_TRUE@comp_module_la_LIBADD = @WAYLAND_LIBS@
 @USE_MODULE_PHYSICS_TRUE@physicsdir = $(MDIR)/physics
 @USE_MODULE_PHYSICS_TRUE@physics_DATA = physics/e-module-physics.edj \
@@ -5859,6 +5879,10 @@ wizard/page_170.lo: wizard/$(am__dirstamp) \
 	wizard/$(DEPDIR)/$(am__dirstamp)
 wizard/page_170.la: $(wizard_page_170_la_OBJECTS) $(wizard_page_170_la_DEPENDENCIES) $(EXTRA_wizard_page_170_la_DEPENDENCIES) wizard/$(am__dirstamp)
 	$(AM_V_CCLD)$(LINK) $(am_wizard_page_170_la_rpath) $(wizard_page_170_la_OBJECTS) $(wizard_page_170_la_LIBADD) $(LIBS)
+wizard/page_180.lo: wizard/$(am__dirstamp) \
+	wizard/$(DEPDIR)/$(am__dirstamp)
+wizard/page_180.la: $(wizard_page_180_la_OBJECTS) $(wizard_page_180_la_DEPENDENCIES) $(EXTRA_wizard_page_180_la_DEPENDENCIES) wizard/$(am__dirstamp)
+	$(AM_V_CCLD)$(LINK) $(am_wizard_page_180_la_rpath) $(wizard_page_180_la_OBJECTS) $(wizard_page_180_la_LIBADD) $(LIBS)
 wizard/page_200.lo: wizard/$(am__dirstamp) \
 	wizard/$(DEPDIR)/$(am__dirstamp)
 wizard/page_200.la: $(wizard_page_200_la_OBJECTS) $(wizard_page_200_la_DEPENDENCIES) $(EXTRA_wizard_page_200_la_DEPENDENCIES) wizard/$(am__dirstamp)
@@ -6397,6 +6421,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@wizard/$(DEPDIR)/page_140.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@wizard/$(DEPDIR)/page_160.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@wizard/$(DEPDIR)/page_170.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@wizard/$(DEPDIR)/page_180.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@wizard/$(DEPDIR)/page_200.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@wizard/$(DEPDIR)/wizard_page_150_la-e_mod_comp_cfdata.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@wizard/$(DEPDIR)/wizard_page_150_la-page_150.Plo@am__quote@

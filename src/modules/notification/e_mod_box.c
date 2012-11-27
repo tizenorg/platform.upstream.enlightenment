@@ -312,6 +312,7 @@ _notification_box_icon_fill(Notification_Box_Icon *ic,
    Evas_Object *dummy = NULL;
    int w, h = 0;
 
+   // XXX: this is horrible.
    if ((icon_path = e_notification_app_icon_get(n)) && *icon_path)
      {
         if (!memcmp(icon_path, "file://", 7)) icon_path += 7;
@@ -332,8 +333,10 @@ _notification_box_icon_fill(Notification_Box_Icon *ic,
         snprintf(buf, sizeof(buf), "%s/e-module-notification.edj", notification_mod->dir);
         dummy = edje_object_add(evas_object_evas_get(ic->n_box->o_box));
         if (!e_theme_edje_object_set(dummy, "base/theme/modules/notification",
+                                     "e/modules/notification/logo"))
+          if (!e_theme_edje_object_set(dummy, "base/theme/modules/notification",
                                      "modules/notification/logo"))
-          edje_object_file_set(dummy, buf, "modules/notification/logo");
+            edje_object_file_set(dummy, buf, "modules/notification/logo");
         evas_object_resize(dummy, 80, 80);
         app_icon = (Evas_Object*)edje_object_part_object_get(dummy, "image");
      }
@@ -354,7 +357,7 @@ _notification_box_icon_fill(Notification_Box_Icon *ic,
    evas_object_show(ic->o_icon2);
 
    if (dummy) evas_object_del(dummy);
-   evas_object_del(app_icon);
+   else evas_object_del(app_icon);
    _notification_box_icon_fill_label(ic);
 }
 

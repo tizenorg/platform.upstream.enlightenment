@@ -3,8 +3,9 @@
 #include "e_mod_main.h"
 
 EAPI int
-wizard_page_init(E_Wizard_Page *pg __UNUSED__)
+wizard_page_init(E_Wizard_Page *pg __UNUSED__, Eina_Bool *need_xdg_desktops __UNUSED__, Eina_Bool *need_xdg_icons)
 {
+   *need_xdg_icons = EINA_TRUE;
    return 1;
 }
 
@@ -17,6 +18,7 @@ wizard_page_shutdown(E_Wizard_Page *pg __UNUSED__)
 EAPI int
 wizard_page_show(E_Wizard_Page *pg __UNUSED__)
 {
+   /* TODO: Wait until icon theme list is built */
    Eina_List *l, *themes = efreet_icon_theme_list_get();
    Efreet_Icon_Theme *th;
    int i;
@@ -66,4 +68,3 @@ wizard_page_apply(E_Wizard_Page *pg __UNUSED__)
 {
    return 1;
 }
-
