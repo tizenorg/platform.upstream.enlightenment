@@ -2814,6 +2814,7 @@ e_fm2_client_data(Ecore_Ipc_Event_Client_Data *e)
                      }
                    break;
                 }
+              free(evdir);
 //                       printf(" ...\n");
               if ((sd->id != e->ref_to) || (path[0] != 0)) break;
 //                            printf(" end response = %i\n", e->response);
@@ -6414,7 +6415,7 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
 
    fsel = e_fm2_uri_path_list_get(ev->data);
    fp = eina_list_data_get(fsel);
-   if (fp && sd->realpath)
+   if (fp && sd->realpath && ((sd->drop_all) || (!sd->drop_icon)))
      {
         const char *f;
 
@@ -6434,7 +6435,7 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
                }
           }
      }
-
+   
    isel = _e_fm2_uri_icon_list_get(fsel);
    if (!isel) return;
    ox = 0; oy = 0;
@@ -6963,11 +6964,17 @@ _e_fm2_cb_drag_finished(E_Drag *drag, int dropped __UNUSED__)
                   E_Fm2_Icon *ic;
 
                   file = ecore_file_file_get(uri->path);
-                  ic = _e_fm2_icon_find(fm, file);
-                  ic->drag.dnd = EINA_FALSE;
-                  if (ic->sd->dnd_scroller) ecore_animator_del(ic->sd->dnd_scroller);
-                  ic->sd->dnd_scroller = NULL;
-                  evas_object_smart_callback_call(ic->sd->obj, "dnd_end", &ic->info);
+                  if (file)
+                    {
+                       ic = _e_fm2_icon_find(fm, file);
+                       if (ic)
+                         {
+                            ic->drag.dnd = EINA_FALSE;
+                            if (ic->sd->dnd_scroller) ecore_animator_del(ic->sd->dnd_scroller);
+                            ic->sd->dnd_scroller = NULL;
+                            evas_object_smart_callback_call(ic->sd->obj, "dnd_end", &ic->info);
+                         }
+                    }
                }
 
              if (uri->hostname) eina_stringshare_del(uri->hostname);
@@ -9235,7 +9242,7 @@ _e_fm2_new_file(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
      }
    if (!ecore_file_can_write(sd->realpath))
      {
-        e_util_dialog_show(_("Error"), _("%s is not able to be written to!"), sd->realpath);
+        e_util_dialog_show(_("Error"), _("%s can't be written to!"), sd->realpath);
         return;
      }
    sd->new_file.thread = ecore_thread_feedback_run(_e_fm2_new_file_thread, (Ecore_Thread_Notify_Cb)_e_fm2_new_file_notify,

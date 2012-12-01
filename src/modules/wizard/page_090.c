@@ -1,6 +1,5 @@
 /* Setup if we need battery? */
-#include "e.h"
-#include "e_mod_main.h"
+#include "e_wizard.h"
 
 #ifdef __FreeBSD__
 # include <sys/ioctl.h>
@@ -31,7 +30,7 @@ read_file(const char *file)
    fclose(f);
    return strdup(buf);
 }
-
+/*
 EAPI int
 wizard_page_init(E_Wizard_Page *pg __UNUSED__, Eina_Bool *need_xdg_desktops __UNUSED__, Eina_Bool *need_xdg_icons __UNUSED__)
 {
@@ -43,7 +42,7 @@ wizard_page_shutdown(E_Wizard_Page *pg __UNUSED__)
 {
    return 1;
 }
-
+*/
 EAPI int
 wizard_page_show(E_Wizard_Page *pg __UNUSED__)
 {
@@ -116,7 +115,7 @@ wizard_page_show(E_Wizard_Page *pg __UNUSED__)
      }
    return 0; /* 1 == show ui, and wait for user, 0 == just continue */
 }
-
+/*
 EAPI int
 wizard_page_hide(E_Wizard_Page *pg __UNUSED__)
 {
@@ -128,4 +127,4 @@ wizard_page_apply(E_Wizard_Page *pg __UNUSED__)
 {
    return 1;
 }
-
+*/

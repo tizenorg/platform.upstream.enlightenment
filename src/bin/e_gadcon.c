@@ -939,16 +939,18 @@ e_gadcon_client_config_del(E_Config_Gadcon *cf_gc, E_Config_Gadcon_Client *cf_gc
 {
    E_Gadcon *gc;
    Eina_List *l, *ll;
+
+   if (!cf_gcc) return;
    EINA_LIST_FOREACH(gadcons, l, gc)
      {
         if (!gc->awaiting_classes) continue;
         ll = eina_hash_find(gc->awaiting_classes, cf_gcc->name);
         eina_hash_set(gc->awaiting_classes, cf_gcc->name, eina_list_remove(ll, cf_gcc));
      }
-   if (!cf_gcc) return;
-   if (cf_gcc->name) eina_stringshare_del(cf_gcc->name);
-   if (cf_gcc->id) eina_stringshare_del(cf_gcc->id);
-   if (cf_gcc->style) eina_stringshare_del(cf_gcc->style);
+
+   eina_stringshare_del(cf_gcc->name);
+   eina_stringshare_del(cf_gcc->id);
+   eina_stringshare_del(cf_gcc->style);
    if (cf_gc) cf_gc->clients = eina_list_remove(cf_gc->clients, cf_gcc);
    free(cf_gcc);
 }
@@ -1244,7 +1246,7 @@ e_gadcon_client_edit_end(E_Gadcon_Client *gcc)
    if (gcc->moving)
      {
         gcc->moving = 0;
-        _e_gadcon_client_save(gcc);
+        if (gcc->cf) _e_gadcon_client_save(gcc);
      }
    if (gcc->o_event) evas_object_del(gcc->o_event);
    gcc->o_event = NULL;
@@ -2069,6 +2071,8 @@ _e_gadcon_client_delfn(void *d __UNUSED__, void *o)
    if ((gcc->client_class->func.id_del) && (gcc->cf))
      gcc->client_class->func.id_del((E_Gadcon_Client_Class *)gcc->client_class,
                                     gcc->cf->id);
+   if (gcc->drag.drag)
+     e_object_del(E_OBJECT(gcc->drag.drag));
    gcc->gadcon->clients = eina_list_remove(gcc->gadcon->clients, gcc);
    if (gcc->scroll_timer) ecore_timer_del(gcc->scroll_timer);
    if (gcc->scroll_animator) ecore_animator_del(gcc->scroll_animator);
@@ -2855,6 +2859,7 @@ _e_gadcon_cb_dnd_enter(void *data, const char *type __UNUSED__, void *event)
    if ((!gcc->hidden) && (gcc->gadcon == gc))
      {
         if (gc->dnd_enter_cb) gc->dnd_enter_cb(gc, gc->drag_gcc);
+        evas_object_hide(gc->drag_gcc->drag.drag->object);
         return;
      }
    if (gcc->gadcon != gc)
@@ -5532,7 +5537,7 @@ _e_gadcon_custom_populate_job(void *data __UNUSED__)
 {
    const E_Gadcon_Client_Class *cc;
    E_Config_Gadcon_Client *cf_gcc;
-   const Eina_List *l;
+   Eina_List *l, *ll;
    E_Gadcon *gc;
 
 #ifndef E17_RELEASE_BUILD
@@ -5544,8 +5549,13 @@ _e_gadcon_custom_populate_job(void *data __UNUSED__)
      {
         if (!gc->cf) continue;
         e_gadcon_layout_freeze(gc->o_container);
-        EINA_LIST_FOREACH(gc->cf->clients, l, cf_gcc)
+        EINA_LIST_FOREACH_SAFE(gc->cf->clients, l, ll, cf_gcc)
           {
+             if ((!cf_gcc->name) || (!cf_gcc->name[0]) || (!cf_gcc->id) || (!cf_gcc->id[0]))
+               {
+                  e_gadcon_client_config_del(gc->cf, cf_gcc);
+                  continue;
+               }
              cc = eina_hash_find(providers, cf_gcc->name);
              if (!cc) continue;
              if (gc->populate_class.func)
@@ -5617,7 +5627,7 @@ _e_gadcon_provider_populate_job(void *data __UNUSED__)
              x++;
           }
           if (freeze) e_gadcon_layout_thaw(gc->o_container);
-          if (x) _e_gadcon_event_populate(gc);
+          if (x && _modules_loaded) _e_gadcon_event_populate(gc);
        }
 //out:
 #ifndef E17_RELEASE_BUILD

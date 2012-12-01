@@ -19,6 +19,7 @@ macros.edc \
 edc/about-e.edc \
 edc/about-theme.edc \
 edc/background.edc \
+edc/backlight.edc \
 edc/border.edc \
 edc/button.edc \
 edc/check.edc \
@@ -44,6 +45,7 @@ edc/ilist.edc \
 edc/init.edc \
 edc/label.edc \
 edc/menu.edc \
+edc/mixer.edc \
 edc/notification.edc \
 edc/pager.edc \
 edc/pointer.edc \
@@ -59,6 +61,7 @@ edc/sys.edc \
 edc/syscon.edc \
 edc/systray.edc \
 edc/tasks.edc \
+edc/temperature.edc \
 edc/textblock.edc \
 edc/toolbar.edc \
 edc/transitions.edc \
@@ -109,6 +112,10 @@ img/big_arrow_right.png \
 img/big_arrow_right_shadow.png \
 img/big_arrow_up.png \
 img/big_arrow_up_shadow.png \
+img/bulb_glow.png \
+img/bulb_off.png \
+img/bulb_on.png \
+img/bulb_over.png \
 img/bt_base.png \
 img/bt_sig_1.png \
 img/bt_sig_2.png \
@@ -193,7 +200,10 @@ img/knob_sz_20.png \
 img/knob_sz_22.png \
 img/knob_sz_24.png \
 img/led_dark.png \
+img/led_dot_white.png \
 img/led_light.png \
+img/led_red_light.png \
+img/led_strobe.png \
 img/led_tiny_green.png \
 img/led_tiny_orange.png \
 img/led_square_base.png \
@@ -239,6 +249,8 @@ img/slider_run_bevel_horiz.png \
 img/slider_run_bevel_vert.png \
 img/slot_horiz_bottom.png \
 img/slot_horiz_top.png \
+img/speaker.png \
+img/speaker_shadow.png \
 img/sym_check_alum.png \
 img/sym_close_dark_normal.png \
 img/sym_close_dark_selected.png \
@@ -274,6 +286,9 @@ img/tacho_hand_small_min2.png \
 img/tacho_hand_small_min3.png \
 img/tacho_hand_small_min4.png \
 img/tacho_hand_small_shadow.png \
+img/therm_content.png \
+img/therm_shadow.png \
+img/therm_shine.png \
 img/vert_bar_inset.png \
 img/vert_glow_run.png \
 img/vertical_separated_bar_glow.png \

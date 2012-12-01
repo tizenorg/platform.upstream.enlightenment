@@ -1,6 +1,8 @@
 #ifndef E_MOD_GADMAN_H
 #define E_MOD_GADMAN_H
 
+#include "e.h"
+
 #define DEFAULT_POS_X  0.1
 #define DEFAULT_POS_Y  0.1
 #define DEFAULT_SIZE_W 0.07
@@ -43,15 +45,6 @@ typedef enum
 #define ID_GADMAN_LAYER_BG (ID_GADMAN_LAYER_BASE + GADMAN_LAYER_BG)
 #define ID_GADMAN_LAYER_TOP (ID_GADMAN_LAYER_BASE + GADMAN_LAYER_TOP)
 
-typedef struct Gadman_Popup
-{
-   EINA_INLIST;
-   E_Gadcon_Client *gcc;
-   E_Gadcon_Popup *pop;
-   Ecore_Timer *timer;
-   Ecore_Event_Handler *eh;
-} Gadman_Popup;
-
 struct _Manager
 {
    Eina_List   *gadcons[GADMAN_LAYER_COUNT];
@@ -65,8 +58,6 @@ struct _Manager
    E_Gadcon_Client *drag_gcc[GADMAN_LAYER_COUNT];
 
    Eina_List *drag_handlers;
-
-   Eina_Inlist *gadman_popups;
 
    Eina_List *waiting;
    Ecore_Event_Handler *add;
@@ -99,4 +90,17 @@ void             gadman_gadget_edit_end(void *data, Evas_Object *obj, const char
 void             gadman_gadgets_toggle(void);
 void             gadman_update_bg(void);
 Eina_Bool gadman_gadget_add_handler(void *d, int type, E_Event_Gadcon_Client_Add *ev);
+
+E_Config_Dialog *_config_gadman_module(E_Container *con, const char *params __UNUSED__);
+
+/**
+ * @addtogroup Optional_Gadgets
+ * @{
+ *
+ * @defgroup Module_Gadman Gadman (Gadget Manager)
+ *
+ * Manages @ref Optional_Gadgets on desktop or overlay.
+ *
+ * @}
+ */
 #endif

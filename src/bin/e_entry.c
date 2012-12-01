@@ -116,14 +116,18 @@ e_entry_text_set(Evas_Object *entry, const char *_text)
          edje_object_part_object_get(sd->entry_object, ENTRY_PART_NAME),
          _text);
    otext = edje_object_part_text_get(sd->entry_object, ENTRY_PART_NAME);
-   if ((text) && (otext) && (!strcmp(text, otext))) return;
+   if ((text) && (otext) && (!strcmp(text, otext)))
+     {
+        free(text);
+        return;
+     }
    if ((!text) && (!otext)) return;
    edje_object_part_text_set(sd->entry_object, ENTRY_PART_NAME, text);
    sd->changing++;
    edje_object_message_signal_process(sd->entry_object);
    sd->changing--;
    evas_object_smart_callback_call(entry, "changed", NULL);
-   if (text) free(text);
+   free(text);
 }
 
 /**
@@ -192,7 +196,7 @@ EAPI void
 e_entry_password_set(Evas_Object *entry, int password_mode)
 {
    E_Entry_Smart_Data *sd;
-   char *text;
+   Eina_Stringshare *text;
 
    if (evas_object_smart_smart_get(entry) != _e_entry_smart) SMARTERRNR();
    if ((!entry) || (!(sd = evas_object_smart_data_get(entry))))
@@ -200,7 +204,8 @@ e_entry_password_set(Evas_Object *entry, int password_mode)
    if (sd->password_mode == password_mode)
       return;
 
-   text = strdup(edje_object_part_text_get(sd->entry_object, ENTRY_PART_NAME));
+   text = eina_stringshare_add(
+         edje_object_part_text_get(sd->entry_object, ENTRY_PART_NAME));
 
    sd->password_mode = !!password_mode;
    if (!sd->password_mode)
@@ -212,7 +217,7 @@ e_entry_password_set(Evas_Object *entry, int password_mode)
    if (text)
      {
         edje_object_part_text_set(sd->entry_object, ENTRY_PART_NAME, text);
-        free(text);
+        eina_stringshare_del(text);
      }
 
    /* FIXME: Some sort of an hack to fix focus. We should just have an "update

@@ -1,9 +1,8 @@
 /* Ask about updates checking */
-#include "e.h"
-#include "e_mod_main.h"
+#include "e_wizard.h"
 
 static int do_up = 1;
-
+/*
 EAPI int
 wizard_page_init(E_Wizard_Page *pg __UNUSED__, Eina_Bool *need_xdg_desktops __UNUSED__, Eina_Bool *need_xdg_icons __UNUSED__)
 {
@@ -15,7 +14,7 @@ wizard_page_shutdown(E_Wizard_Page *pg __UNUSED__)
 {
    return 1;
 }
-
+*/
 EAPI int
 wizard_page_show(E_Wizard_Page *pg)
 {
@@ -69,10 +68,10 @@ wizard_page_hide(E_Wizard_Page *pg __UNUSED__)
    e_config_save_queue();
    return 1;
 }
-
+/*
 EAPI int
 wizard_page_apply(E_Wizard_Page *pg __UNUSED__)
 {
    return 1;
 }
-
+*/
