@@ -5,7 +5,7 @@ License:        BSD 2-clause
 Summary:        The Enlightenment window manager
 Url:            http://www.enlightenment.org/
 Group:          Graphics/X11
-Source0:        enlightenment-%{version}-alpha7.tar.bz2
+Source0:        enlightenment-%{version}-beta.tar.bz2
 BuildRequires:  doxygen
 #BuildRequires:  valgrind
 BuildRequires:  fdupes
