@@ -1,9 +1,5 @@
 #include "e.h"
 
-/*
- * TODO: Listen to EFREET_EVENT_DESKTOP_CACHE_UPDATE
- */
-
 typedef struct _Main_Data Main_Data;
 
 struct _Main_Data
@@ -121,7 +117,6 @@ _TEST(void *d __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
    e_dialog_button_add(dia, "Add", NULL, _TEST_ADD, o_list);
    e_dialog_button_add(dia, "Del", NULL, _TEST_DEL, o_list);
    e_dialog_content_set(dia, o_list, 100, 300);
-   e_dialog_resizable_set(dia, 1);
    e_dialog_show(dia);
 }
 #endif
@@ -1189,6 +1184,7 @@ _e_int_menus_clients_add_by_class(Eina_List *borders, E_Menu *m)
                   mi = e_menu_item_new(m);
                   e_menu_item_separator_set(mi, 1);
                }
+             free(class);
              class = strdup(bd->client.icccm.class);
           }
         if (e_config->clientlist_separate_with == E_CLIENTLIST_GROUP_SEP_MENU)

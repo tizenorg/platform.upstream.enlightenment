@@ -224,6 +224,8 @@ _mixer_popup_update(E_Mixer_Instance *inst)
 {
    E_Mixer_Channel_State *state;
 
+   if (!inst->popup) return;
+
    state = &inst->mixer_state;
 
    if (inst->ui.left)
@@ -412,7 +414,7 @@ _mixer_popup_cb_volume_left_change(void *data, Evas_Object *obj, void *event __U
 
    e_mod_mixer_volume_set(inst->sys, inst->channel,
                           state->left, state->right);
-   _mixer_gadget_update(inst);
+   if (!_mixer_using_default) _mixer_gadget_update(inst);
 }
 
 static void
@@ -433,7 +435,7 @@ _mixer_popup_cb_volume_right_change(void *data, Evas_Object *obj, void *event __
 
    e_mod_mixer_volume_set(inst->sys, inst->channel,
                           state->left, state->right);
-   _mixer_gadget_update(inst);
+   if (!_mixer_using_default) _mixer_gadget_update(inst);
 }
 
 static void
@@ -444,9 +446,8 @@ _mixer_popup_cb_mute_change(void *data, Evas_Object *obj, void *event __UNUSED__
 
    state->mute = e_widget_check_checked_get(obj);
    e_mod_mixer_mute_set(inst->sys, inst->channel, state->mute);
-   if (!state->mute) e_mod_mixer_volume_set(inst->sys, inst->channel, state->left, state->right);
 
-   _mixer_gadget_update(inst);
+   if (!_mixer_using_default) _mixer_gadget_update(inst);
 }
 
 static Evas_Object *

@@ -964,19 +964,16 @@ main(int argc, char **argv)
    TS("E_Update Init Done");
    _e_main_shutdown_push(e_update_shutdown);
 
-   if (!after_restart)
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup Desktop Environment"));
+   TS("E_Deskenv Init");
+   if (!e_deskenv_init())
      {
-        if (e_config->show_splash)
-          e_init_status_set(_("Setup Desktop Environment"));
-        TS("E_Deskenv Init");
-        if (!e_deskenv_init())
-          {
-             e_error_message_show(_("Enlightenment cannot initialize its desktop environment.\n"));
-             _e_main_shutdown(-1);
-          }
-        TS("E_Deskenv Init Done");
-        _e_main_shutdown_push(e_deskenv_shutdown);
+        e_error_message_show(_("Enlightenment cannot initialize its desktop environment.\n"));
+        _e_main_shutdown(-1);
      }
+   TS("E_Deskenv Init Done");
+   _e_main_shutdown_push(e_deskenv_shutdown);
 
    if (e_config->show_splash)
      e_init_status_set(_("Setup File Ordering"));
@@ -1643,11 +1640,23 @@ _e_main_screens_init(void)
         return 0;
      }
    TS("\tscreens: focus");
-   if (!e_focus_init()) return 0;
+   if (!e_focus_init())
+     {
+        free(roots);
+        return 0;
+     }
    TS("\tscreens: border");
-   if (!e_border_init()) return 0;
+   if (!e_border_init())
+     {
+        free(roots);
+        return 0;
+     }
    TS("\tscreens: win");
-   if (!e_win_init()) return 0;
+   if (!e_win_init())
+     {
+        free(roots);
+        return 0;
+     }
    TS("\tscreens: manage roots");
    for (i = 0; i < num; i++)
      {
@@ -1680,6 +1689,10 @@ _e_main_screens_init(void)
              free(roots);
              return 0;
           }
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+        ecore_x_e_window_profile_supported_set(roots[i],
+                                               e_config->use_desktop_window_profile);
+#endif
      }
    free(roots);
 

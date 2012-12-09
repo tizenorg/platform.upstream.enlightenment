@@ -45,7 +45,6 @@ e_int_config_randr(E_Container *con, const char *params __UNUSED__)
 
    /* NB: These are just arbitrary values I picked. Feel free to change */
    e_win_size_min_set(cfd->dia->win, 180, 230);
-   e_dialog_resizable_set(cfd->dia, 1);
 
    return cfd;
 }
@@ -267,6 +266,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 
    e_widget_list_object_append(o, cfdata->o_scroll, 1, 1, 0.5);
 
+   e_dialog_resizable_set(cfd->dia, 1);
    return o;
 }
 

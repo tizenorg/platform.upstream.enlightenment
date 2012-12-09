@@ -36,6 +36,9 @@
 /* Define if the ALSA output plugin should be built */
 #undef HAVE_ALSA
 
+/* Define to 1 if you have the <arpa/inet.h> header file. */
+#undef HAVE_ARPA_INET_H
+
 /* Package BATTERY ( ecore >= 1.7.0 ecore-file >= 1.7.0 ecore-con >= 1.7.0
    eina >= 1.7.0 ) found. */
 #undef HAVE_BATTERY
@@ -109,6 +112,9 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <netinet/in.h> header file. */
+#undef HAVE_NETINET_IN_H
 
 /* PAM Authentication Support */
 #undef HAVE_PAM

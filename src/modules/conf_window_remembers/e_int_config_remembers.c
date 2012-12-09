@@ -33,7 +33,6 @@ e_int_config_remembers(E_Container *con, const char *params __UNUSED__)
    cfd = e_config_dialog_new(con, _("Window Remembers"), "E", 
                              "windows/window_remembers", 
                              "preferences-desktop-window-remember", 0, v, NULL);
-   e_dialog_resizable_set(cfd->dia, 1);
    return cfd;
 }
 
@@ -109,11 +108,12 @@ _basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static Evas_Object *
-_basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *ol, *of2, *ow;
    Evas_Coord mw, mh;
 
+   e_dialog_resizable_set(cfd->dia, 1);
    ol = e_widget_list_add(evas, 0, 0);
 
    ow = e_widget_check_add(evas, _("Remember internal dialogs"),

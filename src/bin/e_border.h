@@ -393,7 +393,16 @@ struct _E_Border
             Ecore_X_Window video_parent;
             E_Border      *video_parent_border;
             Eina_List     *video_child;
-
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+            struct
+            {
+               const char     *name;
+               const char    **available_list;
+               int             num;
+               unsigned char   wait_for_done : 1;
+               unsigned char   use : 1;
+            } profile;
+#endif
             unsigned char  centered : 1;
             unsigned char  video : 1;
          } state;
@@ -403,6 +412,9 @@ struct _E_Border
             unsigned char state : 1;
             unsigned char video_parent : 1;
             unsigned char video_position : 1;
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+            unsigned char profile : 1;
+#endif
          } fetch;
       } e;
 
@@ -802,6 +814,9 @@ EAPI void           e_border_tmp_input_hidden_push(E_Border *bd);
 EAPI void           e_border_tmp_input_hidden_pop(E_Border *bd);
 
 EAPI void           e_border_activate(E_Border *bd, Eina_Bool just_do_it);
+
+EAPI void           e_border_focus_lock_set(Eina_Bool lock);
+EAPI Eina_Bool     e_border_focus_lock_get(void);
 
 extern EAPI int E_EVENT_BORDER_RESIZE;
 extern EAPI int E_EVENT_BORDER_MOVE;

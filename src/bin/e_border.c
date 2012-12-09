@@ -71,10 +71,11 @@ static Eina_Bool _e_border_cb_window_focus_in(void *data,
 static Eina_Bool _e_border_cb_window_focus_out(void *data,
                                                int ev_type,
                                                void *ev);
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
 static Eina_Bool _e_border_cb_client_message(void *data,
                                              int ev_type,
                                              void *ev);
-
+#endif
 static Eina_Bool _e_border_cb_window_state_request(void *data,
                                                    int ev_type,
                                                    void *ev);
@@ -127,7 +128,11 @@ static Eina_Bool _e_border_cb_grab_replay(void *data,
                                           void *event);
 static void      _e_border_cb_drag_finished(E_Drag *drag,
                                             int dropped);
-
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+static Eina_Bool _e_border_cb_desk_window_profile_change(void *data,
+                                                         int   ev_type,
+                                                         void *ev);
+#endif
 static void      _e_border_eval(E_Border *bd);
 static void      _e_border_eval0(E_Border *bd);
 static void      _e_border_container_layout_hook(E_Container *con);
@@ -230,6 +235,9 @@ static int grabbed = 0;
 static Eina_List *focus_stack = NULL;
 static Eina_List *raise_stack = NULL;
 
+static E_Border *warp_timer_border = NULL;
+static Eina_Bool focus_locked = EINA_FALSE;
+
 static Ecore_X_Randr_Screen_Size screen_size = { -1, -1 };
 static int screen_size_index = -1;
 
@@ -314,8 +322,10 @@ e_border_init(void)
                          _e_border_cb_window_focus_in, NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_X_EVENT_WINDOW_FOCUS_OUT,
                          _e_border_cb_window_focus_out, NULL);
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
    E_LIST_HANDLER_APPEND(handlers, ECORE_X_EVENT_CLIENT_MESSAGE,
                          _e_border_cb_client_message, NULL);
+#endif
    E_LIST_HANDLER_APPEND(handlers, ECORE_X_EVENT_WINDOW_STATE_REQUEST,
                          _e_border_cb_window_state_request, NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_X_EVENT_WINDOW_MOVE_RESIZE_REQUEST,
@@ -337,7 +347,10 @@ e_border_init(void)
                          _e_border_cb_config_icon_theme, NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_CONFIG_MODE_CHANGED,
                          _e_border_cb_config_mode, NULL);
-
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_DESK_WINDOW_PROFILE_CHANGE,
+                         _e_border_cb_desk_window_profile_change, NULL);
+#endif
    if (!borders_hash) borders_hash = eina_hash_string_superfast_new(NULL);
 
    E_EVENT_BORDER_ADD = ecore_event_type_new();
@@ -374,8 +387,22 @@ e_border_shutdown(void)
    if (borders_hash) eina_hash_free(borders_hash);
    borders_hash = NULL;
    e_int_border_menu_hooks_clear();
+   focus_locked = EINA_FALSE;
+   warp_timer_border = NULL;
 
    return 1;
+}
+
+EAPI void
+e_border_focus_lock_set(Eina_Bool lock)
+{
+   focus_locked = !!lock;
+}
+
+EAPI Eina_Bool
+e_border_focus_lock_get(void)
+{
+   return focus_locked;
 }
 
 EAPI E_Border *
@@ -647,6 +674,11 @@ e_border_new(E_Container *con,
                   video_parent = EINA_TRUE;
                 else if (atoms[i] == ECORE_X_ATOM_E_VIDEO_POSITION)
                   video_position = EINA_TRUE;
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+                /* loop to check for window profile list atom */
+                else if (atoms[i] == ECORE_X_ATOM_E_WINDOW_PROFILE_SUPPORTED)
+                  bd->client.e.fetch.profile = 1;
+#endif
              }
            if (video_position && video_parent)
              {
@@ -919,6 +951,20 @@ e_border_desk_set(E_Border *bd,
    E_OBJECT_CHECK(desk);
    E_OBJECT_TYPE_CHECK(desk, E_DESK_TYPE);
    if (bd->desk == desk) return;
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+   if ((e_config->use_desktop_window_profile) &&
+       (bd->client.e.state.profile.use))
+     {
+        if (bd->client.e.state.profile.wait_for_done) return;
+        if (e_util_strcmp(bd->client.e.state.profile.name, desk->window_profile))
+          {
+             ecore_x_e_window_profile_change_request_send(bd->client.win,
+                                                          desk->window_profile);
+             bd->client.e.state.profile.wait_for_done = 1;
+             return;
+          }
+     }
+#endif
    ecore_x_window_shadow_tree_flush();
    if (bd->fullscreen)
      {
@@ -1032,22 +1078,15 @@ e_border_hide(E_Border *bd,
                     e_border_focus_set(bd->parent, 1, 1);
                   else if (e_config->focus_revert_on_hide_or_close)
                     {
-                       /* When using pointer focus, the border under the
-                        * pointer (if any) gets focused, in sloppy/click
-                        * focus the last focused window on the current
-                        * desk gets focus */
-                       if (e_config->focus_policy == E_FOCUS_MOUSE)
-                         {
-                            pbd = e_border_under_pointer_get(desk, bd);
-                            if (pbd)
-                              e_border_focus_set(pbd, 1, 1);
-                         }
-                       else
-                         {
-                            e_desk_last_focused_focus(desk);
-                            if ((pbd = eina_list_data_get(focus_next)))
-                              e_border_pointer_warp_to_center(pbd);
-                         }
+                       e_desk_last_focused_focus(desk);
+                       if ((pbd = eina_list_data_get(focus_next)))
+                         e_border_pointer_warp_to_center(pbd);
+                    }
+                  else if (e_config->focus_policy == E_FOCUS_MOUSE)
+                    {
+                       pbd = e_border_under_pointer_get(desk, bd);
+                       if (pbd)
+                         e_border_focus_set(pbd, 1, 1);
                     }
                }
           }
@@ -2147,7 +2186,7 @@ e_border_focus_set(E_Border *bd,
    /* dont focus an iconified window. that's silly! */
    if (focus)
      {
-        if (bd->iconic)
+        if ((bd->iconic) && (!bd->deskshow))
           {
              e_border_uniconify(bd);
              if (!focus_track_frozen)
@@ -2968,6 +3007,7 @@ e_border_fullscreen(E_Border *bd,
                     E_Fullscreen policy)
 {
    E_Event_Border_Fullscreen *ev;
+   int x, y, w, h;
 
    E_OBJECT_CHECK(bd);
    E_OBJECT_TYPE_CHECK(bd, E_BORDER_TYPE);
@@ -2983,15 +3023,31 @@ e_border_fullscreen(E_Border *bd,
      {
         bd->pre_res_change.valid = 0;
 
-        bd->saved.x = bd->x - bd->zone->x;
-        bd->saved.y = bd->y - bd->zone->y;
-        bd->saved.w = bd->client.w;
-        bd->saved.h = bd->client.h;
+        if (bd->maximized)
+          {
+             x = bd->saved.x;
+             y = bd->saved.y;
+             w = bd->saved.w;
+             h = bd->saved.h;
+          }
+        else
+          {
+             bd->saved.x = bd->x - bd->zone->x;
+             bd->saved.y = bd->y - bd->zone->y;
+             bd->saved.w = bd->client.w;
+             bd->saved.h = bd->client.h;
+          }
         bd->saved.maximized = bd->maximized;
         bd->saved.zone = bd->zone->num;
 
         if (bd->maximized)
-          e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
+          {
+             e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
+             bd->saved.x = x;
+             bd->saved.y = y;
+             bd->saved.w = w;
+             bd->saved.h = h;
+          }
         e_hints_window_size_set(bd);
 
         bd->client_inset.l = 0;
@@ -4447,15 +4503,16 @@ _e_border_reset_lost_window(E_Border *bd)
    warp_to = 1;
    warp_to_win = bd->zone->container->win;
 
-   if (!warp_timer)
-     warp_timer = ecore_timer_add(0.01,
-                                  _e_border_pointer_warp_to_center_timer, (const void *)bd);
+   if (warp_timer) ecore_timer_del(warp_timer);
+   warp_timer = ecore_timer_add(0.01, _e_border_pointer_warp_to_center_timer, bd);
 
    e_border_raise(bd);
    if (!bd->lock_focus_out)
      e_border_focus_set(bd, 1, 1);
 
    bd->during_lost = EINA_FALSE;
+   e_border_focus_lock_set(EINA_TRUE);
+   warp_timer_border = bd;
 }
 
 EAPI void
@@ -4723,9 +4780,12 @@ e_border_resize_limit(E_Border *bd,
                       int *h)
 {
    double a;
+   Eina_Bool inc_h;
 
    E_OBJECT_CHECK(bd);
    E_OBJECT_TYPE_CHECK(bd, E_BORDER_TYPE);
+
+   inc_h = (*h - bd->h > 0);
    *w -= bd->client_inset.l + bd->client_inset.r;
    *h -= bd->client_inset.t + bd->client_inset.b;
    if (*h < 1) *h = 1;
@@ -4743,7 +4803,11 @@ e_border_resize_limit(E_Border *bd,
         if ((bd->client.icccm.min_aspect != 0.0) &&
             (a < bd->client.icccm.min_aspect))
           {
-             th = tw / bd->client.icccm.max_aspect;
+             if (inc_h)
+               tw = th * bd->client.icccm.min_aspect;
+             else
+               th = tw / bd->client.icccm.max_aspect;
+             *w = tw + bd->client.icccm.base_w;
              *h = th + bd->client.icccm.base_h;
           }
         else if ((bd->client.icccm.max_aspect != 0.0) &&
@@ -4758,7 +4822,12 @@ e_border_resize_limit(E_Border *bd,
         a = (double)*w / (double)*h;
         if ((bd->client.icccm.min_aspect != 0.0) &&
             (a < bd->client.icccm.min_aspect))
-          *h = *w / bd->client.icccm.min_aspect;
+          {
+             if (inc_h)
+               *w = *h * bd->client.icccm.min_aspect;
+             else
+               *h = *w / bd->client.icccm.min_aspect;
+          }
         else if ((bd->client.icccm.max_aspect != 0.0) &&
                  (a > bd->client.icccm.max_aspect))
           *w = *h * bd->client.icccm.max_aspect;
@@ -4804,6 +4873,36 @@ e_border_resize_limit(E_Border *bd,
 static void
 _e_border_free(E_Border *bd)
 {
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+   if (bd->client.e.state.profile.use)
+     {
+        if (bd->client.e.state.profile.available_list)
+          {
+             int i;
+             for (i = 0; i < bd->client.e.state.profile.num; i++)
+               {
+                  if (bd->client.e.state.profile.available_list[i])
+                    {
+                       eina_stringshare_del(bd->client.e.state.profile.available_list[i]);
+                       bd->client.e.state.profile.available_list[i] = NULL;
+                    }
+               }
+             E_FREE(bd->client.e.state.profile.available_list);
+             bd->client.e.state.profile.available_list = NULL;
+          }
+
+        bd->client.e.state.profile.num = 0;
+
+        if (bd->client.e.state.profile.name)
+          {
+             eina_stringshare_del(bd->client.e.state.profile.name);
+             bd->client.e.state.profile.name = NULL;
+          }
+
+        bd->client.e.state.profile.wait_for_done = 0;
+        bd->client.e.state.profile.use = 0;
+     }
+#endif
    if (bd->client.e.state.video_parent && bd->client.e.state.video_parent_border)
      {
         bd->client.e.state.video_parent_border->client.e.state.video_child =
@@ -5818,7 +5917,18 @@ _e_border_cb_window_property(void *data  __UNUSED__,
         bd->client.netwm.fetch.state = 1;
         bd->changed = 1;
      }
-
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+   else if (e->atom == ECORE_X_ATOM_E_WINDOW_PROFILE_SUPPORTED)
+     {
+        bd->client.e.fetch.profile = 1;
+        bd->changed = 1;
+     }
+   else if (e->atom == ECORE_X_ATOM_E_WINDOW_PROFILE_AVAILABLE_LIST)
+     {
+        bd->client.e.fetch.profile = 1;
+        bd->changed = 1;
+     }
+#endif
    return ECORE_CALLBACK_PASS_ON;
 }
 
@@ -6042,22 +6152,60 @@ _e_border_cb_window_focus_out(void *data  __UNUSED__,
    return ECORE_CALLBACK_PASS_ON;
 }
 
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
 static Eina_Bool
 _e_border_cb_client_message(void *data  __UNUSED__,
                             int ev_type __UNUSED__,
-                            void *ev    __UNUSED__)
+                            void       *ev)
 {
-   /*
-      E_Border *bd;
-      Ecore_X_Event_Client_Message *e;
+   E_Border *bd;
+   Ecore_X_Event_Client_Message *e;
+   char *profile = NULL;
 
-      e = ev;
-      bd = e_border_find_by_client_window(e->win);
-      if (!bd) return 1;
-    */
-   return 1;
+   e = (Ecore_X_Event_Client_Message *)ev;
+   bd = e_border_find_by_client_window(e->win);
+   if (!bd) return ECORE_CALLBACK_PASS_ON;
+
+   if (e->message_type == ECORE_X_ATOM_E_WINDOW_PROFILE_CHANGE)
+     {
+        if (bd->client.e.state.profile.use)
+          {
+             profile = ecore_x_atom_name_get(e->data.l[1]);
+             ecore_x_e_window_profile_change_request_send(bd->client.win,
+                                                          profile);
+             bd->client.e.state.profile.wait_for_done = 1;
+          }
+     }
+   else if (e->message_type == ECORE_X_ATOM_E_WINDOW_PROFILE_CHANGE_DONE)
+     {
+        if ((bd->client.e.state.profile.use) &&
+            (bd->client.e.state.profile.wait_for_done))
+          {
+             E_Container *con = bd->zone->container;
+             E_Desk *desk = NULL;
+
+             profile = ecore_x_atom_name_get(e->data.l[1]);
+             if (profile)
+               {
+                  if (bd->client.e.state.profile.name)
+                    eina_stringshare_del(bd->client.e.state.profile.name);
+                  bd->client.e.state.profile.name = eina_stringshare_add(profile);
+               }
+
+             bd->client.e.state.profile.wait_for_done = 0;
+
+             desk = e_container_desk_window_profile_get(con, profile);
+             if ((desk) && (bd->desk != desk))
+               e_border_desk_set(bd, desk);
+          }
+     }
+
+   if (profile)
+     free(profile);
+
+   return ECORE_CALLBACK_PASS_ON;
 }
-
+#endif
 static Eina_Bool
 _e_border_cb_window_state_request(void *data  __UNUSED__,
                                   int ev_type __UNUSED__,
@@ -6437,11 +6585,14 @@ _e_border_cb_mouse_in(void *data,
    }
 #endif
    if (grabbed) return ECORE_CALLBACK_PASS_ON;
+   if (focus_locked) return ECORE_CALLBACK_RENEW;
    if (ev->event_win == bd->win)
      {
+        if (focus_locked && (bd != warp_timer_border)) return ECORE_CALLBACK_RENEW;
         if (!bd->iconic)
           e_focus_event_mouse_in(bd);
      }
+   else if (focus_locked) return ECORE_CALLBACK_RENEW;
 #if 0
    if ((ev->win != bd->win) &&
        (ev->win != bd->event_win) &&
@@ -6957,6 +7108,27 @@ _e_border_cb_drag_finished(E_Drag *drag,
    drag_border = NULL;
 }
 
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+static Eina_Bool
+_e_border_cb_desk_window_profile_change(void *data  __UNUSED__,
+                                        int ev_type __UNUSED__,
+                                        void *ev __UNUSED__)
+{
+//   E_Event_Desk_Window_Profile_Change *e = ev;
+   Eina_List *l = NULL;
+   E_Border *bd;
+
+   EINA_LIST_FOREACH(borders, l, bd)
+     {
+        if (!e_object_is_del(E_OBJECT(bd)))
+          {
+             bd->client.e.fetch.profile = 1;
+             bd->changed = 1;
+          }
+     }
+   return ECORE_CALLBACK_PASS_ON;
+}
+#endif
 static Eina_Bool
 _e_border_post_move_resize_job(void *data)
 {
@@ -7051,7 +7223,10 @@ _e_border_eval0(E_Border *bd)
 {
    int change_urgent = 0;
    int rem_change = 0;
-
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+   Eina_Bool need_desk_set = EINA_FALSE;
+#endif
+   
    if (e_object_is_del(E_OBJECT(bd)))
      {
         CRI("_e_border_eval(%p) with deleted border!\n", bd);
@@ -7179,6 +7354,71 @@ _e_border_eval0(E_Border *bd)
         bd->client.e.fetch.state = 0;
         rem_change = 1;
      }
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+   if (bd->client.e.fetch.profile)
+     {
+        const char **list = NULL;
+        int n, i, res;
+        unsigned int use;
+
+        if (bd->client.e.state.profile.name)
+          {
+             eina_stringshare_del(bd->client.e.state.profile.name);
+             bd->client.e.state.profile.name = NULL;
+          }
+
+        if (bd->client.e.state.profile.available_list)
+          {
+             for (i = 0; i < bd->client.e.state.profile.num; i++)
+               {
+                  if (bd->client.e.state.profile.available_list[i])
+                    {
+                       eina_stringshare_del(bd->client.e.state.profile.available_list[i]);
+                       bd->client.e.state.profile.available_list[i] = NULL;
+                    }
+               }
+             E_FREE(bd->client.e.state.profile.available_list);
+             bd->client.e.state.profile.available_list = NULL;
+          }
+        bd->client.e.state.profile.num = 0;
+
+        res = ecore_x_window_prop_card32_get(bd->client.win,
+                                             ECORE_X_ATOM_E_WINDOW_PROFILE_SUPPORTED,
+                                             &use,
+                                             1);
+        if ((res == 1) && (use == 1))
+          {
+             Ecore_X_Atom val;
+             res = ecore_x_window_prop_atom_get(bd->client.win,
+                                                ECORE_X_ATOM_E_WINDOW_PROFILE_CHANGE,
+                                                &val, 1);
+             if (res == 1)
+               {
+                  char *name = ecore_x_atom_name_get(val);
+                  if (name)
+                    {
+                       bd->client.e.state.profile.name = eina_stringshare_add(name);
+                       free(name);
+                    }
+               }
+
+             if (ecore_x_e_window_available_profiles_get(bd->client.win, &list, &n))
+               {
+                  bd->client.e.state.profile.available_list = E_NEW(const char *, n);
+                  for (i = 0; i < n; i++)
+                    bd->client.e.state.profile.available_list[i] = eina_stringshare_add(list[i]);
+                  bd->client.e.state.profile.num = n;
+               }
+             need_desk_set = EINA_TRUE;
+             bd->client.e.state.profile.use = 1;
+
+             if (list)
+               free(list);
+          }
+
+        bd->client.e.fetch.profile = 0;
+     }
+#endif
    if (bd->client.netwm.fetch.type)
      {
         e_hints_window_type_get(bd);
@@ -7804,6 +8044,56 @@ _e_border_eval0(E_Border *bd)
         bd->client.netwm.update.state = 0;
      }
 
+#if (ECORE_VERSION_MAJOR > 1) || (ECORE_VERSION_MINOR >= 8)
+   if ((e_config->use_desktop_window_profile) && (need_desk_set))
+     {
+        if (!(bd->client.e.state.profile.name) &&
+            (bd->client.e.state.profile.num >= 1))
+          {
+             const char *p = NULL;
+             int i;
+             for (i = 0; i < bd->client.e.state.profile.num; i++)
+               {
+                  if (!bd->client.e.state.profile.available_list[i])
+                    continue;
+                  p = bd->client.e.state.profile.available_list[i];
+                  if (strcmp(bd->desk->window_profile, p) == 0)
+                    {
+                       bd->client.e.state.profile.name = eina_stringshare_add(bd->desk->window_profile);
+                       break;
+                    }
+               }
+
+             if (!bd->client.e.state.profile.name)
+               {
+                  E_Container *con = bd->zone->container;
+                  E_Desk *desk = NULL;
+
+                  for (i = 0; i < bd->client.e.state.profile.num; i++)
+                    {
+                       if (!bd->client.e.state.profile.available_list[i])
+                         continue;
+                       p = bd->client.e.state.profile.available_list[i];
+                       desk = e_container_desk_window_profile_get(con, p);
+                       if ((desk) && (bd->desk != desk))
+                         {
+                            bd->client.e.state.profile.name = eina_stringshare_add(p);
+                            break;
+                         }
+                    }
+               }
+          }
+
+        if (!bd->client.e.state.profile.name)
+          {
+             bd->client.e.state.profile.name = eina_stringshare_add(bd->desk->window_profile);
+          }
+
+        ecore_x_e_window_profile_change_request_send(bd->client.win,
+                                                     bd->client.e.state.profile.name);
+        bd->client.e.state.profile.wait_for_done = 1;
+     }
+#endif
    if (bd->new_client)
      {
         E_Event_Border_Add *ev;
@@ -9895,6 +10185,8 @@ _e_border_pointer_warp_to_center_timer(void *data __UNUSED__)
 cleanup:
    ecore_timer_del(warp_timer);
    warp_timer = NULL;
+   e_border_focus_lock_set(EINA_FALSE);
+   warp_timer_border = NULL;
    return ECORE_CALLBACK_CANCEL;
 }
 
@@ -9928,8 +10220,10 @@ e_border_pointer_warp_to_center(E_Border *bd)
    warp_to = 1;
    warp_to_win = bd->zone->container->win;
    ecore_x_pointer_xy_get(bd->zone->container->win, &warp_x, &warp_y);
-   if (!warp_timer)
-     warp_timer = ecore_timer_add(0.01, _e_border_pointer_warp_to_center_timer, (const void *)bd);
+   if (warp_timer) ecore_timer_del(warp_timer);
+   warp_timer = ecore_timer_add(0.01, _e_border_pointer_warp_to_center_timer, bd);
+   warp_timer_border = bd;
+   e_border_focus_lock_set(EINA_TRUE);
    return 1;
 }
 

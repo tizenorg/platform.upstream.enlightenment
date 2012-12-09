@@ -159,12 +159,12 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static Evas_Object *
-_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata) 
+_basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata) 
 {
    Evas_Object *o, *of, *ol;
    Evas_Object *ob;
    
-   o = e_widget_list_add(evas, 0, 1);
+   o = e_widget_list_add(evas, 1, 1);
    of  = e_widget_framelist_add(evas, _("Categories"), 0);
    ol = e_widget_ilist_add(evas, 16, 16, &(cfdata->cur_type));
    cfdata->gui.tlist = ol;
@@ -183,7 +183,6 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
    e_widget_frametable_object_append(of, ob, 1, 1, 1, 1, 1, 1, 1, 0);
    e_widget_list_object_append(o, of, 1, 1, 0.5);
 
-   e_dialog_resizable_set(cfd->dia, 1);
    return o;
 }
 

@@ -396,7 +396,7 @@ _style_selector(Evas *evas,
 
         orec = evas_object_rectangle_add(e_livethumb_evas_get(ob));
         ds_it->client = orec;
-        evas_object_color_set(orec, 255, 255, 255, 255);
+        evas_object_color_set(orec, 0, 0, 0, 128);
         edje_object_part_swallow(obd, "e.swallow.client", orec);
         evas_object_show(orec);
 
@@ -1338,7 +1338,6 @@ _advanced_create_widgets(E_Config_Dialog *cfd,
 
    e_widget_toolbook_page_show(otb, 0);
 
-   e_dialog_resizable_set(cfd->dia, 1);
 
    e_widget_table_object_append(tab, otb, 0, 0, 1, 1, 1, 1, 1, 1);
    return tab;
@@ -1489,7 +1488,7 @@ _advanced_apply_data(E_Config_Dialog *cfd  __UNUSED__,
 }
 
 static Evas_Object *
-_basic_create_widgets(E_Config_Dialog *cfd,
+_basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED,
                       Evas *evas,
                       E_Config_Dialog_Data *cfdata)
 {
@@ -1546,7 +1545,6 @@ _basic_create_widgets(E_Config_Dialog *cfd,
 
    e_widget_toolbook_page_show(otb, 0);
 
-   e_dialog_resizable_set(cfd->dia, 1);
 
    e_widget_table_object_append(tab, otb, 0, 0, 1, 1, 1, 1, 1, 1);
    return tab;

@@ -199,6 +199,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
    int n = 1, sel = 0;
    const char *str, *tmp;
 
+   e_dialog_resizable_set(cfd->dia, 1);
    if (cfdata->border)
      tmp = cfdata->border->client.border.name;
    else
@@ -256,7 +257,6 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
         e_widget_list_object_append(o, ob, 1, 0, 0.0);
      }
 
-   e_dialog_resizable_set(cfd->dia, 1);
    return o;
 }
 

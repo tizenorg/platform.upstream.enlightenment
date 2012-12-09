@@ -344,7 +344,11 @@ _e_exec_cb_exec(void *data, Efreet_Desktop *desktop, char *exec, int remaining)
 
         penv_display_length = strlen(penv_display);
         /* Check for insane length for DISPLAY env */
-        if (penv_display_length + 32 > 4096) return NULL;
+        if (penv_display_length + 32 > 4096)
+          {
+             E_FREE(inst);
+             return NULL;
+          }
 
         /* buf2 = '.%i' */
         *buf2 = '.';
@@ -475,7 +479,6 @@ _e_exec_cb_exec(void *data, Efreet_Desktop *desktop, char *exec, int remaining)
    /* reset env vars */
    if ((launch->launch_method) && (!desktop))
      e_exehist_add(launch->launch_method, exec);
-   free(exec);
    /* 20 lines at start and end, 20x100 limit on bytes at each end. */
 //// FIXME: seem to be some issues with the pipe and filling up ram - need to
 //// check. for now disable.
@@ -512,6 +515,7 @@ _e_exec_cb_exec(void *data, Efreet_Desktop *desktop, char *exec, int remaining)
         if (launch->zone) e_object_unref(E_OBJECT(launch->zone));
         free(launch);
      }
+   free(exec);
    return inst;
 }
 
@@ -547,7 +551,7 @@ _e_exec_instance_free(E_Exec_Instance *inst)
              if (instances)
                eina_hash_modify(e_exec_instances, inst->key, instances);
              else
-               eina_hash_del(e_exec_instances, inst->key, NULL);
+               eina_hash_del_by_key(e_exec_instances, inst->key);
           }
         eina_stringshare_del(inst->key);
      }
@@ -574,7 +578,12 @@ _e_exec_cb_exit(void *data __UNUSED__, int type __UNUSED__, void *event)
    E_Exec_Instance *inst;
 
    ev = event;
-   if (!ev->exe) return ECORE_CALLBACK_PASS_ON;
+   if (!ev->exe)
+     {
+        inst = e_exec_startup_id_pid_instance_find(-1, ev->pid);
+        if (!inst) return ECORE_CALLBACK_PASS_ON;
+        ev->exe = inst->exe;
+     }
 //   if (ecore_exe_tag_get(ev->exe)) printf("  tag %s\n", ecore_exe_tag_get(ev->exe));
    if (!(ecore_exe_tag_get(ev->exe) &&
          (!strcmp(ecore_exe_tag_get(ev->exe), "E/exec"))))

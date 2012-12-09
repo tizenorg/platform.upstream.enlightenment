@@ -160,6 +160,7 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
    Evas_Object *o, *of, *ob;
    int i;
 
+   e_dialog_resizable_set(cfd->dia, 1);
    o = e_widget_table_add(evas, 0);
 
    of = e_widget_framelist_add(evas, _("Enlightenment Paths"), 0);
@@ -208,7 +209,6 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
    e_widget_framelist_object_append(of, ob);
    e_widget_table_object_append(o, of, 1, 0, 1, 2, 0, 1, 0, 1);
    
-   e_dialog_resizable_set(cfd->dia, 1);
    return o;
 }
 

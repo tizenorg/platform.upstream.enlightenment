@@ -7,7 +7,7 @@ m4_define([v_rev], m4_esyscmd([(svnversion "${SVN_REPO_PATH:-.}" | grep -v '\(ex
 m4_if(v_rev, [0], [m4_define([v_rev], m4_esyscmd([git log 2> /dev/null | (grep -m1 git-svn-id || echo 0) | sed -e 's/.*@\([0-9]*\).*/\1/' | tr -d '\n']))])
 ##--   When released, remove the dnl on the below line
 m4_undefine([v_rev])
-m4_define([relname], [0.17.0-alpha7])
+m4_define([relname], [0.17.0-beta])
 ##--   When doing snapshots - change soname. remove dnl on below line
 dnl m4_define([relname], [ver-pre-svn-08])
 dnl m4_define([v_rel], [-release relname])
@@ -19,7 +19,7 @@ m4_define([lt_age], v_min)
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 
-AC_INIT([enlightenment], [v_ver-alpha7], [enlightenment-devel@lists.sourceforge.net])
+AC_INIT([enlightenment], [v_ver-beta], [enlightenment-devel@lists.sourceforge.net])
 AC_PREREQ([2.52])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_MACRO_DIR([m4])
@@ -76,7 +76,7 @@ AC_CHECK_FUNCS(unsetenv)
 
 efl_version="1.7.0"
 
-AC_CHECK_HEADERS([sys/timerfd.h sys/ptrace.h])
+AC_CHECK_HEADERS([sys/timerfd.h sys/ptrace.h arpa/inet.h netinet/in.h])
 
 dnl AC_CHECK_HEADERS(X11/extensions/shape.h,, AC_MSG_ERROR([Cannot find X11/extensions/shape.h. Make sure your CFLAGS environment variable contains include lines for the location of this file]))
 
@@ -486,6 +486,7 @@ AC_MSG_WARN([EFM requirements : $efm_requires])
 PKG_CHECK_MODULES(E_FM, [$efm_requires])
 
 PKG_CHECK_MODULES(E_FM_CMDLINE, [
+  eina >= ${efl_version}
   ecore >= ${efl_version}
   ecore-file >= ${efl_version}
   edbus >= ${efl_version}
@@ -499,11 +500,11 @@ PKG_CHECK_MODULES(E_FM_OP, [
 ])
 
 PKG_CHECK_MODULES(E_FM_OPEN, [
+  eina >= ${efl_version}
+  eet >= ${efl_version}
   ecore >= ${efl_version}
   ecore-ipc >= ${efl_version}
   ecore-con >= ${efl_version}
-  eet >= ${efl_version}
-  eina >= ${efl_version}
 ])
 
 PKG_CHECK_MODULES(E_SYS, [
@@ -615,6 +616,7 @@ if test "x$want_emotion" != "xno"; then
 fi
 
 PKG_CHECK_MODULES(E_OPEN, [
+  eina >= ${efl_version}
   ecore >= ${efl_version}
   efreet >= ${efl_version}
   efreet-mime >= ${efl_version}

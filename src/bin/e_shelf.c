@@ -449,6 +449,8 @@ e_shelf_toggle(E_Shelf *es, int show)
    E_OBJECT_TYPE_CHECK(es, E_SHELF_TYPE);
 
    es->toggle = show;
+   if (es->autohide_timer) ecore_timer_del(es->autohide_timer);
+   es->autohide_timer = NULL;
    if (es->locked) return;
    es->interrupted = -1;
    es->urgent_show = 0;
@@ -1293,6 +1295,8 @@ _e_shelf_free(E_Shelf *es)
           }
         e_object_del(E_OBJECT(es->popup));
      }
+   if (es->autohide_timer) ecore_timer_del(es->autohide_timer);
+   es->autohide_timer = NULL;
    es->popup = NULL;
 
    ev = E_NEW(E_Event_Shelf, 1);
@@ -1832,6 +1836,21 @@ _e_shelf_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNU
 }
 
 static Eina_Bool
+_e_shelf_cb_mouse_move_autohide_fuck_systray(E_Shelf *es)
+{
+   int x, y;
+   Ecore_Event_Mouse_Move ev;
+
+   memset(&ev, 0, sizeof(Ecore_Event_Mouse_Move));
+   ecore_x_pointer_xy_get(es->zone->container->manager->root, &x, &y);
+   ev.root.x = x, ev.root.y = y;
+   _e_shelf_cb_mouse_in(es, ECORE_EVENT_MOUSE_MOVE, &ev);
+   if (es->autohide_timer) ecore_timer_del(es->autohide_timer);
+   es->autohide_timer = NULL;
+   return EINA_FALSE;
+}
+
+static Eina_Bool
 _e_shelf_cb_mouse_in(void *data, int type, void *event)
 {
    E_Shelf *es;
@@ -1848,6 +1867,7 @@ _e_shelf_cb_mouse_in(void *data, int type, void *event)
         if (es->zone != ev->zone) return ECORE_CALLBACK_PASS_ON;
         if (!_e_shelf_on_current_desk(es, ev)) return ECORE_CALLBACK_PASS_ON;
 
+        ev->x -= es->zone->x, ev->y -= es->zone->y;
         switch (es->gadcon->orient)
           {
            case E_GADCON_ORIENT_LEFT:
@@ -1943,12 +1963,23 @@ _e_shelf_cb_mouse_in(void *data, int type, void *event)
          */
         inside = (es->popup && ((ev->event_window == es->popup->evas_win)));
         if (!inside)
-          inside = (
-                    (E_INSIDE(ev->root.x, ev->root.y, es->zone->x, es->zone->y, es->zone->w + 4, es->zone->h + 4)) &&
-                    ((E_INSIDE(ev->root.x, ev->root.y, es->x, es->y, es->w, es->h)) ||
-                    (E_INSIDE(ev->root.x, ev->root.y, es->x - 2, es->y - 2, es->w + 4, es->h + 4)) ||
-                    (E_INSIDE(ev->root.x, ev->root.y, es->x + 2, es->y + 2, es->w + 4, es->h + 4)))
-                   );
+          {
+             inside = E_INSIDE(ev->root.x, ev->root.y, es->zone->x, es->zone->y, es->zone->w + 4, es->zone->h + 4);
+             ev->root.x -= es->zone->x, ev->root.y -= es->zone->y;
+             if (inside)
+               inside = (
+                         ((E_INSIDE(ev->root.x, ev->root.y, es->x, es->y, es->w, es->h)) ||
+                         (E_INSIDE(ev->root.x, ev->root.y, es->x - 2, es->y - 2, es->w + 4, es->h + 4)) ||
+                         (E_INSIDE(ev->root.x, ev->root.y, es->x + 2, es->y + 2, es->w + 4, es->h + 4)))
+                        );
+             if (inside && es->popup)
+               {
+                  if (es->autohide_timer)
+                    ecore_timer_reset(es->autohide_timer);
+                  else
+                    es->autohide_timer = ecore_timer_add(0.5, (Ecore_Task_Cb)_e_shelf_cb_mouse_move_autohide_fuck_systray, es);
+               }
+          }
         if (inside)
           {
              if (es->hidden || (!es->toggle))
@@ -2580,7 +2611,9 @@ _e_shelf_bindings_add(E_Shelf *es)
    _e_shelf_bindings_del(es);
 
    /* Don't need edge binding if we don't hide shelf */
-   if ((!es->cfg->autohide) && (!es->cfg->autohide_show_action)) return;
+   if ((es->cfg) && (!es->cfg->autohide) &&
+       (!es->cfg->autohide_show_action))
+     return;
 
    snprintf(buf, sizeof(buf), "shelf.%d", es->id);
    switch (es->gadcon->orient)

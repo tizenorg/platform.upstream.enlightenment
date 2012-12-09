@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "pa.h"
 
@@ -344,6 +345,7 @@ con(Pulse *conn, int type __UNUSED__, Ecore_Con_Event_Server_Add *ev)
 {
    int on = 1;
    int fd;
+   int flags;
 
    if (conn != ecore_con_server_data_get(ev->server)) return ECORE_CALLBACK_PASS_ON;
    INF("connected to %s", ecore_con_server_name_get(ev->server));
@@ -359,7 +361,12 @@ con(Pulse *conn, int type __UNUSED__, Ecore_Con_Event_Server_Add *ev)
    setsockopt(conn->fd, SOL_SOCKET, SO_PASSCRED, &on, sizeof(on));
 #endif
    setsockopt(conn->fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-   fcntl(conn->fd, F_SETFL, O_NONBLOCK | FD_CLOEXEC);
+   fcntl(conn->fd, F_SETFL, O_NONBLOCK);
+
+   flags = fcntl(conn->fd, F_GETFD);
+   flags |= FD_CLOEXEC;
+   fcntl(conn->fd, F_SETFD, flags);
+
    conn->fdh = ecore_main_fd_handler_add(conn->fd, ECORE_FD_WRITE, (Ecore_Fd_Cb)fdh_func, conn, NULL, NULL);
    ecore_con_server_del(conn->svr);
    conn->svr = NULL;
@@ -540,7 +547,7 @@ pulse_sink_channel_volume_set(Pulse *conn, Pulse_Sink *sink, uint32_t id, double
    tag->data = malloc(tag->dsize);
    tag->tag_count = conn->tag_count;
    if (vol <= 0.0) sink->volume.values[id] = PA_VOLUME_MUTED;
-   else sink->volume.values[id] = ((vol * PA_VOLUME_NORM) - (PA_VOLUME_NORM / 2)) / 100;
+   else sink->volume.values[id] = (vol * PA_VOLUME_NORM) / 100;
    tag_simple_init(conn, tag, type, PA_TAG_U32);
    tag_uint32(tag, sink->index);
    tag_string(tag, NULL);

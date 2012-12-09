@@ -941,7 +941,11 @@ _lc_check(void)
    if (getenv("LC_MESSAGES")) strcat(buf2, "<br>LC_MESSAGES");
    if (getenv("LC_ALL")) strcat(buf2, "<br>LC_ALL");
 
-   if (!buf2[0]) return;
+   if (!buf2[0])
+     {
+        _lc_check_del(NULL);
+        return;
+     }
 
    snprintf(buf, sizeof(buf), _("You have some extra locale environment<br>"
                                  "variables set that may interfere with<br>"
@@ -1019,6 +1023,7 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
    char buf[PATH_MAX];
 
    cfdata->evas = evas;
+   e_dialog_resizable_set(cfd->dia, 1);
    o = e_widget_table_add(evas, 0);
    of = e_widget_framelist_add(evas, _("Language Selector"), 0);
    ob = e_widget_ilist_add(evas, 16, 16, &(cfdata->cur_blang));
@@ -1096,7 +1101,6 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
                                      1, 0, 1, 1, 1, 1, 1, 0);
    e_widget_table_object_append(o, of, 0, 1, 1, 1, 1, 0, 1, 0);
 
-   e_dialog_resizable_set(cfd->dia, 1);
    return o;
 }
 
@@ -1107,7 +1111,7 @@ _advanced_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data 
    const char *lang, *reg, *cs, *mod;
 
    cfdata->evas = evas;
-
+   e_dialog_resizable_set(cfd->dia, 1);
    _intl_current_locale_setup(cfdata);
 
    o = e_widget_table_add(evas, 0);
@@ -1194,7 +1198,6 @@ _advanced_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data 
    e_widget_on_change_hook_set(cfdata->gui.cs_list, _ilist_codeset_cb_change, cfdata);
    e_widget_on_change_hook_set(cfdata->gui.mod_list, _ilist_modifier_cb_change, cfdata);
 
-   e_dialog_resizable_set(cfd->dia, 1);
    return o;
 }
 

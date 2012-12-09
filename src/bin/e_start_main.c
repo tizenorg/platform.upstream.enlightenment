@@ -17,6 +17,7 @@
 # include <alloca.h>
 #endif
 #include <signal.h>
+#include <errno.h>
 
 #include <Eina.h>
 
@@ -403,6 +404,9 @@ main(int argc, char **argv)
    copy_args(args + i, argv + 1, argc - 1);
    args[i + argc - 1] = NULL;
 
+   if (valgrind_tool || valgrind_mode)
+     really_know = EINA_TRUE;
+
 #if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || \
    (defined (__MACH__) && defined (__APPLE__))
    execv(args[0], args);
@@ -469,7 +473,7 @@ main(int argc, char **argv)
 
 #ifdef HAVE_SYS_PTRACE_H
                             if (!really_know)
-                              r = ptrace(PTRACE_GETSIGINFO, child, NULL, &sig);
+                              r = ptrace(PT_GETSIGINFO, child, NULL, &sig);
 #endif
                             back = r == 0 &&
                               sig.si_signo != SIGTRAP ? sig.si_signo : 0;

@@ -72,6 +72,7 @@ struct _E_Config_Dialog_Data
       const char    *binding, *action, *cur;
       char          *params;
       int            cur_act, add;
+      Eina_Bool     changed : 1;
 
       E_Grab_Dialog *eg;
    } locals;
@@ -356,14 +357,15 @@ _binding_change_cb(void *data)
 
    cfdata = data;
 
-   _auto_apply_changes(cfdata);
+   if (cfdata->locals.changed) _auto_apply_changes(cfdata);
    eina_stringshare_del(cfdata->locals.cur);
    cfdata->locals.cur = NULL;
    cfdata->locals.cur_act = -1;
 
+   cfdata->locals.changed = 0;
    if ((!cfdata->locals.binding) || (!cfdata->locals.binding[0])) return;
 
-   cfdata->locals.cur = eina_stringshare_add(cfdata->locals.binding);
+   cfdata->locals.cur = eina_stringshare_ref(cfdata->locals.binding);
 
    _update_buttons(cfdata);
    _update_action_list(cfdata);
@@ -377,6 +379,7 @@ _action_change_cb(void *data)
    cfdata = data;
    _update_action_params(cfdata);
    cfdata->locals.cur_act = e_widget_ilist_selected_get(cfdata->gui.o_action_list);
+   cfdata->locals.changed = 1;
 }
 
 static void
@@ -1134,7 +1137,7 @@ _grab_key_down_cb(void *data,
 static void
 _auto_apply_changes(E_Config_Dialog_Data *cfdata)
 {
-   int n, g, a, ok;
+   int n, g, a, ok = 0;
    E_Config_Binding_Key *bi;
    E_Action_Group *actg;
    E_Action_Description *actd;
@@ -1153,33 +1156,21 @@ _auto_apply_changes(E_Config_Dialog_Data *cfdata)
    actd = eina_list_nth(actg->acts, a);
    if (!actd) return;
 
-   eina_stringshare_del(bi->action);
-   bi->action = NULL;
-
-   if (actd->act_cmd) bi->action = eina_stringshare_add(actd->act_cmd);
-
-   eina_stringshare_del(bi->params);
-   bi->params = NULL;
-
-   if (actd->act_params)
-     bi->params = eina_stringshare_add(actd->act_params);
-   else
+   eina_stringshare_replace(&bi->action, actd->act_cmd);
+   eina_stringshare_replace(&bi->params, actd->act_params);
+   if (bi->params) return;
+   if (cfdata->locals.params)
      {
         ok = 1;
-        if (cfdata->locals.params)
-          {
-             if (!e_util_strcmp(cfdata->locals.params, TEXT_NO_PARAMS))
-               ok = 0;
-
-             if ((actd->param_example) && (!e_util_strcmp(cfdata->locals.params, actd->param_example)))
-               ok = 0;
-          }
-        else
+        if (!e_util_strcmp(cfdata->locals.params, TEXT_NO_PARAMS))
           ok = 0;
 
-        if (ok)
-          bi->params = eina_stringshare_add(cfdata->locals.params);
+        else if ((actd->param_example) && (!e_util_strcmp(cfdata->locals.params, actd->param_example)))
+          ok = 0;
      }
+
+   if (ok)
+     bi->params = eina_stringshare_add(cfdata->locals.params);
 }
 
 static void

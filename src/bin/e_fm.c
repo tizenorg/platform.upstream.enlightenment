@@ -194,6 +194,7 @@ struct _E_Fm2_Icon
    struct
    {
       Evas_Coord x, y;
+      Ecore_Timer *dnd_end_timer; //we need this for XDirectSave drops so we don't lose the icon
       Eina_Bool  start : 1;
       Eina_Bool  dnd : 1; // currently dragging
       Eina_Bool  src : 1; // drag source
@@ -2193,7 +2194,7 @@ e_fm2_icon_get(Evas *evas, E_Fm2_Icon *ic,
      ic->thumb_failed = EINA_TRUE;
 
    /* create thumbnails for edje files */
-   if (_e_fm2_file_is_edje(ic->info.file))
+   if ((ic->info.file) && (_e_fm2_file_is_edje(ic->info.file)))
      {
         o = _e_fm2_icon_thumb_edje_get
             (evas, ic, gen_func, data, force_gen, type_ret);
@@ -4296,7 +4297,7 @@ _e_fm2_uri_parse(const char *val)
    hostname[i] = '\0';
 
    /* See http://www.faqs.org/rfcs/rfc1738.html for the escaped chars */
-   for (i = 0; *p != '\0' && i < PATH_MAX; i++, p++)
+   for (i = 0; (*p != '\0') && (i < (PATH_MAX-1)); i++, p++)
      {
         if (*p == '%')
           {
@@ -4619,6 +4620,8 @@ _e_fm2_icon_free(E_Fm2_Icon *ic)
      }
    if (ic->selected)
      ic->sd->selected_icons = eina_list_remove(ic->sd->selected_icons, ic);
+   if (ic->drag.dnd_end_timer)
+     ecore_timer_del(ic->drag.dnd_end_timer);
    eina_stringshare_del(ic->info.file);
    eina_stringshare_del(ic->info.mime);
    eina_stringshare_del(ic->info.label);
@@ -5606,7 +5609,7 @@ _e_fm2_inplace_open(const E_Fm2_Icon *ic)
    char buf[PATH_MAX];
 
    if (((!S_ISDIR(ic->info.statinfo.st_mode)) ||
-         (ic->info.link) ||
+         (ic->info.link && (!S_ISDIR(ic->info.statinfo.st_mode))) ||
          (!ic->sd->config->view.open_dirs_in_place) ||
          (ic->sd->config->view.no_subdir_jump)))
      return 0;
@@ -6441,7 +6444,13 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
    ox = 0; oy = 0;
    EINA_LIST_FOREACH(isel, l, ic)
      {
-        if (ic && ic->drag.src)
+        if (!ic) continue;
+        if (ic->drag.dnd_end_timer)
+          {
+             ecore_timer_del(ic->drag.dnd_end_timer);
+             ic->drag.dnd_end_timer = NULL;
+          }
+        if (ic->drag.src)
           {
              ox = ic->x;
              oy = ic->y;
@@ -6670,7 +6679,12 @@ end:
           }
      }
    eina_list_free(fsel);
-   eina_list_free(isel);
+   EINA_LIST_FREE(isel, ic)
+     if (ic->drag.dnd_end_timer)
+       {
+          ecore_timer_del(ic->drag.dnd_end_timer);
+          ic->drag.dnd_end_timer = NULL;
+       }
 }
 
 static void
@@ -6875,6 +6889,7 @@ _e_fm2_cb_icon_mouse_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNU
      {
         /* if its a directory && open dirs in-place is set then change the dir
          * to be the dir + file */
+        if (ic->sd->config->view.single_click) return;
         if (_e_fm2_inplace_open(ic) == 0)
           evas_object_smart_callback_call(ic->sd->obj, "selected", NULL);
         /* if its in file selector mode then signal that a selection has
@@ -6937,6 +6952,16 @@ _e_fm2_cb_icon_mouse_up(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSE
      }
 }
 
+static Eina_Bool
+_e_fm2_cb_drag_finished_show(E_Fm2_Icon *ic)
+{
+   ic->drag.dnd = ic->drag.src = EINA_FALSE;
+   if (ic->obj) evas_object_show(ic->obj);
+   if (ic->obj_icon) evas_object_show(ic->obj_icon);
+   ic->drag.dnd_end_timer = NULL;
+   return EINA_FALSE;
+}
+
 static void
 _e_fm2_cb_drag_finished(E_Drag *drag, int dropped __UNUSED__)
 {
@@ -6973,6 +6998,8 @@ _e_fm2_cb_drag_finished(E_Drag *drag, int dropped __UNUSED__)
                             if (ic->sd->dnd_scroller) ecore_animator_del(ic->sd->dnd_scroller);
                             ic->sd->dnd_scroller = NULL;
                             evas_object_smart_callback_call(ic->sd->obj, "dnd_end", &ic->info);
+                            if (ic->drag.dnd_end_timer) ecore_timer_reset(ic->drag.dnd_end_timer);
+                            else ic->drag.dnd_end_timer = ecore_timer_add(0.2, (Ecore_Task_Cb)_e_fm2_cb_drag_finished_show, ic);
                          }
                     }
                }
@@ -8565,11 +8592,11 @@ _e_fm2_icon_menu(E_Fm2_Icon *ic, Evas_Object *obj, unsigned int timestamp)
    e_menu_category_set(mn, "e/fileman/action");
 
    if (sd->icon_menu.replace.func)
-     sd->icon_menu.replace.func(sd->icon_menu.replace.data, sd->obj, mn, NULL);
+     sd->icon_menu.replace.func(sd->icon_menu.replace.data, sd->obj, mn, &ic->info);
    else
      {
         if (sd->icon_menu.start.func)
-          sd->icon_menu.start.func(sd->icon_menu.start.data, sd->obj, mn, NULL);
+          sd->icon_menu.start.func(sd->icon_menu.start.data, sd->obj, mn, &ic->info);
         if (!(sd->icon_menu.flags & E_FM2_MENU_NO_VIEW_MENU))
           {
              mi = e_menu_item_new(mn);
@@ -9566,7 +9593,6 @@ _e_fm2_view_image_sel(E_Fm2_Smart_Data *sd, const char *title,
 
    e_dialog_button_add(dia, _("OK"), NULL, ok_cb, sd);
    e_dialog_button_add(dia, _("Cancel"), NULL, _e_fm2_view_image_sel_close, sd);
-   e_dialog_resizable_set(dia, 1);
    e_win_centered_set(dia->win, 1);
    e_object_data_set(E_OBJECT(dia), sd);
    e_object_del_attach_func_set(E_OBJECT(dia), _image_sel_del);
@@ -10171,6 +10197,7 @@ _e_fm_error_dialog(int pid, const char *str)
 
    id = (intptr_t*)(long)pid;
    ere = e_fm2_op_registry_entry_get(pid);
+   if (!ere) return NULL;
    sd = evas_object_smart_data_get(ere->e_fm);
    while (sd->realpath)
      {

@@ -319,31 +319,12 @@ _systray_gravity(const Instance *inst)
      }
 }
 
-static Evas_Coord
-_systray_icon_size_normalize(Evas_Coord size)
-{
-   const Evas_Coord *itr, sizes[] = {
-      16, 22, 24, 32, 36, 48, 64, 72, 96, 128, 192, 256, -1
-   };
-   for (itr = sizes; *itr > 0; itr++)
-     if (*itr == size)
-       return size;
-     else if (*itr > size)
-       {
-          if (itr > sizes)
-            return itr[-1];
-          else
-            return sizes[0];
-       }
-   return sizes[0];
-}
-
 static Icon *
 _systray_icon_add(Instance *inst, const Ecore_X_Window win)
 {
    Ecore_X_Gravity gravity;
    Evas_Object *o;
-   Evas_Coord w, h;
+   int w, h, sz;
    Icon *icon;
 
    edje_object_part_geometry_get(inst->ui.gadget, _part_size,
@@ -353,7 +334,12 @@ _systray_icon_add(Instance *inst, const Ecore_X_Window win)
    else
      h = w;
 
-   w = h = _systray_icon_size_normalize(w);
+   /* assuming systray must be on a shelf here */
+   sz = MIN(inst->gcc->gadcon->shelf->w, inst->gcc->gadcon->shelf->h);
+   if ((w < 16) && (sz > 16))
+     w = h = sz - 5;
+
+   w = h = e_util_icon_size_normalize(w);
 
    o = evas_object_rectangle_add(inst->evas);
    if (!o)

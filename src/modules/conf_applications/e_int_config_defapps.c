@@ -283,12 +283,13 @@ _sel_mime_cb(void *data)
 }
 
 static Evas_Object *
-_basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *otb, *ot, *ob, *of, *il;
    Eina_List *l;
    Config_Mime *m;
 
+   e_dialog_resizable_set(cfd->dia, 1);
    otb = e_widget_toolbook_add(evas, 24, 24);
 
    ot = e_widget_table_add(evas, EINA_FALSE);
@@ -359,7 +360,6 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
 
    e_widget_toolbook_page_show(otb, 0);
 
-   e_dialog_resizable_set(cfd->dia, 1);
    e_win_centered_set(cfd->dia->win, 1);
    return otb;
 }
@@ -429,7 +429,7 @@ _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
      {
         EINA_LIST_FOREACH(e_config->env_vars, l, evr)
           {
-             if (!strcmp(evr->var, "BROWSER"))
+             if (!e_util_strcmp(evr->var, "BROWSER"))
                {
                   e_config->env_vars = eina_list_remove_list(e_config->env_vars, l);
                   if (evr->val) eina_stringshare_del(evr->val);

@@ -74,7 +74,6 @@ _xkb_cfg_dialog(E_Container *con, const char *params __UNUSED__)
                              "keyboard_and_mouse/xkbswitch",
                              "preferences-desktop-keyboard",
                              0, v, NULL);
-   e_dialog_resizable_set(cfd->dia, 1);
    _xkb.cfd = cfd;
    return cfd;
 }
@@ -216,10 +215,13 @@ _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static Evas_Object *
-_basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
+   Evas_Object *mainn;
+
    /* Holds the dialog contents, displays a toolbar on the top */
-   Evas_Object *mainn = e_widget_toolbook_add(evas, 24, 24);
+   e_dialog_resizable_set(cfd->dia, 1);
+   mainn = e_widget_toolbook_add(evas, 24, 24);
    {
       /* Holds the used layouts ilist and the button table */
       Evas_Object *layoutss;
@@ -526,7 +528,6 @@ _dlg_add_new(E_Config_Dialog_Data *cfdata)
    e_dialog_button_disable_num_set(dlg, 0, 1);
    e_dialog_button_disable_num_set(dlg, 1, 0);
 
-   e_dialog_resizable_set(dlg, 1);
    e_dialog_show(dlg);
 
    return dlg;

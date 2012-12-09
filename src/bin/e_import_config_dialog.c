@@ -31,7 +31,11 @@ _import_edj_gen(E_Import_Config_Dialog *import)
    fstrip = ecore_file_strip_ext(file);
    if (!fstrip) return;
    len = e_user_dir_snprintf(buf, sizeof(buf), "backgrounds/%s.edj", fstrip);
-   if (len >= sizeof(buf)) return;
+   if (len >= sizeof(buf))
+     {
+        free(fstrip);
+        return;
+     }
    off = len - (sizeof(".edj") - 1);
    for (num = 1; ecore_file_exists(buf) && num < 100; num++)
      snprintf(buf + off, sizeof(buf) - off, "-%d.edj", num);
@@ -452,8 +456,6 @@ e_import_config_dialog_show(E_Container *con, const char *path, Ecore_End_Cb ok,
    import->path = eina_stringshare_add(path);
    e_object_del_attach_func_set(E_OBJECT(dia), _e_import_config_dia_del);
    e_win_delete_callback_set(dia->win, _e_import_config_dialog_win_del);
-
-   evas = e_win_evas_get(dia->win);
 
    import->method = IMPORT_SCALE_ASPECT_OUT;
    import->external = 0;

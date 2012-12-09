@@ -1015,6 +1015,7 @@ _e_fwin_page_create(E_Fwin *fwin)
    e_scrollframe_custom_theme_set(o, "base/theme/fileman",
                                   "e/fileman/default/scrollframe");
    edje_object_part_swallow(fwin->bg_obj, "e.swallow.content", o);
+   e_widget_scrollframe_focus_object_set(o, page->fm_obj);
 
    if (fileman_config->view.show_toolbar)
      page->tbar = e_toolbar_new(evas, "toolbar",
@@ -2077,20 +2078,23 @@ static void
 _e_fwin_cb_menu_extend_start(void *data,
                              Evas_Object *obj,
                              E_Menu *m,
-                             E_Fm2_Icon_Info *info __UNUSED__)
+                             E_Fm2_Icon_Info *info)
 {
    E_Menu_Item *mi = NULL;
    E_Fwin_Page *page;
    E_Menu *subm;
    Eina_List *selected = NULL;
    Eina_Bool set = EINA_FALSE;
+   char buf[PATH_MAX];
 
    page = data;
 
    selected = e_fm2_selected_list_get(page->fm_obj);
 
 #ifdef ENABLE_FILES
-   subm = e_mod_menu_add(m, e_fm2_real_path_get(page->fm_obj));
+   if (info && info->file)
+     snprintf(buf, sizeof(buf), "%s/%s", e_fm2_real_path_get(page->fm_obj), info->file);
+   subm = e_mod_menu_add(m, (info && info->file) ? buf : e_fm2_real_path_get(page->fm_obj));
 
    if (((!page->fwin->zone) || fileman_config->view.desktop_navigation) && e_fm2_has_parent_get(obj))
      {
@@ -2230,18 +2234,21 @@ _e_fwin_border_set(E_Fwin_Page *page, E_Fwin *fwin, E_Fm2_Icon_Info *ici)
    if (fwin->win->border->placed) return;
 
    class = eina_stringshare_printf("e_fwin::%s", e_fm2_real_path_get(fwin->cur_page->fm_obj));
+   e_zone_useful_geometry_get(fwin->win->border->zone,
+                              NULL, NULL, &zw, &zh);
    EINA_LIST_FOREACH(e_config->remembers, ll, rem)
-     if (rem->class && (rem->class == class))
+     if (rem->class == class)
        {
           found = 1;
+          rem->prop.w = E_CLAMP(rem->prop.w, DEFAULT_WIDTH, zw);
+          rem->prop.h = E_CLAMP(rem->prop.h, DEFAULT_HEIGHT, zh);
+          rem->prop.pos_x = E_CLAMP(rem->prop.pos_x, 0, zw - rem->prop.w);
+          rem->prop.pos_y = E_CLAMP(rem->prop.pos_y, 0, zh - rem->prop.h);
           break;
        }
    eina_stringshare_del(class);
 
    if (found) return;
-
-   e_zone_useful_geometry_get(fwin->win->border->zone,
-                              NULL, NULL, &zw, &zh);
 
    /* No custom info, so just put window near icon */
    e_fm2_icon_geometry_get(ici->ic, &ix, &iy, &iw, &ih);
@@ -2502,7 +2509,6 @@ _e_fwin_file_open_dialog(E_Fwin_Page *page,
    else return;  /* make clang happy */
 
    e_dialog_title_set(dia, _("Open with..."));
-   e_dialog_resizable_set(dia, 1);
    e_dialog_button_add(dia, _("Open"), "document-open",
                        _e_fwin_cb_open, fad);
    e_dialog_button_add(dia, _("Close"), "window-close",
