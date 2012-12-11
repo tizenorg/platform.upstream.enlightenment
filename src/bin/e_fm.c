@@ -1571,7 +1571,7 @@ e_fm2_window_object_get(Evas_Object *obj)
 EAPI void
 e_fm2_window_object_set(Evas_Object *obj, E_Object *eobj)
 {
-   const char *drop[] = { "enlightenment/desktop", "enlightenment/border", "text/uri-list", "XdndDirectSave0"};
+   const char *drop[] = {"text/uri-list", "XdndDirectSave0"};
 
    EFM_SMART_CHECK();
    sd->eobj = eobj;
@@ -1582,7 +1582,7 @@ e_fm2_window_object_set(Evas_Object *obj, E_Object *eobj)
                                          _e_fm2_cb_dnd_move,
                                          _e_fm2_cb_dnd_leave,
                                          _e_fm2_cb_dnd_selection_notify,
-                                         drop, 4,
+                                         drop, 2,
                                          sd->x, sd->y, sd->w, sd->h);
    e_drop_handler_responsive_set(sd->drop_handler);
    e_drop_handler_xds_set(sd->drop_handler, _e_fm2_cb_dnd_drop);
@@ -4330,14 +4330,13 @@ _e_fm2_uri_icon_list_get(Eina_List *uri)
      {
         Evas_Object *fm;
         E_Fm2_Icon *ic;
+        const char *file;
 
         ic = NULL;
         fm = _e_fm2_file_fm2_find(path);
-        if (fm)
-          {
-             const char *file = ecore_file_file_get(path);
-             ic = _e_fm2_icon_find(fm, file);
-          }
+        if (!fm) continue;
+        file = ecore_file_file_get(path);
+        ic = _e_fm2_icon_find(fm, file);
         icons = eina_list_append(icons, ic);
      }
    return icons;
@@ -6410,7 +6409,7 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
    char *args = NULL;
    size_t size = 0;
    size_t length = 0;
-   Eina_Bool memerr = EINA_FALSE;
+   Eina_Bool lnk = EINA_FALSE, memerr = EINA_FALSE;
    
    sd = data;
    ev = event;
@@ -6432,6 +6431,7 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
           {
              if ((e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_MOVE) || (sd->config->view.link_drop))
                {
+                  lnk = EINA_TRUE;
                   if (_e_fm2_view_mode_get(sd) != E_FM2_VIEW_MODE_CUSTOM_ICONS)
                     goto end;
                   memerr = EINA_TRUE; // prevent actual file move op
@@ -6440,16 +6440,10 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
      }
    
    isel = _e_fm2_uri_icon_list_get(fsel);
-   if (!isel) return;
    ox = 0; oy = 0;
    EINA_LIST_FOREACH(isel, l, ic)
      {
         if (!ic) continue;
-        if (ic->drag.dnd_end_timer)
-          {
-             ecore_timer_del(ic->drag.dnd_end_timer);
-             ic->drag.dnd_end_timer = NULL;
-          }
         if (ic->drag.src)
           {
              ox = ic->x;
@@ -6468,7 +6462,7 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
    if (sd->drop_all) /* drop arbitrarily into the dir */
      {
         /* move file into this fm dir */
-        for (ll = fsel, il = isel; ll && il; ll = eina_list_next(ll), il = eina_list_next(il))
+        for (ll = fsel, il = isel; ll; ll = eina_list_next(ll), il = eina_list_next(il))
           {
              ic = eina_list_data_get(il);
              fp = eina_list_data_get(ll);
@@ -6638,6 +6632,7 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
      {
         if (e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_COPY)
           {
+             lnk = EINA_TRUE;
              if (sd->config->view.link_drop && (!sd->drop_icon))
                e_fm2_client_file_symlink(sd->obj, args);
              else
@@ -6647,7 +6642,7 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
         else if (e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_MOVE)
           {
              if (sd->config->view.link_drop && (!sd->drop_icon))
-               e_fm2_client_file_symlink(sd->obj, args);
+               lnk = EINA_TRUE, e_fm2_client_file_symlink(sd->obj, args);
              else
                e_fm2_client_file_move(sd->obj, args);
              free(args);
@@ -6655,7 +6650,7 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
         else if (e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_ASK)
           {
              if (sd->config->view.link_drop && (!sd->drop_icon))
-               e_fm2_client_file_symlink(sd->obj, args);
+               lnk = EINA_TRUE, e_fm2_client_file_symlink(sd->obj, args);
              else
                e_fm2_drop_menu(sd->obj, args);
           }
@@ -6680,7 +6675,7 @@ end:
      }
    eina_list_free(fsel);
    EINA_LIST_FREE(isel, ic)
-     if (ic->drag.dnd_end_timer)
+     if (ic->drag.dnd_end_timer && (!lnk))
        {
           ecore_timer_del(ic->drag.dnd_end_timer);
           ic->drag.dnd_end_timer = NULL;
@@ -9197,18 +9192,17 @@ _e_fm2_new_file_thread(void *data __UNUSED__, Ecore_Thread *eth)
    const char *path;
    struct stat st;
    unsigned int x;
-   FILE *f;
+   int fd;
 
    path = ecore_thread_global_data_wait("path", 2.0);
    snprintf(buf, sizeof(buf), "%s/%s", path, _("New File"));
    errno = 0;
    if (stat(buf, &st) && (errno == ENOENT))
      {
-        f = fopen(buf, "w");
-        if (f)
+        fd = open(buf, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR | S_IWUSR);
+        if (fd)
           {
-             fwrite("", 1, 1, f);
-             fclose(f);
+             close(fd);
              ecore_thread_feedback(eth, strdup(buf));
              return;
           }
@@ -9222,11 +9216,10 @@ _e_fm2_new_file_thread(void *data __UNUSED__, Ecore_Thread *eth)
         errno = 0;
         if (stat(buf, &st) && (errno == ENOENT))
           {
-             f = fopen(buf, "w");
-             if (f)
+             fd = open(buf, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR | S_IWUSR);
+             if (fd)
                {
-                  fwrite("", 1, 1, f);
-                  fclose(f);
+                  close(fd);
                   ecore_thread_feedback(eth, strdup(buf));
                   return;
                }

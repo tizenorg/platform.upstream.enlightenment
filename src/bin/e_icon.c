@@ -425,7 +425,7 @@ e_icon_fdo_icon_set(Evas_Object *obj, const char *icon)
    const char *path;
    int len;
 
-   if (!icon) return EINA_TRUE;
+   if (!icon) return EINA_FALSE;
    if (evas_object_smart_smart_get(obj) != _e_smart) SMARTERR(0);
    if (icon[0] == '/') return e_icon_file_set(obj, icon);
 
@@ -444,7 +444,7 @@ e_icon_fdo_icon_set(Evas_Object *obj, const char *icon)
    if (!sd->fdo) return EINA_FALSE;
 
    path = efreet_icon_path_find(e_config->icon_theme, sd->fdo, sd->size);
-   if (!path) return EINA_TRUE;
+   if (!path) return EINA_FALSE;
 
    len = strlen(icon);
    if ((len > 4) && (!strcasecmp(icon + len - 4, ".edj")))

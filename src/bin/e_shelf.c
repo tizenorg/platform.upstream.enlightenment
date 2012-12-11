@@ -64,21 +64,21 @@ static int orientations[] =
 
 static const char *orient_names[] =
 {
-   [E_GADCON_ORIENT_FLOAT] = "Float",
-   [E_GADCON_ORIENT_HORIZ] = "Horizontal",
-   [E_GADCON_ORIENT_VERT] = "Vertical",
-   [E_GADCON_ORIENT_LEFT] = "Left",
-   [E_GADCON_ORIENT_RIGHT] = "Right",
-   [E_GADCON_ORIENT_TOP] = "Top",
-   [E_GADCON_ORIENT_BOTTOM] = "Bottom",
-   [E_GADCON_ORIENT_CORNER_TL] = "Top-left Corner",
-   [E_GADCON_ORIENT_CORNER_TR] = "Top-right Corner",
-   [E_GADCON_ORIENT_CORNER_BL] = "Bottom-left Corner",
-   [E_GADCON_ORIENT_CORNER_BR] = "Bottom-right Corner",
-   [E_GADCON_ORIENT_CORNER_LT] = "Left-top Corner",
-   [E_GADCON_ORIENT_CORNER_RT] = "Right-top Corner",
-   [E_GADCON_ORIENT_CORNER_LB] = "Left-bottom Corner",
-   [E_GADCON_ORIENT_CORNER_RB] = "Right-bottom Corner"
+   [E_GADCON_ORIENT_FLOAT] = N_("Float"),
+   [E_GADCON_ORIENT_HORIZ] = N_("Horizontal"),
+   [E_GADCON_ORIENT_VERT] = N_("Vertical"),
+   [E_GADCON_ORIENT_LEFT] = N_("Left"),
+   [E_GADCON_ORIENT_RIGHT] = N_("Right"),
+   [E_GADCON_ORIENT_TOP] = N_("Top"),
+   [E_GADCON_ORIENT_BOTTOM] = N_("Bottom"),
+   [E_GADCON_ORIENT_CORNER_TL] = N_("Top-left Corner"),
+   [E_GADCON_ORIENT_CORNER_TR] = N_("Top-right Corner"),
+   [E_GADCON_ORIENT_CORNER_BL] = N_("Bottom-left Corner"),
+   [E_GADCON_ORIENT_CORNER_BR] = N_("Bottom-right Corner"),
+   [E_GADCON_ORIENT_CORNER_LT] = N_("Left-top Corner"),
+   [E_GADCON_ORIENT_CORNER_RT] = N_("Right-top Corner"),
+   [E_GADCON_ORIENT_CORNER_LB] = N_("Left-bottom Corner"),
+   [E_GADCON_ORIENT_CORNER_RB] = N_("Right-bottom Corner")
 };
 
 EAPI int E_EVENT_SHELF_RENAME = -1;
@@ -1953,6 +1953,7 @@ _e_shelf_cb_mouse_in(void *data, int type, void *event)
    else if (type == ECORE_EVENT_MOUSE_MOVE)
      {
         Ecore_Event_Mouse_Move *ev;
+        int x, y;
         Eina_Bool inside = EINA_FALSE;
 
         ev = event;
@@ -1965,12 +1966,12 @@ _e_shelf_cb_mouse_in(void *data, int type, void *event)
         if (!inside)
           {
              inside = E_INSIDE(ev->root.x, ev->root.y, es->zone->x, es->zone->y, es->zone->w + 4, es->zone->h + 4);
-             ev->root.x -= es->zone->x, ev->root.y -= es->zone->y;
+             x = ev->root.x - es->zone->x, y = ev->root.y - es->zone->x;
              if (inside)
                inside = (
-                         ((E_INSIDE(ev->root.x, ev->root.y, es->x, es->y, es->w, es->h)) ||
-                         (E_INSIDE(ev->root.x, ev->root.y, es->x - 2, es->y - 2, es->w + 4, es->h + 4)) ||
-                         (E_INSIDE(ev->root.x, ev->root.y, es->x + 2, es->y + 2, es->w + 4, es->h + 4)))
+                         ((E_INSIDE(x, y, es->x, es->y, es->w, es->h)) ||
+                         (E_INSIDE(x, y, es->x - 2, es->y - 2, es->w + 4, es->h + 4)) ||
+                         (E_INSIDE(x, y, es->x + 2, es->y + 2, es->w + 4, es->h + 4)))
                         );
              if (inside && es->popup)
                {

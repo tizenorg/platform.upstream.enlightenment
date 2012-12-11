@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: e17\n"
 "Report-Msgid-Bugs-To: enlightenment-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2012-12-07 14:21+0000\n"
+"POT-Creation-Date: 2012-12-11 15:02+0000\n"
 "PO-Revision-Date: 2012-11-23 10:59-0300\n"
 "Last-Translator: Vinícius dos Santos Oliveira <vini.ipsmaker@gmail.com>\n"
 "Language-Team: Brazilian Portuguese\n"
@@ -23,7 +23,7 @@ msgstr ""
 msgid "About Enlightenment"
 msgstr "Sobre o Enlightenment"
 
-#: src/bin/e_about.c:20 src/bin/e_actions.c:2983 src/bin/e_config_dialog.c:288
+#: src/bin/e_about.c:20 src/bin/e_actions.c:2987 src/bin/e_config_dialog.c:288
 #: src/bin/e_fm.c:1030 src/bin/e_int_border_menu.c:194
 #: src/bin/e_int_border_prop.c:81 src/bin/e_theme_about.c:24
 #: src/modules/conf/e_conf.c:179
@@ -33,8 +33,8 @@ msgstr "Sobre o Enlightenment"
 msgid "Close"
 msgstr "Fechar"
 
-#: src/bin/e_about.c:21 src/bin/e_actions.c:3358 src/bin/e_actions.c:3362
-#: src/bin/e_actions.c:3366 src/bin/e_int_menus.c:225 src/bin/e_main.c:620
+#: src/bin/e_about.c:21 src/bin/e_actions.c:3362 src/bin/e_actions.c:3366
+#: src/bin/e_actions.c:3370 src/bin/e_int_menus.c:225 src/bin/e_main.c:619
 #: src/modules/conf_interaction/e_int_config_mouse.c:192
 #: src/modules/conf_window_remembers/e_int_config_remembers.c:221
 #: src/modules/wizard/page_000.c:34
@@ -68,436 +68,436 @@ msgstr ""
 msgid "Are you sure you want to kill this window?"
 msgstr "Tem certeza que quer fechar esta janela?"
 
-#: src/bin/e_actions.c:375 src/bin/e_actions.c:2988
-#: src/bin/e_int_border_menu.c:745
+#: src/bin/e_actions.c:375 src/bin/e_actions.c:2992
+#: src/bin/e_int_border_menu.c:749
 msgid "Kill"
 msgstr "Fechar"
 
-#: src/bin/e_actions.c:377 src/bin/e_actions.c:2124 src/bin/e_actions.c:2218
-#: src/bin/e_actions.c:2278 src/bin/e_actions.c:2338 src/bin/e_actions.c:2403
-#: src/bin/e_actions.c:2468 src/bin/e_confirm_dialog.c:53
-#: src/bin/e_desklock.c:1313 src/bin/e_fm.c:10059 src/bin/e_fm.c:10424
-#: src/bin/e_screensaver.c:167
+#: src/bin/e_actions.c:377 src/bin/e_actions.c:2128 src/bin/e_actions.c:2222
+#: src/bin/e_actions.c:2282 src/bin/e_actions.c:2342 src/bin/e_actions.c:2407
+#: src/bin/e_actions.c:2472 src/bin/e_confirm_dialog.c:53
+#: src/bin/e_desklock.c:1313 src/bin/e_fm.c:10052 src/bin/e_fm.c:10417
+#: src/bin/e_screensaver.c:191
 msgid "No"
 msgstr "Não"
 
-#: src/bin/e_actions.c:2119 src/bin/e_actions.c:3362 src/bin/e_int_menus.c:254
+#: src/bin/e_actions.c:2123 src/bin/e_actions.c:3366 src/bin/e_int_menus.c:254
 msgid "Exit"
 msgstr "Sair"
 
-#: src/bin/e_actions.c:2120
+#: src/bin/e_actions.c:2124
 #, fuzzy
 msgid "Are you sure you want to exit Enlightenment?"
 msgstr "Tem certeza que quer sair?"
 
-#: src/bin/e_actions.c:2122 src/bin/e_actions.c:2216 src/bin/e_actions.c:2276
-#: src/bin/e_actions.c:2336 src/bin/e_actions.c:2401 src/bin/e_actions.c:2466
+#: src/bin/e_actions.c:2126 src/bin/e_actions.c:2220 src/bin/e_actions.c:2280
+#: src/bin/e_actions.c:2340 src/bin/e_actions.c:2405 src/bin/e_actions.c:2470
 #: src/bin/e_confirm_dialog.c:52 src/bin/e_desklock.c:1311
-#: src/bin/e_fm.c:10062 src/bin/e_screensaver.c:165
+#: src/bin/e_fm.c:10055 src/bin/e_screensaver.c:189
 msgid "Yes"
 msgstr "Sim"
 
-#: src/bin/e_actions.c:2213
+#: src/bin/e_actions.c:2217
 #, fuzzy
 msgid "Logout"
 msgstr "Sair agora"
 
-#: src/bin/e_actions.c:2214
+#: src/bin/e_actions.c:2218
 #, fuzzy
 msgid "Are you sure you want to logout?"
 msgstr "Tem certeza que quer sair da sessão?"
 
-#: src/bin/e_actions.c:2272 src/bin/e_sys.c:749
+#: src/bin/e_actions.c:2276 src/bin/e_sys.c:749
 msgid "Power off"
 msgstr "Desligar"
 
-#: src/bin/e_actions.c:2274
+#: src/bin/e_actions.c:2278
 #, fuzzy
 msgid "Are you sure you want to power off your computer?"
 msgstr "Tem certeza que quer sair da sessão?"
 
-#: src/bin/e_actions.c:2333 src/bin/e_actions.c:3405
+#: src/bin/e_actions.c:2337 src/bin/e_actions.c:3409
 msgid "Reboot"
 msgstr "Reiniciar"
 
-#: src/bin/e_actions.c:2334
+#: src/bin/e_actions.c:2338
 #, fuzzy
 msgid "Are you sure you want to reboot your computer?"
 msgstr "Tem certeza que quer reiniciar?"
 
-#: src/bin/e_actions.c:2398 src/bin/e_actions.c:3413
+#: src/bin/e_actions.c:2402 src/bin/e_actions.c:3417
 msgid "Suspend"
 msgstr "Suspender"
 
-#: src/bin/e_actions.c:2399
+#: src/bin/e_actions.c:2403
 #, fuzzy
 msgid "Are you sure you want to suspend your computer?"
 msgstr "Tem certeza que quer sair da sessão?"
 
-#: src/bin/e_actions.c:2463 src/bin/e_actions.c:3417
+#: src/bin/e_actions.c:2467 src/bin/e_actions.c:3421
 #: src/modules/conf_keybindings/e_int_config_acpibindings.c:379
 msgid "Hibernate"
 msgstr "Hibernar"
 
-#: src/bin/e_actions.c:2464
+#: src/bin/e_actions.c:2468
 #, fuzzy
 msgid "Are you sure you want to hibernate your computer?"
 msgstr "Tem certeza que quer hibernar?"
 
-#: src/bin/e_actions.c:2943 src/bin/e_actions.c:2954 src/bin/e_actions.c:2973
-#: src/bin/e_actions.c:2978 src/bin/e_actions.c:2983 src/bin/e_actions.c:2988
-#: src/bin/e_actions.c:3274 src/bin/e_actions.c:3278 src/bin/e_actions.c:3283
-#: src/bin/e_actions.c:3289 src/bin/e_actions.c:3295 src/bin/e_actions.c:3301
-#: src/modules/shot/e_mod_main.c:948
+#: src/bin/e_actions.c:2947 src/bin/e_actions.c:2958 src/bin/e_actions.c:2977
+#: src/bin/e_actions.c:2982 src/bin/e_actions.c:2987 src/bin/e_actions.c:2992
+#: src/bin/e_actions.c:3278 src/bin/e_actions.c:3282 src/bin/e_actions.c:3287
+#: src/bin/e_actions.c:3293 src/bin/e_actions.c:3299 src/bin/e_actions.c:3305
+#: src/modules/shot/e_mod_main.c:959
 msgid "Window : Actions"
 msgstr "Janela: Ações"
 
-#: src/bin/e_actions.c:2943 src/bin/e_fm.c:11184
-#: src/bin/e_int_border_menu.c:665
+#: src/bin/e_actions.c:2947 src/bin/e_fm.c:11177
+#: src/bin/e_int_border_menu.c:669
 msgid "Move"
 msgstr "Mover"
 
-#: src/bin/e_actions.c:2954 src/bin/e_int_border_menu.c:679
+#: src/bin/e_actions.c:2958 src/bin/e_int_border_menu.c:683
 msgid "Resize"
 msgstr "Redimensionar"
 
-#: src/bin/e_actions.c:2965 src/bin/e_actions.c:3329 src/bin/e_actions.c:3331
-#: src/bin/e_actions.c:3333 src/bin/e_actions.c:3335 src/bin/e_actions.c:3337
+#: src/bin/e_actions.c:2969 src/bin/e_actions.c:3333 src/bin/e_actions.c:3335
+#: src/bin/e_actions.c:3337 src/bin/e_actions.c:3339 src/bin/e_actions.c:3341
 #: src/modules/comp/e_mod_config.c:452 src/modules/comp/e_mod_config.c:761
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:336
 msgid "Menu"
 msgstr "Menu"
 
-#: src/bin/e_actions.c:2965
+#: src/bin/e_actions.c:2969
 msgid "Window Menu"
 msgstr "Menu da janela"
 
-#: src/bin/e_actions.c:2973 src/bin/e_int_border_menu.c:1047
+#: src/bin/e_actions.c:2977 src/bin/e_int_border_menu.c:1051
 #: src/modules/winlist/e_int_config_winlist.c:216
 msgid "Raise"
 msgstr "Mostrar"
 
-#: src/bin/e_actions.c:2978 src/bin/e_int_border_menu.c:1055
+#: src/bin/e_actions.c:2982 src/bin/e_int_border_menu.c:1059
 msgid "Lower"
 msgstr "Ocultar"
 
-#: src/bin/e_actions.c:2993 src/bin/e_actions.c:2997 src/bin/e_actions.c:3002
-#: src/bin/e_actions.c:3006 src/bin/e_actions.c:3011 src/bin/e_actions.c:3015
-#: src/bin/e_actions.c:3021 src/bin/e_actions.c:3023 src/bin/e_actions.c:3026
-#: src/bin/e_actions.c:3029 src/bin/e_actions.c:3032 src/bin/e_actions.c:3035
-#: src/bin/e_actions.c:3037 src/bin/e_actions.c:3039 src/bin/e_actions.c:3041
-#: src/bin/e_actions.c:3048 src/bin/e_actions.c:3050 src/bin/e_actions.c:3052
-#: src/bin/e_actions.c:3054 src/bin/e_actions.c:3056 src/bin/e_actions.c:3060
-#: src/bin/e_actions.c:3065 src/bin/e_actions.c:3070 src/bin/e_actions.c:3076
-#: src/bin/e_actions.c:3082
+#: src/bin/e_actions.c:2997 src/bin/e_actions.c:3001 src/bin/e_actions.c:3006
+#: src/bin/e_actions.c:3010 src/bin/e_actions.c:3015 src/bin/e_actions.c:3019
+#: src/bin/e_actions.c:3025 src/bin/e_actions.c:3027 src/bin/e_actions.c:3030
+#: src/bin/e_actions.c:3033 src/bin/e_actions.c:3036 src/bin/e_actions.c:3039
+#: src/bin/e_actions.c:3041 src/bin/e_actions.c:3043 src/bin/e_actions.c:3045
+#: src/bin/e_actions.c:3052 src/bin/e_actions.c:3054 src/bin/e_actions.c:3056
+#: src/bin/e_actions.c:3058 src/bin/e_actions.c:3060 src/bin/e_actions.c:3064
+#: src/bin/e_actions.c:3069 src/bin/e_actions.c:3074 src/bin/e_actions.c:3080
+#: src/bin/e_actions.c:3086
 msgid "Window : State"
 msgstr "Janela: Estado"
 
-#: src/bin/e_actions.c:2993
+#: src/bin/e_actions.c:2997
 msgid "Sticky Mode Toggle"
 msgstr "Alternar modo fixo"
 
-#: src/bin/e_actions.c:2997
+#: src/bin/e_actions.c:3001
 msgid "Sticky Mode Enable"
 msgstr "Ativar fixação"
 
-#: src/bin/e_actions.c:3002
+#: src/bin/e_actions.c:3006
 msgid "Iconic Mode Toggle"
 msgstr "Alternar modo minimizado"
 
-#: src/bin/e_actions.c:3006
+#: src/bin/e_actions.c:3010
 msgid "Iconic Mode Enable"
 msgstr "Ativar minimização"
 
-#: src/bin/e_actions.c:3011
+#: src/bin/e_actions.c:3015
 msgid "Fullscreen Mode Toggle"
 msgstr "Alternar modo tela cheia"
 
-#: src/bin/e_actions.c:3015
+#: src/bin/e_actions.c:3019
 msgid "Fullscreen Mode Enable"
 msgstr "Ativar modo tela cheia"
 
-#: src/bin/e_actions.c:3021 src/bin/e_int_border_menu.c:384
-#: src/bin/e_int_border_menu.c:640
+#: src/bin/e_actions.c:3025 src/bin/e_int_border_menu.c:384
+#: src/bin/e_int_border_menu.c:644
 msgid "Maximize"
 msgstr "Maximizar"
 
-#: src/bin/e_actions.c:3023 src/bin/e_int_border_menu.c:395
+#: src/bin/e_actions.c:3027 src/bin/e_int_border_menu.c:395
 msgid "Maximize Vertically"
 msgstr "Maximizar verticalmente"
 
-#: src/bin/e_actions.c:3026 src/bin/e_int_border_menu.c:406
+#: src/bin/e_actions.c:3030 src/bin/e_int_border_menu.c:406
 msgid "Maximize Horizontally"
 msgstr "Maximizar horizontalmente"
 
-#: src/bin/e_actions.c:3029 src/bin/e_int_border_menu.c:417
+#: src/bin/e_actions.c:3033 src/bin/e_int_border_menu.c:417
 msgid "Maximize Left"
 msgstr "Maximizar à esquerda"
 
-#: src/bin/e_actions.c:3032 src/bin/e_int_border_menu.c:428
+#: src/bin/e_actions.c:3036 src/bin/e_int_border_menu.c:428
 msgid "Maximize Right"
 msgstr "Maximizar à direita"
 
-#: src/bin/e_actions.c:3035
+#: src/bin/e_actions.c:3039
 msgid "Maximize Fullscreen"
 msgstr "Maximizar em toda a tela"
 
-#: src/bin/e_actions.c:3037
+#: src/bin/e_actions.c:3041
 msgid "Maximize Mode \"Smart\""
 msgstr "Maximizar - Modo inteligente"
 
-#: src/bin/e_actions.c:3039
+#: src/bin/e_actions.c:3043
 msgid "Maximize Mode \"Expand\""
 msgstr "Maximizar - Modo expandir"
 
-#: src/bin/e_actions.c:3041
+#: src/bin/e_actions.c:3045
 msgid "Maximize Mode \"Fill\""
 msgstr "Maximizar - Modo preencher"
 
-#: src/bin/e_actions.c:3048
+#: src/bin/e_actions.c:3052
 msgid "Shade Up Mode Toggle"
 msgstr "Alternar enrolar para cima"
 
-#: src/bin/e_actions.c:3050
+#: src/bin/e_actions.c:3054
 msgid "Shade Down Mode Toggle"
 msgstr "Alternar enrolar para baixo"
 
-#: src/bin/e_actions.c:3052
+#: src/bin/e_actions.c:3056
 msgid "Shade Left Mode Toggle"
 msgstr "Alternar enrolar à esquerda"
 
-#: src/bin/e_actions.c:3054
+#: src/bin/e_actions.c:3058
 msgid "Shade Right Mode Toggle"
 msgstr "Alternar enrolar à direita"
 
-#: src/bin/e_actions.c:3056
+#: src/bin/e_actions.c:3060
 msgid "Shade Mode Toggle"
 msgstr "Alternar modo enrolamento"
 
-#: src/bin/e_actions.c:3060
+#: src/bin/e_actions.c:3064
 msgid "Set Shaded State"
 msgstr "Definir enrolamento"
 
-#: src/bin/e_actions.c:3061
+#: src/bin/e_actions.c:3065
 msgid "syntax: \"(0|1) (up|down|left|right)\""
 msgstr "sintaxe: \"(0|1) (up|down|left|right)\""
 
-#: src/bin/e_actions.c:3065
+#: src/bin/e_actions.c:3069
 msgid "Toggle Borderless State"
 msgstr "Alternar estado dos contornos"
 
-#: src/bin/e_actions.c:3070
+#: src/bin/e_actions.c:3074
 msgid "Set Border"
 msgstr "Definir contornos"
 
-#: src/bin/e_actions.c:3076
+#: src/bin/e_actions.c:3080
 msgid "Cycle between Borders"
 msgstr "Percorrer contornos"
 
-#: src/bin/e_actions.c:3082
+#: src/bin/e_actions.c:3086
 msgid "Toggle Pinned State"
 msgstr "Alternar estado fixo"
 
-#: src/bin/e_actions.c:3087 src/bin/e_actions.c:3089 src/bin/e_actions.c:3091
-#: src/bin/e_actions.c:3093 src/bin/e_actions.c:3095 src/bin/e_actions.c:3101
-#: src/bin/e_actions.c:3106 src/bin/e_actions.c:3112 src/bin/e_actions.c:3117
-#: src/bin/e_actions.c:3123 src/bin/e_actions.c:3129 src/bin/e_actions.c:3131
-#: src/bin/e_actions.c:3133 src/bin/e_actions.c:3135 src/bin/e_actions.c:3137
-#: src/bin/e_actions.c:3139 src/bin/e_actions.c:3141 src/bin/e_actions.c:3143
-#: src/bin/e_actions.c:3145 src/bin/e_actions.c:3147 src/bin/e_actions.c:3149
-#: src/bin/e_actions.c:3151 src/bin/e_actions.c:3153 src/bin/e_actions.c:3159
-#: src/bin/e_actions.c:3161 src/bin/e_actions.c:3163 src/bin/e_actions.c:3165
-#: src/bin/e_actions.c:3167 src/bin/e_actions.c:3173 src/bin/e_actions.c:3179
-#: src/bin/e_actions.c:3185 src/bin/e_actions.c:3190 src/bin/e_actions.c:3192
-#: src/bin/e_actions.c:3194 src/bin/e_actions.c:3196 src/bin/e_actions.c:3198
-#: src/bin/e_actions.c:3200 src/bin/e_actions.c:3202 src/bin/e_actions.c:3204
-#: src/bin/e_actions.c:3206 src/bin/e_actions.c:3208 src/bin/e_actions.c:3210
-#: src/bin/e_actions.c:3212 src/bin/e_actions.c:3214 src/bin/e_actions.c:3429
-#: src/bin/e_actions.c:3434 src/bin/e_int_menus.c:187
+#: src/bin/e_actions.c:3091 src/bin/e_actions.c:3093 src/bin/e_actions.c:3095
+#: src/bin/e_actions.c:3097 src/bin/e_actions.c:3099 src/bin/e_actions.c:3105
+#: src/bin/e_actions.c:3110 src/bin/e_actions.c:3116 src/bin/e_actions.c:3121
+#: src/bin/e_actions.c:3127 src/bin/e_actions.c:3133 src/bin/e_actions.c:3135
+#: src/bin/e_actions.c:3137 src/bin/e_actions.c:3139 src/bin/e_actions.c:3141
+#: src/bin/e_actions.c:3143 src/bin/e_actions.c:3145 src/bin/e_actions.c:3147
+#: src/bin/e_actions.c:3149 src/bin/e_actions.c:3151 src/bin/e_actions.c:3153
+#: src/bin/e_actions.c:3155 src/bin/e_actions.c:3157 src/bin/e_actions.c:3163
+#: src/bin/e_actions.c:3165 src/bin/e_actions.c:3167 src/bin/e_actions.c:3169
+#: src/bin/e_actions.c:3171 src/bin/e_actions.c:3177 src/bin/e_actions.c:3183
+#: src/bin/e_actions.c:3189 src/bin/e_actions.c:3194 src/bin/e_actions.c:3196
+#: src/bin/e_actions.c:3198 src/bin/e_actions.c:3200 src/bin/e_actions.c:3202
+#: src/bin/e_actions.c:3204 src/bin/e_actions.c:3206 src/bin/e_actions.c:3208
+#: src/bin/e_actions.c:3210 src/bin/e_actions.c:3212 src/bin/e_actions.c:3214
+#: src/bin/e_actions.c:3216 src/bin/e_actions.c:3218 src/bin/e_actions.c:3433
+#: src/bin/e_actions.c:3438 src/bin/e_int_menus.c:187
 #: src/bin/e_int_shelf_config.c:267 src/modules/comp/e_mod_config.c:444
 #: src/modules/comp/e_mod_config.c:753
 #: src/modules/conf_window_manipulation/e_int_config_clientlist.c:101
-#: src/modules/fileman/e_mod_menu.c:334 src/modules/ibox/e_mod_config.c:166
+#: src/modules/fileman/e_mod_menu.c:336 src/modules/ibox/e_mod_config.c:166
 msgid "Desktop"
 msgstr "Área de trabalho"
 
-#: src/bin/e_actions.c:3087
+#: src/bin/e_actions.c:3091
 msgid "Flip Desktop Left"
 msgstr "Mudar para a área de trabalho à esquerda"
 
-#: src/bin/e_actions.c:3089
+#: src/bin/e_actions.c:3093
 msgid "Flip Desktop Right"
 msgstr "Mudar para a área de trabalho à direita"
 
-#: src/bin/e_actions.c:3091
+#: src/bin/e_actions.c:3095
 msgid "Flip Desktop Up"
 msgstr "Mudar para a área de trabalho de cima"
 
-#: src/bin/e_actions.c:3093
+#: src/bin/e_actions.c:3097
 msgid "Flip Desktop Down"
 msgstr "Mudar para a área de trabalho de baixo"
 
-#: src/bin/e_actions.c:3095
+#: src/bin/e_actions.c:3099
 msgid "Flip Desktop By..."
 msgstr "Mudar área de trabalho..."
 
-#: src/bin/e_actions.c:3101
+#: src/bin/e_actions.c:3105
 msgid "Flip To Previous Desktop"
 msgstr "Mudar para a área de trabalho anterior"
 
-#: src/bin/e_actions.c:3106
+#: src/bin/e_actions.c:3110
 msgid "Show The Desktop"
 msgstr "Mostrar área de trabalho"
 
-#: src/bin/e_actions.c:3112
+#: src/bin/e_actions.c:3116
 msgid "Show The Shelf"
 msgstr "Mostrar painel"
 
-#: src/bin/e_actions.c:3117
+#: src/bin/e_actions.c:3121
 msgid "Flip Desktop To..."
 msgstr "Mudar para a área de trabalho..."
 
-#: src/bin/e_actions.c:3123
+#: src/bin/e_actions.c:3127
 msgid "Flip Desktop Linearly..."
 msgstr "Mudar área de trabalho linearmente..."
 
-#: src/bin/e_actions.c:3129
+#: src/bin/e_actions.c:3133
 msgid "Switch To Desktop 0"
 msgstr "Mudar para a área de trabalho 0"
 
-#: src/bin/e_actions.c:3131
+#: src/bin/e_actions.c:3135
 msgid "Switch To Desktop 1"
 msgstr "Mudar para a área de trabalho 1"
 
-#: src/bin/e_actions.c:3133
+#: src/bin/e_actions.c:3137
 msgid "Switch To Desktop 2"
 msgstr "Mudar para a área de trabalho 2"
 
-#: src/bin/e_actions.c:3135
+#: src/bin/e_actions.c:3139
 msgid "Switch To Desktop 3"
 msgstr "Mudar para a área de trabalho 3"
 
-#: src/bin/e_actions.c:3137
+#: src/bin/e_actions.c:3141
 msgid "Switch To Desktop 4"
 msgstr "Mudar para a área de trabalho 4"
 
-#: src/bin/e_actions.c:3139
+#: src/bin/e_actions.c:3143
 msgid "Switch To Desktop 5"
 msgstr "Mudar para a área de trabalho 5"
 
-#: src/bin/e_actions.c:3141
+#: src/bin/e_actions.c:3145
 msgid "Switch To Desktop 6"
 msgstr "Mudar para a área de trabalho 6"
 
-#: src/bin/e_actions.c:3143
+#: src/bin/e_actions.c:3147
 msgid "Switch To Desktop 7"
 msgstr "Mudar para a área de trabalho 7"
 
-#: src/bin/e_actions.c:3145
+#: src/bin/e_actions.c:3149
 msgid "Switch To Desktop 8"
 msgstr "Mudar para a área de trabalho 8"
 
-#: src/bin/e_actions.c:3147
+#: src/bin/e_actions.c:3151
 msgid "Switch To Desktop 9"
 msgstr "Mudar para a área de trabalho 9"
 
-#: src/bin/e_actions.c:3149
+#: src/bin/e_actions.c:3153
 msgid "Switch To Desktop 10"
 msgstr "Mudar para a área de trabalho 10"
 
-#: src/bin/e_actions.c:3151
+#: src/bin/e_actions.c:3155
 msgid "Switch To Desktop 11"
 msgstr "Mudar para a área de trabalho 11"
 
-#: src/bin/e_actions.c:3153
+#: src/bin/e_actions.c:3157
 msgid "Switch To Desktop..."
 msgstr "Mudar para a área de trabalho..."
 
-#: src/bin/e_actions.c:3159
+#: src/bin/e_actions.c:3163
 msgid "Flip Desktop Left (All Screens)"
 msgstr "Mudar para a área de trabalho à esquerda (todas as telas)"
 
-#: src/bin/e_actions.c:3161
+#: src/bin/e_actions.c:3165
 msgid "Flip Desktop Right (All Screens)"
 msgstr "Mudar para a área de trabalho à direita (todas as telas)"
 
-#: src/bin/e_actions.c:3163
+#: src/bin/e_actions.c:3167
 msgid "Flip Desktop Up (All Screens)"
 msgstr "Mudar para a área de trabalho de cima (todas as telas)"
 
-#: src/bin/e_actions.c:3165
+#: src/bin/e_actions.c:3169
 msgid "Flip Desktop Down (All Screens)"
 msgstr "Mudar para a área de trabalho de baixo (todas as telas)"
 
-#: src/bin/e_actions.c:3167
+#: src/bin/e_actions.c:3171
 msgid "Flip Desktop By... (All Screens)"
 msgstr "Mudar área de trabalho... (todas as telas)"
 
-#: src/bin/e_actions.c:3173
+#: src/bin/e_actions.c:3177
 msgid "Flip Desktop To... (All Screens)"
 msgstr "Mudar para a área de trabalho... (todas as telas)"
 
-#: src/bin/e_actions.c:3179
+#: src/bin/e_actions.c:3183
 msgid "Flip Desktop Linearly... (All Screens)"
 msgstr "Mudar área de trabalho linearmente... (todas as telas)"
 
-#: src/bin/e_actions.c:3185
+#: src/bin/e_actions.c:3189
 msgid "Flip Desktop In Direction..."
 msgstr "Mudar área de trabalho na direção..."
 
-#: src/bin/e_actions.c:3190
+#: src/bin/e_actions.c:3194
 msgid "Switch To Desktop 0 (All Screens)"
 msgstr "Mudar para a área de trabalho 0 (todas as telas)"
 
-#: src/bin/e_actions.c:3192
+#: src/bin/e_actions.c:3196
 msgid "Switch To Desktop 1 (All Screens)"
 msgstr "Mudar para a área de trabalho 1 (todas as telas)"
 
-#: src/bin/e_actions.c:3194
+#: src/bin/e_actions.c:3198
 msgid "Switch To Desktop 2 (All Screens)"
 msgstr "Mudar para a área de trabalho 2 (todas as telas)"
 
-#: src/bin/e_actions.c:3196
+#: src/bin/e_actions.c:3200
 msgid "Switch To Desktop 3 (All Screens)"
 msgstr "Mudar para a área de trabalho 3 (todas as telas)"
 
-#: src/bin/e_actions.c:3198
+#: src/bin/e_actions.c:3202
 msgid "Switch To Desktop 4 (All Screens)"
 msgstr "Mudar para a área de trabalho 4 (todas as telas)"
 
-#: src/bin/e_actions.c:3200
+#: src/bin/e_actions.c:3204
 msgid "Switch To Desktop 5 (All Screens)"
 msgstr "Mudar para a área de trabalho 5 (todas as telas)"
 
-#: src/bin/e_actions.c:3202
+#: src/bin/e_actions.c:3206
 msgid "Switch To Desktop 6 (All Screens)"
 msgstr "Mudar para a área de trabalho 6 (todas as telas)"
 
-#: src/bin/e_actions.c:3204
+#: src/bin/e_actions.c:3208
 msgid "Switch To Desktop 7 (All Screens)"
 msgstr "Mudar para a área de trabalho 7 (todas as telas)"
 
-#: src/bin/e_actions.c:3206
+#: src/bin/e_actions.c:3210
 msgid "Switch To Desktop 8 (All Screens)"
 msgstr "Mudar para a área de trabalho 8 (todas as telas)"
 
-#: src/bin/e_actions.c:3208
+#: src/bin/e_actions.c:3212
 msgid "Switch To Desktop 9 (All Screens)"
 msgstr "Mudar para a área de trabalho 9 (todas as telas)"
 
-#: src/bin/e_actions.c:3210
+#: src/bin/e_actions.c:3214
 msgid "Switch To Desktop 10 (All Screens)"
 msgstr "Mudar para a área de trabalho 10 (todas as telas)"
 
-#: src/bin/e_actions.c:3212
+#: src/bin/e_actions.c:3216
 msgid "Switch To Desktop 11 (All Screens)"
 msgstr "Mudar para a área de trabalho 11 (todas as telas)"
 
-#: src/bin/e_actions.c:3214
+#: src/bin/e_actions.c:3218
 msgid "Switch To Desktop... (All Screens)"
 msgstr "Mudar para a área de trabalho... (todas as telas)"
 
-#: src/bin/e_actions.c:3220 src/bin/e_actions.c:3224
+#: src/bin/e_actions.c:3224 src/bin/e_actions.c:3228
 #: src/modules/winlist/e_mod_main.c:37 src/modules/winlist/e_mod_main.c:39
 #: src/modules/winlist/e_mod_main.c:41 src/modules/winlist/e_mod_main.c:44
 #: src/modules/winlist/e_mod_main.c:47 src/modules/winlist/e_mod_main.c:50
@@ -510,219 +510,221 @@ msgstr "Mudar para a área de trabalho... (todas as telas)"
 msgid "Window : List"
 msgstr "Janela: Lista"
 
-#: src/bin/e_actions.c:3220
+#: src/bin/e_actions.c:3224
 msgid "Jump to window..."
 msgstr "Ir para a janela..."
 
-#: src/bin/e_actions.c:3224
+#: src/bin/e_actions.c:3228
 msgid "Jump to window... or start..."
 msgstr "Ir para a janela ou iniciar"
 
-#: src/bin/e_actions.c:3231 src/bin/e_actions.c:3233 src/bin/e_actions.c:3235
-#: src/bin/e_actions.c:3241 src/bin/e_actions.c:3243 src/bin/e_actions.c:3245
-#: src/bin/e_actions.c:3250 src/bin/e_actions.c:3253 src/bin/e_actions.c:3256
-#: src/bin/e_actions.c:3258 src/bin/e_actions.c:3260 src/bin/e_actions.c:3262
-#: src/bin/e_actions.c:3265 src/bin/e_actions.c:3267 src/bin/e_actions.c:3269
+#: src/bin/e_actions.c:3235 src/bin/e_actions.c:3237 src/bin/e_actions.c:3239
+#: src/bin/e_actions.c:3245 src/bin/e_actions.c:3247 src/bin/e_actions.c:3249
+#: src/bin/e_actions.c:3254 src/bin/e_actions.c:3257 src/bin/e_actions.c:3260
+#: src/bin/e_actions.c:3262 src/bin/e_actions.c:3264 src/bin/e_actions.c:3266
+#: src/bin/e_actions.c:3269 src/bin/e_actions.c:3271 src/bin/e_actions.c:3273
+#: src/modules/backlight/e_mod_main.c:486
+#: src/modules/backlight/e_mod_main.c:496
 #: src/modules/conf_display/e_mod_main.c:17
 #: src/modules/conf_randr/e_mod_main.c:14 src/modules/ibox/e_mod_config.c:135
-#: src/modules/shot/e_mod_main.c:706 src/modules/shot/e_mod_main.c:941
-#: src/modules/shot/e_mod_main.c:978
+#: src/modules/shot/e_mod_main.c:717 src/modules/shot/e_mod_main.c:952
+#: src/modules/shot/e_mod_main.c:989
 msgid "Screen"
 msgstr "Tela"
 
-#: src/bin/e_actions.c:3231
+#: src/bin/e_actions.c:3235
 msgid "Send Mouse To Screen 0"
 msgstr "Enviar mouse para a tela 0"
 
-#: src/bin/e_actions.c:3233
+#: src/bin/e_actions.c:3237
 msgid "Send Mouse To Screen 1"
 msgstr "Enviar mouse para a tela 1"
 
-#: src/bin/e_actions.c:3235
+#: src/bin/e_actions.c:3239
 msgid "Send Mouse To Screen..."
 msgstr "Enviar mouse para a tela..."
 
-#: src/bin/e_actions.c:3241
+#: src/bin/e_actions.c:3245
 msgid "Send Mouse Forward 1 Screen"
 msgstr "Avançar o mouse 1 tela"
 
-#: src/bin/e_actions.c:3243
+#: src/bin/e_actions.c:3247
 msgid "Send Mouse Back 1 Screen"
 msgstr "Recuar o mouse 1 tela"
 
-#: src/bin/e_actions.c:3245
+#: src/bin/e_actions.c:3249
 msgid "Send Mouse Forward/Back Screens..."
 msgstr "Recuar ou avançar o mouse nas telas..."
 
-#: src/bin/e_actions.c:3250
+#: src/bin/e_actions.c:3254
 msgid "Dim"
 msgstr "Reduzir"
 
-#: src/bin/e_actions.c:3253
+#: src/bin/e_actions.c:3257
 msgid "Undim"
 msgstr "Restaurar"
 
-#: src/bin/e_actions.c:3256
+#: src/bin/e_actions.c:3260
 msgid "Backlight Set"
 msgstr "Definir iluminação"
 
-#: src/bin/e_actions.c:3258
+#: src/bin/e_actions.c:3262
 msgid "Backlight Min"
 msgstr "Mínimo"
 
-#: src/bin/e_actions.c:3260
+#: src/bin/e_actions.c:3264
 msgid "Backlight Mid"
 msgstr "Média"
 
-#: src/bin/e_actions.c:3262
+#: src/bin/e_actions.c:3266
 msgid "Backlight Max"
 msgstr "Máximo"
 
-#: src/bin/e_actions.c:3265
+#: src/bin/e_actions.c:3269
 msgid "Backlight Adjust"
 msgstr "Ajuste de iluminação"
 
-#: src/bin/e_actions.c:3267
+#: src/bin/e_actions.c:3271
 msgid "Backlight Up"
 msgstr "Aumentar"
 
-#: src/bin/e_actions.c:3269
+#: src/bin/e_actions.c:3273
 msgid "Backlight Down"
 msgstr "Diminuir"
 
-#: src/bin/e_actions.c:3274
+#: src/bin/e_actions.c:3278
 msgid "Move To Center"
 msgstr "Mover para o centro"
 
-#: src/bin/e_actions.c:3278
+#: src/bin/e_actions.c:3282
 msgid "Move To Coordinates..."
 msgstr "Mover para as coordenadas..."
 
-#: src/bin/e_actions.c:3283
+#: src/bin/e_actions.c:3287
 msgid "Move By Coordinate Offset..."
 msgstr "Mover por valor de coordenadas..."
 
-#: src/bin/e_actions.c:3289
+#: src/bin/e_actions.c:3293
 msgid "Resize By..."
 msgstr "Redimensionar em..."
 
-#: src/bin/e_actions.c:3295
+#: src/bin/e_actions.c:3299
 msgid "Push in Direction..."
 msgstr "Enviar para a direção..."
 
-#: src/bin/e_actions.c:3301
+#: src/bin/e_actions.c:3305
 msgid "Drag Icon..."
 msgstr "Arrastar ícone..."
 
-#: src/bin/e_actions.c:3306 src/bin/e_actions.c:3308 src/bin/e_actions.c:3310
-#: src/bin/e_actions.c:3316 src/bin/e_actions.c:3322 src/bin/e_actions.c:3324
+#: src/bin/e_actions.c:3310 src/bin/e_actions.c:3312 src/bin/e_actions.c:3314
+#: src/bin/e_actions.c:3320 src/bin/e_actions.c:3326 src/bin/e_actions.c:3328
 msgid "Window : Moving"
 msgstr "Janela: Movimentação"
 
-#: src/bin/e_actions.c:3306
+#: src/bin/e_actions.c:3310
 msgid "To Next Desktop"
 msgstr "Para a área de trabalho seguinte"
 
-#: src/bin/e_actions.c:3308
+#: src/bin/e_actions.c:3312
 msgid "To Previous Desktop"
 msgstr "Para a área de trabalho anterior"
 
-#: src/bin/e_actions.c:3310
+#: src/bin/e_actions.c:3314
 msgid "By Desktop #..."
 msgstr "Por # áreas de trabalho..."
 
-#: src/bin/e_actions.c:3316
+#: src/bin/e_actions.c:3320
 msgid "To Desktop..."
 msgstr "Para a área de trabalho..."
 
-#: src/bin/e_actions.c:3322
+#: src/bin/e_actions.c:3326
 msgid "To Next Screen"
 msgstr "Para a tela seguinte"
 
-#: src/bin/e_actions.c:3324
+#: src/bin/e_actions.c:3328
 msgid "To Previous Screen"
 msgstr "Para a tela anterior"
 
-#: src/bin/e_actions.c:3329
+#: src/bin/e_actions.c:3333
 msgid "Show Main Menu"
 msgstr "Mostrar menu principal"
 
-#: src/bin/e_actions.c:3331
+#: src/bin/e_actions.c:3335
 msgid "Show Favorites Menu"
 msgstr "Mostrar menu de favoritos"
 
-#: src/bin/e_actions.c:3333
+#: src/bin/e_actions.c:3337
 msgid "Show All Applications Menu"
 msgstr "Mostrar menu de aplicações"
 
-#: src/bin/e_actions.c:3335
+#: src/bin/e_actions.c:3339
 msgid "Show Clients Menu"
 msgstr "Mostrar menu de programas"
 
-#: src/bin/e_actions.c:3337
+#: src/bin/e_actions.c:3341
 msgid "Show Menu..."
 msgstr "Mostrar menu..."
 
-#: src/bin/e_actions.c:3344 src/bin/e_actions.c:3349 src/bin/e_actions.c:3354
+#: src/bin/e_actions.c:3348 src/bin/e_actions.c:3353 src/bin/e_actions.c:3358
 #: src/modules/conf/e_mod_main.c:272 src/modules/conf/e_mod_main.c:345
 #: src/modules/everything/evry_plug_apps.c:1169
 #: src/modules/fileman/e_mod_main.c:55 src/modules/fileman/e_mod_main.c:133
 msgid "Launch"
 msgstr "Iniciar"
 
-#: src/bin/e_actions.c:3344 src/bin/e_int_border_prop.c:468
+#: src/bin/e_actions.c:3348 src/bin/e_int_border_prop.c:468
 msgid "Command"
 msgstr "Comando"
 
-#: src/bin/e_actions.c:3349 src/bin/e_eap_editor.c:698
+#: src/bin/e_actions.c:3353 src/bin/e_eap_editor.c:698
 #: src/bin/e_int_border_menu.c:118
 #, c-format
 msgid "Application"
 msgstr "Aplicação"
 
-#: src/bin/e_actions.c:3354
+#: src/bin/e_actions.c:3358
 msgid "New Instance of Focused App"
 msgstr "Nova instância da aplicação focada"
 
-#: src/bin/e_actions.c:3358 src/bin/e_int_menus.c:249
+#: src/bin/e_actions.c:3362 src/bin/e_int_menus.c:249
 msgid "Restart"
 msgstr "Reiniciar"
 
-#: src/bin/e_actions.c:3366
+#: src/bin/e_actions.c:3370
 msgid "Exit Now"
 msgstr "Sair agora"
 
-#: src/bin/e_actions.c:3370 src/bin/e_actions.c:3375
+#: src/bin/e_actions.c:3374 src/bin/e_actions.c:3379
 msgid "Enlightenment : Mode"
 msgstr "Enlightenment: Modo"
 
-#: src/bin/e_actions.c:3371
+#: src/bin/e_actions.c:3375
 msgid "Presentation Mode Toggle"
 msgstr "Alternar modo de apresentação"
 
-#: src/bin/e_actions.c:3376
+#: src/bin/e_actions.c:3380
 msgid "Offline Mode Toggle"
 msgstr "Alternar modo offline"
 
-#: src/bin/e_actions.c:3380 src/bin/e_actions.c:3384 src/bin/e_actions.c:3388
+#: src/bin/e_actions.c:3384 src/bin/e_actions.c:3388 src/bin/e_actions.c:3392
 msgid "Enlightenment : Module"
 msgstr "Enlightenment: Módulo"
 
-#: src/bin/e_actions.c:3381
+#: src/bin/e_actions.c:3385
 msgid "Enable the named module"
 msgstr "Ativar o módulo referenciado"
 
-#: src/bin/e_actions.c:3385
+#: src/bin/e_actions.c:3389
 msgid "Disable the named module"
 msgstr "Desativar o módulo referenciado"
 
-#: src/bin/e_actions.c:3389
+#: src/bin/e_actions.c:3393
 msgid "Toggle the named module"
 msgstr "Alternar o módulo referenciado"
 
-#: src/bin/e_actions.c:3393 src/bin/e_actions.c:3397 src/bin/e_actions.c:3401
-#: src/bin/e_actions.c:3405 src/bin/e_actions.c:3409 src/bin/e_actions.c:3413
-#: src/bin/e_actions.c:3417 src/bin/e_actions.c:3421 src/bin/e_configure.c:411
+#: src/bin/e_actions.c:3397 src/bin/e_actions.c:3401 src/bin/e_actions.c:3405
+#: src/bin/e_actions.c:3409 src/bin/e_actions.c:3413 src/bin/e_actions.c:3417
+#: src/bin/e_actions.c:3421 src/bin/e_actions.c:3425 src/bin/e_configure.c:411
 #: src/bin/e_int_config_modules.c:52
 #: src/modules/conf_applications/e_int_config_apps.c:275
 #: src/modules/conf_display/e_int_config_desklock_fsel.c:87
@@ -730,64 +732,64 @@ msgstr "Alternar o módulo referenciado"
 #: src/modules/conf_theme/e_int_config_wallpaper.c:429
 #: src/modules/conf_theme/e_int_config_wallpaper.c:546
 #: src/modules/conf_theme/e_int_config_startup.c:258
-#: src/modules/conf_theme/e_int_config_theme.c:455
-#: src/modules/conf_theme/e_int_config_theme.c:830
-#: src/modules/conf_theme/e_int_config_theme.c:844
+#: src/modules/conf_theme/e_int_config_theme.c:456
+#: src/modules/conf_theme/e_int_config_theme.c:831
+#: src/modules/conf_theme/e_int_config_theme.c:845
 #: src/modules/gadman/e_mod_config.c:252 src/modules/syscon/e_mod_main.c:31
 #: src/modules/syscon/e_mod_main.c:35 src/modules/syscon/e_mod_main.c:60
 #: src/modules/syscon/e_mod_main.c:129
 msgid "System"
 msgstr "Sistema"
 
-#: src/bin/e_actions.c:3393
+#: src/bin/e_actions.c:3397
 msgid "Log Out"
 msgstr "Sair"
 
-#: src/bin/e_actions.c:3397
+#: src/bin/e_actions.c:3401
 msgid "Power Off Now"
 msgstr "Desligar agora"
 
-#: src/bin/e_actions.c:3401
+#: src/bin/e_actions.c:3405
 msgid "Power Off"
 msgstr "Desligar"
 
-#: src/bin/e_actions.c:3409
+#: src/bin/e_actions.c:3413
 msgid "Suspend Now"
 msgstr "Suspender agora"
 
-#: src/bin/e_actions.c:3421
+#: src/bin/e_actions.c:3425
 msgid "Hibernate Now"
 msgstr "Hibernar agora"
 
-#: src/bin/e_actions.c:3429
+#: src/bin/e_actions.c:3433
 msgid "Lock"
 msgstr "Bloquear"
 
-#: src/bin/e_actions.c:3434 src/bin/e_int_menus.c:1367
+#: src/bin/e_actions.c:3438 src/bin/e_int_menus.c:1367
 msgid "Cleanup Windows"
 msgstr "Limpar janelas"
 
-#: src/bin/e_actions.c:3439
+#: src/bin/e_actions.c:3443
 msgid "Generic : Actions"
 msgstr "Genérico: Ações"
 
-#: src/bin/e_actions.c:3439
+#: src/bin/e_actions.c:3443
 msgid "Delayed Action"
 msgstr "Ação adiada"
 
-#: src/bin/e_actions.c:3447 src/bin/e_actions.c:3451 src/bin/e_actions.c:3455
+#: src/bin/e_actions.c:3451 src/bin/e_actions.c:3455 src/bin/e_actions.c:3459
 msgid "Keyboard Layouts"
 msgstr "Disposições de teclado"
 
-#: src/bin/e_actions.c:3448
+#: src/bin/e_actions.c:3452
 msgid "Use keyboard layout"
 msgstr "Utilizar disposição de teclado"
 
-#: src/bin/e_actions.c:3452
+#: src/bin/e_actions.c:3456
 msgid "Next keyboard layout"
 msgstr "Disposição seguinte"
 
-#: src/bin/e_actions.c:3456
+#: src/bin/e_actions.c:3460
 msgid "Previous keyboard layout"
 msgstr "Disposição anterior"
 
@@ -804,15 +806,15 @@ msgid "Select"
 msgstr "Selecionar"
 
 #: src/bin/e_color_dialog.c:47 src/bin/e_eap_editor.c:862
-#: src/bin/e_eap_editor.c:925 src/bin/e_entry_dialog.c:64 src/bin/e_fm.c:9595
+#: src/bin/e_eap_editor.c:925 src/bin/e_entry_dialog.c:64 src/bin/e_fm.c:9588
 #: src/bin/e_fm_prop.c:625 src/bin/e_import_dialog.c:189
 #: src/bin/e_import_config_dialog.c:534
 #: src/modules/conf_intl/e_int_config_imc_import.c:124
 #: src/modules/conf_theme/e_int_config_theme_import.c:123
 #: src/modules/fileman/e_int_config_mime_edit.c:315
 #: src/modules/syscon/e_syscon.c:122 src/modules/shot/e_mod_main.c:289
-#: src/modules/shot/e_mod_main.c:528 src/modules/shot/e_mod_main.c:765
-#: src/modules/xkbswitch/e_mod_config.c:526
+#: src/modules/shot/e_mod_main.c:539 src/modules/shot/e_mod_main.c:776
+#: src/modules/xkbswitch/e_mod_config.c:527
 msgid "Cancel"
 msgstr "Cancelar"
 
@@ -848,11 +850,11 @@ msgstr ""
 "recente do Enlightenment.<br>Isto é mau e por precaução, as definições "
 "originais foram restauradas.<br>Desculpe qualquer inconveniente.<br>"
 
-#: src/bin/e_config.c:1706 src/bin/e_config.c:2340
+#: src/bin/e_config.c:1709 src/bin/e_config.c:2343
 msgid "Enlightenment Settings Write Problems"
 msgstr "Erro ao escrever as definições do Enlightenment"
 
-#: src/bin/e_config.c:1709
+#: src/bin/e_config.c:1712
 #, c-format
 msgid ""
 "Enlightenment has had an error while moving config files<br>from:<br>"
@@ -863,36 +865,36 @@ msgstr ""
 "<br>%s<br><br>para:<br>%s<br><br>A tarefa foi terminada para sua segurança."
 "<br>"
 
-#: src/bin/e_config.c:1719 src/bin/e_config.c:2353
+#: src/bin/e_config.c:1722 src/bin/e_config.c:2356
 #: src/bin/e_config_dialog.c:278 src/bin/e_eap_editor.c:860
 #: src/bin/e_eap_editor.c:923 src/bin/e_entry_dialog.c:63 src/bin/e_exec.c:617
-#: src/bin/e_fm.c:9594 src/bin/e_fm.c:10330 src/bin/e_fm_prop.c:624
+#: src/bin/e_fm.c:9587 src/bin/e_fm.c:10323 src/bin/e_fm_prop.c:624
 #: src/bin/e_import_config_dialog.c:533 src/bin/e_int_border_remember.c:318
-#: src/bin/e_int_border_remember.c:507 src/bin/e_module.c:425
-#: src/bin/e_module.c:792 src/bin/e_sys.c:618 src/bin/e_sys.c:659
+#: src/bin/e_int_border_remember.c:507 src/bin/e_module.c:431
+#: src/bin/e_module.c:798 src/bin/e_sys.c:618 src/bin/e_sys.c:659
 #: src/bin/e_utils.c:692 src/modules/comp/e_mod_config.c:918
 #: src/modules/conf_intl/e_int_config_imc_import.c:120
 #: src/modules/conf_theme/e_int_config_theme_import.c:119
 #: src/modules/cpufreq/e_mod_main.c:436 src/modules/cpufreq/e_mod_main.c:465
 #: src/modules/cpufreq/e_mod_main.c:492
 #: src/modules/fileman/e_int_config_mime_edit.c:314
-#: src/modules/xkbswitch/e_mod_config.c:525
+#: src/modules/xkbswitch/e_mod_config.c:526
 msgid "OK"
 msgstr "Aceitar"
 
-#: src/bin/e_config.c:2231
+#: src/bin/e_config.c:2234
 msgid "Settings Upgraded"
 msgstr "Definições atualizadas"
 
-#: src/bin/e_config.c:2249
+#: src/bin/e_config.c:2252
 msgid "The EET file handle is bad."
 msgstr "O identificador do arquivo EET está errado"
 
-#: src/bin/e_config.c:2253
+#: src/bin/e_config.c:2256
 msgid "The file data is empty."
 msgstr "O arquivo está vazio"
 
-#: src/bin/e_config.c:2257
+#: src/bin/e_config.c:2260
 msgid ""
 "The file is not writable. Perhaps the disk is read-only<br>or you lost "
 "permissions to your files."
@@ -900,17 +902,17 @@ msgstr ""
 "Não pode escrever no arquivo. Pode ser que o disco seja somente para leitura "
 "ou que você tenha perdido permissões aos seus arquivos."
 
-#: src/bin/e_config.c:2261
+#: src/bin/e_config.c:2264
 msgid "Memory ran out while preparing the write.<br>Please free up memory."
 msgstr ""
 "Ficou sem memória ao preparar a escrita.<br>Por favor liberte espaço de "
 "memória."
 
-#: src/bin/e_config.c:2265
+#: src/bin/e_config.c:2268
 msgid "This is a generic error."
 msgstr "Este é um erro genérico"
 
-#: src/bin/e_config.c:2269
+#: src/bin/e_config.c:2272
 msgid ""
 "The settings file is too large.<br>It should be very small (a few hundred KB "
 "at most)."
@@ -918,61 +920,61 @@ msgstr ""
 "O arquivo das definições é muito grande.<br>Em princípio seria pequeno "
 "(algumas centenas de KB)."
 
-#: src/bin/e_config.c:2273
+#: src/bin/e_config.c:2276
 msgid "You have I/O errors on the disk.<br>Maybe it needs replacing?"
 msgstr "Possui erros de E/S no disco.<br>Talvez precise ser substituído?"
 
-#: src/bin/e_config.c:2277
+#: src/bin/e_config.c:2280
 #, fuzzy
 msgid "You ran out of space while writing the file."
 msgstr "Ficou sem espaço ao escrever no arquivo"
 
-#: src/bin/e_config.c:2281
+#: src/bin/e_config.c:2284
 #, fuzzy
 msgid "The file was closed while writing."
 msgstr "O arquivo foi fechado durante a escrita"
 
-#: src/bin/e_config.c:2285
+#: src/bin/e_config.c:2288
 msgid "Memory-mapping (mmap) of the file failed."
 msgstr "Falha ao fazer \"memory-mapping (mmap)\" do arquivo"
 
-#: src/bin/e_config.c:2289
+#: src/bin/e_config.c:2292
 msgid "X509 Encoding failed."
 msgstr "Falha na codificação X509"
 
-#: src/bin/e_config.c:2293
+#: src/bin/e_config.c:2296
 msgid "Signature failed."
 msgstr "Falha de assinatura"
 
-#: src/bin/e_config.c:2297
+#: src/bin/e_config.c:2300
 msgid "The signature was invalid."
 msgstr "A assinatura era inválida"
 
-#: src/bin/e_config.c:2301
+#: src/bin/e_config.c:2304
 msgid "Not signed."
 msgstr "Não assinado"
 
-#: src/bin/e_config.c:2305
+#: src/bin/e_config.c:2308
 msgid "Feature not implemented."
 msgstr "Opção não implementada"
 
-#: src/bin/e_config.c:2309
+#: src/bin/e_config.c:2312
 msgid "PRNG was not seeded."
 msgstr "O PRNG não foi semeado"
 
-#: src/bin/e_config.c:2313
+#: src/bin/e_config.c:2316
 msgid "Encryption failed."
 msgstr "Falha de criptografia (codificação)"
 
-#: src/bin/e_config.c:2317
+#: src/bin/e_config.c:2320
 msgid "Decryption failed."
 msgstr "Falha de criptografia (decodificação)"
 
-#: src/bin/e_config.c:2321
+#: src/bin/e_config.c:2324
 msgid "The error is unknown to Enlightenment."
 msgstr "O erro não é reconhecido pelo Enlightenment"
 
-#: src/bin/e_config.c:2343
+#: src/bin/e_config.c:2346
 #, c-format
 msgid ""
 "Enlightenment has had an error while writing<br>its config file.<br>"
@@ -1002,9 +1004,9 @@ msgid "Apply"
 msgstr "Aplicar"
 
 #: src/bin/e_configure.c:29 src/modules/conf_shelves/e_mod_main.c:21
-#: src/modules/gadman/e_mod_main.c:23 src/modules/mixer/e_mod_main.c:1272
+#: src/modules/gadman/e_mod_main.c:23 src/modules/mixer/e_mod_main.c:1281
 #: src/modules/connman/e_mod_main.c:681
-#: src/modules/notification/e_mod_main.c:146
+#: src/modules/notification/e_mod_main.c:148
 msgid "Extensions"
 msgstr "Extensões"
 
@@ -1075,7 +1077,7 @@ msgstr ""
 "erro foi <hilight>%i</hilight>.<br>Isto é mau e não deveria acontecer. Por "
 "favor reporte este erro."
 
-#: src/bin/e_desklock.c:1302 src/bin/e_screensaver.c:156
+#: src/bin/e_desklock.c:1302 src/bin/e_screensaver.c:180
 msgid "Activate Presentation Mode?"
 msgstr "Ativar modo de apresentação?"
 
@@ -1090,11 +1092,11 @@ msgstr ""
 "de <b>apresentação</b> e inativar temporariamente a proteção de ecrã, os "
 "bloqueios e a poupança de energia?"
 
-#: src/bin/e_desklock.c:1315 src/bin/e_screensaver.c:169
+#: src/bin/e_desklock.c:1315 src/bin/e_screensaver.c:193
 msgid "No, but increase timeout"
 msgstr "Não, mas aumentar o tempo limite"
 
-#: src/bin/e_desklock.c:1317 src/bin/e_screensaver.c:171
+#: src/bin/e_desklock.c:1317 src/bin/e_screensaver.c:195
 msgid "No, and stop asking"
 msgstr "Não e parar de perguntar"
 
@@ -1164,7 +1166,7 @@ msgid "Desktop file"
 msgstr "Arquivo .desktop"
 
 #: src/bin/e_eap_editor.c:781 src/bin/e_int_border_prop.c:450
-#: src/bin/e_int_border_prop.c:502 src/modules/comp/e_mod_config.c:1524
+#: src/bin/e_int_border_prop.c:502 src/modules/comp/e_mod_config.c:1527
 #: src/modules/conf_applications/e_int_config_defapps.c:358
 #: src/modules/conf_performance/e_int_config_performance.c:122
 #: src/modules/everything/evry_config.c:378
@@ -1186,7 +1188,7 @@ msgstr "Executar no terminal"
 msgid "Show in Menus"
 msgstr "Mostrar no menu"
 
-#: src/bin/e_eap_editor.c:791 src/bin/e_fm.c:8459 src/bin/e_fm.c:8619
+#: src/bin/e_eap_editor.c:791 src/bin/e_fm.c:8454 src/bin/e_fm.c:8614
 #: src/bin/e_int_border_remember.c:763
 #: src/modules/xkbswitch/e_mod_config.c:334
 msgid "Options"
@@ -1201,8 +1203,8 @@ msgstr "Escolha o ícone para %s"
 msgid "Select an Executable"
 msgstr "Escolha o executável"
 
-#: src/bin/e_entry.c:476 src/bin/e_fm.c:8804 src/bin/e_fm.c:10423
-#: src/bin/e_shelf.c:1789 src/bin/e_shelf.c:2464
+#: src/bin/e_entry.c:480 src/bin/e_fm.c:8799 src/bin/e_fm.c:10416
+#: src/bin/e_shelf.c:1789 src/bin/e_shelf.c:2465
 #: src/modules/conf_dialogs/e_int_config_profiles.c:135
 #: src/modules/conf_dialogs/e_int_config_profiles.c:335
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:266
@@ -1217,19 +1219,19 @@ msgstr "Escolha o executável"
 msgid "Delete"
 msgstr "Eliminar"
 
-#: src/bin/e_entry.c:486 src/bin/e_fm.c:8715
+#: src/bin/e_entry.c:490 src/bin/e_fm.c:8710
 msgid "Cut"
 msgstr "Cortar"
 
-#: src/bin/e_entry.c:495 src/bin/e_fm.c:8729 src/bin/e_fm.c:11179
+#: src/bin/e_entry.c:499 src/bin/e_fm.c:8724 src/bin/e_fm.c:11172
 msgid "Copy"
 msgstr "Copiar"
 
-#: src/bin/e_entry.c:505 src/bin/e_fm.c:8520 src/bin/e_fm.c:8742
+#: src/bin/e_entry.c:509 src/bin/e_fm.c:8515 src/bin/e_fm.c:8737
 msgid "Paste"
 msgstr "Colar"
 
-#: src/bin/e_entry.c:516
+#: src/bin/e_entry.c:520
 msgid "Select All"
 msgstr "Selecionar tudo"
 
@@ -1417,263 +1419,263 @@ msgstr "Erro de ejeção"
 msgid "Can't eject device"
 msgstr "Não foi possível ejetar o dispositivo"
 
-#: src/bin/e_fm.c:8377 src/modules/fileman/e_mod_config.c:355
+#: src/bin/e_fm.c:8372 src/modules/fileman/e_mod_config.c:355
 msgid "Case Sensitive"
 msgstr "Sensível a maiúsculas"
 
-#: src/bin/e_fm.c:8383 src/modules/fileman/e_mod_config.c:358
+#: src/bin/e_fm.c:8378 src/modules/fileman/e_mod_config.c:358
 msgid "Sort By Extension"
 msgstr "Ordenar por extensão"
 
-#: src/bin/e_fm.c:8389 src/modules/fileman/e_mod_config.c:361
+#: src/bin/e_fm.c:8384 src/modules/fileman/e_mod_config.c:361
 msgid "Sort By Modification Time"
 msgstr "Ordenar por data de modificação"
 
-#: src/bin/e_fm.c:8395 src/modules/fileman/e_mod_config.c:364
+#: src/bin/e_fm.c:8390 src/modules/fileman/e_mod_config.c:364
 msgid "Sort By Size"
 msgstr "Ordenar por tamanho"
 
-#: src/bin/e_fm.c:8404 src/modules/fileman/e_mod_config.c:372
+#: src/bin/e_fm.c:8399 src/modules/fileman/e_mod_config.c:372
 msgid "Directories First"
 msgstr "Diretórios no início"
 
-#: src/bin/e_fm.c:8410 src/modules/fileman/e_mod_config.c:376
+#: src/bin/e_fm.c:8405 src/modules/fileman/e_mod_config.c:376
 msgid "Directories Last"
 msgstr "Diretórios no fim"
 
-#: src/bin/e_fm.c:8443 src/bin/e_fm.c:8603
+#: src/bin/e_fm.c:8438 src/bin/e_fm.c:8598
 #: src/modules/fileman/e_mod_config.c:302
 msgid "View Mode"
 msgstr "Modo de visualização"
 
-#: src/bin/e_fm.c:8452 src/bin/e_fm.c:8612
+#: src/bin/e_fm.c:8447 src/bin/e_fm.c:8607
 #: src/modules/everything/evry_config.c:503
 #: src/modules/fileman/e_mod_config.c:380
 msgid "Sorting"
 msgstr "Ordenação"
 
-#: src/bin/e_fm.c:8470 src/bin/e_fm.c:8630
+#: src/bin/e_fm.c:8465 src/bin/e_fm.c:8625
 msgid "Refresh View"
 msgstr "Atualizar visualização"
 
-#: src/bin/e_fm.c:8481 src/bin/e_fm.c:8642
+#: src/bin/e_fm.c:8476 src/bin/e_fm.c:8637
 msgid "New..."
 msgstr "Novo..."
 
-#: src/bin/e_fm.c:8501 src/bin/e_fm.c:8663 src/bin/e_fm.c:8694
+#: src/bin/e_fm.c:8496 src/bin/e_fm.c:8658 src/bin/e_fm.c:8689
 msgid "Actions..."
 msgstr "Ações..."
 
-#: src/bin/e_fm.c:8528 src/bin/e_fm.c:8750 src/bin/e_fm.c:11192
+#: src/bin/e_fm.c:8523 src/bin/e_fm.c:8745 src/bin/e_fm.c:11185
 msgid "Link"
 msgstr "Ligação"
 
-#: src/bin/e_fm.c:8812 src/bin/e_fm.c:10061 src/bin/e_shelf.c:2459
+#: src/bin/e_fm.c:8807 src/bin/e_fm.c:10054 src/bin/e_shelf.c:2460
 #: src/modules/conf_shelves/e_int_config_shelf.c:138
 msgid "Rename"
 msgstr "Renomear"
 
-#: src/bin/e_fm.c:8831
+#: src/bin/e_fm.c:8826
 msgid "Unmount"
 msgstr "Desmontar"
 
-#: src/bin/e_fm.c:8836
+#: src/bin/e_fm.c:8831
 msgid "Mount"
 msgstr "Montar"
 
-#: src/bin/e_fm.c:8841
+#: src/bin/e_fm.c:8836
 msgid "Eject"
 msgstr "Ejetar"
 
-#: src/bin/e_fm.c:8856 src/bin/e_int_border_remember.c:742
+#: src/bin/e_fm.c:8851 src/bin/e_int_border_remember.c:742
 #: src/modules/ibar/e_mod_main.c:871
 msgid "Properties"
 msgstr "Propriedades"
 
-#: src/bin/e_fm.c:8864
+#: src/bin/e_fm.c:8859
 msgid "Application Properties"
 msgstr "Propriedades da aplicação"
 
-#: src/bin/e_fm.c:8872 src/bin/e_fm_prop.c:115
+#: src/bin/e_fm.c:8867 src/bin/e_fm_prop.c:115
 msgid "File Properties"
 msgstr "Propriedades do arquivo"
 
-#: src/bin/e_fm.c:9088
+#: src/bin/e_fm.c:9083
 msgid "Use default"
 msgstr "Utilizar predefinições"
 
-#: src/bin/e_fm.c:9118 src/modules/fileman/e_mod_config.c:307
+#: src/bin/e_fm.c:9113 src/modules/fileman/e_mod_config.c:307
 msgid "Grid Icons"
 msgstr "Grelha"
 
-#: src/bin/e_fm.c:9126 src/modules/fileman/e_mod_config.c:309
+#: src/bin/e_fm.c:9121 src/modules/fileman/e_mod_config.c:309
 msgid "Custom Icons"
 msgstr "Personalizada"
 
-#: src/bin/e_fm.c:9134 src/modules/everything/evry_config.c:430
+#: src/bin/e_fm.c:9129 src/modules/everything/evry_config.c:430
 #: src/modules/everything/evry_config.c:460
 #: src/modules/fileman/e_mod_config.c:317
 msgid "List"
 msgstr "Lista"
 
-#: src/bin/e_fm.c:9142 src/modules/everything/evry_config.c:458
+#: src/bin/e_fm.c:9137 src/modules/everything/evry_config.c:458
 msgid "Default View"
 msgstr "Visualização pré-definida"
 
-#: src/bin/e_fm.c:9164
+#: src/bin/e_fm.c:9159
 #, c-format
 msgid "Icon Size (%d)"
 msgstr "Tamanho dos ícones (%d)"
 
-#: src/bin/e_fm.c:9189 src/bin/e_fm.c:9267 src/bin/e_fm.c:9272
-#: src/bin/e_fm.c:10018 src/bin/e_fm.c:10231 src/bin/e_fm_prop.c:254
-#: src/bin/e_shelf.c:2334
+#: src/bin/e_fm.c:9184 src/bin/e_fm.c:9260 src/bin/e_fm.c:9265
+#: src/bin/e_fm.c:10011 src/bin/e_fm.c:10224 src/bin/e_fm_prop.c:254
+#: src/bin/e_shelf.c:2335
 msgid "Error"
 msgstr "Erro"
 
-#: src/bin/e_fm.c:9189
+#: src/bin/e_fm.c:9184
 msgid "Could not create a file!"
 msgstr "Não foi possível criar o arquivo!"
 
-#: src/bin/e_fm.c:9203 src/bin/e_fm.c:9221
+#: src/bin/e_fm.c:9198 src/bin/e_fm.c:9215
 msgid "New File"
 msgstr "Novo arquivo"
 
-#: src/bin/e_fm.c:9267
+#: src/bin/e_fm.c:9260
 msgid "Already creating a new file for this directory!"
 msgstr "Já está prestes a criar um novo arquivo neste diretório!"
 
-#: src/bin/e_fm.c:9272
+#: src/bin/e_fm.c:9265
 #, fuzzy, c-format
 msgid "%s can't be written to!"
 msgstr "Não pode escrever em %s!"
 
-#: src/bin/e_fm.c:9291
+#: src/bin/e_fm.c:9284
 msgid "Directory"
 msgstr "Diretório"
 
-#: src/bin/e_fm.c:9296
+#: src/bin/e_fm.c:9289
 #: src/modules/conf_applications/e_int_config_defapps.c:312
 msgid "File"
 msgstr "Arquivo"
 
-#: src/bin/e_fm.c:9327
+#: src/bin/e_fm.c:9320
 msgid "Inherit parent settings"
 msgstr "Herdar definições da janela principal"
 
-#: src/bin/e_fm.c:9336
+#: src/bin/e_fm.c:9329
 msgid "Show Hidden Files"
 msgstr "Mostrar arquivos ocultos"
 
-#: src/bin/e_fm.c:9348
+#: src/bin/e_fm.c:9341
 msgid "Remember Ordering"
 msgstr "Memorizar ordenação"
 
-#: src/bin/e_fm.c:9357
+#: src/bin/e_fm.c:9350
 msgid "Sort Now"
 msgstr "Ordenar agora"
 
-#: src/bin/e_fm.c:9365
+#: src/bin/e_fm.c:9358
 msgid "Single Click Activation"
 msgstr "Ativar com um clique"
 
-#: src/bin/e_fm.c:9376 src/modules/fileman/e_mod_config.c:392
+#: src/bin/e_fm.c:9369 src/modules/fileman/e_mod_config.c:392
 msgid "Secure Deletion"
 msgstr "Eliminação segura"
 
-#: src/bin/e_fm.c:9389
+#: src/bin/e_fm.c:9382
 msgid "File Manager Settings"
 msgstr "Definições do gerenciador de arquivos"
 
-#: src/bin/e_fm.c:9394
+#: src/bin/e_fm.c:9387
 msgid "File Icon Settings"
 msgstr "Definições dos ícones de arquivos"
 
-#: src/bin/e_fm.c:9472 src/bin/e_fm.c:9687
+#: src/bin/e_fm.c:9465 src/bin/e_fm.c:9680
 msgid "Set background..."
 msgstr "Definir imagem de fundo"
 
-#: src/bin/e_fm.c:9480
+#: src/bin/e_fm.c:9473
 msgid "Clear background"
 msgstr "Remover imagem de fundo"
 
-#: src/bin/e_fm.c:9487 src/bin/e_fm.c:9715
+#: src/bin/e_fm.c:9480 src/bin/e_fm.c:9708
 msgid "Set overlay..."
 msgstr "Definir sobreposição"
 
-#: src/bin/e_fm.c:9493
+#: src/bin/e_fm.c:9486
 msgid "Clear overlay"
 msgstr "Remover sobreposição"
 
-#: src/bin/e_fm.c:9804
+#: src/bin/e_fm.c:9797
 msgid "Create a new Directory"
 msgstr "Criar novo diretório"
 
-#: src/bin/e_fm.c:9805
+#: src/bin/e_fm.c:9798
 msgid "New Directory Name:"
 msgstr "Nome do novo diretório:"
 
-#: src/bin/e_fm.c:9860 src/bin/e_fm.c:10156
+#: src/bin/e_fm.c:9853 src/bin/e_fm.c:10149
 #, c-format
 msgid "Rename %s to:"
 msgstr "Renomear %s para:"
 
-#: src/bin/e_fm.c:9862 src/bin/e_fm.c:10157
+#: src/bin/e_fm.c:9855 src/bin/e_fm.c:10150
 msgid "Rename File"
 msgstr "Renomear arquivo"
 
-#: src/bin/e_fm.c:10014 src/bin/e_fm.c:10223
+#: src/bin/e_fm.c:10007 src/bin/e_fm.c:10216
 msgid "Retry"
 msgstr "Tentar novamente"
 
-#: src/bin/e_fm.c:10015 src/bin/e_fm.c:10224 src/bin/e_fm.c:11200
+#: src/bin/e_fm.c:10008 src/bin/e_fm.c:10217 src/bin/e_fm.c:11193
 msgid "Abort"
 msgstr "Abortar"
 
-#: src/bin/e_fm.c:10060
+#: src/bin/e_fm.c:10053
 msgid "No to all"
 msgstr "Não para todos"
 
-#: src/bin/e_fm.c:10063
+#: src/bin/e_fm.c:10056
 msgid "Yes to all"
 msgstr "Sim para todos"
 
-#: src/bin/e_fm.c:10066
+#: src/bin/e_fm.c:10059
 msgid "Warning"
 msgstr "Aviso"
 
-#: src/bin/e_fm.c:10069
+#: src/bin/e_fm.c:10062
 #, c-format
 msgid "File already exists, overwrite?<br><hilight>%s</hilight>"
 msgstr "O arquivo já existe. Substituir?<br><hilight>%s</hilight>"
 
-#: src/bin/e_fm.c:10226
+#: src/bin/e_fm.c:10219
 msgid "Move Source"
 msgstr "Mover fonte"
 
-#: src/bin/e_fm.c:10227
+#: src/bin/e_fm.c:10220
 msgid "Ignore this"
 msgstr "Ignorar"
 
-#: src/bin/e_fm.c:10228
+#: src/bin/e_fm.c:10221
 msgid "Ignore all"
 msgstr "Ignorar tudo"
 
-#: src/bin/e_fm.c:10233
+#: src/bin/e_fm.c:10226
 #, c-format
 msgid "An error occurred while performing an operation.<br>%s"
 msgstr "Ocorreu um erro ao executar a operação<br>%s"
 
-#: src/bin/e_fm.c:10426
+#: src/bin/e_fm.c:10419
 msgid "Confirm Delete"
 msgstr "Confirmação"
 
-#: src/bin/e_fm.c:10436
+#: src/bin/e_fm.c:10429
 #, c-format
 msgid "Are you sure you want to delete<br><hilight>%s</hilight>?"
 msgstr "Tem certeza que quer apagar<br><hilight>%s</hilight> ?"
 
-#: src/bin/e_fm.c:10441
+#: src/bin/e_fm.c:10434
 #, c-format
 msgid ""
 "Are you sure you want to delete<br><hilight>all</hilight> the %d files "
@@ -1682,7 +1684,7 @@ msgstr ""
 "Tem certeza que quer apagar<br><hilight>todos</hilight> os %d arquivos "
 "de<br><hilight>%s</hilight>?"
 
-#: src/bin/e_fm.c:10451
+#: src/bin/e_fm.c:10444
 #, c-format
 msgid ""
 "Are you sure you want to delete<br>the %d selected file in<br><hilight>%s</"
@@ -1726,7 +1728,7 @@ msgstr "Dispositivo removível"
 msgid "Cannot change permissions: %s"
 msgstr "Não foi possível alterar as permissões: %s"
 
-#: src/bin/e_fm_prop.c:390 src/bin/e_shelf.c:1120 src/bin/e_shelf.c:2354
+#: src/bin/e_fm_prop.c:390 src/bin/e_shelf.c:1120 src/bin/e_shelf.c:2355
 #: src/modules/comp/e_mod_config.c:493
 #: src/modules/conf_dialogs/e_int_config_profiles.c:312
 #: src/modules/conf_display/e_int_config_desk.c:186
@@ -1788,9 +1790,9 @@ msgid "Others:"
 msgstr "Outras:"
 
 #: src/bin/e_fm_prop.c:480 src/bin/e_import_config_dialog.c:470
-#: src/bin/e_widget_fsel.c:347
+#: src/bin/e_widget_fsel.c:348
 #: src/modules/conf_theme/e_int_config_transitions.c:218
-#: src/modules/conf_theme/e_int_config_theme.c:1137
+#: src/modules/conf_theme/e_int_config_theme.c:1139
 #: src/modules/conf_theme/e_int_config_xsettings.c:496
 msgid "Preview"
 msgstr "Pré-visualização"
@@ -1833,11 +1835,11 @@ msgstr "Mover para"
 msgid "Automatically scroll contents"
 msgstr "Deslocar conteúdo automaticamente"
 
-#: src/bin/e_gadcon.c:1759 src/modules/gadman/e_mod_gadman.c:1000
+#: src/bin/e_gadcon.c:1759 src/modules/gadman/e_mod_gadman.c:1002
 msgid "Plain"
 msgstr "Simples"
 
-#: src/bin/e_gadcon.c:1773 src/modules/gadman/e_mod_gadman.c:1008
+#: src/bin/e_gadcon.c:1773 src/modules/gadman/e_mod_gadman.c:1010
 msgid "Inset"
 msgstr "Moldura"
 
@@ -1852,7 +1854,7 @@ msgstr "Aparência"
 #: src/modules/conf_applications/e_int_config_apps.c:291
 #: src/modules/conf_applications/e_int_config_apps.c:311
 #: src/modules/conf_applications/e_int_config_apps_personal.c:95
-#: src/modules/gadman/e_mod_gadman.c:1056 src/modules/ibar/e_mod_main.c:876
+#: src/modules/gadman/e_mod_gadman.c:1058 src/modules/ibar/e_mod_main.c:876
 #: src/modules/xkbswitch/e_mod_config.c:267
 msgid "Remove"
 msgstr "Remover"
@@ -2028,7 +2030,7 @@ msgid "Size"
 msgstr "Tamanho"
 
 #: src/bin/e_int_border_locks.c:313 src/bin/e_int_border_locks.c:332
-#: src/bin/e_int_border_menu.c:693 src/bin/e_int_border_prop.c:501
+#: src/bin/e_int_border_menu.c:697 src/bin/e_int_border_prop.c:501
 #: src/bin/e_int_border_remember.c:698 src/bin/e_int_shelf_config.c:152
 #: src/modules/conf_window_manipulation/e_int_config_focus.c:305
 msgid "Stacking"
@@ -2094,7 +2096,7 @@ msgstr "Memorizar estes bloqueios"
 msgid "Window"
 msgstr "Janela"
 
-#: src/bin/e_int_border_menu.c:149 src/bin/e_int_border_menu.c:1007
+#: src/bin/e_int_border_menu.c:149 src/bin/e_int_border_menu.c:1011
 msgid "Always on Top"
 msgstr "Sempre à frente"
 
@@ -2136,39 +2138,39 @@ msgstr "Adicionar à IBar"
 msgid "Create Keyboard Shortcut"
 msgstr "Criar atalho de teclado"
 
-#: src/bin/e_int_border_menu.c:652
+#: src/bin/e_int_border_menu.c:656
 #: src/modules/everything/evry_plug_windows.c:438
 msgid "Iconify"
 msgstr "Minimizar"
 
-#: src/bin/e_int_border_menu.c:702
+#: src/bin/e_int_border_menu.c:706
 msgid "Skip"
 msgstr "Ignorar"
 
-#: src/bin/e_int_border_menu.c:712 src/modules/conf_theme/e_mod_main.c:226
+#: src/bin/e_int_border_menu.c:716 src/modules/conf_theme/e_mod_main.c:226
 msgid "Border"
 msgstr "Contorno"
 
-#: src/bin/e_int_border_menu.c:724 src/bin/e_int_border_remember.c:605
+#: src/bin/e_int_border_menu.c:728 src/bin/e_int_border_remember.c:605
 #: src/bin/e_int_border_remember.c:701
 msgid "Locks"
 msgstr "Bloqueios"
 
-#: src/bin/e_int_border_menu.c:732
+#: src/bin/e_int_border_menu.c:736
 #: src/modules/conf_dialogs/e_int_config_dialogs.c:128
 msgid "Remember"
 msgstr "Memorizar"
 
-#: src/bin/e_int_border_menu.c:754
+#: src/bin/e_int_border_menu.c:758
 msgid "ICCCM/NetWM"
 msgstr "ICCCM/NetWM"
 
-#: src/bin/e_int_border_menu.c:927
+#: src/bin/e_int_border_menu.c:931
 #, c-format
 msgid "Screen %d"
 msgstr "Tela %d"
 
-#: src/bin/e_int_border_menu.c:1018 src/bin/e_int_border_prop.c:157
+#: src/bin/e_int_border_menu.c:1022 src/bin/e_int_border_prop.c:157
 #: src/bin/e_int_border_prop.c:179 src/modules/comp/e_mod_config.c:458
 #: src/modules/comp/e_mod_config.c:767
 #: src/modules/conf_theme/e_int_config_fonts.c:100
@@ -2178,54 +2180,54 @@ msgstr "Tela %d"
 msgid "Normal"
 msgstr "Normal"
 
-#: src/bin/e_int_border_menu.c:1029
+#: src/bin/e_int_border_menu.c:1033
 msgid "Always Below"
 msgstr "Sempre por trás"
 
-#: src/bin/e_int_border_menu.c:1073
+#: src/bin/e_int_border_menu.c:1077
 msgid "Pin to Desktop"
 msgstr "Fixar na área de trabalho"
 
-#: src/bin/e_int_border_menu.c:1084
+#: src/bin/e_int_border_menu.c:1088
 msgid "Unpin from Desktop"
 msgstr "Desafixar da área de trabalho"
 
-#: src/bin/e_int_border_menu.c:1174
+#: src/bin/e_int_border_menu.c:1178
 msgid "Select Border Style"
 msgstr "Escolha o tipo de contorno"
 
-#: src/bin/e_int_border_menu.c:1186
+#: src/bin/e_int_border_menu.c:1190
 msgid "Use Enlightenment Default Icon Preference"
 msgstr "Utilizar ícones do Enlightenment"
 
-#: src/bin/e_int_border_menu.c:1194
+#: src/bin/e_int_border_menu.c:1198
 msgid "Use Application Provided Icon"
 msgstr "Utilizar ícones da aplicação"
 
-#: src/bin/e_int_border_menu.c:1202
+#: src/bin/e_int_border_menu.c:1206
 msgid "Use User Defined Icon"
 msgstr "Utilizar ícones definidos pelo usuário"
 
-#: src/bin/e_int_border_menu.c:1211 src/bin/e_int_border_remember.c:734
+#: src/bin/e_int_border_menu.c:1215 src/bin/e_int_border_remember.c:734
 msgid "Offer Resistance"
 msgstr "Criar resistência"
 
-#: src/bin/e_int_border_menu.c:1272
+#: src/bin/e_int_border_menu.c:1276
 msgid "Window List"
 msgstr "Lista de janelas"
 
-#: src/bin/e_int_border_menu.c:1282 src/modules/pager/e_mod_main.c:265
-#: src/modules/pager/e_mod_main.c:2940 src/modules/pager/e_mod_main.c:2947
-#: src/modules/pager/e_mod_main.c:2954 src/modules/pager/e_mod_main.c:2956
-#: src/modules/pager/e_mod_main.c:2958 src/modules/pager/e_mod_main.c:2960
-#: src/modules/pager/e_mod_main.c:2962 src/modules/pager/e_mod_main.c:2964
-#: src/modules/pager/e_mod_main.c:2990 src/modules/pager/e_mod_main.c:2991
-#: src/modules/pager/e_mod_main.c:2992 src/modules/pager/e_mod_main.c:2993
-#: src/modules/pager/e_mod_main.c:2994 src/modules/pager/e_mod_main.c:2995
+#: src/bin/e_int_border_menu.c:1286 src/modules/pager/e_mod_main.c:265
+#: src/modules/pager/e_mod_main.c:2915 src/modules/pager/e_mod_main.c:2922
+#: src/modules/pager/e_mod_main.c:2929 src/modules/pager/e_mod_main.c:2931
+#: src/modules/pager/e_mod_main.c:2933 src/modules/pager/e_mod_main.c:2935
+#: src/modules/pager/e_mod_main.c:2937 src/modules/pager/e_mod_main.c:2939
+#: src/modules/pager/e_mod_main.c:2965 src/modules/pager/e_mod_main.c:2966
+#: src/modules/pager/e_mod_main.c:2967 src/modules/pager/e_mod_main.c:2968
+#: src/modules/pager/e_mod_main.c:2969 src/modules/pager/e_mod_main.c:2970
 msgid "Pager"
 msgstr "Paginador"
 
-#: src/bin/e_int_border_menu.c:1292 src/modules/wizard/page_180.c:24
+#: src/bin/e_int_border_menu.c:1296 src/modules/wizard/page_180.c:24
 msgid "Taskbar"
 msgstr "Barra de tarefas"
 
@@ -2450,10 +2452,11 @@ msgstr "Solicita posição"
 
 #: src/bin/e_int_border_prop.c:477 src/bin/e_int_border_prop.c:512
 #: src/bin/e_int_config_modules.c:58 src/bin/e_int_menus.c:273
-#: src/bin/e_shelf.c:2430 src/modules/battery/e_mod_main.c:194
-#: src/modules/clock/e_mod_main.c:360 src/modules/clock/e_mod_main.c:603
-#: src/modules/conf/e_conf.c:136 src/modules/conf/e_conf.c:146
-#: src/modules/conf/e_mod_main.c:101 src/modules/conf_dialogs/e_mod_main.c:17
+#: src/bin/e_shelf.c:2431 src/modules/backlight/e_mod_main.c:308
+#: src/modules/battery/e_mod_main.c:194 src/modules/clock/e_mod_main.c:360
+#: src/modules/clock/e_mod_main.c:603 src/modules/conf/e_conf.c:136
+#: src/modules/conf/e_conf.c:146 src/modules/conf/e_mod_main.c:101
+#: src/modules/conf_dialogs/e_mod_main.c:17
 #: src/modules/conf_interaction/e_int_config_mouse.c:170
 #: src/modules/conf_shelves/e_int_config_shelf.c:145
 #: src/modules/everything/evry_gadget.c:511
@@ -2463,7 +2466,7 @@ msgstr "Solicita posição"
 #: src/modules/ibox/e_mod_main.c:302 src/modules/ibox/e_mod_main.c:678
 #: src/modules/pager/e_mod_main.c:875 src/modules/temperature/e_mod_main.c:230
 #: src/modules/mixer/e_mod_main.c:777 src/modules/connman/e_mod_main.c:506
-#: src/modules/tasks/e_mod_main.c:716 src/modules/xkbswitch/e_mod_main.c:327
+#: src/modules/tasks/e_mod_main.c:715 src/modules/xkbswitch/e_mod_main.c:327
 #: src/modules/xkbswitch/e_mod_main.c:369
 msgid "Settings"
 msgstr "Definições"
@@ -2551,7 +2554,7 @@ msgstr "Tamanho, posição e bloqueios"
 #: src/bin/e_int_border_remember.c:609 src/modules/conf/e_mod_main.c:252
 #: src/modules/everything/evry_gadget.c:644
 #: src/modules/everything/evry_plug_aggregator.c:313
-#: src/modules/shot/e_mod_main.c:710
+#: src/modules/everything/evry_view.c:1606 src/modules/shot/e_mod_main.c:721
 msgid "All"
 msgstr "Tudo"
 
@@ -2653,7 +2656,7 @@ msgstr "Configurações dos módulos"
 msgid "Load"
 msgstr "Carregar"
 
-#: src/bin/e_int_config_modules.c:203 src/bin/e_module.c:528
+#: src/bin/e_int_config_modules.c:203 src/bin/e_module.c:534
 msgid "Unload"
 msgstr "Descarregar"
 
@@ -2738,7 +2741,7 @@ msgstr "Aplicações"
 #: src/modules/conf_window_manipulation/e_mod_main.c:17
 #: src/modules/conf_window_remembers/e_mod_main.c:14
 #: src/modules/everything/evry_plug_windows.c:425
-#: src/modules/winlist/e_mod_main.c:26 src/modules/tiling/e_mod_tiling.c:4012
+#: src/modules/winlist/e_mod_main.c:26 src/modules/tiling/e_mod_tiling.c:4128
 msgid "Windows"
 msgstr "Janelas"
 
@@ -2880,19 +2883,19 @@ msgstr "O Enlightenment não conseguiu iniciar o Eina!\n"
 msgid "Enlightenment could not create a logging domain!\n"
 msgstr "O Enlightenment não conseguiu criar o domínio de registo!\n"
 
-#: src/bin/e_main.c:279
+#: src/bin/e_main.c:278
 msgid "Enlightenment cannot initialize Eet!\n"
 msgstr "O Enlightenment não conseguiu iniciar o Eet!\n"
 
-#: src/bin/e_main.c:288
+#: src/bin/e_main.c:287
 msgid "Enlightenment cannot initialize Ecore!\n"
 msgstr "O Enlightenment não conseguiu iniciar o Ecore!\n"
 
-#: src/bin/e_main.c:297
+#: src/bin/e_main.c:296
 msgid "Enlightenment cannot initialize EIO!\n"
 msgstr "O Enlightenment não conseguiu iniciar o EIO!\n"
 
-#: src/bin/e_main.c:309
+#: src/bin/e_main.c:308
 msgid ""
 "Enlightenment cannot set up an exit signal handler.\n"
 "Perhaps you are out of memory?"
@@ -2900,7 +2903,7 @@ msgstr ""
 "O Enlightenment não conseguiu configurar um sinal de saída.\n"
 "Será que tem memória suficiente?"
 
-#: src/bin/e_main.c:316
+#: src/bin/e_main.c:315
 msgid ""
 "Enlightenment cannot set up a HUP signal handler.\n"
 "Perhaps you are out of memory?"
@@ -2908,7 +2911,7 @@ msgstr ""
 "O Enlightenment não conseguiu configurar um sinal HUP.\n"
 "Será que tem memória suficiente?"
 
-#: src/bin/e_main.c:323
+#: src/bin/e_main.c:322
 msgid ""
 "Enlightenment cannot set up a USER signal handler.\n"
 "Perhaps you are out of memory?"
@@ -2916,39 +2919,39 @@ msgstr ""
 "O Enlightenment não conseguiu configurar um sinal USER.\n"
 "Será que tem memória suficiente?"
 
-#: src/bin/e_main.c:332
+#: src/bin/e_main.c:331
 msgid "Enlightenment cannot initialize Ecore_File!\n"
 msgstr "O Enlightenment não conseguiu iniciar Ecore_File!\n"
 
-#: src/bin/e_main.c:341
+#: src/bin/e_main.c:340
 msgid "Enlightenment cannot initialize Ecore_Con!\n"
 msgstr "O Enlightenment não conseguiu iniciar Ecore_Con!\n"
 
-#: src/bin/e_main.c:350
+#: src/bin/e_main.c:349
 msgid "Enlightenment cannot initialize Ecore_Ipc!\n"
 msgstr "O Enlightenment não conseguiu iniciar Ecore_Ipc!\n"
 
-#: src/bin/e_main.c:361
+#: src/bin/e_main.c:360
 msgid "Enlightenment cannot initialize Ecore_X!\n"
 msgstr "O Enlightenment não conseguiu iniciar Ecore_X!\n"
 
-#: src/bin/e_main.c:373
+#: src/bin/e_main.c:372
 msgid "Enlightenment cannot initialize Ecore_IMF!\n"
 msgstr "O Enlightenment não conseguiu iniciar o Ecore_IMF!\n"
 
-#: src/bin/e_main.c:383
+#: src/bin/e_main.c:382
 msgid "Enlightenment cannot initialize Ecore_Evas!\n"
 msgstr "O Enlightenment não conseguiu iniciar Ecore_Evas!\n"
 
-#: src/bin/e_main.c:393
+#: src/bin/e_main.c:392
 msgid "Enlightenment cannot initialize Elementary!\n"
 msgstr "O Enlightenment não conseguiu iniciar o Elementary!\n"
 
-#: src/bin/e_main.c:404
+#: src/bin/e_main.c:403
 msgid "Enlightenment cannot initialize Emotion!\n"
 msgstr "O Enlightenment não conseguiu iniciar o Emotion!\n"
 
-#: src/bin/e_main.c:419
+#: src/bin/e_main.c:418
 msgid ""
 "Enlightenment found ecore_evas doesn't support the Software X11\n"
 "rendering in Evas. Please check your installation of Evas and\n"
@@ -2958,7 +2961,7 @@ msgstr ""
 "processamento X11 no Evas. Por favor verifique a instalação\n"
 "do Evas e do Ecore e verifique se ambos possuem suporte a X11."
 
-#: src/bin/e_main.c:427
+#: src/bin/e_main.c:426
 msgid ""
 "Enlightenment found ecore_evas doesn't support the Software Buffer\n"
 "rendering in Evas. Please check your installation of Evas and\n"
@@ -2968,15 +2971,15 @@ msgstr ""
 "\"Software Buffer\" no Evas. Por favor verifique a instalação\n"
 "do Evas e do Ecore e verifique se ambos possuem suporte \"Software Buffer\"."
 
-#: src/bin/e_main.c:437
+#: src/bin/e_main.c:436
 msgid "Enlightenment cannot initialize Edje!\n"
 msgstr "O Enlightenment não conseguiu iniciar o Edje!\n"
 
-#: src/bin/e_main.c:449
+#: src/bin/e_main.c:448
 msgid "Enlightenment cannot initialize E_Intl!\n"
 msgstr "O Enlightenment não conseguiu iniciar E_Intl!\n"
 
-#: src/bin/e_main.c:459
+#: src/bin/e_main.c:458
 msgid ""
 "Enlightenment cannot initialize its emergency alert system.\n"
 "Have you set your DISPLAY variable?"
@@ -2984,11 +2987,11 @@ msgstr ""
 "O Enlightenment não conseguiu iniciar o sistema de alertas.\n"
 "Configurou a variável DISPLAY?"
 
-#: src/bin/e_main.c:469
+#: src/bin/e_main.c:468
 msgid "Enlightenment cannot initialize E_Xinerama!\n"
 msgstr "O Enlightenment não conseguiu iniciar E_Xinerama!\n"
 
-#: src/bin/e_main.c:487
+#: src/bin/e_main.c:486
 msgid ""
 "Enlightenment cannot create directories in your home directory.\n"
 "Perhaps you have no home directory or the disk is full?"
@@ -2996,36 +2999,36 @@ msgstr ""
 "O Enlightenment não conseguiu criar os diretórios da sua pasta pessoal.\n"
 "A pasta pessoal existe? Será que o disco está cheio?"
 
-#: src/bin/e_main.c:497
+#: src/bin/e_main.c:496
 #, fuzzy
 msgid "Enlightenment cannot set up its file registry system.\n"
 msgstr "O Enlightenment não conseguiu configurar o registo do sistema."
 
-#: src/bin/e_main.c:506
+#: src/bin/e_main.c:505
 #, fuzzy
 msgid "Enlightenment cannot set up its config system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de configurações."
 
-#: src/bin/e_main.c:519
+#: src/bin/e_main.c:518
 msgid "Enlightenment cannot initialize E_Randr!\n"
 msgstr "O Enlightenment não conseguiu iniciar E_Randr!\n"
 
-#: src/bin/e_main.c:528
+#: src/bin/e_main.c:527
 #, fuzzy
 msgid "Enlightenment cannot set up its environment.\n"
 msgstr "O Enlightenment não conseguiu configurar o ambiente de trabalho."
 
-#: src/bin/e_main.c:544
+#: src/bin/e_main.c:543
 #, fuzzy
 msgid "Enlightenment cannot set up its scale system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de escala."
 
-#: src/bin/e_main.c:553
+#: src/bin/e_main.c:552
 #, fuzzy
 msgid "Enlightenment cannot set up its pointer system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de cursores."
 
-#: src/bin/e_main.c:562
+#: src/bin/e_main.c:561
 msgid ""
 "Enlightenment cannot set up paths for finding files.\n"
 "Perhaps you are out of memory?"
@@ -3033,32 +3036,32 @@ msgstr ""
 "O Enlightenment não conseguiu configurar os diretórios de pesquisa.\n"
 "Será que tem memória suficiente?"
 
-#: src/bin/e_main.c:579
+#: src/bin/e_main.c:578
 #, fuzzy
 msgid "Enlightenment cannot set up its font system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de fontes."
 
-#: src/bin/e_main.c:596
+#: src/bin/e_main.c:595
 #, fuzzy
 msgid "Enlightenment cannot set up its theme system.\n"
 msgstr "O Enlightenment não conseguiu configurar o tema."
 
-#: src/bin/e_main.c:612
+#: src/bin/e_main.c:611
 #, fuzzy
 msgid "Enlightenment cannot set up its init screen.\n"
 msgstr "O Enlightenment não conseguiu configurar a tela inicial."
 
-#: src/bin/e_main.c:627
+#: src/bin/e_main.c:626
 msgid "Starting International Support"
 msgstr "Iniciando suporte internacional"
 
-#: src/bin/e_main.c:631
+#: src/bin/e_main.c:630
 #, fuzzy
 msgid "Enlightenment cannot set up its intl system.\n"
 msgstr ""
 "O Enlightenment não conseguiu configurar o sistema de internacionalização."
 
-#: src/bin/e_main.c:640
+#: src/bin/e_main.c:639
 msgid ""
 "Enlightenment cannot initialize the FDO desktop system.\n"
 "Perhaps you lack permissions on ~/.cache/efreet or are\n"
@@ -3068,11 +3071,11 @@ msgstr ""
 "Tem permissões de escrita em ~/.cache/efreet?\n"
 "Possui espaço livre em disco? A memória é suficiente?"
 
-#: src/bin/e_main.c:663
+#: src/bin/e_main.c:664
 msgid "Setup Screens"
 msgstr "Configurar telas"
 
-#: src/bin/e_main.c:667
+#: src/bin/e_main.c:668
 msgid ""
 "Enlightenment set up window management for all the screens on your system\n"
 "failed. Perhaps another window manager is running?\n"
@@ -3082,259 +3085,259 @@ msgstr ""
 "telas do seu sistema. Será que já existe outro gerenciador de janelas "
 "ativo?\n"
 
-#: src/bin/e_main.c:675
+#: src/bin/e_main.c:676
 msgid "Setup ACPI"
 msgstr "Configurar ACPI"
 
-#: src/bin/e_main.c:682
+#: src/bin/e_main.c:683
 msgid "Setup Backlight"
 msgstr "Configurar iluminação"
 
-#: src/bin/e_main.c:686
+#: src/bin/e_main.c:687
 #, fuzzy
 msgid "Enlightenment cannot configure the backlight.\n"
 msgstr "O Enlightenment não conseguiu configurar a iluminação."
 
-#: src/bin/e_main.c:693
-msgid "Setup DPMS"
-msgstr "Configurar DPMS"
-
-#: src/bin/e_main.c:697
-#, fuzzy
-msgid "Enlightenment cannot configure the DPMS settings.\n"
-msgstr "O Enlightenment não conseguiu configurar as definições DPMS."
-
-#: src/bin/e_main.c:704
+#: src/bin/e_main.c:694
 msgid "Setup Screensaver"
 msgstr "Configurar proteção de tela"
 
-#: src/bin/e_main.c:708
+#: src/bin/e_main.c:698
 #, fuzzy
 msgid "Enlightenment cannot configure the X screensaver.\n"
 msgstr "O Enlightenment não conseguiu configurar a proteção de tela do X."
 
-#: src/bin/e_main.c:715
+#: src/bin/e_main.c:705
+msgid "Setup DPMS"
+msgstr "Configurar DPMS"
+
+#: src/bin/e_main.c:709
+#, fuzzy
+msgid "Enlightenment cannot configure the DPMS settings.\n"
+msgstr "O Enlightenment não conseguiu configurar as definições DPMS."
+
+#: src/bin/e_main.c:716
 msgid "Setup Powersave Modes"
 msgstr "Configurar modos de energia"
 
-#: src/bin/e_main.c:719
+#: src/bin/e_main.c:720
 #, fuzzy
 msgid "Enlightenment cannot set up its powersave modes.\n"
 msgstr "O Enlightenment não conseguiu configurar os modos de energia."
 
-#: src/bin/e_main.c:726
+#: src/bin/e_main.c:727
 msgid "Setup Desklock"
 msgstr "Configurar bloqueio do sistema"
 
-#: src/bin/e_main.c:730
+#: src/bin/e_main.c:731
 #, fuzzy
 msgid "Enlightenment cannot set up its desk locking system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de bloqueio."
 
-#: src/bin/e_main.c:737
+#: src/bin/e_main.c:738
 msgid "Setup Popups"
 msgstr "Configurar alertas"
 
-#: src/bin/e_main.c:741
+#: src/bin/e_main.c:742
 #, fuzzy
 msgid "Enlightenment cannot set up its popup system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de alertas."
 
-#: src/bin/e_main.c:753
+#: src/bin/e_main.c:754
 msgid "Setup Message Bus"
 msgstr "Configurar canal de mensagens"
 
-#: src/bin/e_main.c:760
+#: src/bin/e_main.c:761
 msgid "Setup Paths"
 msgstr "Configurar caminhos"
 
-#: src/bin/e_main.c:766
+#: src/bin/e_main.c:767
 msgid "Setup System Controls"
 msgstr "Configurar controles do sistema"
 
-#: src/bin/e_main.c:770
+#: src/bin/e_main.c:771
 msgid "Enlightenment cannot initialize the System Command system.\n"
 msgstr "O Enlightenment não conseguiu iniciar os comandos do sistema.\n"
 
-#: src/bin/e_main.c:777
+#: src/bin/e_main.c:778
 msgid "Setup Actions"
 msgstr "Configurar ações"
 
-#: src/bin/e_main.c:781
+#: src/bin/e_main.c:782
 #, fuzzy
 msgid "Enlightenment cannot set up its actions system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de ações."
 
-#: src/bin/e_main.c:788
+#: src/bin/e_main.c:789
 msgid "Setup Execution System"
 msgstr "Configurar sistema de execução"
 
-#: src/bin/e_main.c:792
+#: src/bin/e_main.c:793
 #, fuzzy
 msgid "Enlightenment cannot set up its exec system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de execuções."
 
-#: src/bin/e_main.c:803
+#: src/bin/e_main.c:804
 msgid "Setup Filemanager"
 msgstr "Configurar gerenciador de arquivos"
 
-#: src/bin/e_main.c:807
+#: src/bin/e_main.c:808
 msgid "Enlightenment cannot initialize the File manager.\n"
 msgstr "O Enlightenment não conseguiu iniciar o gerenciador de arquivos.\n"
 
-#: src/bin/e_main.c:814
+#: src/bin/e_main.c:815
 msgid "Setup Message System"
 msgstr "Configurar mensagens do sistema"
 
-#: src/bin/e_main.c:818
+#: src/bin/e_main.c:819
 #, fuzzy
 msgid "Enlightenment cannot set up its msg system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de mensagens."
 
-#: src/bin/e_main.c:825
+#: src/bin/e_main.c:826
 msgid "Setup DND"
 msgstr "Configurar arrastar-e-soltar"
 
-#: src/bin/e_main.c:829
+#: src/bin/e_main.c:830
 #, fuzzy
 msgid "Enlightenment cannot set up its dnd system.\n"
 msgstr ""
 "O Enlightenment não conseguiu configurar o sistema de arrastar-e-soltar."
 
-#: src/bin/e_main.c:836
+#: src/bin/e_main.c:837
 msgid "Setup Grab Input Handling"
 msgstr "Configurar gerenciamento da captura de entradas"
 
-#: src/bin/e_main.c:840
+#: src/bin/e_main.c:841
 #, fuzzy
 msgid "Enlightenment cannot set up its grab input handling system.\n"
 msgstr ""
 "O Enlightenment não conseguiu configurar o sistema da captura de entradas."
 
-#: src/bin/e_main.c:847
+#: src/bin/e_main.c:848
 msgid "Setup Modules"
 msgstr "Configurar módulos"
 
-#: src/bin/e_main.c:851 src/bin/e_main.c:1033
+#: src/bin/e_main.c:852 src/bin/e_main.c:1034
 #, fuzzy
 msgid "Enlightenment cannot set up its module system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de módulos."
 
-#: src/bin/e_main.c:858
+#: src/bin/e_main.c:859
 msgid "Setup Remembers"
 msgstr "Configurar lembretes"
 
-#: src/bin/e_main.c:862
+#: src/bin/e_main.c:863
 #, fuzzy
 msgid "Enlightenment cannot setup remember settings.\n"
 msgstr "O Enlightenment não conseguiu configurar as definições de lembrete."
 
-#: src/bin/e_main.c:869
+#: src/bin/e_main.c:870
 msgid "Setup Color Classes"
 msgstr "Configurar classes de cor"
 
-#: src/bin/e_main.c:873
+#: src/bin/e_main.c:874
 #, fuzzy
 msgid "Enlightenment cannot set up its color class system.\n"
 msgstr "O Enlightenment não conseguiu configurar as classes de cor."
 
-#: src/bin/e_main.c:880
+#: src/bin/e_main.c:881
 msgid "Setup Gadcon"
 msgstr "Configurar gadgets"
 
-#: src/bin/e_main.c:884
+#: src/bin/e_main.c:885
 #, fuzzy
 msgid "Enlightenment cannot set up its gadget control system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de gadgets."
 
-#: src/bin/e_main.c:891
+#: src/bin/e_main.c:892
 msgid "Setup Wallpaper"
 msgstr "Configurar papel de parede"
 
-#: src/bin/e_main.c:895
+#: src/bin/e_main.c:896
 #, fuzzy
 msgid "Enlightenment cannot set up its desktop background system.\n"
 msgstr "O Enlightenment não conseguiu configurar a imagem da área de trabalho."
 
-#: src/bin/e_main.c:902
+#: src/bin/e_main.c:903
 msgid "Setup Mouse"
 msgstr "Configurar mouse"
 
-#: src/bin/e_main.c:906
+#: src/bin/e_main.c:907
 #, fuzzy
 msgid "Enlightenment cannot configure the mouse settings.\n"
 msgstr "O Enlightenment não conseguiu configurar as definições do mouse."
 
-#: src/bin/e_main.c:913
+#: src/bin/e_main.c:914
 #, fuzzy
 msgid "Enlightenment cannot setup XKB Keyboard layouts.\n"
 msgstr "O Enlightenment não conseguiu configurar as disposições do teclado."
 
-#: src/bin/e_main.c:919
+#: src/bin/e_main.c:920
 msgid "Setup Bindings"
 msgstr "Configurar associações"
 
-#: src/bin/e_main.c:923
+#: src/bin/e_main.c:924
 #, fuzzy
 msgid "Enlightenment cannot set up its bindings system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de associações."
 
-#: src/bin/e_main.c:930
+#: src/bin/e_main.c:931
 msgid "Setup Thumbnailer"
 msgstr "Configurar serviço de miniaturas"
 
-#: src/bin/e_main.c:934
+#: src/bin/e_main.c:935
 msgid "Enlightenment cannot initialize the Thumbnailing system.\n"
 msgstr "O Enlightenment não conseguiu configurar o sistema de miniaturas.\n"
 
-#: src/bin/e_main.c:943
+#: src/bin/e_main.c:944
 msgid "Enlightenment cannot initialize the Icon Cache system.\n"
 msgstr "O Enlightenment não conseguiu iniciar o sistema de cache de ícones.\n"
 
-#: src/bin/e_main.c:952
+#: src/bin/e_main.c:953
 msgid "Enlightenment cannot initialize the XSettings system.\n"
 msgstr "O Enlightenment não conseguiu iniciar o sistema XSettings.\n"
 
-#: src/bin/e_main.c:961
+#: src/bin/e_main.c:962
 msgid "Enlightenment cannot initialize the Update system.\n"
 msgstr "O Enlightenment não conseguiu iniciar o sistema de atualizações.\n"
 
-#: src/bin/e_main.c:968
+#: src/bin/e_main.c:969
 msgid "Setup Desktop Environment"
 msgstr "Configurar ambiente de trabalho"
 
-#: src/bin/e_main.c:972
+#: src/bin/e_main.c:973
 msgid "Enlightenment cannot initialize its desktop environment.\n"
 msgstr "O Enlightenment não conseguiu iniciar o ambiente de trabalho.\n"
 
-#: src/bin/e_main.c:979
+#: src/bin/e_main.c:980
 msgid "Setup File Ordering"
 msgstr "Configurar ordem dos arquivos"
 
-#: src/bin/e_main.c:983
+#: src/bin/e_main.c:984
 #, fuzzy
 msgid "Enlightenment cannot set up its order file system.\n"
 msgstr ""
 "O Enlightenment não conseguiu configurar o sistema de organização dos "
 "arquivos."
 
-#: src/bin/e_main.c:998
+#: src/bin/e_main.c:999
 msgid "Load Modules"
 msgstr "Carregar módulos"
 
-#: src/bin/e_main.c:1029
+#: src/bin/e_main.c:1030
 msgid "Setup Shelves"
 msgstr "Configurar painéis"
 
-#: src/bin/e_main.c:1040
+#: src/bin/e_main.c:1041
 msgid "Configure Shelves"
 msgstr "Configurar painéis"
 
-#: src/bin/e_main.c:1051
+#: src/bin/e_main.c:1052
 msgid "Almost Done"
 msgstr "Quase terminado"
 
-#: src/bin/e_main.c:1209
+#: src/bin/e_main.c:1212
 #, c-format
 msgid ""
 "Options:\n"
@@ -3388,7 +3391,7 @@ msgstr ""
 "\t-i-really-know-what-i-am-doing-and-accept-full-responsibility-for-it\n"
 "\t\tSe precisar desta ajuda, você não precisa desta opção.\n"
 
-#: src/bin/e_main.c:1262
+#: src/bin/e_main.c:1265
 msgid ""
 "You are executing enlightenment directly. This is\n"
 "bad. Please do not execute the \"enlightenment\"\n"
@@ -3404,11 +3407,11 @@ msgstr ""
 "caminhos e também iniciar outros serviços\n"
 "necessários, antes de iniciar a sessão.\n"
 
-#: src/bin/e_main.c:1543
+#: src/bin/e_main.c:1546
 msgid "Testing Format Support"
 msgstr "Testando suporte ao formato"
 
-#: src/bin/e_main.c:1547
+#: src/bin/e_main.c:1550
 msgid ""
 "Enlightenment found Evas can't create a buffer canvas. Please check\n"
 "Evas has Software Buffer engine support.\n"
@@ -3417,7 +3420,7 @@ msgstr ""
 "tela.\n"
 "Verifique se o Evas tem suporte a \"Software Buffer\".\n"
 
-#: src/bin/e_main.c:1559
+#: src/bin/e_main.c:1562
 msgid ""
 "Enlightenment found Evas can't load SVG files. Check Evas has SVG loader "
 "support.\n"
@@ -3425,7 +3428,7 @@ msgstr ""
 "O Evas mas não consegue abrir arquivos SVG. Verifique se o Evas tem suporte "
 "a arquivos SVG.\n"
 
-#: src/bin/e_main.c:1569
+#: src/bin/e_main.c:1572
 msgid ""
 "Enlightenment found Evas can't load JPEG files. Check Evas has JPEG loader "
 "support.\n"
@@ -3433,7 +3436,7 @@ msgstr ""
 "O Evas mas não consegue abrir arquivos JPEG. Verifique se o Evas tem suporte "
 "a arquivos JPEG.\n"
 
-#: src/bin/e_main.c:1579
+#: src/bin/e_main.c:1582
 msgid ""
 "Enlightenment found Evas can't load PNG files. Check Evas has PNG loader "
 "support.\n"
@@ -3441,7 +3444,7 @@ msgstr ""
 "O Evas mas não consegue abrir arquivos PNG. Verifique se o Evas tem suporte "
 "a arquivos PNG.\n"
 
-#: src/bin/e_main.c:1589
+#: src/bin/e_main.c:1592
 msgid ""
 "Enlightenment found Evas can't load EET files. Check Evas has EET loader "
 "support.\n"
@@ -3449,7 +3452,7 @@ msgstr ""
 "O Evas mas não consegue abrir os arquivos EET. Verifique se o Evas tem "
 "suporte a arquivos EET.\n"
 
-#: src/bin/e_main.c:1603
+#: src/bin/e_main.c:1606
 msgid ""
 "Enlightenment found Evas can't load the 'Sans' font. Check Evas has "
 "fontconfig\n"
@@ -3460,7 +3463,7 @@ msgstr ""
 "Verifique se o Evas tem suporte a fontconfig e se pode configurar o tipo de "
 "letra \"Sans\".\n"
 
-#: src/bin/e_main.c:1810
+#: src/bin/e_main.c:1813
 #, fuzzy, c-format
 msgid ""
 "Enlightenment crashed early on start and has<br>been restarted. There was an "
@@ -3471,11 +3474,11 @@ msgstr ""
 "erro ao carregar o módulo: %s.<br>Este módulo foi desativado e não será "
 "carregado."
 
-#: src/bin/e_main.c:1815 src/bin/e_main.c:1832
+#: src/bin/e_main.c:1818 src/bin/e_main.c:1835
 msgid "Enlightenment crashed early on start and has been restarted"
 msgstr "O Enlightenment terminou ao iniciar a sessão e foi reiniciado."
 
-#: src/bin/e_main.c:1816
+#: src/bin/e_main.c:1819
 #, fuzzy, c-format
 msgid ""
 "Enlightenment crashed early on start and has been restarted.<br>There was an "
@@ -3486,7 +3489,7 @@ msgstr ""
 "um erro ao carregar o módulo: %s.<br>Este módulo foi desativado e não será "
 "carregado."
 
-#: src/bin/e_main.c:1825
+#: src/bin/e_main.c:1828
 #, fuzzy
 msgid ""
 "Enlightenment crashed early on start and has<br>been restarted. All modules "
@@ -3499,7 +3502,7 @@ msgstr ""
 "corrigir os problemas.<br>O diálogo de configuração dos módulos deve "
 "permitir-lhe escolher os módulos a carregar."
 
-#: src/bin/e_main.c:1833
+#: src/bin/e_main.c:1836
 msgid ""
 "Enlightenment crashed early on start and has been restarted.<br>All modules "
 "have been disabled and will not be loaded to help<br>remove any problem "
@@ -3516,7 +3519,7 @@ msgstr ""
 msgid "Loading Module: %s"
 msgstr "Carregando módulo: %s"
 
-#: src/bin/e_module.c:142
+#: src/bin/e_module.c:148
 #, fuzzy, c-format
 msgid ""
 "There was an error loading the module named: %s<br>No module named %s could "
@@ -3525,11 +3528,11 @@ msgstr ""
 "Ocorreu um erro ao carregar o módulo: %s<br>O módulo com o nome %s não foi "
 "encontrado nos diretórios dos módulos.<br>"
 
-#: src/bin/e_module.c:145 src/bin/e_module.c:158 src/bin/e_module.c:176
+#: src/bin/e_module.c:151 src/bin/e_module.c:164 src/bin/e_module.c:182
 msgid "Error loading Module"
 msgstr "Erro ao carregar módulo"
 
-#: src/bin/e_module.c:153 src/bin/e_module.c:170
+#: src/bin/e_module.c:159 src/bin/e_module.c:176
 #, fuzzy, c-format
 msgid ""
 "There was an error loading the module named: %s<br>The full path to this "
@@ -3538,11 +3541,11 @@ msgstr ""
 "Ocorreu um erro ao carregar o módulo: %s<br>O caminho para o módulo é:<br>"
 "%s<br>O erro reportado foi:<br>%s<br>"
 
-#: src/bin/e_module.c:175
+#: src/bin/e_module.c:181
 msgid "Module does not contain all needed functions"
 msgstr "O módulo não contém as funções necessárias"
 
-#: src/bin/e_module.c:190
+#: src/bin/e_module.c:196
 #, c-format
 msgid ""
 "Module API Error<br>Error initializing Module: %s<br>It requires a minimum "
@@ -3553,23 +3556,23 @@ msgstr ""
 "versão mínima API: %i.<br>O API de módulos informada pelo Enlightenment é: "
 "%i.<br>"
 
-#: src/bin/e_module.c:195
+#: src/bin/e_module.c:201
 #, c-format
 msgid "Enlightenment %s Module"
 msgstr "Módulo %s do Enlightenment"
 
-#: src/bin/e_module.c:523
+#: src/bin/e_module.c:529
 msgid "What action should be taken with this module?<br>"
 msgstr "Qual a ação que deve ser efetuada com este módulo?<br>"
 
-#: src/bin/e_module.c:529 src/bin/e_shelf.c:1789
+#: src/bin/e_module.c:535 src/bin/e_shelf.c:1789
 #: src/modules/conf_dialogs/e_int_config_profiles.c:335
 #: src/modules/conf_shelves/e_int_config_shelf.c:390
 #: src/modules/ibar/e_mod_config.c:199
 msgid "Keep"
 msgstr "Manter"
 
-#: src/bin/e_module.c:777
+#: src/bin/e_module.c:783
 msgid ""
 "The following modules are not standard ones for<br>Enlightenment and may "
 "cause bugs and crashes.<br>Please remove them before reporting any bugs."
@@ -3579,15 +3582,15 @@ msgstr ""
 "causar erros<br>Por favor remova-os antes de reportar qualquer erro<br><br>A "
 "lista dos módulos é a seguinte:<br><br>"
 
-#: src/bin/e_module.c:789
+#: src/bin/e_module.c:795
 msgid "Unstable module tainting"
 msgstr "Análise de módulos instáveis"
 
-#: src/bin/e_module.c:793
+#: src/bin/e_module.c:799
 msgid "I know"
 msgstr "Eu sei"
 
-#: src/bin/e_screensaver.c:159
+#: src/bin/e_screensaver.c:183
 #, fuzzy
 msgid ""
 "You disabled the screensaver too fast.<br><br>Would you like to enable "
@@ -3597,6 +3600,82 @@ msgstr ""
 "Desativou a proteção de tela muito rapidamente.<br><br>Pretende ativar o "
 "modo de <b>apresentação</b> e inativar temporariamente a proteção de tela, "
 "os bloqueios e a economia de energia?"
+
+#: src/bin/e_shelf.c:67
+msgid "Float"
+msgstr ""
+
+#: src/bin/e_shelf.c:68
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:227
+#: src/modules/everything/evry_config.c:568
+#: src/modules/gadman/e_mod_gadman.c:1030
+msgid "Horizontal"
+msgstr "Horizontal"
+
+#: src/bin/e_shelf.c:69
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:229
+#: src/modules/everything/evry_config.c:561
+#: src/modules/gadman/e_mod_gadman.c:1038
+msgid "Vertical"
+msgstr "Vertical"
+
+#: src/bin/e_shelf.c:70
+#, fuzzy
+msgid "Left"
+msgstr "Esquerda:"
+
+#: src/bin/e_shelf.c:71
+#, fuzzy
+msgid "Right"
+msgstr "Direita:"
+
+#: src/bin/e_shelf.c:72
+#, fuzzy
+msgid "Top"
+msgstr "Ajudas"
+
+#: src/bin/e_shelf.c:73
+#, fuzzy
+msgid "Bottom"
+msgstr "Margem inferior"
+
+#: src/bin/e_shelf.c:74
+#, fuzzy
+msgid "Top-left Corner"
+msgstr "Local do alerta"
+
+#: src/bin/e_shelf.c:75
+#, fuzzy
+msgid "Top-right Corner"
+msgstr "Local do alerta"
+
+#: src/bin/e_shelf.c:76
+#, fuzzy
+msgid "Bottom-left Corner"
+msgstr "Margem inferior esquerda"
+
+#: src/bin/e_shelf.c:77
+#, fuzzy
+msgid "Bottom-right Corner"
+msgstr "Margem inferior direita"
+
+#: src/bin/e_shelf.c:78
+#, fuzzy
+msgid "Left-top Corner"
+msgstr "Local do alerta"
+
+#: src/bin/e_shelf.c:79
+#, fuzzy
+msgid "Right-top Corner"
+msgstr "Local do alerta"
+
+#: src/bin/e_shelf.c:80
+msgid "Left-bottom Corner"
+msgstr ""
+
+#: src/bin/e_shelf.c:81
+msgid "Right-bottom Corner"
+msgstr ""
 
 #: src/bin/e_shelf.c:267
 msgid "Shelf #"
@@ -3632,11 +3711,11 @@ msgstr "Erro do painel"
 msgid "A shelf with that name already exists!"
 msgstr "Já existe um painel com este nome!"
 
-#: src/bin/e_shelf.c:1654 src/bin/e_shelf.c:2475
+#: src/bin/e_shelf.c:1654 src/bin/e_shelf.c:2476
 msgid "Stop Moving Gadgets"
 msgstr "Parar de mover gadgets"
 
-#: src/bin/e_shelf.c:1656 src/bin/e_shelf.c:2477
+#: src/bin/e_shelf.c:1656 src/bin/e_shelf.c:2478
 msgid "Begin Moving Gadgets"
 msgstr "Mover gadgets"
 
@@ -3650,28 +3729,28 @@ msgid ""
 "it?"
 msgstr "Solicitou apagar este painel.<br><br>Tem a certeza disso?"
 
-#: src/bin/e_shelf.c:2334
+#: src/bin/e_shelf.c:2335
 msgid "A shelf with that name and id already exists!"
 msgstr "Já existe um painel com este nome e id!"
 
-#: src/bin/e_shelf.c:2353
+#: src/bin/e_shelf.c:2354
 msgid "Rename Shelf"
 msgstr "Renomear painel"
 
-#: src/bin/e_shelf.c:2425 src/modules/conf_shelves/e_int_config_shelf.c:141
+#: src/bin/e_shelf.c:2426 src/modules/conf_shelves/e_int_config_shelf.c:141
 #: src/modules/ibar/e_mod_main.c:858
 msgid "Contents"
 msgstr "Conteúdo"
 
-#: src/bin/e_shelf.c:2435
+#: src/bin/e_shelf.c:2436
 msgid "Orientation"
 msgstr "Orientação"
 
-#: src/bin/e_shelf.c:2444
+#: src/bin/e_shelf.c:2445
 msgid "Autohide"
 msgstr "Ocultar automaticamente"
 
-#: src/bin/e_shelf.c:2451 src/modules/conf_display/e_int_config_display.c:405
+#: src/bin/e_shelf.c:2452 src/modules/conf_display/e_int_config_display.c:405
 msgid "Refresh"
 msgstr "Atualizar"
 
@@ -4164,8 +4243,8 @@ msgstr "Modificado:"
 msgid "Read Only"
 msgstr "Somente leitura"
 
-#: src/bin/e_widget_filepreview.c:527
-msgid "Read / Write"
+#: src/bin/e_widget_filepreview.c:527 src/bin/e_widget_filepreview.c:716
+msgid "Read-Write"
 msgstr "Leitura/Escrita"
 
 #: src/bin/e_widget_filepreview.c:530 src/bin/e_widget_filepreview.c:541
@@ -4187,24 +4266,31 @@ msgstr "Protegido"
 msgid "Forbidden"
 msgstr "Proibido"
 
-#: src/bin/e_widget_filepreview.c:716
-msgid "Read-Write"
-msgstr "Leitura/Escrita"
-
-#: src/bin/e_widget_fsel.c:333
+#: src/bin/e_widget_fsel.c:334
 msgid "Add to Favorites"
 msgstr "Adicionar aos favoritos"
 
-#: src/bin/e_widget_fsel.c:338
+#: src/bin/e_widget_fsel.c:339
 #: src/modules/conf_display/e_int_config_desklock_fsel.c:91
 #: src/modules/conf_intl/e_int_config_imc.c:825
 #: src/modules/conf_theme/e_int_config_wallpaper.c:435
 #: src/modules/conf_theme/e_int_config_wallpaper.c:552
 #: src/modules/conf_theme/e_int_config_startup.c:266
-#: src/modules/conf_theme/e_int_config_theme.c:462
+#: src/modules/conf_theme/e_int_config_theme.c:463
 #: src/modules/gadman/e_mod_config.c:256
 msgid "Go up a Directory"
 msgstr "Subir um diretório"
+
+#: src/modules/backlight/e_mod_main.c:430
+#: src/modules/conf_display/e_mod_main.c:36
+msgid "Backlight"
+msgstr "Iluminação"
+
+#: src/modules/backlight/e_mod_main.c:486
+#: src/modules/backlight/e_mod_main.c:496
+#, fuzzy
+msgid "Backlight Controls"
+msgstr "Diminuir"
 
 #: src/modules/battery/e_mod_config.c:64
 msgid "Battery Monitor Settings"
@@ -4412,47 +4498,52 @@ msgstr "Mostrar calendário"
 msgid "Show calendar"
 msgstr "Mostrar calendário"
 
-#: src/modules/comp/e_mod_comp.c:3641 src/modules/comp/e_mod_comp.c:3663
-#: src/modules/comp/e_mod_comp.c:4067 src/modules/comp/e_mod_comp.c:4077
+#: src/modules/comp/e_mod_comp.c:3694 src/modules/comp/e_mod_comp.c:3716
+#: src/modules/comp/e_mod_comp.c:4129 src/modules/comp/e_mod_comp.c:4139
 msgid "Compositor Error"
 msgstr "Erro de compositor"
 
-#: src/modules/comp/e_mod_comp.c:3642
-msgid "Another compositor is already running<br>on your screen."
+#: src/modules/comp/e_mod_comp.c:3695
+#, fuzzy
+msgid "Another compositor is already running<br>on your display server."
 msgstr "Já existe um gestor de composição em execução na sua tela."
 
-#: src/modules/comp/e_mod_comp.c:3664
+#: src/modules/comp/e_mod_comp.c:3717
+#, fuzzy
 msgid ""
-"Your screen does not support the compositor<br>overlay window. This is "
-"needed for it to<br>function."
+"Your display server does not support the<br>compositor overlay window. This "
+"is needed<br>for it to function."
 msgstr ""
 "A sua tela não tem suporte a janelas sobrepostas do compositor<br>Tal "
 "suporte é necessário para a função"
 
-#: src/modules/comp/e_mod_comp.c:3738
+#: src/modules/comp/e_mod_comp.c:3791
 msgid "Compositor Warning"
 msgstr "Aviso de compositor"
 
-#: src/modules/comp/e_mod_comp.c:3739
+#: src/modules/comp/e_mod_comp.c:3792
 msgid ""
-"Your screen does not support OpenGL.<br>Falling back to software engine."
+"Your display driver does not support OpenGL, or<br>no OpenGL engines were "
+"compiled or installed for<br>Evas or Ecore-Evas. Falling back to software "
+"engine."
 msgstr ""
-"A sua tela não tem suporte a OpenGL<br>Utilizando mecanismo alternativo"
 
-#: src/modules/comp/e_mod_comp.c:4068
+#: src/modules/comp/e_mod_comp.c:4130
+#, fuzzy
 msgid ""
-"Your X Display does not support the XComposite extension<br>or Ecore was "
-"built without XComposite support.<br>Note that for composite support you "
-"will also need<br>XRender and XFixes support in X11 and Ecore."
+"Your display server does not support XComposite,<br>or Ecore-X was built "
+"without XComposite support.<br>Note that for composite support you will also "
+"need<br>XRender and XFixes support in X11 and Ecore."
 msgstr ""
 "Sua tela X não tem suporte à extensão XComposite<br>ou o Ecore foi compilado "
 "sem o suporte a XComposite<br>Para ter suporte à extensão também precisa de "
 "suporte ao<br>XRender e XFixes no X11 e no Ecore"
 
-#: src/modules/comp/e_mod_comp.c:4078
+#: src/modules/comp/e_mod_comp.c:4140
+#, fuzzy
 msgid ""
-"Your screen does not support the XDamage extension<br>or Ecore was built "
-"without XDamage support."
+"Your display server does not support XDamage<br>or Ecore was built without "
+"XDamage support."
 msgstr ""
 "Sua tela X não tem suporte à extensão XDamage<br>ou o Ecore foi compilado "
 "sem o suporte a XDamage"
@@ -4504,7 +4595,7 @@ msgid "Menu (Popup)"
 msgstr "Menu (alerta)"
 
 #: src/modules/comp/e_mod_config.c:460 src/modules/comp/e_mod_config.c:769
-#: src/modules/notification/e_mod_main.c:149
+#: src/modules/notification/e_mod_main.c:151
 msgid "Notification"
 msgstr "Notificações"
 
@@ -4659,11 +4750,11 @@ msgstr "%1.2f segundos"
 msgid "Sync"
 msgstr "Sincronização"
 
-#: src/modules/comp/e_mod_config.c:1190 src/modules/comp/e_mod_config.c:1529
+#: src/modules/comp/e_mod_config.c:1190 src/modules/comp/e_mod_config.c:1532
 msgid "Software"
 msgstr "Equipamento"
 
-#: src/modules/comp/e_mod_config.c:1196 src/modules/comp/e_mod_config.c:1535
+#: src/modules/comp/e_mod_config.c:1196 src/modules/comp/e_mod_config.c:1538
 msgid "OpenGL"
 msgstr "OpenGL"
 
@@ -4671,7 +4762,7 @@ msgstr "OpenGL"
 msgid "OpenGL options"
 msgstr "Opções OpenGL"
 
-#: src/modules/comp/e_mod_config.c:1201 src/modules/comp/e_mod_config.c:1509
+#: src/modules/comp/e_mod_config.c:1201 src/modules/comp/e_mod_config.c:1512
 msgid "Tear-free updates (VSynced)"
 msgstr "Atualizações livres de \"Screen tearing\" (sincronização vertical)"
 
@@ -4716,144 +4807,80 @@ msgstr "Limpar cache"
 msgid "Send dump"
 msgstr "Limpar cache drasticamente"
 
-#: src/modules/comp/e_mod_config.c:1239 src/modules/comp/e_mod_config.c:1515
+#: src/modules/comp/e_mod_config.c:1239 src/modules/comp/e_mod_config.c:1518
 msgid "Don't composite fullscreen windows"
 msgstr "Não compor janelas em tela cheia"
 
-#: src/modules/comp/e_mod_config.c:1241
-msgid "Keep hidden windows"
-msgstr "Manter janelas ocultas"
-
-#: src/modules/comp/e_mod_config.c:1243
-msgid "Maximum hidden pixels"
-msgstr "Máximo de pixeis ocultos"
-
-#: src/modules/comp/e_mod_config.c:1246
-msgid "1M"
-msgstr "1M"
-
-#: src/modules/comp/e_mod_config.c:1248
-msgid "2M"
-msgstr "2M"
-
-#: src/modules/comp/e_mod_config.c:1250
-msgid "4M"
-msgstr "4M"
-
-#: src/modules/comp/e_mod_config.c:1252
-msgid "8M"
-msgstr "8M"
-
-#: src/modules/comp/e_mod_config.c:1254
-msgid "16M"
-msgstr "16M"
-
-#: src/modules/comp/e_mod_config.c:1256
-msgid "32M"
-msgstr "32M"
-
-#: src/modules/comp/e_mod_config.c:1258
-msgid "64M"
-msgstr "64M"
-
-#: src/modules/comp/e_mod_config.c:1260
-msgid "128M"
-msgstr "128M"
-
-#: src/modules/comp/e_mod_config.c:1262
-msgid "256M"
-msgstr "256M"
-
-#: src/modules/comp/e_mod_config.c:1265
+#: src/modules/comp/e_mod_config.c:1267
 msgid "Memory"
 msgstr "Memória"
 
-#: src/modules/comp/e_mod_config.c:1270
-msgid "Min hidden"
-msgstr "Mínimo oculto"
-
-#: src/modules/comp/e_mod_config.c:1273 src/modules/comp/e_mod_config.c:1291
-msgid "30 Seconds"
-msgstr "30 segundos"
-
-#: src/modules/comp/e_mod_config.c:1275 src/modules/comp/e_mod_config.c:1293
-msgid "1 Minute"
-msgstr "1 minuto"
-
-#: src/modules/comp/e_mod_config.c:1277 src/modules/comp/e_mod_config.c:1295
-msgid "5 Minutes"
-msgstr "5 minutos"
-
-#: src/modules/comp/e_mod_config.c:1279 src/modules/comp/e_mod_config.c:1297
-msgid "30 Minutes"
-msgstr "30 minutos"
-
-#: src/modules/comp/e_mod_config.c:1281 src/modules/comp/e_mod_config.c:1299
-msgid "2 Hours"
-msgstr "2 horas"
-
-#: src/modules/comp/e_mod_config.c:1283 src/modules/comp/e_mod_config.c:1301
-msgid "10 Hours"
-msgstr "10 horas"
-
-#: src/modules/comp/e_mod_config.c:1285 src/modules/comp/e_mod_config.c:1303
-msgid "Forever"
-msgstr "Eternamente"
-
-#: src/modules/comp/e_mod_config.c:1288
-msgid "Max hidden"
-msgstr "Máximo oculto"
-
-#: src/modules/comp/e_mod_config.c:1307
-msgid "Timeouts"
-msgstr "Limites"
-
-#: src/modules/comp/e_mod_config.c:1312
+#: src/modules/comp/e_mod_config.c:1315
 msgid "Show Framerate"
 msgstr "Mostrar taxa de imagens"
 
-#: src/modules/comp/e_mod_config.c:1314
+#: src/modules/comp/e_mod_config.c:1317
 msgid "Rolling average frame count"
 msgstr "Número médio de imagens"
 
-#: src/modules/comp/e_mod_config.c:1316
+#: src/modules/comp/e_mod_config.c:1319
 #, c-format
 msgid "%1.0f Frames"
 msgstr "%1.0f imagens"
 
-#: src/modules/comp/e_mod_config.c:1320
+#: src/modules/comp/e_mod_config.c:1323
 msgid "Corner"
 msgstr "Localização"
 
-#: src/modules/comp/e_mod_config.c:1337
+#: src/modules/comp/e_mod_config.c:1326
+#, fuzzy
+msgid "Top Left"
+msgstr "Margem superior esquerda"
+
+#: src/modules/comp/e_mod_config.c:1329
+#, fuzzy
+msgid "Top Right"
+msgstr "Margem superior direita"
+
+#: src/modules/comp/e_mod_config.c:1332
+#, fuzzy
+msgid "Bottom Left"
+msgstr "Margem inferior esquerda"
+
+#: src/modules/comp/e_mod_config.c:1335
+#, fuzzy
+msgid "Bottom Right"
+msgstr "Margem inferior direita"
+
+#: src/modules/comp/e_mod_config.c:1340
 msgid "Debug"
 msgstr "Depuração"
 
-#: src/modules/comp/e_mod_config.c:1512
+#: src/modules/comp/e_mod_config.c:1515
 msgid "Smooth scaling of window content"
 msgstr "Ajuste suave do conteúdo da janela"
 
-#: src/modules/comp/e_mod_config.c:1518
+#: src/modules/comp/e_mod_config.c:1521
 msgid "Select default style"
 msgstr "Escolher o estilo padrão"
 
-#: src/modules/comp/e_mod_config.c:1539
+#: src/modules/comp/e_mod_config.c:1542
 msgid "To reset compositor:"
 msgstr "Para reiniciar o compositor:"
 
-#: src/modules/comp/e_mod_config.c:1541
+#: src/modules/comp/e_mod_config.c:1544
 msgid "Ctrl+Alt+Shift+Home"
 msgstr "Ctrl+Alt+Shift+Home"
 
-#: src/modules/comp/e_mod_config.c:1544
+#: src/modules/comp/e_mod_config.c:1547
 msgid "Rendering"
 msgstr "Renderização"
 
-#: src/modules/comp/e_mod_main.c:43 src/modules/comp/e_mod_main.c:69
+#: src/modules/comp/e_mod_main.c:43 src/modules/comp/e_mod_main.c:74
 msgid "Composite"
 msgstr "Composição"
 
-#: src/modules/comp/e_mod_main.c:70
+#: src/modules/comp/e_mod_main.c:75
 msgid ""
 "Dropshadow module is incompatible<br>with compositing. Disabling "
 "the<br>Dropshadow module."
@@ -4875,7 +4902,7 @@ msgid "Settings Panel"
 msgstr "Painel de definições"
 
 #: src/modules/conf/e_mod_main.c:421
-#: src/modules/conf_display/e_int_config_screensaver.c:197
+#: src/modules/conf_display/e_int_config_screensaver.c:206
 msgid "Presentation"
 msgstr "Apresentação"
 
@@ -5153,7 +5180,7 @@ msgid "Resolution change"
 msgstr "Alteração da resolução"
 
 #: src/modules/conf_display/e_int_config_display.c:195
-#: src/modules/shot/e_mod_main.c:287 src/modules/shot/e_mod_main.c:761
+#: src/modules/shot/e_mod_main.c:287 src/modules/shot/e_mod_main.c:772
 msgid "Save"
 msgstr "Gravar"
 
@@ -5286,7 +5313,6 @@ msgid "Animation speed"
 msgstr "Velocidade da animação"
 
 #: src/modules/conf_display/e_int_config_desks.c:226
-#: src/modules/conf_display/e_int_config_dpms.c:168
 #: src/modules/conf_performance/e_int_config_powermanagement.c:204
 #: src/modules/conf_window_manipulation/e_int_config_focus.c:283
 #: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:244
@@ -5329,9 +5355,9 @@ msgstr "Escolha o papel de parede..."
 #: src/modules/conf_theme/e_int_config_wallpaper.c:425
 #: src/modules/conf_theme/e_int_config_wallpaper.c:542
 #: src/modules/conf_theme/e_int_config_startup.c:253
-#: src/modules/conf_theme/e_int_config_theme.c:451
-#: src/modules/conf_theme/e_int_config_theme.c:827
-#: src/modules/conf_theme/e_int_config_theme.c:836
+#: src/modules/conf_theme/e_int_config_theme.c:452
+#: src/modules/conf_theme/e_int_config_theme.c:828
+#: src/modules/conf_theme/e_int_config_theme.c:837
 #: src/modules/gadman/e_mod_config.c:248
 msgid "Personal"
 msgstr "Pessoal"
@@ -5386,8 +5412,8 @@ msgstr "Bloquear ao ativar a proteção de tela do X"
 
 #: src/modules/conf_display/e_int_config_desklock.c:315
 #: src/modules/conf_display/e_int_config_desklock.c:340
-#: src/modules/conf_display/e_int_config_screensaver.c:174
-#: src/modules/conf_display/e_int_config_screensaver.c:191
+#: src/modules/conf_display/e_int_config_screensaver.c:183
+#: src/modules/conf_display/e_int_config_screensaver.c:200
 #: src/modules/fileman/e_mod_config.c:410
 #, c-format
 msgid "%1.0f seconds"
@@ -5398,8 +5424,7 @@ msgid "Lock when idle time exceeded"
 msgstr "Bloquear se exceder o tempo de inatividade"
 
 #: src/modules/conf_display/e_int_config_desklock.c:326
-#: src/modules/conf_display/e_int_config_screensaver.c:157
-#: src/modules/conf_display/e_int_config_dpms.c:160
+#: src/modules/conf_display/e_int_config_screensaver.c:166
 #, c-format
 msgid "%1.0f minutes"
 msgstr "%1.0f minutos"
@@ -5409,7 +5434,7 @@ msgid "Timers"
 msgstr "Temporizadores"
 
 #: src/modules/conf_display/e_int_config_desklock.c:336
-#: src/modules/conf_display/e_int_config_screensaver.c:186
+#: src/modules/conf_display/e_int_config_screensaver.c:195
 msgid "Suggest if deactivated before"
 msgstr "Sugerir se desativado antes de"
 
@@ -5442,33 +5467,33 @@ msgstr "Papel de parede"
 msgid "Screen Saver Settings"
 msgstr "Definições da proteção de tela"
 
-#: src/modules/conf_display/e_int_config_screensaver.c:149
+#: src/modules/conf_display/e_int_config_screensaver.c:158
 msgid "Enable screen blanking"
 msgstr "Ativar escurecimento da tela"
 
-#: src/modules/conf_display/e_int_config_screensaver.c:154
+#: src/modules/conf_display/e_int_config_screensaver.c:163
 #: src/modules/syscon/e_int_config_syscon.c:167
 msgid "Timeout"
 msgstr "Intervalo"
 
-#: src/modules/conf_display/e_int_config_screensaver.c:162
+#: src/modules/conf_display/e_int_config_screensaver.c:171
 msgid "Suspend on blank"
 msgstr "Suspender ao escurecer tela"
 
-#: src/modules/conf_display/e_int_config_screensaver.c:166
+#: src/modules/conf_display/e_int_config_screensaver.c:175
 msgid "Suspend even if AC"
 msgstr "Suspender mesmo se ligado à corrente elétrica"
 
-#: src/modules/conf_display/e_int_config_screensaver.c:171
+#: src/modules/conf_display/e_int_config_screensaver.c:180
 msgid "Suspend delay"
 msgstr "Atraso de suspensão"
 
-#: src/modules/conf_display/e_int_config_screensaver.c:179
+#: src/modules/conf_display/e_int_config_screensaver.c:188
 #: src/modules/conf_display/e_mod_main.c:32
 msgid "Blanking"
 msgstr "Escurecimento de tela"
 
-#: src/modules/conf_display/e_int_config_screensaver.c:183
+#: src/modules/conf_display/e_int_config_screensaver.c:192
 msgid "Presentation mode enabled"
 msgstr "Ativar modo de apresentação"
 
@@ -5476,27 +5501,37 @@ msgstr "Ativar modo de apresentação"
 msgid "Backlight Settings"
 msgstr "Definições de iluminação"
 
-#: src/modules/conf_display/e_int_config_dpms.c:145
+#: src/modules/conf_display/e_int_config_dpms.c:150
 msgid "Normal Backlight"
 msgstr "Normal"
 
-#: src/modules/conf_display/e_int_config_dpms.c:147
-#: src/modules/conf_display/e_int_config_dpms.c:153
+#: src/modules/conf_display/e_int_config_dpms.c:152
+#: src/modules/conf_display/e_int_config_dpms.c:158
 #, c-format
 msgid "%3.0f"
 msgstr "%3.0f"
 
-#: src/modules/conf_display/e_int_config_dpms.c:151
+#: src/modules/conf_display/e_int_config_dpms.c:156
 msgid "Dim Backlight"
 msgstr "Diminuir"
 
-#: src/modules/conf_display/e_int_config_dpms.c:157
+#: src/modules/conf_display/e_int_config_dpms.c:162
 msgid "Idle Fade Time"
 msgstr "Intervalo para desativar"
 
-#: src/modules/conf_display/e_int_config_dpms.c:166
+#: src/modules/conf_display/e_int_config_dpms.c:164
+#, fuzzy, c-format
+msgid "%1.0f second(s)"
+msgstr "%1.0f segundos"
+
+#: src/modules/conf_display/e_int_config_dpms.c:170
 msgid "Fade Time"
 msgstr "Duração"
+
+#: src/modules/conf_display/e_int_config_dpms.c:172
+#, fuzzy, c-format
+msgid "%1.1f second(s)"
+msgstr "%1.1f segundos"
 
 #: src/modules/conf_display/e_mod_main.c:21
 #: src/modules/tiling/e_mod_config.c:198
@@ -5510,10 +5545,6 @@ msgstr "Resolução de tela"
 #: src/modules/conf_display/e_mod_main.c:28
 msgid "Screen Lock"
 msgstr "Bloqueio de tela"
-
-#: src/modules/conf_display/e_mod_main.c:36
-msgid "Backlight"
-msgstr "Iluminação"
 
 #: src/modules/conf_display/e_mod_main.c:44
 msgid "Desk"
@@ -6155,7 +6186,7 @@ msgid "Main Menu"
 msgstr "Menu principal"
 
 #: src/modules/conf_menus/e_int_config_menus.c:258
-#: src/modules/fileman/e_mod_menu.c:342
+#: src/modules/fileman/e_mod_menu.c:344
 msgid "Favorites"
 msgstr "Favoritos"
 
@@ -6260,7 +6291,7 @@ msgid "Fonts"
 msgstr "Fontes tipográficas"
 
 #: src/modules/conf_paths/e_int_config_paths.c:76
-#: src/modules/conf_theme/e_int_config_theme.c:1117
+#: src/modules/conf_theme/e_int_config_theme.c:1119
 msgid "Themes"
 msgstr "Temas"
 
@@ -6430,13 +6461,13 @@ msgid "e.g. Saving to disk"
 msgstr "exemplo: Gravar no disco"
 
 #: src/modules/conf_performance/e_int_config_powermanagement.c:235
-#: src/modules/shot/e_mod_main.c:692
+#: src/modules/shot/e_mod_main.c:703
 #: src/modules/notification/e_mod_config.c:96
 msgid "Low"
 msgstr "Baixa"
 
 #: src/modules/conf_performance/e_int_config_powermanagement.c:274
-#: src/modules/dropshadow/e_mod_config.c:124 src/modules/shot/e_mod_main.c:690
+#: src/modules/dropshadow/e_mod_config.c:124 src/modules/shot/e_mod_main.c:701
 msgid "Medium"
 msgstr "Média"
 
@@ -6448,7 +6479,7 @@ msgid "%.0f s"
 msgstr "%1.0f seg."
 
 #: src/modules/conf_performance/e_int_config_powermanagement.c:313
-#: src/modules/shot/e_mod_main.c:688
+#: src/modules/shot/e_mod_main.c:699
 msgid "High"
 msgstr "Alta"
 
@@ -7104,23 +7135,23 @@ msgstr "Erro ao importar tema"
 msgid "%s is probably not an E17 theme!"
 msgstr ""
 
-#: src/modules/conf_theme/e_int_config_theme.c:496
+#: src/modules/conf_theme/e_int_config_theme.c:497
 msgid " Import..."
 msgstr "Importar..."
 
-#: src/modules/conf_theme/e_int_config_theme.c:1108
+#: src/modules/conf_theme/e_int_config_theme.c:1110
 msgid "Theme Categories"
 msgstr "Categorias de temas"
 
-#: src/modules/conf_theme/e_int_config_theme.c:1126
+#: src/modules/conf_theme/e_int_config_theme.c:1128
 msgid "Assign"
 msgstr "Atribuir"
 
-#: src/modules/conf_theme/e_int_config_theme.c:1129
+#: src/modules/conf_theme/e_int_config_theme.c:1131
 msgid "Clear"
 msgstr "Limpar"
 
-#: src/modules/conf_theme/e_int_config_theme.c:1132
+#: src/modules/conf_theme/e_int_config_theme.c:1134
 msgid "Clear All"
 msgstr "Limpar tudo"
 
@@ -7147,7 +7178,8 @@ msgstr ""
 "O Enlightenment não conseguiu importar o tema devido a um erro de cópia"
 
 #: src/modules/conf_theme/e_int_config_xsettings.c:58
-msgid "GTK Application Theme Settings"
+#, fuzzy
+msgid "Application Theme Settings"
 msgstr "Definições do tema das aplicações GTK"
 
 #: src/modules/conf_theme/e_int_config_xsettings.c:471
@@ -7555,18 +7587,6 @@ msgstr "Preencher espaço disponível"
 msgid "Direction"
 msgstr "Direção"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:227
-#: src/modules/everything/evry_config.c:568
-#: src/modules/gadman/e_mod_gadman.c:1028
-msgid "Horizontal"
-msgstr "Horizontal"
-
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:229
-#: src/modules/everything/evry_config.c:561
-#: src/modules/gadman/e_mod_gadman.c:1036
-msgid "Vertical"
-msgstr "Vertical"
-
 #: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:231
 msgid "Both"
 msgstr "Ambas"
@@ -7823,7 +7843,7 @@ msgstr ""
 msgid "Dropshadow Settings"
 msgstr "Definições da sombra"
 
-#: src/modules/dropshadow/e_mod_config.c:106 src/modules/shot/e_mod_main.c:682
+#: src/modules/dropshadow/e_mod_config.c:106 src/modules/shot/e_mod_main.c:693
 msgid "Quality"
 msgstr "Qualidade"
 
@@ -7913,6 +7933,7 @@ msgstr "Sombra"
 
 #: src/modules/everything/e_mod_main.c:60
 #: src/modules/everything/e_mod_main.c:210
+#: src/modules/everything/evry_plugin.c:180
 msgid "Everything Launcher"
 msgstr "Everything - Lançador"
 
@@ -8120,9 +8141,178 @@ msgstr[1] "%d itens"
 msgid "No plugins loaded"
 msgstr "Sem plugins carregados"
 
+#: src/modules/everything/evry_plug_apps.c:1148
+#, fuzzy
+msgid "Exebuf"
+msgstr "Typebuf"
+
+#: src/modules/everything/evry_plug_apps.c:1163
+#: src/modules/everything/evry_plug_apps.c:1210
+#: src/modules/fileman/e_fwin.c:2148 src/modules/fileman/e_fwin.c:2511
+msgid "Open with..."
+msgstr "Abrir com..."
+
+#: src/modules/everything/evry_plug_apps.c:1176
+#, fuzzy
+msgid "Open File..."
+msgstr "Abrir com..."
+
+#: src/modules/everything/evry_plug_apps.c:1190
+#, fuzzy
+msgid "Edit Application Entry"
+msgstr "Prioridade das aplicações"
+
+#: src/modules/everything/evry_plug_apps.c:1197
+#, fuzzy
+msgid "New Application Entry"
+msgstr "Aplicação"
+
+#: src/modules/everything/evry_plug_apps.c:1204
+msgid "Run with Sudo"
+msgstr ""
+
+#: src/modules/everything/evry_plug_apps.c:1217
+#: src/modules/fileman/e_fwin.c:249
+#, fuzzy
+msgid "Open Terminal here"
+msgstr "Abrir terminal aqui"
+
+#: src/modules/everything/evry_plug_apps.c:1223
+#, fuzzy
+msgid "Run Executable"
+msgstr "Escolha o executável"
+
+#: src/modules/everything/evry_plug_apps.c:1303
+#: src/modules/everything/evry_plug_apps.c:1437
+msgid "Everything Applications"
+msgstr "Everything - Aplicações"
+
+#: src/modules/everything/evry_plug_apps.c:1334
+msgid "Commands"
+msgstr "Comandos"
+
+#: src/modules/everything/evry_plug_apps.c:1335
+msgid "Terminal Command"
+msgstr "Comando do terminal"
+
+#: src/modules/everything/evry_plug_apps.c:1340
+msgid "Sudo GUI"
+msgstr "Interface sudo"
+
+#: src/modules/everything/evry_plug_apps.c:1418
+#: src/modules/everything/evry_plug_collection.c:146
+#: src/modules/everything/evry_plug_files.c:1585
+msgid "Everything Plugin"
+msgstr "Everything - Plugin"
+
+#: src/modules/everything/evry_plug_calc.c:252
+msgid "Calculator"
+msgstr ""
+
 #: src/modules/everything/evry_plug_clipboard.c:33
 msgid "Copy to Clipboard"
 msgstr ""
+
+#: src/modules/everything/evry_plug_files.c:1316
+msgid "Copy To ..."
+msgstr ""
+
+#: src/modules/everything/evry_plug_files.c:1321
+#, fuzzy
+msgid "Move To ..."
+msgstr "Mover para..."
+
+#: src/modules/everything/evry_plug_files.c:1326
+#, fuzzy
+msgid "Move to Trash"
+msgstr "Mover para"
+
+#: src/modules/everything/evry_plug_files.c:1330
+msgid "Open Folder (EFM)"
+msgstr ""
+
+#: src/modules/everything/evry_plug_files.c:1334
+#, fuzzy
+msgid "Sort by Date"
+msgstr "Ordenar por tamanho"
+
+#: src/modules/everything/evry_plug_files.c:1339
+#, fuzzy
+msgid "Sort by Name"
+msgstr "Ordenar por tamanho"
+
+#: src/modules/everything/evry_plug_files.c:1372
+#: src/modules/everything/evry_plug_files.c:1384
+#, fuzzy
+msgid "Recent Files"
+msgstr "Renomear arquivo"
+
+#: src/modules/everything/evry_plug_files.c:1456
+#: src/modules/everything/evry_plug_files.c:1607
+msgid "Everything Files"
+msgstr "Everything - Arquivos"
+
+#: src/modules/everything/evry_plug_files.c:1483
+msgid "Show recent files"
+msgstr "Mostrar arquivos recentes"
+
+#: src/modules/everything/evry_plug_files.c:1487
+msgid "Search recent files"
+msgstr "Procurar arquivos recentes"
+
+#: src/modules/everything/evry_plug_files.c:1491
+msgid "Search cached files"
+msgstr "Procurar arquivos em cache"
+
+#: src/modules/everything/evry_plug_files.c:1495
+msgid "Cache visited directories"
+msgstr "Colocar diretórios visitados em cache"
+
+#: src/modules/everything/evry_plug_files.c:1499
+msgid "Clear cache"
+msgstr "Limpar cache"
+
+#: src/modules/everything/evry_plug_settings.c:187
+#, fuzzy
+msgid "Show Dialog"
+msgstr "Diálogo"
+
+#: src/modules/everything/evry_plug_text.c:63
+#: src/modules/everything/evry_plug_text.c:66
+#, fuzzy
+msgid "Text"
+msgstr "Mover texto"
+
+#: src/modules/everything/evry_plug_windows.c:430
+#, fuzzy
+msgid "Switch to Window"
+msgstr "Mudar para a área de trabalho da nova janela"
+
+#: src/modules/everything/evry_plug_windows.c:445
+#, fuzzy
+msgid "Toggle Fullscreen"
+msgstr "Tela cheia"
+
+#: src/modules/everything/evry_plug_windows.c:459
+#, fuzzy
+msgid "Send to Desktop"
+msgstr "Fixar na área de trabalho"
+
+#: src/modules/everything/evry_plugin.c:178
+#: src/modules/everything/evry_plugin.c:211
+#, fuzzy, c-format
+msgid "Show %s Plugin"
+msgstr "<i>Plugin</i>"
+
+#: src/modules/everything/evry_plugin.c:188
+#, fuzzy, c-format
+msgid "Browse %s"
+msgstr "Navegador"
+
+#: src/modules/everything/evry_plugin.c:213
+#, fuzzy
+msgid "Everything"
+msgstr "Executar Everything"
 
 #: src/modules/everything/evry_view_help.c:67
 msgid ""
@@ -8163,130 +8353,10 @@ msgstr ""
 "alterna os modos de visualização em lista<br><hilight>&lt;ctrl+3&gt;</"
 "hilight> alterna os modos de visualização em miniaturas"
 
-#: src/modules/everything/evry_plug_apps.c:1148
+#: src/modules/everything/evry_view_tabs.c:93
 #, fuzzy
-msgid "Exebuf"
-msgstr "Typebuf"
-
-#: src/modules/everything/evry_plug_apps.c:1163
-#, fuzzy
-msgid "Open With..."
-msgstr "Abrir com..."
-
-#: src/modules/everything/evry_plug_apps.c:1176
-#, fuzzy
-msgid "Open File..."
-msgstr "Abrir com..."
-
-#: src/modules/everything/evry_plug_apps.c:1190
-#, fuzzy
-msgid "Edit Application Entry"
-msgstr "Prioridade das aplicações"
-
-#: src/modules/everything/evry_plug_apps.c:1197
-#, fuzzy
-msgid "New Application Entry"
-msgstr "Aplicação"
-
-#: src/modules/everything/evry_plug_apps.c:1204
-msgid "Run with Sudo"
-msgstr ""
-
-#: src/modules/everything/evry_plug_apps.c:1210
-#: src/modules/fileman/e_fwin.c:2148 src/modules/fileman/e_fwin.c:2511
-msgid "Open with..."
-msgstr "Abrir com..."
-
-#: src/modules/everything/evry_plug_apps.c:1217
-#, fuzzy
-msgid "Open Terminal here"
-msgstr "Abrir terminal aqui"
-
-#: src/modules/everything/evry_plug_apps.c:1223
-#, fuzzy
-msgid "Run Executable"
-msgstr "Escolha o executável"
-
-#: src/modules/everything/evry_plug_apps.c:1303
-#: src/modules/everything/evry_plug_apps.c:1437
-msgid "Everything Applications"
-msgstr "Everything - Aplicações"
-
-#: src/modules/everything/evry_plug_apps.c:1334
-msgid "Commands"
-msgstr "Comandos"
-
-#: src/modules/everything/evry_plug_apps.c:1335
-msgid "Terminal Command"
-msgstr "Comando do terminal"
-
-#: src/modules/everything/evry_plug_apps.c:1340
-msgid "Sudo GUI"
-msgstr "Interface sudo"
-
-#: src/modules/everything/evry_plug_apps.c:1418
-#: src/modules/everything/evry_plug_files.c:1585
-msgid "Everything Plugin"
-msgstr "Everything - Plugin"
-
-#: src/modules/everything/evry_plug_calc.c:252
-msgid "Calculator"
-msgstr ""
-
-#: src/modules/everything/evry_plug_files.c:1372
-#: src/modules/everything/evry_plug_files.c:1384
-#, fuzzy
-msgid "Recent Files"
-msgstr "Renomear arquivo"
-
-#: src/modules/everything/evry_plug_files.c:1456
-#: src/modules/everything/evry_plug_files.c:1607
-msgid "Everything Files"
-msgstr "Everything - Arquivos"
-
-#: src/modules/everything/evry_plug_files.c:1483
-msgid "Show recent files"
-msgstr "Mostrar arquivos recentes"
-
-#: src/modules/everything/evry_plug_files.c:1487
-msgid "Search recent files"
-msgstr "Procurar arquivos recentes"
-
-#: src/modules/everything/evry_plug_files.c:1491
-msgid "Search cached files"
-msgstr "Procurar arquivos em cache"
-
-#: src/modules/everything/evry_plug_files.c:1495
-msgid "Cache visited directories"
-msgstr "Colocar diretórios visitados em cache"
-
-#: src/modules/everything/evry_plug_files.c:1499
-msgid "Clear cache"
-msgstr "Limpar cache"
-
-#: src/modules/everything/evry_plug_settings.c:187
-#, fuzzy
-msgid "Show Dialog"
-msgstr "Diálogo"
-
-#: src/modules/everything/evry_plug_windows.c:430
-#, fuzzy
-msgid "Switch to Window"
-msgstr "Mudar para a área de trabalho da nova janela"
-
-#: src/modules/everything/evry_plug_windows.c:445
-#, fuzzy
-msgid "Toggle Fullscreen"
-msgstr "Tela cheia"
-
-#: src/modules/everything/evry_plug_windows.c:459
-#, fuzzy
-msgid "Send to Desktop"
-msgstr "Fixar na área de trabalho"
-
-#: src/modules/fileman/e_fwin.c:249
-msgid "Open Terminal Here"
-msgstr "Abrir terminal aqui"
+msgid "Back"
+msgstr "Iluminação"
 
 #: src/modules/fileman/e_fwin.c:2039
 msgid "Other application..."
@@ -8419,7 +8489,7 @@ msgstr "Apagando arquivos permanentemente..."
 msgid "Unknown operation from slave %d"
 msgstr "Operação desconhecida de %d"
 
-#: src/modules/fileman/e_fwin_nav.c:412
+#: src/modules/fileman/e_fwin_nav.c:446
 msgid "EFM Navigation"
 msgstr "Navegação EFM"
 
@@ -8513,8 +8583,8 @@ msgid "Use Single Click"
 msgstr "Abrir com um clique"
 
 #: src/modules/fileman/e_mod_config.c:389
-msgid "Really Move"
-msgstr "Realmente mover"
+msgid "'cp+rm' instead of 'mv'"
+msgstr ""
 
 #: src/modules/fileman/e_mod_config.c:395
 msgid "Use Alternate Selection Modifiers"
@@ -8600,23 +8670,23 @@ msgstr "Explorar"
 msgid "0 listable items"
 msgstr "0 itens listáveis"
 
-#: src/modules/fileman/e_mod_menu.c:264
+#: src/modules/fileman/e_mod_menu.c:266
 msgid "GTK Bookmarks"
 msgstr "Marcadores GTK"
 
-#: src/modules/fileman/e_mod_menu.c:318
+#: src/modules/fileman/e_mod_menu.c:320
 msgid "Current Directory"
 msgstr "Diretório atual"
 
-#: src/modules/fileman/e_mod_menu.c:326
+#: src/modules/fileman/e_mod_menu.c:328
 msgid "Home"
 msgstr "Pasta pessoal"
 
-#: src/modules/fileman/e_mod_menu.c:356
+#: src/modules/fileman/e_mod_menu.c:358
 msgid "Root"
 msgstr "Raiz"
 
-#: src/modules/fileman/e_mod_menu.c:396
+#: src/modules/fileman/e_mod_menu.c:398
 msgid "Navigate..."
 msgstr "Explorar..."
 
@@ -8677,20 +8747,20 @@ msgstr "Imagem de fundo"
 msgid "Background Options"
 msgstr "Opções de fundo"
 
-#: src/modules/gadman/e_mod_gadman.c:990
+#: src/modules/gadman/e_mod_gadman.c:992
 msgid "Begin move/resize"
 msgstr "Mover/redimensionar"
 
-#: src/modules/gadman/e_mod_gadman.c:1020
+#: src/modules/gadman/e_mod_gadman.c:1022
 #, fuzzy
 msgid "Free"
 msgstr "Livre"
 
-#: src/modules/gadman/e_mod_gadman.c:1044
+#: src/modules/gadman/e_mod_gadman.c:1046
 msgid "Appearance"
 msgstr "Aparência"
 
-#: src/modules/gadman/e_mod_gadman.c:1065
+#: src/modules/gadman/e_mod_gadman.c:1067
 msgid "Add other gadgets"
 msgstr "Adicionar mais gadgets"
 
@@ -9071,31 +9141,31 @@ msgstr ""
 "objeto de manipulação pelos menus de contexto.<br>Este botão só funciona nos "
 "alertas."
 
-#: src/modules/pager/e_mod_main.c:2947
+#: src/modules/pager/e_mod_main.c:2922
 msgid "Show Pager Popup"
 msgstr "Mostrar alerta do paginador"
 
-#: src/modules/pager/e_mod_main.c:2954 src/modules/pager/e_mod_main.c:2990
+#: src/modules/pager/e_mod_main.c:2929 src/modules/pager/e_mod_main.c:2965
 msgid "Popup Desk Right"
 msgstr "Na área de trabalho à direita"
 
-#: src/modules/pager/e_mod_main.c:2956 src/modules/pager/e_mod_main.c:2991
+#: src/modules/pager/e_mod_main.c:2931 src/modules/pager/e_mod_main.c:2966
 msgid "Popup Desk Left"
 msgstr "Na área de trabalho à esquerda"
 
-#: src/modules/pager/e_mod_main.c:2958 src/modules/pager/e_mod_main.c:2992
+#: src/modules/pager/e_mod_main.c:2933 src/modules/pager/e_mod_main.c:2967
 msgid "Popup Desk Up"
 msgstr "Na área de trabalho em cima"
 
-#: src/modules/pager/e_mod_main.c:2960 src/modules/pager/e_mod_main.c:2993
+#: src/modules/pager/e_mod_main.c:2935 src/modules/pager/e_mod_main.c:2968
 msgid "Popup Desk Down"
 msgstr "Na área de trabalho em baixo"
 
-#: src/modules/pager/e_mod_main.c:2962 src/modules/pager/e_mod_main.c:2994
+#: src/modules/pager/e_mod_main.c:2937 src/modules/pager/e_mod_main.c:2969
 msgid "Popup Desk Next"
 msgstr "Na área de trabalho seguinte"
 
-#: src/modules/pager/e_mod_main.c:2964 src/modules/pager/e_mod_main.c:2995
+#: src/modules/pager/e_mod_main.c:2939 src/modules/pager/e_mod_main.c:2970
 msgid "Popup Desk Previous"
 msgstr "Na área de trabalho anterior"
 
@@ -9298,17 +9368,18 @@ msgid "Check for available updates"
 msgstr "Procurar atualizações"
 
 #: src/modules/wizard/page_170.c:32
+#, fuzzy
 msgid ""
-"Enlightenment can check for new<br>versions, updates, securiity "
+"Enlightenment can check for new<br>versions, updates, security "
 "and<br>bugfixes, as well as available add-ons.<br><br>This is very useful, "
-"because it lets you<br>you know about available bug fixes and<br>security "
-"fixes when they happen. As a<br>bi-product of this, Enlightenment "
-"will<br>connect to enlightenment.org and transmit<br>some information as a "
-"result much like any<br>web browser might do. No personal "
-"information<br>such as username, password or any personal<br>files will be "
-"transmitted. If you do not like<br>this, please disable this below. It is "
-"highly<br>advised that you do not disable this as it<br>may leave you "
-"vulnerable or having to live<br>with bugs."
+"because it lets<br>you know about available bug fixes and<br>security fixes "
+"when they happen. As a<br>bi-product of this, Enlightenment will<br>connect "
+"to enlightenment.org and transmit<br>some information as a result much like "
+"any<br>web browser might do. No personal information<br>such as username, "
+"password or any personal<br>files will be transmitted. If you do not "
+"like<br>this, please disable this below. It is highly<br>advised that you do "
+"not disable this as it<br>may leave you vulnerable or having to live<br>with "
+"bugs."
 msgstr ""
 "O Enlightenment pode procurar novas versões e atualizações para o ambiente "
 "de trabalho e para os extras.<br><br>Esta funcionalidade pode ser útil, pois "
@@ -9431,9 +9502,22 @@ msgstr "Volume alterado"
 msgid "Mixer Settings Updated"
 msgstr "As definições do gerenciador de som foram atualizadas"
 
-#: src/modules/mixer/e_mod_main.c:1349
+#: src/modules/mixer/e_mod_main.c:1358
 msgid "Mixer Module"
 msgstr "Módulo gerenciador de som"
+
+#: src/modules/mixer/e_mod_main.c:1393
+msgid "Increase Volume"
+msgstr ""
+
+#: src/modules/mixer/e_mod_main.c:1394
+msgid "Decrease Volume"
+msgstr ""
+
+#: src/modules/mixer/e_mod_main.c:1395
+#, fuzzy
+msgid "Mute Volume"
+msgstr "Novo volume"
 
 #: src/modules/connman/e_mod_main.c:252
 msgid "Missing Application"
@@ -9451,23 +9535,27 @@ msgstr ""
 msgid "Wifi On"
 msgstr "Rede sem fios conectada"
 
-#: src/modules/systray/e_mod_main.c:900
-msgid "Another systray exists"
-msgstr "Já existe uma bandeja de sistema"
-
-#: src/modules/systray/e_mod_main.c:901
-msgid "There can be only one systray gadget and another one already exists."
-msgstr "Só pode existir um gadget como bandeja de sistema e você já a tem"
-
-#: src/modules/systray/e_mod_main.c:909
+#: src/modules/systray/e_mod_main.c:497 src/modules/systray/e_mod_main.c:935
 msgid "Systray Error"
 msgstr "Erro na bandeja do sistema"
 
-#: src/modules/systray/e_mod_main.c:910
+#: src/modules/systray/e_mod_main.c:498
+msgid "Systray cannot set its background invisible to match its shelf."
+msgstr ""
+
+#: src/modules/systray/e_mod_main.c:926
+msgid "Another systray exists"
+msgstr "Já existe uma bandeja de sistema"
+
+#: src/modules/systray/e_mod_main.c:927
+msgid "There can be only one systray gadget and another one already exists."
+msgstr "Só pode existir um gadget como bandeja de sistema e você já a tem"
+
+#: src/modules/systray/e_mod_main.c:936
 msgid "Systray cannot work in a shelf that is set to below everything."
 msgstr "A bandeja não funciona num painel que esteja por baixo de tudo"
 
-#: src/modules/systray/e_mod_main.c:1121
+#: src/modules/systray/e_mod_main.c:1147
 msgid "Systray"
 msgstr "Bandeja do sistema"
 
@@ -9510,96 +9598,96 @@ msgstr "Erro - Falha ao enviar"
 msgid "Upload failed with status code:<br>%i"
 msgstr "Ocorreu um ero ao enviar. Código:<br>%i"
 
-#: src/modules/shot/e_mod_main.c:439
+#: src/modules/shot/e_mod_main.c:450
 msgid "Error - Can't create file"
 msgstr "Erro - Arquivo não criado"
 
-#: src/modules/shot/e_mod_main.c:440
+#: src/modules/shot/e_mod_main.c:451
 #, c-format
 msgid "Cannot create temporary file '%s': %s"
 msgstr "Não foi possível criar o arquivo temporário %s: %s"
 
-#: src/modules/shot/e_mod_main.c:458
+#: src/modules/shot/e_mod_main.c:469
 msgid "Error - Can't open file"
 msgstr "Erro - Não foi possível abrir o arquivo"
 
-#: src/modules/shot/e_mod_main.c:459
+#: src/modules/shot/e_mod_main.c:470
 #, c-format
 msgid "Cannot open temporary file '%s': %s"
 msgstr "Não foi possível abrir o arquivo temporário %s: %s"
 
-#: src/modules/shot/e_mod_main.c:467
+#: src/modules/shot/e_mod_main.c:478
 msgid "Error - Bad size"
 msgstr "Erro - Tamanho inválido"
 
-#: src/modules/shot/e_mod_main.c:468
+#: src/modules/shot/e_mod_main.c:479
 #, c-format
 msgid "Cannot get size of file '%s'"
 msgstr "Não foi possível obter o tamanho do arquivo %s"
 
-#: src/modules/shot/e_mod_main.c:478
+#: src/modules/shot/e_mod_main.c:489
 msgid "Error - Can't allocate memory"
 msgstr "Erro - Não consegue alocar memória"
 
-#: src/modules/shot/e_mod_main.c:479
+#: src/modules/shot/e_mod_main.c:490
 #, c-format
 msgid "Cannot allocate memory for picture: %s"
 msgstr "Não foi possível alocar memória para a imagem: %s"
 
-#: src/modules/shot/e_mod_main.c:486
+#: src/modules/shot/e_mod_main.c:497
 msgid "Error - Can't read picture"
 msgstr "Erro - Não consegue ler imagem"
 
-#: src/modules/shot/e_mod_main.c:487
+#: src/modules/shot/e_mod_main.c:498
 msgid "Cannot read picture"
 msgstr "Não foi possível ler a imagem"
 
-#: src/modules/shot/e_mod_main.c:508
+#: src/modules/shot/e_mod_main.c:519
 msgid "Uploading screenshot"
 msgstr "Enviando captura"
 
-#: src/modules/shot/e_mod_main.c:513
+#: src/modules/shot/e_mod_main.c:524
 msgid "Uploading ..."
 msgstr "Enviando..."
 
-#: src/modules/shot/e_mod_main.c:518
+#: src/modules/shot/e_mod_main.c:529
 msgid "Screenshot is available at this location:"
 msgstr "A captura está disponível neste local:"
 
-#: src/modules/shot/e_mod_main.c:527
+#: src/modules/shot/e_mod_main.c:538
 msgid "Hide"
 msgstr "Ocultar"
 
-#: src/modules/shot/e_mod_main.c:630
+#: src/modules/shot/e_mod_main.c:641
 msgid "Where to put Screenshot..."
 msgstr "Local para gravar a captura..."
 
-#: src/modules/shot/e_mod_main.c:686
+#: src/modules/shot/e_mod_main.c:697
 msgid "Perfect"
 msgstr "Perfeita"
 
-#: src/modules/shot/e_mod_main.c:763
+#: src/modules/shot/e_mod_main.c:774
 msgid "Share"
 msgstr "Compartilhar"
 
-#: src/modules/shot/e_mod_main.c:900 src/modules/shot/e_mod_main.c:948
+#: src/modules/shot/e_mod_main.c:911 src/modules/shot/e_mod_main.c:959
 msgid "Take Shot"
 msgstr "Obter captura de tela"
 
-#: src/modules/shot/e_mod_main.c:911 src/modules/shot/e_mod_main.c:941
-#: src/modules/shot/e_mod_main.c:952 src/modules/shot/e_mod_main.c:978
+#: src/modules/shot/e_mod_main.c:922 src/modules/shot/e_mod_main.c:952
+#: src/modules/shot/e_mod_main.c:963 src/modules/shot/e_mod_main.c:989
 msgid "Take Screenshot"
 msgstr "Captura de tela"
 
-#: src/modules/shot/e_mod_main.c:929
+#: src/modules/shot/e_mod_main.c:940
 msgid "Shot Error"
 msgstr "Erro"
 
-#: src/modules/shot/e_mod_main.c:930
+#: src/modules/shot/e_mod_main.c:941
 msgid "Cannot initialize network"
 msgstr "Não foi possível iniciar a rede"
 
-#: src/modules/tasks/e_mod_main.c:318 src/modules/tasks/e_mod_main.c:723
+#: src/modules/tasks/e_mod_main.c:318 src/modules/tasks/e_mod_main.c:722
 msgid "Tasks"
 msgstr "Tarefas"
 
@@ -9656,9 +9744,9 @@ msgstr "Número de colunas por área de trabalho (0 para inativo):"
 msgid "Tiling Configuration"
 msgstr "Configuração"
 
-#: src/modules/tiling/e_mod_tiling.c:3950
-#: src/modules/tiling/e_mod_tiling.c:4014
-#: src/modules/tiling/e_mod_tiling.c:4152
+#: src/modules/tiling/e_mod_tiling.c:4066
+#: src/modules/tiling/e_mod_tiling.c:4130
+#: src/modules/tiling/e_mod_tiling.c:4268
 msgid "Tiling"
 msgstr "Mosaico"
 
@@ -9678,27 +9766,27 @@ msgstr "Modelos"
 msgid "Label only"
 msgstr "Somente texto"
 
-#: src/modules/xkbswitch/e_mod_config.c:480
+#: src/modules/xkbswitch/e_mod_config.c:481
 msgid "Add New Configuration"
 msgstr "Adicionar nova configuração"
 
-#: src/modules/xkbswitch/e_mod_config.c:493
+#: src/modules/xkbswitch/e_mod_config.c:494
 msgid "Available"
 msgstr "Disponível"
 
-#: src/modules/xkbswitch/e_mod_config.c:500
+#: src/modules/xkbswitch/e_mod_config.c:501
 msgid "Model"
 msgstr "Modelo"
 
-#: src/modules/xkbswitch/e_mod_config.c:507
+#: src/modules/xkbswitch/e_mod_config.c:508
 msgid "Variant"
 msgstr "Variante"
 
-#: src/modules/notification/e_mod_main.c:64
+#: src/modules/notification/e_mod_main.c:66
 msgid "Enter Presentation Mode"
 msgstr "Entrar no modo de apresentação"
 
-#: src/modules/notification/e_mod_main.c:65
+#: src/modules/notification/e_mod_main.c:67
 msgid ""
 "Enlightenment is in <b>presentation</b> mode.<br>During presentation mode, "
 "screen saver, lock and power saving will be disabled so you are not "
@@ -9708,11 +9796,11 @@ msgstr ""
 "para que não seja incomodado, os serviços de bloqueio, economia de energia e "
 "proteção de tela estarão inativos."
 
-#: src/modules/notification/e_mod_main.c:71
+#: src/modules/notification/e_mod_main.c:73
 msgid "Exited Presentation Mode"
 msgstr "Saiu do modo de apresentação"
 
-#: src/modules/notification/e_mod_main.c:72
+#: src/modules/notification/e_mod_main.c:74
 msgid ""
 "Presentation mode is over.<br>Now screen saver, lock and power saving "
 "settings will be restored."
@@ -9720,11 +9808,11 @@ msgstr ""
 "Terminou o modo de apresentação.<br> Os serviços de bloqueio, economia de "
 "energia e proteção de tela vão ser restaurados."
 
-#: src/modules/notification/e_mod_main.c:87
+#: src/modules/notification/e_mod_main.c:89
 msgid "Enter Offline Mode"
 msgstr "Entrar no modo \"offline\""
 
-#: src/modules/notification/e_mod_main.c:88
+#: src/modules/notification/e_mod_main.c:90
 msgid ""
 "Enlightenment is in <b>offline</b> mode.<br>During offline mode, modules "
 "that use network will stop polling remote services."
@@ -9732,11 +9820,11 @@ msgstr ""
 "O Enlightenment está no modo <b>\"offline\".</b> Neste modo, os módulos que "
 "utilizem a rede irão parar de analisar os serviços remotos."
 
-#: src/modules/notification/e_mod_main.c:94
+#: src/modules/notification/e_mod_main.c:96
 msgid "Exited Offline Mode"
 msgstr "Saiu do modo \"offline\""
 
-#: src/modules/notification/e_mod_main.c:95
+#: src/modules/notification/e_mod_main.c:97
 msgid ""
 "Now in <b>online</b> mode.<br>Now modules that use network will resume "
 "regular tasks."
@@ -9744,15 +9832,15 @@ msgstr ""
 "Terminou o modo <b>\"offline\"</b>. Os módulos que utilizam a rede irão "
 "retomar os serviços."
 
-#: src/modules/notification/e_mod_main.c:170
+#: src/modules/notification/e_mod_main.c:172
 msgid "Notification Module"
 msgstr "Módulo de notificações"
 
-#: src/modules/notification/e_mod_main.c:189
+#: src/modules/notification/e_mod_main.c:191
 msgid "Error During DBus Init!"
 msgstr "Erro ao iniciar DBus!"
 
-#: src/modules/notification/e_mod_main.c:190
+#: src/modules/notification/e_mod_main.c:192
 msgid ""
 "Error during DBus init! Please check if dbus is correctly installed and "
 "running."
@@ -9859,8 +9947,89 @@ msgstr "Utilizar geometria de monitores múltiplos"
 #~ msgid "Maximize right"
 #~ msgstr "Maximizar à direita"
 
+#~ msgid "Read / Write"
+#~ msgstr "Leitura/Escrita"
+
+#~ msgid ""
+#~ "Your screen does not support OpenGL.<br>Falling back to software engine."
+#~ msgstr ""
+#~ "A sua tela não tem suporte a OpenGL<br>Utilizando mecanismo alternativo"
+
+#~ msgid "Keep hidden windows"
+#~ msgstr "Manter janelas ocultas"
+
+#~ msgid "Maximum hidden pixels"
+#~ msgstr "Máximo de pixeis ocultos"
+
+#~ msgid "1M"
+#~ msgstr "1M"
+
+#~ msgid "2M"
+#~ msgstr "2M"
+
+#~ msgid "4M"
+#~ msgstr "4M"
+
+#~ msgid "8M"
+#~ msgstr "8M"
+
+#~ msgid "16M"
+#~ msgstr "16M"
+
+#~ msgid "32M"
+#~ msgstr "32M"
+
+#~ msgid "64M"
+#~ msgstr "64M"
+
+#~ msgid "128M"
+#~ msgstr "128M"
+
+#~ msgid "256M"
+#~ msgstr "256M"
+
+#~ msgid "Min hidden"
+#~ msgstr "Mínimo oculto"
+
+#~ msgid "30 Seconds"
+#~ msgstr "30 segundos"
+
+#~ msgid "1 Minute"
+#~ msgstr "1 minuto"
+
+#~ msgid "5 Minutes"
+#~ msgstr "5 minutos"
+
+#~ msgid "30 Minutes"
+#~ msgstr "30 minutos"
+
+#~ msgid "2 Hours"
+#~ msgstr "2 horas"
+
+#~ msgid "10 Hours"
+#~ msgstr "10 horas"
+
+#~ msgid "Forever"
+#~ msgstr "Eternamente"
+
+#~ msgid "Max hidden"
+#~ msgstr "Máximo oculto"
+
+#~ msgid "Timeouts"
+#~ msgstr "Limites"
+
 #~ msgid "Online..."
 #~ msgstr "Online..."
+
+#, fuzzy
+#~ msgid "Open With..."
+#~ msgstr "Abrir com..."
+
+#~ msgid "Open Terminal Here"
+#~ msgstr "Abrir terminal aqui"
+
+#~ msgid "Really Move"
+#~ msgstr "Realmente mover"
 
 #~ msgid "Show popup on urgent window"
 #~ msgstr "Mostrar alerta nas janelas urgentes"
@@ -10176,9 +10345,6 @@ msgstr "Utilizar geometria de monitores múltiplos"
 
 #~ msgid "offline"
 #~ msgstr "offline"
-
-#~ msgid "Move To..."
-#~ msgstr "Mover para..."
 
 #~ msgid "Move By..."
 #~ msgstr "Mover por..."

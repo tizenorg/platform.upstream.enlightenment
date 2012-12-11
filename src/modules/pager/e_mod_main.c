@@ -2050,32 +2050,23 @@ _pager_inst_cb_scroll(void *data)
 static void
 _pager_update_drop_position(Pager *p, Evas_Coord x, Evas_Coord y)
 {
-   Pager_Desk *pd, *pd2;
-   Eina_List *l;
+   Pager_Desk *pd;
 
    p->dnd_x = x;
    p->dnd_y = y;
    pd = _pager_desk_at_coord(p, x, y);
    if (pd == p->active_drop_pd) return;
-   for (l = p->desks; l; l = l->next)
-     {
-        pd2 = l->data;
-        if (pd == pd2)
-          edje_object_signal_emit(pd2->o_desk, "e,action,drag,in", "e");
-        else if (pd2 == p->active_drop_pd)
-          edje_object_signal_emit(pd2->o_desk, "e,action,drag,out", "e");
-     }
+   if (pd)
+     edje_object_signal_emit(pd->o_desk, "e,action,drag,in", "e");
+   if (p->active_drop_pd)
+     edje_object_signal_emit(p->active_drop_pd->o_desk, "e,action,drag,out", "e");
    p->active_drop_pd = pd;
 }
 
 static void
-_pager_drop_cb_enter(void *data, const char *type __UNUSED__, void *event_info)
+_pager_drop_cb_enter(void *data, const char *type __UNUSED__, void *event_info EINA_UNUSED)
 {
-   E_Event_Dnd_Enter *ev;
-   Pager *p;
-
-   ev = event_info;
-   p = data;
+   Pager *p = data;
 
    /* FIXME this fixes a segv, but the case is not easy
     * reproduceable. this makes no sense either since
@@ -2084,13 +2075,8 @@ _pager_drop_cb_enter(void *data, const char *type __UNUSED__, void *event_info)
     * so this must be an issue with e_dnd code... i guess */
    if (act_popup) p = act_popup->pager;
 
-   _pager_update_drop_position(p, ev->x, ev->y);
-
    if (p->inst)
-     {
-        e_gadcon_client_autoscroll_cb_set(p->inst->gcc, _pager_inst_cb_scroll, p);
-        e_gadcon_client_autoscroll_update(p->inst->gcc, ev->x, ev->y);
-     }
+     e_gadcon_client_autoscroll_cb_set(p->inst->gcc, _pager_inst_cb_scroll, p);
 }
 
 static void
@@ -2113,24 +2099,13 @@ _pager_drop_cb_move(void *data, const char *type __UNUSED__, void *event_info)
 static void
 _pager_drop_cb_leave(void *data, const char *type __UNUSED__, void *event_info __UNUSED__)
 {
-   Pager *p;
-   Eina_List *l;
-
-   p = data;
+   Pager *p = data;
 
    if (act_popup) p = act_popup->pager;
 
-   for (l = p->desks; l && p->active_drop_pd; l = l->next)
-     {
-        Pager_Desk *pd;
-
-        pd = l->data;
-        if (pd == p->active_drop_pd)
-          {
-             edje_object_signal_emit(pd->o_desk, "e,action,drag,out", "e");
-             p->active_drop_pd = NULL;
-          }
-     }
+   if (p->active_drop_pd)
+     edje_object_signal_emit(p->active_drop_pd->o_desk, "e,action,drag,out", "e");
+   p->active_drop_pd = NULL;
 
    if (p->inst) e_gadcon_client_autoscroll_cb_set(p->inst->gcc, NULL, NULL);
 }
@@ -2215,9 +2190,9 @@ _pager_drop_cb_drop(void *data, const char *type, void *event_info)
           }
      }
 
-   for (l = p->desks; l && p->active_drop_pd; l = l->next)
+   EINA_LIST_FOREACH(p->desks, l, pd)
      {
-        pd = l->data;
+        if (!p->active_drop_pd) break;
         if (pd == p->active_drop_pd)
           {
              edje_object_signal_emit(pd->o_desk, "e,action,drag,out", "e");
@@ -2384,10 +2359,10 @@ _pager_desk_cb_drag_finished(E_Drag *drag, int dropped)
         if (!pd->desk) return;
         zone = e_util_zone_current_get(e_manager_current_get());
         desk = e_desk_current_get(zone);
-        for (l = pagers; l && !pd2; l = l->next)
+        EINA_LIST_FOREACH(pagers, l, p)
           {
-             p = l->data;
              pd2 = _pager_desk_find(p, desk);
+             if (pd2) break;
           }
         _pager_desk_switch(pd, pd2);
      }

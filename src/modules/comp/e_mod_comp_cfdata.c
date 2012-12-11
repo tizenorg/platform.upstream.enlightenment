@@ -32,7 +32,7 @@ e_mod_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd)
 #define D *conf_edd
    E_CONFIG_VAL(D, T, shadow_style, STR);
    E_CONFIG_VAL(D, T, engine, INT);
-   E_CONFIG_VAL(D, T, max_unmapped_pixels, INT);
+   //E_CONFIG_VAL(D, T, max_unmapped_pixels, INT);
    E_CONFIG_VAL(D, T, max_unmapped_time, INT);
    E_CONFIG_VAL(D, T, min_unmapped_time, INT);
    E_CONFIG_VAL(D, T, fps_average_range, INT);
@@ -46,7 +46,7 @@ e_mod_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd)
    E_CONFIG_VAL(D, T, grab, UCHAR);
    E_CONFIG_VAL(D, T, vsync, UCHAR);
    E_CONFIG_VAL(D, T, swap_mode, UCHAR);
-   E_CONFIG_VAL(D, T, keep_unmapped, UCHAR);
+   //E_CONFIG_VAL(D, T, keep_unmapped, UCHAR);
    E_CONFIG_VAL(D, T, send_flush, UCHAR);
    E_CONFIG_VAL(D, T, send_dump, UCHAR);
    E_CONFIG_VAL(D, T, nocomp_fs, UCHAR);
@@ -88,7 +88,7 @@ e_mod_comp_cfdata_config_new(void)
    cfg->keep_unmapped = 1;
    cfg->send_flush = 1; // implement
    cfg->send_dump = 1; // implement
-   cfg->nocomp_fs = 1; // buggy
+   cfg->nocomp_fs = 0; // buggy
    cfg->smooth_windows = 0; // 1 if gl, 0 if not
    cfg->first_draw_delay = 0.15;
 

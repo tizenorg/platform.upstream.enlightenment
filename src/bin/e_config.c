@@ -1395,7 +1395,7 @@ e_config_load(void)
      E_CONFIG_LIMIT(e_config->dpms_suspend_timeout, 30, 5400);
      E_CONFIG_LIMIT(e_config->dpms_off_timeout, 30, 5400);
 
-     E_CONFIG_LIMIT(e_config->backlight.timer, 30, 5400);
+     E_CONFIG_LIMIT(e_config->backlight.timer, 1, 3600);
 
      E_CONFIG_LIMIT(e_config->screensaver_timeout, 30, 5400);
      E_CONFIG_LIMIT(e_config->screensaver_interval, 0, 5400);
@@ -1447,6 +1447,9 @@ e_config_load(void)
      E_CONFIG_LIMIT(e_config->border_keyboard.resize.dy, 1, 255);
 
      E_CONFIG_LIMIT(e_config->multiscreen_flip, 0, 1);
+
+     if (!e_config->icon_theme)
+       e_config->icon_theme = eina_stringshare_add("hicolor"); // FDO default
 
      /* FIXME: disabled auto apply because it causes problems */
      e_config->cfgdlg_auto_apply = 0;

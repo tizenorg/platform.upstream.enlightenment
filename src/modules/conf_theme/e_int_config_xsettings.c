@@ -55,7 +55,7 @@ e_int_config_xsettings(E_Container *con, const char *params __UNUSED__)
    v->basic.apply_cfdata = _basic_apply;
    v->basic.check_changed = _basic_check_changed;
 
-   cfd = e_config_dialog_new(con, _("GTK Application Theme Settings"),
+   cfd = e_config_dialog_new(con, _("Application Theme Settings"),
                              "E", "appearance/xsettings",
                              "preferences-desktop-theme", 0, v, NULL);
    return cfd;
@@ -150,7 +150,7 @@ _basic_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
    if (cfdata->icon_overrides || cfdata->match_e17_icon_theme)
      e_config->icon_theme = eina_stringshare_ref(cfdata->icon_theme);
    else
-     e_config->icon_theme = NULL;
+     e_config->icon_theme = eina_stringshare_add("hicolor"); // FDO default
 
    e_config->icon_theme_overrides = !!cfdata->icon_overrides;
    e_config->xsettings.match_e17_icon_theme = cfdata->match_e17_icon_theme;
