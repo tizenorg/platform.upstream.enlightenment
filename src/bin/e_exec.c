@@ -312,7 +312,7 @@ _e_exec_cb_exec(void *data, Efreet_Desktop *desktop, char *exec, int remaining)
    E_Exec_Launch *launch;
    Eina_List *l, *lnew;
    Ecore_Exe *exe = NULL;
-   char *penv_display;
+   const char *penv_display;
    char buf[4096];
 
    launch = data;
@@ -330,7 +330,6 @@ _e_exec_cb_exec(void *data, Efreet_Desktop *desktop, char *exec, int remaining)
    if (++startup_id < 1) startup_id = 1;
    /* save previous env vars we need to save */
    penv_display = getenv("DISPLAY");
-   if (penv_display) penv_display = strdup(penv_display);
    if ((penv_display) && (launch->zone))
      {
         const char *p1, *p2;
@@ -346,7 +345,7 @@ _e_exec_cb_exec(void *data, Efreet_Desktop *desktop, char *exec, int remaining)
         /* Check for insane length for DISPLAY env */
         if (penv_display_length + 32 > 4096)
           {
-             E_FREE(inst);
+             free(inst);
              return NULL;
           }
 
@@ -396,7 +395,7 @@ _e_exec_cb_exec(void *data, Efreet_Desktop *desktop, char *exec, int remaining)
      {
         if (!getcwd(buf, sizeof(buf)))
           {
-             E_FREE(inst);
+             free(inst);
              e_util_dialog_show
                (_("Run Error"),
                    _("Enlightenment was unable to get current directory"));
@@ -404,7 +403,7 @@ _e_exec_cb_exec(void *data, Efreet_Desktop *desktop, char *exec, int remaining)
           }
         if (chdir(desktop->path))
           {
-             E_FREE(inst);
+             free(inst);
              e_util_dialog_show
                (_("Run Error"),
                    _("Enlightenment was unable to change to directory:<br>"
@@ -422,7 +421,7 @@ _e_exec_cb_exec(void *data, Efreet_Desktop *desktop, char *exec, int remaining)
                      "<br>"
                      "%s"),
                    buf);
-             E_FREE(inst);
+             free(inst);
              return NULL;
           }
      }
@@ -462,13 +461,10 @@ _e_exec_cb_exec(void *data, Efreet_Desktop *desktop, char *exec, int remaining)
      }
 
    if (penv_display)
-     {
-        e_util_env_set("DISPLAY", penv_display);
-        free(penv_display);
-     }
+     e_util_env_set("DISPLAY", penv_display);
    if (!exe)
      {
-        E_FREE(inst);
+        free(inst);
         e_util_dialog_show(_("Run Error"),
                            _("Enlightenment was unable to fork a child process:<br>"
                              "<br>"

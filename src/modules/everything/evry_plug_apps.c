@@ -999,8 +999,6 @@ _new_app_action(Evry_Action *act)
           desktop->comment = strdup(app->desktop->comment);
         if (app->desktop->generic_name)
           desktop->generic_name = strdup(app->desktop->generic_name);
-        if (app->desktop->generic_name)
-          desktop->generic_name = strdup(app->desktop->generic_name);
         if (app->desktop->exec)
           desktop->exec = strdup(app->desktop->exec);
         if (app->desktop->icon)
@@ -1033,17 +1031,18 @@ _open_term_action(Evry_Action *act)
 
    if (dir)
      {
-        if (!getcwd(cwd, sizeof(cwd)))
-          return 0;
-        if (chdir(dir))
-          return 0;
+        if ((!getcwd(cwd, sizeof(cwd))) || (chdir(dir)))
+          {
+             free(dir);
+             return 0;
+          }
 
         tmp = E_NEW(Evry_Item_App, 1);
         tmp->file = _conf->cmd_terminal;
 
         ret = evry->util_exec_app(EVRY_ITEM(tmp), NULL);
-        E_FREE(tmp);
-        E_FREE(dir);
+        free(tmp);
+        free(dir);
         if (chdir(cwd))
           return 0;
      }
@@ -1649,6 +1648,7 @@ _exe_path_list()
           }
         if (pp > last)
           exe_path = eina_list_append(exe_path, strdup(last));
+        free(path);
      }
 
    if (changed)

@@ -198,7 +198,8 @@ _ilist_fill(E_Config_Dialog_Data *cfdata)
         if (!desk)
           {
              e_prefix_data_snprintf(buf, sizeof(buf), "data/config/%s/", prof);
-             pdir = strdupa(buf);
+             free(pdir);
+             pdir = strdup(buf);
              if (pdir)
                {
                   snprintf(buf, sizeof(buf), "%s/profile.desktop", pdir);
@@ -222,6 +223,7 @@ _ilist_fill(E_Config_Dialog_Data *cfdata)
         ic = e_util_icon_add(buf, evas);
         e_widget_ilist_append(cfdata->o_list, ic, label, _ilist_cb_selected, cfdata, prof);
         free(prof);
+        free(pdir);
         if (desk) efreet_desktop_free(desk);
      }
    if (profiles) eina_list_free(profiles);
@@ -274,6 +276,7 @@ _ilist_cb_selected(void *data)
         else
           e_widget_disabled_set(cfdata->o_reset, 1);
 
+        free(pdir);
         pdir = strdup(buf);
         if (pdir)
           {
@@ -294,6 +297,7 @@ _ilist_cb_selected(void *data)
    else
      e_widget_textblock_markup_set(cfdata->o_text, _("Unknown"));
    if (desk) efreet_desktop_free(desk);
+   free(pdir);
 }
 
 static void
@@ -323,10 +327,10 @@ _cb_delete(void *data, void *data2 __UNUSED__)
    Del_Profile_Confirm_Data *d;
    char buf[4096];
 
+   if (!data) return;
+
    d = E_NEW(Del_Profile_Confirm_Data, 1);
-   if (!d) return;
    d->cfdata = data;
-   if (!d->cfdata) return;
 
    snprintf(buf, sizeof(buf),
             _("You want to delete the \"%s\" profile.<br><br>"

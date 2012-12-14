@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: e.HEAD\n"
 "Report-Msgid-Bugs-To: enlightenment-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2012-12-11 15:02+0000\n"
+"POT-Creation-Date: 2012-12-14 16:17+0000\n"
 "PO-Revision-Date: 2009-12-13 21:16+0000\n"
 "Last-Translator: Sergio Gavrylov <sergiovana@bigmir.net>\n"
 "Language-Team: Ukrainian <translation@linux.org.ua>\n"
@@ -21,12 +21,12 @@ msgid "About Enlightenment"
 msgstr "Про Enlightenment"
 
 #: src/bin/e_about.c:20 src/bin/e_actions.c:2987 src/bin/e_config_dialog.c:288
-#: src/bin/e_fm.c:1030 src/bin/e_int_border_menu.c:194
+#: src/bin/e_fm.c:1051 src/bin/e_int_border_menu.c:194
 #: src/bin/e_int_border_prop.c:81 src/bin/e_theme_about.c:24
 #: src/modules/conf/e_conf.c:179
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:877
 #: src/modules/everything/evry_plug_windows.c:452
-#: src/modules/fileman/e_fwin.c:2514 src/modules/mixer/app_mixer.c:520
+#: src/modules/fileman/e_fwin.c:2513 src/modules/mixer/app_mixer.c:520
 msgid "Close"
 msgstr "Закрити"
 
@@ -74,7 +74,7 @@ msgstr "Вбити"
 #: src/bin/e_actions.c:377 src/bin/e_actions.c:2128 src/bin/e_actions.c:2222
 #: src/bin/e_actions.c:2282 src/bin/e_actions.c:2342 src/bin/e_actions.c:2407
 #: src/bin/e_actions.c:2472 src/bin/e_confirm_dialog.c:53
-#: src/bin/e_desklock.c:1313 src/bin/e_fm.c:10052 src/bin/e_fm.c:10417
+#: src/bin/e_desklock.c:1313 src/bin/e_fm.c:10176 src/bin/e_fm.c:10541
 #: src/bin/e_screensaver.c:191
 msgid "No"
 msgstr "Ні"
@@ -91,7 +91,7 @@ msgstr "Ви впевнені? Вийти?"
 #: src/bin/e_actions.c:2126 src/bin/e_actions.c:2220 src/bin/e_actions.c:2280
 #: src/bin/e_actions.c:2340 src/bin/e_actions.c:2405 src/bin/e_actions.c:2470
 #: src/bin/e_confirm_dialog.c:52 src/bin/e_desklock.c:1311
-#: src/bin/e_fm.c:10055 src/bin/e_screensaver.c:189
+#: src/bin/e_fm.c:10179 src/bin/e_screensaver.c:189
 msgid "Yes"
 msgstr "Так"
 
@@ -146,11 +146,11 @@ msgstr "Перейти в режим сну?"
 #: src/bin/e_actions.c:2982 src/bin/e_actions.c:2987 src/bin/e_actions.c:2992
 #: src/bin/e_actions.c:3278 src/bin/e_actions.c:3282 src/bin/e_actions.c:3287
 #: src/bin/e_actions.c:3293 src/bin/e_actions.c:3299 src/bin/e_actions.c:3305
-#: src/modules/shot/e_mod_main.c:959
+#: src/modules/shot/e_mod_main.c:984
 msgid "Window : Actions"
 msgstr "Вікно: дії"
 
-#: src/bin/e_actions.c:2947 src/bin/e_fm.c:11177
+#: src/bin/e_actions.c:2947 src/bin/e_fm.c:11301
 #: src/bin/e_int_border_menu.c:669
 msgid "Move"
 msgstr "Пересунути"
@@ -323,7 +323,7 @@ msgstr "Ввімкнути стан прикріплення"
 #: src/bin/e_int_shelf_config.c:267 src/modules/comp/e_mod_config.c:444
 #: src/modules/comp/e_mod_config.c:753
 #: src/modules/conf_window_manipulation/e_int_config_clientlist.c:101
-#: src/modules/fileman/e_mod_menu.c:336 src/modules/ibox/e_mod_config.c:166
+#: src/modules/fileman/e_mod_menu.c:339 src/modules/ibox/e_mod_config.c:166
 msgid "Desktop"
 msgstr "Стільниця"
 
@@ -531,12 +531,12 @@ msgstr ""
 #: src/bin/e_actions.c:3254 src/bin/e_actions.c:3257 src/bin/e_actions.c:3260
 #: src/bin/e_actions.c:3262 src/bin/e_actions.c:3264 src/bin/e_actions.c:3266
 #: src/bin/e_actions.c:3269 src/bin/e_actions.c:3271 src/bin/e_actions.c:3273
-#: src/modules/backlight/e_mod_main.c:486
-#: src/modules/backlight/e_mod_main.c:496
+#: src/modules/backlight/e_mod_main.c:493
+#: src/modules/backlight/e_mod_main.c:503
 #: src/modules/conf_display/e_mod_main.c:17
 #: src/modules/conf_randr/e_mod_main.c:14 src/modules/ibox/e_mod_config.c:135
-#: src/modules/shot/e_mod_main.c:717 src/modules/shot/e_mod_main.c:952
-#: src/modules/shot/e_mod_main.c:989
+#: src/modules/shot/e_mod_main.c:742 src/modules/shot/e_mod_main.c:977
+#: src/modules/shot/e_mod_main.c:1015
 msgid "Screen"
 msgstr "Екран"
 
@@ -691,7 +691,7 @@ msgstr "Показати меню..."
 
 #: src/bin/e_actions.c:3348 src/bin/e_actions.c:3353 src/bin/e_actions.c:3358
 #: src/modules/conf/e_mod_main.c:272 src/modules/conf/e_mod_main.c:345
-#: src/modules/everything/evry_plug_apps.c:1169
+#: src/modules/everything/evry_plug_apps.c:1168
 #: src/modules/fileman/e_mod_main.c:55 src/modules/fileman/e_mod_main.c:133
 msgid "Launch"
 msgstr "Запустити"
@@ -756,11 +756,11 @@ msgstr ""
 #: src/modules/conf_display/e_int_config_desklock_fsel.c:87
 #: src/modules/conf_intl/e_int_config_imc.c:818
 #: src/modules/conf_theme/e_int_config_wallpaper.c:429
-#: src/modules/conf_theme/e_int_config_wallpaper.c:546
+#: src/modules/conf_theme/e_int_config_wallpaper.c:549
 #: src/modules/conf_theme/e_int_config_startup.c:258
-#: src/modules/conf_theme/e_int_config_theme.c:456
-#: src/modules/conf_theme/e_int_config_theme.c:831
-#: src/modules/conf_theme/e_int_config_theme.c:845
+#: src/modules/conf_theme/e_int_config_theme.c:732
+#: src/modules/conf_theme/e_int_config_theme.c:1106
+#: src/modules/conf_theme/e_int_config_theme.c:1120
 #: src/modules/gadman/e_mod_config.c:252 src/modules/syscon/e_mod_main.c:31
 #: src/modules/syscon/e_mod_main.c:35 src/modules/syscon/e_mod_main.c:60
 #: src/modules/syscon/e_mod_main.c:129
@@ -838,15 +838,15 @@ msgid "Select"
 msgstr "Вибрати один"
 
 #: src/bin/e_color_dialog.c:47 src/bin/e_eap_editor.c:862
-#: src/bin/e_eap_editor.c:925 src/bin/e_entry_dialog.c:64 src/bin/e_fm.c:9588
-#: src/bin/e_fm_prop.c:625 src/bin/e_import_dialog.c:189
+#: src/bin/e_eap_editor.c:925 src/bin/e_entry_dialog.c:64 src/bin/e_fm.c:9752
+#: src/bin/e_fm_prop.c:625 src/bin/e_import_dialog.c:191
 #: src/bin/e_import_config_dialog.c:534
 #: src/modules/conf_intl/e_int_config_imc_import.c:124
 #: src/modules/conf_theme/e_int_config_theme_import.c:123
-#: src/modules/fileman/e_int_config_mime_edit.c:315
-#: src/modules/syscon/e_syscon.c:122 src/modules/shot/e_mod_main.c:289
-#: src/modules/shot/e_mod_main.c:539 src/modules/shot/e_mod_main.c:776
-#: src/modules/xkbswitch/e_mod_config.c:527
+#: src/modules/fileman/e_int_config_mime_edit.c:314
+#: src/modules/syscon/e_syscon.c:122 src/modules/shot/e_mod_main.c:290
+#: src/modules/shot/e_mod_main.c:540 src/modules/shot/e_mod_main.c:566
+#: src/modules/shot/e_mod_main.c:801 src/modules/xkbswitch/e_mod_config.c:527
 msgid "Cancel"
 msgstr "Скасувати"
 
@@ -899,8 +899,8 @@ msgstr ""
 
 #: src/bin/e_config.c:1722 src/bin/e_config.c:2356
 #: src/bin/e_config_dialog.c:278 src/bin/e_eap_editor.c:860
-#: src/bin/e_eap_editor.c:923 src/bin/e_entry_dialog.c:63 src/bin/e_exec.c:617
-#: src/bin/e_fm.c:9587 src/bin/e_fm.c:10323 src/bin/e_fm_prop.c:624
+#: src/bin/e_eap_editor.c:923 src/bin/e_entry_dialog.c:63 src/bin/e_exec.c:613
+#: src/bin/e_fm.c:9751 src/bin/e_fm.c:10447 src/bin/e_fm_prop.c:624
 #: src/bin/e_import_config_dialog.c:533 src/bin/e_int_border_remember.c:318
 #: src/bin/e_int_border_remember.c:507 src/bin/e_module.c:431
 #: src/bin/e_module.c:798 src/bin/e_sys.c:618 src/bin/e_sys.c:659
@@ -909,7 +909,7 @@ msgstr ""
 #: src/modules/conf_theme/e_int_config_theme_import.c:119
 #: src/modules/cpufreq/e_mod_main.c:436 src/modules/cpufreq/e_mod_main.c:465
 #: src/modules/cpufreq/e_mod_main.c:492
-#: src/modules/fileman/e_int_config_mime_edit.c:314
+#: src/modules/fileman/e_int_config_mime_edit.c:313
 #: src/modules/xkbswitch/e_mod_config.c:526
 msgid "OK"
 msgstr "Гаразд"
@@ -1188,7 +1188,7 @@ msgstr "URL"
 
 #: src/bin/e_eap_editor.c:732 src/bin/e_eap_editor.c:741
 #: src/bin/e_fm_prop.c:495 src/modules/conf_theme/e_int_config_fonts.c:95
-#: src/modules/fileman/e_int_config_mime_edit.c:146
+#: src/modules/fileman/e_int_config_mime_edit.c:145
 msgid "Icon"
 msgstr "Піктограма"
 
@@ -1228,7 +1228,7 @@ msgstr "Загальні"
 msgid "Startup Notify"
 msgstr "Сповіщення про запуск"
 
-#: src/bin/e_eap_editor.c:786 src/modules/everything/evry_plug_apps.c:1183
+#: src/bin/e_eap_editor.c:786 src/modules/everything/evry_plug_apps.c:1182
 msgid "Run in Terminal"
 msgstr "Запустити в Терміналі"
 
@@ -1236,7 +1236,7 @@ msgstr "Запустити в Терміналі"
 msgid "Show in Menus"
 msgstr "Показувати в меню"
 
-#: src/bin/e_eap_editor.c:791 src/bin/e_fm.c:8454 src/bin/e_fm.c:8614
+#: src/bin/e_eap_editor.c:791 src/bin/e_fm.c:8558 src/bin/e_fm.c:8718
 #: src/bin/e_int_border_remember.c:763
 #: src/modules/xkbswitch/e_mod_config.c:334
 msgid "Options"
@@ -1251,10 +1251,10 @@ msgstr "Вибрати піктограму"
 msgid "Select an Executable"
 msgstr "Виберіть виконуваний файл"
 
-#: src/bin/e_entry.c:480 src/bin/e_fm.c:8799 src/bin/e_fm.c:10416
-#: src/bin/e_shelf.c:1789 src/bin/e_shelf.c:2465
+#: src/bin/e_entry.c:480 src/bin/e_fm.c:8903 src/bin/e_fm.c:10540
+#: src/bin/e_shelf.c:1789 src/bin/e_shelf.c:2467
 #: src/modules/conf_dialogs/e_int_config_profiles.c:135
-#: src/modules/conf_dialogs/e_int_config_profiles.c:335
+#: src/modules/conf_dialogs/e_int_config_profiles.c:339
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:266
 #: src/modules/conf_keybindings/e_int_config_acpibindings.c:201
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:247
@@ -1267,15 +1267,15 @@ msgstr "Виберіть виконуваний файл"
 msgid "Delete"
 msgstr "Стерти"
 
-#: src/bin/e_entry.c:490 src/bin/e_fm.c:8710
+#: src/bin/e_entry.c:490 src/bin/e_fm.c:8814
 msgid "Cut"
 msgstr "Вирізати"
 
-#: src/bin/e_entry.c:499 src/bin/e_fm.c:8724 src/bin/e_fm.c:11172
+#: src/bin/e_entry.c:499 src/bin/e_fm.c:8828 src/bin/e_fm.c:11296
 msgid "Copy"
 msgstr "Копіювати"
 
-#: src/bin/e_entry.c:509 src/bin/e_fm.c:8515 src/bin/e_fm.c:8737
+#: src/bin/e_entry.c:509 src/bin/e_fm.c:8619 src/bin/e_fm.c:8841
 msgid "Paste"
 msgstr "Вставити"
 
@@ -1283,39 +1283,39 @@ msgstr "Вставити"
 msgid "Select All"
 msgstr "Виділити все"
 
-#: src/bin/e_exec.c:401 src/bin/e_exec.c:409 src/bin/e_exec.c:420
-#: src/bin/e_exec.c:472 src/bin/e_utils.c:188
+#: src/bin/e_exec.c:400 src/bin/e_exec.c:408 src/bin/e_exec.c:419
+#: src/bin/e_exec.c:468 src/bin/e_utils.c:188
 #: src/modules/conf_intl/e_int_config_imc.c:272
 #: src/modules/conf_intl/e_int_config_imc.c:520
 msgid "Run Error"
 msgstr "Помилка запуску"
 
-#: src/bin/e_exec.c:402
+#: src/bin/e_exec.c:401
 #, fuzzy
 msgid "Enlightenment was unable to get current directory"
 msgstr ""
 "Enlightenment не зміг імпортувати зображення<br>через помилки в конверсії."
 
-#: src/bin/e_exec.c:410
+#: src/bin/e_exec.c:409
 #, fuzzy, c-format
 msgid "Enlightenment was unable to change to directory:<br><br>%s"
 msgstr "Enlightenment не зміг запустити дочірній процес:<br><br>%s<br>"
 
-#: src/bin/e_exec.c:421
+#: src/bin/e_exec.c:420
 #, fuzzy, c-format
 msgid "Enlightenment was unable to restore to directory:<br><br>%s"
 msgstr "Enlightenment не зміг запустити дочірній процес:<br><br>%s<br>"
 
-#: src/bin/e_exec.c:473
+#: src/bin/e_exec.c:469
 #, fuzzy, c-format
 msgid "Enlightenment was unable to fork a child process:<br><br>%s"
 msgstr "Enlightenment не зміг запустити дочірній процес:<br><br>%s<br>"
 
-#: src/bin/e_exec.c:608
+#: src/bin/e_exec.c:604
 msgid "Application run error"
 msgstr "Помилка запуску програми"
 
-#: src/bin/e_exec.c:610
+#: src/bin/e_exec.c:606
 #, c-format
 msgid ""
 "Enlightenment was unable to run the application:<br><br>%s<br><br>The "
@@ -1324,425 +1324,428 @@ msgstr ""
 "Enlightenment не зміг запустити програму:<br><br>%s<br><br>Програма не може "
 "запуститися."
 
-#: src/bin/e_exec.c:717
+#: src/bin/e_exec.c:713
 msgid "Application Execution Error"
 msgstr "Помилка виконання програми"
 
-#: src/bin/e_exec.c:730 src/bin/e_exec.c:732
+#: src/bin/e_exec.c:726 src/bin/e_exec.c:728
 #, c-format
 msgid "%s stopped running unexpectedly."
 msgstr "%s несподівано закінчив виконання."
 
-#: src/bin/e_exec.c:738
+#: src/bin/e_exec.c:734
 #, c-format
 msgid "An exit code of %i was returned from %s."
 msgstr "Код виходу %i був повернутий з %s."
 
-#: src/bin/e_exec.c:746
+#: src/bin/e_exec.c:742
 #, c-format
 msgid "%s was interrupted by an Interrupt Signal."
 msgstr "%s перерваний сигналом переривання."
 
-#: src/bin/e_exec.c:749
+#: src/bin/e_exec.c:745
 #, c-format
 msgid "%s was interrupted by a Quit Signal."
 msgstr "%s перерваний сигналом виходу."
 
-#: src/bin/e_exec.c:753
+#: src/bin/e_exec.c:749
 #, c-format
 msgid "%s was interrupted by an Abort Signal."
 msgstr "%s перерваний сигналом аварійного припинення роботи."
 
-#: src/bin/e_exec.c:756
+#: src/bin/e_exec.c:752
 #, c-format
 msgid "%s was interrupted by a Floating Point Error."
 msgstr "%s перерваний помилкою плаваючої коми."
 
-#: src/bin/e_exec.c:760
+#: src/bin/e_exec.c:756
 #, c-format
 msgid "%s was interrupted by an Uninterruptable Kill Signal."
 msgstr "%s перерваний сигналом Uninterruptable Kill."
 
-#: src/bin/e_exec.c:764
+#: src/bin/e_exec.c:760
 #, c-format
 msgid "%s was interrupted by a Segmentation Fault."
 msgstr "%s перерваний помилкою сегментації."
 
-#: src/bin/e_exec.c:768
+#: src/bin/e_exec.c:764
 #, c-format
 msgid "%s was interrupted by a Broken Pipe."
 msgstr "%s перерваний помилкою Broken Pipe."
 
-#: src/bin/e_exec.c:771
+#: src/bin/e_exec.c:767
 #, c-format
 msgid "%s was interrupted by a Termination Signal."
 msgstr "%s перерваний сигналом завершення."
 
-#: src/bin/e_exec.c:775
+#: src/bin/e_exec.c:771
 #, c-format
 msgid "%s was interrupted by a Bus Error."
 msgstr "%s перерваний помилкою Bus Error."
 
-#: src/bin/e_exec.c:778
+#: src/bin/e_exec.c:774
 #, c-format
 msgid "%s was interrupted by the signal number %i."
 msgstr "%s перерваний сигналом номер %i."
 
-#: src/bin/e_exec.c:834
+#: src/bin/e_exec.c:830
 msgid ""
 "***The remaining output has been truncated. Save the output to view.***\n"
 msgstr "*** Залишок виведення був обрізаний. Збережіть для перегляду. ***\n"
 
-#: src/bin/e_exec.c:893 src/bin/e_exec.c:971 src/bin/e_exec.c:978
+#: src/bin/e_exec.c:889 src/bin/e_exec.c:967 src/bin/e_exec.c:974
 msgid "Error Logs"
 msgstr "Журнали помилок"
 
-#: src/bin/e_exec.c:899 src/bin/e_exec.c:979
+#: src/bin/e_exec.c:895 src/bin/e_exec.c:975
 msgid "There was no error message."
 msgstr "Не було повідомлення про помилку."
 
-#: src/bin/e_exec.c:903 src/bin/e_exec.c:986
+#: src/bin/e_exec.c:899 src/bin/e_exec.c:982
 msgid "Save This Message"
 msgstr "Зберегти це повідомлення"
 
-#: src/bin/e_exec.c:908 src/bin/e_exec.c:911 src/bin/e_exec.c:991
-#: src/bin/e_exec.c:994
+#: src/bin/e_exec.c:904 src/bin/e_exec.c:907 src/bin/e_exec.c:987
+#: src/bin/e_exec.c:990
 #, c-format
 msgid "This error log will be saved as %s/%s.log"
 msgstr "Цей файл помилки буде збережений як %s/%s.log"
 
-#: src/bin/e_exec.c:937
+#: src/bin/e_exec.c:933
 msgid "Error Information"
 msgstr "Інформація про помилку"
 
-#: src/bin/e_exec.c:945
+#: src/bin/e_exec.c:941
 msgid "Error Signal Information"
 msgstr "Сигнал помилки інформації"
 
-#: src/bin/e_exec.c:955 src/bin/e_exec.c:962
+#: src/bin/e_exec.c:951 src/bin/e_exec.c:958
 msgid "Output Data"
 msgstr "Вихідні дані"
 
-#: src/bin/e_exec.c:963
+#: src/bin/e_exec.c:959
 msgid "There was no output."
 msgstr "Не було ніяких даних."
 
-#: src/bin/e_fm.c:1032
+#: src/bin/e_fm.c:1053
 msgid "Nonexistent path"
 msgstr "Неіснуючий шлях"
 
-#: src/bin/e_fm.c:1035
+#: src/bin/e_fm.c:1056
 #, c-format
 msgid "%s doesn't exist."
 msgstr "%s не існує."
 
-#: src/bin/e_fm.c:2796 src/bin/e_fm.c:3726
+#: src/bin/e_fm.c:2817 src/bin/e_fm.c:3774
 #, fuzzy, c-format
 msgid "%u file"
 msgid_plural "%u files"
 msgstr[0] "%1.0f файлів"
 msgstr[1] "%1.0f файлів"
 
-#: src/bin/e_fm.c:3014
+#: src/bin/e_fm.c:3035
 msgid "Mount Error"
 msgstr "Помилка під'єднання"
 
-#: src/bin/e_fm.c:3014
+#: src/bin/e_fm.c:3035
 msgid "Can't mount device"
 msgstr "Не вдається під'єднати пристрій"
 
-#: src/bin/e_fm.c:3030
+#: src/bin/e_fm.c:3051
 msgid "Unmount Error"
 msgstr "Помилка демонтування"
 
-#: src/bin/e_fm.c:3030
+#: src/bin/e_fm.c:3051
 msgid "Can't unmount device"
 msgstr "Не вдається демонтувати пристрій"
 
-#: src/bin/e_fm.c:3045
+#: src/bin/e_fm.c:3066
 msgid "Eject Error"
 msgstr "Помилка витягування"
 
-#: src/bin/e_fm.c:3045
+#: src/bin/e_fm.c:3066
 msgid "Can't eject device"
 msgstr "Не вдається витягти пристрій"
 
-#: src/bin/e_fm.c:8372 src/modules/fileman/e_mod_config.c:355
+#: src/bin/e_fm.c:8476 src/modules/fileman/e_mod_config.c:355
 msgid "Case Sensitive"
 msgstr "Враховувати регістр"
 
-#: src/bin/e_fm.c:8378 src/modules/fileman/e_mod_config.c:358
+#: src/bin/e_fm.c:8482 src/modules/fileman/e_mod_config.c:358
 #, fuzzy
 msgid "Sort By Extension"
 msgstr "Показувати розширення піктограм"
 
-#: src/bin/e_fm.c:8384 src/modules/fileman/e_mod_config.c:361
+#: src/bin/e_fm.c:8488 src/modules/fileman/e_mod_config.c:361
 msgid "Sort By Modification Time"
 msgstr ""
 
-#: src/bin/e_fm.c:8390 src/modules/fileman/e_mod_config.c:364
+#: src/bin/e_fm.c:8494 src/modules/fileman/e_mod_config.c:364
 #, fuzzy
 msgid "Sort By Size"
 msgstr "Сортуванти"
 
-#: src/bin/e_fm.c:8399 src/modules/fileman/e_mod_config.c:372
+#: src/bin/e_fm.c:8503 src/modules/fileman/e_mod_config.c:372
 #, fuzzy
 msgid "Directories First"
 msgstr "Пошук в каталогах"
 
-#: src/bin/e_fm.c:8405 src/modules/fileman/e_mod_config.c:376
+#: src/bin/e_fm.c:8509 src/modules/fileman/e_mod_config.c:376
 #, fuzzy
 msgid "Directories Last"
 msgstr "Пошук в каталогах"
 
-#: src/bin/e_fm.c:8438 src/bin/e_fm.c:8598
+#: src/bin/e_fm.c:8542 src/bin/e_fm.c:8702
 #: src/modules/fileman/e_mod_config.c:302
 msgid "View Mode"
 msgstr "Режим Відображення"
 
-#: src/bin/e_fm.c:8447 src/bin/e_fm.c:8607
+#: src/bin/e_fm.c:8551 src/bin/e_fm.c:8711
 #: src/modules/everything/evry_config.c:503
 #: src/modules/fileman/e_mod_config.c:380
 #, fuzzy
 msgid "Sorting"
 msgstr "Запускається"
 
-#: src/bin/e_fm.c:8465 src/bin/e_fm.c:8625
+#: src/bin/e_fm.c:8569 src/bin/e_fm.c:8729
 msgid "Refresh View"
 msgstr "Оновити вигляд"
 
-#: src/bin/e_fm.c:8476 src/bin/e_fm.c:8637
+#: src/bin/e_fm.c:8580 src/bin/e_fm.c:8741
 msgid "New..."
 msgstr ""
 
-#: src/bin/e_fm.c:8496 src/bin/e_fm.c:8658 src/bin/e_fm.c:8689
+#: src/bin/e_fm.c:8600 src/bin/e_fm.c:8762 src/bin/e_fm.c:8793
 #, fuzzy
 msgid "Actions..."
 msgstr "Дія"
 
-#: src/bin/e_fm.c:8523 src/bin/e_fm.c:8745 src/bin/e_fm.c:11185
+#: src/bin/e_fm.c:8627 src/bin/e_fm.c:8849 src/bin/e_fm.c:11309
 msgid "Link"
 msgstr "Посилання"
 
-#: src/bin/e_fm.c:8807 src/bin/e_fm.c:10054 src/bin/e_shelf.c:2460
+#: src/bin/e_fm.c:8911 src/bin/e_fm.c:10178 src/bin/e_shelf.c:2462
 #: src/modules/conf_shelves/e_int_config_shelf.c:138
 msgid "Rename"
 msgstr "Перейменувати"
 
-#: src/bin/e_fm.c:8826
+#: src/bin/e_fm.c:8930
 msgid "Unmount"
 msgstr "Розмонтувати"
 
-#: src/bin/e_fm.c:8831
+#: src/bin/e_fm.c:8935
 msgid "Mount"
 msgstr "Змонтувати"
 
-#: src/bin/e_fm.c:8836
+#: src/bin/e_fm.c:8940
 msgid "Eject"
 msgstr "Витягти"
 
-#: src/bin/e_fm.c:8851 src/bin/e_int_border_remember.c:742
+#: src/bin/e_fm.c:8955 src/bin/e_int_border_remember.c:742
 #: src/modules/ibar/e_mod_main.c:871
 msgid "Properties"
 msgstr "Властивості"
 
-#: src/bin/e_fm.c:8859
+#: src/bin/e_fm.c:8963
 #, fuzzy
 msgid "Application Properties"
 msgstr "Піктограма від програми "
 
-#: src/bin/e_fm.c:8867 src/bin/e_fm_prop.c:115
+#: src/bin/e_fm.c:8971 src/bin/e_fm_prop.c:115
 msgid "File Properties"
 msgstr "Властивості файла"
 
-#: src/bin/e_fm.c:9083
+#: src/bin/e_fm.c:9187
 msgid "Use default"
 msgstr "Використовувати типові параметри"
 
-#: src/bin/e_fm.c:9113 src/modules/fileman/e_mod_config.c:307
+#: src/bin/e_fm.c:9217 src/modules/fileman/e_mod_config.c:307
 msgid "Grid Icons"
 msgstr "Сітка піктограм"
 
-#: src/bin/e_fm.c:9121 src/modules/fileman/e_mod_config.c:309
+#: src/bin/e_fm.c:9225 src/modules/fileman/e_mod_config.c:309
 msgid "Custom Icons"
 msgstr "Свої піктограми"
 
-#: src/bin/e_fm.c:9129 src/modules/everything/evry_config.c:430
+#: src/bin/e_fm.c:9233 src/modules/everything/evry_config.c:430
 #: src/modules/everything/evry_config.c:460
 #: src/modules/fileman/e_mod_config.c:317
 msgid "List"
 msgstr "Список"
 
-#: src/bin/e_fm.c:9137 src/modules/everything/evry_config.c:458
+#: src/bin/e_fm.c:9241 src/modules/everything/evry_config.c:458
 #, fuzzy
 msgid "Default View"
 msgstr "Типовий рушій"
 
-#: src/bin/e_fm.c:9159
+#: src/bin/e_fm.c:9263
 #, c-format
 msgid "Icon Size (%d)"
 msgstr "Розмір піктограми (%d)"
 
-#: src/bin/e_fm.c:9184 src/bin/e_fm.c:9260 src/bin/e_fm.c:9265
-#: src/bin/e_fm.c:10011 src/bin/e_fm.c:10224 src/bin/e_fm_prop.c:254
+#: src/bin/e_fm.c:9288 src/bin/e_fm.c:9300 src/bin/e_fm.c:9403
+#: src/bin/e_fm.c:9408 src/bin/e_fm.c:9424 src/bin/e_fm.c:9429
+#: src/bin/e_fm.c:10124 src/bin/e_fm.c:10348 src/bin/e_fm_prop.c:254
 #: src/bin/e_shelf.c:2335
 msgid "Error"
 msgstr "Помилка"
 
-#: src/bin/e_fm.c:9184
+#: src/bin/e_fm.c:9288
+#, fuzzy
+msgid "Could not create a directory!"
+msgstr "Помилка завантаження модуля"
+
+#: src/bin/e_fm.c:9300
 #, fuzzy
 msgid "Could not create a file!"
 msgstr "Помилка завантаження модуля"
 
-#: src/bin/e_fm.c:9198 src/bin/e_fm.c:9215
+#: src/bin/e_fm.c:9314 src/bin/e_fm.c:9339
+#: src/modules/conf_paths/e_int_config_paths.c:206
+msgid "New Directory"
+msgstr "Новий каталог"
+
+#: src/bin/e_fm.c:9314 src/bin/e_fm.c:9339
 #, fuzzy
 msgid "New File"
 msgstr "Файл:"
 
-#: src/bin/e_fm.c:9260
+#: src/bin/e_fm.c:9403 src/bin/e_fm.c:9424
 msgid "Already creating a new file for this directory!"
 msgstr ""
 
-#: src/bin/e_fm.c:9265
+#: src/bin/e_fm.c:9408 src/bin/e_fm.c:9429
 #, c-format
 msgid "%s can't be written to!"
 msgstr ""
 
-#: src/bin/e_fm.c:9284
+#: src/bin/e_fm.c:9448
 #, fuzzy
 msgid "Directory"
 msgstr "Новий каталог"
 
-#: src/bin/e_fm.c:9289
+#: src/bin/e_fm.c:9453
 #: src/modules/conf_applications/e_int_config_defapps.c:312
 #, fuzzy
 msgid "File"
 msgstr "Файл:"
 
-#: src/bin/e_fm.c:9320
+#: src/bin/e_fm.c:9484
 msgid "Inherit parent settings"
 msgstr "Успадковувати батьківські налаштування"
 
-#: src/bin/e_fm.c:9329
+#: src/bin/e_fm.c:9493
 msgid "Show Hidden Files"
 msgstr "Показати приховані файли"
 
-#: src/bin/e_fm.c:9341
+#: src/bin/e_fm.c:9505
 msgid "Remember Ordering"
 msgstr "Запам'ятати черговість"
 
-#: src/bin/e_fm.c:9350
+#: src/bin/e_fm.c:9514
 msgid "Sort Now"
 msgstr "Сортуванти"
 
-#: src/bin/e_fm.c:9358
+#: src/bin/e_fm.c:9522
 #, fuzzy
 msgid "Single Click Activation"
 msgstr "Використовувати один клік"
 
-#: src/bin/e_fm.c:9369 src/modules/fileman/e_mod_config.c:392
+#: src/bin/e_fm.c:9533 src/modules/fileman/e_mod_config.c:392
 #, fuzzy
 msgid "Secure Deletion"
 msgstr "Роздільна здатність екрана"
 
-#: src/bin/e_fm.c:9382
+#: src/bin/e_fm.c:9546
 #, fuzzy
 msgid "File Manager Settings"
 msgstr "Налаштування Fileman"
 
-#: src/bin/e_fm.c:9387
+#: src/bin/e_fm.c:9551
 #, fuzzy
 msgid "File Icon Settings"
 msgstr "Налаштування Fileman"
 
-#: src/bin/e_fm.c:9465 src/bin/e_fm.c:9680
+#: src/bin/e_fm.c:9629 src/bin/e_fm.c:9844
 msgid "Set background..."
 msgstr "Встановити фон..."
 
-#: src/bin/e_fm.c:9473
+#: src/bin/e_fm.c:9637
 #, fuzzy
 msgid "Clear background"
 msgstr "Встановити фон..."
 
-#: src/bin/e_fm.c:9480 src/bin/e_fm.c:9708
+#: src/bin/e_fm.c:9644 src/bin/e_fm.c:9872
 msgid "Set overlay..."
 msgstr "Налаштувати накладання..."
 
-#: src/bin/e_fm.c:9486
+#: src/bin/e_fm.c:9650
 #, fuzzy
 msgid "Clear overlay"
 msgstr "Налаштувати накладання..."
 
-#: src/bin/e_fm.c:9797
-msgid "Create a new Directory"
-msgstr "Створити новий каталог"
-
-#: src/bin/e_fm.c:9798
-msgid "New Directory Name:"
-msgstr "Назва нового каталогу:"
-
-#: src/bin/e_fm.c:9853 src/bin/e_fm.c:10149
+#: src/bin/e_fm.c:9966 src/bin/e_fm.c:10273
 #, c-format
 msgid "Rename %s to:"
 msgstr "Перейменувати %s в:"
 
-#: src/bin/e_fm.c:9855 src/bin/e_fm.c:10150
+#: src/bin/e_fm.c:9968 src/bin/e_fm.c:10274
 msgid "Rename File"
 msgstr "Перейменувати файл"
 
-#: src/bin/e_fm.c:10007 src/bin/e_fm.c:10216
+#: src/bin/e_fm.c:10120 src/bin/e_fm.c:10340
 msgid "Retry"
 msgstr "Спробувати ще раз"
 
-#: src/bin/e_fm.c:10008 src/bin/e_fm.c:10217 src/bin/e_fm.c:11193
+#: src/bin/e_fm.c:10121 src/bin/e_fm.c:10341 src/bin/e_fm.c:11317
 msgid "Abort"
 msgstr "Відмінити"
 
-#: src/bin/e_fm.c:10053
+#: src/bin/e_fm.c:10177
 msgid "No to all"
 msgstr "Ні для всього"
 
-#: src/bin/e_fm.c:10056
+#: src/bin/e_fm.c:10180
 msgid "Yes to all"
 msgstr "Так для всього"
 
-#: src/bin/e_fm.c:10059
+#: src/bin/e_fm.c:10183
 msgid "Warning"
 msgstr "Попередження"
 
-#: src/bin/e_fm.c:10062
+#: src/bin/e_fm.c:10186
 #, c-format
 msgid "File already exists, overwrite?<br><hilight>%s</hilight>"
 msgstr "Файл вже існує, перезаписати?<br><hilight>%s</hilight>"
 
-#: src/bin/e_fm.c:10219
+#: src/bin/e_fm.c:10343
 #, fuzzy
 msgid "Move Source"
 msgstr "Рухати текст"
 
-#: src/bin/e_fm.c:10220
+#: src/bin/e_fm.c:10344
 msgid "Ignore this"
 msgstr "Пропустити це"
 
-#: src/bin/e_fm.c:10221
+#: src/bin/e_fm.c:10345
 msgid "Ignore all"
 msgstr "Ігнорувати все"
 
-#: src/bin/e_fm.c:10226
+#: src/bin/e_fm.c:10350
 #, c-format
 msgid "An error occurred while performing an operation.<br>%s"
 msgstr "Сталася помилка під час виконання операції.<br>%s"
 
-#: src/bin/e_fm.c:10419
+#: src/bin/e_fm.c:10543
 msgid "Confirm Delete"
 msgstr "Підтвердіть вилучення"
 
-#: src/bin/e_fm.c:10429
+#: src/bin/e_fm.c:10553
 #, fuzzy, c-format
 msgid "Are you sure you want to delete<br><hilight>%s</hilight>?"
 msgstr "Ви впевнені, що хочете вилучити<br><hilight>%s</hilight> ?"
 
-#: src/bin/e_fm.c:10434
+#: src/bin/e_fm.c:10558
 #, fuzzy, c-format
 msgid ""
 "Are you sure you want to delete<br><hilight>all</hilight> the %d files "
@@ -1751,7 +1754,7 @@ msgstr ""
 "Ви впевнені, що хочете вилучити<br> %d вибраних файлів з:<br><hilight>%s</"
 "hilight> ?"
 
-#: src/bin/e_fm.c:10444
+#: src/bin/e_fm.c:10568
 #, fuzzy, c-format
 msgid ""
 "Are you sure you want to delete<br>the %d selected file in<br><hilight>%s</"
@@ -1797,7 +1800,7 @@ msgstr ""
 
 #: src/bin/e_fm_prop.c:390 src/bin/e_shelf.c:1120 src/bin/e_shelf.c:2355
 #: src/modules/comp/e_mod_config.c:493
-#: src/modules/conf_dialogs/e_int_config_profiles.c:312
+#: src/modules/conf_dialogs/e_int_config_profiles.c:316
 #: src/modules/conf_display/e_int_config_desk.c:186
 #: src/modules/conf_window_remembers/e_int_config_remembers.c:137
 msgid "Name:"
@@ -1865,7 +1868,7 @@ msgstr "Інші"
 #: src/bin/e_fm_prop.c:480 src/bin/e_import_config_dialog.c:470
 #: src/bin/e_widget_fsel.c:348
 #: src/modules/conf_theme/e_int_config_transitions.c:218
-#: src/modules/conf_theme/e_int_config_theme.c:1139
+#: src/modules/conf_theme/e_int_config_theme.c:1414
 #: src/modules/conf_theme/e_int_config_xsettings.c:496
 msgid "Preview"
 msgstr "Попередній перегляд"
@@ -1997,7 +2000,7 @@ msgstr ""
 msgid "Select a Picture..."
 msgstr "Вибрати зображення..."
 
-#: src/bin/e_import_dialog.c:188
+#: src/bin/e_import_dialog.c:190
 #, fuzzy
 msgid "Use"
 msgstr "Вкладка"
@@ -2317,13 +2320,13 @@ msgid "Window List"
 msgstr "Перелік вікон"
 
 #: src/bin/e_int_border_menu.c:1286 src/modules/pager/e_mod_main.c:265
-#: src/modules/pager/e_mod_main.c:2915 src/modules/pager/e_mod_main.c:2922
-#: src/modules/pager/e_mod_main.c:2929 src/modules/pager/e_mod_main.c:2931
-#: src/modules/pager/e_mod_main.c:2933 src/modules/pager/e_mod_main.c:2935
-#: src/modules/pager/e_mod_main.c:2937 src/modules/pager/e_mod_main.c:2939
-#: src/modules/pager/e_mod_main.c:2965 src/modules/pager/e_mod_main.c:2966
-#: src/modules/pager/e_mod_main.c:2967 src/modules/pager/e_mod_main.c:2968
-#: src/modules/pager/e_mod_main.c:2969 src/modules/pager/e_mod_main.c:2970
+#: src/modules/pager/e_mod_main.c:2916 src/modules/pager/e_mod_main.c:2923
+#: src/modules/pager/e_mod_main.c:2930 src/modules/pager/e_mod_main.c:2932
+#: src/modules/pager/e_mod_main.c:2934 src/modules/pager/e_mod_main.c:2936
+#: src/modules/pager/e_mod_main.c:2938 src/modules/pager/e_mod_main.c:2940
+#: src/modules/pager/e_mod_main.c:2966 src/modules/pager/e_mod_main.c:2967
+#: src/modules/pager/e_mod_main.c:2968 src/modules/pager/e_mod_main.c:2969
+#: src/modules/pager/e_mod_main.c:2970 src/modules/pager/e_mod_main.c:2971
 msgid "Pager"
 msgstr "Пейджер"
 
@@ -2334,7 +2337,7 @@ msgstr "Панель завдань"
 #: src/bin/e_int_border_prop.c:110 src/bin/e_int_border_prop.c:117
 #: src/bin/e_int_border_prop.c:124 src/bin/e_moveresize.c:96
 #: src/bin/e_moveresize.c:153 src/bin/e_widget_filepreview.c:82
-#: src/modules/conf_display/e_int_config_display.c:535
+#: src/modules/conf_display/e_int_config_display.c:536
 #, c-format
 msgid "%i×%i"
 msgstr ""
@@ -2554,7 +2557,7 @@ msgstr "Запросив позицію"
 
 #: src/bin/e_int_border_prop.c:477 src/bin/e_int_border_prop.c:512
 #: src/bin/e_int_config_modules.c:58 src/bin/e_int_menus.c:273
-#: src/bin/e_shelf.c:2431 src/modules/backlight/e_mod_main.c:308
+#: src/bin/e_shelf.c:2433 src/modules/backlight/e_mod_main.c:309
 #: src/modules/battery/e_mod_main.c:194 src/modules/clock/e_mod_main.c:360
 #: src/modules/clock/e_mod_main.c:603 src/modules/conf/e_conf.c:136
 #: src/modules/conf/e_conf.c:146 src/modules/conf/e_mod_main.c:101
@@ -2566,7 +2569,7 @@ msgstr "Запросив позицію"
 #: src/modules/everything/evry_plug_settings.c:183
 #: src/modules/ibar/e_mod_main.c:379 src/modules/ibar/e_mod_main.c:864
 #: src/modules/ibox/e_mod_main.c:302 src/modules/ibox/e_mod_main.c:678
-#: src/modules/pager/e_mod_main.c:875 src/modules/temperature/e_mod_main.c:230
+#: src/modules/pager/e_mod_main.c:876 src/modules/temperature/e_mod_main.c:230
 #: src/modules/mixer/e_mod_main.c:777 src/modules/connman/e_mod_main.c:506
 #: src/modules/tasks/e_mod_main.c:715 src/modules/xkbswitch/e_mod_main.c:327
 #: src/modules/xkbswitch/e_mod_main.c:369
@@ -2657,7 +2660,7 @@ msgstr "Розмір, позицію та замки"
 #: src/bin/e_int_border_remember.c:609 src/modules/conf/e_mod_main.c:252
 #: src/modules/everything/evry_gadget.c:644
 #: src/modules/everything/evry_plug_aggregator.c:313
-#: src/modules/everything/evry_view.c:1606 src/modules/shot/e_mod_main.c:721
+#: src/modules/everything/evry_view.c:1609 src/modules/shot/e_mod_main.c:746
 #, fuzzy
 msgid "All"
 msgstr "Дозволити"
@@ -2770,12 +2773,12 @@ msgstr "Локаль"
 msgid "Unload"
 msgstr "Вивантажити модуль"
 
-#: src/bin/e_int_config_modules.c:337 src/bin/e_int_config_modules.c:626
+#: src/bin/e_int_config_modules.c:337 src/bin/e_int_config_modules.c:624
 #, fuzzy
 msgid "No modules selected."
 msgstr "Немає обраних модулів."
 
-#: src/bin/e_int_config_modules.c:624
+#: src/bin/e_int_config_modules.c:622
 #, fuzzy
 msgid "More than one module selected."
 msgstr "Більше одного обраного модуля."
@@ -2844,9 +2847,9 @@ msgstr "Улюблені програми"
 #: src/modules/conf_theme/e_int_config_fonts.c:58
 #: src/modules/conf_theme/e_int_config_xsettings.c:484
 #: src/modules/conf_window_remembers/e_int_config_remembers.c:194
-#: src/modules/everything/evry_plug_apps.c:1140
-#: src/modules/everything/evry_plug_apps.c:1156
-#: src/modules/everything/evry_plug_apps.c:1418
+#: src/modules/everything/evry_plug_apps.c:1139
+#: src/modules/everything/evry_plug_apps.c:1155
+#: src/modules/everything/evry_plug_apps.c:1417
 msgid "Applications"
 msgstr "Програми"
 
@@ -2854,7 +2857,7 @@ msgstr "Програми"
 #: src/modules/conf_window_manipulation/e_mod_main.c:17
 #: src/modules/conf_window_remembers/e_mod_main.c:14
 #: src/modules/everything/evry_plug_windows.c:425
-#: src/modules/winlist/e_mod_main.c:26 src/modules/tiling/e_mod_tiling.c:4128
+#: src/modules/winlist/e_mod_main.c:26 src/modules/tiling/e_mod_tiling.c:4142
 msgid "Windows"
 msgstr "Вікна"
 
@@ -3598,7 +3601,7 @@ msgstr ""
 "чи має Evas підтримку в fontconfig, та чи розпізнає fontconfig шрифт "
 "'Sans'.\n"
 
-#: src/bin/e_main.c:1813
+#: src/bin/e_main.c:1814
 #, c-format
 msgid ""
 "Enlightenment crashed early on start and has<br>been restarted. There was an "
@@ -3606,11 +3609,11 @@ msgid ""
 "will not be loaded."
 msgstr ""
 
-#: src/bin/e_main.c:1818 src/bin/e_main.c:1835
+#: src/bin/e_main.c:1819 src/bin/e_main.c:1836
 msgid "Enlightenment crashed early on start and has been restarted"
 msgstr "Enlightenment дав збій на старті і був перезавантажений"
 
-#: src/bin/e_main.c:1819
+#: src/bin/e_main.c:1820
 #, fuzzy, c-format
 msgid ""
 "Enlightenment crashed early on start and has been restarted.<br>There was an "
@@ -3622,7 +3625,7 @@ msgstr ""
 "будь-яку проблему з модулями у Вашій конфігурації.<br>Діалог конфігурації "
 "модулів дозволить Вам вибрати потрібні<br>модулі заново."
 
-#: src/bin/e_main.c:1828
+#: src/bin/e_main.c:1829
 #, fuzzy
 msgid ""
 "Enlightenment crashed early on start and has<br>been restarted. All modules "
@@ -3635,7 +3638,7 @@ msgstr ""
 "будь-яку проблему з модулями у Вашій конфігурації.<br>Діалог конфігурації "
 "модулів дозволить Вам вибрати потрібні<br>модулі заново."
 
-#: src/bin/e_main.c:1836
+#: src/bin/e_main.c:1837
 msgid ""
 "Enlightenment crashed early on start and has been restarted.<br>All modules "
 "have been disabled and will not be loaded to help<br>remove any problem "
@@ -3700,7 +3703,7 @@ msgid "What action should be taken with this module?<br>"
 msgstr "Хочете вивантажити цей модуль?<br>"
 
 #: src/bin/e_module.c:535 src/bin/e_shelf.c:1789
-#: src/modules/conf_dialogs/e_int_config_profiles.c:335
+#: src/modules/conf_dialogs/e_int_config_profiles.c:339
 #: src/modules/conf_shelves/e_int_config_shelf.c:390
 #: src/modules/ibar/e_mod_config.c:199
 msgid "Keep"
@@ -3839,12 +3842,12 @@ msgstr "Поличка №"
 msgid "A shelf with that name already exists!"
 msgstr ""
 
-#: src/bin/e_shelf.c:1654 src/bin/e_shelf.c:2476
+#: src/bin/e_shelf.c:1654 src/bin/e_shelf.c:2478
 #, fuzzy
 msgid "Stop Moving Gadgets"
 msgstr "Закінчити переміщення/зміну розміру елементів"
 
-#: src/bin/e_shelf.c:1656 src/bin/e_shelf.c:2478
+#: src/bin/e_shelf.c:1656 src/bin/e_shelf.c:2480
 #, fuzzy
 msgid "Begin Moving Gadgets"
 msgstr "Почати переміщення/зміну розміру елементів"
@@ -3868,23 +3871,23 @@ msgstr ""
 msgid "Rename Shelf"
 msgstr "Перейменувати файл"
 
-#: src/bin/e_shelf.c:2426 src/modules/conf_shelves/e_int_config_shelf.c:141
+#: src/bin/e_shelf.c:2428 src/modules/conf_shelves/e_int_config_shelf.c:141
 #: src/modules/ibar/e_mod_main.c:858
 #, fuzzy
 msgid "Contents"
 msgstr "Коментар"
 
-#: src/bin/e_shelf.c:2436
+#: src/bin/e_shelf.c:2438
 #, fuzzy
 msgid "Orientation"
 msgstr "Презентація"
 
-#: src/bin/e_shelf.c:2445
+#: src/bin/e_shelf.c:2447
 #, fuzzy
 msgid "Autohide"
 msgstr "Автоматично приховувати"
 
-#: src/bin/e_shelf.c:2452 src/modules/conf_display/e_int_config_display.c:405
+#: src/bin/e_shelf.c:2454 src/modules/conf_display/e_int_config_display.c:406
 msgid "Refresh"
 msgstr "Частота кадрів"
 
@@ -4150,7 +4153,7 @@ msgstr[1] "%li хвилин тому"
 #: src/bin/e_widget_filepreview.c:539 src/bin/e_widget_filepreview.c:540
 #: src/bin/e_widget_filepreview.c:571 src/bin/e_widget_filepreview.c:582
 #: src/modules/comp/e_mod_config.c:516
-#: src/modules/conf_dialogs/e_int_config_profiles.c:295
+#: src/modules/conf_dialogs/e_int_config_profiles.c:298
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:1218
 #: src/modules/conf_keybindings/e_int_config_acpibindings.c:395
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:1119
@@ -4410,21 +4413,21 @@ msgstr "Долучити до улюблених"
 #: src/modules/conf_display/e_int_config_desklock_fsel.c:91
 #: src/modules/conf_intl/e_int_config_imc.c:825
 #: src/modules/conf_theme/e_int_config_wallpaper.c:435
-#: src/modules/conf_theme/e_int_config_wallpaper.c:552
+#: src/modules/conf_theme/e_int_config_wallpaper.c:555
 #: src/modules/conf_theme/e_int_config_startup.c:266
-#: src/modules/conf_theme/e_int_config_theme.c:463
+#: src/modules/conf_theme/e_int_config_theme.c:739
 #: src/modules/gadman/e_mod_config.c:256
 msgid "Go up a Directory"
 msgstr "Каталогом вище"
 
-#: src/modules/backlight/e_mod_main.c:430
+#: src/modules/backlight/e_mod_main.c:422
 #: src/modules/conf_display/e_mod_main.c:36
 #, fuzzy
 msgid "Backlight"
 msgstr "підсвічування"
 
-#: src/modules/backlight/e_mod_main.c:486
-#: src/modules/backlight/e_mod_main.c:496
+#: src/modules/backlight/e_mod_main.c:493
+#: src/modules/backlight/e_mod_main.c:503
 #, fuzzy
 msgid "Backlight Controls"
 msgstr "підсвічування вниз"
@@ -4647,42 +4650,42 @@ msgstr "Показувати панель інструментів"
 msgid "Show calendar"
 msgstr "Показувати панель інструментів"
 
-#: src/modules/comp/e_mod_comp.c:3694 src/modules/comp/e_mod_comp.c:3716
-#: src/modules/comp/e_mod_comp.c:4129 src/modules/comp/e_mod_comp.c:4139
+#: src/modules/comp/e_mod_comp.c:3697 src/modules/comp/e_mod_comp.c:3719
+#: src/modules/comp/e_mod_comp.c:4132 src/modules/comp/e_mod_comp.c:4142
 #, fuzzy
 msgid "Compositor Error"
 msgstr "Помилка демонтування"
 
-#: src/modules/comp/e_mod_comp.c:3695
+#: src/modules/comp/e_mod_comp.c:3698
 msgid "Another compositor is already running<br>on your display server."
 msgstr ""
 
-#: src/modules/comp/e_mod_comp.c:3717
+#: src/modules/comp/e_mod_comp.c:3720
 msgid ""
 "Your display server does not support the<br>compositor overlay window. This "
 "is needed<br>for it to function."
 msgstr ""
 
-#: src/modules/comp/e_mod_comp.c:3791
+#: src/modules/comp/e_mod_comp.c:3794
 #, fuzzy
 msgid "Compositor Warning"
 msgstr "Позицію"
 
-#: src/modules/comp/e_mod_comp.c:3792
+#: src/modules/comp/e_mod_comp.c:3795
 msgid ""
 "Your display driver does not support OpenGL, or<br>no OpenGL engines were "
 "compiled or installed for<br>Evas or Ecore-Evas. Falling back to software "
 "engine."
 msgstr ""
 
-#: src/modules/comp/e_mod_comp.c:4130
+#: src/modules/comp/e_mod_comp.c:4133
 msgid ""
 "Your display server does not support XComposite,<br>or Ecore-X was built "
 "without XComposite support.<br>Note that for composite support you will also "
 "need<br>XRender and XFixes support in X11 and Ecore."
 msgstr ""
 
-#: src/modules/comp/e_mod_comp.c:4140
+#: src/modules/comp/e_mod_comp.c:4143
 msgid ""
 "Your display server does not support XDamage<br>or Ecore was built without "
 "XDamage support."
@@ -5229,21 +5232,21 @@ msgstr ""
 msgid "Reset"
 msgstr "Скинути"
 
-#: src/modules/conf_dialogs/e_int_config_profiles.c:289
+#: src/modules/conf_dialogs/e_int_config_profiles.c:292
 #, fuzzy, c-format
 msgid "Selected profile: %s"
 msgstr "Вибрати профіль"
 
-#: src/modules/conf_dialogs/e_int_config_profiles.c:311
+#: src/modules/conf_dialogs/e_int_config_profiles.c:315
 msgid "Add New Profile"
 msgstr "Додати новий профіль"
 
-#: src/modules/conf_dialogs/e_int_config_profiles.c:332
+#: src/modules/conf_dialogs/e_int_config_profiles.c:336
 #, c-format
 msgid "You want to delete the \"%s\" profile.<br><br>Are you sure?"
 msgstr "Ви хочете вилучити \"%s\" профіль.<br><br>Ви впевнені?"
 
-#: src/modules/conf_dialogs/e_int_config_profiles.c:334
+#: src/modules/conf_dialogs/e_int_config_profiles.c:338
 #, fuzzy
 msgid "Are you sure you want to delete this profile?"
 msgstr "Ви дійсно хочете вилучити цю поличку?"
@@ -5363,7 +5366,7 @@ msgid "Resolution change"
 msgstr "Зміна роздільної здатності"
 
 #: src/modules/conf_display/e_int_config_display.c:195
-#: src/modules/shot/e_mod_main.c:287 src/modules/shot/e_mod_main.c:772
+#: src/modules/shot/e_mod_main.c:288 src/modules/shot/e_mod_main.c:797
 msgid "Save"
 msgstr "Зберегти"
 
@@ -5375,27 +5378,27 @@ msgstr "Відновити"
 msgid "Screen Resolution Settings"
 msgstr "Налаштування роздільної здатності екрана"
 
-#: src/modules/conf_display/e_int_config_display.c:394
+#: src/modules/conf_display/e_int_config_display.c:395
 msgid "Resolution"
 msgstr "Роздільна здатність"
 
-#: src/modules/conf_display/e_int_config_display.c:401
+#: src/modules/conf_display/e_int_config_display.c:402
 msgid "Restore on login"
 msgstr "Відновлювати під час реєстрації"
 
-#: src/modules/conf_display/e_int_config_display.c:465
+#: src/modules/conf_display/e_int_config_display.c:466
 msgid "Rotation"
 msgstr "Обертання"
 
-#: src/modules/conf_display/e_int_config_display.c:484
+#: src/modules/conf_display/e_int_config_display.c:485
 msgid "Mirroring"
 msgstr "Дзеркально"
 
-#: src/modules/conf_display/e_int_config_display.c:629
+#: src/modules/conf_display/e_int_config_display.c:630
 msgid "Missing Features"
 msgstr "Відсутність функцій"
 
-#: src/modules/conf_display/e_int_config_display.c:630
+#: src/modules/conf_display/e_int_config_display.c:631
 msgid ""
 "Your X Display Server is missing support for<br>the <hilight>XRandR</"
 "hilight> (X Resize and Rotate) extension.<br>You cannot change screen "
@@ -5408,11 +5411,11 @@ msgstr ""
 "екрана<br>без підтримки цього розширення. Також це може бути<br>тому що, під "
 "час побудови <hilight>ecore</hilight> не було<br>виявлено підтримки XRandR."
 
-#: src/modules/conf_display/e_int_config_display.c:642
+#: src/modules/conf_display/e_int_config_display.c:643
 msgid "No Refresh Rates Found"
 msgstr "Не знайдено частоти оновлення"
 
-#: src/modules/conf_display/e_int_config_display.c:643
+#: src/modules/conf_display/e_int_config_display.c:644
 msgid ""
 "No refresh rates were reported by your X Display Server.<br>If you are "
 "running a nested X Display Server, then<br>this is to be expected. However, "
@@ -5426,7 +5429,7 @@ msgstr ""
 "здатності, і це може <hilight>пошкодити</hilight> ваш екран."
 
 #: src/modules/conf_display/e_int_config_desks.c:52
-#: src/modules/pager/e_mod_main.c:883
+#: src/modules/pager/e_mod_main.c:884
 msgid "Virtual Desktops Settings"
 msgstr "Налаштування віртуальних стільниць"
 
@@ -5540,11 +5543,11 @@ msgstr "Виберіть тло ..."
 #: src/modules/conf_display/e_int_config_desklock_fsel.c:84
 #: src/modules/conf_intl/e_int_config_imc.c:813
 #: src/modules/conf_theme/e_int_config_wallpaper.c:425
-#: src/modules/conf_theme/e_int_config_wallpaper.c:542
+#: src/modules/conf_theme/e_int_config_wallpaper.c:545
 #: src/modules/conf_theme/e_int_config_startup.c:253
-#: src/modules/conf_theme/e_int_config_theme.c:452
-#: src/modules/conf_theme/e_int_config_theme.c:828
-#: src/modules/conf_theme/e_int_config_theme.c:837
+#: src/modules/conf_theme/e_int_config_theme.c:728
+#: src/modules/conf_theme/e_int_config_theme.c:1103
+#: src/modules/conf_theme/e_int_config_theme.c:1112
 #: src/modules/gadman/e_mod_config.c:248
 msgid "Personal"
 msgstr "Особистий"
@@ -6433,7 +6436,7 @@ msgid "Main Menu"
 msgstr "Показати головне меню"
 
 #: src/modules/conf_menus/e_int_config_menus.c:258
-#: src/modules/fileman/e_mod_menu.c:344
+#: src/modules/fileman/e_mod_menu.c:347
 msgid "Favorites"
 msgstr "Улюблені"
 
@@ -6546,7 +6549,7 @@ msgid "Fonts"
 msgstr "Шрифти"
 
 #: src/modules/conf_paths/e_int_config_paths.c:76
-#: src/modules/conf_theme/e_int_config_theme.c:1119
+#: src/modules/conf_theme/e_int_config_theme.c:1394
 msgid "Themes"
 msgstr "Теми"
 
@@ -6577,10 +6580,6 @@ msgstr "Типові каталоги"
 #: src/modules/conf_paths/e_int_config_paths.c:204
 msgid "User Defined Directories"
 msgstr "Каталоги визначені користувачем"
-
-#: src/modules/conf_paths/e_int_config_paths.c:206
-msgid "New Directory"
-msgstr "Новий каталог"
 
 #: src/modules/conf_paths/e_int_config_env.c:36
 #: src/modules/conf_paths/e_mod_main.c:24
@@ -6732,14 +6731,14 @@ msgid "e.g. Saving to disk"
 msgstr ""
 
 #: src/modules/conf_performance/e_int_config_powermanagement.c:235
-#: src/modules/shot/e_mod_main.c:703
+#: src/modules/shot/e_mod_main.c:728
 #: src/modules/notification/e_mod_config.c:96
 #, fuzzy
 msgid "Low"
 msgstr "Знизити"
 
 #: src/modules/conf_performance/e_int_config_powermanagement.c:274
-#: src/modules/dropshadow/e_mod_config.c:124 src/modules/shot/e_mod_main.c:701
+#: src/modules/dropshadow/e_mod_config.c:124 src/modules/shot/e_mod_main.c:726
 msgid "Medium"
 msgstr "Середній"
 
@@ -6751,7 +6750,7 @@ msgid "%.0f s"
 msgstr "%1.0f сек"
 
 #: src/modules/conf_performance/e_int_config_powermanagement.c:313
-#: src/modules/shot/e_mod_main.c:699
+#: src/modules/shot/e_mod_main.c:724
 msgid "High"
 msgstr ""
 
@@ -6794,28 +6793,28 @@ msgid "Wallpaper Settings"
 msgstr "Налаштування шпалер"
 
 #: src/modules/conf_theme/e_int_config_wallpaper.c:467
-#: src/modules/conf_theme/e_int_config_wallpaper.c:577
+#: src/modules/conf_theme/e_int_config_wallpaper.c:580
 msgid "Use Theme Wallpaper"
 msgstr "Використовувати шпалери теми"
 
 #: src/modules/conf_theme/e_int_config_wallpaper.c:472
-#: src/modules/conf_theme/e_int_config_wallpaper.c:582
+#: src/modules/conf_theme/e_int_config_wallpaper.c:585
 msgid "Picture..."
 msgstr "Зображення..."
 
-#: src/modules/conf_theme/e_int_config_wallpaper.c:595
+#: src/modules/conf_theme/e_int_config_wallpaper.c:601
 msgid "Where to place the Wallpaper"
 msgstr "Де розташувати шпалери"
 
-#: src/modules/conf_theme/e_int_config_wallpaper.c:596
+#: src/modules/conf_theme/e_int_config_wallpaper.c:602
 msgid "All Desktops"
 msgstr "На всіх стільницях"
 
-#: src/modules/conf_theme/e_int_config_wallpaper.c:598
+#: src/modules/conf_theme/e_int_config_wallpaper.c:604
 msgid "This Desktop"
 msgstr "На цій стільниці"
 
-#: src/modules/conf_theme/e_int_config_wallpaper.c:600
+#: src/modules/conf_theme/e_int_config_wallpaper.c:606
 msgid "This Screen"
 msgstr "На цьому екрані"
 
@@ -7427,37 +7426,37 @@ msgstr "Зміна фону"
 msgid "Transitions"
 msgstr "Переходи"
 
-#: src/modules/conf_theme/e_int_config_theme.c:92
+#: src/modules/conf_theme/e_int_config_theme.c:369
 msgid "Theme Selector"
 msgstr "Вибір Теми"
 
-#: src/modules/conf_theme/e_int_config_theme.c:334
+#: src/modules/conf_theme/e_int_config_theme.c:610
 #, fuzzy
 msgid "Theme File Error"
 msgstr "Помилка імпорту теми"
 
-#: src/modules/conf_theme/e_int_config_theme.c:335
+#: src/modules/conf_theme/e_int_config_theme.c:611
 #, c-format
 msgid "%s is probably not an E17 theme!"
 msgstr ""
 
-#: src/modules/conf_theme/e_int_config_theme.c:497
+#: src/modules/conf_theme/e_int_config_theme.c:773
 msgid " Import..."
 msgstr " Імпортувати..."
 
-#: src/modules/conf_theme/e_int_config_theme.c:1110
+#: src/modules/conf_theme/e_int_config_theme.c:1385
 msgid "Theme Categories"
 msgstr "Категорії Тем"
 
-#: src/modules/conf_theme/e_int_config_theme.c:1128
+#: src/modules/conf_theme/e_int_config_theme.c:1403
 msgid "Assign"
 msgstr "Призначити"
 
-#: src/modules/conf_theme/e_int_config_theme.c:1131
+#: src/modules/conf_theme/e_int_config_theme.c:1406
 msgid "Clear"
 msgstr "Очистити"
 
-#: src/modules/conf_theme/e_int_config_theme.c:1134
+#: src/modules/conf_theme/e_int_config_theme.c:1409
 msgid "Clear All"
 msgstr "Очистити Все"
 
@@ -8211,11 +8210,35 @@ msgid ""
 msgstr ""
 "Помилка налаштування частоти ЦП<br>за допомогою утиліти setfreq цього модуля"
 
+#: src/modules/cpufreq/e_mod_main.c:1157
+#, fuzzy
+msgid "Cpufreq Error"
+msgstr "Cpufreq"
+
+#: src/modules/cpufreq/e_mod_main.c:1158
+msgid ""
+"The freqset binary in the cpufreq module<br>directory cannot be found (stat "
+"failed)"
+msgstr ""
+
+#: src/modules/cpufreq/e_mod_main.c:1165
+#, fuzzy
+msgid "Cpufreq Permissions Error"
+msgstr "Дозволи"
+
+#: src/modules/cpufreq/e_mod_main.c:1166
+#, c-format
+msgid ""
+"The freqset binary in the cpufreq module<br>is not owned by root or does not "
+"have the<br>setuid bit set. Please ensure this is the<brcase. For example:"
+"<br><br>sudo chown root %s<br>sudo chmod u+s,a+x %s<br>"
+msgstr ""
+
 #: src/modules/dropshadow/e_mod_config.c:38
 msgid "Dropshadow Settings"
 msgstr "Параметри тіней"
 
-#: src/modules/dropshadow/e_mod_config.c:106 src/modules/shot/e_mod_main.c:693
+#: src/modules/dropshadow/e_mod_config.c:106 src/modules/shot/e_mod_main.c:718
 msgid "Quality"
 msgstr "Якість"
 
@@ -8556,76 +8579,76 @@ msgstr[1] ""
 msgid "No plugins loaded"
 msgstr "Модулі не завантажені"
 
-#: src/modules/everything/evry_plug_apps.c:1148
+#: src/modules/everything/evry_plug_apps.c:1147
 #, fuzzy
 msgid "Exebuf"
 msgstr "Typebuf"
 
-#: src/modules/everything/evry_plug_apps.c:1163
-#: src/modules/everything/evry_plug_apps.c:1210
-#: src/modules/fileman/e_fwin.c:2148 src/modules/fileman/e_fwin.c:2511
+#: src/modules/everything/evry_plug_apps.c:1162
+#: src/modules/everything/evry_plug_apps.c:1209
+#: src/modules/fileman/e_fwin.c:2147 src/modules/fileman/e_fwin.c:2510
 msgid "Open with..."
 msgstr "Відкрити через..."
 
-#: src/modules/everything/evry_plug_apps.c:1176
+#: src/modules/everything/evry_plug_apps.c:1175
 #, fuzzy
 msgid "Open File..."
 msgstr "Відкрити через..."
 
-#: src/modules/everything/evry_plug_apps.c:1190
+#: src/modules/everything/evry_plug_apps.c:1189
 #, fuzzy
 msgid "Edit Application Entry"
 msgstr "Додати програму"
 
-#: src/modules/everything/evry_plug_apps.c:1197
+#: src/modules/everything/evry_plug_apps.c:1196
 #, fuzzy
 msgid "New Application Entry"
 msgstr "Нова програма"
 
-#: src/modules/everything/evry_plug_apps.c:1204
+#: src/modules/everything/evry_plug_apps.c:1203
 msgid "Run with Sudo"
 msgstr ""
 
-#: src/modules/everything/evry_plug_apps.c:1217
+#: src/modules/everything/evry_plug_apps.c:1216
 #: src/modules/fileman/e_fwin.c:249
 #, fuzzy
 msgid "Open Terminal here"
 msgstr "Запустити в Терміналі"
 
-#: src/modules/everything/evry_plug_apps.c:1223
+#: src/modules/everything/evry_plug_apps.c:1222
 #, fuzzy
 msgid "Run Executable"
 msgstr "Виконуваний"
 
-#: src/modules/everything/evry_plug_apps.c:1303
-#: src/modules/everything/evry_plug_apps.c:1437
+#: src/modules/everything/evry_plug_apps.c:1302
+#: src/modules/everything/evry_plug_apps.c:1436
 #, fuzzy
 msgid "Everything Applications"
 msgstr "Рестарт-програми"
 
-#: src/modules/everything/evry_plug_apps.c:1334
+#: src/modules/everything/evry_plug_apps.c:1333
 #, fuzzy
 msgid "Commands"
 msgstr "Команду"
 
-#: src/modules/everything/evry_plug_apps.c:1335
+#: src/modules/everything/evry_plug_apps.c:1334
 #, fuzzy
 msgid "Terminal Command"
 msgstr "Запуск команди"
 
-#: src/modules/everything/evry_plug_apps.c:1340
+#: src/modules/everything/evry_plug_apps.c:1339
 #, fuzzy
 msgid "Sudo GUI"
 msgstr "Sudo GUI"
 
-#: src/modules/everything/evry_plug_apps.c:1418
+#: src/modules/everything/evry_plug_apps.c:1417
 #: src/modules/everything/evry_plug_collection.c:146
 #: src/modules/everything/evry_plug_files.c:1585
 #, fuzzy
 msgid "Everything Plugin"
 msgstr "Все"
 
-#: src/modules/everything/evry_plug_calc.c:252
+#: src/modules/everything/evry_plug_calc.c:265
 msgid "Calculator"
 msgstr ""
 
@@ -8766,136 +8789,136 @@ msgstr ""
 msgid "Back"
 msgstr "підсвічування"
 
-#: src/modules/fileman/e_fwin.c:2039
+#: src/modules/fileman/e_fwin.c:2038
 msgid "Other application..."
 msgstr "Інша програма..."
 
-#: src/modules/fileman/e_fwin.c:2102
+#: src/modules/fileman/e_fwin.c:2101
 #, fuzzy
 msgid "Go To Parent Directory"
 msgstr "До батьківського каталогу"
 
-#: src/modules/fileman/e_fwin.c:2112
+#: src/modules/fileman/e_fwin.c:2111
 #, fuzzy
 msgid "Clone Window"
 msgstr "Розчистити вікна"
 
-#: src/modules/fileman/e_fwin.c:2118
+#: src/modules/fileman/e_fwin.c:2117
 #, fuzzy
 msgid "Copy Path"
 msgstr "Шляхи E"
 
-#: src/modules/fileman/e_fwin.c:2134
+#: src/modules/fileman/e_fwin.c:2133
 msgid "Run"
 msgstr ""
 
-#: src/modules/fileman/e_fwin.c:2141 src/modules/fileman/e_fwin.c:2512
+#: src/modules/fileman/e_fwin.c:2140 src/modules/fileman/e_fwin.c:2511
 msgid "Open"
 msgstr "Відкрити"
 
-#: src/modules/fileman/e_fwin.c:2541 src/modules/fileman/e_fwin.c:2566
+#: src/modules/fileman/e_fwin.c:2540 src/modules/fileman/e_fwin.c:2565
 #, fuzzy, c-format
 msgid "%d file"
 msgid_plural "%d files"
 msgstr[0] "%1.0f файлів"
 msgstr[1] "%1.0f файлів"
 
-#: src/modules/fileman/e_fwin.c:2584
+#: src/modules/fileman/e_fwin.c:2583
 msgid "Known Applications"
 msgstr "Відомі програми"
 
-#: src/modules/fileman/e_fwin.c:2594
+#: src/modules/fileman/e_fwin.c:2593
 #, fuzzy
 msgid "Suggested Applications"
 msgstr "Вибрані програми"
 
-#: src/modules/fileman/e_fwin.c:2629
+#: src/modules/fileman/e_fwin.c:2628
 msgid "All Applications"
 msgstr "Всі програми"
 
-#: src/modules/fileman/e_fwin.c:2652
+#: src/modules/fileman/e_fwin.c:2651
 msgid "Custom Command"
 msgstr "Власна команда"
 
-#: src/modules/fileman/e_fwin.c:2947
+#: src/modules/fileman/e_fwin.c:2946
 #: src/modules/fileman_opinfo/e_mod_main.c:105
 #, c-format
 msgid "Copying is aborted"
 msgstr "Копіювання скасоване"
 
-#: src/modules/fileman/e_fwin.c:2951
+#: src/modules/fileman/e_fwin.c:2950
 #: src/modules/fileman_opinfo/e_mod_main.c:109
 #, c-format
 msgid "Moving is aborted"
 msgstr "Переміщення скасоване"
 
-#: src/modules/fileman/e_fwin.c:2955
+#: src/modules/fileman/e_fwin.c:2954
 #: src/modules/fileman_opinfo/e_mod_main.c:113
 #, c-format
 msgid "Deleting is aborted"
 msgstr "Видалення скасоване"
 
-#: src/modules/fileman/e_fwin.c:2959
+#: src/modules/fileman/e_fwin.c:2958
 #: src/modules/fileman_opinfo/e_mod_main.c:117
 #, fuzzy, c-format
 msgid "Secure deletion is aborted"
 msgstr "Видалення скасоване"
 
-#: src/modules/fileman/e_fwin.c:2963
+#: src/modules/fileman/e_fwin.c:2962
 #: src/modules/fileman_opinfo/e_mod_main.c:121
 #, c-format
 msgid "Unknown operation from slave is aborted"
 msgstr "Невідома операція від підлеглого скосована"
 
-#: src/modules/fileman/e_fwin.c:2973
+#: src/modules/fileman/e_fwin.c:2972
 #: src/modules/fileman_opinfo/e_mod_main.c:131
 #, c-format
 msgid "Copy of %s done"
 msgstr "Копіювання %s зроблено"
 
-#: src/modules/fileman/e_fwin.c:2975
+#: src/modules/fileman/e_fwin.c:2974
 #: src/modules/fileman_opinfo/e_mod_main.c:133
 #, fuzzy, c-format
 msgid "Copying %s (eta: %s)"
 msgstr "Копіювання %s (залишилось: %d сек.)"
 
-#: src/modules/fileman/e_fwin.c:2980
+#: src/modules/fileman/e_fwin.c:2979
 #: src/modules/fileman_opinfo/e_mod_main.c:139
 #, c-format
 msgid "Move of %s done"
 msgstr "Переміщення %s завершено"
 
-#: src/modules/fileman/e_fwin.c:2982
+#: src/modules/fileman/e_fwin.c:2981
 #: src/modules/fileman_opinfo/e_mod_main.c:141
 #, fuzzy, c-format
 msgid "Moving %s (eta: %s)"
 msgstr "Переміщення %s (залишилось: %d сек.)"
 
-#: src/modules/fileman/e_fwin.c:2987
+#: src/modules/fileman/e_fwin.c:2986
 #: src/modules/fileman_opinfo/e_mod_main.c:147
 #, c-format
 msgid "Delete done"
 msgstr "Вилучення зроблено"
 
-#: src/modules/fileman/e_fwin.c:2989
+#: src/modules/fileman/e_fwin.c:2988
 #: src/modules/fileman_opinfo/e_mod_main.c:149
 #, c-format
 msgid "Deleting files..."
 msgstr "Вилучення файлів..."
 
-#: src/modules/fileman/e_fwin.c:2994
+#: src/modules/fileman/e_fwin.c:2993
 #: src/modules/fileman_opinfo/e_mod_main.c:154
 #, fuzzy, c-format
 msgid "Secure delete done"
 msgstr "Роздільна здатність екрана"
 
-#: src/modules/fileman/e_fwin.c:2996
+#: src/modules/fileman/e_fwin.c:2995
 #: src/modules/fileman_opinfo/e_mod_main.c:156
 #, fuzzy, c-format
 msgid "Securely deleting files..."
 msgstr "Вилучення файлів..."
 
-#: src/modules/fileman/e_fwin.c:3000
+#: src/modules/fileman/e_fwin.c:2999
 #: src/modules/fileman_opinfo/e_mod_main.c:160
 #, fuzzy, c-format
 msgid "Unknown operation from slave %d"
@@ -8915,44 +8938,44 @@ msgstr "Піктограми файлів"
 msgid "File Types"
 msgstr "Типи файлів"
 
-#: src/modules/fileman/e_int_config_mime_edit.c:70
+#: src/modules/fileman/e_int_config_mime_edit.c:69
 msgid "File Icon"
 msgstr "Піктограма файла"
 
-#: src/modules/fileman/e_int_config_mime_edit.c:137
+#: src/modules/fileman/e_int_config_mime_edit.c:136
 msgid "Basic Info"
 msgstr "Базова інформація"
 
-#: src/modules/fileman/e_int_config_mime_edit.c:138
+#: src/modules/fileman/e_int_config_mime_edit.c:137
 msgid "Mime:"
 msgstr "Тип Mime:"
 
-#: src/modules/fileman/e_int_config_mime_edit.c:148
+#: src/modules/fileman/e_int_config_mime_edit.c:147
 msgid "Use Generated Thumbnail"
 msgstr "Використовувати згенеровану мініатюру"
 
-#: src/modules/fileman/e_int_config_mime_edit.c:151
+#: src/modules/fileman/e_int_config_mime_edit.c:150
 msgid "Use Theme Icon"
 msgstr "Використовувати піктограму теми"
 
-#: src/modules/fileman/e_int_config_mime_edit.c:154
+#: src/modules/fileman/e_int_config_mime_edit.c:153
 msgid "Use Edje File"
 msgstr "Використовувати файл edje"
 
-#: src/modules/fileman/e_int_config_mime_edit.c:157
+#: src/modules/fileman/e_int_config_mime_edit.c:156
 msgid "Use Image"
 msgstr "Використовувати зображення"
 
-#: src/modules/fileman/e_int_config_mime_edit.c:160
+#: src/modules/fileman/e_int_config_mime_edit.c:159
 msgid "Use Default"
 msgstr "Типово"
 
-#: src/modules/fileman/e_int_config_mime_edit.c:300
+#: src/modules/fileman/e_int_config_mime_edit.c:299
 #, fuzzy
 msgid "Select an Edje file"
 msgstr "Виберіть файл Edje"
 
-#: src/modules/fileman/e_int_config_mime_edit.c:302
+#: src/modules/fileman/e_int_config_mime_edit.c:301
 #, fuzzy
 msgid "Select an image"
 msgstr "Виберіть зображення"
@@ -9094,24 +9117,24 @@ msgstr ""
 msgid "0 listable items"
 msgstr ""
 
-#: src/modules/fileman/e_mod_menu.c:266
+#: src/modules/fileman/e_mod_menu.c:269
 msgid "GTK Bookmarks"
 msgstr ""
 
-#: src/modules/fileman/e_mod_menu.c:320
+#: src/modules/fileman/e_mod_menu.c:323
 #, fuzzy
 msgid "Current Directory"
 msgstr "Новий каталог"
 
-#: src/modules/fileman/e_mod_menu.c:328
+#: src/modules/fileman/e_mod_menu.c:331
 msgid "Home"
 msgstr "Домівка"
 
-#: src/modules/fileman/e_mod_menu.c:358
+#: src/modules/fileman/e_mod_menu.c:361
 msgid "Root"
 msgstr "Файлова система"
 
-#: src/modules/fileman/e_mod_menu.c:398
+#: src/modules/fileman/e_mod_menu.c:401
 msgid "Navigate..."
 msgstr ""
 
@@ -9126,7 +9149,7 @@ msgstr[1] "Обробка %d операції(ій)"
 msgid "Filemanager is idle"
 msgstr "Файловий менеджер не діє"
 
-#: src/modules/fileman_opinfo/e_mod_main.c:438
+#: src/modules/fileman_opinfo/e_mod_main.c:439
 msgid "EFM Operation Info"
 msgstr "Оперативна інформація EFM"
 
@@ -9272,6 +9295,7 @@ msgid "Scroll speed"
 msgstr "Швидкість прокрутки"
 
 #: src/modules/winlist/e_int_config_winlist.c:260
+#: src/modules/tasks/e_mod_config.c:98
 #, fuzzy
 msgid "Minimum width"
 msgstr "Мінімальна ширина"
@@ -9290,6 +9314,7 @@ msgid "Maximum width"
 msgstr "Максимальна ширина"
 
 #: src/modules/winlist/e_int_config_winlist.c:273
+#: src/modules/tasks/e_mod_config.c:103
 #, fuzzy
 msgid "Minimum height"
 msgstr "Мінімальна висота"
@@ -9621,32 +9646,32 @@ msgstr ""
 "прийнято внутрішній код<br>для контекстних меню.<br>Ця кнопка працює тільки "
 "в спливаючому вікні."
 
-#: src/modules/pager/e_mod_main.c:2922
+#: src/modules/pager/e_mod_main.c:2923
 msgid "Show Pager Popup"
 msgstr "Показувати підказку пейджера"
 
-#: src/modules/pager/e_mod_main.c:2929 src/modules/pager/e_mod_main.c:2965
+#: src/modules/pager/e_mod_main.c:2930 src/modules/pager/e_mod_main.c:2966
 msgid "Popup Desk Right"
 msgstr "Пересунути підказку праворуч"
 
-#: src/modules/pager/e_mod_main.c:2931 src/modules/pager/e_mod_main.c:2966
+#: src/modules/pager/e_mod_main.c:2932 src/modules/pager/e_mod_main.c:2967
 msgid "Popup Desk Left"
 msgstr "Пересунути підказку ліворуч"
 
-#: src/modules/pager/e_mod_main.c:2933 src/modules/pager/e_mod_main.c:2967
+#: src/modules/pager/e_mod_main.c:2934 src/modules/pager/e_mod_main.c:2968
 msgid "Popup Desk Up"
 msgstr "Пересунути підказку вверх"
 
-#: src/modules/pager/e_mod_main.c:2935 src/modules/pager/e_mod_main.c:2968
+#: src/modules/pager/e_mod_main.c:2936 src/modules/pager/e_mod_main.c:2969
 msgid "Popup Desk Down"
 msgstr "Пересунути підказку вниз"
 
-#: src/modules/pager/e_mod_main.c:2937 src/modules/pager/e_mod_main.c:2969
+#: src/modules/pager/e_mod_main.c:2938 src/modules/pager/e_mod_main.c:2970
 #, fuzzy
 msgid "Popup Desk Next"
 msgstr "Popup бюро Далі"
 
-#: src/modules/pager/e_mod_main.c:2939 src/modules/pager/e_mod_main.c:2970
+#: src/modules/pager/e_mod_main.c:2940 src/modules/pager/e_mod_main.c:2971
 #, fuzzy
 msgid "Popup Desk Previous"
 msgstr "Popup бюро Попередня"
@@ -10047,139 +10072,155 @@ msgstr "Systray не може працювати в полку, який вст�
 msgid "Systray"
 msgstr "Системний лоток"
 
-#: src/modules/shot/e_mod_main.c:175 src/modules/shot/e_mod_main.c:209
+#: src/modules/shot/e_mod_main.c:176 src/modules/shot/e_mod_main.c:210
 #, fuzzy
 msgid "Error saving screenshot file"
 msgstr "Помилка завантаження модуля"
 
-#: src/modules/shot/e_mod_main.c:176 src/modules/shot/e_mod_main.c:210
+#: src/modules/shot/e_mod_main.c:177 src/modules/shot/e_mod_main.c:211
 #, fuzzy, c-format
 msgid "Path: %s"
 msgstr "Шляхи E"
 
-#: src/modules/shot/e_mod_main.c:227
+#: src/modules/shot/e_mod_main.c:228
 #, fuzzy
 msgid "Error - Unknown format"
 msgstr "Інформація про помилку"
 
-#: src/modules/shot/e_mod_main.c:228
+#: src/modules/shot/e_mod_main.c:229
 msgid ""
 "File has an unspecified extension.<br>Please use '.jpg' or '.png' "
 "extensions<br>only as other formats are not<br>supported currently."
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:275
+#: src/modules/shot/e_mod_main.c:276
 msgid "Select screenshot save location"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:385
+#: src/modules/shot/e_mod_main.c:386
 #, c-format
 msgid "Uploaded %s / %s"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:405
+#: src/modules/shot/e_mod_main.c:406
 #, fuzzy
 msgid "Error - Upload Failed"
 msgstr "Помилка завантаження модуля"
 
-#: src/modules/shot/e_mod_main.c:406
+#: src/modules/shot/e_mod_main.c:407
 #, c-format
 msgid "Upload failed with status code:<br>%i"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:450
+#: src/modules/shot/e_mod_main.c:451
 #, fuzzy
 msgid "Error - Can't create file"
 msgstr "Помилка завантаження модуля"
 
-#: src/modules/shot/e_mod_main.c:451
+#: src/modules/shot/e_mod_main.c:452
 #, c-format
 msgid "Cannot create temporary file '%s': %s"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:469
+#: src/modules/shot/e_mod_main.c:470
 msgid "Error - Can't open file"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:470
+#: src/modules/shot/e_mod_main.c:471
 #, c-format
 msgid "Cannot open temporary file '%s': %s"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:478
+#: src/modules/shot/e_mod_main.c:479
 #, fuzzy
 msgid "Error - Bad size"
 msgstr "Помилка завантаження модуля"
 
-#: src/modules/shot/e_mod_main.c:479
+#: src/modules/shot/e_mod_main.c:480
 #, c-format
 msgid "Cannot get size of file '%s'"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:489
+#: src/modules/shot/e_mod_main.c:490
 msgid "Error - Can't allocate memory"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:490
+#: src/modules/shot/e_mod_main.c:491
 #, c-format
 msgid "Cannot allocate memory for picture: %s"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:497
+#: src/modules/shot/e_mod_main.c:498
 msgid "Error - Can't read picture"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:498
+#: src/modules/shot/e_mod_main.c:499
 msgid "Cannot read picture"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:519
+#: src/modules/shot/e_mod_main.c:520
 msgid "Uploading screenshot"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:524
+#: src/modules/shot/e_mod_main.c:525
 msgid "Uploading ..."
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:529
+#: src/modules/shot/e_mod_main.c:530
 msgid "Screenshot is available at this location:"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:538
+#: src/modules/shot/e_mod_main.c:539
 #, fuzzy
 msgid "Hide"
 msgstr "Автоматично приховувати"
 
-#: src/modules/shot/e_mod_main.c:641
+#: src/modules/shot/e_mod_main.c:563
+#, fuzzy
+msgid "Confirm Share"
+msgstr "Підтвердіть вилучення"
+
+#: src/modules/shot/e_mod_main.c:564
+msgid ""
+"This image will be uploaded<br>to enlightenment.org. It will be publicly "
+"visible."
+msgstr ""
+
+#: src/modules/shot/e_mod_main.c:566
+#, fuzzy
+msgid "Confirm"
+msgstr "Параметри поличок"
+
+#: src/modules/shot/e_mod_main.c:666
 msgid "Where to put Screenshot..."
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:697
+#: src/modules/shot/e_mod_main.c:722
 msgid "Perfect"
 msgstr ""
 
-#: src/modules/shot/e_mod_main.c:774
+#: src/modules/shot/e_mod_main.c:799
 #, fuzzy
 msgid "Share"
 msgstr "Різка"
 
-#: src/modules/shot/e_mod_main.c:911 src/modules/shot/e_mod_main.c:959
+#: src/modules/shot/e_mod_main.c:936 src/modules/shot/e_mod_main.c:984
 #, fuzzy
 msgid "Take Shot"
 msgstr "Налаштування екранів"
 
-#: src/modules/shot/e_mod_main.c:922 src/modules/shot/e_mod_main.c:952
-#: src/modules/shot/e_mod_main.c:963 src/modules/shot/e_mod_main.c:989
+#: src/modules/shot/e_mod_main.c:947 src/modules/shot/e_mod_main.c:977
+#: src/modules/shot/e_mod_main.c:988 src/modules/shot/e_mod_main.c:1015
 #, fuzzy
 msgid "Take Screenshot"
 msgstr "Налаштування екранів"
 
-#: src/modules/shot/e_mod_main.c:940
+#: src/modules/shot/e_mod_main.c:965
 #, fuzzy
 msgid "Shot Error"
 msgstr "Помилка під'єднання"
 
-#: src/modules/shot/e_mod_main.c:941
+#: src/modules/shot/e_mod_main.c:966
 #, fuzzy
 msgid "Cannot initialize network"
 msgstr "Enlightenment не може ініціалізувати менеджер файлів.\n"
@@ -10204,20 +10245,10 @@ msgstr "Показувати ярлик піктограми"
 msgid "Show text only"
 msgstr "Показувати піктограми на стільниці"
 
-#: src/modules/tasks/e_mod_config.c:98
-#, fuzzy
-msgid "Minimum Width"
-msgstr "Мінімальна ширина"
-
 #: src/modules/tasks/e_mod_config.c:100 src/modules/tasks/e_mod_config.c:105
 #, fuzzy, c-format
 msgid "%1.0f px"
 msgstr "%.0f пікс."
-
-#: src/modules/tasks/e_mod_config.c:103
-#, fuzzy
-msgid "Minimum Height"
-msgstr "Мінімальна висота"
 
 #: src/modules/tiling/e_mod_config.c:135
 msgid "columns"
@@ -10250,9 +10281,9 @@ msgstr ""
 msgid "Tiling Configuration"
 msgstr "(немає інформації)"
 
-#: src/modules/tiling/e_mod_tiling.c:4066
-#: src/modules/tiling/e_mod_tiling.c:4130
-#: src/modules/tiling/e_mod_tiling.c:4268
+#: src/modules/tiling/e_mod_tiling.c:4080
+#: src/modules/tiling/e_mod_tiling.c:4144
+#: src/modules/tiling/e_mod_tiling.c:4282
 #, fuzzy
 msgid "Tiling"
 msgstr "Опитування"
@@ -10356,11 +10387,11 @@ msgstr ""
 msgid "Notification Module"
 msgstr "Сповіщення"
 
-#: src/modules/notification/e_mod_main.c:191
+#: src/modules/notification/e_mod_main.c:192
 msgid "Error During DBus Init!"
 msgstr "Помилка при запуску DBus!"
 
-#: src/modules/notification/e_mod_main.c:192
+#: src/modules/notification/e_mod_main.c:193
 msgid ""
 "Error during DBus init! Please check if dbus is correctly installed and "
 "running."
@@ -10457,6 +10488,12 @@ msgstr ""
 #~ "suspend to disk?"
 #~ msgstr "Перехід в режим сну.<br><br>Ви дійсно цього хочете?"
 
+#~ msgid "Create a new Directory"
+#~ msgstr "Створити новий каталог"
+
+#~ msgid "New Directory Name:"
+#~ msgstr "Назва нового каталогу:"
+
 #~ msgid "Maximize vertically"
 #~ msgstr "Збільшити вертикально"
 
@@ -10536,6 +10573,14 @@ msgstr ""
 
 #~ msgid "Show popup on urgent window"
 #~ msgstr "Показувати підказку в терміновому вікні"
+
+#, fuzzy
+#~ msgid "Minimum Width"
+#~ msgstr "Мінімальна ширина"
+
+#, fuzzy
+#~ msgid "Minimum Height"
+#~ msgstr "Мінімальна висота"
 
 #~ msgid "Notification Box"
 #~ msgstr "Сповіщення"

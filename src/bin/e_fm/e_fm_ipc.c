@@ -163,7 +163,7 @@ static char       *_e_str_list_remove(Eina_List **list, const char *str, int len
 static void        _e_fm_ipc_reorder(const char *file, const char *dst, const char *relative, int after);
 static void        _e_fm_ipc_dir_del(E_Dir *ed);
 
-static const char *_e_fm_ipc_prepare_command(E_Fm_Op_Type type, const char *args);
+static char *_e_fm_ipc_prepare_command(E_Fm_Op_Type type, const char *args);
 
 /* local subsystem functions */
 int
@@ -479,7 +479,7 @@ _e_fm_ipc_task_remove(E_Fm_Task *task)
 static void
 _e_fm_ipc_mkdir_try(E_Fm_Task *task)
 {
-   char buf[PATH_MAX + 4096];
+   char buf[PATH_MAX + 4096], *dir;
 
    if (mkdir(task->src, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) < 0)
      {
@@ -488,8 +488,10 @@ _e_fm_ipc_mkdir_try(E_Fm_Task *task)
      }
    else
      {
-        _e_fm_ipc_reorder(ecore_file_file_get(task->src), ecore_file_dir_get(task->src), task->rel, task->rel_to);
+        dir = ecore_file_dir_get(task->src);
+        _e_fm_ipc_reorder(ecore_file_file_get(task->src), dir, task->rel, task->rel_to);
         _e_fm_ipc_task_remove(task);
+        free(dir);
      }
 }
 
@@ -794,13 +796,13 @@ static int
 _e_fm_ipc_slave_run(E_Fm_Op_Type type, const char *args, int id)
 {
    E_Fm_Slave *slave;
-   const char *command;
+   char *command;
 
    slave = malloc(sizeof(E_Fm_Slave));
 
    if (!slave) return 0;
 
-   command = eina_stringshare_add(_e_fm_ipc_prepare_command(type, args));
+   command = _e_fm_ipc_prepare_command(type, args);
    if (!command)
      {
         free(slave);
@@ -811,7 +813,7 @@ _e_fm_ipc_slave_run(E_Fm_Op_Type type, const char *args, int id)
    slave->exe = ecore_exe_pipe_run(command, ECORE_EXE_PIPE_WRITE | ECORE_EXE_PIPE_READ | ECORE_EXE_PIPE_ERROR, slave);
 //   printf("EFM command: %s\n", command);
 
-   eina_stringshare_del(command);
+   free(command);
 
    _e_fm_ipc_slaves = eina_list_append(_e_fm_ipc_slaves, slave);
 
@@ -1249,10 +1251,9 @@ _e_fm_ipc_cb_fop_trash_idler(void *data)
 {
    E_Fop *fop = NULL;
    FILE *info = NULL;
-   const char *trash_dir = NULL;
-   const char *filename = NULL;
+   const char *filename;
    const char *escname = NULL;
-   const char *dest = NULL;
+   char *dest, *trash_dir;
    char buf[4096];
    unsigned int i = 0;
    struct tm *lt;
@@ -1266,15 +1267,15 @@ _e_fm_ipc_cb_fop_trash_idler(void *data)
 
    /* Check that 'home trash' and subsequesnt dirs exists, create if not */
    snprintf(buf, sizeof(buf), "%s/Trash", efreet_data_home_get());
-   trash_dir = eina_stringshare_add(buf);
+   trash_dir = strdupa(buf);
    snprintf(buf, sizeof(buf), "%s/files", trash_dir);
    if (!ecore_file_mkpath(buf)) return 0;
    snprintf(buf, sizeof(buf), "%s/info", trash_dir);
    if (!ecore_file_mkpath(buf)) return 0;
 
-   filename = eina_stringshare_add(strrchr(fop->src, '/'));
+   filename = strrchr(fop->src, '/');
+   if (!filename) return 0;
    escname = ecore_file_escape_name(filename);
-   eina_stringshare_del(filename);
 
    /* Find path for info file. Pointer address is part of the filename to
     * alleviate some of the looping in case of multiple filenames with the
@@ -1285,7 +1286,7 @@ _e_fm_ipc_cb_fop_trash_idler(void *data)
                  fop, i++);
      }
    while (ecore_file_exists(buf));
-   dest = eina_stringshare_add(buf);
+   dest = strdup(buf);
 
    /* Try to move the file */
    if (rename(fop->src, dest))
@@ -1293,6 +1294,7 @@ _e_fm_ipc_cb_fop_trash_idler(void *data)
         if (errno == EXDEV)
           {
              /* Move failed. Spec says delete files that can't be trashed */
+             free(dest);
              ecore_file_unlink(fop->src);
              return ECORE_CALLBACK_CANCEL;
           }
@@ -1318,8 +1320,7 @@ _e_fm_ipc_cb_fop_trash_idler(void *data)
      /* Could not create info file. Spec says to put orig file back */
      rename(dest, fop->src);
 
-   if (dest) eina_stringshare_del(dest);
-   if (trash_dir) eina_stringshare_del(trash_dir);
+   free(dest);
    eina_stringshare_del(fop->src);
    eina_stringshare_del(fop->dst);
    _e_fops = eina_list_remove(_e_fops, fop);
@@ -1438,7 +1439,7 @@ _e_fm_ipc_dir_del(E_Dir *ed)
    free(ed);
 }
 
-static const char *
+static char *
 _e_fm_ipc_prepare_command(E_Fm_Op_Type type, const char *args)
 {
    char *buffer;

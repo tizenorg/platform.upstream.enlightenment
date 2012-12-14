@@ -39,8 +39,8 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
-/* Package BATTERY ( ecore >= 1.7.0 ecore-file >= 1.7.0 ecore-con >= 1.7.0
-   eina >= 1.7.0 ) found. */
+/* Package BATTERY ( ecore >= $efl_version ecore-file >= $efl_version
+   ecore-con >= $efl_version eina >= $efl_version ) found. */
 #undef HAVE_BATTERY
 
 /* Define to 1 if you have the <CFBase.h> header file. */
@@ -61,7 +61,7 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
-/* Package ECONNMAN ( edbus >= 1.7.0 ) found. */
+/* Package ECONNMAN ( edbus >= $efl_version ) found. */
 #undef HAVE_ECONNMAN
 
 /* Package ECORE_IMF ( ecore-imf >= ${efl_version} ecore-imf-evas >=
@@ -80,7 +80,7 @@
 /* "Have emotion support" */
 #undef HAVE_EMOTION
 
-/* Package ENOTIFY ( edbus >= 1.7.0 enotify >= 1.7.0 ) found. */
+/* Package ENOTIFY ( edbus >= $efl_version enotify >= $efl_version ) found. */
 #undef HAVE_ENOTIFY
 
 /* Package EPHYSICS ( ephysics ) found. */
@@ -149,8 +149,8 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
-/* Package TEMPERATURE ( ecore >= 1.7.0 ecore-file >= 1.7.0 eina >= 1.7.0 )
-   found. */
+/* Package TEMPERATURE ( ecore >= $efl_version ecore-file >= $efl_version eina
+   >= $efl_version ) found. */
 #undef HAVE_TEMPERATURE
 
 /* enable Udisks mounting */

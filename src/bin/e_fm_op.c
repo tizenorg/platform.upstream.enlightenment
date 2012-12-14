@@ -268,8 +268,11 @@ main(int argc, char **argv)
                               goto skip_arg;
 
                             if (buf[0] != '/')
-                              _E_FM_OP_ERROR_SEND_SCAN(0, E_FM_OP_ERROR,
-                                                       "Unknown destination '%s': %s.", buf);
+                              {
+                                 free(p2);
+                                 _E_FM_OP_ERROR_SEND_SCAN(0, E_FM_OP_ERROR,
+                                                          "Unknown destination '%s': %s.", buf);
+                              }
                          }
                        else if (type == E_FM_OP_RENAME)
                          {
@@ -277,8 +280,11 @@ main(int argc, char **argv)
                               goto skip_arg;
 
                             if (buf[0] != '/')
-                              _E_FM_OP_ERROR_SEND_SCAN(0, E_FM_OP_ERROR,
-                                                       "Unknown destination '%s': %s.", buf);
+                              {
+                                 free(p2);
+                                 _E_FM_OP_ERROR_SEND_SCAN(0, E_FM_OP_ERROR,
+                                                          "Unknown destination '%s': %s.", buf);
+                              }
 
                             if (access(buf, F_OK) == -1)
                               {
@@ -291,6 +297,7 @@ main(int argc, char **argv)
                                         type = E_FM_OP_MOVE;
                                       else
                                         {
+                                           free(p2);
                                            _E_FM_OP_ERROR_SEND_SCAN(0, E_FM_OP_ERROR,
                                                                     "Cannot move '%s' to '%s': %s.",
                                                                     argv[i], buf);
@@ -468,6 +475,7 @@ _e_fm_op_remove_link_task(E_Fm_Op_Task *task)
 {
    E_Fm_Op_Task *ltask;
 
+   if (!task) return;
    if (task->link)
      {
         ltask = eina_list_data_get(task->link);
@@ -1089,7 +1097,8 @@ _e_fm_op_update_progress(E_Fm_Op_Task *task, off_t _plus_e_fm_op_done, off_t _pl
              eta = (int)(eta + 0.5);
           }
 
-        if ((percent != ppercent) || (eta != peta) || ((task) && (task != ptask)))
+        if (!task) return;
+        if ((percent != ppercent) || (eta != peta) || (task != ptask))
           {
              ppercent = percent;
              peta = eta;
@@ -1234,17 +1243,30 @@ _e_fm_op_copy_link(E_Fm_Op_Task *task)
 
    if (symlink(lnk_path, task->dst.name) == -1)
      {
+        char *buf;
+
         if (errno == EEXIST)
           {
              if (unlink(task->dst.name) == -1)
-               _E_FM_OP_ERROR_SEND_WORK(task, E_FM_OP_ERROR, "Cannot unlink '%s': %s.", task->dst.name);
+               {
+                  free(lnk_path);
+                  _E_FM_OP_ERROR_SEND_WORK(task, E_FM_OP_ERROR, "Cannot unlink '%s': %s.", task->dst.name);
+               }
              if (symlink(lnk_path, task->dst.name) == -1)
-               _E_FM_OP_ERROR_SEND_WORK(task, E_FM_OP_ERROR, "Cannot create link from '%s' to '%s': %s.", lnk_path, task->dst.name);
+               {
+                  buf = strdupa(lnk_path);
+                  free(lnk_path);
+                  _E_FM_OP_ERROR_SEND_WORK(task, E_FM_OP_ERROR, "Cannot create link from '%s' to '%s': %s.", buf, task->dst.name);
+               }
           }
         else
-          _E_FM_OP_ERROR_SEND_WORK(task, E_FM_OP_ERROR, "Cannot create link from '%s' to '%s': %s.", lnk_path, task->dst.name);
+          {
+             buf = strdupa(lnk_path);
+             free(lnk_path);
+             _E_FM_OP_ERROR_SEND_WORK(task, E_FM_OP_ERROR, "Cannot create link from '%s' to '%s': %s.", buf, task->dst.name);
+          }
      }
-   E_FREE(lnk_path);
+   free(lnk_path);
 
    task->dst.done += task->src.st.st_size;
 

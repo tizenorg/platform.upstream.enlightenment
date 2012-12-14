@@ -61,7 +61,7 @@ deserialize_sink(Pulse *conn __UNUSED__, Pulse_Tag *tag, Eina_Bool source)
    uint32_t owner_module, monitor_source, flags, base_volume, state, n_volume_steps, card, n_ports;
    uint64_t latency, configured_latency;
    const char *monitor_source_name, *driver;
-   Eina_Hash *props;
+   Eina_Hash *props = NULL;
    unsigned int x;
 
    monitor_source_name = driver = NULL;
@@ -120,6 +120,7 @@ deserialize_sink(Pulse *conn __UNUSED__, Pulse_Tag *tag, Eina_Bool source)
    return sink;
 error:
    pulse_sink_free(sink);
+   eina_hash_free(props);
    return NULL;
 }
 
@@ -154,7 +155,7 @@ deserialize_tag(Pulse *conn, PA_Commands command, Pulse_Tag *tag)
                     pulse_sink_free(sink);
                   break;
                }
-             ev = eina_list_append(ev, sink);
+             if (cb) ev = eina_list_append(ev, sink);
           }
         break;
       case PA_COMMAND_GET_SINK_INFO:

@@ -993,9 +993,10 @@ linux_acpi_init(void)
           {
              EINA_ITERATOR_FOREACH(powers, info)
                {
-                  char buf[4096];
+                  char buf[PATH_MAX];
                   FILE *f;
 
+                  if (info->name_length + sizeof("/state") >= sizeof(buf)) continue;
                   strcpy(buf, info->path);
                   strcat(buf, "/state");
                   f = fopen(buf, "r");

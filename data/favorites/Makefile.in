@@ -342,6 +342,7 @@ edje_cc = @edje_cc@
 eet_eet = @eet_eet@
 efl_doxygen = @efl_doxygen@
 efl_have_doxygen = @efl_have_doxygen@
+efl_version = @efl_version@
 exec_prefix = @exec_prefix@
 fnmatch_libs = @fnmatch_libs@
 host = @host@

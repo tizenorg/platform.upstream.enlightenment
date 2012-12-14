@@ -2381,6 +2381,7 @@ _e_shelf_cb_menu_orient(void *data, E_Menu *m, E_Menu_Item *mi)
              cf_es = es->cfg;
              cfd = es->config_dialog;
              es->config_dialog = NULL;
+             e_gadcon_unpopulate(es->gadcon);
              e_object_del(E_OBJECT(es));
              es = e_shelf_config_new(zone, cf_es);
              es->config_dialog = cfd;
@@ -2409,6 +2410,7 @@ _e_shelf_menu_orientation_pre_cb(void *data, E_Menu *m)
         e_menu_item_callback_set(mi, _e_shelf_cb_menu_orient, es);
         if (es->cfg->orient == orient)
           e_menu_item_toggle_set(mi, 1);
+        e_menu_item_disabled_set(mi, es->cfg->orient == orient);
      }
 }
 
