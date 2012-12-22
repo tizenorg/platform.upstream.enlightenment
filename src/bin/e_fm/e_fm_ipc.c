@@ -47,6 +47,10 @@
 #define DEF_ROUND_TRIP_TOLERANCE 0.01
 #define DEF_MOD_BACKOFF          0.2
 
+#ifndef strdupa
+# define strdupa(str) strcpy(alloca(strlen(str) + 1), str)
+#endif
+
 typedef struct _E_Dir          E_Dir;
 typedef struct _E_Fop          E_Fop;
 typedef struct _E_Mod          E_Mod;
@@ -1150,8 +1154,8 @@ _e_fm_ipc_file_add_mod(E_Dir *ed, const char *path, E_Fm_Op_Type op, int listing
    bsz = p - buf;
    ecore_ipc_server_send(_e_fm_ipc_server, 6 /*E_IPC_DOMAIN_FM*/, op, 0, ed->id,
                          listing, buf, bsz);
-   if (lnk) free(lnk);
-   if (rlnk) free(rlnk);
+   free(lnk);
+   free(rlnk);
 }
 
 static void

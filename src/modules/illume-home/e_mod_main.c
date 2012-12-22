@@ -356,7 +356,7 @@ _il_home_desktop_find_border(E_Zone *zone, Efreet_Desktop *desktop)
         if (e_exec_startup_id_pid_find(bd->client.netwm.pid, 
                                        bd->client.netwm.startup_id) == desktop) 
           {
-             if (exe) free(exe);
+             free(exe);
              return bd;
           }
         if (exe) 
@@ -381,7 +381,7 @@ _il_home_desktop_find_border(E_Zone *zone, Efreet_Desktop *desktop)
                }
           }
      }
-   if (exe) free(exe);
+   free(exe);
    return NULL;
 }
 
@@ -423,6 +423,7 @@ _il_home_win_new(E_Zone *zone)
 
    hwin->o_bg = edje_object_add(evas);
    edje_object_file_set(hwin->o_bg, bgfile, "e/desktop/background");
+   eina_stringshare_del(bgfile);
    evas_object_move(hwin->o_bg, 0, 0);
    evas_object_show(hwin->o_bg);
 
@@ -750,6 +751,7 @@ _il_home_cb_bg_change(void *data __UNUSED__, int type, void *event __UNUSED__)
         else
           bgfile = e_bg_file_get(zone->container->num, zone->num, -1, -1);
         edje_object_file_set(hwin->o_bg, bgfile, "e/desktop/background");
+        eina_stringshare_del(bgfile);
      }
 
    return ECORE_CALLBACK_PASS_ON;

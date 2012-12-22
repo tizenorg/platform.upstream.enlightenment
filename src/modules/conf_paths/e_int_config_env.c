@@ -77,8 +77,8 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
         if (evr->val) eina_stringshare_del(evr->val);
         E_FREE(evr);
      }
-   if (cfdata->var_str) free(cfdata->var_str);
-   if (cfdata->val_str) free(cfdata->val_str);
+   free(cfdata->var_str);
+   free(cfdata->val_str);
    E_FREE(cfdata);
 }
 
@@ -278,6 +278,8 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    Evas_Object *o, *ol, *oe, *ob, *oc;
    Eina_List *l;
    E_Config_Env_Var *evr;
+   
+   e_dialog_resizable_set(cfd->dia, 1);
    
    o = e_widget_table_add(evas, 0);
    

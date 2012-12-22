@@ -4,10 +4,11 @@
 #include "e.h"
 #include "evry_api.h"
 
-#define MOD_CONFIG_FILE_EPOCH 0x0005
-#define MOD_CONFIG_FILE_GENERATION 0x0002
-#define MOD_CONFIG_FILE_VERSION					\
-  ((MOD_CONFIG_FILE_EPOCH << 16) | MOD_CONFIG_FILE_GENERATION)
+/* Increment for Major Changes */
+#define MOD_CONFIG_FILE_EPOCH      1
+/* Increment for Minor Changes (ie: user doesn't need a new config) */
+#define MOD_CONFIG_FILE_GENERATION 0
+#define MOD_CONFIG_FILE_VERSION    ((MOD_CONFIG_FILE_EPOCH * 1000000) + MOD_CONFIG_FILE_GENERATION)
 
 #define SLIDE_LEFT   1
 #define SLIDE_RIGHT -1
@@ -53,6 +54,8 @@ struct _Evry_Window
 
   /* only to be used by creator of win */
   void *data;
+
+  Ecore_Timer *delay_hide_action;
 };
 
 struct _Evry_Selector

@@ -71,7 +71,6 @@ static Eina_List *_e_int_menus_app_threads = NULL;
 static Eina_Hash *_e_int_menus_app_menus = NULL;
 static Eina_Hash *_e_int_menus_app_menus_waiting = NULL;
 static Efreet_Menu *_e_int_menus_app_menu_default = NULL;
-static E_Menu *_e_int_menus_app_menu_default_waiting = NULL;
 static Ecore_Timer *_e_int_menus_app_cleaner = NULL;
 static Eina_List *handlers = NULL;
 
@@ -519,9 +518,7 @@ e_int_menus_menu_augmentation_point_disabled_set(const char *menu, Eina_Bool dis
 EINTERN void
 e_int_menus_init(void)
 {
-   if (e_config->menu_apps_show)
-     _e_int_menus_apps_thread_new(NULL, NULL);
-   else
+   if (!e_config->menu_apps_show)
      {
         char buf[PATH_MAX];
 
@@ -540,7 +537,8 @@ e_int_menus_shutdown(void)
    _e_int_menus_app_cleaner = NULL;
    eina_hash_free(_e_int_menus_app_menus_waiting);
    _e_int_menus_app_menus_waiting = NULL;
-   _e_int_menus_app_menu_default_waiting = NULL;
+   efreet_menu_free(_e_int_menus_app_menu_default);
+   _e_int_menus_app_menu_default = NULL;
    E_FREE_LIST(handlers, ecore_event_handler_del);
 }
 
@@ -698,7 +696,8 @@ _e_int_menus_apps_scan(E_Menu *m, Efreet_Menu *menu)
    else
      {
         mi = e_menu_item_new(m);
-        e_menu_item_label_set(mi, _("(No Applications)"));
+        e_menu_item_label_set(mi, _("No applications"));
+        e_menu_item_disabled_set(mi, 1);
      }
 }
 
@@ -718,17 +717,8 @@ _e_int_menus_app_thread_notify_cb(void *data, Ecore_Thread *eth __UNUSED__, void
    const char *dir = data;
 
    if (!msg) return;
-   if (dir)
-     {
-        eina_hash_add(_e_int_menus_app_menus, dir, menu);
-        m = eina_hash_set(_e_int_menus_app_menus_waiting, dir, NULL);
-     }
-   else
-     {
-        _e_int_menus_app_menu_default = menu;
-        m = _e_int_menus_app_menu_default_waiting;
-        _e_int_menus_app_menu_default_waiting = NULL;
-     }
+   eina_hash_add(_e_int_menus_app_menus, dir, menu);
+   m = eina_hash_set(_e_int_menus_app_menus_waiting, dir, NULL);
    if (!m) return;
    e_object_del_attach_func_set(E_OBJECT(m), NULL);
 
@@ -768,10 +758,7 @@ _e_int_menus_app_thread_cb(void *data, Ecore_Thread *eth)
    const char *dir = data;
    Efreet_Menu *menu;
 
-   if (dir)
-     menu = efreet_menu_parse(dir);
-   else
-     menu = efreet_menu_get();
+   menu = efreet_menu_parse(dir);
    ecore_thread_feedback(eth, menu);
 }
 
@@ -799,7 +786,11 @@ _e_int_menus_apps_thread_new(E_Menu *m, const char *dir)
           _e_int_menus_app_menus = eina_hash_string_superfast_new((void *)efreet_menu_free);
      }
    else
-     menu = _e_int_menus_app_menu_default;
+     {
+        menu = _e_int_menus_app_menu_default;
+        if (!menu)
+          menu = _e_int_menus_app_menu_default = efreet_menu_get();
+     }
 
    if (menu) return menu;
    if (dir)
@@ -809,14 +800,11 @@ _e_int_menus_apps_thread_new(E_Menu *m, const char *dir)
         else
           _e_int_menus_app_menus_waiting = eina_hash_string_superfast_new(NULL);
      }
-   else
-     mn = _e_int_menus_app_menu_default_waiting;
+   else return NULL;
 
    if (mn) return NULL;
    if (dir && m)
      eina_hash_add(_e_int_menus_app_menus_waiting, dir, m);
-   else if (!dir)
-     _e_int_menus_app_menu_default_waiting = m;
 
    eth = ecore_thread_feedback_run(_e_int_menus_app_thread_cb, _e_int_menus_app_thread_notify_cb,
                                    _e_int_menus_app_thread_end_cb, _e_int_menus_app_thread_end_cb, dir, EINA_FALSE);
@@ -1008,6 +996,7 @@ _e_int_menus_virtuals_icon_cb(void *data, E_Menu *m, E_Menu_Item *mi)
    bgfile = e_bg_file_get(desk->zone->container->num, desk->zone->num, desk->x, desk->y);
    o = e_thumb_icon_add(m->evas);
    e_thumb_icon_file_set(o, bgfile, "e/desktop/background");
+   eina_stringshare_del(bgfile);
    e_thumb_icon_size_set(o, tw, th);
    e_thumb_icon_begin(o);
    mi->icon_object = o;
@@ -1329,7 +1318,8 @@ _e_int_menus_clients_pre_cb(void *data __UNUSED__, E_Menu *m)
      {
         /* FIXME here we want nothing, but that crashes!!! */
         mi = e_menu_item_new(m);
-        e_menu_item_label_set(mi, _("(No Windows)"));
+        e_menu_item_label_set(mi, _("No windows"));
+        e_menu_item_disabled_set(mi, 1);
      }
 
    if (borders)
@@ -1434,7 +1424,7 @@ _e_int_menus_clients_item_create(E_Border *bd, E_Menu *m)
    if ((title) && (title[0]))
      e_menu_item_label_set(mi, title);
    else
-     e_menu_item_label_set(mi, _("No name!!"));
+     e_menu_item_label_set(mi, _("Untitled window"));
    /* ref the border as we implicitly unref it in the callback */
    e_object_ref(E_OBJECT(bd));
 /*   e_object_breadcrumb_add(E_OBJECT(bd), "clients_menu");*/
@@ -1521,7 +1511,8 @@ _e_int_menus_lost_clients_pre_cb(void *data __UNUSED__, E_Menu *m)
      {
         /* FIXME here we want nothing, but that crashes!!! */
         mi = e_menu_item_new(m);
-        e_menu_item_label_set(mi, _("(No Windows)"));
+        e_menu_item_label_set(mi, _("No windows"));
+        e_menu_item_disabled_set(mi, 1);
         return;
      }
    EINA_LIST_FOREACH(borders, l, bd)
@@ -1533,7 +1524,7 @@ _e_int_menus_lost_clients_pre_cb(void *data __UNUSED__, E_Menu *m)
         if ((title) && (title[0]))
           e_menu_item_label_set(mi, title);
         else
-          e_menu_item_label_set(mi, _("No name!!"));
+          e_menu_item_label_set(mi, _("Untitled window"));
         /* ref the border as we implicitly unref it in the callback */
         e_object_ref(E_OBJECT(bd));
         e_menu_item_callback_set(mi, _e_int_menus_lost_clients_item_cb, bd);
@@ -1621,15 +1612,14 @@ _e_int_menus_shelves_pre_cb(void *data __UNUSED__, E_Menu *m)
    shelves = e_shelf_list();
    EINA_LIST_FOREACH(shelves, l, es)
      {
-        const char *name;
-        char buf[4096];
+        char buf[1024];
 
         if (!es) continue;
         if (es->zone->num != zone->num) continue;
         if (es->cfg->container != (int)con->num) continue;
 
-        name = e_shelf_orient_string_get(es);
-        snprintf(buf, sizeof(buf), "Shelf %s", name);
+        snprintf(buf, sizeof(buf), "%s %s", _("Shelf"),
+                 e_shelf_orient_string_get(es));
 
         mi = e_menu_item_new(m);
         e_menu_item_label_set(mi, buf);

@@ -273,6 +273,7 @@ _win_save_cb(void *data __UNUSED__, void *data2 __UNUSED__)
    else
      strftime(buf, sizeof(buf), "shot-%Y-%m-%d_%H-%M-%S.jpg", tm);
    fsel_dia = dia = e_dialog_new(scon, "E", "_e_shot_fsel");
+   e_dialog_resizable_set(dia, 1);
    e_dialog_title_set(dia, _("Select screenshot save location"));
    o = e_widget_fsel_add(dia->win->evas, "desktop", "/", 
                          buf,
@@ -483,7 +484,7 @@ _win_share_cb(void *data __UNUSED__, void *data2 __UNUSED__)
         return;
      }
    rewind(f);
-   if (fdata) free(fdata);
+   free(fdata);
    fdata = malloc(fsize);
    if (!fdata)
      {
@@ -517,6 +518,7 @@ _win_share_cb(void *data __UNUSED__, void *data2 __UNUSED__)
    ecore_con_url_post(url_up, fdata, fsize, "application/x-e-shot");
 
    dia = e_dialog_new(scon, "E", "_e_shot_share");
+   e_dialog_resizable_set(dia, 1);
    e_dialog_title_set(dia, _("Uploading screenshot"));
    
    o = e_widget_list_add(dia->win->evas, 0, 0);
@@ -615,14 +617,18 @@ _shot_now(E_Zone *zone, E_Border *bd)
    Ecore_X_Visual visual;
    Ecore_X_Display *display;
    Ecore_X_Screen *scr;
-
+   Ecore_X_Window_Attributes watt;
+   Ecore_X_Colormap colormap;
+   
+   watt.visual = 0;
    if ((!zone) && (!bd)) return;
    if (zone)
      {
         sman = zone->container->manager;
         scon = zone->container;
         xwin = sman->root;
-        sw = sman->w, sh = sman->h;
+        w = sw = sman->w;
+        h = sh = sman->h;
         x = y = 0;
      }
    else
@@ -634,30 +640,27 @@ _shot_now(E_Zone *zone, E_Border *bd)
              if (ecore_x_window_parent_get(xwin) == root) break;
              xwin = ecore_x_window_parent_get(xwin);
           }
-        ecore_x_window_geometry_get(xwin, NULL, NULL, &sw, &sh);
+        ecore_x_window_geometry_get(xwin, &x, &y, &sw, &sh);
+        w = sw;
+        h = sh;
+        xwin = root;
         x = E_CLAMP(bd->x, bd->zone->x, bd->zone->x + bd->zone->w);
         y = E_CLAMP(bd->y, bd->zone->y, bd->zone->y + bd->zone->h);
         sw = E_CLAMP(sw, 0, bd->zone->x + bd->zone->w - x);
         sh = E_CLAMP(sh, 0, bd->zone->y + bd->zone->h - y);
      }
+   if (!ecore_x_window_attributes_get(xwin, &watt)) return;
+   visual = watt.visual;
+   img = ecore_x_image_new(w, h, visual, ecore_x_window_depth_get(xwin));
+   ecore_x_image_get(img, xwin, x, y, 0, 0, sw, sh);
+   src = ecore_x_image_data_get(img, &bpl, &rows, &bpp);
    display = ecore_x_display_get();
    scr = ecore_x_default_screen_get();
-   visual = ecore_x_default_visual_get(display, scr);
-   img = ecore_x_image_new(sw, sh, visual, ecore_x_window_depth_get(xwin));
-   ecore_x_image_get(img, xwin, 0, 0, 0, 0, sw, sh);
-   src = ecore_x_image_data_get(img, &bpl, &rows, &bpp);
-   if (!ecore_x_image_is_argb32_get(img))
-     {
-        Ecore_X_Colormap colormap;
-
-        colormap = ecore_x_default_colormap_get(display, scr);
-        dst = malloc(sw * sh * sizeof(int));
-        ecore_x_image_to_argb_convert(src, bpp, bpl, colormap, visual,
-                                      0, 0, sw, sh,
-                                      dst, (sw * sizeof(int)), 0, 0);
-     }
-   else
-      dst = (unsigned int *)src;
+   colormap = ecore_x_default_colormap_get(display, scr);
+   dst = malloc(sw * sh * sizeof(int));
+   ecore_x_image_to_argb_convert(src, bpp, bpl, colormap, visual,
+                                 0, 0, sw, sh,
+                                 dst, (sw * sizeof(int)), 0, 0);
    
    if (win) e_object_del(E_OBJECT(win));
    win = e_win_new(e_container_current_get(e_manager_current_get()));
@@ -700,7 +703,7 @@ _shot_now(E_Zone *zone, E_Border *bd)
    evas_object_image_alpha_set(o, EINA_FALSE);
    evas_object_image_size_set(o, sw, sh);
    evas_object_image_data_copy_set(o, dst);
-   if (dst != (unsigned int *)src) free(dst);
+   free(dst);
    ecore_x_image_free(img);
    evas_object_image_data_update_add(o, 0, 0, sw, sh);
    e_widget_preview_extern_object_set(op, o);
@@ -974,14 +977,14 @@ e_modapi_init(E_Module *m)
    if (act)
      {
         act->func.go = _e_mod_action_cb;
-        e_action_predef_name_set(_("Screen"), _("Take Screenshot"),
+        e_action_predef_name_set(N_("Screen"), N_("Take Screenshot"),
                                  "shot", NULL, NULL, 0);
      }
    border_act = e_action_add("border_shot");
    if (border_act)
      {
         border_act->func.go = _e_mod_action_border_cb;
-        e_action_predef_name_set(_("Window : Actions"), _("Take Shot"),
+        e_action_predef_name_set(N_("Window : Actions"), N_("Take Shot"),
                                  "border_shot", NULL, NULL, 0);
      }
    maug = e_int_menus_menu_augmentation_add_sorted
@@ -1012,7 +1015,7 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
      }
    if (act)
      {
-        e_action_predef_name_del(_("Screen"), _("Take Screenshot"));
+        e_action_predef_name_del("Screen", "Take Screenshot");
         e_action_del("shot");
         act = NULL;
      }

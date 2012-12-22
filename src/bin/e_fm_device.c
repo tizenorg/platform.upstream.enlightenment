@@ -4,7 +4,6 @@
 
 static void _e_fm2_volume_write(E_Volume *v) EINA_ARG_NONNULL(1);
 static void _e_fm2_volume_erase(E_Volume *v) EINA_ARG_NONNULL(1);
-static void _e_fm2_device_mount_free(E_Fm2_Mount *m) EINA_ARG_NONNULL(1);
 static void _e_fm2_device_mount_ok(E_Fm2_Mount *m) EINA_ARG_NONNULL(1);
 static void _e_fm2_device_mount_fail(E_Fm2_Mount *m) EINA_ARG_NONNULL(1);
 static void _e_fm2_device_unmount_ok(E_Fm2_Mount *m) EINA_ARG_NONNULL(1);
@@ -16,6 +15,26 @@ static Eina_List *_e_vols = NULL;
 static Eina_Bool _check_run_show = EINA_FALSE;
 static Eina_Bool _check_run_hide = EINA_FALSE;
 static Ecore_Thread *_check_vols = NULL;
+
+static inline E_Fm2_Device_Mount_Op *
+_e_fm2_device_mount_op_new(char *args, size_t size, size_t length)
+{
+   E_Fm2_Device_Mount_Op *mop;
+
+   mop = E_NEW(E_Fm2_Device_Mount_Op, 1);
+   mop->args = args;
+   mop->size = size;
+   mop->length = length;
+   return mop;
+}
+
+static inline void
+_e_fm2_device_mount_op_free(E_Fm2_Device_Mount_Op *mop)
+{
+   if (!mop) return;
+   free(mop->args);
+   free(mop);
+}
 
 static void
 _e_fm2_device_volume_setup(E_Volume *v)
@@ -280,7 +299,15 @@ e_fm2_device_volume_del(E_Volume *v)
    EINA_LIST_FREE(v->mounts, m)
      {
         _e_fm2_device_unmount_ok(m);
-        _e_fm2_device_mount_free(m);
+        e_fm2_device_mount_free(m);
+     }
+   while (v->mount_ops)
+     {
+        E_Fm2_Device_Mount_Op *mop;
+
+        mop = (E_Fm2_Device_Mount_Op*)v->mount_ops;
+        v->mount_ops = eina_inlist_remove(v->mount_ops, v->mount_ops);
+        _e_fm2_device_mount_op_free(mop);
      }
    _e_fm_shared_device_volume_free(v);
 }
@@ -412,20 +439,25 @@ e_fm2_device_volume_mountpoint_get(E_Volume *v)
    return eina_stringshare_add(buf);
 }
 
+EAPI E_Fm2_Device_Mount_Op *
+e_fm2_device_mount_op_add(E_Fm2_Mount *m, char *args, size_t size, size_t length)
+{
+   E_Fm2_Device_Mount_Op *mop;
+
+   mop = _e_fm2_device_mount_op_new(args, size, length);
+   m->volume->mount_ops = eina_inlist_append(m->volume->mount_ops, EINA_INLIST_GET(mop));
+   return mop;
+}
+
 EAPI void
 e_fm2_device_mount_add(E_Volume   *v,
                        const char *mountpoint)
 {
-   Eina_List *l;
-   E_Fm2_Mount *m;
-
    v->mounted = EINA_TRUE;
    if (mountpoint && (mountpoint[0]))
      eina_stringshare_replace(&v->mount_point, mountpoint);
 
-   EINA_LIST_FOREACH(v->mounts, l, m)
-     _e_fm2_device_mount_ok(m);
-
+   E_LIST_FOREACH(v->mounts, _e_fm2_device_mount_ok);
 //   printf("MOUNT %s %s\n", v->udi, v->mount_point);
 }
 
@@ -444,17 +476,17 @@ e_fm2_device_mount_del(E_Volume *v)
    EINA_LIST_FREE(v->mounts, m)
      {
         _e_fm2_device_unmount_ok(m);
-        _e_fm2_device_mount_free(m);
+        e_fm2_device_mount_free(m);
      }
 }
 
 EAPI void
-_e_fm2_device_mount_free(E_Fm2_Mount *m)
+e_fm2_device_mount_free(E_Fm2_Mount *m)
 {
    if (!m) return;
 
-   if (m->udi) eina_stringshare_del(m->udi);
-   if (m->mount_point) eina_stringshare_del(m->mount_point);
+   eina_stringshare_del(m->udi);
+   eina_stringshare_del(m->mount_point);
 
    free(m);
 }
@@ -534,7 +566,7 @@ e_fm2_device_mount_fail(E_Volume *v)
    EINA_LIST_FREE(v->mounts, m)
      {
         _e_fm2_device_mount_fail(m);
-        _e_fm2_device_mount_free(m);
+        e_fm2_device_mount_free(m);
      }
 }
 
@@ -544,8 +576,13 @@ e_fm2_device_unmount(E_Fm2_Mount *m)
    E_Volume *v;
 
    if (!(v = m->volume)) return;
+   if (v->mount_ops)
+     {
+        m->deleted = EINA_TRUE;
+        return;
+     }
    v->mounts = eina_list_remove(v->mounts, m);
-   _e_fm2_device_mount_free(m);
+   e_fm2_device_mount_free(m);
 
    if (v->auto_unmount && v->mounted && !eina_list_count(v->mounts))
      {
@@ -575,6 +612,7 @@ _e_fm2_device_mount_ok(E_Fm2_Mount *m)
      m->mount_point = eina_stringshare_add(m->volume->mount_point);
    if (m->mount_ok)
      m->mount_ok(m->data);
+   if (m->deleted) ecore_job_add((Ecore_Cb)e_fm2_device_unmount, m);
    //printf("MOUNT OK '%s'\n", m->mount_point);
 }
 

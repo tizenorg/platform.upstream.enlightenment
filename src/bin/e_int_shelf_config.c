@@ -277,18 +277,6 @@ _basic_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
    E_Config_Shelf_Desk *sd;
    int recreate = 0;
 
-   if (!cfdata->escfg->style)
-     {
-        cfdata->escfg->style = eina_stringshare_ref(cfdata->style);
-        e_shelf_style_set(cfdata->es, cfdata->style);
-     }
-   else if ((cfdata->escfg->style) &&
-            (cfdata->escfg->style != cfdata->style))
-     {
-        eina_stringshare_replace(&cfdata->escfg->style, cfdata->style);
-        e_shelf_style_set(cfdata->es, cfdata->style);
-     }
-
    if (cfdata->escfg->orient != cfdata->orient)
      {
         cfdata->escfg->orient = cfdata->orient;
@@ -338,7 +326,7 @@ _basic_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
      }
 
    cfdata->escfg->overlap = cfdata->overlap;
-   e_shelf_autohide_set(cfdata->es, cfdata->autohide);
+   e_shelf_autohide_set(cfdata->es, cfdata->autohide + (cfdata->autohide * cfdata->autohide_action));
    cfdata->escfg->autohide_show_action = cfdata->autohide_action;
    cfdata->escfg->hide_timeout = cfdata->hide_timeout;
    cfdata->escfg->hide_duration = cfdata->hide_duration;
@@ -369,6 +357,18 @@ _basic_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
           }
      }
 
+   e_gadcon_unpopulate(cfdata->es->gadcon);
+   if (!cfdata->escfg->style)
+     {
+        cfdata->escfg->style = eina_stringshare_ref(cfdata->style);
+        e_shelf_style_set(cfdata->es, cfdata->style);
+     }
+   else if ((cfdata->escfg->style) &&
+            (cfdata->escfg->style != cfdata->style))
+     {
+        eina_stringshare_replace(&cfdata->escfg->style, cfdata->style);
+        e_shelf_style_set(cfdata->es, cfdata->style);
+     }
    if (recreate)
      {
         E_Zone *zone;
@@ -377,11 +377,14 @@ _basic_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
         zone = cfdata->es->zone;
         cf_es = cfdata->es->cfg;
         cfdata->es->config_dialog = NULL;
+        e_shelf_hide(cfdata->es);
         e_object_del(E_OBJECT(cfdata->es));
 
         cfdata->es = e_shelf_config_new(zone, cf_es);
         cfdata->es->config_dialog = cfd;
      }
+   else
+     e_gadcon_populate(cfdata->es->gadcon);
 
    if (cfdata->escfg->desk_show_mode)
      {

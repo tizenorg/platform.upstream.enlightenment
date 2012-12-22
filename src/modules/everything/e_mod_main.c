@@ -17,7 +17,6 @@ static const char *module_icon = NULL;
 static E_Config_DD *conf_edd = NULL;
 static E_Config_DD *plugin_conf_edd = NULL;
 static E_Config_DD *gadget_conf_edd = NULL;
-static int _e_module_evry_log_dom = -1;
 
 Evry_API *evry = NULL;
 Evry_Config *evry_conf = NULL;
@@ -38,16 +37,6 @@ e_modapi_init(E_Module *m)
    Evry_Module *em;
    char buf[4096];
 
-   _e_module_evry_log_dom = eina_log_domain_register
-       ("e_module_everything", EINA_LOG_DEFAULT_COLOR);
-
-   if (_e_module_evry_log_dom < 0)
-     {
-        EINA_LOG_ERR
-          ("impossible to create a log domain for everything module");
-        return NULL;
-     }
-
    _mod_evry = m;
 
    /* add module supplied action */
@@ -57,8 +46,8 @@ e_modapi_init(E_Module *m)
         act->func.go = _e_mod_action_cb;
         act->func.go_edge = _e_mod_action_cb_edge;
         e_action_predef_name_set
-          (_("Everything Launcher"),
-          _("Show Everything Launcher"),
+          (N_("Everything Launcher"),
+          N_("Show Everything Launcher"),
           "everything", "", NULL, 0);
      }
 
@@ -94,7 +83,6 @@ e_modapi_init(E_Module *m)
    _evry_events[EVRY_EVENT_PLUGIN_SELECTED] = ecore_event_type_new();
 
    evry = E_NEW(Evry_API, 1);
-   evry->log_dom = _e_module_evry_log_dom;
 #define SET(func) (evry->func = &evry_##func);
    SET(api_version_check);
    SET(item_new);
@@ -207,8 +195,8 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
 
    if (act)
      {
-        e_action_predef_name_del(_("Everything Launcher"),
-                                 _("Show Everything Dialog"));
+        e_action_predef_name_del("Everything Launcher",
+                                 "Show Everything Launcher");
         e_action_del("everything");
      }
 
@@ -425,68 +413,59 @@ _config_init()
    if (!evry_conf)
      {
         evry_conf = E_NEW(Evry_Config, 1);
-        evry_conf->version = (MOD_CONFIG_FILE_EPOCH << 16);
+
+        /* setup defaults */
+        evry_conf->rel_x = 0.5;
+        evry_conf->rel_y = 0.43;
+        evry_conf->width = 455;
+        evry_conf->height = 430;
+        evry_conf->scroll_animate = 1;
+        evry_conf->scroll_speed = 10.0;
+        evry_conf->hide_input = 0;
+        evry_conf->hide_list = 0;
+        evry_conf->quick_nav = 1;
+        evry_conf->view_mode = VIEW_MODE_DETAIL;
+        evry_conf->view_zoom = 0;
+        evry_conf->cycle_mode = 0;
+        evry_conf->history_sort_mode = 0;
+        evry_conf->edge_width = 340;
+        evry_conf->edge_height = 385;
+        evry_conf->first_run = EINA_TRUE;
+
+        pcc = E_NEW(Plugin_Config, 1);
+        pcc->name = eina_stringshare_add("Start");
+        pcc->enabled = EINA_FALSE;
+        pcc->aggregate = EINA_FALSE;
+        pcc->top_level = EINA_TRUE;
+        pcc->view_mode = VIEW_MODE_THUMB;
+        evry_conf->collections = eina_list_append(evry_conf->collections, pcc);
+
+        pc = E_NEW(Plugin_Config, 1);
+        pc->name = eina_stringshare_add("Windows");
+        pc->enabled = EINA_TRUE;
+        pc->view_mode = VIEW_MODE_NONE;
+        pcc->plugins = eina_list_append(pcc->plugins, pc);
+
+        pc = E_NEW(Plugin_Config, 1);
+        pc->name = eina_stringshare_add("Settings");
+        pc->enabled = EINA_TRUE;
+        pc->view_mode = VIEW_MODE_NONE;
+        pcc->plugins = eina_list_append(pcc->plugins, pc);
+
+        pc = E_NEW(Plugin_Config, 1);
+        pc->name = eina_stringshare_add("Files");
+        pc->enabled = EINA_TRUE;
+        pc->view_mode = VIEW_MODE_NONE;
+        pcc->plugins = eina_list_append(pcc->plugins, pc);
+
+        pc = E_NEW(Plugin_Config, 1);
+        pc->name = eina_stringshare_add("Applications");
+        pc->enabled = EINA_TRUE;
+        pc->view_mode = VIEW_MODE_NONE;
+        pcc->plugins = eina_list_append(pcc->plugins, pc);
+        evry_conf->width = 464;
+        evry_conf->height = 366;
      }
-
-#define IFMODCFG(v) if ((evry_conf->version & 0xffff) < v) {
-#define IFMODCFGEND }
-
-    /* setup defaults */
-    IFMODCFG(0x0001);
-    evry_conf->rel_x = 0.5;
-    evry_conf->rel_y = 0.43;
-    evry_conf->width = 455;
-    evry_conf->height = 430;
-    evry_conf->scroll_animate = 1;
-    evry_conf->scroll_speed = 10.0;
-    evry_conf->hide_input = 0;
-    evry_conf->hide_list = 0;
-    evry_conf->quick_nav = 1;
-    evry_conf->view_mode = VIEW_MODE_DETAIL;
-    evry_conf->view_zoom = 0;
-    evry_conf->cycle_mode = 0;
-    evry_conf->history_sort_mode = 0;
-    evry_conf->edge_width = 340;
-    evry_conf->edge_height = 385;
-    evry_conf->first_run = EINA_TRUE;
-
-    pcc = E_NEW(Plugin_Config, 1);
-    pcc->name = eina_stringshare_add("Start");
-    pcc->enabled = EINA_FALSE;
-    pcc->aggregate = EINA_FALSE;
-    pcc->top_level = EINA_TRUE;
-    pcc->view_mode = VIEW_MODE_THUMB;
-    evry_conf->collections = eina_list_append(evry_conf->collections, pcc);
-
-    pc = E_NEW(Plugin_Config, 1);
-    pc->name = eina_stringshare_add("Windows");
-    pc->enabled = EINA_TRUE;
-    pc->view_mode = VIEW_MODE_NONE;
-    pcc->plugins = eina_list_append(pcc->plugins, pc);
-
-    pc = E_NEW(Plugin_Config, 1);
-    pc->name = eina_stringshare_add("Settings");
-    pc->enabled = EINA_TRUE;
-    pc->view_mode = VIEW_MODE_NONE;
-    pcc->plugins = eina_list_append(pcc->plugins, pc);
-
-    pc = E_NEW(Plugin_Config, 1);
-    pc->name = eina_stringshare_add("Files");
-    pc->enabled = EINA_TRUE;
-    pc->view_mode = VIEW_MODE_NONE;
-    pcc->plugins = eina_list_append(pcc->plugins, pc);
-
-    pc = E_NEW(Plugin_Config, 1);
-    pc->name = eina_stringshare_add("Applications");
-    pc->enabled = EINA_TRUE;
-    pc->view_mode = VIEW_MODE_NONE;
-    pcc->plugins = eina_list_append(pcc->plugins, pc);
-    IFMODCFGEND;
-
-    IFMODCFG(0x0003);
-    evry_conf->width = 464;
-    evry_conf->height = 366;
-    IFMODCFGEND;
 
     evry_conf->version = MOD_CONFIG_FILE_VERSION;
 }

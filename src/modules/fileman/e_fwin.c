@@ -425,6 +425,8 @@ e_fwin_zone_new(E_Zone *zone, void *p)
 
    e_fm2_custom_theme_content_set(o, "desktop");
 
+   evas_object_smart_callback_add(o, "changed",
+                                  _e_fwin_icon_mouse_out, fwin);
    evas_object_smart_callback_add(o, "dir_changed",
                                   _e_fwin_changed, page);
    evas_object_smart_callback_add(o, "dir_deleted",
@@ -547,12 +549,14 @@ e_fwin_reload_all(void)
                        fwin->cur_page->tbar = e_toolbar_new
                          (e_win_evas_get(fwin->win), "toolbar",
                              fwin->win, fwin->cur_page->fm_obj);
+                       e_toolbar_orient(fwin->cur_page->tbar, fileman_config->view.toolbar_orient);
                     }
                }
              else
                {
                   if (fwin->cur_page->tbar)
                     {
+                       fileman_config->view.toolbar_orient = fwin->cur_page->tbar->gadcon->orient;
                        e_object_del(E_OBJECT(fwin->cur_page->tbar));
                        fwin->cur_page->tbar = NULL;
                     }
@@ -674,7 +678,7 @@ _e_fwin_new(E_Container *con,
    e_fm2_path_set(page->fm_obj, dev, path);
    _e_fwin_window_title_set(page);
 
-   e_win_size_min_set(fwin->win, 24, 24);
+   e_win_size_min_set(fwin->win, 360, 250);
 
    zone = e_util_zone_current_get(e_manager_current_get());
    if ((zone) && (zone->w < DEFAULT_WIDTH))
@@ -912,7 +916,6 @@ _e_fwin_page_favorites_add(E_Fwin_Page *page)
    fmc.view.no_click_rename = 1;
    e_fm2_config_set(o, &fmc);
    e_fm2_icon_menu_flags_set(o, E_FM2_MENU_NO_NEW | E_FM2_MENU_NO_ACTIVATE_CHANGE | E_FM2_MENU_NO_VIEW_CHANGE);
-   //evas_object_smart_callback_add(o, "changed", _cb, fwin);
    evas_object_smart_callback_add(o, "selected", _e_fwin_favorite_selected, page);
    evas_object_smart_callback_add(o, "dnd_enter", (Evas_Smart_Cb)_e_fwin_dnd_enter_cb, page->fwin);
    evas_object_smart_callback_add(o, "dnd_leave", (Evas_Smart_Cb)_e_fwin_dnd_leave_cb, page->fwin);
@@ -962,6 +965,7 @@ _e_fwin_page_create(E_Fwin *fwin)
    e_fm2_view_flags_set(o, E_FM2_VIEW_DIR_CUSTOM);
    evas_object_event_callback_add(o, EVAS_CALLBACK_KEY_DOWN, _e_fwin_cb_key_down, page);
 
+   evas_object_smart_callback_add(o, "changed", _e_fwin_icon_mouse_out, fwin);
    evas_object_smart_callback_add(o, "dir_changed",
                                   _e_fwin_changed, page);
    evas_object_smart_callback_add(o, "dir_deleted",
@@ -1011,14 +1015,18 @@ _e_fwin_page_create(E_Fwin *fwin)
    e_widget_can_focus_set(o, EINA_FALSE);
    page->scrollframe_obj = o;
    page->scr = e_widget_scrollframe_object_get(o);
+   e_scrollframe_key_navigation_set(o, EINA_FALSE);
    e_scrollframe_custom_theme_set(o, "base/theme/fileman",
                                   "e/fileman/default/scrollframe");
    edje_object_part_swallow(fwin->bg_obj, "e.swallow.content", o);
    e_widget_scrollframe_focus_object_set(o, page->fm_obj);
 
    if (fileman_config->view.show_toolbar)
-     page->tbar = e_toolbar_new(evas, "toolbar",
-                                fwin->win, page->fm_obj);
+     {
+        page->tbar = e_toolbar_new(evas, "toolbar",
+                                   fwin->win, page->fm_obj);
+        e_toolbar_orient(page->tbar, fileman_config->view.toolbar_orient);
+     }
 
    page->fm_op_entry_add_handler =
      ecore_event_handler_add(E_EVENT_FM_OP_REGISTRY_ADD,
@@ -1032,7 +1040,11 @@ static void
 _e_fwin_page_free(E_Fwin_Page *page)
 {
    if (page->fm_obj) evas_object_del(page->fm_obj);
-   if (page->tbar) e_object_del(E_OBJECT(page->tbar));
+   if (page->tbar)
+     {
+        fileman_config->view.toolbar_orient = page->tbar->gadcon->orient;
+        e_object_del(E_OBJECT(page->tbar));
+     }
    else evas_object_del(page->scrollframe_obj);
 
    if (page->fm_op_entry_add_handler)
@@ -1630,6 +1642,7 @@ _e_fwin_changed(void *data,
    fwin = page->fwin;
    if (!fwin) return;  //safety
 
+   _e_fwin_icon_mouse_out(fwin, NULL, NULL);
    cfg = e_fm2_config_get(page->fm_obj);
    e_fm2_path_get(page->fm_obj, &dev, NULL);
    e_user_dir_concat_static(buf, "fileman/favorites");
@@ -1918,7 +1931,7 @@ _e_fwin_zone_focus_in(void *data,
    E_Fwin *fwin;
 
    fwin = data;
-   if (!fwin) return;
+   if ((!fwin) || (!fwin->cur_page) || (!fwin->cur_page->fm_obj)) return;
    evas_object_focus_set(fwin->cur_page->fm_obj, EINA_TRUE);
 }
 
@@ -2084,16 +2097,16 @@ _e_fwin_cb_menu_extend_start(void *data,
    E_Menu *subm;
    Eina_List *selected = NULL;
    Eina_Bool set = EINA_FALSE;
-   char buf[PATH_MAX];
+   char buf[PATH_MAX] = {0};
 
    page = data;
 
    selected = e_fm2_selected_list_get(page->fm_obj);
 
 #ifdef ENABLE_FILES
-   if (info && info->file)
+   if (info && info->file && (info->link || S_ISDIR(info->statinfo.st_mode)))
      snprintf(buf, sizeof(buf), "%s/%s", e_fm2_real_path_get(page->fm_obj), info->file);
-   subm = e_mod_menu_add(m, (info && info->file) ? buf : e_fm2_real_path_get(page->fm_obj));
+   subm = e_mod_menu_add(m, (buf[0]) ? buf : e_fm2_real_path_get(page->fm_obj));
 
    if (((!page->fwin->zone) || fileman_config->view.desktop_navigation) && e_fm2_has_parent_get(obj))
      {
@@ -2153,6 +2166,7 @@ _e_fwin_cb_menu_extend_start(void *data,
 
    mi = e_menu_item_new(m);
    e_menu_item_separator_set(mi, 1);
+   eina_list_free(selected);
 }
 
 static void
@@ -2225,9 +2239,9 @@ _e_fwin_border_set(E_Fwin_Page *page, E_Fwin *fwin, E_Fm2_Icon_Info *ici)
      }
    else
      {
-        file = e_icon_file_get(oic);
-        fwin->win->border->internal_icon =
-          eina_stringshare_add(file);
+        e_icon_file_get(oic, &file, &group);
+        fwin->win->border->internal_icon = eina_stringshare_add(file);
+        fwin->win->border->internal_icon_key = eina_stringshare_add(group);
      }
    evas_object_del(oic);
    if (fwin->win->border->placed) return;
@@ -2505,7 +2519,9 @@ _e_fwin_file_open_dialog(E_Fwin_Page *page,
      dia = e_dialog_new(fwin->zone->container,
                         "E", "_fwin_open_apps");
    else return;  /* make clang happy */
-
+   
+   e_dialog_resizable_set(dia, 1);
+   
    fad = E_NEW(E_Fwin_Apps_Dialog, 1);
    e_dialog_title_set(dia, _("Open with..."));
    e_dialog_button_add(dia, _("Open"), "document-open",

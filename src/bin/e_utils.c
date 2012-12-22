@@ -206,7 +206,10 @@ EAPI int
 e_util_strcmp(const char *s1, const char *s2)
 {
    if ((s1) && (s2))
-     return strcmp(s1, s2);
+     {
+        if (s1 == s2) return 0;
+        return strcmp(s1, s2);
+     }
    return 0x7fffffff;
 }
 
@@ -1000,7 +1003,7 @@ e_util_dir_check(const char *dir)
      {
         if (!ecore_file_mkpath(dir))
           {
-             e_util_dialog_show("Error creating directory", "Failed to create directory: %s .<br>Check that you have correct permissions set.", dir);
+             e_util_dialog_show(_("Error creating directory"), _("Failed to create directory: %s .<br>Check that you have correct permissions set."), dir);
              return 0;
           }
      }
@@ -1008,7 +1011,7 @@ e_util_dir_check(const char *dir)
      {
         if (!ecore_file_is_dir(dir))
           {
-             e_util_dialog_show("Error creating directory", "Failed to create directory: %s .<br>A file of that name already exists.", dir);
+             e_util_dialog_show(_("Error creating directory"), _("Failed to create directory: %s .<br>A file of that name already exists."), dir);
              return 0;
           }
      }
@@ -1209,14 +1212,16 @@ _e_util_conf_timer_new(void *data)
 EAPI Eina_Bool
 e_util_module_config_check(const char *module_name, int loaded, int current)
 {
-   if ((loaded >> 16) < (current >> 16))
-     {
-        ecore_timer_add(1.0, _e_util_conf_timer_old, strdup(module_name));
-        return EINA_FALSE;
-     }
-   else if (loaded > current)
+   int rem;
+   if (loaded > current)
      {
         ecore_timer_add(1.0, _e_util_conf_timer_new, strdup(module_name));
+        return EINA_FALSE;
+     }
+   loaded -= loaded % 1000000, current -= current % 1000000;
+   if (loaded < current)
+     {
+        ecore_timer_add(1.0, _e_util_conf_timer_old, strdup(module_name));
         return EINA_FALSE;
      }
 

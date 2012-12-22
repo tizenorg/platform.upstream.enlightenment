@@ -660,7 +660,7 @@ e_zone_desk_count_set(E_Zone *zone,
                }
           }
      }
-   if (zone->desks) free(zone->desks);
+   free(zone->desks);
    zone->desks = new_desks;
 
    zone->desk_x_count = xx;
@@ -743,7 +743,8 @@ e_zone_desk_flip_to(E_Zone *zone,
           y = zone->desk_y_count - 1;
      }
    desk = e_desk_at_xy_get(zone, x, y);
-   if (desk) e_desk_show(desk);
+   if (!desk) return;
+   e_desk_show(desk);
    e_zone_edge_flip_eval(zone);
 }
 
@@ -760,7 +761,6 @@ e_zone_desk_linear_flip_by(E_Zone *zone,
    while (dx < 0)
      dx += (zone->desk_x_count * zone->desk_y_count);
    e_zone_desk_linear_flip_to(zone, dx);
-   e_zone_edge_flip_eval(zone);
 }
 
 EAPI void
@@ -775,7 +775,6 @@ e_zone_desk_linear_flip_to(E_Zone *zone,
    y = x / zone->desk_x_count;
    x = x - (y * zone->desk_x_count);
    e_zone_desk_flip_to(zone, x, y);
-   e_zone_edge_flip_eval(zone);
 }
 
 EAPI void

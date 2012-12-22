@@ -550,7 +550,7 @@ _cpufreq_status_free(Status *s)
           free(l->data);
         eina_list_free(s->governors);
      }
-   if (s->cur_governor) free(s->cur_governor);
+   free(s->cur_governor);
    if (s->orig_governor) eina_stringshare_del(s->orig_governor);
    free(s);
 }
@@ -834,7 +834,7 @@ _cpufreq_status_check_current(Status *s)
           {
              ret = 1;
 
-             if (s->cur_governor) free(s->cur_governor);
+             free(s->cur_governor);
              s->cur_governor = strdup(buf);
 
              for (i = strlen(s->cur_governor) - 1; i >= 0; i--)
@@ -1165,7 +1165,7 @@ e_modapi_init(E_Module *m)
         e_util_dialog_show(_("Cpufreq Permissions Error"),
                            _("The freqset binary in the cpufreq module<br>"
                              "is not owned by root or does not have the<br>"
-                             "setuid bit set. Please ensure this is the<br"
+                             "setuid bit set. Please ensure this is the<br>"
                              "case. For example:<br>"
                              "<br>"
                              "sudo chown root %s<br>"

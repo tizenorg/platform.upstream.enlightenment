@@ -86,12 +86,16 @@ e_fwin_nav_shutdown(void)
 static Eina_Bool
 _event_deleted(Nav_Item *ni, int type, void *e)
 {
-   Eio_Monitor_Error *me = e;
    Eio_Monitor_Event *ev = e;
    const char *dir;
 
    if (type == EIO_MONITOR_ERROR)
-     dir = eio_monitor_path_get(me->monitor);
+     {
+        //donteven.jpg
+        eio_monitor_del(ni->monitor);
+        ni->monitor = eio_monitor_stringshared_add(ni->path);
+        return ECORE_CALLBACK_RENEW;
+     }
    else
      dir = ev->filename;
    
@@ -541,13 +545,11 @@ _cb_forward_click(void *data, Evas_Object *obj __UNUSED__, const char *emission 
 static void
 _cb_refresh_click(void *data, Evas_Object *obj __UNUSED__, const char *emission __UNUSED__, const char *source __UNUSED__)
 {
-   Instance *inst;
-
-   inst = data;
+   Instance *inst = data;
 
    // Don't destroy forward history when refreshing
    inst->ignore_dir = 1;
-   e_fm2_path_set(inst->o_fm, NULL, e_fm2_real_path_get(inst->o_fm));
+   e_fm2_refresh(inst->o_fm);
 }
 
 static void
@@ -714,6 +716,7 @@ _cb_dir_changed(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUS
                   while (l->next)
                     _box_button_free((Nav_Item*)l->next);
                   _box_button_free((Nav_Item*)l);
+                  l = NULL;
                }
              else
                {

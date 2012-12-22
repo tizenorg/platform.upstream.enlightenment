@@ -4,10 +4,10 @@ EINTERN int _e_qa_log_dom = -1;
 static E_Action *_e_qa_toggle = NULL;
 static E_Action *_e_qa_add = NULL;
 static E_Action *_e_qa_del = NULL;
-static const char _e_qa_name[] = "Quickaccess";
-static const char _lbl_toggle[] = "Toggle Visibility";
-static const char _lbl_add[] = "Add Quickaccess For Current Window";
-static const char _lbl_del[] = "Remove Quickaccess From Current Window";
+static const char _e_qa_name[] = N_("Quickaccess");
+static const char _lbl_toggle[] = N_("Toggle Visibility");
+static const char _lbl_add[] = N_("Add Quickaccess For Current Window");
+static const char _lbl_del[] = N_("Remove Quickaccess From Current Window");
 const char *_act_toggle = NULL;
 static const char _act_add[] = "qa_add";
 static const char _act_del[] = "qa_del";
@@ -489,7 +489,7 @@ _e_qa_toggle_cb(E_Object *obj __UNUSED__, const char *params)
      {
         if (entry->help_watch)
           _e_qa_help_activate_hook(entry);
-        if ((!entry->config.jump) && (entry->border->visible || (entry->border->client.icccm.accepts_focus && entry->border->focused) || entry->config.hide_when_behind))
+        if ((!entry->config.jump) && entry->border->visible && ((entry->border->client.icccm.accepts_focus && entry->border->focused) || entry->config.hide_when_behind))
           {
              _e_qa_border_deactivate(entry);
              return;
@@ -648,7 +648,7 @@ _grab_key_down_cb(void *data, int type __UNUSED__, void *event)
 
    if (e_util_binding_match(NULL, ev, NULL, NULL))
      {
-        e_util_dialog_show("Keybind Error", "The keybinding you have entered is already in use!");
+        e_util_dialog_show(_("Keybind Error"), _("The keybinding you have entered is already in use!"));
         e_object_del(E_OBJECT(eg));
         return ECORE_CALLBACK_RENEW;
      }
@@ -1306,11 +1306,11 @@ e_qa_init(void)
 #undef CB
 
    _e_qa_toggle->func.go = _e_qa_toggle_cb;
-   e_action_predef_name_set(_(_e_qa_name), _(_lbl_toggle), _act_toggle, NULL, _("quick access name/identifier"), 1);
+   e_action_predef_name_set(_e_qa_name, _lbl_toggle, _act_toggle, NULL, _("quick access name/identifier"), 1);
    _e_qa_add->func.go = _e_qa_add_cb;
-   e_action_predef_name_set(_(_e_qa_name), _(_lbl_add), _act_add, NULL, NULL, 0);
+   e_action_predef_name_set(_e_qa_name, _lbl_add, _act_add, NULL, NULL, 0);
    _e_qa_del->func.go = _e_qa_del_cb;
-   e_action_predef_name_set(_(_e_qa_name), _(_lbl_del), _act_del, NULL, NULL, 0);
+   e_action_predef_name_set(_e_qa_name, _lbl_del, _act_del, NULL, NULL, 0);
    INF("loaded qa module, registered %s action.", _act_toggle);
    
    border_hook = e_int_border_menu_hook_add(_e_qa_bd_menu_hook, NULL);
@@ -1324,21 +1324,21 @@ e_qa_shutdown(void)
 {
    if (_e_qa_toggle)
      {
-        e_action_predef_name_del(_(_e_qa_name), _(_lbl_toggle));
+        e_action_predef_name_del(_e_qa_name, _lbl_toggle);
 
         e_action_del(_act_toggle);
         _e_qa_toggle = NULL;
      }
    if (_e_qa_add)
      {
-        e_action_predef_name_del(_(_e_qa_name), _(_lbl_add));
+        e_action_predef_name_del(_e_qa_name, _lbl_add);
 
         e_action_del(_act_add);
         _e_qa_add = NULL;
      }
    if (_e_qa_del)
      {
-        e_action_predef_name_del(_(_e_qa_name), _(_lbl_del));
+        e_action_predef_name_del(_e_qa_name, _lbl_del);
 
         e_action_del(_act_del);
         _e_qa_del = NULL;

@@ -101,6 +101,7 @@ edc/O/transitions.edc \
 edc/O/wallpaper.edc \
 edc/O/winlist.edc \
 edc/O/wizard.edc \
+img/add_glow_small.png \
 img/ball_small_glow_intense.png \
 img/ball_small_glow.png \
 img/bat_base.png \
@@ -224,6 +225,12 @@ img/icon_system-restart.png \
 img/icon_system-shutdown.png \
 img/icon_system-suspend-hibernate.png \
 img/icon_system-suspend.png \
+img/icon_wallpaper_center.png \
+img/icon_wallpaper_fill.png \
+img/icon_wallpaper_pan.png \
+img/icon_wallpaper_stretch.png \
+img/icon_wallpaper_tile.png \
+img/icon_wallpaper_within.png \
 img/ic_win_move.png \
 img/ic_win_resize.png \
 img/inset_circle_tiny.png \
@@ -275,6 +282,7 @@ img/mini_blue_glow_arrow_2.png \
 img/mini_blue_glow_arrow_3.png \
 img/mini_box_bevel_shadow.png \
 img/mini_box_glow.png \
+img/pointer_entry_bar.png \
 img/pointer_glow.png \
 img/pointer_mono.png \
 img/pointer.png \

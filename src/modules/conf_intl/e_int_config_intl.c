@@ -18,7 +18,7 @@ static void         _ilist_region_cb_change(void *data, Evas_Object *obj);
 static void         _ilist_codeset_cb_change(void *data, Evas_Object *obj);
 static void         _ilist_modifier_cb_change(void *data, Evas_Object *obj);
 static int          _lang_list_sort(const void *data1, const void *data2);
-static void         _lang_list_load(void *data);
+static void         _lang_list_load(void *data, int *sel);
 static int          _region_list_sort(const void *data1, const void *data2);
 static void         _region_list_load(void *data);
 static int          _basic_lang_list_sort(const void *data1, const void *data2);
@@ -111,6 +111,7 @@ const E_Intl_Pair basic_language_predefined_pairs[] = {
    {"en_US.UTF-8", "us_flag.png", "English"},
    {"en_GB.UTF-8", "gb_flag.png", "British English"},
    {"el_GR.UTF-8", "gr_flag.png", "Ελληνικά"},
+   {"eo_US.UTF-8", "epo_flag.png", "Esperanto"},
    {"eo.UTF-8", "epo_flag.png", "Esperanto"},
    {"es_AR.UTF-8", "ar_flag.png", "Español"},
    {"et_ET.UTF-8", "ee_flag.png", "Eesti keel"},
@@ -659,7 +660,10 @@ _fill_data(E_Config_Dialog_Data *cfdata)
                {
                   char *basic_language;
 
-                  basic_language = e_intl_locale_parts_combine(locale_parts, E_INTL_LOC_LANG | E_INTL_LOC_REGION);
+                  if (locale_parts->mask & E_INTL_LOC_REGION)
+                    basic_language = e_intl_locale_parts_combine(locale_parts, E_INTL_LOC_LANG | E_INTL_LOC_REGION);
+                  else if (locale_parts->lang)
+                    basic_language = strdup(locale_parts->lang);
                   if (basic_language)
                     {
                        int i;
@@ -1017,7 +1021,7 @@ static Evas_Object *
 _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *o, *of, *ob, *ic;
-   char *cur_sig_loc;
+   char *cur_sig_loc = NULL;
    Eina_List *next;
    int i = 0;
    char buf[PATH_MAX];
@@ -1043,16 +1047,15 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
         locale_parts = e_intl_locale_parts_get(cfdata->cur_language);
         if (locale_parts)
           {
-             cur_sig_loc = e_intl_locale_parts_combine(locale_parts,
-                                                       E_INTL_LOC_LANG | E_INTL_LOC_REGION);
+             if (locale_parts->mask & E_INTL_LOC_REGION)
+               cur_sig_loc = e_intl_locale_parts_combine(locale_parts,
+                                                         E_INTL_LOC_LANG | E_INTL_LOC_REGION);
+             else if (locale_parts->lang)
+               cur_sig_loc = strdup(locale_parts->lang);
 
              e_intl_locale_parts_free(locale_parts);
           }
-        else
-          cur_sig_loc = NULL;
      }
-   else
-     cur_sig_loc = NULL;
 
    e_prefix_data_snprintf(buf, sizeof(buf), "data/flags/%s", "lang-system.png");
    ic = e_util_icon_add(buf, evas);
@@ -1109,6 +1112,7 @@ _advanced_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data 
 {
    Evas_Object *o, *of, *ob;
    const char *lang, *reg, *cs, *mod;
+   int sel = -1;
 
    cfdata->evas = evas;
    e_dialog_resizable_set(cfd->dia, 1);
@@ -1131,13 +1135,13 @@ _advanced_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data 
         cfdata->lang_list =
           eina_list_sort(cfdata->lang_list, eina_list_count(cfdata->lang_list),
                          _lang_list_sort);
-        _lang_list_load(cfdata);
+        _lang_list_load(cfdata, &sel);
      }
 
    e_widget_ilist_go(ob);
    e_widget_size_min_set(ob, 140, 200);
    e_widget_framelist_object_append(of, ob);
-   e_widget_ilist_selected_set(ob, e_widget_ilist_selected_get(ob));
+   e_widget_ilist_selected_set(ob, sel);
 
    /* Region List */
    ob = e_widget_ilist_add(evas, 0, 0, &(cfdata->cur_reg));
@@ -1146,7 +1150,7 @@ _advanced_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data 
    e_widget_ilist_go(ob);
    e_widget_size_min_set(ob, 100, 100);
    e_widget_framelist_object_append(of, ob);
-   e_widget_ilist_selected_set(ob, e_widget_ilist_selected_get(ob));
+   e_widget_ilist_selected_set(ob, sel);
 
    /* Codeset List */
    ob = e_widget_ilist_add(evas, 0, 0, &(cfdata->cur_cs));
@@ -1486,7 +1490,7 @@ _lang_list_sort(const void *data1, const void *data2)
 }
 
 static void
-_lang_list_load(void *data)
+_lang_list_load(void *data, int *sel)
 {
    E_Config_Dialog_Data *cfdata;
    Eina_List *l;
@@ -1528,13 +1532,10 @@ _lang_list_load(void *data)
         e_widget_ilist_append(cfdata->gui.lang_list, ic, trans, NULL, NULL, ln->lang_code);
 
         if (cfdata->cur_lang && !strcmp(cfdata->cur_lang, ln->lang_code))
-          {
-             int count;
-
-             count = e_widget_ilist_count(cfdata->gui.lang_list);
-             e_widget_ilist_selected_set(cfdata->gui.lang_list, count - 1);
-          }
+          *sel = e_widget_ilist_count(cfdata->gui.lang_list) - 1;
      }
+   if (*sel > -1)
+     e_widget_ilist_selected_set(cfdata->gui.lang_list, *sel);
    e_widget_ilist_thaw(cfdata->gui.lang_list);
    edje_thaw();
    evas_event_thaw(evas_object_evas_get(cfdata->gui.lang_list));

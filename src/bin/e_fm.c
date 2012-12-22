@@ -146,6 +146,7 @@ struct _E_Fm2_Smart_Data
    E_Fm2_Icon     *drop_icon;
    Ecore_Animator *dnd_scroller;
    Evas_Point dnd_current;
+   Eina_List *mount_ops;
    E_Fm2_Mount    *mount;
    signed char     drop_after;
    Eina_Bool       drop_show : 1;
@@ -192,6 +193,8 @@ struct _E_Fm2_Icon
    E_Dialog         *dialog;
 
    E_Fm2_Icon_Info   info;
+   E_Fm2_Mount *mount; // for dnd into unmounted dirs
+   Ecore_Timer *mount_timer; // autounmount in 15s
 
    struct
    {
@@ -252,7 +255,7 @@ struct _E_Fm2_Context_Menu_Data
    E_Fm2_Smart_Data *sd;
    E_Fm2_Mime_Handler *handler;
 };
-
+static Eina_Bool    _e_fm2_cb_drag_finished_show(E_Fm2_Icon *ic);
 static const char   *_e_fm2_dev_path_map(E_Fm2_Smart_Data *sd, const char *dev, const char *path);
 static void          _e_fm2_file_add(Evas_Object *obj, const char *file, int unique, Eina_Stringshare *file_rel, int after, E_Fm2_Finfo *finf);
 static void          _e_fm2_file_del(Evas_Object *obj, const char *file);
@@ -383,7 +386,7 @@ static void          _e_fm2_file_rename_no_cb(void *data);
 static void          _e_fm2_file_application_properties(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__);
 static void          _e_fm2_file_properties(void *data, E_Menu *m, E_Menu_Item *mi);
 static void          _e_fm2_file_properties_delete_cb(void *obj);
-static void          _e_fm2_file_do_rename(const char *text, E_Fm2_Icon *ic);
+static int           _e_fm2_file_do_rename(const char *text, E_Fm2_Icon *ic);
 
 static Evas_Object  *_e_fm2_icon_entry_widget_add(E_Fm2_Icon *ic);
 static void          _e_fm2_icon_entry_widget_del(E_Fm2_Icon *ic);
@@ -522,7 +525,12 @@ _e_fm2_icon_realpath(const E_Fm2_Icon *ic, char *buf, int buflen)
 static inline Eina_Bool
 _e_fm2_icon_path(const E_Fm2_Icon *ic, char *buf, int buflen)
 {
-   int r = snprintf(buf, buflen, "%s/%s", ic->sd->path, ic->info.file);
+   int r;
+
+   if (ic->info.link)
+     r = snprintf(buf, buflen, "%s", ic->info.link);
+   else
+     r = snprintf(buf, buflen, "%s/%s", ic->sd->path, ic->info.file);
    return r < buflen;
 }
 
@@ -1619,6 +1627,7 @@ e_fm2_icons_update(Evas_Object *obj)
 
    EFM_SMART_CHECK();
 
+   if ((!sd->realpath) || (!sd->icons)) return;
    bufused = eina_strlcpy(buf, sd->realpath, sizeof(buf));
    if (bufused >= (int)(sizeof(buf) - 2))
      return;
@@ -2868,7 +2877,7 @@ e_fm2_client_data(Ecore_Ipc_Event_Client_Data *e)
                   _e_fm2_live_file_del
                     (obj, ecore_file_file_get(path));
                }
-             if (evdir) free(evdir);
+             free(evdir);
              break;
 
            case E_FM_OP_MONITOR_END: /*mon dir del*/
@@ -4714,6 +4723,9 @@ _e_fm2_icon_free(E_Fm2_Icon *ic)
         e_object_del(E_OBJECT(ic->prop_dialog));
         ic->prop_dialog = NULL;
      }
+   if (ic->mount)
+     e_fm2_device_unmount(ic->mount);
+   if (ic->mount_timer) ecore_timer_del(ic->mount_timer);
    if (ic->selected)
      ic->sd->selected_icons = eina_list_remove(ic->sd->selected_icons, ic);
    if (ic->drag.dnd_end_timer)
@@ -6445,12 +6457,56 @@ _e_fm_icon_save_position(const char *file, Evas_Coord x, Evas_Coord y, Evas_Coor
    e_fm2_custom_file_flush();
 }
 
+static Eina_Bool
+_e_fm_drop_menu_queue(Evas_Object *e_fm, void *args, int op)
+{
+   E_Volume *vol;
+   E_Fm2_Device_Mount_Op *mop = args;
+
+   vol = evas_object_data_del(e_fm, "dnd_queue");
+   if (!vol) return EINA_FALSE;
+   if (!vol->mounted)
+     {
+        /* this should get picked up by the post-mount callback */
+        switch (op)
+          {
+           case 0: //copy
+             mop->action = ECORE_X_ATOM_XDND_ACTION_COPY;
+             break;
+           case 1: //move
+             mop->action = ECORE_X_ATOM_XDND_ACTION_MOVE;
+             break;
+           case 2: //link
+             mop->action = ECORE_X_ATOM_XDND_ACTION_LINK;
+             break;
+          }
+        return EINA_TRUE;
+     }
+   switch (op)
+     {
+      case 0: //copy
+        e_fm2_client_file_copy(e_fm, mop->args);
+        break;
+      case 1: //move
+        e_fm2_client_file_move(e_fm, mop->args);
+        break;
+      case 2: //link
+        e_fm2_client_file_symlink(e_fm, mop->args);
+        break;
+     }
+   vol->mount_ops = eina_inlist_remove(vol->mount_ops, EINA_INLIST_GET(mop));
+   free(mop->args);
+   free(mop);
+   return EINA_TRUE;
+}
+
 static void
 _e_fm_drop_menu_copy_cb(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
 {
    char *args;
 
-   args = evas_object_data_get(data, "drop_menu_data");
+   args = evas_object_data_del(data, "drop_menu_data");
+   if (_e_fm_drop_menu_queue(data, args, 0)) return;
    e_fm2_client_file_copy(data, args);
    free(args);
 }
@@ -6460,7 +6516,8 @@ _e_fm_drop_menu_move_cb(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUS
 {
    char *args;
 
-   args = evas_object_data_get(data, "drop_menu_data");
+   args = evas_object_data_del(data, "drop_menu_data");
+   if (_e_fm_drop_menu_queue(data, args, 1)) return;
    e_fm2_client_file_move(data, args);
    free(args);
 }
@@ -6470,7 +6527,8 @@ _e_fm_drop_menu_symlink_cb(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __U
 {
    char *args;
 
-   args = evas_object_data_get(data, "drop_menu_data");
+   args = evas_object_data_del(data, "drop_menu_data");
+   if (_e_fm_drop_menu_queue(data, args, 2)) return;
    e_fm2_client_file_symlink(data, args);
    free(args);
 }
@@ -6478,7 +6536,7 @@ _e_fm_drop_menu_symlink_cb(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __U
 static void
 _e_fm_drop_menu_abort_cb(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
 {
-   free(evas_object_data_get(data, "drop_menu_data"));
+   free(evas_object_data_del(data, "drop_menu_data"));
 }
 
 static void
@@ -6489,6 +6547,87 @@ _e_fm_drop_menu_free(void *data)
    e_fm = e_object_data_get(data);
    if (!e_fm) return;
    evas_object_data_del(e_fm, "drop_menu_data");
+}
+
+static void
+_e_fm2_cb_dnd_selection_notify_post_mount_fail(E_Volume *vol)
+{
+   E_Fm2_Device_Mount_Op *mop;
+ 
+   while (vol->mount_ops)
+     {
+        E_Fm2_Icon *ic;
+
+        mop = (E_Fm2_Device_Mount_Op*) vol->mount_ops;
+        ic = mop->ic;
+        vol->mount_ops = eina_inlist_remove(vol->mount_ops, EINA_INLIST_GET(mop));
+        /* FIXME: this can be made more clear */
+        e_util_dialog_show(_("Error"), _("The recent DND operation requested for '%s' has failed."), vol->label ?: vol->udi);
+        evas_object_data_del(ic->sd->obj, "dnd_queue");
+        free(mop->args);
+        ic->sd->mount_ops = eina_list_remove(ic->sd->mount_ops, mop);
+        free(mop);
+     }
+}
+
+static void
+_e_fm2_cb_dnd_selection_notify_post_mount(E_Volume *vol)
+{
+   E_Fm2_Device_Mount_Op *mop = NULL;
+   const char *mp;
+   Eina_Inlist *l;
+
+   mp = e_fm2_device_volume_mountpoint_get(vol);
+   EINA_INLIST_FOREACH_SAFE(vol->mount_ops, l, mop)
+     {
+        E_Fm2_Icon *ic = mop->ic;
+
+        if (mp)
+          {
+             mop->args = e_util_string_append_quoted(mop->args, &mop->size, &mop->length, mp);
+             if (mop->action == ECORE_X_ATOM_XDND_ACTION_ASK)
+               continue;
+             else if (mop->action == ECORE_X_ATOM_XDND_ACTION_MOVE)
+                e_fm2_client_file_move(ic->sd->obj, mop->args);
+             else if (mop->action == ECORE_X_ATOM_XDND_ACTION_COPY)
+               e_fm2_client_file_copy(ic->sd->obj, mop->args);
+             else if (mop->action == ECORE_X_ATOM_XDND_ACTION_LINK)
+               e_fm2_client_file_symlink(ic->sd->obj, mop->args);
+          }
+        else
+          e_util_dialog_show(_("Error"), _("The recent DND operation requested for '%s' has failed."), vol->label ?: vol->udi);
+        free(mop->args);
+        vol->mount_ops = eina_inlist_remove(vol->mount_ops, EINA_INLIST_GET(mop));
+        ic->sd->mount_ops = eina_list_remove(ic->sd->mount_ops, mop);
+        free(mop);
+     }
+   eina_stringshare_del(mp);
+}
+
+static void
+_e_fm2_cb_dnd_selection_notify_post_umount(E_Volume *vol)
+{
+   E_Fm2_Device_Mount_Op *mop;
+
+   EINA_INLIST_FOREACH(vol->mount_ops, mop)
+     {
+        E_Fm2_Icon *ic = mop->ic;
+
+        if (!ic) continue;
+        if (ic->mount_timer) ecore_timer_del(ic->mount_timer);
+        ic->mount_timer = NULL;
+        ic->mount = NULL;
+        ic->sd->mount_ops = eina_list_remove(ic->sd->mount_ops, mop);
+     }
+}
+
+static Eina_Bool
+_e_fm2_cb_dnd_selection_notify_post_mount_timer(E_Fm2_Icon *ic)
+{
+   e_fm2_device_unmount(ic->mount);
+   ic->mount = NULL;
+   ic->mount_timer = NULL;
+   return EINA_FALSE;
 }
 
 static void
@@ -6507,7 +6646,8 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
    char *args = NULL;
    size_t size = 0;
    size_t length = 0;
-   Eina_Bool lnk = EINA_FALSE, memerr = EINA_FALSE;
+   Eina_Bool lnk = EINA_FALSE, memerr = EINA_FALSE, mnt = EINA_FALSE;
+   E_Fm2_Device_Mount_Op *mop = NULL;
    
    sd = data;
    ev = event;
@@ -6651,18 +6791,68 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
 
              if (!memerr)
                {
-                  if (S_ISDIR(sd->drop_icon->info.statinfo.st_mode))
+                  while (sd->drop_icon->info.removable)
                     {
-                       if (sd->drop_icon->info.link)
-                         snprintf(dirpath, sizeof(dirpath), "%s", sd->drop_icon->info.link);
-                       else
-                         snprintf(dirpath, sizeof(dirpath), "%s/%s", sd->realpath, sd->drop_icon->info.file);
-                    }
-                  else
-                    snprintf(dirpath, sizeof(dirpath), "%s", sd->realpath);
+                       /* we're dropping onto a device
+                        * cross your fingers and hope for good luck
+                        */
+                       E_Volume *vol;
+                       const char *mp;
 
-                  args = e_util_string_append_quoted(args, &size, &length, dirpath);
-                  if (!args) memerr = EINA_TRUE;
+                       vol = e_fm2_device_volume_find_fast(sd->drop_icon->info.link);
+                       if (!vol) break;
+                       if (vol->mounted)
+                         {
+                            mp = e_fm2_device_volume_mountpoint_get(vol);
+                            if (mp)
+                              {
+                                 /* luuuuuuckkyyyyyyyyy */
+                                 args = e_util_string_append_quoted(args, &size, &length, mp);
+                                 if (!args) memerr = EINA_TRUE;
+                                 eina_stringshare_del(mp);
+                                 mnt = EINA_TRUE;
+                                 break;
+                              }
+                         }
+                       else if (!sd->drop_icon->mount)
+                         sd->drop_icon->mount = e_fm2_device_mount(vol, (Ecore_Cb)_e_fm2_cb_dnd_selection_notify_post_mount,
+                           (Ecore_Cb)_e_fm2_cb_dnd_selection_notify_post_mount_fail, (Ecore_Cb)_e_fm2_cb_dnd_selection_notify_post_umount,
+                           NULL, vol);
+
+                       if (sd->drop_icon->mount_timer) ecore_timer_reset(sd->drop_icon->mount_timer);
+                       else sd->drop_icon->mount_timer = ecore_timer_add(15., (Ecore_Task_Cb)_e_fm2_cb_dnd_selection_notify_post_mount_timer, sd->drop_icon);
+                       if ((e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_ASK) ||
+                           ((sd->config->view.link_drop) || (!sd->drop_icon)))
+                         /* this here's some buuuullshit */
+                         evas_object_data_set(sd->obj, "dnd_queue", vol);
+                       else if (e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_MOVE)
+                         /* set copy if we're over a device */
+                         e_drop_handler_action_set(ECORE_X_ATOM_XDND_ACTION_COPY);
+                       mop = e_fm2_device_mount_op_add(sd->drop_icon->mount, args, size, length);
+                       mop->ic = sd->drop_icon;
+                       mop->mnt = sd->drop_icon->mount;
+                       sd->mount_ops = eina_list_append(sd->mount_ops, mop);
+                       /*
+                        * set lnk here to prevent deleting the show timer
+                        */
+                       mnt = lnk = EINA_TRUE;
+                       break;
+                    }
+                  if (!mnt)
+                    {
+                       if (S_ISDIR(sd->drop_icon->info.statinfo.st_mode))
+                         {
+                            if (sd->drop_icon->info.link)
+                              snprintf(dirpath, sizeof(dirpath), "%s", sd->drop_icon->info.link);
+                            else
+                              snprintf(dirpath, sizeof(dirpath), "%s/%s", sd->realpath, sd->drop_icon->info.file);
+                         }
+                       else
+                         snprintf(dirpath, sizeof(dirpath), "%s", sd->realpath);
+
+                       args = e_util_string_append_quoted(args, &size, &length, dirpath);
+                       if (!args) memerr = EINA_TRUE;
+                    }
                }
           }
         else
@@ -6728,33 +6918,47 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
 
    if (args)
      {
+        Eina_Bool do_lnk = EINA_FALSE, do_move = EINA_FALSE, do_copy = EINA_FALSE;
+
         if (e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_COPY)
           {
              lnk = EINA_TRUE;
              if (sd->config->view.link_drop && (!sd->drop_icon))
-               e_fm2_client_file_symlink(sd->obj, args);
+               do_lnk = EINA_TRUE;
              else
-               e_fm2_client_file_copy(sd->obj, args);
-             free(args);
+               do_copy = EINA_TRUE;
           }
         else if (e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_MOVE)
           {
              if (sd->config->view.link_drop && (!sd->drop_icon))
-               lnk = EINA_TRUE, e_fm2_client_file_symlink(sd->obj, args);
+               lnk = do_lnk = EINA_TRUE;
              else
-               e_fm2_client_file_move(sd->obj, args);
-             free(args);
+               do_move = EINA_TRUE;
           }
         else if (e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_ASK)
           {
              if (sd->config->view.link_drop && (!sd->drop_icon))
-               {
-                  lnk = EINA_TRUE, e_fm2_client_file_symlink(sd->obj, args);
-                  free(args);
-               }
-             else
-               e_fm2_drop_menu(sd->obj, args);
+               do_lnk = lnk = EINA_TRUE;
           }
+        if (mnt && mop)
+          mop->action = (do_lnk * ECORE_X_ATOM_XDND_ACTION_LINK) +
+            (do_copy * ECORE_X_ATOM_XDND_ACTION_COPY) + (do_move * ECORE_X_ATOM_XDND_ACTION_MOVE) +
+            (((!do_copy) && (!do_move) && (!do_lnk)) * ECORE_X_ATOM_XDND_ACTION_ASK);
+        else if (do_lnk)
+          e_fm2_client_file_symlink(sd->obj, args);
+        else if (do_copy)
+          e_fm2_client_file_copy(sd->obj, args);
+        else if (do_move)
+          e_fm2_client_file_move(sd->obj, args);
+        if ((!do_lnk) && (!do_copy) && (!do_move))
+          {
+             e_fm2_drop_menu(sd->obj, args);
+             if (mnt && mop)
+               evas_object_data_set(sd->obj, "drop_menu_data", mop);
+             E_LIST_FOREACH(isel, _e_fm2_cb_drag_finished_show);
+          }
+        if (((!mnt) && (!mop)) && (do_lnk || do_copy || do_move))
+          free(args);
      }
 end:
    _e_fm2_dnd_drop_hide(sd->obj);
@@ -7391,10 +7595,11 @@ static void
 _e_fm2_cb_icon_thumb_gen(void *data, Evas_Object *obj, void *event_info __UNUSED__)
 {
    E_Fm2_Icon *ic;
+   const char *file;
 
    ic = data;
 
-   if (e_icon_file_get(obj))
+   if (e_icon_file_get(obj, &file, NULL))
      {
         Evas_Coord w = 0, h = 0;
         int have_alpha;
@@ -8245,6 +8450,7 @@ _e_fm2_smart_del(Evas_Object *obj)
    E_FREE(sd->typebuf.buf);
    if (sd->typebuf.timer) ecore_timer_del(sd->typebuf.timer);
    sd->typebuf.timer = NULL;
+   eina_list_free(sd->mount_ops);
 
    evas_object_del(sd->underlay);
    evas_object_del(sd->overlay);
@@ -9740,6 +9946,7 @@ _e_fm2_view_image_sel(E_Fm2_Smart_Data *sd, const char *title,
 
    dia = e_dialog_new(NULL, "E", "_fm2_view_image_select_dialog");
    if (!dia) return;
+   e_dialog_resizable_set(dia, 1);
    e_dialog_title_set(dia, title);
 
    o = e_widget_fsel_add(dia->win->evas, "/", sd->realpath, NULL, NULL, NULL, sd, NULL, sd, 1);
@@ -10046,7 +10253,22 @@ _e_fm2_icon_entry_widget_cb_key_down(void *data, Evas *e __UNUSED__, Evas_Object
 static void
 _e_fm2_icon_entry_widget_accept(E_Fm2_Icon *ic)
 {
-   _e_fm2_file_do_rename(e_widget_entry_text_get(ic->entry_widget), ic);
+   const char *txt;
+
+   txt = e_widget_entry_text_get(ic->entry_widget);
+   switch (_e_fm2_file_do_rename(txt, ic))
+     {
+      case -2:
+        e_util_dialog_show(_("Error"), _("%s already exists!"), txt);
+        return;
+      case -1:
+        e_util_dialog_show(_("Error"), _("%s could not be renamed because it is protected"), ic->info.file);
+        break;
+      case 0:
+        e_util_dialog_show(_("Error"), _("Internal filemanager error :("));
+      default: /* success! */
+        break;
+     }
    _e_fm2_icon_entry_widget_del(ic);
 }
 
@@ -10067,7 +10289,20 @@ _e_fm2_file_rename_yes_cb(void *data, char *text)
    ic = data;
    ic->entry_dialog = NULL;
 
-   _e_fm2_file_do_rename(text, ic);
+   switch (_e_fm2_file_do_rename(text, ic))
+     {
+      case -2:
+        e_util_dialog_show(_("Error"), _("%s already exists!"), text);
+        _e_fm2_file_rename(ic, NULL, NULL);
+        break;
+      case -1:
+        e_util_dialog_show(_("Error"), _("%s could not be renamed because it is protected"), ic->info.file);
+        break;
+      case 0:
+        e_util_dialog_show(_("Error"), _("Internal filemanager error :("));
+      default: /* success! */
+        break;
+     }
 }
 
 static void
@@ -10079,7 +10314,7 @@ _e_fm2_file_rename_no_cb(void *data)
    ic->entry_dialog = NULL;
 }
 
-static void
+static int
 _e_fm2_file_do_rename(const char *text, E_Fm2_Icon *ic)
 {
    char oldpath[PATH_MAX];
@@ -10088,22 +10323,23 @@ _e_fm2_file_do_rename(const char *text, E_Fm2_Icon *ic)
    size_t size = 0;
    size_t length = 0;
 
-   if ((text) && (strcmp(text, ic->info.file)))
-     {
-        _e_fm2_icon_realpath(ic, oldpath, sizeof(oldpath));
-        snprintf(newpath, sizeof(newpath), "%s/%s", ic->sd->realpath, text);
-        if (e_filereg_file_protected(oldpath)) return;
+   if (!text) return 0;
+   if (!strcmp(text, ic->info.file)) return EINA_TRUE;
+   _e_fm2_icon_realpath(ic, oldpath, sizeof(oldpath));
+   snprintf(newpath, sizeof(newpath), "%s/%s", ic->sd->realpath, text);
+   if (e_filereg_file_protected(oldpath)) return -1;
+   if (ecore_file_exists(newpath)) return -2;
 
-        args = e_util_string_append_quoted(args, &size, &length, oldpath);
-        if (!args) return;
-        args = e_util_string_append_char(args, &size, &length, ' ');
-        if (!args) return;
-        args = e_util_string_append_quoted(args, &size, &length, newpath);
-        if (!args) return;
+   args = e_util_string_append_quoted(args, &size, &length, oldpath);
+   if (!args) return 0;
+   args = e_util_string_append_char(args, &size, &length, ' ');
+   if (!args) return 0;
+   args = e_util_string_append_quoted(args, &size, &length, newpath);
+   if (!args) return 0;
 
-        e_fm2_client_file_move(ic->sd->obj, args);
-        free(args);
-     }
+   e_fm2_client_file_move(ic->sd->obj, args);
+   free(args);
+   return 1;
 }
 
 static E_Dialog *
@@ -10316,6 +10552,7 @@ _e_fm_error_dialog(int pid, const char *str)
    ere = e_fm2_op_registry_entry_get(pid);
    if (!ere) return NULL;
    sd = evas_object_smart_data_get(ere->e_fm);
+   E_LIST_FOREACH(sd->icons, _e_fm2_cb_drag_finished_show);
    while (sd->realpath)
      {
         /* trying to make or move a link onto a device will fail, create button for
@@ -11276,7 +11513,7 @@ e_fm2_desktop_get(Evas_Object *obj)
 }
 
 EAPI void
-e_fm2_drop_menu(Evas_Object *e_fm, char *args)
+e_fm2_drop_menu(Evas_Object *obj, char *args)
 {
    E_Menu *menu;
    E_Menu_Item *item;
@@ -11285,21 +11522,26 @@ e_fm2_drop_menu(Evas_Object *e_fm, char *args)
    E_Zone *zone;
    int x, y;
 
-   menu = e_menu_new();
+   EFM_SMART_CHECK();
+
+   EINA_SAFETY_ON_TRUE_RETURN(!!sd->menu);
+   sd->menu = menu = e_menu_new();
    if (!menu) return;
 
-   evas_object_data_set(e_fm, "drop_menu_data", args);
-   e_object_data_set(E_OBJECT(menu), e_fm);
+   e_menu_post_deactivate_callback_set(menu, _e_fm2_menu_post_cb, sd);
+
+   evas_object_data_set(obj, "drop_menu_data", args);
+   e_object_data_set(E_OBJECT(menu), obj);
    e_object_free_attach_func_set(E_OBJECT(menu), _e_fm_drop_menu_free);
 
    item = e_menu_item_new(menu);
    e_menu_item_label_set(item, _("Copy"));
-   e_menu_item_callback_set(item, _e_fm_drop_menu_copy_cb, e_fm);
+   e_menu_item_callback_set(item, _e_fm_drop_menu_copy_cb, obj);
    e_util_menu_item_theme_icon_set(item, "edit-copy");
 
    item = e_menu_item_new(menu);
    e_menu_item_label_set(item, _("Move"));
-   e_menu_item_callback_set(item, _e_fm_drop_menu_move_cb, e_fm);
+   e_menu_item_callback_set(item, _e_fm_drop_menu_move_cb, obj);
    e_menu_item_icon_edje_set(item,
                              e_theme_edje_file_get("base/theme/fileman",
                                                    "e/fileman/default/button/move"),
@@ -11307,7 +11549,7 @@ e_fm2_drop_menu(Evas_Object *e_fm, char *args)
 
    item = e_menu_item_new(menu);
    e_menu_item_label_set(item, _("Link"));
-   e_menu_item_callback_set(item, _e_fm_drop_menu_symlink_cb, e_fm);
+   e_menu_item_callback_set(item, _e_fm_drop_menu_symlink_cb, obj);
    e_util_menu_item_theme_icon_set(item, "emblem-symbolic-link");
 
    item = e_menu_item_new(menu);
@@ -11315,7 +11557,7 @@ e_fm2_drop_menu(Evas_Object *e_fm, char *args)
 
    item = e_menu_item_new(menu);
    e_menu_item_label_set(item, _("Abort"));
-   e_menu_item_callback_set(item, _e_fm_drop_menu_abort_cb, e_fm);
+   e_menu_item_callback_set(item, _e_fm_drop_menu_abort_cb, obj);
    e_menu_item_icon_edje_set(item,
                              e_theme_edje_file_get("base/theme/fileman",
                                                    "e/fileman/default/button/abort"),
@@ -11329,7 +11571,8 @@ e_fm2_drop_menu(Evas_Object *e_fm, char *args)
    zone = e_util_zone_current_get(man);
    if (!zone) goto error;
    e_menu_activate_mouse(menu, zone, x, y, 1, 1, E_MENU_POP_DIRECTION_DOWN, 0);
-
+   return;
 error:
    e_object_del(E_OBJECT(menu));
+   sd->menu = NULL;
 }

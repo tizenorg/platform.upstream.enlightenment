@@ -559,7 +559,6 @@ e_gadcon_populate(E_Gadcon *gc)
 {
    Eina_List *l;
    E_Config_Gadcon_Client *cf_gcc;
-   Eina_Bool ret = EINA_TRUE;
 
    E_OBJECT_CHECK(gc);
    E_OBJECT_TYPE_CHECK(gc, E_GADCON_TYPE);
@@ -579,10 +578,7 @@ e_gadcon_populate(E_Gadcon *gc)
                }
           }
         if (cc)
-          {
-             ret = _e_gadcon_client_populate(gc, cc, cf_gcc);
-             if (!ret) break;
-          }
+          _e_gadcon_client_populate(gc, cc, cf_gcc);
         else
           e_gadcon_client_queue(gc, cf_gcc);
      }
@@ -1401,7 +1397,7 @@ e_gadcon_client_autoscroll_set(E_Gadcon_Client *gcc, int autoscroll)
 
    if (gcc->autoscroll_disabled && (!autoscroll))
      {
-        e_util_dialog_show("Gadget error", "%s does not support disabling autoscrolling", gcc->name);
+        e_util_dialog_show(_("Gadget error"), _("%s does not support disabling autoscrolling"), gcc->name);
         return;
      }
    gcc->autoscroll = autoscroll;
@@ -1760,13 +1756,12 @@ e_gadcon_client_util_menu_items_append(E_Gadcon_Client *gcc, E_Menu *menu_gadget
              e_util_menu_item_theme_icon_set(mi, "enlightenment/plain");
              e_menu_item_radio_group_set(mi, 1);
              e_menu_item_radio_set(mi, 1);
-             if ((gcc->style) && 
-                 (!strcmp(gcc->style, E_GADCON_CLIENT_STYLE_PLAIN)))
+             if (!e_util_strcmp(gcc->style, E_GADCON_CLIENT_STYLE_PLAIN))
                e_menu_item_toggle_set(mi, 1);
-             else if ((gcc->client_class->default_style) && 
-                      (!strcmp(gcc->client_class->default_style, 
-                               E_GADCON_CLIENT_STYLE_PLAIN)))
+             else if ((!gcc->style) &&
+               (!e_util_strcmp(gcc->client_class->default_style, E_GADCON_CLIENT_STYLE_PLAIN)))
                e_menu_item_toggle_set(mi, 1);
+             e_menu_item_disabled_set(mi, mi->toggle);
              e_menu_item_callback_set(mi, _e_gadcon_client_cb_menu_style_plain, gcc);
 
              mi = e_menu_item_new(mo);
@@ -1774,13 +1769,12 @@ e_gadcon_client_util_menu_items_append(E_Gadcon_Client *gcc, E_Menu *menu_gadget
              e_util_menu_item_theme_icon_set(mi, "enlightenment/inset");
              e_menu_item_radio_group_set(mi, 1);
              e_menu_item_radio_set(mi, 1);
-             if ((gcc->style) && 
-                 (!strcmp(gcc->style, E_GADCON_CLIENT_STYLE_INSET)))
+             if (!e_util_strcmp(gcc->style, E_GADCON_CLIENT_STYLE_INSET))
                e_menu_item_toggle_set(mi, 1);
-             else if ((gcc->client_class->default_style) && 
-                      (!strcmp(gcc->client_class->default_style, 
-                               E_GADCON_CLIENT_STYLE_INSET)))
+             else if ((!gcc->style) &&
+               (!e_util_strcmp(gcc->client_class->default_style, E_GADCON_CLIENT_STYLE_INSET)))
                e_menu_item_toggle_set(mi, 1);
+             e_menu_item_disabled_set(mi, mi->toggle);
              e_menu_item_callback_set(mi, _e_gadcon_client_cb_menu_style_inset, gcc);
 
              mi = e_menu_item_new(menu_gadget);
@@ -3087,8 +3081,8 @@ _e_gadcon_client_class_feature_check(const E_Gadcon_Client_Class *cc, const char
 {
    if (!feature)
      {
-        e_util_dialog_show("Insufficent gadcon support",
-                           "Module %s needs to support %s",
+        e_util_dialog_show(_("Insufficent gadcon support"),
+                           _("Module %s needs to support %s"),
                            cc->name, name);
         return 0;
      }
@@ -3224,8 +3218,7 @@ _e_gadcon_client_cb_menu_style_plain(void *data, E_Menu *m __UNUSED__, E_Menu_It
 
    gcc = data;
    gc = gcc->gadcon;
-   if (gcc->style) eina_stringshare_del(gcc->style);
-   gcc->style = eina_stringshare_add(E_GADCON_CLIENT_STYLE_PLAIN);
+   eina_stringshare_replace(&gcc->style, E_GADCON_CLIENT_STYLE_PLAIN);
    _e_gadcon_client_save(gcc);
    e_gadcon_unpopulate(gc);
    e_gadcon_populate(gc);
@@ -3239,8 +3232,7 @@ _e_gadcon_client_cb_menu_style_inset(void *data, E_Menu *m __UNUSED__, E_Menu_It
 
    gcc = data;
    gc = gcc->gadcon;
-   if (gcc->style) eina_stringshare_del(gcc->style);
-   gcc->style = eina_stringshare_add(E_GADCON_CLIENT_STYLE_INSET);
+   eina_stringshare_replace(&gcc->style, E_GADCON_CLIENT_STYLE_INSET);
    _e_gadcon_client_save(gcc);
    e_gadcon_unpopulate(gc);
    e_gadcon_populate(gc);

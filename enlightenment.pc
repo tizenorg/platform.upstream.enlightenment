@@ -8,12 +8,12 @@ pkgdatadir=${prefix}/share/enlightenment/data
 themes=${pkgdatadir}/themes
 backgrounds=${pkgdatadir}/backgrounds
 config_apps=/usr/local/share/enlightenment/config-apps
-release=0.17.0-lucky
+release=0.17.0
 
 Name: enlightenment
 Description: Enlightenmnt Window Manager
-Requires: evas >= 1.7.3 ecore >= 1.7.3 ecore-x >= 1.7.3 ecore-evas >= 1.7.3 ecore-con >= 1.7.3 ecore-ipc >= 1.7.3 ecore-file >= 1.7.3 eet >= 1.7.3 edje >= 1.7.3 efreet >= 1.7.3 efreet-mime >= 1.7.3 efreet-trash >= 1.7.3 eina >= 1.7.3 dbus-1 edbus >= 1.7.3 eio >= 1.7.3 ehal >= 1.7.3, edbus >= 1.7.3 eukit >= 1.7.3  eeze elementary > 1.6.9.0 emotion >= 1.7.3
-Version: 0.17.0-lucky
+Requires: evas >= 1.7.4 ecore >= 1.7.4 ecore-x >= 1.7.4 ecore-evas >= 1.7.4 ecore-con >= 1.7.4 ecore-ipc >= 1.7.4 ecore-file >= 1.7.4 eet >= 1.7.4 edje >= 1.7.4 efreet >= 1.7.4 efreet-mime >= 1.7.4 efreet-trash >= 1.7.4 eina >= 1.7.4 dbus-1 edbus >= 1.7.4 eio >= 1.7.4  eukit >= 1.7.4  eeze
+Version: 0.17.0
 Libs: -L${libdir}
 Libs.private:  -lm
 Cflags: -I${includedir} -DUSE_E_CONFIG_H

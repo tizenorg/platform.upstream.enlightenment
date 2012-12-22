@@ -31,6 +31,7 @@ struct _E_Config_Dialog_Data
       } adv;
    } gui;
    Eina_List *obs;
+   E_Config_Dialog *cfd;
 };
 
 static void
@@ -51,6 +52,7 @@ _scale_preview_sel_set(Evas_Object *ob, int sel)
         v = (int)(unsigned long)evas_object_data_get(ob, "scale");
         scl = (double)v / 1000.0;
         if (sc) *sc = scl;
+        e_config_dialog_changed_set(cfdata->cfd, (scl != e_config->scale.factor));
         if (evas_object_data_get(ob, "dpi"))
           {
              cfdata->use_dpi = EINA_TRUE;
@@ -98,6 +100,7 @@ _scale_preview_new(E_Config_Dialog_Data *cfdata, Evas *e, double sc, double *scp
    bg = edje_object_add(e_widget_preview_evas_get(ob));
    file = e_bg_file_get(0, 0, 0, 0);
    edje_object_file_set(bg, file, "e/desktop/background");
+   eina_stringshare_del(file);
    evas_object_move(bg, 0, 0);
    evas_object_resize(bg, 640, 480);
    evas_object_show(bg);
@@ -176,19 +179,18 @@ e_int_config_scale(E_Container *con, const char *params __UNUSED__)
 
    cfd = e_config_dialog_new(con, _("Scale Settings"), "E", "appearance/scale",
                              "preferences-scale", 0, v, NULL);
-   e_config_dialog_changed_auto_set(cfd, 0);
-   e_config_dialog_changed_set(cfd, 1);
+   e_config_dialog_changed_auto_set(cfd, 1);
    return cfd;
 }
 
 /* local function prototypes */
 static void *
-_create_data(E_Config_Dialog *cfd __UNUSED__)
+_create_data(E_Config_Dialog *cfd)
 {
    E_Config_Dialog_Data *cfdata;
 
    cfdata = E_NEW(E_Config_Dialog_Data, 1);
-   _fill_data(cfdata);
+   cfdata->cfd = cfd;
    return cfdata;
 }
 
@@ -220,6 +222,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    double sc = 1.0;
    int dpi, x = 0, y = 0;
 
+   _fill_data(cfdata);
    o = e_widget_table_add(evas, 1);
 
    dpi = ecore_x_dpi_get();
@@ -236,7 +239,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
 #define SCALE_OP(v) do { \
    ob = _scale_preview_new(cfdata, evas, v, &(cfdata->factor), NULL, EINA_FALSE); \
    e_widget_table_object_align_append(o, ob, x, y, 1, 1, 0, 0, 0, 0, 0.5, 0.5); \
-   if ((cfdata->factor >= (v - 0.05)) && (cfdata->factor < v + 0.05)) \
+   if (cfdata->use_custom && ((cfdata->factor >= (v - 0.05)) && (cfdata->factor < v + 0.05))) \
      _scale_preview_sel_set(ob, 1); \
    x++; if (x >= COL) { x = 0; y++; } \
 } while (0)
@@ -271,7 +274,9 @@ _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
            e_config->scale.use_dpi, e_config->scale.use_custom,
            e_config->scale.min, e_config->scale.max, e_config->scale.factor,
            e_config->scale.base_dpi);
-   
+
+   cfd->dia->win->border->internal_no_reopen = 1;
+   e_remember_update(cfd->dia->win->border);
    e_config_save_queue();
 
    a = e_action_find("restart");
@@ -287,6 +292,7 @@ _adv_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *c
    E_Radio_Group *rg;
    char buff[256];
 
+   _fill_data(cfdata);
    if (cfdata->obs) cfdata->obs = eina_list_free(cfdata->obs);
    otb = e_widget_toolbook_add(evas, 24, 24);
 
@@ -344,7 +350,7 @@ _adv_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *c
 }
 
 static int
-_adv_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_adv_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
 {
    E_Action *a;
    
@@ -362,6 +368,8 @@ _adv_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
    e_config->scale.factor = cfdata->factor;
    e_config->scale.base_dpi = cfdata->base_dpi;
 
+   cfd->dia->win->border->internal_no_reopen = 1;
+   e_remember_update(cfd->dia->win->border);
    e_config_save_queue();
    
    a = e_action_find("restart");

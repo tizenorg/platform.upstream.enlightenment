@@ -12,23 +12,11 @@
  **********************************************************************
  */
 
-E_Randr_Serialized_Setup *
-_new_serialized_setup(void)
-{
-   return E_NEW(E_Randr_Serialized_Setup, 1);
-}
-
-EINTERN E_Randr_Serialized_Setup *
-e_randr_serialized_setup_new(void)
-{
-    return _new_serialized_setup();
-}
-
 EAPI void
 e_randr_store_configuration(E_Randr_Configuration_Store_Modifier modifier)
 {
    if (!e_config->randr_serialized_setup)
-     e_config->randr_serialized_setup = _new_serialized_setup();
+     e_config->randr_serialized_setup = e_randr_serialized_setup_new();
 
    fprintf(stderr, "E_RANDR: Configuration shall be stored using the following modifier:%s\n%s%s%s%s",
          ((!modifier) ? "NONE" : ""),
@@ -48,8 +36,8 @@ e_randr_store_configuration(E_Randr_Configuration_Store_Modifier modifier)
    e_config_save_queue();
 }
 
-Eina_Bool
-_try_restore_configuration(void)
+EAPI Eina_Bool 
+e_randr_try_restore_configuration(void)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(e_config, EINA_FALSE);
    if (!e_config->randr_serialized_setup) return EINA_FALSE;
@@ -63,12 +51,14 @@ _try_restore_configuration(void)
    return EINA_FALSE;
 }
 
-EINTERN Eina_Bool e_randr_try_restore_configuration(void)
+EINTERN E_Randr_Serialized_Setup *
+e_randr_serialized_setup_new(void)
 {
-   return _try_restore_configuration();
+    return E_NEW(E_Randr_Serialized_Setup, 1);
 }
 
-EINTERN void e_randr_serialized_setup_free(E_Randr_Serialized_Setup *ss)
+EINTERN void 
+e_randr_serialized_setup_free(E_Randr_Serialized_Setup *ss)
 {
    E_Randr_Serialized_Setup_12 *serialized_setup_12 = NULL;
    E_Randr_Serialized_Output_Policy *serialized_output_policy = NULL;

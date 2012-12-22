@@ -538,7 +538,6 @@ _e_intl_locale_alias_get(const char *language)
    Eina_Hash *alias_hash;
    char *alias;
    char *lower_language;
-   unsigned int i;
 
    if ((!language) || (!strncmp(language, "POSIX", strlen("POSIX"))))
      return strdup("C");
@@ -547,13 +546,10 @@ _e_intl_locale_alias_get(const char *language)
    if (!alias_hash) /* No alias file available */
      return strdup(language);
 
-   lower_language = malloc(strlen(language) + 1);
-   for (i = 0; i < strlen(language); i++)
-     lower_language[i] = tolower(language[i]);
-   lower_language[i] = 0;
+   lower_language = strdupa(language);
+   eina_str_tolower(&lower_language);
 
    alias = eina_hash_find(alias_hash, lower_language);
-   free(lower_language);
 
    if (alias)
      alias = strdup(alias);
@@ -624,7 +620,7 @@ e_intl_locale_parts_get(const char *locale)
    /* Parse Results */
    E_Locale_Parts *locale_parts;
    char language[4];
-   char territory[4];
+   char territory[4] = {0};
    char codeset[32];
    char modifier[32];
 
@@ -655,6 +651,12 @@ e_intl_locale_parts_get(const char *locale)
                }
              else if ((tmp_idx < 2) && (islower(locale_char)))
                language[tmp_idx++] = locale_char;
+             else if (locale_char == '.') // no territory
+               {
+                  state = 2;
+                  language[tmp_idx] = 0;
+                  tmp_idx = 0;
+               }
              else
                return NULL;
              break;
@@ -727,6 +729,7 @@ e_intl_locale_parts_get(const char *locale)
         break;
      }
 
+   if ((!language[0]) && (!territory[0]) && (!codeset[0]) && (!modifier[0])) return NULL;
    locale_parts = E_NEW(E_Locale_Parts, 1);
 
    /* Put the parts of the string together */
@@ -878,7 +881,7 @@ _e_intl_locale_validate(const char *locale)
    Eina_List *all_locales;
    E_Locale_Parts *locale_parts;
    char *locale_next;
-   char *locale_lr;
+   char *locale_lr = NULL;
    char *locale_cs_canonic;
    int found;
 
@@ -887,9 +890,13 @@ _e_intl_locale_validate(const char *locale)
    locale_parts = e_intl_locale_parts_get(locale);
 
    /* Gather the search information */
-   locale_lr =
-     e_intl_locale_parts_combine(locale_parts,
-                                 E_INTL_LOC_LANG | E_INTL_LOC_REGION);
+   if (locale_parts)
+     {
+        if (locale_parts->mask & E_INTL_LOC_REGION)
+          locale_lr = e_intl_locale_parts_combine(locale_parts, E_INTL_LOC_LANG | E_INTL_LOC_REGION);
+        else if (locale_parts->lang)
+          locale_lr = strdup(locale_parts->lang);
+     }
    if (!locale_lr)
      {
         /* Not valid locale, maybe its an alias */
@@ -913,12 +920,17 @@ _e_intl_locale_validate(const char *locale)
         if (found == 0)
           {
              E_Locale_Parts *locale_parts_next;
-             char *locale_lr_next;
+             char *locale_lr_next = NULL;
 
              locale_parts_next = e_intl_locale_parts_get(locale_next);
-             locale_lr_next = e_intl_locale_parts_combine(locale_parts_next,
-                                                          E_INTL_LOC_LANG | E_INTL_LOC_REGION);
-
+             if (locale_parts_next)
+               {
+                  if (locale_parts_next->mask & E_INTL_LOC_REGION)
+                    locale_lr_next = e_intl_locale_parts_combine(locale_parts_next,
+                                                                 E_INTL_LOC_LANG | E_INTL_LOC_REGION);
+                  else if (locale_parts_next->lang)
+                    locale_lr_next = strdup(locale_parts_next->lang);
+               }
              if ((locale_parts) && (locale_lr_next) &&
                  (!strcmp(locale_lr, locale_lr_next)))
                {

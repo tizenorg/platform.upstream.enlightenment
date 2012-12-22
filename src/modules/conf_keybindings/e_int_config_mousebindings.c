@@ -191,7 +191,7 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
    eina_stringshare_del(cfdata->locals.action);
    eina_stringshare_del(cfdata->locals.cur);
 
-   if (cfdata->locals.params) free(cfdata->locals.params);
+   free(cfdata->locals.params);
    E_FREE(cfdata);
 }
 
@@ -289,7 +289,7 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
    e_widget_size_min_set(ob, 200, 200);
    e_widget_frametable_object_append(ot, ob, 0, 0, 2, 1, 1, 1, 1, 1);
 
-   ob = e_widget_button_add(evas, _("Add"), "list-all", _add_mouse_binding_cb, cfdata, NULL);
+   ob = e_widget_button_add(evas, _("Add"), "list-add", _add_mouse_binding_cb, cfdata, NULL);
    e_widget_frametable_object_append(ot, ob, 0, 1, 1, 1, 1, 0, 1, 0);
    ob = e_widget_button_add(evas, _("Delete"), "list-remove", _delete_mouse_binding_cb, cfdata, NULL);
    cfdata->gui.o_del = ob;
@@ -632,6 +632,14 @@ _restore_mouse_binding_defaults_cb(void *data, void *data2 __UNUSED__)
                       "desk_linear_flip_by", "1");
    CFG_WHEELBIND_DFLT(E_BINDING_CONTEXT_WINDOW, 1, 1, E_BINDING_MODIFIER_ALT, 0,
                       "desk_linear_flip_by", "1");
+   CFG_WHEELBIND_DFLT(E_BINDING_CONTEXT_POPUP, 0, -1, E_BINDING_MODIFIER_ALT, 0,
+                      "desk_linear_flip_by", "-1");
+   CFG_WHEELBIND_DFLT(E_BINDING_CONTEXT_POPUP, 1, -1, E_BINDING_MODIFIER_ALT, 0,
+                      "desk_linear_flip_by", "-1");
+   CFG_WHEELBIND_DFLT(E_BINDING_CONTEXT_POPUP, 0, 1, E_BINDING_MODIFIER_ALT, 0,
+                      "desk_linear_flip_by", "1");
+   CFG_WHEELBIND_DFLT(E_BINDING_CONTEXT_POPUP, 1, 1, E_BINDING_MODIFIER_ALT, 0,
+                      "desk_linear_flip_by", "1");
 
    eina_stringshare_del(cfdata->locals.cur);
    cfdata->locals.cur = NULL;
@@ -748,13 +756,18 @@ _update_mouse_binding_list(E_Config_Dialog_Data *cfdata)
           snprintf(label, sizeof(label), "%s + %s", button ? button : "", mods);
         else
           snprintf(label, sizeof(label), "%s", button ? button : "");
-        if (button) free(button);
-        if (mods) free(mods);
+        free(button);
+        free(mods);
 
         switch (eb->button)
           {
            case 1:
-             icon = "preferences-desktop-mouse-left";
+             if (e_config->mouse_hand == E_MOUSE_HAND_RIGHT)
+               icon = "preferences-desktop-mouse-left";
+             else if (e_config->mouse_hand == E_MOUSE_HAND_LEFT)
+               icon = "preferences-desktop-mouse-right";
+             else
+               icon = "preferences-desktop-mouse-extra";
              break;
 
            case 2:
@@ -762,7 +775,12 @@ _update_mouse_binding_list(E_Config_Dialog_Data *cfdata)
              break;
 
            case 3:
-             icon = "preferences-desktop-mouse-right";
+             if (e_config->mouse_hand == E_MOUSE_HAND_RIGHT)
+               icon = "preferences-desktop-mouse-right";
+             else if (e_config->mouse_hand == E_MOUSE_HAND_LEFT)
+               icon = "preferences-desktop-mouse-left";
+             else
+               icon = "preferences-desktop-mouse-extra";
              break;
 
            default:
@@ -799,8 +817,8 @@ _update_mouse_binding_list(E_Config_Dialog_Data *cfdata)
           snprintf(label, sizeof(label), "%s + %s", button ? button : "", mods);
         else
           snprintf(label, sizeof(label), "%s", button ? button : "");
-        if (button) free(button);
-        if (mods) free(mods);
+        free(button);
+        free(mods);
 
         snprintf(val, sizeof(val), "w%d", i);
 
@@ -1151,20 +1169,36 @@ static char *
 _helper_button_name_get(E_Config_Binding_Mouse *eb)
 {
    char *name = NULL;
-   char buf[1024] = "";
+   char buf[1024];
 
    switch (eb->button)
      {
       case 1:
-        name = strdup(_("Left Button"));
+        if (e_config->mouse_hand == E_MOUSE_HAND_RIGHT)
+          name = strdup(_("Left button"));
+        else if (e_config->mouse_hand == E_MOUSE_HAND_LEFT)
+          name = strdup(_("Right button"));
+        else
+          {
+             snprintf(buf, sizeof(buf), _("Button %i"), eb->button);
+             name = strdup(buf);
+          }
         break;
 
       case 2:
-        name = strdup(_("Middle Button"));
+        name = strdup(_("Middle button"));
         break;
 
       case 3:
-        name = strdup(_("Right Button"));
+        if (e_config->mouse_hand == E_MOUSE_HAND_RIGHT)
+          name = strdup(_("Right button"));
+        else if (e_config->mouse_hand == E_MOUSE_HAND_LEFT)
+          name = strdup(_("Left button"));
+        else
+          {
+             snprintf(buf, sizeof(buf), _("Button %i"), eb->button);
+             name = strdup(buf);
+          }
         break;
 
       case 4:
@@ -1174,7 +1208,7 @@ _helper_button_name_get(E_Config_Binding_Mouse *eb)
         break;
 
       default:
-        snprintf(buf, sizeof(buf), _("Extra Button (%d)"), eb->button);
+        snprintf(buf, sizeof(buf), _("Extra button (%d)"), eb->button);
         name = strdup(buf);
      }
    return name;

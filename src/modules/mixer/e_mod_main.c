@@ -11,7 +11,7 @@ static char tmpbuf[4096]; /* general purpose buffer, just use immediately */
 
 static const char _conf_domain[] = "module.mixer";
 static const char _name[] = "mixer";
-const char _e_mixer_Name[] = "Mixer";
+const char _e_mixer_Name[] = N_("Mixer");
 Eina_Bool _mixer_using_default = EINA_FALSE;
 E_Mixer_Volume_Get_Cb e_mod_mixer_volume_get;
 E_Mixer_Volume_Set_Cb e_mod_mixer_volume_set;
@@ -197,8 +197,7 @@ _mixer_module_configuration_new(void)
    E_Mixer_Module_Config *conf;
 
    conf = E_NEW(E_Mixer_Module_Config, 1);
-   if (!conf)
-     return NULL;
+   conf->desktop_notification = 1;
 
    return conf;
 }
@@ -1376,15 +1375,8 @@ _mixer_module_configuration_setup(E_Mixer_Module_Context *ctxt)
    ctxt->module_conf_edd = module_edd;
    ctxt->conf = _mixer_module_configuration_load(module_edd);
 
-#define IFMODCFG(v) if ((ctxt->conf->version & 0xffff) < v) {
-#define IFMODCFGEND }
-
-    IFMODCFG(0x0003);
-    ctxt->conf->desktop_notification = 1;
-    IFMODCFGEND;
-
-    ctxt->conf->version = MOD_CONFIG_FILE_VERSION;
-    ctxt->desktop_notification = ctxt->conf->desktop_notification;
+   ctxt->conf->version = MOD_CONFIG_FILE_VERSION;
+   ctxt->desktop_notification = ctxt->conf->desktop_notification;
 }
 
 static const char _act_increase[] = "volume_increase";
@@ -1403,7 +1395,7 @@ _mixer_actions_register(E_Mixer_Module_Context *ctxt)
         if (ctxt->actions.incr)
           {
              ctxt->actions.incr->func.go = _mixer_cb_volume_increase;
-             e_action_predef_name_set(_(_e_mixer_Name), _(_lbl_increase),
+             e_action_predef_name_set(_e_mixer_Name, _lbl_increase,
                                       _act_increase, NULL, NULL, 0);
           }
      }
@@ -1414,7 +1406,7 @@ _mixer_actions_register(E_Mixer_Module_Context *ctxt)
         if (ctxt->actions.decr)
           {
              ctxt->actions.decr->func.go = _mixer_cb_volume_decrease;
-             e_action_predef_name_set(_(_e_mixer_Name), _(_lbl_decrease),
+             e_action_predef_name_set(_e_mixer_Name, _lbl_decrease,
                                       _act_decrease, NULL, NULL, 0);
           }
      }
@@ -1425,7 +1417,7 @@ _mixer_actions_register(E_Mixer_Module_Context *ctxt)
         if (ctxt->actions.mute)
           {
              ctxt->actions.mute->func.go = _mixer_cb_volume_mute;
-             e_action_predef_name_set(_(_e_mixer_Name), _(_lbl_mute), _act_mute,
+             e_action_predef_name_set(_e_mixer_Name, _lbl_mute, _act_mute,
                                       NULL, NULL, 0);
              e_managers_keys_ungrab();
              e_managers_keys_grab();
@@ -1438,21 +1430,21 @@ _mixer_actions_unregister(E_Mixer_Module_Context *ctxt)
 {
    if (ctxt->actions.incr)
      {
-        e_action_predef_name_del(_(_e_mixer_Name), _(_lbl_increase));
+        e_action_predef_name_del(_e_mixer_Name, _lbl_increase);
         e_action_del(_act_increase);
         ctxt->actions.incr = NULL;
      }
 
    if (ctxt->actions.decr)
      {
-        e_action_predef_name_del(_(_e_mixer_Name), _(_lbl_decrease));
+        e_action_predef_name_del(_e_mixer_Name, _lbl_decrease);
         e_action_del(_act_decrease);
         ctxt->actions.decr = NULL;
      }
 
    if (ctxt->actions.mute)
      {
-        e_action_predef_name_del(_(_e_mixer_Name), _(_lbl_mute));
+        e_action_predef_name_del(_e_mixer_Name, _lbl_mute);
         e_action_del(_act_mute);
         e_managers_keys_ungrab();
         e_managers_keys_grab();

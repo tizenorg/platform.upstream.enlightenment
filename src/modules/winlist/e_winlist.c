@@ -49,6 +49,7 @@ static int _last_pointer_y = 0;
 static E_Border *_last_border = NULL;
 static int _hold_count = 0;
 static int _hold_mod = 0;
+static E_Winlist_Activate_Type _activate_type = 0;
 static Eina_List *_handlers = NULL;
 static Ecore_X_Window _input_window = 0;
 static int _warp_to = 0;
@@ -278,6 +279,7 @@ e_winlist_hide(void)
    _winlist = NULL;
    _hold_count = 0;
    _hold_mod = 0;
+   _activate_type = 0;
 
    EINA_LIST_FREE(_handlers, handler)
      ecore_event_handler_del(handler);
@@ -884,11 +886,13 @@ e_winlist_right(E_Zone *zone)
 }
 
 void
-e_winlist_modifiers_set(int mod)
+e_winlist_modifiers_set(int mod, E_Winlist_Activate_Type type)
 {
    if (!_winlist) return;
    _hold_mod = mod;
    _hold_count = 0;
+   _activate_type = type;
+   if (type == E_WINLIST_ACTIVATE_TYPE_MOUSE) _hold_count++;
    if (_hold_mod & ECORE_EVENT_MODIFIER_SHIFT) _hold_count++;
    if (_hold_mod & ECORE_EVENT_MODIFIER_CTRL) _hold_count++;
    if (_hold_mod & ECORE_EVENT_MODIFIER_ALT) _hold_count++;
@@ -1377,37 +1381,26 @@ _e_winlist_cb_key_up(void *data __UNUSED__, int type __UNUSED__, void *event)
    if (!_winlist) return ECORE_CALLBACK_PASS_ON;
    if (_hold_mod)
      {
-        if ((_hold_mod & ECORE_EVENT_MODIFIER_SHIFT) && (!strcmp(ev->key, "Shift_L")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_SHIFT) && (!strcmp(ev->key, "Shift_R")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_CTRL) && (!strcmp(ev->key, "Control_L")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_CTRL) && (!strcmp(ev->key, "Control_R")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_ALT) && (!strcmp(ev->key, "Alt_L")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_ALT) && (!strcmp(ev->key, "Alt_R")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_ALT) && (!strcmp(ev->key, "Meta_L")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_ALT) && (!strcmp(ev->key, "Meta_R")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_ALT) && (!strcmp(ev->key, "Super_L")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_ALT) && (!strcmp(ev->key, "Super_R")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_WIN) && (!strcmp(ev->key, "Super_L")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_WIN) && (!strcmp(ev->key, "Super_R")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_WIN) && (!strcmp(ev->key, "Mode_switch")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_WIN) && (!strcmp(ev->key, "Meta_L")))
-          _hold_count--;
-        else if ((_hold_mod & ECORE_EVENT_MODIFIER_WIN) && (!strcmp(ev->key, "Meta_R")))
-          _hold_count--;
-        if (_hold_count <= 0)
+#define KEY_CHECK(MOD, NAME) \
+        if ((_hold_mod & ECORE_EVENT_MODIFIER_##MOD) && (!strcmp(ev->key, NAME))) \
+          _hold_count--, _hold_mod &= ~ECORE_EVENT_MODIFIER_##MOD
+        KEY_CHECK(SHIFT, "Shift_L");
+        else KEY_CHECK(SHIFT, "Shift_R");
+        else KEY_CHECK(CTRL, "Control_L");
+        else KEY_CHECK(CTRL, "Control_R");
+        else KEY_CHECK(ALT, "Alt_L");
+        else KEY_CHECK(ALT, "Alt_R");
+        else KEY_CHECK(ALT, "Meta_L");
+        else KEY_CHECK(ALT, "Meta_R");
+        else KEY_CHECK(WIN, "Meta_L");
+        else KEY_CHECK(WIN, "Meta_R");
+        else KEY_CHECK(ALT, "Super_L");
+        else KEY_CHECK(ALT, "Super_R");
+        else KEY_CHECK(WIN, "Super_L");
+        else KEY_CHECK(WIN, "Super_R");
+        else KEY_CHECK(WIN, "Mode_switch");
+
+        if ((_hold_count <= 0) || ((!_hold_mod) && (_activate_type == E_WINLIST_ACTIVATE_TYPE_KEY)))
           {
              e_winlist_hide();
              return 1;
@@ -1461,8 +1454,10 @@ _e_winlist_cb_mouse_up(void *data __UNUSED__, int type __UNUSED__, void *event)
 
    ev = event;
    if (ev->window != _input_window) return ECORE_CALLBACK_PASS_ON;
-   e_bindings_mouse_up_event_handle(E_BINDING_CONTEXT_WINLIST,
-                                    E_OBJECT(_winlist->zone), ev);
+   if (e_bindings_mouse_up_event_handle(E_BINDING_CONTEXT_WINLIST, E_OBJECT(_winlist->zone), ev))
+     return ECORE_CALLBACK_RENEW;
+   if (_activate_type != E_WINLIST_ACTIVATE_TYPE_MOUSE) return ECORE_CALLBACK_RENEW;
+   if (!--_hold_count) e_winlist_hide();
    return ECORE_CALLBACK_PASS_ON;
 }
 

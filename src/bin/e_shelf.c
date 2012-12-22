@@ -964,10 +964,6 @@ e_shelf_style_set(E_Shelf *es, const char *style)
      es->instant_delay = -1.0;
 
    if (es->popup) e_popup_edje_bg_object_set(es->popup, es->o_base);
-   
-   if (!es->gadcon) return;
-   e_gadcon_unpopulate(es->gadcon);
-   e_gadcon_populate(es->gadcon);
 }
 
 EAPI void
@@ -1021,14 +1017,17 @@ e_shelf_popup_set(E_Shelf *es, int popup)
 }
 
 EAPI void
-e_shelf_autohide_set(E_Shelf *es, Eina_Bool autohide)
+e_shelf_autohide_set(E_Shelf *es, int autohide_type)
 {
    E_OBJECT_CHECK(es);
    E_OBJECT_TYPE_CHECK(es, E_SHELF_TYPE);
 
-   autohide = !!autohide;
-   if ((es->cfg->autohide == autohide) && ((!!es->autohide) == autohide)) return;
-   es->cfg->autohide = autohide;
+   if ((es->cfg->autohide == !!autohide_type) && ((!!es->autohide) == !!autohide_type))
+     {
+        if ((!es->autohide) || (es->cfg->autohide_show_action == autohide_type - 1))
+          return;
+     }
+   es->cfg->autohide = !!autohide_type;
    if (!es->cfg->autohide)
      {
         if (!es->autohide) return;
@@ -1036,6 +1035,9 @@ e_shelf_autohide_set(E_Shelf *es, Eina_Bool autohide)
         es->autohide = NULL;
         return;
      }
+   es->cfg->autohide_show_action = autohide_type - 1;
+   if (es->autohide) ecore_event_handler_del(es->autohide);
+   es->autohide = NULL;
 /*
  * see FIXME in _e_shelf_cb_mouse_in() for why these are commented out
    es->handlers = 
@@ -1043,8 +1045,9 @@ e_shelf_autohide_set(E_Shelf *es, Eina_Bool autohide)
                       ecore_event_handler_add(ECORE_X_EVENT_MOUSE_IN, 
                                               _e_shelf_cb_mouse_in, es));
 */
-   es->autohide = ecore_event_handler_add(ECORE_EVENT_MOUSE_MOVE, 
-                                          _e_shelf_cb_mouse_in, es);
+   if (!es->cfg->autohide_show_action)
+     es->autohide = ecore_event_handler_add(ECORE_EVENT_MOUSE_MOVE, 
+                                            _e_shelf_cb_mouse_in, es);
 /*
    es->handlers = 
      eina_list_append(es->handlers,
@@ -1072,7 +1075,7 @@ e_shelf_config_new(E_Zone *zone, E_Config_Shelf *cf_es)
    es->fit_along = cf_es->fit_along;
    es->fit_size = cf_es->fit_size;
 
-   e_shelf_autohide_set(es, cf_es->autohide);
+   e_shelf_autohide_set(es, cf_es->autohide + (cf_es->autohide * cf_es->autohide_show_action));
    e_shelf_orient(es, cf_es->orient);
    e_shelf_position_calc(es);
    e_shelf_populate(es);
@@ -1690,7 +1693,7 @@ _e_shelf_cb_menu_autohide(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UN
 {
    E_Shelf *es = data;
 
-   e_shelf_autohide_set(es, !es->cfg->autohide);
+   e_shelf_autohide_set(es, (!es->cfg->autohide) + (!es->cfg->autohide * es->cfg->autohide_show_action));
    if ((es->cfg->autohide) && (!es->hidden))
      e_shelf_toggle(es, 0);
    else if ((!es->cfg->autohide) && (es->hidden))
@@ -1845,9 +1848,7 @@ _e_shelf_cb_mouse_move_autohide_fuck_systray(E_Shelf *es)
    ecore_x_pointer_xy_get(es->zone->container->manager->root, &x, &y);
    ev.root.x = x, ev.root.y = y;
    _e_shelf_cb_mouse_in(es, ECORE_EVENT_MOUSE_MOVE, &ev);
-   if (es->autohide_timer) ecore_timer_del(es->autohide_timer);
-   es->autohide_timer = NULL;
-   return EINA_FALSE;
+   return EINA_TRUE;
 }
 
 static Eina_Bool
@@ -1966,7 +1967,7 @@ _e_shelf_cb_mouse_in(void *data, int type, void *event)
         if (!inside)
           {
              inside = E_INSIDE(ev->root.x, ev->root.y, es->zone->x, es->zone->y, es->zone->w + 4, es->zone->h + 4);
-             x = ev->root.x - es->zone->x, y = ev->root.y - es->zone->x;
+             x = ev->root.x - es->zone->x, y = ev->root.y - es->zone->y;
              if (inside)
                inside = (
                          ((E_INSIDE(x, y, es->x, es->y, es->w, es->h)) ||
@@ -2194,6 +2195,13 @@ end:
      e_shelf_toggle(es, 0);
    else
      _e_shelf_toggle_border_fix(es);
+   if ((!es->hidden) && es->cfg->autohide_show_action)
+     {
+        edje_object_signal_emit(es->o_base, "e,state,hidden", "e");
+        es->hidden = 1;
+        if (!es->hide_timer)
+          es->hide_timer = ecore_timer_add(es->cfg->hide_timeout, _e_shelf_cb_hide_animator_timer, es);
+     }
    return ECORE_CALLBACK_CANCEL;
 }
 

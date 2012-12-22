@@ -2192,6 +2192,9 @@ _move_left_cols(E_Border *bd, Eina_Bool check_moving_anims)
         /* Remove stack */
         e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
 
+        nb_stacks--;
+
+        assert((0 <= nb_stacks) && (nb_stacks < TILING_MAX_STACKS - 1));
         for (i = stack; i < nb_stacks; i++) {
             _G.tinfo->stacks[i] = _G.tinfo->stacks[i+1];
         }
@@ -2265,7 +2268,6 @@ _move_right_cols(E_Border *bd, Eina_Bool check_moving_anims)
         e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
 
         for (i = 0; i < nb_stacks; i++) {
-
             width = w / (nb_stacks + 1 - i);
 
             _set_stack_geometry(i, x, width);
@@ -2295,14 +2297,19 @@ _move_right_cols(E_Border *bd, Eina_Bool check_moving_anims)
             _check_moving_anims(bd, extra, stack + 1);
     } else {
         int x, y, w, h;
-        int width;
 
+        /* Remove stack */
         e_zone_useful_geometry_get(_G.tinfo->desk->zone, &x, &y, &w, &h);
+
+        nb_stacks--;
+
+        assert((0 <= nb_stacks) && (nb_stacks < TILING_MAX_STACKS - 1));
         for (i = stack; i < nb_stacks; i++) {
              _G.tinfo->stacks[i] = _G.tinfo->stacks[i + 1];
         }
-        nb_stacks--;
         for (i = 0; i < nb_stacks; i++) {
+            int width;
+
             width = w / (nb_stacks - i);
 
             _set_stack_geometry(i, x, width);
@@ -2517,6 +2524,9 @@ _move_up_rows(E_Border *bd, Eina_Bool check_moving_anims)
         /* Remove stack */
         e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
 
+        nb_stacks--;
+
+        assert((0 <= nb_stacks) && (nb_stacks < TILING_MAX_STACKS - 1));
         for (i = stack; i < nb_stacks; i++) {
             _G.tinfo->stacks[i] = _G.tinfo->stacks[i+1];
         }
@@ -2590,7 +2600,6 @@ _move_down_rows(E_Border *bd, Eina_Bool check_moving_anims)
         e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
 
         for (i = 0; i < nb_stacks; i++) {
-
             height = h / (nb_stacks + 1 - i);
 
             _set_stack_geometry(i, y, height);
@@ -2621,11 +2630,15 @@ _move_down_rows(E_Border *bd, Eina_Bool check_moving_anims)
     } else {
         int x, y, w, h;
 
-        e_zone_useful_geometry_get(_G.tinfo->desk->zone, &x, &y, &w, &h);
+        /* Remove stack */
+        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
+
+        nb_stacks--;
+
+        assert((0 <= nb_stacks) && (nb_stacks < TILING_MAX_STACKS - 1));
         for (i = stack; i < nb_stacks; i++) {
              _G.tinfo->stacks[i] = _G.tinfo->stacks[i + 1];
         }
-        nb_stacks--;
         for (i = 0; i < nb_stacks; i++) {
             int height;
 
@@ -3653,17 +3666,15 @@ static void _move_or_resize(E_Border *bd)
         return;
     }
     if (bd->maximized) {
-        bool changed = false;
 
         if (_G.tinfo->conf->use_rows) {
-            if (stack > 0 && bd->maximized & E_MAXIMIZE_VERTICAL) {
+            if (bd->maximized & E_MAXIMIZE_VERTICAL) {
                  _e_border_unmaximize(bd, E_MAXIMIZE_VERTICAL);
                  _e_border_move_resize(bd,
                                        extra->expected.x,
                                        extra->expected.y,
                                        extra->expected.w,
                                        extra->expected.h);
-                 changed = true;
             }
             if (bd->maximized & E_MAXIMIZE_HORIZONTAL
             && eina_list_count(_G.tinfo->stacks[stack]) > 1) {
@@ -3673,17 +3684,15 @@ static void _move_or_resize(E_Border *bd)
                                        extra->expected.y,
                                        extra->expected.w,
                                        extra->expected.h);
-                 changed = true;
             }
         } else {
-            if (stack > 0 && bd->maximized & E_MAXIMIZE_HORIZONTAL) {
+            if (bd->maximized & E_MAXIMIZE_HORIZONTAL) {
                  _e_border_unmaximize(bd, E_MAXIMIZE_HORIZONTAL);
                  _e_border_move_resize(bd,
                                        extra->expected.x,
                                        extra->expected.y,
                                        extra->expected.w,
                                        extra->expected.h);
-                 changed = true;
             }
             if (bd->maximized & E_MAXIMIZE_VERTICAL
             && eina_list_count(_G.tinfo->stacks[stack]) > 1) {
@@ -3693,30 +3702,17 @@ static void _move_or_resize(E_Border *bd)
                                        extra->expected.y,
                                        extra->expected.w,
                                        extra->expected.h);
-                 changed = true;
             }
         }
-        if (changed)
-            return;
     }
 
-    if ((bd->changes.border && bd->changes.size)
-        || bd->x <= 0 || bd->y <= 0) {
-        _e_border_move_resize(bd,
-                              extra->expected.x,
-                              extra->expected.y,
-                              extra->expected.w,
-                              extra->expected.h);
-        return;
-    }
-
-    if (abs(extra->expected.w - bd->w) >= bd->client.icccm.step_w) {
+    if (abs(extra->expected.w - bd->w) >= MAX(bd->client.icccm.step_w, 1)) {
         if (_G.tinfo->conf->use_rows)
             _move_resize_border_in_stack(bd, extra, stack, TILING_RESIZE);
         else
             _move_resize_border_stack(bd, extra, stack, TILING_RESIZE);
     }
-    if (abs(extra->expected.h - bd->h) >= bd->client.icccm.step_h) {
+    if (abs(extra->expected.h - bd->h) >= MAX(bd->client.icccm.step_h, 1)) {
         if (_G.tinfo->conf->use_rows)
             _move_resize_border_stack(bd, extra, stack, TILING_RESIZE);
         else
@@ -4077,62 +4073,62 @@ e_modapi_init(E_Module *m)
         const char *_name = _value;                                          \
         if ((_action = e_action_add(_name))) {                               \
             _action->func.go = _cb;                                          \
-            e_action_predef_name_set(_("Tiling"), _(_title), _name,          \
+            e_action_predef_name_set(N_("Tiling"), _title, _name,            \
                                      _params, _example, _editable);          \
         }                                                                    \
     }
 
     /* Module's actions */
     ACTION_ADD(_G.act_togglefloat, _e_mod_action_toggle_floating_cb,
-               "Toggle floating", "toggle_floating",
+               N_("Toggle floating"), "toggle_floating",
                NULL, NULL, 0);
     ACTION_ADD(_G.act_addstack, _e_mod_action_add_stack_cb,
-               "Add a stack", "add_stack",
+               N_("Add a stack"), "add_stack",
                NULL, NULL, 0);
     ACTION_ADD(_G.act_removestack, _e_mod_action_remove_stack_cb,
-               "Remove a stack", "remove_stack",
+               N_("Remove a stack"), "remove_stack",
                NULL, NULL, 0);
     ACTION_ADD(_G.act_tg_stack, _e_mod_action_tg_stack_cb,
-               "Toggle between rows and columns", "tg_cols_rows",
+               N_("Toggle between rows and columns"), "tg_cols_rows",
                NULL, NULL, 0);
     ACTION_ADD(_G.act_swap, _e_mod_action_swap_cb,
-               "Swap a window with an other", "swap",
+               N_("Swap a window with an other"), "swap",
                NULL, NULL, 0);
 
     ACTION_ADD(_G.act_move, _e_mod_action_move_cb,
-               "Move window", "move",
+               N_("Move window"), "move",
                NULL, NULL, 0);
     ACTION_ADD(_G.act_move_left, _e_mod_action_move_direct_cb,
-               "Move window to the left", "move_left",
+               N_("Move window to the left"), "move_left",
                "left", NULL, 0);
     ACTION_ADD(_G.act_move_right, _e_mod_action_move_direct_cb,
-               "Move window to the right", "move_right",
+               N_("Move window to the right"), "move_right",
                "right", NULL, 0);
     ACTION_ADD(_G.act_move_up, _e_mod_action_move_direct_cb,
-               "Move window up", "move_up",
+               N_("Move window up"), "move_up",
                "up", NULL, 0);
     ACTION_ADD(_G.act_move_down, _e_mod_action_move_direct_cb,
-               "Move window down", "move_down",
+               N_("Move window down"), "move_down",
                "down", NULL, 0);
 
     ACTION_ADD(_G.act_adjusttransitions, _e_mod_action_adjust_transitions,
-               "Adjust transitions", "adjust_transitions",
+               N_("Adjust transitions"), "adjust_transitions",
                NULL, NULL, 0);
     ACTION_ADD(_G.act_go, _e_mod_action_go_cb,
-               "Focus a particular window", "go",
+               N_("Focus a particular window"), "go",
                NULL, NULL, 0);
 
     ACTION_ADD(_G.act_send_ne, _e_mod_action_send_cb,
-               "Send to upper right corner", "send_ne",
+               N_("Send to upper right corner"), "send_ne",
                "ne", NULL, 0);
     ACTION_ADD(_G.act_send_nw, _e_mod_action_send_cb,
-               "Send to upper left corner", "send_nw",
+               N_("Send to upper left corner"), "send_nw",
                "nw", NULL, 0);
     ACTION_ADD(_G.act_send_se, _e_mod_action_send_cb,
-               "Send to lower right corner", "send_se",
+               N_("Send to lower right corner"), "send_se",
                "se", NULL, 0);
     ACTION_ADD(_G.act_send_sw, _e_mod_action_send_cb,
-               "Send to lower left corner", "send_sw",
+               N_("Send to lower left corner"), "send_sw",
                "sw", NULL, 0);
 #undef ACTION_ADD
 
@@ -4279,7 +4275,7 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
 
 #define ACTION_DEL(act, title, value)                        \
     if (act) {                                               \
-        e_action_predef_name_del(_("Tiling"), _(title)); \
+        e_action_predef_name_del("Tiling", title);           \
         e_action_del(value);                                 \
         act = NULL;                                          \
     }

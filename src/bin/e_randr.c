@@ -33,6 +33,12 @@ static void      _event_listeners_remove(void);
 EAPI E_Randr_Screen_Info e_randr_screen_info;
 static Eina_List *_event_handlers = NULL;
 
+EAPI Eina_Bool
+e_randr_screen_info_refresh(void)
+{
+   return _screen_info_refresh();
+}
+
 EINTERN Eina_Bool
 e_randr_init(void)
 {
@@ -44,12 +50,6 @@ e_randr_shutdown(void)
 {
    _shutdown();
    return 1;
-}
-
-EAPI Eina_Bool
-e_randr_screen_info_refresh(void)
-{
-   return _screen_info_refresh();
 }
 
 static Eina_Bool
@@ -129,9 +129,7 @@ _e_event_config_loaded_cb(void *data __UNUSED__, int type, void *ev __UNUSED__)
 {
    if (type != E_EVENT_CONFIG_LOADED) return EINA_TRUE;
 
-   _try_restore_configuration();
-
-   return EINA_FALSE;
+   return e_randr_try_restore_configuration();
 }
 
 static void

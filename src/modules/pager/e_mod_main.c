@@ -403,6 +403,7 @@ _pager_desk_livethumb_setup(Pager_Desk *pd)
    bgfile = e_bg_file_get(pd->desk->zone->container->num, pd->desk->zone->num, pd->desk->x, pd->desk->y);
    edje_object_file_set(o, bgfile, "e/desktop/background");
    e_livethumb_thumb_set(pd->o_bg, o);
+   eina_stringshare_del(bgfile);
 }
 
 static Pager_Desk *
@@ -2913,7 +2914,7 @@ e_modapi_init(E_Module *m)
 
    e_gadcon_provider_register(&_gadcon_class);
 
-   e_configure_registry_item_add("extensions/pager", 40, N_("Pager"), NULL,
+   e_configure_registry_item_add("extensions/pager", 40, _("Pager"), NULL,
                                  "preferences-pager", _pager_config_dialog);
 
    act_popup_show = e_action_add("pager_show");
@@ -2963,12 +2964,12 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    e_action_del("pager_show");
    e_action_del("pager_switch");
 
-   e_action_predef_name_del(N_("Pager"), N_("Popup Desk Right"));
-   e_action_predef_name_del(N_("Pager"), N_("Popup Desk Left"));
-   e_action_predef_name_del(N_("Pager"), N_("Popup Desk Up"));
-   e_action_predef_name_del(N_("Pager"), N_("Popup Desk Down"));
-   e_action_predef_name_del(N_("Pager"), N_("Popup Desk Next"));
-   e_action_predef_name_del(N_("Pager"), N_("Popup Desk Previous"));
+   e_action_predef_name_del("Pager", "Popup Desk Right");
+   e_action_predef_name_del("Pager", "Popup Desk Left");
+   e_action_predef_name_del("Pager", "Popup Desk Up");
+   e_action_predef_name_del("Pager", "Popup Desk Down");
+   e_action_predef_name_del("Pager", "Popup Desk Next");
+   e_action_predef_name_del("Pager", "Popup Desk Previous");
 
    E_FREE(pager_config);
    E_CONFIG_DD_FREE(conf_edd);

@@ -391,6 +391,10 @@ _e_remember_update(E_Border *bd, E_Remember *rem)
              rem->prop.w = bd->client.w;
              rem->prop.h = bd->client.h;
           }
+        if (bd->internal)
+          rem->prop.maximize = bd->maximized & E_MAXIMIZE_DIRECTION;
+        else
+          rem->prop.maximize = 0;
      }
    if (rem->apply & E_REMEMBER_APPLY_LAYER)
      {
@@ -709,6 +713,14 @@ _e_remember_cb_hook_pre_post_fetch(void *data __UNUSED__, void *border)
           }
         bd->w = bd->client.w + bd->client_inset.l + bd->client_inset.r;
         bd->h = bd->client.h + bd->client_inset.t + bd->client_inset.b;
+        if (rem->prop.maximize)
+          {
+             bd->saved.x = rem->prop.pos_x;
+             bd->saved.y = rem->prop.pos_y;
+             bd->saved.w = bd->w;
+             bd->saved.h = bd->h;
+             bd->maximized = rem->prop.maximize | e_config->maximize_policy;
+          }
         bd->changes.size = 1;
         bd->changes.shape = 1;
      }
@@ -806,6 +818,20 @@ _e_remember_cb_hook_pre_post_fetch(void *data __UNUSED__, void *border)
         //		    bd->x = (rem->prop.pos_x * bd->zone->w) / rem->prop.res_x;
         //		  if (bd->zone->h != rem->prop.res_y)
         //		    bd->y = (rem->prop.pos_y * bd->zone->h) / rem->prop.res_y;
+        if (
+            /* upper left */
+            (!E_INSIDE(bd->x, bd->y, 0, 0, bd->zone->w, bd->zone->h)) &&
+            /* upper right */
+            (!E_INSIDE(bd->x + bd->w, bd->y, 0, 0, bd->zone->w, bd->zone->h)) &&
+            /* lower left */
+            (!E_INSIDE(bd->x, bd->y + bd->h, 0, 0, bd->zone->w, bd->zone->h)) &&
+            /* lower right */
+            (!E_INSIDE(bd->x + bd->w, bd->y + bd->h, 0, 0, bd->zone->w, bd->zone->h))
+           )
+          {
+             e_border_center_pos_get(bd, &bd->x, &bd->y);
+             rem->prop.pos_x = bd->x, rem->prop.pos_y = bd->y;
+          }
         bd->x += bd->zone->x;
         bd->y += bd->zone->y;
         bd->placed = 1;
@@ -913,6 +939,7 @@ _e_remember_init_edd(void)
    E_CONFIG_VAL(D, T, prop.w, INT);
    E_CONFIG_VAL(D, T, prop.h, INT);
    E_CONFIG_VAL(D, T, prop.layer, INT);
+   E_CONFIG_VAL(D, T, prop.maximize, UINT);
    E_CONFIG_VAL(D, T, prop.lock_user_location, UCHAR);
    E_CONFIG_VAL(D, T, prop.lock_client_location, UCHAR);
    E_CONFIG_VAL(D, T, prop.lock_user_size, UCHAR);

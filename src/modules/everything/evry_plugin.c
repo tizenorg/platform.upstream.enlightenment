@@ -33,7 +33,6 @@ _evry_plugin_free(Evry_Item *it)
 
    evry_plugin_unregister(p);
 
-   DBG("%s", p->name);
    if (p->config) p->config->plugin = NULL;
    if (p->name) eina_stringshare_del(p->name);
 
@@ -177,7 +176,7 @@ evry_plugin_register(Evry_Plugin *p, int type, int priority)
         char buf[256];
         snprintf(buf, sizeof(buf), _("Show %s Plugin"), p->name);
 
-        e_action_predef_name_set(_("Everything Launcher"), buf,
+        e_action_predef_name_set(N_("Everything Launcher"), buf,
                                  "everything", p->name, NULL, 1);
      }
 
@@ -203,14 +202,12 @@ evry_plugin_unregister(Evry_Plugin *p)
 {
    Eina_List *l = evry_conf->conf_subjects;
 
-   DBG("%s", p->name);
-
    if (l && eina_list_data_find_list(l, p->config))
      {
         char buf[256];
         snprintf(buf, sizeof(buf), _("Show %s Plugin"), p->name);
 
-        e_action_predef_name_del(_("Everything"), buf);
+        e_action_predef_name_del("Everything Launcher", buf);
      }
 }
 
