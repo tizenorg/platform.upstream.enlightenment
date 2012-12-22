@@ -5,7 +5,7 @@ License:        BSD 2-clause
 Summary:        The Enlightenment window manager
 Url:            http://www.enlightenment.org/
 Group:          Graphics/X11
-Source0:        enlightenment-%{version}-lucky.tar.bz2
+Source0:        enlightenment-%{version}.tar.bz2
 BuildRequires:  doxygen
 #BuildRequires:  valgrind
 BuildRequires:  fdupes
@@ -50,7 +50,7 @@ Requires:       %{name} = %{version}
 Development files for enlightenment
 
 %prep
-%setup -q -n %{name}-%{version}-lucky
+%setup -q -n %{name}-%{version}
 
 
 %build
