@@ -55,8 +55,8 @@ Development files for enlightenment
 
 %build
 %configure  --enable-device-udev \
-	    --enable-mount-eeze \
-	    --disable-comp
+	    --enable-mount-eeze  \
+        --enable-comp
 make %{?_smp_mflags}
 
 %install
