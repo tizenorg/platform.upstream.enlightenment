@@ -6930,7 +6930,7 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
           }
         else if (e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_MOVE)
           {
-             if (sd->config->view.link_drop && (!sd->drop_icon))
+             if (sd->config->view.link_drop)
                lnk = do_lnk = EINA_TRUE;
              else
                do_move = EINA_TRUE;
@@ -6957,7 +6957,7 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
                evas_object_data_set(sd->obj, "drop_menu_data", mop);
              E_LIST_FOREACH(isel, _e_fm2_cb_drag_finished_show);
           }
-        if (((!mnt) && (!mop)) && (do_lnk || do_copy || do_move))
+        if (((!mnt) || (!mop)) && (do_lnk || do_copy || do_move))
           free(args);
      }
 end:

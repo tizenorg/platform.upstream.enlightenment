@@ -1091,17 +1091,16 @@ e_border_hide(E_Border *bd,
         switch (manage)
           {
            case 2: break;
-
            case 3:
              bd->hidden = 1;
-
            case 1:
-             /* Make sure that this border isn't deleted */
-             bd->await_hide_event++;
-
            default:
-             if (!e_manager_comp_evas_get(bd->zone->container->manager))
-               ecore_x_window_hide(bd->client.win);
+               if (!e_manager_comp_evas_get(bd->zone->container->manager))
+                 {
+                    /* Make sure that this border isn't deleted */
+                    bd->await_hide_event++;
+                    ecore_x_window_hide(bd->client.win);
+                 }
           }
      }
 
@@ -3159,10 +3158,10 @@ e_border_unfullscreen(E_Border *bd)
              screen_size.width = -1;
              screen_size.height = -1;
           }
-        e_border_move_resize(bd,
-                             bd->saved.x + bd->zone->x,
-                             bd->saved.y + bd->zone->y,
-                             bd->saved.w, bd->saved.h);
+        _e_border_move_resize_internal(bd,
+                                       bd->zone->x + bd->saved.x,
+                                       bd->zone->y + bd->saved.y,
+                                       bd->saved.w, bd->saved.h, 0, 1);
 
         if (bd->saved.maximized)
           e_border_maximize(bd, (e_config->maximize_policy & E_MAXIMIZE_TYPE) |
@@ -3789,10 +3788,8 @@ _e_border_action_move_timeout(void *data __UNUSED__)
 static void
 _e_border_action_move_timeout_add(void)
 {
-   if (!e_config->border_keyboard.timeout) return;
-   if (action_timer)
-     ecore_timer_reset(action_timer);
-   else
+   E_FN_DEL(ecore_timer_del, action_timer);
+   if (e_config->border_keyboard.timeout)
      action_timer = ecore_timer_add(e_config->border_keyboard.timeout, _e_border_action_move_timeout, NULL);
 }
 
@@ -3902,9 +3899,9 @@ _e_border_action_resize_timeout(void *data __UNUSED__)
 static void
 _e_border_action_resize_timeout_add(void)
 {
-   if (action_timer)
-     ecore_timer_del(action_timer);
-   action_timer = ecore_timer_add(e_config->border_keyboard.timeout, _e_border_action_resize_timeout, NULL);
+   E_FN_DEL(ecore_timer_del, action_timer);
+   if (e_config->border_keyboard.timeout)
+     action_timer = ecore_timer_add(e_config->border_keyboard.timeout, _e_border_action_resize_timeout, NULL);
 }
 
 static Eina_Bool
@@ -7236,7 +7233,7 @@ _e_border_eval0(E_Border *bd)
    bd->changes.border = 0;
 
    /* fetch any info queued to be fetched */
-   if (bd->client.netwm.fetch.state)
+   if (bd->changes.prop || bd->client.netwm.fetch.state)
      {
         e_hints_window_state_get(bd);
         bd->client.netwm.fetch.state = 0;
@@ -7339,13 +7336,13 @@ _e_border_eval0(E_Border *bd)
         bd->changes.icon = 1;
         rem_change = 1;
      }
-   if (bd->client.icccm.fetch.state)
+   if (bd->changes.prop || bd->client.icccm.fetch.state)
      {
         bd->client.icccm.state = ecore_x_icccm_state_get(bd->client.win);
         bd->client.icccm.fetch.state = 0;
         rem_change = 1;
      }
-   if (bd->client.e.fetch.state)
+   if (bd->changes.prop || bd->client.e.fetch.state)
      {
         e_hints_window_e_state_get(bd);
         bd->client.e.fetch.state = 0;
@@ -7414,7 +7411,7 @@ _e_border_eval0(E_Border *bd)
         bd->client.e.fetch.profile = 0;
      }
 #endif
-   if (bd->client.netwm.fetch.type)
+   if (bd->changes.prop || bd->client.netwm.fetch.type)
      {
         e_hints_window_type_get(bd);
         if ((!bd->lock_border) || (!bd->client.border.name))
@@ -7471,7 +7468,7 @@ _e_border_eval0(E_Border *bd)
         bd->client.icccm.fetch.command = 0;
         rem_change = 1;
      }
-   if (bd->client.icccm.fetch.hints)
+   if (bd->changes.prop || bd->client.icccm.fetch.hints)
      {
         Eina_Bool accepts_focus, is_urgent;
 
@@ -7503,7 +7500,7 @@ _e_border_eval0(E_Border *bd)
         bd->client.icccm.fetch.hints = 0;
         rem_change = 1;
      }
-   if (bd->client.icccm.fetch.size_pos_hints)
+   if (bd->changes.prop || bd->client.icccm.fetch.size_pos_hints)
      {
         Eina_Bool request_pos;
 
@@ -7915,7 +7912,7 @@ _e_border_eval0(E_Border *bd)
           }
         bd->need_shape_merge = 1;
      }
-   if (bd->client.mwm.fetch.hints)
+   if (bd->changes.prop || bd->client.mwm.fetch.hints)
      {
         int pb;
 
@@ -7998,7 +7995,7 @@ _e_border_eval0(E_Border *bd)
 
         fprintf(stderr, "internal position has been updated [%i, %i]\n", bd->client.e.state.video_position.x, bd->client.e.state.video_position.y);
      }
-   if (bd->client.netwm.update.state)
+   if (bd->changes.prop || bd->client.netwm.update.state)
      {
         e_hints_window_state_set(bd);
         /* Some stats might change the border, like modal */
@@ -8403,6 +8400,7 @@ _e_border_eval0(E_Border *bd)
         bd->client.border.changed = 0;
      }
 
+   bd->changes.prop = 0;
    if (rem_change) e_remember_update(bd);
 
    if (change_urgent)
@@ -8546,6 +8544,14 @@ _e_border_eval(E_Border *bd)
 
                   if (bd->y < zy)
                     bd->y = zy;
+
+                  /* ensure we account for windows which already have client_inset;
+                   * fixes lots of wine placement issues
+                   */
+                  if (bd->x - bd->client_inset.l >= zx)
+                    bd->x -= bd->client_inset.l;
+                  if (bd->y - bd->client_inset.t >= zy)
+                    bd->y -= bd->client_inset.t;
 
                   if (bd->x + bd->w > zx + zw)
                     bd->x = zx + zw - bd->w;
@@ -9148,7 +9154,6 @@ _e_border_eval(E_Border *bd)
    bd->new_client = 0;
    bd->changed = 0;
    bd->changes.stack = 0;
-   bd->changes.prop = 0;
 
    if ((bd->take_focus) || (bd->want_focus))
      {

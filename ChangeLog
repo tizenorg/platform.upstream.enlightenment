@@ -1,3 +1,108 @@
+2013-01-31 Mike Blumenkrantz
+
+        * 0.17.1 release
+
+2013-01-29 Mike Blumenkrantz
+
+        * fixed bug where dragging files into sidebar would move them instead of creating links
+
+2013-01-23 Mike Blumenkrantz
+
+        * module error dialog is no longer remembered across restarts
+        * fix small leak in efm when performing dnd onto mounted drive icon
+        * fixed small leak in e_import_config_dialog_show during failure case
+        * fixed small leak in e_import_dialog_show during failure case
+        * fixed small leak in illume2 policy config
+        * fixed path setting in import dialog
+        * fixed possible NULL deref in desktop editor
+        * fixed possible NULL deref in e_sys when debugging
+
+2013-01-22 Massimo Maiurana
+
+        * Added three more files for input methods used in asian countries
+
+2013-01-22 Igor Murzov
+
+        * Marked some messages for translation
+        * Better gettext usage in a few places
+        * Fixed some typos and improved some messages a bit
+
+2013-01-22 Mike Blumenkrantz
+
+        * Desktop->Shelves menu now shows shelf names
+        * No longer build illume edj files
+        * fixed gadget dragging on desktop near screen edges
+        * fixed bug where backlight settings would try to update dummy backlight devices
+        * fixed bug where "don't composite fullscreen windows" option would cause some windows to stop appearing
+
+2013-01-11 Mike Blumenkrantz
+
+        * fixed bug where backlight settings would try to update dummy backlight devices
+
+2013-01-10 Carsten Haitzler
+
+        * fixed bug where starting with a nonexistent config could cause a crash instead of simply restarting
+        * fixed window border hide bug where after iconification hides leave ghosts
+
+2013-01-10 Mike Blumenkrantz
+
+        * fixed bug where internal dialogs would not redraw after unfullscreening
+
+2013-01-10 Deon Thomas
+
+        * Fixed bug with desktop config profile where conf module version variable was misnamed
+
+2013-01-09 Mike Blumenkrantz
+
+        * fixed bug where window border insets were not applied to initial positioning geometry, causing them to be placed incorrectly
+
+2013-01-08 Mike Blumenkrantz
+
+        * Fixed bug where keyboard resizing of windows would not be possible if timeout was set to zero
+        * Fixed crash when clicking apply in wallpaper settings dialog and no wallpaper is selected
+        * Fixed bug where disabled slider widgets could be changed with mouse wheel
+        * Fixed bug where fileman config slider widgets were not properly disabled
+        * Tasks gadgets now apply the selected style
+
+2013-01-07 Tom "TAsn" Hacohen
+	* e_entry + e_scrollable: Fixed issues with smart members.
+
+2013-01-07 Mike Blumenkrantz
+ 
+        * Restore default keybindings no longer restores two bindings for ctrl+alt+f
+
+2013-01-07  Thomas Petazzoni
+
+	* Fix build with uClibc.
+
+2013-01-04 Lucas De Marchi
+
+        * Fixed crash when changing desktops configuration
+
+2013-01-03  Cedric Bail
+
+	* Fix E17 restart after manually monitoring it
+
+2012-12-28  Tomas Cech
+
+        * Fix construction of variant list for setxkbmap
+
+2012-12-28  Carsten Haitzler
+
+        * Increased maximum menu size, improved menu autoscrolling
+
+2012-12-28  Hannes Janetzek
+
+        * Fixed error in Evry when trying to call edje functions on non-edje object
+
+2012-12-24  Mike Blumenkrantz
+
+        * Fixed crash when changing ibar source
+
+2012-12-24  Boris Faure
+
+        * Fixed SIGFPE in tiling module and functionality of toggle_rows_count
+
 2012-12-21
 
         Initial release

@@ -146,7 +146,11 @@ e_import_dialog_show(E_Container *con, const char *dev, const char *path, Ecore_
    if (!id) return NULL;
 
    dia = e_dialog_new(con, "E", "_import_fsel_dialog");
-   if (!dia) return NULL;
+   if (!dia)
+     {
+        e_object_del(E_OBJECT(id));
+        return NULL;
+     }
    e_dialog_resizable_set(dia, 1);
    
    dia->data = id;
@@ -162,15 +166,13 @@ e_import_dialog_show(E_Container *con, const char *dev, const char *path, Ecore_
    fpath = path ?: e_config->wallpaper_import_last_path;
    if (fdev)
      snprintf(buf, sizeof(buf), "%s/%s",
-              fdev, path);
+              fdev, fpath);
    else
-     snprintf(buf, sizeof(buf), "%s", path);
+     snprintf(buf, sizeof(buf), "%s", fpath);
 
    rpath = ecore_file_realpath(buf);
    if (!ecore_file_exists(rpath))
      fpath = "/";
-   else
-     fpath = path ?: e_config->wallpaper_import_last_path;
    free(rpath);
 
    if ((!fdev) && (!fpath))

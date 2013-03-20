@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: E17\n"
 "Report-Msgid-Bugs-To: enlightenment-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2012-12-21 23:47+0000\n"
+"POT-Creation-Date: 2013-01-30 13:25+0000\n"
 "PO-Revision-Date: 2010-02-18 15:21+0200\n"
 "Last-Translator: H. İbrahim Güngör <h.ibrahim.gungor@gmail.com>\n"
 "Language-Team: Turkish <kde-i18n-doc@kde.org>\n"
@@ -79,7 +79,7 @@ msgstr "Sonlandır"
 #: src/bin/e_actions.c:2472 src/bin/e_confirm_dialog.c:53
 #: src/bin/e_desklock.c:1313 src/bin/e_fm.c:10412 src/bin/e_fm.c:10778
 #: src/bin/e_screensaver.c:191
-#: src/modules/quickaccess/e_mod_quickaccess.c:1264
+#: src/modules/quickaccess/e_mod_quickaccess.c:1267
 msgid "No"
 msgstr "Hayır"
 
@@ -96,7 +96,7 @@ msgstr "Çıkmak istediğinizden emin misiniz?"
 #: src/bin/e_actions.c:2340 src/bin/e_actions.c:2405 src/bin/e_actions.c:2470
 #: src/bin/e_confirm_dialog.c:52 src/bin/e_desklock.c:1311
 #: src/bin/e_fm.c:10415 src/bin/e_screensaver.c:189
-#: src/modules/quickaccess/e_mod_quickaccess.c:1264
+#: src/modules/quickaccess/e_mod_quickaccess.c:1267
 msgid "Yes"
 msgstr "Evet"
 
@@ -755,13 +755,14 @@ msgstr ""
 #: src/modules/conf_display/e_int_config_desklock_fsel.c:87
 #: src/modules/conf_intl/e_int_config_imc.c:818
 #: src/modules/conf_theme/e_int_config_wallpaper.c:427
-#: src/modules/conf_theme/e_int_config_wallpaper.c:580
+#: src/modules/conf_theme/e_int_config_wallpaper.c:581
 #: src/modules/conf_theme/e_int_config_startup.c:258
 #: src/modules/conf_theme/e_int_config_theme.c:732
 #: src/modules/conf_theme/e_int_config_theme.c:1106
 #: src/modules/conf_theme/e_int_config_theme.c:1120
 #: src/modules/gadman/e_mod_config.c:252 src/modules/syscon/e_mod_main.c:31
 #: src/modules/syscon/e_mod_main.c:35 src/modules/syscon/e_mod_main.c:129
+#: src/modules/syscon/e_syscon_gadget.c:141
 msgid "System"
 msgstr "Sistem"
 
@@ -837,15 +838,15 @@ msgstr "Birini seç"
 
 #: src/bin/e_color_dialog.c:47 src/bin/e_eap_editor.c:862
 #: src/bin/e_eap_editor.c:925 src/bin/e_entry_dialog.c:64 src/bin/e_fm.c:9959
-#: src/bin/e_fm_prop.c:625 src/bin/e_import_dialog.c:194
-#: src/bin/e_import_config_dialog.c:537
+#: src/bin/e_fm_prop.c:625 src/bin/e_import_dialog.c:196
+#: src/bin/e_import_config_dialog.c:541
 #: src/modules/conf_edgebindings/e_int_config_signalbindings.c:637
 #: src/modules/conf_intl/e_int_config_imc_import.c:124
 #: src/modules/conf_theme/e_int_config_theme_import.c:123
 #: src/modules/fileman/e_int_config_mime_edit.c:316
 #: src/modules/syscon/e_syscon.c:122
 #: src/modules/quickaccess/e_mod_quickaccess.c:319
-#: src/modules/quickaccess/e_mod_quickaccess.c:378
+#: src/modules/quickaccess/e_mod_quickaccess.c:381
 #: src/modules/shot/e_mod_main.c:291 src/modules/shot/e_mod_main.c:542
 #: src/modules/shot/e_mod_main.c:568 src/modules/shot/e_mod_main.c:804
 #: src/modules/xkbswitch/e_mod_config.c:529
@@ -872,11 +873,11 @@ msgid ""
 "to<br>defaults. Sorry for the inconvenience.<br>"
 msgstr ""
 
-#: src/bin/e_config.c:1507 src/bin/e_config.c:2141
+#: src/bin/e_config.c:1509 src/bin/e_config.c:2143
 msgid "Enlightenment Settings Write Problems"
 msgstr "Enlightenment Ayarları Yazma Sorunları"
 
-#: src/bin/e_config.c:1510
+#: src/bin/e_config.c:1512
 #, c-format
 msgid ""
 "Enlightenment has had an error while moving config files<br>from:<br>"
@@ -884,11 +885,11 @@ msgid ""
 "<br>"
 msgstr ""
 
-#: src/bin/e_config.c:1520 src/bin/e_config.c:2154
+#: src/bin/e_config.c:1522 src/bin/e_config.c:2156
 #: src/bin/e_config_dialog.c:278 src/bin/e_eap_editor.c:860
 #: src/bin/e_eap_editor.c:923 src/bin/e_entry_dialog.c:63 src/bin/e_exec.c:613
 #: src/bin/e_fm.c:9958 src/bin/e_fm.c:10684 src/bin/e_fm_prop.c:624
-#: src/bin/e_import_config_dialog.c:536 src/bin/e_int_border_remember.c:318
+#: src/bin/e_import_config_dialog.c:540 src/bin/e_int_border_remember.c:318
 #: src/bin/e_int_border_remember.c:507 src/bin/e_module.c:431
 #: src/bin/e_module.c:798 src/bin/e_sys.c:618 src/bin/e_sys.c:659
 #: src/bin/e_utils.c:695 src/modules/comp/e_mod_config.c:914
@@ -902,21 +903,21 @@ msgstr ""
 msgid "OK"
 msgstr "Tamam"
 
-#: src/bin/e_config.c:2032
+#: src/bin/e_config.c:2034
 msgid "Settings Upgraded"
 msgstr "Ayarlar Yükseltildi"
 
-#: src/bin/e_config.c:2050
+#: src/bin/e_config.c:2052
 #, fuzzy
 msgid "The EET file handle is bad."
 msgstr "EET dosya tanıtıcısı kötü."
 
-#: src/bin/e_config.c:2054
+#: src/bin/e_config.c:2056
 #, fuzzy
 msgid "The file data is empty."
 msgstr "Dosya veri boş."
 
-#: src/bin/e_config.c:2058
+#: src/bin/e_config.c:2060
 #, fuzzy
 msgid ""
 "The file is not writable. Perhaps the disk is read-only<br>or you lost "
@@ -925,17 +926,17 @@ msgstr ""
 "Dosya yazılabilir değil. Belki disk salt okunur<br>veya dosyalarınızı "
 "izinleri kaybetti."
 
-#: src/bin/e_config.c:2062
+#: src/bin/e_config.c:2064
 #, fuzzy
 msgid "Memory ran out while preparing the write.<br>Please free up memory."
 msgstr "Yazma hazırlarken Bellek tükendi.<br>özgür kadar hafıza olun."
 
-#: src/bin/e_config.c:2066
+#: src/bin/e_config.c:2068
 #, fuzzy
 msgid "This is a generic error."
 msgstr "Bu genel bir hatadır."
 
-#: src/bin/e_config.c:2070
+#: src/bin/e_config.c:2072
 #, fuzzy
 msgid ""
 "The settings file is too large.<br>It should be very small (a few hundred KB "
@@ -943,71 +944,71 @@ msgid ""
 msgstr ""
 "Ayarlar dosyası çok büyük.<br>Bu (en az birkaç yüz KB) çok küçük olmalıdır."
 
-#: src/bin/e_config.c:2074
+#: src/bin/e_config.c:2076
 msgid "You have I/O errors on the disk.<br>Maybe it needs replacing?"
 msgstr ""
 
-#: src/bin/e_config.c:2078
+#: src/bin/e_config.c:2080
 #, fuzzy
 msgid "You ran out of space while writing the file."
 msgstr "Dosya yazarken boşluk bitti"
 
-#: src/bin/e_config.c:2082
+#: src/bin/e_config.c:2084
 #, fuzzy
 msgid "The file was closed while writing."
 msgstr "Yazarkendosyası kapanmıştır."
 
-#: src/bin/e_config.c:2086
+#: src/bin/e_config.c:2088
 #, fuzzy
 msgid "Memory-mapping (mmap) of the file failed."
 msgstr "Dosyanın bellek eşleme (mmap) başarısız oldu."
 
-#: src/bin/e_config.c:2090
+#: src/bin/e_config.c:2092
 #, fuzzy
 msgid "X509 Encoding failed."
 msgstr "X509 Kodlama başarısız oldu."
 
-#: src/bin/e_config.c:2094
+#: src/bin/e_config.c:2096
 #, fuzzy
 msgid "Signature failed."
 msgstr "Uykuya alma başarısız."
 
-#: src/bin/e_config.c:2098
+#: src/bin/e_config.c:2100
 #, fuzzy
 msgid "The signature was invalid."
 msgstr "Imza geçersiz oldu."
 
-#: src/bin/e_config.c:2102
+#: src/bin/e_config.c:2104
 #, fuzzy
 msgid "Not signed."
 msgstr "(Pencere Yok)"
 
-#: src/bin/e_config.c:2106
+#: src/bin/e_config.c:2108
 #, fuzzy
 msgid "Feature not implemented."
 msgstr "Uygulanmadı bulunuyor."
 
-#: src/bin/e_config.c:2110
+#: src/bin/e_config.c:2112
 #, fuzzy
 msgid "PRNG was not seeded."
 msgstr "PRNG seeded değildi."
 
-#: src/bin/e_config.c:2114
+#: src/bin/e_config.c:2116
 #, fuzzy
 msgid "Encryption failed."
 msgstr "Askıya alma başarısız."
 
-#: src/bin/e_config.c:2118
+#: src/bin/e_config.c:2120
 #, fuzzy
 msgid "Decryption failed."
 msgstr "Askıya alma başarısız."
 
-#: src/bin/e_config.c:2122
+#: src/bin/e_config.c:2124
 #, fuzzy
 msgid "The error is unknown to Enlightenment."
 msgstr "Enlightenment'a Hoş Geldiniz"
 
-#: src/bin/e_config.c:2144
+#: src/bin/e_config.c:2146
 #, c-format
 msgid ""
 "Enlightenment has had an error while writing<br>its config file.<br>"
@@ -1474,42 +1475,42 @@ msgstr "Hata"
 msgid "The recent DND operation requested for '%s' has failed."
 msgstr ""
 
-#: src/bin/e_fm.c:8682 src/modules/fileman/e_mod_config.c:357
+#: src/bin/e_fm.c:8682 src/modules/fileman/e_mod_config.c:361
 msgid "Case Sensitive"
 msgstr "Durum duyarlı"
 
-#: src/bin/e_fm.c:8688 src/modules/fileman/e_mod_config.c:360
+#: src/bin/e_fm.c:8688 src/modules/fileman/e_mod_config.c:364
 #, fuzzy
 msgid "Sort By Extension"
 msgstr "Simge Uzantısını Göster"
 
-#: src/bin/e_fm.c:8694 src/modules/fileman/e_mod_config.c:363
+#: src/bin/e_fm.c:8694 src/modules/fileman/e_mod_config.c:367
 msgid "Sort By Modification Time"
 msgstr ""
 
-#: src/bin/e_fm.c:8700 src/modules/fileman/e_mod_config.c:366
+#: src/bin/e_fm.c:8700 src/modules/fileman/e_mod_config.c:370
 #, fuzzy
 msgid "Sort By Size"
 msgstr "Şimdi Sırala"
 
-#: src/bin/e_fm.c:8709 src/modules/fileman/e_mod_config.c:374
+#: src/bin/e_fm.c:8709 src/modules/fileman/e_mod_config.c:378
 #, fuzzy
 msgid "Directories First"
 msgstr "Arama Dizinleri"
 
-#: src/bin/e_fm.c:8715 src/modules/fileman/e_mod_config.c:378
+#: src/bin/e_fm.c:8715 src/modules/fileman/e_mod_config.c:382
 #, fuzzy
 msgid "Directories Last"
 msgstr "Arama Dizinleri"
 
 #: src/bin/e_fm.c:8748 src/bin/e_fm.c:8908
-#: src/modules/fileman/e_mod_config.c:302
+#: src/modules/fileman/e_mod_config.c:306
 msgid "View Mode"
 msgstr "Görünüm Kipi"
 
 #: src/bin/e_fm.c:8757 src/bin/e_fm.c:8917
 #: src/modules/everything/evry_config.c:503
-#: src/modules/fileman/e_mod_config.c:382
+#: src/modules/fileman/e_mod_config.c:386
 #, fuzzy
 msgid "Sorting"
 msgstr "Başlıyor"
@@ -1552,7 +1553,7 @@ msgid "Eject"
 msgstr "Çıkarma"
 
 #: src/bin/e_fm.c:9161 src/bin/e_int_border_remember.c:742
-#: src/modules/ibar/e_mod_main.c:871
+#: src/modules/ibar/e_mod_main.c:872
 msgid "Properties"
 msgstr "Özellikler"
 
@@ -1569,17 +1570,17 @@ msgstr "Dosya Özellikleri"
 msgid "Use default"
 msgstr "Ön Tanımlıyı kullan"
 
-#: src/bin/e_fm.c:9423 src/modules/fileman/e_mod_config.c:307
+#: src/bin/e_fm.c:9423 src/modules/fileman/e_mod_config.c:311
 msgid "Grid Icons"
 msgstr "Izgara Görünümü"
 
-#: src/bin/e_fm.c:9431 src/modules/fileman/e_mod_config.c:309
+#: src/bin/e_fm.c:9431 src/modules/fileman/e_mod_config.c:313
 msgid "Custom Icons"
 msgstr "Özel Simgeler"
 
 #: src/bin/e_fm.c:9439 src/modules/everything/evry_config.c:430
 #: src/modules/everything/evry_config.c:460
-#: src/modules/fileman/e_mod_config.c:317
+#: src/modules/fileman/e_mod_config.c:321
 msgid "List"
 msgstr "Listele"
 
@@ -1654,7 +1655,7 @@ msgstr "Şimdi Sırala"
 msgid "Single Click Activation"
 msgstr "Tek Tık Kullan"
 
-#: src/bin/e_fm.c:9739 src/modules/fileman/e_mod_config.c:394
+#: src/bin/e_fm.c:9739 src/modules/fileman/e_mod_config.c:398
 #, fuzzy
 msgid "Secure Deletion"
 msgstr "Ekran Çözünürlüğü"
@@ -1882,7 +1883,7 @@ msgstr "Grupla"
 msgid "Others:"
 msgstr "Diğer"
 
-#: src/bin/e_fm_prop.c:480 src/bin/e_import_config_dialog.c:473
+#: src/bin/e_fm_prop.c:480 src/bin/e_import_config_dialog.c:477
 #: src/bin/e_widget_fsel.c:348
 #: src/modules/conf_theme/e_int_config_transitions.c:218
 #: src/modules/conf_theme/e_int_config_theme.c:1414
@@ -1939,11 +1940,11 @@ msgstr "Metni Taşı"
 msgid "Automatically scroll contents"
 msgstr "İçeriği otomatik kaydır"
 
-#: src/bin/e_gadcon.c:1755 src/modules/gadman/e_mod_gadman.c:1002
+#: src/bin/e_gadcon.c:1755 src/modules/gadman/e_mod_gadman.c:1000
 msgid "Plain"
 msgstr "Düz"
 
-#: src/bin/e_gadcon.c:1768 src/modules/gadman/e_mod_gadman.c:1010
+#: src/bin/e_gadcon.c:1768 src/modules/gadman/e_mod_gadman.c:1008
 msgid "Inset"
 msgstr "Çerçeve"
 
@@ -1958,7 +1959,7 @@ msgstr "Görünüm"
 #: src/modules/conf_applications/e_int_config_apps.c:291
 #: src/modules/conf_applications/e_int_config_apps.c:311
 #: src/modules/conf_applications/e_int_config_apps_personal.c:97
-#: src/modules/gadman/e_mod_gadman.c:1058 src/modules/ibar/e_mod_main.c:876
+#: src/modules/gadman/e_mod_gadman.c:1056 src/modules/ibar/e_mod_main.c:877
 #: src/modules/xkbswitch/e_mod_config.c:267
 msgid "Remove"
 msgstr "Kaldır"
@@ -2029,11 +2030,11 @@ msgstr ""
 "Enlightenment temayı içe aktaramadı.<br><br>Bunun geçerli bir tema olduğuna "
 "emin misiniz?"
 
-#: src/bin/e_import_dialog.c:159
+#: src/bin/e_import_dialog.c:163
 msgid "Select a Picture..."
 msgstr "Resim Seç..."
 
-#: src/bin/e_import_dialog.c:193
+#: src/bin/e_import_dialog.c:195
 #, fuzzy
 msgid "Use"
 msgstr "Çerçeve"
@@ -2047,56 +2048,56 @@ msgid ""
 "Enlightenment was unable to import the picture<br>due to conversion errors."
 msgstr "Enlightenment çevrim hataları nedeniyle<br>resmi içe aktaramadı."
 
-#: src/bin/e_import_config_dialog.c:455
+#: src/bin/e_import_config_dialog.c:459
 #, fuzzy
 msgid "Import Settings..."
 msgstr "Resim İçe Aktarma Ayarları"
 
-#: src/bin/e_import_config_dialog.c:487
+#: src/bin/e_import_config_dialog.c:491
 msgid "Fill and Stretch Options"
 msgstr "Doldurma ve Uzatma Seçenekleri"
 
-#: src/bin/e_import_config_dialog.c:489
+#: src/bin/e_import_config_dialog.c:493
 msgid "Stretch"
 msgstr "Uzat"
 
-#: src/bin/e_import_config_dialog.c:493 src/bin/e_int_border_prop.c:236
+#: src/bin/e_import_config_dialog.c:497 src/bin/e_int_border_prop.c:236
 #, c-format
 msgid "Center"
 msgstr "Ortala"
 
-#: src/bin/e_import_config_dialog.c:497
+#: src/bin/e_import_config_dialog.c:501
 msgid "Tile"
 msgstr "Döşe"
 
-#: src/bin/e_import_config_dialog.c:502
+#: src/bin/e_import_config_dialog.c:506
 #, fuzzy
 msgid "Within"
 msgstr "içinde"
 
-#: src/bin/e_import_config_dialog.c:506
+#: src/bin/e_import_config_dialog.c:510
 msgid "Fill"
 msgstr "Doldur"
 
-#: src/bin/e_import_config_dialog.c:510
+#: src/bin/e_import_config_dialog.c:514
 #, fuzzy
 msgid "Pan"
 msgstr "Pencere Gözü"
 
-#: src/bin/e_import_config_dialog.c:518
+#: src/bin/e_import_config_dialog.c:522
 msgid "File Quality"
 msgstr "Dosya Kalitesi"
 
-#: src/bin/e_import_config_dialog.c:519
+#: src/bin/e_import_config_dialog.c:523
 msgid "Use original file"
 msgstr "Özgün dosyayı kullan"
 
-#: src/bin/e_import_config_dialog.c:521
+#: src/bin/e_import_config_dialog.c:525
 #, c-format
 msgid "%3.0f%%"
 msgstr "%3.0f%%"
 
-#: src/bin/e_import_config_dialog.c:526
+#: src/bin/e_import_config_dialog.c:530
 #, fuzzy
 msgid "Fill Color"
 msgstr "Renkler"
@@ -2595,7 +2596,7 @@ msgstr "Pozisyon İste"
 #: src/modules/everything/evry_gadget.c:511
 #: src/modules/everything/evry_gadget.c:695
 #: src/modules/everything/evry_plug_settings.c:183
-#: src/modules/ibar/e_mod_main.c:379 src/modules/ibar/e_mod_main.c:864
+#: src/modules/ibar/e_mod_main.c:380 src/modules/ibar/e_mod_main.c:865
 #: src/modules/ibox/e_mod_main.c:302 src/modules/ibox/e_mod_main.c:678
 #: src/modules/pager/e_mod_main.c:877 src/modules/temperature/e_mod_main.c:230
 #: src/modules/mixer/e_mod_main.c:776 src/modules/connman/e_mod_main.c:459
@@ -2785,7 +2786,7 @@ msgstr "Modül Ayarları"
 msgid "Load"
 msgstr "Yerel"
 
-#: src/bin/e_int_config_modules.c:205 src/bin/e_module.c:534
+#: src/bin/e_int_config_modules.c:205 src/bin/e_module.c:533
 #, fuzzy
 msgid "Unload"
 msgstr "Modülü Kaldır"
@@ -2924,17 +2925,18 @@ msgstr "(Pencere Yok)"
 msgid "Untitled window"
 msgstr "Dahili Pencereler"
 
-#: src/bin/e_int_menus.c:1621 src/bin/e_shelf.c:1121 src/bin/e_shelf.c:1636
+#: src/bin/e_int_menus.c:1627 src/bin/e_shelf.c:1636
 #: src/modules/conf_shelves/e_int_config_shelf.c:191
-msgid "Shelf"
-msgstr "Raf"
+#, fuzzy, c-format
+msgid "Shelf %s"
+msgstr "Raf #"
 
-#: src/bin/e_int_menus.c:1689
+#: src/bin/e_int_menus.c:1695
 #, fuzzy
 msgid "Add a Shelf"
 msgstr "Raf Ekle"
 
-#: src/bin/e_int_menus.c:1696
+#: src/bin/e_int_menus.c:1702
 #, fuzzy
 msgid "Delete a Shelf"
 msgstr "Rafı Sil"
@@ -3678,12 +3680,12 @@ msgstr ""
 msgid "Enlightenment %s Module"
 msgstr "Enlightenment %s Modülü"
 
-#: src/bin/e_module.c:529
+#: src/bin/e_module.c:528
 #, fuzzy
 msgid "What action should be taken with this module?<br>"
 msgstr "Bu modülü çıkarmak istiyor musunuz?<br>"
 
-#: src/bin/e_module.c:535 src/bin/e_shelf.c:1792
+#: src/bin/e_module.c:534 src/bin/e_shelf.c:1792
 #: src/modules/conf_dialogs/e_int_config_profiles.c:339
 #: src/modules/conf_shelves/e_int_config_shelf.c:392
 #: src/modules/ibar/e_mod_config.c:199
@@ -3724,14 +3726,14 @@ msgstr ""
 #: src/bin/e_shelf.c:68
 #: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:227
 #: src/modules/everything/evry_config.c:568
-#: src/modules/gadman/e_mod_gadman.c:1030
+#: src/modules/gadman/e_mod_gadman.c:1028
 msgid "Horizontal"
 msgstr "Yatay"
 
 #: src/bin/e_shelf.c:69
 #: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:229
 #: src/modules/everything/evry_config.c:561
-#: src/modules/gadman/e_mod_gadman.c:1038
+#: src/modules/gadman/e_mod_gadman.c:1036
 msgid "Vertical"
 msgstr "Dikey"
 
@@ -3790,8 +3792,9 @@ msgstr ""
 msgid "Right-bottom Corner"
 msgstr ""
 
-#: src/bin/e_shelf.c:267
-msgid "Shelf #"
+#: src/bin/e_shelf.c:268 src/bin/e_shelf.c:1121
+#, fuzzy, c-format
+msgid "Shelf #%d"
 msgstr "Raf #"
 
 #: src/bin/e_shelf.c:892
@@ -3848,7 +3851,7 @@ msgid "Rename Shelf"
 msgstr "Dosyayı Yeniden Adlandır"
 
 #: src/bin/e_shelf.c:2436 src/modules/conf_shelves/e_int_config_shelf.c:143
-#: src/modules/ibar/e_mod_main.c:858
+#: src/modules/ibar/e_mod_main.c:859
 #, fuzzy
 msgid "Contents"
 msgstr "Yorum"
@@ -3858,7 +3861,7 @@ msgstr "Yorum"
 msgid "Orientation"
 msgstr "Sunum"
 
-#: src/bin/e_shelf.c:2455 src/modules/quickaccess/e_mod_quickaccess.c:789
+#: src/bin/e_shelf.c:2455 src/modules/quickaccess/e_mod_quickaccess.c:792
 #, fuzzy
 msgid "Autohide"
 msgstr "Otomatik Gizle"
@@ -3868,7 +3871,8 @@ msgid "Refresh"
 msgstr "Yenile"
 
 #: src/bin/e_startup.c:66
-msgid "Starting"
+#, fuzzy, c-format
+msgid "Starting %s"
 msgstr "Başlıyor"
 
 #: src/bin/e_sys.c:295
@@ -4195,68 +4199,45 @@ msgstr ""
 
 #: src/bin/e_utils.c:1293
 #, fuzzy, c-format
-msgid "%li Seconds"
-msgstr "%.1f saniye"
+msgid "A second"
+msgid_plural "%li Seconds"
+msgstr[0] "%.1f saniye"
 
-#: src/bin/e_utils.c:1298
+#: src/bin/e_utils.c:1297
 #, c-format
 msgid "One year"
-msgstr ""
+msgid_plural "%li Years"
+msgstr[0] ""
 
-#: src/bin/e_utils.c:1300
-#, fuzzy, c-format
-msgid "%li Years"
-msgstr "%li Yıl önce"
-
-#: src/bin/e_utils.c:1306
+#: src/bin/e_utils.c:1302
 #, c-format
 msgid "One month"
-msgstr ""
+msgid_plural "%li Months"
+msgstr[0] ""
 
-#: src/bin/e_utils.c:1308
-#, fuzzy, c-format
-msgid "%li Months"
-msgstr "%li Ay önce"
-
-#: src/bin/e_utils.c:1314
+#: src/bin/e_utils.c:1307
 #, c-format
 msgid "One week"
-msgstr ""
+msgid_plural "%li Weeks"
+msgstr[0] ""
 
-#: src/bin/e_utils.c:1316
-#, fuzzy, c-format
-msgid "%li Weeks"
-msgstr "%li Hafta önce"
-
-#: src/bin/e_utils.c:1322
+#: src/bin/e_utils.c:1312
 #, c-format
 msgid "One day"
-msgstr ""
+msgid_plural "%li Days"
+msgstr[0] ""
 
-#: src/bin/e_utils.c:1324
-#, fuzzy, c-format
-msgid "%li Days"
-msgstr "%li Gün önce"
-
-#: src/bin/e_utils.c:1330
+#: src/bin/e_utils.c:1317
 #, c-format
 msgid "An hour"
-msgstr ""
+msgid_plural "%li Hours"
+msgstr[0] ""
 
-#: src/bin/e_utils.c:1332
-#, fuzzy, c-format
-msgid "%li Hours"
-msgstr "%li Saat önce"
-
-#: src/bin/e_utils.c:1338
+#: src/bin/e_utils.c:1322
 #, fuzzy, c-format
 msgid "A minute"
-msgstr "%1.0f dakika"
-
-#: src/bin/e_utils.c:1340
-#, fuzzy, c-format
-msgid "%li Minutes"
-msgstr "%li Dakika önce"
+msgid_plural "%li Minutes"
+msgstr[0] "%1.0f dakika"
 
 #: src/bin/e_widget_config_list.c:60 src/modules/comp/e_mod_config.c:1092
 #: src/modules/conf_applications/e_int_config_apps.c:266
@@ -4636,42 +4617,42 @@ msgstr ""
 msgid "Toggle calendar"
 msgstr "Araç Çubuğunu Göster"
 
-#: src/modules/comp/e_mod_comp.c:3694 src/modules/comp/e_mod_comp.c:3716
-#: src/modules/comp/e_mod_comp.c:4129 src/modules/comp/e_mod_comp.c:4139
+#: src/modules/comp/e_mod_comp.c:3655 src/modules/comp/e_mod_comp.c:3677
+#: src/modules/comp/e_mod_comp.c:4090 src/modules/comp/e_mod_comp.c:4100
 #, fuzzy
 msgid "Compositor Error"
 msgstr "Çıkarma Hatası"
 
-#: src/modules/comp/e_mod_comp.c:3695
+#: src/modules/comp/e_mod_comp.c:3656
 msgid "Another compositor is already running<br>on your display server."
 msgstr ""
 
-#: src/modules/comp/e_mod_comp.c:3717
+#: src/modules/comp/e_mod_comp.c:3678
 msgid ""
 "Your display server does not support the<br>compositor overlay window. This "
 "is needed<br>for it to function."
 msgstr ""
 
-#: src/modules/comp/e_mod_comp.c:3791
+#: src/modules/comp/e_mod_comp.c:3752
 #, fuzzy
 msgid "Compositor Warning"
 msgstr "Konum"
 
-#: src/modules/comp/e_mod_comp.c:3792
+#: src/modules/comp/e_mod_comp.c:3753
 msgid ""
 "Your display driver does not support OpenGL, or<br>no OpenGL engines were "
 "compiled or installed for<br>Evas or Ecore-Evas. Falling back to software "
 "engine."
 msgstr ""
 
-#: src/modules/comp/e_mod_comp.c:4130
+#: src/modules/comp/e_mod_comp.c:4091
 msgid ""
 "Your display server does not support XComposite,<br>or Ecore-X was built "
 "without XComposite support.<br>Note that for composite support you will also "
 "need<br>XRender and XFixes support in X11 and Ecore."
 msgstr ""
 
-#: src/modules/comp/e_mod_comp.c:4140
+#: src/modules/comp/e_mod_comp.c:4101
 msgid ""
 "Your display server does not support XDamage<br>or Ecore was built without "
 "XDamage support."
@@ -4740,7 +4721,7 @@ msgid "Splash"
 msgstr "Splash Metni"
 
 #: src/modules/comp/e_mod_config.c:464 src/modules/comp/e_mod_config.c:769
-#: src/modules/fileman/e_mod_config.c:341
+#: src/modules/fileman/e_mod_config.c:345
 #, fuzzy
 msgid "Toolbar"
 msgstr "Araç Çubuğunu Göster"
@@ -5042,6 +5023,7 @@ msgid ""
 msgstr ""
 
 #: src/modules/conf/e_mod_config.c:35 src/modules/conf/e_mod_main.c:285
+#: src/modules/conf/e_mod_main.c:299
 #, fuzzy
 msgid "Configuration Panel"
 msgstr "yapılandırma"
@@ -5310,7 +5292,7 @@ msgstr "Exchange duvar kağıtları"
 #: src/modules/everything/evry_config.c:554
 #: src/modules/everything/evry_config.c:580
 #: src/modules/everything/evry_config.c:587
-#: src/modules/fileman/e_mod_config.c:323
+#: src/modules/fileman/e_mod_config.c:327
 #: src/modules/syscon/e_int_config_syscon.c:148
 #: src/modules/syscon/e_int_config_syscon.c:153
 #: src/modules/syscon/e_int_config_syscon.c:158
@@ -5402,7 +5384,7 @@ msgstr "Arka Plan seçin ..."
 #: src/modules/conf_display/e_int_config_desklock_fsel.c:84
 #: src/modules/conf_intl/e_int_config_imc.c:813
 #: src/modules/conf_theme/e_int_config_wallpaper.c:423
-#: src/modules/conf_theme/e_int_config_wallpaper.c:576
+#: src/modules/conf_theme/e_int_config_wallpaper.c:577
 #: src/modules/conf_theme/e_int_config_startup.c:253
 #: src/modules/conf_theme/e_int_config_theme.c:728
 #: src/modules/conf_theme/e_int_config_theme.c:1103
@@ -5474,7 +5456,7 @@ msgstr "X ekran koruyucu devreye girer sonra kilitle"
 #: src/modules/conf_display/e_int_config_desklock.c:340
 #: src/modules/conf_display/e_int_config_screensaver.c:183
 #: src/modules/conf_display/e_int_config_screensaver.c:200
-#: src/modules/fileman/e_mod_config.c:412
+#: src/modules/fileman/e_mod_config.c:416
 #, c-format
 msgid "%1.0f seconds"
 msgstr "%1.0f saniye"
@@ -6424,7 +6406,8 @@ msgid "%5.0f pixels/s"
 msgstr "%5.0f piksel/sn"
 
 #: src/modules/conf_menus/e_int_config_menus.c:306
-msgid "Fast Mouse Move Threshhold"
+#, fuzzy
+msgid "Fast Mouse Move Threshold"
 msgstr "Hızlı Fare Hareketi Eşiği"
 
 #: src/modules/conf_menus/e_int_config_menus.c:308
@@ -6469,6 +6452,7 @@ msgstr "Yazı Tipleri"
 
 #: src/modules/conf_paths/e_int_config_paths.c:76
 #: src/modules/conf_theme/e_int_config_theme.c:1394
+#: src/modules/conf_theme/e_mod_main.c:172
 msgid "Themes"
 msgstr "Temalar"
 
@@ -6584,7 +6568,7 @@ msgid "Image cache size"
 msgstr "Görüntü önbellek boyutu"
 
 #: src/modules/conf_performance/e_int_config_performance.c:140
-#: src/modules/fileman/e_mod_config.c:406
+#: src/modules/fileman/e_mod_config.c:410
 #, fuzzy, c-format
 msgid "%1.0f MiB"
 msgstr "%1.0f MB"
@@ -6694,8 +6678,8 @@ msgid "Screen Setup"
 msgstr "Ekran Koruyucu"
 
 #: src/modules/conf_shelves/e_int_config_shelf.c:127
-#, fuzzy
-msgid "Configured Shelves: Display"
+#, fuzzy, c-format
+msgid "Configured Shelves: Display %d"
 msgstr "Yapılandırılmış Raflar"
 
 #: src/modules/conf_shelves/e_int_config_shelf.c:388
@@ -6713,34 +6697,34 @@ msgid "Wallpaper Settings"
 msgstr "Duvar Kağıdı Ayarları"
 
 #: src/modules/conf_theme/e_int_config_wallpaper.c:433
-#: src/modules/conf_theme/e_int_config_wallpaper.c:586
+#: src/modules/conf_theme/e_int_config_wallpaper.c:587
 #, fuzzy
 msgid "Go up a directory"
 msgstr "Yukarı Çık"
 
 #: src/modules/conf_theme/e_int_config_wallpaper.c:465
-#: src/modules/conf_theme/e_int_config_wallpaper.c:611
+#: src/modules/conf_theme/e_int_config_wallpaper.c:612
 msgid "Use Theme Wallpaper"
 msgstr "Tema Duvar Kağıdını Kullan"
 
 #: src/modules/conf_theme/e_int_config_wallpaper.c:470
-#: src/modules/conf_theme/e_int_config_wallpaper.c:616
+#: src/modules/conf_theme/e_int_config_wallpaper.c:617
 msgid "Picture..."
 msgstr "Resim..."
 
-#: src/modules/conf_theme/e_int_config_wallpaper.c:632
+#: src/modules/conf_theme/e_int_config_wallpaper.c:633
 msgid "Where to place the Wallpaper"
 msgstr "Arka planın yerleştirileceği yer"
 
-#: src/modules/conf_theme/e_int_config_wallpaper.c:633
+#: src/modules/conf_theme/e_int_config_wallpaper.c:634
 msgid "All Desktops"
 msgstr "Tüm Masaüstleri"
 
-#: src/modules/conf_theme/e_int_config_wallpaper.c:635
+#: src/modules/conf_theme/e_int_config_wallpaper.c:636
 msgid "This Desktop"
 msgstr "Bu Masaüstü"
 
-#: src/modules/conf_theme/e_int_config_wallpaper.c:637
+#: src/modules/conf_theme/e_int_config_wallpaper.c:638
 msgid "This Screen"
 msgstr "Bu Ekran"
 
@@ -7576,7 +7560,7 @@ msgid "Resize Geometry"
 msgstr "Pencere Boyutlandırma Geometrisi"
 
 #: src/modules/conf_window_manipulation/e_int_config_window_display.c:163
-#: src/modules/fileman/e_mod_config.c:352
+#: src/modules/fileman/e_mod_config.c:356
 #: src/modules/winlist/e_int_config_winlist.c:210
 #: src/modules/tasks/e_mod_config.c:86
 msgid "Display"
@@ -8591,8 +8575,9 @@ msgid "Move to Trash"
 msgstr "Metni Taşı"
 
 #: src/modules/everything/evry_plug_files.c:1331
-msgid "Open Folder (EFM)"
-msgstr ""
+#, fuzzy
+msgid "Open Directory"
+msgstr "Yeni Dizin"
 
 #: src/modules/everything/evry_plug_files.c:1335
 #, fuzzy
@@ -8893,127 +8878,127 @@ msgstr "Bir Edje dosyasını seçin"
 msgid "Select an image"
 msgstr "Bir resim seçin"
 
-#: src/modules/fileman/e_mod_config.c:120
+#: src/modules/fileman/e_mod_config.c:122
 msgid "Fileman Settings"
 msgstr "Dosya Yöneticisi Ayarları"
 
-#: src/modules/fileman/e_mod_config.c:321
+#: src/modules/fileman/e_mod_config.c:325
 msgid "Icon Size"
 msgstr "Simge Boyutu"
 
-#: src/modules/fileman/e_mod_config.c:327
+#: src/modules/fileman/e_mod_config.c:331
 msgid "View"
 msgstr "Görünüm"
 
-#: src/modules/fileman/e_mod_config.c:332
+#: src/modules/fileman/e_mod_config.c:336
 #, fuzzy
 msgid "File Extensions"
 msgstr "Eklentiler"
 
-#: src/modules/fileman/e_mod_config.c:335
+#: src/modules/fileman/e_mod_config.c:339
 #, fuzzy
 msgid "Full Path In Title"
 msgstr "Splash Başlığı"
 
-#: src/modules/fileman/e_mod_config.c:338
+#: src/modules/fileman/e_mod_config.c:342
 #, fuzzy
 msgid "Icons On Desktop"
 msgstr "Masaüstünde simge gösterme"
 
-#: src/modules/fileman/e_mod_config.c:344
+#: src/modules/fileman/e_mod_config.c:348
 msgid "Sidebar"
 msgstr ""
 
-#: src/modules/fileman/e_mod_config.c:385
+#: src/modules/fileman/e_mod_config.c:389
 msgid "Open Dirs In Place"
 msgstr "Dizinleri Olduğu Yerde Aç"
 
-#: src/modules/fileman/e_mod_config.c:388
+#: src/modules/fileman/e_mod_config.c:392
 msgid "Use Single Click"
 msgstr "Tek Tık Kullan"
 
-#: src/modules/fileman/e_mod_config.c:391
+#: src/modules/fileman/e_mod_config.c:395
 msgid "'cp+rm' instead of 'mv'"
 msgstr ""
 
-#: src/modules/fileman/e_mod_config.c:397
+#: src/modules/fileman/e_mod_config.c:401
 #, fuzzy
 msgid "Use Alternate Selection Modifiers"
 msgstr "Alternatif Seçim Modifiers kullanın"
 
-#: src/modules/fileman/e_mod_config.c:400
+#: src/modules/fileman/e_mod_config.c:404
 #, fuzzy
 msgid "Allow Navigation On Desktop"
 msgstr "Masaüstünde cihazı simgeleri göster"
 
-#: src/modules/fileman/e_mod_config.c:404
+#: src/modules/fileman/e_mod_config.c:408
 msgid "Max File Size For Thumbnailing"
 msgstr ""
 
-#: src/modules/fileman/e_mod_config.c:410
+#: src/modules/fileman/e_mod_config.c:414
 #, fuzzy
 msgid "Spring Delay"
 msgstr "Uykuda kalma süresi"
 
-#: src/modules/fileman/e_mod_config.c:415
+#: src/modules/fileman/e_mod_config.c:419
 #: src/modules/quickaccess/e_mod_config.c:252
 #: src/modules/quickaccess/e_mod_config.c:348
 msgid "Behavior"
 msgstr "Davranış"
 
-#: src/modules/fileman/e_mod_config.c:424
-#: src/modules/fileman/e_mod_config.c:427
-#: src/modules/fileman/e_mod_config.c:430
-#: src/modules/fileman/e_mod_config.c:433
+#: src/modules/fileman/e_mod_config.c:428
+#: src/modules/fileman/e_mod_config.c:431
+#: src/modules/fileman/e_mod_config.c:434
+#: src/modules/fileman/e_mod_config.c:437
 #: src/modules/gadman/e_mod_config.c:208
 #, fuzzy
 msgid "Mode"
 msgstr "Kipler"
 
-#: src/modules/fileman/e_mod_config.c:439
+#: src/modules/fileman/e_mod_config.c:443
 #, fuzzy
 msgid "Show device icons on desktop"
 msgstr "Masaüstünde cihazı simgeleri göster"
 
-#: src/modules/fileman/e_mod_config.c:442
+#: src/modules/fileman/e_mod_config.c:446
 #, fuzzy
 msgid "Mount volumes on insert"
 msgstr "Insert hacimleri Dağına"
 
-#: src/modules/fileman/e_mod_config.c:445
+#: src/modules/fileman/e_mod_config.c:449
 msgid "Open filemanager on mount"
 msgstr "Bağlandığında dosya yöneticisini aç"
 
-#: src/modules/fileman/e_mod_config.c:449
+#: src/modules/fileman/e_mod_config.c:453
 #, fuzzy
 msgid "Device"
 msgstr "Ön izleme"
 
-#: src/modules/fileman/e_mod_config.c:453
+#: src/modules/fileman/e_mod_config.c:457
 #, fuzzy
 msgid "Show tooltip"
 msgstr "Araç Çubuğunu Göster"
 
-#: src/modules/fileman/e_mod_config.c:457
+#: src/modules/fileman/e_mod_config.c:461
 msgid "Tooltip delay"
 msgstr ""
 
-#: src/modules/fileman/e_mod_config.c:459
+#: src/modules/fileman/e_mod_config.c:463
 #: src/modules/syscon/e_int_config_syscon.c:169
 #, fuzzy, c-format
 msgid "%1.1f"
 msgstr "%1.1f MB"
 
-#: src/modules/fileman/e_mod_config.c:463
+#: src/modules/fileman/e_mod_config.c:467
 msgid "Tooltip size (Screen percentage)"
 msgstr ""
 
-#: src/modules/fileman/e_mod_config.c:465
+#: src/modules/fileman/e_mod_config.c:469
 #, c-format
 msgid "%2.0f"
 msgstr ""
 
-#: src/modules/fileman/e_mod_config.c:469
+#: src/modules/fileman/e_mod_config.c:473
 msgid "Tooltips"
 msgstr ""
 
@@ -9024,6 +9009,11 @@ msgstr "Dosya Yöneticisi"
 #: src/modules/fileman/e_mod_main.c:58
 msgid "Navigate"
 msgstr ""
+
+#: src/modules/fileman/e_mod_main.c:275
+#, fuzzy
+msgid "Fileman"
+msgstr "Dosya yöneticisi"
 
 #: src/modules/fileman/e_mod_menu.c:239
 msgid "No listable items"
@@ -9064,6 +9054,14 @@ msgstr "Dosya yöneticisi boşta"
 msgid "EFM Operation Info"
 msgstr "EFM İşlem Bilgisi"
 
+#: src/modules/gadman/e_mod_config.c:21 src/modules/gadman/e_mod_config.c:229
+msgid "Background"
+msgstr "Arka plan"
+
+#: src/modules/gadman/e_mod_config.c:22
+msgid "Hover (Key Toggle)"
+msgstr ""
+
 #: src/modules/gadman/e_mod_config.c:79 src/modules/gadman/e_mod_config.c:156
 #: src/modules/gadman/e_mod_main.c:163
 #, fuzzy
@@ -9101,29 +9099,25 @@ msgstr "Şeffaf"
 msgid "Animations"
 msgstr "Boşta"
 
-#: src/modules/gadman/e_mod_config.c:229
-msgid "Background"
-msgstr "Arka plan"
-
 #: src/modules/gadman/e_mod_config.c:302
 #, fuzzy
 msgid "Background Options"
 msgstr "Arka plan gezdirme"
 
-#: src/modules/gadman/e_mod_gadman.c:992
+#: src/modules/gadman/e_mod_gadman.c:990
 #, fuzzy
 msgid "Begin move/resize"
 msgstr "Aracı oynat/yeniden boyutlandır"
 
-#: src/modules/gadman/e_mod_gadman.c:1022
+#: src/modules/gadman/e_mod_gadman.c:1020
 msgid "Free"
 msgstr "Boş"
 
-#: src/modules/gadman/e_mod_gadman.c:1046
+#: src/modules/gadman/e_mod_gadman.c:1044
 msgid "Appearance"
 msgstr "Görünüm"
 
-#: src/modules/gadman/e_mod_gadman.c:1067
+#: src/modules/gadman/e_mod_gadman.c:1065
 msgid "Add other gadgets"
 msgstr "Başka bir araç ekle"
 
@@ -9378,21 +9372,21 @@ msgstr ""
 msgid "Are you sure you want to delete this bar source?"
 msgstr "Bu çubuğu ve içeriğini silmek istediğinize emin misiniz?"
 
-#: src/modules/ibar/e_mod_main.c:284 src/modules/ibar/e_mod_main.c:1801
+#: src/modules/ibar/e_mod_main.c:285 src/modules/ibar/e_mod_main.c:1802
 msgid "IBar"
 msgstr "IBar"
 
-#: src/modules/ibar/e_mod_main.c:847
+#: src/modules/ibar/e_mod_main.c:848
 #, fuzzy
 msgid "Create new Icon"
 msgstr "Yeni Simge Oluştur"
 
-#: src/modules/ibar/e_mod_main.c:881
+#: src/modules/ibar/e_mod_main.c:882
 #, fuzzy, c-format
 msgid "Icon %s"
 msgstr "Simgeler"
 
-#: src/modules/ibar/e_mod_main.c:1801
+#: src/modules/ibar/e_mod_main.c:1802
 #, fuzzy
 msgid "Focus IBar"
 msgstr "Odakla"
@@ -9665,6 +9659,7 @@ msgid "Ignore"
 msgstr "Tümünü görmezden gel"
 
 #: src/modules/physics/e_mod_main.c:29 src/modules/physics/e_mod_main.c:47
+#: src/modules/physics/e_mod_main.c:54
 msgid "Physics"
 msgstr ""
 
@@ -9720,6 +9715,11 @@ msgstr "Sistem Kontrolleri"
 #, fuzzy
 msgid "Syscon"
 msgstr "SYSCON"
+
+#: src/modules/syscon/e_syscon_gadget.c:72
+#, fuzzy
+msgid "Show Menu"
+msgstr "Menüyü... Göster"
 
 #: src/modules/temperature/e_mod_config.c:56
 msgid "Temperature Settings"
@@ -9891,12 +9891,12 @@ msgid ""
 "Enlightenment can check for new<br>versions, updates, security "
 "and<br>bugfixes, as well as available add-ons.<br><br>This is very useful, "
 "because it lets<br>you know about available bug fixes and<br>security fixes "
-"when they happen. As a<br>bi-product of this, Enlightenment will<br>connect "
-"to enlightenment.org and transmit<br>some information as a result much like "
-"any<br>web browser might do. No personal information<br>such as username, "
-"password or any personal<br>files will be transmitted. If you do not "
-"like<br>this, please disable this below. It is highly<br>advised that you do "
-"not disable this as it<br>may leave you vulnerable or having to live<br>with "
+"when they happen. As a<br>result, Enlightenment will connect "
+"to<br>enlightenment.org and transmit some<br>information, much like any web "
+"browser<br>might do. No personal information such as<br>username, password "
+"or any personal files<br>will be transmitted. If you don't like this,"
+"<br>please disable this below. It is highly<br>advised that you do not "
+"disable this as it<br>may leave you vulnerable or having to live<br>with "
 "bugs."
 msgstr ""
 
@@ -9975,7 +9975,7 @@ msgstr "Keybinding üzerinden ses değişikliği Popup göster"
 msgid "Sound Cards"
 msgstr "Ses Kartları"
 
-#: src/modules/mixer/conf_gadget.c:377
+#: src/modules/mixer/conf_gadget.c:378
 msgid "Mixer Settings"
 msgstr "Karıştırıcı Ayarları"
 
@@ -10086,6 +10086,7 @@ msgid "Quickaccess Settings"
 msgstr "Ölçekleme Ayarları"
 
 #: src/modules/quickaccess/e_mod_main.c:37
+#: src/modules/quickaccess/e_mod_main.c:47
 #: src/modules/quickaccess/e_mod_quickaccess.c:7
 msgid "Quickaccess"
 msgstr ""
@@ -10105,14 +10106,14 @@ msgstr ""
 #: src/modules/quickaccess/e_mod_quickaccess.c:265
 #: src/modules/quickaccess/e_mod_quickaccess.c:343
 #: src/modules/quickaccess/e_mod_quickaccess.c:350
-#: src/modules/quickaccess/e_mod_quickaccess.c:373
-#: src/modules/quickaccess/e_mod_quickaccess.c:389
-#: src/modules/quickaccess/e_mod_quickaccess.c:484
+#: src/modules/quickaccess/e_mod_quickaccess.c:376
+#: src/modules/quickaccess/e_mod_quickaccess.c:392
+#: src/modules/quickaccess/e_mod_quickaccess.c:487
 msgid "Quickaccess Error"
 msgstr ""
 
 #: src/modules/quickaccess/e_mod_quickaccess.c:265
-#: src/modules/quickaccess/e_mod_quickaccess.c:389
+#: src/modules/quickaccess/e_mod_quickaccess.c:392
 msgid "Could not determine command for starting this application!"
 msgstr ""
 
@@ -10132,16 +10133,16 @@ msgid "Like so:"
 msgstr ""
 
 #: src/modules/quickaccess/e_mod_quickaccess.c:316
-#: src/modules/quickaccess/e_mod_quickaccess.c:832
-#: src/modules/quickaccess/e_mod_quickaccess.c:932
-#: src/modules/quickaccess/e_mod_quickaccess.c:971
-#: src/modules/quickaccess/e_mod_quickaccess.c:1000
-#: src/modules/quickaccess/e_mod_quickaccess.c:1012
-#: src/modules/quickaccess/e_mod_quickaccess.c:1028
-#: src/modules/quickaccess/e_mod_quickaccess.c:1193
-#: src/modules/quickaccess/e_mod_quickaccess.c:1223
-#: src/modules/quickaccess/e_mod_quickaccess.c:1244
-#: src/modules/quickaccess/e_mod_quickaccess.c:1261
+#: src/modules/quickaccess/e_mod_quickaccess.c:835
+#: src/modules/quickaccess/e_mod_quickaccess.c:935
+#: src/modules/quickaccess/e_mod_quickaccess.c:974
+#: src/modules/quickaccess/e_mod_quickaccess.c:1003
+#: src/modules/quickaccess/e_mod_quickaccess.c:1015
+#: src/modules/quickaccess/e_mod_quickaccess.c:1031
+#: src/modules/quickaccess/e_mod_quickaccess.c:1196
+#: src/modules/quickaccess/e_mod_quickaccess.c:1226
+#: src/modules/quickaccess/e_mod_quickaccess.c:1247
+#: src/modules/quickaccess/e_mod_quickaccess.c:1264
 msgid "Quickaccess Help"
 msgstr ""
 
@@ -10153,79 +10154,72 @@ msgstr ""
 msgid "Cannot set relaunch for internal E dialog!"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:367
-msgid "The selected window created with name:"
-msgstr ""
-
 #: src/modules/quickaccess/e_mod_quickaccess.c:368
-#, fuzzy
-msgid "and class:"
-msgstr "Pencere sınıfı"
-
-#: src/modules/quickaccess/e_mod_quickaccess.c:368
+#, c-format
 msgid ""
-"could not be found in the Quickaccess app database<brThis means that either "
-"the app is unknown to us<br>or it is not intended for use with this option."
+"The selected window created with name:<br>%s<br>and class:<br>%s<br>could "
+"not be found in the Quickaccess app database<br>This means that either the "
+"app is unknown to us<br>or it is not intended for use with this option."
 "<br>Please choose an action to take:"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:376
-#: src/modules/quickaccess/e_mod_quickaccess.c:974
-#: src/modules/quickaccess/e_mod_quickaccess.c:1015
-#: src/modules/quickaccess/e_mod_quickaccess.c:1227
-#: src/modules/quickaccess/e_mod_quickaccess.c:1250
+#: src/modules/quickaccess/e_mod_quickaccess.c:379
+#: src/modules/quickaccess/e_mod_quickaccess.c:977
+#: src/modules/quickaccess/e_mod_quickaccess.c:1018
+#: src/modules/quickaccess/e_mod_quickaccess.c:1230
+#: src/modules/quickaccess/e_mod_quickaccess.c:1253
 #, fuzzy
 msgid "Continue"
 msgstr "Kapsayıcı"
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:377
+#: src/modules/quickaccess/e_mod_quickaccess.c:380
 msgid "More Help"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:484
+#: src/modules/quickaccess/e_mod_quickaccess.c:487
 msgid "The requested Quickaccess entry does not exist!"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:651
+#: src/modules/quickaccess/e_mod_quickaccess.c:654
 #, fuzzy
 msgid "Keybind Error"
 msgstr "Fare Kısayolları"
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:651
+#: src/modules/quickaccess/e_mod_quickaccess.c:654
 msgid "The keybinding you have entered is already in use!"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:795
+#: src/modules/quickaccess/e_mod_quickaccess.c:798
 msgid "Hide Instead Of Raise"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:802
+#: src/modules/quickaccess/e_mod_quickaccess.c:805
 #, fuzzy
 msgid "Jump Mode"
 msgstr "Masası Git"
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:811
+#: src/modules/quickaccess/e_mod_quickaccess.c:814
 msgid "Relaunch When Closed"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:818
+#: src/modules/quickaccess/e_mod_quickaccess.c:821
 #, fuzzy
 msgid "Transient"
 msgstr "Geçici Durum"
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:825
+#: src/modules/quickaccess/e_mod_quickaccess.c:828
 msgid "Remove Quickaccess"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:853
+#: src/modules/quickaccess/e_mod_quickaccess.c:856
 msgid "Quickaccess..."
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:859
+#: src/modules/quickaccess/e_mod_quickaccess.c:862
 msgid "Add Quickaccess"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:933
+#: src/modules/quickaccess/e_mod_quickaccess.c:936
 msgid ""
 "The options found in the Quickaccess menu are as follows:"
 "<br><hilight>Autohide</hilight> - hide the window whenever it loses "
@@ -10237,55 +10231,55 @@ msgid ""
 "window (not permanent)"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:972
+#: src/modules/quickaccess/e_mod_quickaccess.c:975
 msgid "You deleted it on your own, you rascal!<br>Way to go!"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:974
-#: src/modules/quickaccess/e_mod_quickaccess.c:1015
-#: src/modules/quickaccess/e_mod_quickaccess.c:1227
-#: src/modules/quickaccess/e_mod_quickaccess.c:1250
+#: src/modules/quickaccess/e_mod_quickaccess.c:977
+#: src/modules/quickaccess/e_mod_quickaccess.c:1018
+#: src/modules/quickaccess/e_mod_quickaccess.c:1230
+#: src/modules/quickaccess/e_mod_quickaccess.c:1253
 msgid "Stop"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:991
+#: src/modules/quickaccess/e_mod_quickaccess.c:994
 msgid "Great! Activate the Quickaccess entry again to show it!"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:993
+#: src/modules/quickaccess/e_mod_quickaccess.c:996
 msgid "Great! Activate the Quickaccess entry again to hide it!"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:1013
+#: src/modules/quickaccess/e_mod_quickaccess.c:1016
 msgid "Well done.<br>Now to delete the entry we just made..."
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:1029
+#: src/modules/quickaccess/e_mod_quickaccess.c:1032
 msgid ""
 "The demo dialog has been bound to the keys you pressed.<br>Try pressing the "
 "same keys!"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:1194
+#: src/modules/quickaccess/e_mod_quickaccess.c:1197
 msgid ""
 "The newly displayed window will activate<br>the Quickaccess binding sequence."
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:1201
+#: src/modules/quickaccess/e_mod_quickaccess.c:1204
 msgid "Quickaccess Demo"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:1202
+#: src/modules/quickaccess/e_mod_quickaccess.c:1205
 msgid "This is a demo dialog used in the Quickaccess tutorial"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:1224
+#: src/modules/quickaccess/e_mod_quickaccess.c:1227
 msgid ""
 "Quickaccess entries can be created from<br>the border menu of any window."
 "<br>Click Continue to see a demonstration."
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:1245
+#: src/modules/quickaccess/e_mod_quickaccess.c:1248
 msgid ""
 "Quickaccess is a way of binding user-selected<br>windows and applications to "
 "keyboard shortcuts.<br>Once a Quickaccess entry has been created,<br>the "
@@ -10293,13 +10287,13 @@ msgid ""
 "keyboard shortcut."
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:1262
+#: src/modules/quickaccess/e_mod_quickaccess.c:1265
 msgid ""
 "This appears to be your first time using the Quickaccess module.<br>Would "
 "you like some usage tips?"
 msgstr ""
 
-#: src/modules/quickaccess/e_mod_quickaccess.c:1309
+#: src/modules/quickaccess/e_mod_quickaccess.c:1312
 msgid "quick access name/identifier"
 msgstr ""
 
@@ -10800,6 +10794,41 @@ msgstr ""
 #: src/modules/notification/e_mod_config.c:144
 msgid "Use multiple monitor geometry"
 msgstr ""
+
+#~ msgid "Shelf"
+#~ msgstr "Raf"
+
+#, fuzzy
+#~ msgid "%li Seconds"
+#~ msgstr "%.1f saniye"
+
+#, fuzzy
+#~ msgid "%li Years"
+#~ msgstr "%li Yıl önce"
+
+#, fuzzy
+#~ msgid "%li Months"
+#~ msgstr "%li Ay önce"
+
+#, fuzzy
+#~ msgid "%li Weeks"
+#~ msgstr "%li Hafta önce"
+
+#, fuzzy
+#~ msgid "%li Days"
+#~ msgstr "%li Gün önce"
+
+#, fuzzy
+#~ msgid "%li Hours"
+#~ msgstr "%li Saat önce"
+
+#, fuzzy
+#~ msgid "%li Minutes"
+#~ msgstr "%li Dakika önce"
+
+#, fuzzy
+#~ msgid "and class:"
+#~ msgstr "Pencere sınıfı"
 
 #, fuzzy
 #~ msgid "Enable Settings Daemon"
