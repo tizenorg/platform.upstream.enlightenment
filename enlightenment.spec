@@ -2,7 +2,7 @@
 
 Summary: The Enlightenment window manager
 Name: enlightenment
-Version: 0.17.1
+Version: 0.17.3
 Release: %{_rel}
 License: BSD
 Group: User Interface/Desktops
@@ -13,9 +13,9 @@ Vendor: %{?_vendorinfo:%{_vendorinfo}}%{!?_vendorinfo:The Enlightenment Project 
 Distribution: %{?_distribution:%{_distribution}}%{!?_distribution:%{_vendor}}
 Prefix: %{_prefix}
 #BuildSuggests: xorg-x11-devel, XFree86-devel, libX11-devel
-BuildRequires: efl-devel >= 1.7.4, edje-devel, edje-bin
+BuildRequires: efl-devel >= 1.7.6, edje-devel, edje-bin
 BuildRequires: eeze-devel
-Requires: efl >= 1.7.4
+Requires: efl >= 1.7.6
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 
 %description

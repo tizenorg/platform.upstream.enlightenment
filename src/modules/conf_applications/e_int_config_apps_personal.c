@@ -199,14 +199,18 @@ _btn_cb_del(void *data, void *data2 __UNUSED__)
    E_Config_Dialog_Data *cfdata = data;
    const Eina_List *l;
    const E_Ilist_Item *it;
+   int x = -1;
 
    EINA_LIST_FOREACH(e_widget_ilist_items_get(cfdata->obj.list), l, it)
      {
         const char *file;
 
+        x++;
         if (!it->selected) continue;
         file = e_widget_ilist_item_data_get(it);
-        if (file) ecore_file_unlink(file);
+        if (!file) break;
+        ecore_file_unlink(file);
+        e_widget_ilist_remove_num(cfdata->obj.list, x);
      }
 }
 
@@ -214,16 +218,7 @@ static void
 _widget_list_selection_changed(void *data, Evas_Object *obj __UNUSED__)
 {
    E_Config_Dialog_Data *cfdata = data;
-   const Eina_List *l;
-   const E_Ilist_Item *it;
-   int selnum = 0;
 
-   EINA_LIST_FOREACH(e_widget_ilist_items_get(cfdata->obj.list), l, it)
-     {
-        if (!it->selected) continue;
-        selnum++;
-     }
-   if (selnum == 0) e_widget_disabled_set(cfdata->obj.del, 1);
-   else e_widget_disabled_set(cfdata->obj.del, 0);
+   e_widget_disabled_set(cfdata->obj.del, !e_widget_ilist_selected_count_get(cfdata->obj.list));
 }
 

@@ -177,7 +177,6 @@ e_widget_preview_edje_set(Evas_Object *obj, const char *file, const char *group)
    if (wd->o_thumb) evas_object_del(wd->o_thumb);
    wd->o_thumb = edje_object_add(e_livethumb_evas_get(wd->img));
    ret = edje_object_file_set(wd->o_thumb, file, group);
-   evas_object_show(wd->o_thumb);
    e_livethumb_thumb_set(wd->img, wd->o_thumb);
 
    e_widget_change(obj);

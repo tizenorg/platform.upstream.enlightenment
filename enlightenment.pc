@@ -1,4 +1,4 @@
-prefix=/usr/local
+prefix=/home/antognolli/efl/1.7/git-release/local
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 datadir=${prefix}/share
@@ -7,13 +7,13 @@ modules=${exec_prefix}/lib/enlightenment/modules
 pkgdatadir=${prefix}/share/enlightenment/data
 themes=${pkgdatadir}/themes
 backgrounds=${pkgdatadir}/backgrounds
-config_apps=/usr/local/share/enlightenment/config-apps
-release=0.17.1
+config_apps=/home/antognolli/efl/1.7/git-release/local/share/enlightenment/config-apps
+release=0.17.3
 
 Name: enlightenment
 Description: Enlightenmnt Window Manager
-Requires: evas >= 1.7.4 ecore >= 1.7.4 ecore-x >= 1.7.4 ecore-evas >= 1.7.4 ecore-con >= 1.7.4 ecore-ipc >= 1.7.4 ecore-file >= 1.7.4 eet >= 1.7.4 edje >= 1.7.4 efreet >= 1.7.4 efreet-mime >= 1.7.4 efreet-trash >= 1.7.4 eina >= 1.7.4 dbus-1 edbus >= 1.7.4 eio >= 1.7.4 ehal >= 1.7.4, edbus >= 1.7.4 eukit >= 1.7.4  eeze elementary > 1.6.9.0 emotion >= 1.7.4
-Version: 0.17.1
+Requires: evas >= 1.7.6 ecore >= 1.7.6 ecore-x >= 1.7.6 ecore-evas >= 1.7.6 ecore-con >= 1.7.6 ecore-ipc >= 1.7.6 ecore-file >= 1.7.6 eet >= 1.7.6 edje >= 1.7.6 efreet >= 1.7.6 efreet-mime >= 1.7.6 efreet-trash >= 1.7.6 eina >= 1.7.6 dbus-1 edbus >= 1.7.6 eio >= 1.7.6 ehal >= 1.7.6, edbus >= 1.7.6 eukit >= 1.7.6  eeze elementary > 1.6.9.0 emotion >= 1.7.6
+Version: 0.17.3
 Libs: -L${libdir}
 Libs.private:  -lm
 Cflags: -I${includedir} -DUSE_E_CONFIG_H

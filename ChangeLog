@@ -1,5 +1,87 @@
+2013-04-26 Mike Blumenkrantz
+
+        * fixed theme bug which prevented windows from unshading correctly when animations were disabled
+
+2013-04-25 Mike Blumenkrantz
+
+        * improve efm mouse movement detection for icons
+        * add check for vmware window in another spot to disable key remapping
+
+2013-04-09  Rafael Antognolli
+
+        * 0.17.2.1 release
+
+2013-04-08  maxerba
+
+        * Update Esperanto translations.
+
+2013-04-06  Joan Coll
+
+        * Update Catalan translations.
+
+2013-04-04  Rafael Antognolli
+
+        * 0.17.2 release
+
+2013-02-20 Mike Blumenkrantz
+
+        * toolbar gadgets no longer crash when trying to display a popup
+
+2013-02-18 Mike Blumenkrantz
+
+        * fixed disable of input methods in input method config dialog
+        * fixed pointer warp when pointer was inside warp window but not directly over it
+
+2013-02-11 Mike Blumenkrantz
+
+        * fixed bug where pointer warping to new clients would start at a random location
+        * fix crash when locking screen from Start gadget and then activating gadget again
+        * fixed bug where e_layout would ignore frozen state and crash
+
+2013-02-08 Cedric Bail
+
+	* remove call to efreet_menu_parse from a thread.
+
+2013-02-07 Mike Blumenkrantz
+
+        * keyboard mapping change now also disables for window class "vmware"
+
+2013-02-07 Cedric Bail
+
+	* enable image preloading for all e_widget_preview using edje
+
+2013-02-07 Carsten Haitzler
+
+        * fix clock timerfd usage to actually detect a date change.
+        * improve clock to also listen to /etc/timezone changes too.
+
+2013-02-06 Mike Blumenkrantz
+
+        * moved "allow windows above fullscreen windows" option to geometry settings dialog
+        * fix filemanager efreet cache listeners and updates
+
+2013-02-05 Mike Blumenkrantz
+
+        * fix bug where edge flips would stop functioning after dragging to an invalid edge containing a shelf
+        * remove unnecessary shelf deletion when changing resolution
+
+2013-02-04 Mike Blumenkrantz
+
+        * fix possible crash in xkb rule parsing
+        * fix list update on deletion of personal app launchers
+        * fix button toggling in personal app launchers dialog
+
+2013-02-01 Mike Blumenkrantz
+
+        * fixed leak in profile list dbus method
+        * fixed behavior of Up/Down keys in filemanager when typebuf was visible
+
 2013-01-31 Mike Blumenkrantz
 
+        * fixed a number of bugs where keyboard layouts could not be applied or selected
+        * filemanager now ignores changes to .part files
+        * fixed opening of links in filemanager in some cases
+        * fixed window autoraise triggering from pointer slide
         * 0.17.1 release
 
 2013-01-29 Mike Blumenkrantz

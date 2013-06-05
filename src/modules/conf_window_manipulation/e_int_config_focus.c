@@ -31,7 +31,6 @@ struct _E_Config_Dialog_Data
    double auto_raise_delay;
    int border_raise_on_mouse_action;
    int border_raise_on_focus;
-   int allow_above_fullscreen;
    Eina_List *autoraise_list;
 };
 
@@ -85,7 +84,6 @@ _fill_data(E_Config_Dialog_Data *cfdata)
    cfdata->border_raise_on_mouse_action = 
      e_config->border_raise_on_mouse_action;
    cfdata->border_raise_on_focus = e_config->border_raise_on_focus;
-   cfdata->allow_above_fullscreen = e_config->allow_above_fullscreen;
 }
 
 static void *
@@ -186,7 +184,6 @@ _advanced_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
    e_config->auto_raise_delay = cfdata->auto_raise_delay;
    e_config->border_raise_on_mouse_action = cfdata->border_raise_on_mouse_action;
    e_config->border_raise_on_focus = cfdata->border_raise_on_focus;
-   e_config->allow_above_fullscreen = cfdata->allow_above_fullscreen;
    e_border_button_bindings_grab_all();
    e_config_save_queue();
    return 1; /* Apply was OK */
@@ -207,8 +204,7 @@ _advanced_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *c
 	   (e_config->use_auto_raise != cfdata->use_auto_raise) ||
 	   (e_config->auto_raise_delay != cfdata->auto_raise_delay) ||
 	   (e_config->border_raise_on_mouse_action != cfdata->border_raise_on_mouse_action) ||
-	   (e_config->border_raise_on_focus != cfdata->border_raise_on_focus) ||
-	   (e_config->allow_above_fullscreen != cfdata->allow_above_fullscreen));
+	   (e_config->border_raise_on_focus != cfdata->border_raise_on_focus));
 }
 
 /**--GUI--**/
@@ -298,9 +294,6 @@ _advanced_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Da
    ob = e_widget_check_add(evas, _("Raise when focusing"), 
                            &(cfdata->border_raise_on_focus));
    e_widget_framelist_object_append(of, ob);
-   ob = e_widget_check_add(evas, _("Allow windows above fullscreen window"), 
-                           &(cfdata->allow_above_fullscreen));
-   e_widget_framelist_object_append(of, ob);
    e_widget_list_object_append(ol, of, 1, 0, 0.5);
    e_widget_toolbook_page_append(otb, NULL, _("Stacking"), ol, 
                                  1, 0, 1, 0, 0.5, 0.0);
@@ -341,7 +334,7 @@ _advanced_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Da
     * make sense to have one but not the other.
     */
 
-   ob = e_widget_check_add(evas, _("Slide pointer to a new focused window"), 
+   ob = e_widget_check_add(evas, _("Slide pointer to a new window which is focused"), 
                            &(cfdata->pointer_slide));
    e_widget_framelist_object_append(of, ob);
    e_widget_list_object_append(ol, of, 1, 0, 0.5);

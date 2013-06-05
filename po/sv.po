@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Enlightenment E17\n"
 "Report-Msgid-Bugs-To: enlightenment-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2013-01-30 13:25+0000\n"
+"POT-Creation-Date: 2013-05-11 17:07-0300\n"
 "PO-Revision-Date: 2009-03-08 02:01+0000\n"
 "Last-Translator: ersi <Unknown>\n"
 "Language-Team: Swedish\n"
@@ -20,8 +20,8 @@ msgstr ""
 msgid "About Enlightenment"
 msgstr "Om Enlightenment"
 
-#: src/bin/e_about.c:20 src/bin/e_actions.c:2987 src/bin/e_config_dialog.c:288
-#: src/bin/e_fm.c:1059 src/bin/e_int_border_menu.c:194
+#: src/bin/e_about.c:20 src/bin/e_actions.c:2992 src/bin/e_config_dialog.c:288
+#: src/bin/e_fm.c:1058 src/bin/e_int_border_menu.c:194
 #: src/bin/e_int_border_prop.c:81 src/bin/e_theme_about.c:24
 #: src/modules/conf/e_conf.c:179
 #: src/modules/conf_edgebindings/e_int_config_edgebindings.c:877
@@ -30,8 +30,8 @@ msgstr "Om Enlightenment"
 msgid "Close"
 msgstr "Stäng"
 
-#: src/bin/e_about.c:21 src/bin/e_actions.c:3362 src/bin/e_actions.c:3366
-#: src/bin/e_actions.c:3370 src/bin/e_int_menus.c:224 src/bin/e_main.c:619
+#: src/bin/e_about.c:21 src/bin/e_actions.c:3367 src/bin/e_actions.c:3371
+#: src/bin/e_actions.c:3375 src/bin/e_int_menus.c:223 src/bin/e_main.c:619
 #: src/modules/conf_interaction/e_int_config_mouse.c:192
 #: src/modules/conf_window_remembers/e_int_config_remembers.c:240
 #: src/modules/wizard/page_000.c:34
@@ -66,7 +66,7 @@ msgstr ""
 msgid "Are you sure you want to kill this window?"
 msgstr "Är du säker på att du vill döda det här fönstret?"
 
-#: src/bin/e_actions.c:375 src/bin/e_actions.c:2992
+#: src/bin/e_actions.c:375 src/bin/e_actions.c:2997
 #: src/bin/e_int_border_menu.c:749
 msgid "Kill"
 msgstr "Döda"
@@ -74,13 +74,13 @@ msgstr "Döda"
 #: src/bin/e_actions.c:377 src/bin/e_actions.c:2128 src/bin/e_actions.c:2222
 #: src/bin/e_actions.c:2282 src/bin/e_actions.c:2342 src/bin/e_actions.c:2407
 #: src/bin/e_actions.c:2472 src/bin/e_confirm_dialog.c:53
-#: src/bin/e_desklock.c:1313 src/bin/e_fm.c:10412 src/bin/e_fm.c:10778
+#: src/bin/e_desklock.c:1313 src/bin/e_fm.c:10424 src/bin/e_fm.c:10790
 #: src/bin/e_screensaver.c:191
 #: src/modules/quickaccess/e_mod_quickaccess.c:1267
 msgid "No"
 msgstr "Nej"
 
-#: src/bin/e_actions.c:2123 src/bin/e_actions.c:3366 src/bin/e_int_menus.c:253
+#: src/bin/e_actions.c:2123 src/bin/e_actions.c:3371 src/bin/e_int_menus.c:252
 msgid "Exit"
 msgstr "Avsluta"
 
@@ -92,7 +92,7 @@ msgstr "Är du säker på att du vill avsluta?"
 #: src/bin/e_actions.c:2126 src/bin/e_actions.c:2220 src/bin/e_actions.c:2280
 #: src/bin/e_actions.c:2340 src/bin/e_actions.c:2405 src/bin/e_actions.c:2470
 #: src/bin/e_confirm_dialog.c:52 src/bin/e_desklock.c:1311
-#: src/bin/e_fm.c:10415 src/bin/e_screensaver.c:189
+#: src/bin/e_fm.c:10427 src/bin/e_screensaver.c:189
 #: src/modules/quickaccess/e_mod_quickaccess.c:1267
 msgid "Yes"
 msgstr "Ja"
@@ -117,7 +117,7 @@ msgstr "Stäng"
 msgid "Are you sure you want to power off your computer?"
 msgstr "Vill du verkligen logga ut?"
 
-#: src/bin/e_actions.c:2337 src/bin/e_actions.c:3409
+#: src/bin/e_actions.c:2337 src/bin/e_actions.c:3414
 msgid "Reboot"
 msgstr "Starta om"
 
@@ -126,7 +126,7 @@ msgstr "Starta om"
 msgid "Are you sure you want to reboot your computer?"
 msgstr "Är du säker på att du vill starta om?"
 
-#: src/bin/e_actions.c:2402 src/bin/e_actions.c:3417
+#: src/bin/e_actions.c:2402 src/bin/e_actions.c:3422
 msgid "Suspend"
 msgstr "Vänteläge"
 
@@ -135,7 +135,7 @@ msgstr "Vänteläge"
 msgid "Are you sure you want to suspend your computer?"
 msgstr "Vill du verkligen logga ut?"
 
-#: src/bin/e_actions.c:2467 src/bin/e_actions.c:3421
+#: src/bin/e_actions.c:2467 src/bin/e_actions.c:3426
 #: src/modules/conf_keybindings/e_int_config_acpibindings.c:379
 msgid "Hibernate"
 msgstr "Viloläge"
@@ -145,190 +145,190 @@ msgstr "Viloläge"
 msgid "Are you sure you want to hibernate your computer?"
 msgstr "Är du säker att du vill försätta datorn i viloläge?"
 
-#: src/bin/e_actions.c:2947 src/bin/e_actions.c:2958 src/bin/e_actions.c:2977
-#: src/bin/e_actions.c:2982 src/bin/e_actions.c:2987 src/bin/e_actions.c:2992
-#: src/bin/e_actions.c:3278 src/bin/e_actions.c:3282 src/bin/e_actions.c:3287
-#: src/bin/e_actions.c:3293 src/bin/e_actions.c:3299 src/bin/e_actions.c:3305
+#: src/bin/e_actions.c:2952 src/bin/e_actions.c:2963 src/bin/e_actions.c:2982
+#: src/bin/e_actions.c:2987 src/bin/e_actions.c:2992 src/bin/e_actions.c:2997
+#: src/bin/e_actions.c:3283 src/bin/e_actions.c:3287 src/bin/e_actions.c:3292
+#: src/bin/e_actions.c:3298 src/bin/e_actions.c:3304 src/bin/e_actions.c:3310
 #: src/modules/shot/e_mod_main.c:987
 msgid "Window : Actions"
 msgstr "Fönster : Händelser"
 
-#: src/bin/e_actions.c:2947 src/bin/e_fm.c:11543
+#: src/bin/e_actions.c:2952 src/bin/e_fm.c:11555
 #: src/bin/e_int_border_menu.c:669
 msgid "Move"
 msgstr "Flytta"
 
-#: src/bin/e_actions.c:2958 src/bin/e_int_border_menu.c:683
+#: src/bin/e_actions.c:2963 src/bin/e_int_border_menu.c:683
 msgid "Resize"
 msgstr "Ändra storlek"
 
-#: src/bin/e_actions.c:2969 src/bin/e_actions.c:3333 src/bin/e_actions.c:3335
-#: src/bin/e_actions.c:3337 src/bin/e_actions.c:3339 src/bin/e_actions.c:3341
+#: src/bin/e_actions.c:2974 src/bin/e_actions.c:3338 src/bin/e_actions.c:3340
+#: src/bin/e_actions.c:3342 src/bin/e_actions.c:3344 src/bin/e_actions.c:3346
 #: src/modules/comp/e_mod_config.c:452 src/modules/comp/e_mod_config.c:757
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:336
 msgid "Menu"
 msgstr "Meny"
 
-#: src/bin/e_actions.c:2969
+#: src/bin/e_actions.c:2974
 msgid "Window Menu"
 msgstr "Fönstermeny"
 
-#: src/bin/e_actions.c:2977 src/bin/e_int_border_menu.c:1052
+#: src/bin/e_actions.c:2982 src/bin/e_int_border_menu.c:1052
 #: src/modules/winlist/e_int_config_winlist.c:216
 msgid "Raise"
 msgstr "Höj"
 
-#: src/bin/e_actions.c:2982 src/bin/e_int_border_menu.c:1060
+#: src/bin/e_actions.c:2987 src/bin/e_int_border_menu.c:1060
 msgid "Lower"
 msgstr "Sänk"
 
-#: src/bin/e_actions.c:2997 src/bin/e_actions.c:3001 src/bin/e_actions.c:3006
-#: src/bin/e_actions.c:3010 src/bin/e_actions.c:3015 src/bin/e_actions.c:3019
-#: src/bin/e_actions.c:3025 src/bin/e_actions.c:3027 src/bin/e_actions.c:3030
-#: src/bin/e_actions.c:3033 src/bin/e_actions.c:3036 src/bin/e_actions.c:3039
-#: src/bin/e_actions.c:3041 src/bin/e_actions.c:3043 src/bin/e_actions.c:3045
-#: src/bin/e_actions.c:3052 src/bin/e_actions.c:3054 src/bin/e_actions.c:3056
-#: src/bin/e_actions.c:3058 src/bin/e_actions.c:3060 src/bin/e_actions.c:3064
-#: src/bin/e_actions.c:3069 src/bin/e_actions.c:3074 src/bin/e_actions.c:3080
-#: src/bin/e_actions.c:3086
+#: src/bin/e_actions.c:3002 src/bin/e_actions.c:3006 src/bin/e_actions.c:3011
+#: src/bin/e_actions.c:3015 src/bin/e_actions.c:3020 src/bin/e_actions.c:3024
+#: src/bin/e_actions.c:3030 src/bin/e_actions.c:3032 src/bin/e_actions.c:3035
+#: src/bin/e_actions.c:3038 src/bin/e_actions.c:3041 src/bin/e_actions.c:3044
+#: src/bin/e_actions.c:3046 src/bin/e_actions.c:3048 src/bin/e_actions.c:3050
+#: src/bin/e_actions.c:3057 src/bin/e_actions.c:3059 src/bin/e_actions.c:3061
+#: src/bin/e_actions.c:3063 src/bin/e_actions.c:3065 src/bin/e_actions.c:3069
+#: src/bin/e_actions.c:3074 src/bin/e_actions.c:3079 src/bin/e_actions.c:3085
+#: src/bin/e_actions.c:3091
 msgid "Window : State"
 msgstr "Fönster : Tillstånd"
 
-#: src/bin/e_actions.c:2997
+#: src/bin/e_actions.c:3002
 msgid "Sticky Mode Toggle"
 msgstr "Gör klibbig"
 
-#: src/bin/e_actions.c:3001
+#: src/bin/e_actions.c:3006
 #, fuzzy
 msgid "Sticky Mode Enable"
 msgstr "Gör klibbig"
 
-#: src/bin/e_actions.c:3006
+#: src/bin/e_actions.c:3011
 msgid "Iconic Mode Toggle"
 msgstr "Minimera"
 
-#: src/bin/e_actions.c:3010
+#: src/bin/e_actions.c:3015
 #, fuzzy
 msgid "Iconic Mode Enable"
 msgstr "Minimera"
 
-#: src/bin/e_actions.c:3015
+#: src/bin/e_actions.c:3020
 msgid "Fullscreen Mode Toggle"
 msgstr "Aktivera helskärmsläge"
 
-#: src/bin/e_actions.c:3019
+#: src/bin/e_actions.c:3024
 #, fuzzy
 msgid "Fullscreen Mode Enable"
 msgstr "Aktivera helskärmsläge"
 
-#: src/bin/e_actions.c:3025 src/bin/e_int_border_menu.c:384
+#: src/bin/e_actions.c:3030 src/bin/e_int_border_menu.c:384
 #: src/bin/e_int_border_menu.c:644
 msgid "Maximize"
 msgstr "Maximera"
 
-#: src/bin/e_actions.c:3027 src/bin/e_int_border_menu.c:395
+#: src/bin/e_actions.c:3032 src/bin/e_int_border_menu.c:395
 msgid "Maximize Vertically"
 msgstr "Maximera vertikalt"
 
-#: src/bin/e_actions.c:3030 src/bin/e_int_border_menu.c:406
+#: src/bin/e_actions.c:3035 src/bin/e_int_border_menu.c:406
 msgid "Maximize Horizontally"
 msgstr "Maximera horisontalt"
 
-#: src/bin/e_actions.c:3033 src/bin/e_int_border_menu.c:417
+#: src/bin/e_actions.c:3038 src/bin/e_int_border_menu.c:417
 #, fuzzy
 msgid "Maximize Left"
 msgstr "Maximera"
 
-#: src/bin/e_actions.c:3036 src/bin/e_int_border_menu.c:428
+#: src/bin/e_actions.c:3041 src/bin/e_int_border_menu.c:428
 #, fuzzy
 msgid "Maximize Right"
 msgstr "Maximera"
 
-#: src/bin/e_actions.c:3039
+#: src/bin/e_actions.c:3044
 msgid "Maximize Fullscreen"
 msgstr "Maximera helskärm"
 
-#: src/bin/e_actions.c:3041
+#: src/bin/e_actions.c:3046
 msgid "Maximize Mode \"Smart\""
 msgstr "Maximeringspolicy \"Smart\""
 
-#: src/bin/e_actions.c:3043
+#: src/bin/e_actions.c:3048
 msgid "Maximize Mode \"Expand\""
 msgstr "Maximeringspolicy \"Expandera\""
 
-#: src/bin/e_actions.c:3045
+#: src/bin/e_actions.c:3050
 msgid "Maximize Mode \"Fill\""
 msgstr "Maximeringspolicy \"Fyll\""
 
-#: src/bin/e_actions.c:3052
+#: src/bin/e_actions.c:3057
 #, fuzzy
 msgid "Shade Up Mode Toggle"
 msgstr "Shade up Funktionen Växla"
 
-#: src/bin/e_actions.c:3054
+#: src/bin/e_actions.c:3059
 #, fuzzy
 msgid "Shade Down Mode Toggle"
 msgstr "Shade Down Mode Växla"
 
-#: src/bin/e_actions.c:3056
+#: src/bin/e_actions.c:3061
 #, fuzzy
 msgid "Shade Left Mode Toggle"
 msgstr "Shade Vänster läge Växla"
 
-#: src/bin/e_actions.c:3058
+#: src/bin/e_actions.c:3063
 #, fuzzy
 msgid "Shade Right Mode Toggle"
 msgstr "Shade Rätt läge Växla"
 
-#: src/bin/e_actions.c:3060
+#: src/bin/e_actions.c:3065
 #, fuzzy
 msgid "Shade Mode Toggle"
 msgstr "Shade läge Växla"
 
-#: src/bin/e_actions.c:3064
+#: src/bin/e_actions.c:3069
 #, fuzzy
 msgid "Set Shaded State"
 msgstr "Skuggat"
 
-#: src/bin/e_actions.c:3065
+#: src/bin/e_actions.c:3070
 msgid "syntax: \"(0|1) (up|down|left|right)\""
 msgstr ""
 
-#: src/bin/e_actions.c:3069
+#: src/bin/e_actions.c:3074
 msgid "Toggle Borderless State"
 msgstr "Gör ramlös"
 
-#: src/bin/e_actions.c:3074
+#: src/bin/e_actions.c:3079
 #, fuzzy
 msgid "Set Border"
 msgstr "Ram"
 
-#: src/bin/e_actions.c:3080
+#: src/bin/e_actions.c:3085
 #, fuzzy
 msgid "Cycle between Borders"
 msgstr "Växla mellan Borders"
 
-#: src/bin/e_actions.c:3086
+#: src/bin/e_actions.c:3091
 #, fuzzy
 msgid "Toggle Pinned State"
 msgstr "Toggle Pinnat där"
 
-#: src/bin/e_actions.c:3091 src/bin/e_actions.c:3093 src/bin/e_actions.c:3095
-#: src/bin/e_actions.c:3097 src/bin/e_actions.c:3099 src/bin/e_actions.c:3105
-#: src/bin/e_actions.c:3110 src/bin/e_actions.c:3116 src/bin/e_actions.c:3121
-#: src/bin/e_actions.c:3127 src/bin/e_actions.c:3133 src/bin/e_actions.c:3135
-#: src/bin/e_actions.c:3137 src/bin/e_actions.c:3139 src/bin/e_actions.c:3141
-#: src/bin/e_actions.c:3143 src/bin/e_actions.c:3145 src/bin/e_actions.c:3147
-#: src/bin/e_actions.c:3149 src/bin/e_actions.c:3151 src/bin/e_actions.c:3153
-#: src/bin/e_actions.c:3155 src/bin/e_actions.c:3157 src/bin/e_actions.c:3163
-#: src/bin/e_actions.c:3165 src/bin/e_actions.c:3167 src/bin/e_actions.c:3169
-#: src/bin/e_actions.c:3171 src/bin/e_actions.c:3177 src/bin/e_actions.c:3183
-#: src/bin/e_actions.c:3189 src/bin/e_actions.c:3194 src/bin/e_actions.c:3196
-#: src/bin/e_actions.c:3198 src/bin/e_actions.c:3200 src/bin/e_actions.c:3202
-#: src/bin/e_actions.c:3204 src/bin/e_actions.c:3206 src/bin/e_actions.c:3208
-#: src/bin/e_actions.c:3210 src/bin/e_actions.c:3212 src/bin/e_actions.c:3214
-#: src/bin/e_actions.c:3216 src/bin/e_actions.c:3218 src/bin/e_actions.c:3433
-#: src/bin/e_actions.c:3438 src/bin/e_int_menus.c:186
+#: src/bin/e_actions.c:3096 src/bin/e_actions.c:3098 src/bin/e_actions.c:3100
+#: src/bin/e_actions.c:3102 src/bin/e_actions.c:3104 src/bin/e_actions.c:3110
+#: src/bin/e_actions.c:3115 src/bin/e_actions.c:3121 src/bin/e_actions.c:3126
+#: src/bin/e_actions.c:3132 src/bin/e_actions.c:3138 src/bin/e_actions.c:3140
+#: src/bin/e_actions.c:3142 src/bin/e_actions.c:3144 src/bin/e_actions.c:3146
+#: src/bin/e_actions.c:3148 src/bin/e_actions.c:3150 src/bin/e_actions.c:3152
+#: src/bin/e_actions.c:3154 src/bin/e_actions.c:3156 src/bin/e_actions.c:3158
+#: src/bin/e_actions.c:3160 src/bin/e_actions.c:3162 src/bin/e_actions.c:3168
+#: src/bin/e_actions.c:3170 src/bin/e_actions.c:3172 src/bin/e_actions.c:3174
+#: src/bin/e_actions.c:3176 src/bin/e_actions.c:3182 src/bin/e_actions.c:3188
+#: src/bin/e_actions.c:3194 src/bin/e_actions.c:3199 src/bin/e_actions.c:3201
+#: src/bin/e_actions.c:3203 src/bin/e_actions.c:3205 src/bin/e_actions.c:3207
+#: src/bin/e_actions.c:3209 src/bin/e_actions.c:3211 src/bin/e_actions.c:3213
+#: src/bin/e_actions.c:3215 src/bin/e_actions.c:3217 src/bin/e_actions.c:3219
+#: src/bin/e_actions.c:3221 src/bin/e_actions.c:3223 src/bin/e_actions.c:3438
+#: src/bin/e_actions.c:3443 src/bin/e_int_menus.c:185
 #: src/bin/e_int_shelf_config.c:267 src/modules/comp/e_mod_config.c:444
 #: src/modules/comp/e_mod_config.c:749
 #: src/modules/conf_window_manipulation/e_int_config_clientlist.c:101
@@ -336,186 +336,186 @@ msgstr "Toggle Pinnat där"
 msgid "Desktop"
 msgstr "Skrivbord"
 
-#: src/bin/e_actions.c:3091
+#: src/bin/e_actions.c:3096
 msgid "Flip Desktop Left"
 msgstr "Vänd skrivbord åt vänster"
 
-#: src/bin/e_actions.c:3093
+#: src/bin/e_actions.c:3098
 msgid "Flip Desktop Right"
 msgstr "Vänd skrivbord åt höger"
 
-#: src/bin/e_actions.c:3095
+#: src/bin/e_actions.c:3100
 msgid "Flip Desktop Up"
 msgstr "Vänd skrivbord uppåt"
 
-#: src/bin/e_actions.c:3097
+#: src/bin/e_actions.c:3102
 msgid "Flip Desktop Down"
 msgstr "Vänd skrivbord nedåt"
 
-#: src/bin/e_actions.c:3099
+#: src/bin/e_actions.c:3104
 msgid "Flip Desktop By..."
 msgstr "Vänd skrivbord med..."
 
-#: src/bin/e_actions.c:3105
+#: src/bin/e_actions.c:3110
 #, fuzzy
 msgid "Flip To Previous Desktop"
 msgstr "Till föregående skrivbord"
 
-#: src/bin/e_actions.c:3110
+#: src/bin/e_actions.c:3115
 msgid "Show The Desktop"
 msgstr "Visa skrivbordet"
 
-#: src/bin/e_actions.c:3116
+#: src/bin/e_actions.c:3121
 msgid "Show The Shelf"
 msgstr "Visa hyllan"
 
-#: src/bin/e_actions.c:3121
+#: src/bin/e_actions.c:3126
 msgid "Flip Desktop To..."
 msgstr "Vänd skrivbord till..."
 
-#: src/bin/e_actions.c:3127
+#: src/bin/e_actions.c:3132
 msgid "Flip Desktop Linearly..."
 msgstr "Vänd skrivbord linjärt..."
 
-#: src/bin/e_actions.c:3133
+#: src/bin/e_actions.c:3138
 msgid "Switch To Desktop 0"
 msgstr "Byt till skrivbord 0"
 
-#: src/bin/e_actions.c:3135
+#: src/bin/e_actions.c:3140
 msgid "Switch To Desktop 1"
 msgstr "Byt till skrivbord 1"
 
-#: src/bin/e_actions.c:3137
+#: src/bin/e_actions.c:3142
 msgid "Switch To Desktop 2"
 msgstr "Byt till skrivbord 2"
 
-#: src/bin/e_actions.c:3139
+#: src/bin/e_actions.c:3144
 msgid "Switch To Desktop 3"
 msgstr "Byt till skrivbord 3"
 
-#: src/bin/e_actions.c:3141
+#: src/bin/e_actions.c:3146
 msgid "Switch To Desktop 4"
 msgstr "Byt till skrivbord 4"
 
-#: src/bin/e_actions.c:3143
+#: src/bin/e_actions.c:3148
 msgid "Switch To Desktop 5"
 msgstr "Byt till skrivbord 5"
 
-#: src/bin/e_actions.c:3145
+#: src/bin/e_actions.c:3150
 msgid "Switch To Desktop 6"
 msgstr "Byt till skrivbord 6"
 
-#: src/bin/e_actions.c:3147
+#: src/bin/e_actions.c:3152
 msgid "Switch To Desktop 7"
 msgstr "Byt till skrivbord 7"
 
-#: src/bin/e_actions.c:3149
+#: src/bin/e_actions.c:3154
 msgid "Switch To Desktop 8"
 msgstr "Byt till skrivbord 8"
 
-#: src/bin/e_actions.c:3151
+#: src/bin/e_actions.c:3156
 msgid "Switch To Desktop 9"
 msgstr "Byt till skrivbord 9"
 
-#: src/bin/e_actions.c:3153
+#: src/bin/e_actions.c:3158
 msgid "Switch To Desktop 10"
 msgstr "Byt till skrivbord 10"
 
-#: src/bin/e_actions.c:3155
+#: src/bin/e_actions.c:3160
 msgid "Switch To Desktop 11"
 msgstr "Byt till skrivbord 11"
 
-#: src/bin/e_actions.c:3157
+#: src/bin/e_actions.c:3162
 msgid "Switch To Desktop..."
 msgstr "Byt till skrivbord..."
 
-#: src/bin/e_actions.c:3163
+#: src/bin/e_actions.c:3168
 msgid "Flip Desktop Left (All Screens)"
 msgstr "Vänd skrivbord vänster (Alla skärmar)"
 
-#: src/bin/e_actions.c:3165
+#: src/bin/e_actions.c:3170
 msgid "Flip Desktop Right (All Screens)"
 msgstr "Vänd skrivbord höger (Alla skärmar)"
 
-#: src/bin/e_actions.c:3167
+#: src/bin/e_actions.c:3172
 msgid "Flip Desktop Up (All Screens)"
 msgstr "Vänd skrivbord uppåt (Alla skärmar)"
 
-#: src/bin/e_actions.c:3169
+#: src/bin/e_actions.c:3174
 msgid "Flip Desktop Down (All Screens)"
 msgstr "Vänd skrivbord nedåt (Alla skärmar)"
 
-#: src/bin/e_actions.c:3171
+#: src/bin/e_actions.c:3176
 #, fuzzy
 msgid "Flip Desktop By... (All Screens)"
 msgstr "Vänd Desktop den ... (Alla skärmar."
 
-#: src/bin/e_actions.c:3177
+#: src/bin/e_actions.c:3182
 msgid "Flip Desktop To... (All Screens)"
 msgstr "Vänd skrivbord till... (Alla skärmar)"
 
-#: src/bin/e_actions.c:3183
+#: src/bin/e_actions.c:3188
 msgid "Flip Desktop Linearly... (All Screens)"
 msgstr "Vänd skrivbort linjärt... (Alla skärmar)"
 
-#: src/bin/e_actions.c:3189
+#: src/bin/e_actions.c:3194
 #, fuzzy
 msgid "Flip Desktop In Direction..."
 msgstr "Vänd Desktop i ordning ..."
 
-#: src/bin/e_actions.c:3194
+#: src/bin/e_actions.c:3199
 msgid "Switch To Desktop 0 (All Screens)"
 msgstr "Byt till skrivbord 0 (Alla skärmar)"
 
-#: src/bin/e_actions.c:3196
+#: src/bin/e_actions.c:3201
 msgid "Switch To Desktop 1 (All Screens)"
 msgstr "Byt till skrivbord 1 (Alla skärmar)"
 
-#: src/bin/e_actions.c:3198
+#: src/bin/e_actions.c:3203
 msgid "Switch To Desktop 2 (All Screens)"
 msgstr "Byt till skrivbord 2 (Alla skärmar)"
 
-#: src/bin/e_actions.c:3200
+#: src/bin/e_actions.c:3205
 msgid "Switch To Desktop 3 (All Screens)"
 msgstr "Byt till skrivbord 3 (Alla skärmar)"
 
-#: src/bin/e_actions.c:3202
+#: src/bin/e_actions.c:3207
 msgid "Switch To Desktop 4 (All Screens)"
 msgstr "Byt till skrivbord 4 (Alla skärmar)"
 
-#: src/bin/e_actions.c:3204
+#: src/bin/e_actions.c:3209
 msgid "Switch To Desktop 5 (All Screens)"
 msgstr "Byt till skrivbord 5 (Alla skärmar)"
 
-#: src/bin/e_actions.c:3206
+#: src/bin/e_actions.c:3211
 msgid "Switch To Desktop 6 (All Screens)"
 msgstr "Byt till skrivbord 6 (Alla skärmar)"
 
-#: src/bin/e_actions.c:3208
+#: src/bin/e_actions.c:3213
 msgid "Switch To Desktop 7 (All Screens)"
 msgstr "Byt till skrivbord 7 (Alla skärmar)"
 
-#: src/bin/e_actions.c:3210
+#: src/bin/e_actions.c:3215
 msgid "Switch To Desktop 8 (All Screens)"
 msgstr "Byt till skrivbord 8 (Alla skärmar)"
 
-#: src/bin/e_actions.c:3212
+#: src/bin/e_actions.c:3217
 msgid "Switch To Desktop 9 (All Screens)"
 msgstr "Byt till skrivbord 9 (Alla skärmar)"
 
-#: src/bin/e_actions.c:3214
+#: src/bin/e_actions.c:3219
 msgid "Switch To Desktop 10 (All Screens)"
 msgstr "Byt till skrivbord 10 (Alla skärmar)"
 
-#: src/bin/e_actions.c:3216
+#: src/bin/e_actions.c:3221
 msgid "Switch To Desktop 11 (All Screens)"
 msgstr "Byt till skrivbord 11 (Alla skärmar)"
 
-#: src/bin/e_actions.c:3218
+#: src/bin/e_actions.c:3223
 msgid "Switch To Desktop... (All Screens)"
 msgstr "Byt till skrivbord... (Alla skärmar)"
 
-#: src/bin/e_actions.c:3224 src/bin/e_actions.c:3228
+#: src/bin/e_actions.c:3229 src/bin/e_actions.c:3233
 #: src/modules/winlist/e_mod_main.c:41 src/modules/winlist/e_mod_main.c:43
 #: src/modules/winlist/e_mod_main.c:45 src/modules/winlist/e_mod_main.c:48
 #: src/modules/winlist/e_mod_main.c:51 src/modules/winlist/e_mod_main.c:54
@@ -524,20 +524,20 @@ msgstr "Byt till skrivbord... (Alla skärmar)"
 msgid "Window : List"
 msgstr "Fönster : Lista"
 
-#: src/bin/e_actions.c:3224
+#: src/bin/e_actions.c:3229
 #, fuzzy
 msgid "Jump to window..."
 msgstr "Hoppa till skrivbordet"
 
-#: src/bin/e_actions.c:3228
+#: src/bin/e_actions.c:3233
 msgid "Jump to window... or start..."
 msgstr ""
 
-#: src/bin/e_actions.c:3235 src/bin/e_actions.c:3237 src/bin/e_actions.c:3239
-#: src/bin/e_actions.c:3245 src/bin/e_actions.c:3247 src/bin/e_actions.c:3249
-#: src/bin/e_actions.c:3254 src/bin/e_actions.c:3257 src/bin/e_actions.c:3260
-#: src/bin/e_actions.c:3262 src/bin/e_actions.c:3264 src/bin/e_actions.c:3266
-#: src/bin/e_actions.c:3269 src/bin/e_actions.c:3271 src/bin/e_actions.c:3273
+#: src/bin/e_actions.c:3240 src/bin/e_actions.c:3242 src/bin/e_actions.c:3244
+#: src/bin/e_actions.c:3250 src/bin/e_actions.c:3252 src/bin/e_actions.c:3254
+#: src/bin/e_actions.c:3259 src/bin/e_actions.c:3262 src/bin/e_actions.c:3265
+#: src/bin/e_actions.c:3267 src/bin/e_actions.c:3269 src/bin/e_actions.c:3271
+#: src/bin/e_actions.c:3274 src/bin/e_actions.c:3276 src/bin/e_actions.c:3278
 #: src/modules/backlight/e_mod_main.c:509
 #: src/modules/conf_display/e_mod_main.c:17
 #: src/modules/conf_randr/e_mod_main.c:19 src/modules/ibox/e_mod_config.c:135
@@ -545,226 +545,226 @@ msgstr ""
 msgid "Screen"
 msgstr "Skärm"
 
-#: src/bin/e_actions.c:3235
+#: src/bin/e_actions.c:3240
 msgid "Send Mouse To Screen 0"
 msgstr "Skicka musen till skärm 0"
 
-#: src/bin/e_actions.c:3237
+#: src/bin/e_actions.c:3242
 msgid "Send Mouse To Screen 1"
 msgstr "Skicka musen till skärm 1"
 
-#: src/bin/e_actions.c:3239
+#: src/bin/e_actions.c:3244
 msgid "Send Mouse To Screen..."
 msgstr "Skicka musen till skärm..."
 
-#: src/bin/e_actions.c:3245
+#: src/bin/e_actions.c:3250
 msgid "Send Mouse Forward 1 Screen"
 msgstr "Skicka musen 1 skärm framåt"
 
-#: src/bin/e_actions.c:3247
+#: src/bin/e_actions.c:3252
 msgid "Send Mouse Back 1 Screen"
 msgstr "Skicka musen 1 skärm bakåt"
 
-#: src/bin/e_actions.c:3249
+#: src/bin/e_actions.c:3254
 msgid "Send Mouse Forward/Back Screens..."
 msgstr "Skicka musen till skärmen framför/bakom..."
 
-#: src/bin/e_actions.c:3254
+#: src/bin/e_actions.c:3259
 #, fuzzy
 msgid "Dim"
 msgstr "Dim"
 
-#: src/bin/e_actions.c:3257
+#: src/bin/e_actions.c:3262
 #, fuzzy
 msgid "Undim"
 msgstr "bländningsräknaren"
 
-#: src/bin/e_actions.c:3260
+#: src/bin/e_actions.c:3265
 #, fuzzy
 msgid "Backlight Set"
 msgstr "bakgrundsbelysning Set"
 
-#: src/bin/e_actions.c:3262
+#: src/bin/e_actions.c:3267
 #, fuzzy
 msgid "Backlight Min"
 msgstr "bakgrundsbelysning Min"
 
-#: src/bin/e_actions.c:3264
+#: src/bin/e_actions.c:3269
 #, fuzzy
 msgid "Backlight Mid"
 msgstr "bakgrundsljus Mid"
 
-#: src/bin/e_actions.c:3266
+#: src/bin/e_actions.c:3271
 #, fuzzy
 msgid "Backlight Max"
 msgstr "bakgrundsbelysning Max"
 
-#: src/bin/e_actions.c:3269
+#: src/bin/e_actions.c:3274
 #, fuzzy
 msgid "Backlight Adjust"
 msgstr "bakgrundsbelysning Justera"
 
-#: src/bin/e_actions.c:3271
+#: src/bin/e_actions.c:3276
 #, fuzzy
 msgid "Backlight Up"
 msgstr "bakgrundsbelysning Up"
 
-#: src/bin/e_actions.c:3273
+#: src/bin/e_actions.c:3278
 #, fuzzy
 msgid "Backlight Down"
 msgstr "bakgrundsbelysning fallande"
 
-#: src/bin/e_actions.c:3278
+#: src/bin/e_actions.c:3283
 #, fuzzy
 msgid "Move To Center"
 msgstr "Flytta till centrum"
 
-#: src/bin/e_actions.c:3282
+#: src/bin/e_actions.c:3287
 #, fuzzy
 msgid "Move To Coordinates..."
 msgstr "Flytta till centrum"
 
-#: src/bin/e_actions.c:3287
+#: src/bin/e_actions.c:3292
 msgid "Move By Coordinate Offset..."
 msgstr ""
 
-#: src/bin/e_actions.c:3293
+#: src/bin/e_actions.c:3298
 #, fuzzy
 msgid "Resize By..."
 msgstr "Ändra storlek"
 
-#: src/bin/e_actions.c:3299
+#: src/bin/e_actions.c:3304
 #, fuzzy
 msgid "Push in Direction..."
 msgstr "Skjut i riktning ..."
 
-#: src/bin/e_actions.c:3305
+#: src/bin/e_actions.c:3310
 #, fuzzy
 msgid "Drag Icon..."
 msgstr "Skapa ikon"
 
-#: src/bin/e_actions.c:3310 src/bin/e_actions.c:3312 src/bin/e_actions.c:3314
-#: src/bin/e_actions.c:3320 src/bin/e_actions.c:3326 src/bin/e_actions.c:3328
+#: src/bin/e_actions.c:3315 src/bin/e_actions.c:3317 src/bin/e_actions.c:3319
+#: src/bin/e_actions.c:3325 src/bin/e_actions.c:3331 src/bin/e_actions.c:3333
 msgid "Window : Moving"
 msgstr "Fönster : Flytta"
 
-#: src/bin/e_actions.c:3310
+#: src/bin/e_actions.c:3315
 msgid "To Next Desktop"
 msgstr "Till nästa skrivbord"
 
-#: src/bin/e_actions.c:3312
+#: src/bin/e_actions.c:3317
 msgid "To Previous Desktop"
 msgstr "Till föregående skrivbord"
 
-#: src/bin/e_actions.c:3314
+#: src/bin/e_actions.c:3319
 msgid "By Desktop #..."
 msgstr ""
 
-#: src/bin/e_actions.c:3320
+#: src/bin/e_actions.c:3325
 msgid "To Desktop..."
 msgstr "Till skrivbord..."
 
-#: src/bin/e_actions.c:3326
+#: src/bin/e_actions.c:3331
 #, fuzzy
 msgid "To Next Screen"
 msgstr "Setup Skärmar"
 
-#: src/bin/e_actions.c:3328
+#: src/bin/e_actions.c:3333
 #, fuzzy
 msgid "To Previous Screen"
 msgstr "Till föregående skrivbord"
 
-#: src/bin/e_actions.c:3333
+#: src/bin/e_actions.c:3338
 msgid "Show Main Menu"
 msgstr "Visa huvudmenyn"
 
-#: src/bin/e_actions.c:3335
+#: src/bin/e_actions.c:3340
 msgid "Show Favorites Menu"
 msgstr "Visa favoritprogramsmenyn"
 
-#: src/bin/e_actions.c:3337
+#: src/bin/e_actions.c:3342
 #, fuzzy
 msgid "Show All Applications Menu"
 msgstr "Visa alla Program-menyn"
 
-#: src/bin/e_actions.c:3339
+#: src/bin/e_actions.c:3344
 msgid "Show Clients Menu"
 msgstr "Visa klientmeny"
 
-#: src/bin/e_actions.c:3341
+#: src/bin/e_actions.c:3346
 msgid "Show Menu..."
 msgstr "Visa meny..."
 
-#: src/bin/e_actions.c:3348 src/bin/e_actions.c:3353 src/bin/e_actions.c:3358
+#: src/bin/e_actions.c:3353 src/bin/e_actions.c:3358 src/bin/e_actions.c:3363
 #: src/modules/conf/e_mod_main.c:272
 #: src/modules/everything/evry_plug_apps.c:1169
 #: src/modules/fileman/e_mod_main.c:55
 msgid "Launch"
 msgstr "Kör"
 
-#: src/bin/e_actions.c:3348 src/bin/e_int_border_prop.c:468
+#: src/bin/e_actions.c:3353 src/bin/e_int_border_prop.c:468
 msgid "Command"
 msgstr "Kommando"
 
-#: src/bin/e_actions.c:3353 src/bin/e_eap_editor.c:698
+#: src/bin/e_actions.c:3358 src/bin/e_eap_editor.c:698
 #: src/bin/e_int_border_menu.c:118
 #, c-format
 msgid "Application"
 msgstr "Applikation"
 
-#: src/bin/e_actions.c:3358
+#: src/bin/e_actions.c:3363
 msgid "New Instance of Focused App"
 msgstr ""
 
-#: src/bin/e_actions.c:3362 src/bin/e_int_menus.c:248
+#: src/bin/e_actions.c:3367 src/bin/e_int_menus.c:247
 msgid "Restart"
 msgstr "Starta om"
 
-#: src/bin/e_actions.c:3370
+#: src/bin/e_actions.c:3375
 msgid "Exit Now"
 msgstr "Avsluta nu"
 
-#: src/bin/e_actions.c:3374 src/bin/e_actions.c:3379
+#: src/bin/e_actions.c:3379 src/bin/e_actions.c:3384
 #, fuzzy
 msgid "Enlightenment : Mode"
 msgstr "Enlightenment %s modul"
 
-#: src/bin/e_actions.c:3375
+#: src/bin/e_actions.c:3380
 #, fuzzy
 msgid "Presentation Mode Toggle"
 msgstr "Presentation läge Växla"
 
-#: src/bin/e_actions.c:3380
+#: src/bin/e_actions.c:3385
 #, fuzzy
 msgid "Offline Mode Toggle"
 msgstr "Offline-läge Växla"
 
-#: src/bin/e_actions.c:3384 src/bin/e_actions.c:3388 src/bin/e_actions.c:3392
+#: src/bin/e_actions.c:3389 src/bin/e_actions.c:3393 src/bin/e_actions.c:3397
 #, fuzzy
 msgid "Enlightenment : Module"
 msgstr "Enlightenment %s modul"
 
-#: src/bin/e_actions.c:3385
+#: src/bin/e_actions.c:3390
 #, fuzzy
 msgid "Enable the named module"
 msgstr "Enlightenment Randrmodul"
 
-#: src/bin/e_actions.c:3389
+#: src/bin/e_actions.c:3394
 msgid "Disable the named module"
 msgstr ""
 
-#: src/bin/e_actions.c:3393
+#: src/bin/e_actions.c:3398
 #, fuzzy
 msgid "Toggle the named module"
 msgstr "Gå in i redigeringsläge"
 
-#: src/bin/e_actions.c:3397 src/bin/e_actions.c:3401 src/bin/e_actions.c:3405
-#: src/bin/e_actions.c:3409 src/bin/e_actions.c:3413 src/bin/e_actions.c:3417
-#: src/bin/e_actions.c:3421 src/bin/e_actions.c:3425 src/bin/e_configure.c:411
+#: src/bin/e_actions.c:3402 src/bin/e_actions.c:3406 src/bin/e_actions.c:3410
+#: src/bin/e_actions.c:3414 src/bin/e_actions.c:3418 src/bin/e_actions.c:3422
+#: src/bin/e_actions.c:3426 src/bin/e_actions.c:3430 src/bin/e_configure.c:411
 #: src/bin/e_int_config_modules.c:52
 #: src/modules/conf_applications/e_int_config_apps.c:275
 #: src/modules/conf_display/e_int_config_desklock_fsel.c:87
-#: src/modules/conf_intl/e_int_config_imc.c:818
+#: src/modules/conf_intl/e_int_config_imc.c:808
 #: src/modules/conf_theme/e_int_config_wallpaper.c:427
 #: src/modules/conf_theme/e_int_config_wallpaper.c:581
 #: src/modules/conf_theme/e_int_config_startup.c:258
@@ -777,62 +777,62 @@ msgstr "Gå in i redigeringsläge"
 msgid "System"
 msgstr "System"
 
-#: src/bin/e_actions.c:3397
+#: src/bin/e_actions.c:3402
 msgid "Log Out"
 msgstr "Logga ut"
 
-#: src/bin/e_actions.c:3401
+#: src/bin/e_actions.c:3406
 msgid "Power Off Now"
 msgstr "Stäng av nu"
 
-#: src/bin/e_actions.c:3405
+#: src/bin/e_actions.c:3410
 msgid "Power Off"
 msgstr "Stäng av"
 
-#: src/bin/e_actions.c:3413
+#: src/bin/e_actions.c:3418
 #, fuzzy
 msgid "Suspend Now"
 msgstr "Vänteläge"
 
-#: src/bin/e_actions.c:3425
+#: src/bin/e_actions.c:3430
 #, fuzzy
 msgid "Hibernate Now"
 msgstr "Viloläge"
 
-#: src/bin/e_actions.c:3433
+#: src/bin/e_actions.c:3438
 msgid "Lock"
 msgstr "Lås"
 
-#: src/bin/e_actions.c:3438 src/bin/e_int_menus.c:1357
+#: src/bin/e_actions.c:3443 src/bin/e_int_menus.c:1327
 msgid "Cleanup Windows"
 msgstr "Städa upp fönster"
 
-#: src/bin/e_actions.c:3443
+#: src/bin/e_actions.c:3448
 #, fuzzy
 msgid "Generic : Actions"
 msgstr "Generiska ; Åtgärder"
 
-#: src/bin/e_actions.c:3443
+#: src/bin/e_actions.c:3448
 #, fuzzy
 msgid "Delayed Action"
 msgstr "fördröjd verkan"
 
-#: src/bin/e_actions.c:3451 src/bin/e_actions.c:3455 src/bin/e_actions.c:3459
+#: src/bin/e_actions.c:3456 src/bin/e_actions.c:3460 src/bin/e_actions.c:3464
 #, fuzzy
 msgid "Keyboard Layouts"
 msgstr "Tangentbordsgenväg"
 
-#: src/bin/e_actions.c:3452
+#: src/bin/e_actions.c:3457
 #, fuzzy
 msgid "Use keyboard layout"
 msgstr "Skapa Kortkommando"
 
-#: src/bin/e_actions.c:3456
+#: src/bin/e_actions.c:3461
 #, fuzzy
 msgid "Next keyboard layout"
 msgstr "Skapa Kortkommando"
 
-#: src/bin/e_actions.c:3460
+#: src/bin/e_actions.c:3465
 msgid "Previous keyboard layout"
 msgstr ""
 
@@ -850,7 +850,7 @@ msgid "Select"
 msgstr "Välj en"
 
 #: src/bin/e_color_dialog.c:47 src/bin/e_eap_editor.c:862
-#: src/bin/e_eap_editor.c:925 src/bin/e_entry_dialog.c:64 src/bin/e_fm.c:9959
+#: src/bin/e_eap_editor.c:925 src/bin/e_entry_dialog.c:64 src/bin/e_fm.c:9971
 #: src/bin/e_fm_prop.c:625 src/bin/e_import_dialog.c:196
 #: src/bin/e_import_config_dialog.c:541
 #: src/modules/conf_edgebindings/e_int_config_signalbindings.c:637
@@ -866,7 +866,7 @@ msgstr "Välj en"
 msgid "Cancel"
 msgstr "Avbryt"
 
-#: src/bin/e_config.c:1020
+#: src/bin/e_config.c:1045
 msgid ""
 "Settings data needed upgrading. Your old settings have<br>been wiped and a "
 "new set of defaults initialized. This<br>will happen regularly during "
@@ -877,7 +877,7 @@ msgid ""
 "the hiccup in your settings.<br>"
 msgstr ""
 
-#: src/bin/e_config.c:1037
+#: src/bin/e_config.c:1062
 msgid ""
 "Your settings are NEWER than Enlightenment. This is very<br>strange. This "
 "should not happen unless you downgraded<br>Enlightenment or copied the "
@@ -886,11 +886,11 @@ msgid ""
 "to<br>defaults. Sorry for the inconvenience.<br>"
 msgstr ""
 
-#: src/bin/e_config.c:1509 src/bin/e_config.c:2143
+#: src/bin/e_config.c:1580 src/bin/e_config.c:2209
 msgid "Enlightenment Settings Write Problems"
 msgstr ""
 
-#: src/bin/e_config.c:1512
+#: src/bin/e_config.c:1583
 #, c-format
 msgid ""
 "Enlightenment has had an error while moving config files<br>from:<br>"
@@ -898,10 +898,10 @@ msgid ""
 "<br>"
 msgstr ""
 
-#: src/bin/e_config.c:1522 src/bin/e_config.c:2156
+#: src/bin/e_config.c:1593 src/bin/e_config.c:2222
 #: src/bin/e_config_dialog.c:278 src/bin/e_eap_editor.c:860
 #: src/bin/e_eap_editor.c:923 src/bin/e_entry_dialog.c:63 src/bin/e_exec.c:613
-#: src/bin/e_fm.c:9958 src/bin/e_fm.c:10684 src/bin/e_fm_prop.c:624
+#: src/bin/e_fm.c:9970 src/bin/e_fm.c:10696 src/bin/e_fm_prop.c:624
 #: src/bin/e_import_config_dialog.c:540 src/bin/e_int_border_remember.c:318
 #: src/bin/e_int_border_remember.c:507 src/bin/e_module.c:431
 #: src/bin/e_module.c:798 src/bin/e_sys.c:618 src/bin/e_sys.c:659
@@ -916,21 +916,21 @@ msgstr ""
 msgid "OK"
 msgstr "OK"
 
-#: src/bin/e_config.c:2034
+#: src/bin/e_config.c:2100
 msgid "Settings Upgraded"
 msgstr "Inställningar uppdaterade"
 
-#: src/bin/e_config.c:2052
+#: src/bin/e_config.c:2118
 #, fuzzy
 msgid "The EET file handle is bad."
 msgstr "EET filhandtag är dåligt."
 
-#: src/bin/e_config.c:2056
+#: src/bin/e_config.c:2122
 #, fuzzy
 msgid "The file data is empty."
 msgstr "Filen data är tom."
 
-#: src/bin/e_config.c:2060
+#: src/bin/e_config.c:2126
 #, fuzzy
 msgid ""
 "The file is not writable. Perhaps the disk is read-only<br>or you lost "
@@ -939,17 +939,17 @@ msgstr ""
 "Filen är inte skrivbar. Kanske skivan är skrivskyddad<br>eller om du "
 "förlorat behörighet till dina filer."
 
-#: src/bin/e_config.c:2064
+#: src/bin/e_config.c:2130
 #, fuzzy
 msgid "Memory ran out while preparing the write.<br>Please free up memory."
 msgstr "Minne sprang ut medan du förbereder skriva.<br>Frigör minne."
 
-#: src/bin/e_config.c:2068
+#: src/bin/e_config.c:2134
 #, fuzzy
 msgid "This is a generic error."
 msgstr "Detta är en generisk fel."
 
-#: src/bin/e_config.c:2072
+#: src/bin/e_config.c:2138
 #, fuzzy
 msgid ""
 "The settings file is too large.<br>It should be very small (a few hundred KB "
@@ -958,71 +958,71 @@ msgstr ""
 "Inställningsfilen är för stor.<br>Det bör vara mycket liten (några hundra KB "
 "som mest)."
 
-#: src/bin/e_config.c:2076
+#: src/bin/e_config.c:2142
 msgid "You have I/O errors on the disk.<br>Maybe it needs replacing?"
 msgstr ""
 
-#: src/bin/e_config.c:2080
+#: src/bin/e_config.c:2146
 #, fuzzy
 msgid "You ran out of space while writing the file."
 msgstr "Du sprang ut ur rummet medan du skriver filen"
 
-#: src/bin/e_config.c:2084
+#: src/bin/e_config.c:2150
 #, fuzzy
 msgid "The file was closed while writing."
 msgstr "Ärendet avslutades på den medan du skriver."
 
-#: src/bin/e_config.c:2088
+#: src/bin/e_config.c:2154
 #, fuzzy
 msgid "Memory-mapping (mmap) of the file failed."
 msgstr "Memory -mapping (mmap) för filen misslyckades."
 
-#: src/bin/e_config.c:2092
+#: src/bin/e_config.c:2158
 #, fuzzy
 msgid "X509 Encoding failed."
 msgstr "X509 Kodning misslyckats."
 
-#: src/bin/e_config.c:2096
+#: src/bin/e_config.c:2162
 #, fuzzy
 msgid "Signature failed."
 msgstr "Signatur misslyckades."
 
-#: src/bin/e_config.c:2100
+#: src/bin/e_config.c:2166
 #, fuzzy
 msgid "The signature was invalid."
 msgstr "Signaturen var ogiltigt."
 
-#: src/bin/e_config.c:2104
+#: src/bin/e_config.c:2170
 #, fuzzy
 msgid "Not signed."
 msgstr "(Inga fönster)"
 
-#: src/bin/e_config.c:2108
+#: src/bin/e_config.c:2174
 #, fuzzy
 msgid "Feature not implemented."
 msgstr "Har inte genomförts."
 
-#: src/bin/e_config.c:2112
+#: src/bin/e_config.c:2178
 #, fuzzy
 msgid "PRNG was not seeded."
 msgstr "PRNG inte ympades."
 
-#: src/bin/e_config.c:2116
+#: src/bin/e_config.c:2182
 #, fuzzy
 msgid "Encryption failed."
 msgstr "Kryptering misslyckades."
 
-#: src/bin/e_config.c:2120
+#: src/bin/e_config.c:2186
 #, fuzzy
 msgid "Decryption failed."
 msgstr "Beskrivning: Otillgänglig"
 
-#: src/bin/e_config.c:2124
+#: src/bin/e_config.c:2190
 #, fuzzy
 msgid "The error is unknown to Enlightenment."
 msgstr "Välkommen till Enlightenment"
 
-#: src/bin/e_config.c:2146
+#: src/bin/e_config.c:2212
 #, c-format
 msgid ""
 "Enlightenment has had an error while writing<br>its config file.<br>"
@@ -1174,7 +1174,7 @@ msgstr "Desktop Entry Editor"
 
 #: src/bin/e_eap_editor.c:677 src/bin/e_int_border_prop.c:445
 #: src/bin/e_int_border_prop.c:499 src/modules/comp/e_mod_config.c:709
-#: src/modules/conf_intl/e_int_config_imc.c:896
+#: src/modules/conf_intl/e_int_config_imc.c:886
 #: src/modules/conf_menus/e_int_config_menus.c:265
 #: src/modules/ibar/e_mod_config.c:130
 msgid "Name"
@@ -1242,7 +1242,7 @@ msgstr "Kör i terminal"
 msgid "Show in Menus"
 msgstr "Visa i menyer"
 
-#: src/bin/e_eap_editor.c:791 src/bin/e_fm.c:8764 src/bin/e_fm.c:8924
+#: src/bin/e_eap_editor.c:791 src/bin/e_fm.c:8776 src/bin/e_fm.c:8936
 #: src/bin/e_int_border_remember.c:763
 #: src/modules/xkbswitch/e_mod_config.c:334
 msgid "Options"
@@ -1257,7 +1257,7 @@ msgstr "Välj en ikon"
 msgid "Select an Executable"
 msgstr "Välj en körbar fil"
 
-#: src/bin/e_entry.c:480 src/bin/e_fm.c:9109 src/bin/e_fm.c:10777
+#: src/bin/e_entry.c:480 src/bin/e_fm.c:9121 src/bin/e_fm.c:10789
 #: src/bin/e_shelf.c:1792 src/bin/e_shelf.c:2475
 #: src/modules/conf_dialogs/e_int_config_profiles.c:135
 #: src/modules/conf_dialogs/e_int_config_profiles.c:339
@@ -1267,8 +1267,8 @@ msgstr "Välj en körbar fil"
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:247
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:294
 #: src/modules/conf_paths/e_int_config_env.c:317
-#: src/modules/conf_shelves/e_int_config_shelf.c:137
-#: src/modules/conf_shelves/e_int_config_shelf.c:392
+#: src/modules/conf_shelves/e_int_config_shelf.c:139
+#: src/modules/conf_shelves/e_int_config_shelf.c:394
 #: src/modules/conf_window_remembers/e_int_config_remembers.c:141
 #: src/modules/ibar/e_mod_config.c:112 src/modules/ibar/e_mod_config.c:199
 #: src/modules/quickaccess/e_mod_config.c:277
@@ -1276,15 +1276,15 @@ msgstr "Välj en körbar fil"
 msgid "Delete"
 msgstr "Ta bort"
 
-#: src/bin/e_entry.c:490 src/bin/e_fm.c:9020
+#: src/bin/e_entry.c:490 src/bin/e_fm.c:9032
 msgid "Cut"
 msgstr "Klipp ut"
 
-#: src/bin/e_entry.c:499 src/bin/e_fm.c:9034 src/bin/e_fm.c:11538
+#: src/bin/e_entry.c:499 src/bin/e_fm.c:9046 src/bin/e_fm.c:11550
 msgid "Copy"
 msgstr "Kopiera"
 
-#: src/bin/e_entry.c:509 src/bin/e_fm.c:8825 src/bin/e_fm.c:9047
+#: src/bin/e_entry.c:509 src/bin/e_fm.c:8837 src/bin/e_fm.c:9059
 msgid "Paste"
 msgstr "Klistra in"
 
@@ -1294,8 +1294,8 @@ msgstr "Markera allt"
 
 #: src/bin/e_exec.c:400 src/bin/e_exec.c:408 src/bin/e_exec.c:419
 #: src/bin/e_exec.c:468 src/bin/e_utils.c:188
-#: src/modules/conf_intl/e_int_config_imc.c:272
-#: src/modules/conf_intl/e_int_config_imc.c:520
+#: src/modules/conf_intl/e_int_config_imc.c:261
+#: src/modules/conf_intl/e_int_config_imc.c:510
 msgid "Run Error"
 msgstr "Körfel"
 
@@ -1439,367 +1439,367 @@ msgstr "Utdata"
 msgid "There was no output."
 msgstr "Det finns ingen utdata."
 
-#: src/bin/e_fm.c:1061
+#: src/bin/e_fm.c:1060
 #, fuzzy
 msgid "Nonexistent path"
 msgstr "obefintlig bana"
 
-#: src/bin/e_fm.c:1064
+#: src/bin/e_fm.c:1063
 #, c-format
 msgid "%s doesn't exist."
 msgstr "%s existerar inte."
 
-#: src/bin/e_fm.c:2826 src/bin/e_fm.c:3783
+#: src/bin/e_fm.c:2833 src/bin/e_fm.c:3790
 #, fuzzy, c-format
 msgid "%u file"
 msgid_plural "%u files"
 msgstr[0] "%1.0f filer"
 msgstr[1] "%1.0f filer"
 
-#: src/bin/e_fm.c:3044
+#: src/bin/e_fm.c:3051
 #, fuzzy
 msgid "Mount Error"
 msgstr "Körfel"
 
-#: src/bin/e_fm.c:3044
+#: src/bin/e_fm.c:3051
 #, fuzzy
 msgid "Can't mount device"
 msgstr "Kan inte montera enheten"
 
-#: src/bin/e_fm.c:3060
+#: src/bin/e_fm.c:3067
 #, fuzzy
 msgid "Unmount Error"
 msgstr "Körfel"
 
-#: src/bin/e_fm.c:3060
+#: src/bin/e_fm.c:3067
 #, fuzzy
 msgid "Can't unmount device"
 msgstr "Kan inte avmontera enhet"
 
-#: src/bin/e_fm.c:3075
+#: src/bin/e_fm.c:3082
 #, fuzzy
 msgid "Eject Error"
 msgstr "Fel"
 
-#: src/bin/e_fm.c:3075
+#: src/bin/e_fm.c:3082
 #, fuzzy
 msgid "Can't eject device"
 msgstr "Kan inte mata ut enheten"
 
-#: src/bin/e_fm.c:6565 src/bin/e_fm.c:6598 src/bin/e_fm.c:9494
-#: src/bin/e_fm.c:9506 src/bin/e_fm.c:9609 src/bin/e_fm.c:9614
-#: src/bin/e_fm.c:9630 src/bin/e_fm.c:9635 src/bin/e_fm.c:10262
-#: src/bin/e_fm.c:10265 src/bin/e_fm.c:10268 src/bin/e_fm.c:10295
-#: src/bin/e_fm.c:10299 src/bin/e_fm.c:10302 src/bin/e_fm.c:10360
-#: src/bin/e_fm.c:10585 src/bin/e_fm_prop.c:254 src/bin/e_shelf.c:2343
+#: src/bin/e_fm.c:6593 src/bin/e_fm.c:6626 src/bin/e_fm.c:9506
+#: src/bin/e_fm.c:9518 src/bin/e_fm.c:9621 src/bin/e_fm.c:9626
+#: src/bin/e_fm.c:9642 src/bin/e_fm.c:9647 src/bin/e_fm.c:10274
+#: src/bin/e_fm.c:10277 src/bin/e_fm.c:10280 src/bin/e_fm.c:10307
+#: src/bin/e_fm.c:10311 src/bin/e_fm.c:10314 src/bin/e_fm.c:10372
+#: src/bin/e_fm.c:10597 src/bin/e_fm_prop.c:254 src/bin/e_shelf.c:2343
 msgid "Error"
 msgstr "Fel"
 
-#: src/bin/e_fm.c:6565 src/bin/e_fm.c:6598
+#: src/bin/e_fm.c:6593 src/bin/e_fm.c:6626
 #, c-format
 msgid "The recent DND operation requested for '%s' has failed."
 msgstr ""
 
-#: src/bin/e_fm.c:8682 src/modules/fileman/e_mod_config.c:361
+#: src/bin/e_fm.c:8694 src/modules/fileman/e_mod_config.c:361
 #, fuzzy
 msgid "Case Sensitive"
 msgstr "Grundstorlek"
 
-#: src/bin/e_fm.c:8688 src/modules/fileman/e_mod_config.c:364
+#: src/bin/e_fm.c:8700 src/modules/fileman/e_mod_config.c:364
 #, fuzzy
 msgid "Sort By Extension"
 msgstr "Visa ikon Extension"
 
-#: src/bin/e_fm.c:8694 src/modules/fileman/e_mod_config.c:367
+#: src/bin/e_fm.c:8706 src/modules/fileman/e_mod_config.c:367
 msgid "Sort By Modification Time"
 msgstr ""
 
-#: src/bin/e_fm.c:8700 src/modules/fileman/e_mod_config.c:370
+#: src/bin/e_fm.c:8712 src/modules/fileman/e_mod_config.c:370
 #, fuzzy
 msgid "Sort By Size"
 msgstr "Sortera nu"
 
-#: src/bin/e_fm.c:8709 src/modules/fileman/e_mod_config.c:378
+#: src/bin/e_fm.c:8721 src/modules/fileman/e_mod_config.c:378
 #, fuzzy
 msgid "Directories First"
 msgstr "Sökvägar"
 
-#: src/bin/e_fm.c:8715 src/modules/fileman/e_mod_config.c:382
+#: src/bin/e_fm.c:8727 src/modules/fileman/e_mod_config.c:382
 #, fuzzy
 msgid "Directories Last"
 msgstr "Sökvägar"
 
-#: src/bin/e_fm.c:8748 src/bin/e_fm.c:8908
+#: src/bin/e_fm.c:8760 src/bin/e_fm.c:8920
 #: src/modules/fileman/e_mod_config.c:306
 msgid "View Mode"
 msgstr "Visningsläge"
 
-#: src/bin/e_fm.c:8757 src/bin/e_fm.c:8917
+#: src/bin/e_fm.c:8769 src/bin/e_fm.c:8929
 #: src/modules/everything/evry_config.c:503
 #: src/modules/fileman/e_mod_config.c:386
 #, fuzzy
 msgid "Sorting"
 msgstr "Startar"
 
-#: src/bin/e_fm.c:8775 src/bin/e_fm.c:8935
+#: src/bin/e_fm.c:8787 src/bin/e_fm.c:8947
 msgid "Refresh View"
 msgstr "Uppdatera vy"
 
-#: src/bin/e_fm.c:8786 src/bin/e_fm.c:8947
+#: src/bin/e_fm.c:8798 src/bin/e_fm.c:8959
 msgid "New..."
 msgstr ""
 
-#: src/bin/e_fm.c:8806 src/bin/e_fm.c:8968 src/bin/e_fm.c:8999
+#: src/bin/e_fm.c:8818 src/bin/e_fm.c:8980 src/bin/e_fm.c:9011
 #, fuzzy
 msgid "Actions..."
 msgstr "Händelse"
 
-#: src/bin/e_fm.c:8833 src/bin/e_fm.c:9055 src/bin/e_fm.c:11551
+#: src/bin/e_fm.c:8845 src/bin/e_fm.c:9067 src/bin/e_fm.c:11563
 msgid "Link"
 msgstr "Länk"
 
-#: src/bin/e_fm.c:9117 src/bin/e_fm.c:10414 src/bin/e_shelf.c:2470
-#: src/modules/conf_shelves/e_int_config_shelf.c:140
+#: src/bin/e_fm.c:9129 src/bin/e_fm.c:10426 src/bin/e_shelf.c:2470
+#: src/modules/conf_shelves/e_int_config_shelf.c:142
 #: src/modules/quickaccess/e_mod_config.c:226
 #: src/modules/quickaccess/e_mod_config.c:274
 #: src/modules/quickaccess/e_mod_config.c:304
 msgid "Rename"
 msgstr "Byt namn"
 
-#: src/bin/e_fm.c:9136
+#: src/bin/e_fm.c:9148
 #, fuzzy
 msgid "Unmount"
 msgstr "avmontera"
 
-#: src/bin/e_fm.c:9141
+#: src/bin/e_fm.c:9153
 #, fuzzy
 msgid "Mount"
 msgstr "Typsnitt"
 
-#: src/bin/e_fm.c:9146
+#: src/bin/e_fm.c:9158
 #, fuzzy
 msgid "Eject"
 msgstr "mata"
 
-#: src/bin/e_fm.c:9161 src/bin/e_int_border_remember.c:742
+#: src/bin/e_fm.c:9173 src/bin/e_int_border_remember.c:742
 #: src/modules/ibar/e_mod_main.c:872
 msgid "Properties"
 msgstr "Egenskaper"
 
-#: src/bin/e_fm.c:9169
+#: src/bin/e_fm.c:9181
 #, fuzzy
 msgid "Application Properties"
 msgstr "Applikationsprioritet"
 
-#: src/bin/e_fm.c:9177 src/bin/e_fm_prop.c:115
+#: src/bin/e_fm.c:9189 src/bin/e_fm_prop.c:115
 msgid "File Properties"
 msgstr "Filegenskaper"
 
-#: src/bin/e_fm.c:9393
+#: src/bin/e_fm.c:9405
 #, fuzzy
 msgid "Use default"
 msgstr "Använd standard"
 
-#: src/bin/e_fm.c:9423 src/modules/fileman/e_mod_config.c:311
+#: src/bin/e_fm.c:9435 src/modules/fileman/e_mod_config.c:311
 msgid "Grid Icons"
 msgstr "Rutnätsikoner"
 
-#: src/bin/e_fm.c:9431 src/modules/fileman/e_mod_config.c:313
+#: src/bin/e_fm.c:9443 src/modules/fileman/e_mod_config.c:313
 #, fuzzy
 msgid "Custom Icons"
 msgstr "egna ikoner"
 
-#: src/bin/e_fm.c:9439 src/modules/everything/evry_config.c:430
+#: src/bin/e_fm.c:9451 src/modules/everything/evry_config.c:430
 #: src/modules/everything/evry_config.c:460
 #: src/modules/fileman/e_mod_config.c:321
 msgid "List"
 msgstr "Lista"
 
-#: src/bin/e_fm.c:9447 src/modules/everything/evry_config.c:458
+#: src/bin/e_fm.c:9459 src/modules/everything/evry_config.c:458
 #, fuzzy
 msgid "Default View"
 msgstr "Standardläge för dialoger"
 
-#: src/bin/e_fm.c:9469
+#: src/bin/e_fm.c:9481
 #, c-format
 msgid "Icon Size (%d)"
 msgstr "Ikonstorlek (%d)"
 
-#: src/bin/e_fm.c:9494
+#: src/bin/e_fm.c:9506
 #, fuzzy
 msgid "Could not create a directory!"
 msgstr "Fel vid öppnandet av modul"
 
-#: src/bin/e_fm.c:9506
+#: src/bin/e_fm.c:9518
 #, fuzzy
 msgid "Could not create a file!"
 msgstr "Fel vid öppnandet av modul"
 
-#: src/bin/e_fm.c:9520 src/bin/e_fm.c:9545
+#: src/bin/e_fm.c:9532 src/bin/e_fm.c:9557
 #: src/modules/conf_paths/e_int_config_paths.c:206
 msgid "New Directory"
 msgstr "Ny katalog"
 
-#: src/bin/e_fm.c:9520 src/bin/e_fm.c:9545
+#: src/bin/e_fm.c:9532 src/bin/e_fm.c:9557
 #, fuzzy
 msgid "New File"
 msgstr "Fil:"
 
-#: src/bin/e_fm.c:9609 src/bin/e_fm.c:9630
+#: src/bin/e_fm.c:9621 src/bin/e_fm.c:9642
 msgid "Already creating a new file for this directory!"
 msgstr ""
 
-#: src/bin/e_fm.c:9614 src/bin/e_fm.c:9635
+#: src/bin/e_fm.c:9626 src/bin/e_fm.c:9647
 #, c-format
 msgid "%s can't be written to!"
 msgstr ""
 
-#: src/bin/e_fm.c:9654
+#: src/bin/e_fm.c:9666
 #, fuzzy
 msgid "Directory"
 msgstr "Mapp"
 
-#: src/bin/e_fm.c:9659
+#: src/bin/e_fm.c:9671
 #: src/modules/conf_applications/e_int_config_defapps.c:312
 #, fuzzy
 msgid "File"
 msgstr "Fil:"
 
-#: src/bin/e_fm.c:9690
+#: src/bin/e_fm.c:9702
 msgid "Inherit parent settings"
 msgstr "Ärv förälderinställningar"
 
-#: src/bin/e_fm.c:9699
+#: src/bin/e_fm.c:9711
 msgid "Show Hidden Files"
 msgstr "Visa dolda filer"
 
-#: src/bin/e_fm.c:9711
+#: src/bin/e_fm.c:9723
 msgid "Remember Ordering"
 msgstr "Kom ihåg ordning"
 
-#: src/bin/e_fm.c:9720
+#: src/bin/e_fm.c:9732
 msgid "Sort Now"
 msgstr "Sortera nu"
 
-#: src/bin/e_fm.c:9728
+#: src/bin/e_fm.c:9740
 #, fuzzy
 msgid "Single Click Activation"
 msgstr "Använd enkelklick"
 
-#: src/bin/e_fm.c:9739 src/modules/fileman/e_mod_config.c:398
+#: src/bin/e_fm.c:9751 src/modules/fileman/e_mod_config.c:398
 #, fuzzy
 msgid "Secure Deletion"
 msgstr "Skärmupplösning"
 
-#: src/bin/e_fm.c:9752
+#: src/bin/e_fm.c:9764
 #, fuzzy
 msgid "File Manager Settings"
 msgstr "personsökaren Settings"
 
-#: src/bin/e_fm.c:9757
+#: src/bin/e_fm.c:9769
 #, fuzzy
 msgid "File Icon Settings"
 msgstr "Inställningar för typsnitt"
 
-#: src/bin/e_fm.c:9835 src/bin/e_fm.c:10051
+#: src/bin/e_fm.c:9847 src/bin/e_fm.c:10063
 #, fuzzy
 msgid "Set background..."
 msgstr "Sätt som bakgrund"
 
-#: src/bin/e_fm.c:9843
+#: src/bin/e_fm.c:9855
 #, fuzzy
 msgid "Clear background"
 msgstr "Sätt som bakgrund"
 
-#: src/bin/e_fm.c:9850 src/bin/e_fm.c:10079
+#: src/bin/e_fm.c:9862 src/bin/e_fm.c:10091
 #, fuzzy
 msgid "Set overlay..."
 msgstr "Panelens innehåll"
 
-#: src/bin/e_fm.c:9856
+#: src/bin/e_fm.c:9868
 #, fuzzy
 msgid "Clear overlay"
 msgstr "Panelens innehåll"
 
-#: src/bin/e_fm.c:10173 src/bin/e_fm.c:10509
+#: src/bin/e_fm.c:10185 src/bin/e_fm.c:10521
 #, c-format
 msgid "Rename %s to:"
 msgstr "Döp om %s till:"
 
-#: src/bin/e_fm.c:10175 src/bin/e_fm.c:10510
+#: src/bin/e_fm.c:10187 src/bin/e_fm.c:10522
 msgid "Rename File"
 msgstr "Byt namn"
 
-#: src/bin/e_fm.c:10262 src/bin/e_fm.c:10295
+#: src/bin/e_fm.c:10274 src/bin/e_fm.c:10307
 #, c-format
 msgid "%s already exists!"
 msgstr ""
 
-#: src/bin/e_fm.c:10265 src/bin/e_fm.c:10299
+#: src/bin/e_fm.c:10277 src/bin/e_fm.c:10311
 #, c-format
 msgid "%s could not be renamed because it is protected"
 msgstr ""
 
-#: src/bin/e_fm.c:10268 src/bin/e_fm.c:10302
+#: src/bin/e_fm.c:10280 src/bin/e_fm.c:10314
 #, fuzzy
 msgid "Internal filemanager error :("
 msgstr "Öppna filhanterare på berget"
 
-#: src/bin/e_fm.c:10356 src/bin/e_fm.c:10577
+#: src/bin/e_fm.c:10368 src/bin/e_fm.c:10589
 #, fuzzy
 msgid "Retry"
 msgstr "Försök igen"
 
-#: src/bin/e_fm.c:10357 src/bin/e_fm.c:10578 src/bin/e_fm.c:11559
+#: src/bin/e_fm.c:10369 src/bin/e_fm.c:10590 src/bin/e_fm.c:11571
 msgid "Abort"
 msgstr "Avbryt"
 
-#: src/bin/e_fm.c:10413
+#: src/bin/e_fm.c:10425
 msgid "No to all"
 msgstr "Nej till allt"
 
-#: src/bin/e_fm.c:10416
+#: src/bin/e_fm.c:10428
 msgid "Yes to all"
 msgstr "Ja till allt"
 
-#: src/bin/e_fm.c:10419
+#: src/bin/e_fm.c:10431
 #, fuzzy
 msgid "Warning"
 msgstr "Startar"
 
-#: src/bin/e_fm.c:10422
+#: src/bin/e_fm.c:10434
 #, fuzzy, c-format
 msgid "File already exists, overwrite?<br><hilight>%s</hilight>"
 msgstr "Är du säker på att du vill ta bort<br><hilight>%s</hilight?"
 
-#: src/bin/e_fm.c:10580
+#: src/bin/e_fm.c:10592
 #, fuzzy
 msgid "Move Source"
 msgstr "Flytta text"
 
-#: src/bin/e_fm.c:10581
+#: src/bin/e_fm.c:10593
 msgid "Ignore this"
 msgstr "Ignorera"
 
-#: src/bin/e_fm.c:10582
+#: src/bin/e_fm.c:10594
 msgid "Ignore all"
 msgstr "Ignorera alla"
 
-#: src/bin/e_fm.c:10587
+#: src/bin/e_fm.c:10599
 #, c-format
 msgid "An error occurred while performing an operation.<br>%s"
 msgstr ""
 
-#: src/bin/e_fm.c:10780
+#: src/bin/e_fm.c:10792
 msgid "Confirm Delete"
 msgstr "Bekräfta borttagning"
 
-#: src/bin/e_fm.c:10790
+#: src/bin/e_fm.c:10802
 #, fuzzy, c-format
 msgid "Are you sure you want to delete<br><hilight>%s</hilight>?"
 msgstr "Är du säker på att du vill ta bort<br><hilight>%s</hilight?"
 
-#: src/bin/e_fm.c:10795
+#: src/bin/e_fm.c:10807
 #, fuzzy, c-format
 msgid ""
 "Are you sure you want to delete<br><hilight>all</hilight> the %d files "
@@ -1808,7 +1808,7 @@ msgstr ""
 "Är du säker på att du vill ta bort<br>de %d markerade filerna i:<br><hilight>"
 "%s</hilight>?"
 
-#: src/bin/e_fm.c:10805
+#: src/bin/e_fm.c:10817
 #, fuzzy, c-format
 msgid ""
 "Are you sure you want to delete<br>the %d selected file in<br><hilight>%s</"
@@ -1962,41 +1962,41 @@ msgstr ""
 msgid "Select an Image"
 msgstr "Välj en bild"
 
-#: src/bin/e_gadcon.c:1400
+#: src/bin/e_gadcon.c:1402
 #, fuzzy
 msgid "Gadget error"
 msgstr "Gadget test"
 
-#: src/bin/e_gadcon.c:1400
+#: src/bin/e_gadcon.c:1402
 #, c-format
 msgid "%s does not support disabling autoscrolling"
 msgstr ""
 
-#: src/bin/e_gadcon.c:1674 src/bin/e_int_border_menu.c:140
+#: src/bin/e_gadcon.c:1676 src/bin/e_int_border_menu.c:140
 #, fuzzy
 msgid "Move to"
 msgstr "Flytta text"
 
-#: src/bin/e_gadcon.c:1742
+#: src/bin/e_gadcon.c:1744
 msgid "Automatically scroll contents"
 msgstr "Rulla innehåll automatiskt"
 
-#: src/bin/e_gadcon.c:1755 src/modules/gadman/e_mod_gadman.c:1000
+#: src/bin/e_gadcon.c:1757 src/modules/gadman/e_mod_gadman.c:1000
 msgid "Plain"
 msgstr "Enkel"
 
-#: src/bin/e_gadcon.c:1768 src/modules/gadman/e_mod_gadman.c:1008
+#: src/bin/e_gadcon.c:1770 src/modules/gadman/e_mod_gadman.c:1008
 msgid "Inset"
 msgstr "Infälld"
 
-#: src/bin/e_gadcon.c:1781 src/bin/e_int_config_modules.c:53
+#: src/bin/e_gadcon.c:1783 src/bin/e_int_config_modules.c:53
 #: src/modules/comp/e_mod_main.c:41 src/modules/conf_theme/e_mod_main.c:229
 #: src/modules/dropshadow/e_mod_main.c:88 src/modules/physics/e_mod_main.c:45
 #, fuzzy
 msgid "Look"
 msgstr "titta"
 
-#: src/bin/e_gadcon.c:1793 src/bin/e_widget_config_list.c:66
+#: src/bin/e_gadcon.c:1795 src/bin/e_widget_config_list.c:66
 #: src/modules/conf_applications/e_int_config_apps.c:270
 #: src/modules/conf_applications/e_int_config_apps.c:291
 #: src/modules/conf_applications/e_int_config_apps.c:311
@@ -2006,16 +2006,16 @@ msgstr "titta"
 msgid "Remove"
 msgstr "Ta bort"
 
-#: src/bin/e_gadcon.c:2433
+#: src/bin/e_gadcon.c:2435
 #, fuzzy
 msgid "Stop moving"
 msgstr "Sluta redigera"
 
-#: src/bin/e_gadcon.c:3084
+#: src/bin/e_gadcon.c:3086
 msgid "Insufficent gadcon support"
 msgstr ""
 
-#: src/bin/e_gadcon.c:3085
+#: src/bin/e_gadcon.c:3087
 #, c-format
 msgid "Module %s needs to support %s"
 msgstr ""
@@ -2201,7 +2201,7 @@ msgstr "Storlek"
 #: src/bin/e_int_border_locks.c:313 src/bin/e_int_border_locks.c:332
 #: src/bin/e_int_border_menu.c:697 src/bin/e_int_border_prop.c:501
 #: src/bin/e_int_border_remember.c:698 src/bin/e_int_shelf_config.c:152
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:305
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:298
 msgid "Stacking"
 msgstr "Stapla"
 
@@ -2285,7 +2285,7 @@ msgstr "Skymt"
 
 #: src/bin/e_int_border_menu.c:371 src/bin/e_int_border_prop.c:511
 #: src/modules/comp/e_mod_config.c:880
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:215
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:218
 msgid "Fullscreen"
 msgstr "Helskärm"
 
@@ -2643,14 +2643,14 @@ msgid "Request Position"
 msgstr "Begär position"
 
 #: src/bin/e_int_border_prop.c:477 src/bin/e_int_border_prop.c:512
-#: src/bin/e_int_config_modules.c:58 src/bin/e_int_menus.c:272
+#: src/bin/e_int_config_modules.c:58 src/bin/e_int_menus.c:271
 #: src/bin/e_shelf.c:2441 src/modules/backlight/e_mod_main.c:309
-#: src/modules/battery/e_mod_main.c:194 src/modules/clock/e_mod_main.c:360
-#: src/modules/clock/e_mod_main.c:603 src/modules/conf/e_conf.c:136
+#: src/modules/battery/e_mod_main.c:194 src/modules/clock/e_mod_main.c:361
+#: src/modules/clock/e_mod_main.c:604 src/modules/conf/e_conf.c:136
 #: src/modules/conf/e_conf.c:146 src/modules/conf/e_mod_main.c:101
 #: src/modules/conf_dialogs/e_mod_main.c:17
 #: src/modules/conf_interaction/e_int_config_mouse.c:170
-#: src/modules/conf_shelves/e_int_config_shelf.c:147
+#: src/modules/conf_shelves/e_int_config_shelf.c:149
 #: src/modules/everything/evry_gadget.c:511
 #: src/modules/everything/evry_gadget.c:695
 #: src/modules/everything/evry_plug_settings.c:183
@@ -2658,8 +2658,8 @@ msgstr "Begär position"
 #: src/modules/ibox/e_mod_main.c:302 src/modules/ibox/e_mod_main.c:678
 #: src/modules/pager/e_mod_main.c:877 src/modules/temperature/e_mod_main.c:230
 #: src/modules/mixer/e_mod_main.c:776 src/modules/connman/e_mod_main.c:459
-#: src/modules/tasks/e_mod_main.c:728 src/modules/xkbswitch/e_mod_main.c:327
-#: src/modules/xkbswitch/e_mod_main.c:369
+#: src/modules/tasks/e_mod_main.c:728 src/modules/xkbswitch/e_mod_main.c:321
+#: src/modules/xkbswitch/e_mod_main.c:362
 msgid "Settings"
 msgstr "Inställningar"
 
@@ -2908,7 +2908,7 @@ msgstr "Panelens innehåll"
 msgid "Toolbar Contents"
 msgstr "Verktygsfältsinnehåll"
 
-#: src/bin/e_int_toolbar_config.c:30 src/bin/e_toolbar.c:255
+#: src/bin/e_int_toolbar_config.c:30 src/bin/e_toolbar.c:256
 #, fuzzy
 msgid "Toolbar Settings"
 msgstr "Toolbar Inställningar"
@@ -2931,18 +2931,18 @@ msgstr ""
 "konfiguration av<br>inmatnings program är rätt och att programmet <br>för "
 "din konfigurationfinns i din PATH<br>"
 
-#: src/bin/e_int_menus.c:135 src/modules/syscon/e_int_config_syscon.c:146
+#: src/bin/e_int_menus.c:134 src/modules/syscon/e_int_config_syscon.c:146
 #, fuzzy
 msgid "Main"
 msgstr "huvud"
 
-#: src/bin/e_int_menus.c:158
+#: src/bin/e_int_menus.c:157
 #: src/modules/conf_applications/e_int_config_apps.c:69
 #: src/modules/conf_applications/e_mod_main.c:29
 msgid "Favorite Applications"
 msgstr "Favoritprogram"
 
-#: src/bin/e_int_menus.c:169
+#: src/bin/e_int_menus.c:168
 #: src/modules/conf_applications/e_int_config_apps.c:295
 #: src/modules/conf_menus/e_int_config_menus.c:260
 #: src/modules/conf_menus/e_int_config_menus.c:283
@@ -2954,80 +2954,80 @@ msgstr "Favoritprogram"
 msgid "Applications"
 msgstr "Applikationer"
 
-#: src/bin/e_int_menus.c:193 src/bin/e_int_menus.c:1315
+#: src/bin/e_int_menus.c:192 src/bin/e_int_menus.c:1285
 #: src/modules/conf_window_manipulation/e_mod_main.c:17
 #: src/modules/conf_window_remembers/e_mod_main.c:14
 #: src/modules/everything/evry_plug_windows.c:425
-#: src/modules/winlist/e_mod_main.c:27 src/modules/tiling/e_mod_tiling.c:4138
+#: src/modules/winlist/e_mod_main.c:27 src/modules/tiling/e_mod_tiling.c:4144
 msgid "Windows"
 msgstr "Fönster"
 
-#: src/bin/e_int_menus.c:203 src/bin/e_int_menus.c:1370
+#: src/bin/e_int_menus.c:202 src/bin/e_int_menus.c:1340
 msgid "Lost Windows"
 msgstr "Förlorade fönster"
 
-#: src/bin/e_int_menus.c:229
+#: src/bin/e_int_menus.c:228
 msgid "About"
 msgstr "Om"
 
-#: src/bin/e_int_menus.c:234 src/bin/e_theme_about.c:21
+#: src/bin/e_int_menus.c:233 src/bin/e_theme_about.c:21
 #, fuzzy
 msgid "About Theme"
 msgstr "om Theme"
 
-#: src/bin/e_int_menus.c:325
+#: src/bin/e_int_menus.c:324
 msgid "Virtual"
 msgstr "Virituell"
 
-#: src/bin/e_int_menus.c:332 src/modules/conf_shelves/e_mod_main.c:23
+#: src/bin/e_int_menus.c:331 src/modules/conf_shelves/e_mod_main.c:23
 #: src/modules/conf_shelves/e_mod_main.c:27
 #: src/modules/conf_shelves/e_mod_main.c:74
 #: src/modules/physics/e_mod_config.c:132
 msgid "Shelves"
 msgstr "Paneler"
 
-#: src/bin/e_int_menus.c:341
+#: src/bin/e_int_menus.c:340
 msgid "Show/Hide All Windows"
 msgstr "Visa/göm alla fönster"
 
-#: src/bin/e_int_menus.c:699
+#: src/bin/e_int_menus.c:697
 #, fuzzy
 msgid "No applications"
 msgstr "(Inga program)"
 
-#: src/bin/e_int_menus.c:944
+#: src/bin/e_int_menus.c:914
 #, fuzzy
 msgid "Set Virtual Desktops"
 msgstr "Inställd virtuella skrivbord"
 
-#: src/bin/e_int_menus.c:1321 src/bin/e_int_menus.c:1514
+#: src/bin/e_int_menus.c:1291 src/bin/e_int_menus.c:1484
 #, fuzzy
 msgid "No windows"
 msgstr "(Inga fönster)"
 
-#: src/bin/e_int_menus.c:1427 src/bin/e_int_menus.c:1527
+#: src/bin/e_int_menus.c:1397 src/bin/e_int_menus.c:1497
 #, fuzzy
 msgid "Untitled window"
 msgstr "Interna fönster"
 
-#: src/bin/e_int_menus.c:1627 src/bin/e_shelf.c:1636
-#: src/modules/conf_shelves/e_int_config_shelf.c:191
+#: src/bin/e_int_menus.c:1597 src/bin/e_shelf.c:1636
+#: src/modules/conf_shelves/e_int_config_shelf.c:193
 #, fuzzy, c-format
 msgid "Shelf %s"
 msgstr "Panelens storlek"
 
-#: src/bin/e_int_menus.c:1695
+#: src/bin/e_int_menus.c:1665
 #, fuzzy
 msgid "Add a Shelf"
 msgstr "Lägg till en Uppställning"
 
-#: src/bin/e_int_menus.c:1702
+#: src/bin/e_int_menus.c:1672
 #, fuzzy
 msgid "Delete a Shelf"
 msgstr "Ta bort en Uppställning"
 
 #: src/bin/e_int_shelf_config.c:44
-#: src/modules/conf_shelves/e_int_config_shelf.c:53
+#: src/modules/conf_shelves/e_int_config_shelf.c:55
 msgid "Shelf Settings"
 msgstr "Panelinställningar"
 
@@ -3806,7 +3806,7 @@ msgstr "Vill du stänga av denna modulen?<br>"
 
 #: src/bin/e_module.c:534 src/bin/e_shelf.c:1792
 #: src/modules/conf_dialogs/e_int_config_profiles.c:339
-#: src/modules/conf_shelves/e_int_config_shelf.c:392
+#: src/modules/conf_shelves/e_int_config_shelf.c:394
 #: src/modules/ibar/e_mod_config.c:199
 msgid "Keep"
 msgstr ""
@@ -3840,14 +3840,14 @@ msgid "Float"
 msgstr ""
 
 #: src/bin/e_shelf.c:68
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:227
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:230
 #: src/modules/everything/evry_config.c:568
 #: src/modules/gadman/e_mod_gadman.c:1028
 msgid "Horizontal"
 msgstr "Horisontalt"
 
 #: src/bin/e_shelf.c:69
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:229
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:232
 #: src/modules/everything/evry_config.c:561
 #: src/modules/gadman/e_mod_gadman.c:1036
 msgid "Vertical"
@@ -3969,7 +3969,7 @@ msgstr ""
 msgid "Rename Shelf"
 msgstr "Byt namn"
 
-#: src/bin/e_shelf.c:2436 src/modules/conf_shelves/e_int_config_shelf.c:143
+#: src/bin/e_shelf.c:2436 src/modules/conf_shelves/e_int_config_shelf.c:145
 #: src/modules/ibar/e_mod_main.c:859
 #, fuzzy
 msgid "Contents"
@@ -4154,21 +4154,21 @@ msgstr "Välj ett tema ..."
 msgid "Set As Theme"
 msgstr "Använd som tema"
 
-#: src/bin/e_toolbar.c:245
+#: src/bin/e_toolbar.c:246
 msgid "Stop Moving/Resizing Items"
 msgstr "Sluta flytta/ändra storlek på moduler"
 
-#: src/bin/e_toolbar.c:247
+#: src/bin/e_toolbar.c:248
 msgid "Begin Moving/Resizing Items"
 msgstr "Flytta/ändra storlek på moduler"
 
-#: src/bin/e_toolbar.c:260
+#: src/bin/e_toolbar.c:261
 #, fuzzy
 msgid "Set Toolbar Contents"
 msgstr "Ställ Verktygsfältsinnehåll"
 
-#: src/bin/e_utils.c:189 src/modules/conf_intl/e_int_config_imc.c:273
-#: src/modules/conf_intl/e_int_config_imc.c:521
+#: src/bin/e_utils.c:189 src/modules/conf_intl/e_int_config_imc.c:262
+#: src/modules/conf_intl/e_int_config_imc.c:511
 #, c-format
 msgid "Enlightenment was unable to fork a child process:<br><br>%s<br>"
 msgstr "Enlightenment kunde inte skapa en underprocess:<br><br>%s<br>"
@@ -4334,54 +4334,54 @@ msgstr ""
 "igång. Det är dåligt och<br>som en försiktighetsåtgärd din konfiguration har "
 "nu återställts till<br>standardinställningarna. Ledsen för besväret.<br>"
 
-#: src/bin/e_utils.c:1289
+#: src/bin/e_utils.c:1288
 #, c-format
 msgid "Never"
 msgstr ""
 
-#: src/bin/e_utils.c:1293
+#: src/bin/e_utils.c:1292
 #, fuzzy, c-format
 msgid "A second"
 msgid_plural "%li Seconds"
 msgstr[0] "%.1f seconds"
 msgstr[1] "%.1f seconds"
 
-#: src/bin/e_utils.c:1297
+#: src/bin/e_utils.c:1296
 #, c-format
 msgid "One year"
 msgid_plural "%li Years"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/bin/e_utils.c:1302
+#: src/bin/e_utils.c:1301
 #, c-format
 msgid "One month"
 msgid_plural "%li Months"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/bin/e_utils.c:1307
+#: src/bin/e_utils.c:1306
 #, c-format
 msgid "One week"
 msgid_plural "%li Weeks"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/bin/e_utils.c:1312
+#: src/bin/e_utils.c:1311
 #, c-format
 msgid "One day"
 msgid_plural "%li Days"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/bin/e_utils.c:1317
+#: src/bin/e_utils.c:1316
 #, c-format
 msgid "An hour"
 msgid_plural "%li Hours"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/bin/e_utils.c:1322
+#: src/bin/e_utils.c:1321
 #, fuzzy, c-format
 msgid "A minute"
 msgid_plural "%li Minutes"
@@ -4399,7 +4399,7 @@ msgstr[1] "%1.0f minuter"
 #: src/modules/conf_keybindings/e_int_config_keybindings.c:244
 #: src/modules/conf_keybindings/e_int_config_mousebindings.c:292
 #: src/modules/conf_paths/e_int_config_env.c:311
-#: src/modules/conf_shelves/e_int_config_shelf.c:135
+#: src/modules/conf_shelves/e_int_config_shelf.c:137
 #: src/modules/ibar/e_mod_config.c:110
 #: src/modules/xkbswitch/e_mod_config.c:262
 msgid "Add"
@@ -4533,7 +4533,7 @@ msgstr "Lägg till favoriter"
 
 #: src/bin/e_widget_fsel.c:339
 #: src/modules/conf_display/e_int_config_desklock_fsel.c:91
-#: src/modules/conf_intl/e_int_config_imc.c:825
+#: src/modules/conf_intl/e_int_config_imc.c:815
 #: src/modules/conf_theme/e_int_config_startup.c:266
 #: src/modules/conf_theme/e_int_config_theme.c:739
 #: src/modules/gadman/e_mod_config.c:256
@@ -4711,8 +4711,8 @@ msgstr "Batterimätare"
 msgid "Clock Settings"
 msgstr "Fokus"
 
-#: src/modules/clock/e_mod_config.c:83 src/modules/clock/e_mod_main.c:708
-#: src/modules/clock/e_mod_main.c:865
+#: src/modules/clock/e_mod_config.c:83 src/modules/clock/e_mod_main.c:709
+#: src/modules/clock/e_mod_main.c:868
 msgid "Clock"
 msgstr "Klocka"
 
@@ -4774,7 +4774,7 @@ msgstr ""
 msgid "Days"
 msgstr ""
 
-#: src/modules/clock/e_mod_main.c:865
+#: src/modules/clock/e_mod_main.c:868
 #, fuzzy
 msgid "Toggle calendar"
 msgstr "Exekverbar fil"
@@ -5532,8 +5532,8 @@ msgstr "Animationer"
 
 #: src/modules/conf_display/e_int_config_desks.c:226
 #: src/modules/conf_performance/e_int_config_powermanagement.c:204
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:283
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:244
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:279
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:252
 #, fuzzy, c-format
 msgid "%1.1f s"
 msgstr "%1.1f sek"
@@ -5575,7 +5575,7 @@ msgid "Select a Background..."
 msgstr "Välj en bakgrund ..."
 
 #: src/modules/conf_display/e_int_config_desklock_fsel.c:84
-#: src/modules/conf_intl/e_int_config_imc.c:813
+#: src/modules/conf_intl/e_int_config_imc.c:803
 #: src/modules/conf_theme/e_int_config_wallpaper.c:423
 #: src/modules/conf_theme/e_int_config_wallpaper.c:577
 #: src/modules/conf_theme/e_int_config_startup.c:253
@@ -6144,47 +6144,47 @@ msgstr "Rör"
 msgid "Input Method Settings"
 msgstr "Input Method Settings"
 
-#: src/modules/conf_intl/e_int_config_imc.c:290
+#: src/modules/conf_intl/e_int_config_imc.c:279
 #, fuzzy
 msgid "Input Method Selector"
 msgstr "Input Method Selector"
 
-#: src/modules/conf_intl/e_int_config_imc.c:293
-#: src/modules/conf_intl/e_int_config_imc.c:880
+#: src/modules/conf_intl/e_int_config_imc.c:282
+#: src/modules/conf_intl/e_int_config_imc.c:870
 #, fuzzy
 msgid "Use No Input Method"
 msgstr "Använd inte Input Method"
 
-#: src/modules/conf_intl/e_int_config_imc.c:300
-#: src/modules/conf_intl/e_int_config_imc.c:945
+#: src/modules/conf_intl/e_int_config_imc.c:289
+#: src/modules/conf_intl/e_int_config_imc.c:935
 #, fuzzy
 msgid "Setup Selected Input Method"
 msgstr "Inställning valda Input Method"
 
-#: src/modules/conf_intl/e_int_config_imc.c:885
+#: src/modules/conf_intl/e_int_config_imc.c:875
 msgid "New"
 msgstr "Ny"
 
-#: src/modules/conf_intl/e_int_config_imc.c:889
+#: src/modules/conf_intl/e_int_config_imc.c:879
 msgid "Import..."
 msgstr "Importera..."
 
-#: src/modules/conf_intl/e_int_config_imc.c:893
+#: src/modules/conf_intl/e_int_config_imc.c:883
 #, fuzzy
 msgid "Input Method Parameters"
 msgstr "Input Method Parametrar"
 
-#: src/modules/conf_intl/e_int_config_imc.c:903
+#: src/modules/conf_intl/e_int_config_imc.c:893
 #, fuzzy
 msgid "Execute Command"
 msgstr "Kör kommandot"
 
-#: src/modules/conf_intl/e_int_config_imc.c:910
+#: src/modules/conf_intl/e_int_config_imc.c:900
 #, fuzzy
 msgid "Setup Command"
 msgstr "Setup Kommando"
 
-#: src/modules/conf_intl/e_int_config_imc.c:919
+#: src/modules/conf_intl/e_int_config_imc.c:909
 #, fuzzy
 msgid "Exported Environment Variables"
 msgstr "Exporterade miljövariabler"
@@ -6591,11 +6591,11 @@ msgstr "Laddar"
 
 #: src/modules/conf_menus/e_int_config_menus.c:289
 #: src/modules/conf_menus/e_int_config_menus.c:294
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:183
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:192
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:201
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:249
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:254
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:186
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:195
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:204
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:257
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:262
 #, fuzzy, c-format
 msgid "%2.0f pixels"
 msgstr ""
@@ -6644,7 +6644,7 @@ msgid "%2.2f s"
 msgstr "%1.2f sek"
 
 #: src/modules/conf_menus/e_int_config_menus.c:316
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:348
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:341
 #: src/modules/notification/e_mod_config.c:141
 msgid "Miscellaneous"
 msgstr "Övrigt"
@@ -6895,17 +6895,17 @@ msgstr "Power Management"
 msgid "Screen Setup"
 msgstr "Skärmsläckare"
 
-#: src/modules/conf_shelves/e_int_config_shelf.c:127
+#: src/modules/conf_shelves/e_int_config_shelf.c:129
 #, fuzzy, c-format
 msgid "Configured Shelves: Display %d"
 msgstr "Befintliga paneler"
 
-#: src/modules/conf_shelves/e_int_config_shelf.c:388
+#: src/modules/conf_shelves/e_int_config_shelf.c:390
 #, fuzzy, c-format
 msgid "Are you sure you want to delete \"%s\"?"
 msgstr "Är du säker på att du vill ta bort denna panelen?"
 
-#: src/modules/conf_shelves/e_int_config_shelf.c:391
+#: src/modules/conf_shelves/e_int_config_shelf.c:393
 #, fuzzy
 msgid "Confirm Shelf Deletion"
 msgstr "Bekräfta borttagning"
@@ -7063,7 +7063,7 @@ msgid "File Manager Background Base"
 msgstr "Filhanteraren Bakgrund Base"
 
 #: src/modules/conf_theme/e_int_config_color_classes.c:102
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:269
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:265
 #: src/modules/winlist/e_int_config_winlist.c:214
 msgid "Focus"
 msgstr "Fokus"
@@ -7478,7 +7478,7 @@ msgid "Bytecode"
 msgstr "Bytecode"
 
 #: src/modules/conf_theme/e_int_config_fonts.c:685
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:272
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:280
 #: src/modules/cpufreq/e_mod_main.c:229 src/modules/cpufreq/e_mod_main.c:265
 msgid "Automatic"
 msgstr "Automatiskt"
@@ -7547,7 +7547,7 @@ msgid "%1.2f x"
 msgstr "%1.2f"
 
 #: src/modules/conf_theme/e_int_config_scale.c:325
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:213
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:216
 #, fuzzy
 msgid "Policy"
 msgstr "policy"
@@ -7955,152 +7955,147 @@ msgstr "Tillåta att fönster ovan fullscreen fönster"
 msgid "Screen Limits"
 msgstr "Skärmlås"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:59
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:58
 msgid "Focus Settings"
 msgstr "Fokus"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:224
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:220
 msgid "Click Window to Focus"
 msgstr "Klicka på fönster för fokus"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:226
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:222
 msgid "Window under the Mouse"
 msgstr "Fönster under musen"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:228
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:224
 msgid "Most recent Window under the Mouse"
 msgstr "Senaste fönster under musen"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:231
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:276
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:227
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:272
 #, fuzzy
 msgid "Raise windows on mouse over"
 msgstr "Höj fönster på musen över"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:250
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:246
 #: src/modules/wizard/page_060.c:33
 #, fuzzy
 msgid "Click"
 msgstr "Klocka"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:252
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:248
 #, fuzzy
 msgid "Pointer"
 msgstr "Pekarfokus"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:254
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:250
 #, fuzzy
 msgid "Sloppy"
 msgstr "Slarvig fokus"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:257
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:253
 msgid "New Window Focus"
 msgstr "Fokus för nya fönster"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:259
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:255
 #, fuzzy
 msgid "No window"
 msgstr "(Inga fönster)"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:261
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:257
 #, fuzzy
 msgid "All windows"
 msgstr "Fönster"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:263
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:259
 #, fuzzy
 msgid "Only dialogs"
 msgstr "Bara nya dialoger får fokus"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:265
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:261
 #, fuzzy
 msgid "Only dialogs with focused parent"
 msgstr "Endast dialoger med fokus förälder"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:275
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:271
 msgid "Autoraise"
 msgstr "Autohöj"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:279
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:275
 msgid "Delay before raising:"
 msgstr "Fördröjning innan höjning"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:293
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:289
 msgid "Raise Window"
 msgstr "Höj fönster"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:295
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:291
 #, fuzzy
 msgid "Raise when starting to move or resize"
 msgstr "Höj när du börjar flytta eller ändra storlek på"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:298
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:294
 #, fuzzy
 msgid "Raise when focusing"
 msgstr "Höj vid klick för fokus"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:301
-#, fuzzy
-msgid "Allow windows above fullscreen window"
-msgstr "Tillåta att fönster ovan fullscreen fönster"
-
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:309
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:302
 #, fuzzy
 msgid "Active Window Hint Policy"
 msgstr "Fönster Maximera Policy"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:311
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:304
 #, fuzzy
 msgid "Ignore hint"
 msgstr "Ignorera"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:313
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:306
 #, fuzzy
 msgid "Animate on hint"
 msgstr "Animationer"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:315
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:308
 #, fuzzy
 msgid "Activate on hint"
 msgstr "Action Context"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:317
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:310
 #, fuzzy
 msgid "Hints"
 msgstr "Hinting"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:321
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:314
 msgid "Other Settings"
 msgstr "Andra inställnigar"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:322
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:315
 #, fuzzy
 msgid "Always pass click events to programs"
 msgstr "Alltid gå på evenemang till program"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:325
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:318
 #, fuzzy
 msgid "Click raises the window"
 msgstr "Klick höjer fönstret"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:328
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:321
 #, fuzzy
 msgid "Click focuses the window"
 msgstr "Klicka fokuserar fönstret"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:331
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:324
 #, fuzzy
 msgid "Refocus last window on desktop switch"
 msgstr "Koncentrera sista fönstret på skrivbordet switch"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:334
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:327
 #, fuzzy
 msgid "Focus last focused window on lost focus"
 msgstr "Koncentrera sista fönstret på skrivbordet switch"
 
-#: src/modules/conf_window_manipulation/e_int_config_focus.c:344
+#: src/modules/conf_window_manipulation/e_int_config_focus.c:337
 #, fuzzy
-msgid "Slide pointer to a new focused window"
+msgid "Slide pointer to a new window which is focused"
 msgstr "Skjut pekare till ett nytt fokus fönster"
 
 #: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:66
@@ -8108,129 +8103,139 @@ msgstr "Skjut pekare till ett nytt fokus fönster"
 msgid "Window Geometry"
 msgstr "Fönster geometri"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:177
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:180
 #, fuzzy
 msgid "Resist obstacles"
 msgstr "Resistens"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:179
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:182
 #, fuzzy
 msgid "Other windows"
 msgstr "Interna fönster"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:188
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:191
 #, fuzzy
 msgid "Edge of the screen"
 msgstr "Kanten på skärmen"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:197
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:200
 #, fuzzy
 msgid "Desktop gadgets"
 msgstr "Skrivbord"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:208
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:211
 msgid "Resistance"
 msgstr "Resistens"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:218
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:221
 msgid "Smart expansion"
 msgstr "Expandera smart"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:222
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:225
 msgid "Fill available space"
 msgstr "Fyll allt tillgängligt utrymme"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:225
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:228
 msgid "Direction"
 msgstr "Riktning"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:231
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:234
 msgid "Both"
 msgstr "Båda"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:234
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:237
+#, fuzzy
+msgid "Manipulation"
+msgstr "Hantera fönster"
+
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:238
 #, fuzzy
 msgid "Allow manipulation of maximized windows"
 msgstr "Möjliggöra manipulering av maximerade fönster"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:237
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:241
+#, fuzzy
+msgid "Allow windows above fullscreen window"
+msgstr "Tillåta att fönster ovan fullscreen fönster"
+
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:245
 #, fuzzy
 msgid "Maximization"
 msgstr "Maximera"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:242
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:250
 #, fuzzy
 msgid "Automatically accept changes after:"
 msgstr "Automatiskt acceptera förändringar efter:"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:247
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:255
 #, fuzzy
 msgid "Move by"
 msgstr "Flytta"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:252
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:260
 #, fuzzy
 msgid "Resize by"
 msgstr "Ändra storlek"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:257
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:265
 #: src/modules/wizard/page_011.c:142 src/modules/xkbswitch/e_mod_main.c:74
-#: src/modules/xkbswitch/e_mod_main.c:258
+#: src/modules/xkbswitch/e_mod_main.c:252
 #, fuzzy
 msgid "Keyboard"
 msgstr "Tangentbordsgenväg"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:263
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:271
 #, fuzzy
 msgid "Limit resize to useful geometry"
 msgstr "Begränsa ändra storlek till användbar geometri"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:266
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:274
 #, fuzzy
 msgid "Move after resize"
 msgstr "Röra sig efter resize"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:269
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:277
 #, fuzzy
 msgid "Adjust windows on shelf hide"
 msgstr "Justera fönster på hyllan skinn"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:277
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:285
 #, fuzzy
 msgid "Follow Move"
 msgstr "Följe|slagare"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:280
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:288
 #, fuzzy
 msgid "Follow Resize"
 msgstr "Följeslagarens hastighet"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:283
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:291
 #, fuzzy
 msgid "Follow Raise"
 msgstr "Följe|slagare"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:286
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:294
 #, fuzzy
 msgid "Follow Lower"
 msgstr "Följe|slagare"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:289
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:297
 #, fuzzy
 msgid "Follow Layer"
 msgstr "Följe|slagare"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:292
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:300
 #, fuzzy
 msgid "Follow Desktop"
 msgstr "Alla skrivbord"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:295
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:303
 #, fuzzy
 msgid "Follow Iconify"
 msgstr "Minimera"
 
-#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:299
+#: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:307
 #: src/modules/quickaccess/e_mod_config.c:312
 #, fuzzy
 msgid "Transients"
@@ -10898,83 +10903,83 @@ msgstr ""
 msgid "Tiling Configuration"
 msgstr "Pager konfiguration"
 
-#: src/modules/tiling/e_mod_tiling.c:4076
-#: src/modules/tiling/e_mod_tiling.c:4140
+#: src/modules/tiling/e_mod_tiling.c:4082
+#: src/modules/tiling/e_mod_tiling.c:4146
 #, fuzzy
 msgid "Tiling"
 msgstr "Polling"
 
-#: src/modules/tiling/e_mod_tiling.c:4083
+#: src/modules/tiling/e_mod_tiling.c:4089
 #, fuzzy
 msgid "Toggle floating"
 msgstr "Exekverbar fil"
 
-#: src/modules/tiling/e_mod_tiling.c:4086
+#: src/modules/tiling/e_mod_tiling.c:4092
 msgid "Add a stack"
 msgstr ""
 
-#: src/modules/tiling/e_mod_tiling.c:4089
+#: src/modules/tiling/e_mod_tiling.c:4095
 #, fuzzy
 msgid "Remove a stack"
 msgstr "Ta bort"
 
-#: src/modules/tiling/e_mod_tiling.c:4092
+#: src/modules/tiling/e_mod_tiling.c:4098
 msgid "Toggle between rows and columns"
 msgstr ""
 
-#: src/modules/tiling/e_mod_tiling.c:4095
+#: src/modules/tiling/e_mod_tiling.c:4101
 msgid "Swap a window with an other"
 msgstr ""
 
-#: src/modules/tiling/e_mod_tiling.c:4099
+#: src/modules/tiling/e_mod_tiling.c:4105
 #, fuzzy
 msgid "Move window"
 msgstr "(Inga fönster)"
 
-#: src/modules/tiling/e_mod_tiling.c:4102
+#: src/modules/tiling/e_mod_tiling.c:4108
 #, fuzzy
 msgid "Move window to the left"
 msgstr "Fönstret till vänster"
 
-#: src/modules/tiling/e_mod_tiling.c:4105
+#: src/modules/tiling/e_mod_tiling.c:4111
 #, fuzzy
 msgid "Move window to the right"
 msgstr "Fönstret till höger"
 
-#: src/modules/tiling/e_mod_tiling.c:4108
+#: src/modules/tiling/e_mod_tiling.c:4114
 #, fuzzy
 msgid "Move window up"
 msgstr "(Inga fönster)"
 
-#: src/modules/tiling/e_mod_tiling.c:4111
+#: src/modules/tiling/e_mod_tiling.c:4117
 #, fuzzy
 msgid "Move window down"
 msgstr "Fönster ID"
 
-#: src/modules/tiling/e_mod_tiling.c:4115
+#: src/modules/tiling/e_mod_tiling.c:4121
 #, fuzzy
 msgid "Adjust transitions"
 msgstr "övergångar"
 
-#: src/modules/tiling/e_mod_tiling.c:4118
+#: src/modules/tiling/e_mod_tiling.c:4124
 msgid "Focus a particular window"
 msgstr ""
 
-#: src/modules/tiling/e_mod_tiling.c:4122
+#: src/modules/tiling/e_mod_tiling.c:4128
 #, fuzzy
 msgid "Send to upper right corner"
 msgstr "Popup"
 
-#: src/modules/tiling/e_mod_tiling.c:4125
+#: src/modules/tiling/e_mod_tiling.c:4131
 #, fuzzy
 msgid "Send to upper left corner"
 msgstr "Popup"
 
-#: src/modules/tiling/e_mod_tiling.c:4128
+#: src/modules/tiling/e_mod_tiling.c:4134
 msgid "Send to lower right corner"
 msgstr ""
 
-#: src/modules/tiling/e_mod_tiling.c:4131
+#: src/modules/tiling/e_mod_tiling.c:4137
 msgid "Send to lower left corner"
 msgstr ""
 
@@ -12407,9 +12412,6 @@ msgstr ""
 
 #~ msgid "About..."
 #~ msgstr "Om..."
-
-#~ msgid "Window Manipulation"
-#~ msgstr "Hantera fönster"
 
 #~ msgid "Window list skip"
 #~ msgstr "Ej i fönsterlista"

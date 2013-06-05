@@ -5041,7 +5041,7 @@ _e_border_free(E_Border *bd)
      eina_stringshare_del(bd->client.icccm.name);
    if (bd->client.icccm.class)
      {
-        if (!strcmp(bd->client.icccm.class, "Vmplayer"))
+        if ((!strcasecmp(bd->client.icccm.class, "vmplayer")) || (!strcasecmp(bd->client.icccm.class, "vmware")))
           e_bindings_mapping_change_enable(EINA_TRUE);
         eina_stringshare_del(bd->client.icccm.class);
      }
@@ -7321,7 +7321,8 @@ _e_border_eval0(E_Border *bd)
         pclass = bd->client.icccm.class;
         bd->client.icccm.name = eina_stringshare_add(nname);
         bd->client.icccm.class = eina_stringshare_add(nclass);
-        if (bd->client.icccm.class && (!strcmp(bd->client.icccm.class, "Vmplayer")))
+        if ((!e_util_strcasecmp(bd->client.icccm.class, "vmplayer")) || 
+            (!e_util_strcasecmp(bd->client.icccm.class, "vmware")))
           e_bindings_mapping_change_enable(EINA_FALSE);
         free(nname);
         free(nclass);
@@ -10110,23 +10111,11 @@ e_border_focus_track_thaw(void)
    focus_track_frozen--;
 }
 
-EAPI E_Border *
-e_border_under_pointer_get(E_Desk *desk,
-                           E_Border *exclude)
+static E_Border *
+_e_border_under_pointer_helper(E_Desk *desk, E_Border *exclude, int x, int y)
 {
    E_Border *bd = NULL, *cbd;
    Eina_List *l;
-   int x, y;
-
-   /* We need to ensure that we can get the container window for the
-    * zone of either the given desk or the desk of the excluded
-    * window, so return if neither is given */
-   if (desk)
-     ecore_x_pointer_xy_get(desk->zone->container->win, &x, &y);
-   else if (exclude)
-     ecore_x_pointer_xy_get(exclude->desk->zone->container->win, &x, &y);
-   else
-     return NULL;
 
    EINA_LIST_FOREACH(e_border_raise_stack_get(), l, cbd)
      {
@@ -10146,6 +10135,25 @@ e_border_under_pointer_get(E_Desk *desk,
           }
      }
    return bd;
+}
+
+EAPI E_Border *
+e_border_under_pointer_get(E_Desk *desk,
+                           E_Border *exclude)
+{
+   int x, y;
+
+   /* We need to ensure that we can get the container window for the
+    * zone of either the given desk or the desk of the excluded
+    * window, so return if neither is given */
+   if (desk)
+     ecore_x_pointer_xy_get(desk->zone->container->win, &x, &y);
+   else if (exclude)
+     ecore_x_pointer_xy_get(exclude->desk->zone->container->win, &x, &y);
+   else
+     return NULL;
+
+   return _e_border_under_pointer_helper(desk, exclude, x, y);
 }
 
 static Eina_Bool
@@ -10187,6 +10195,7 @@ cleanup:
    ecore_timer_del(warp_timer);
    warp_timer = NULL;
    e_border_focus_lock_set(EINA_FALSE);
+   e_focus_event_mouse_in(warp_timer_border);
    warp_timer_border = NULL;
    return ECORE_CALLBACK_CANCEL;
 }
@@ -10195,6 +10204,7 @@ EAPI int
 e_border_pointer_warp_to_center(E_Border *bd)
 {
    int x, y;
+   E_Border *cbd = NULL;
 
    /* Do not slide pointer when disabled (probably breaks focus
     * on sloppy/mouse focus but requested by users). */
@@ -10204,7 +10214,10 @@ e_border_pointer_warp_to_center(E_Border *bd)
    ecore_x_pointer_xy_get(bd->zone->container->win, &x, &y);
    if ((x >= bd->x) && (x <= (bd->x + bd->w)) &&
        (y >= bd->y) && (y <= (bd->y + bd->h)))
-     return 0;
+     {
+        cbd = _e_border_under_pointer_helper(bd->desk, bd, x, y);
+        if (cbd == bd) return 0;
+     }
 
    warp_to_x = bd->x + (bd->w / 2);
    if (warp_to_x < (bd->zone->x + 1))
@@ -10217,6 +10230,15 @@ e_border_pointer_warp_to_center(E_Border *bd)
      warp_to_y = bd->zone->y + ((bd->y + bd->h - bd->zone->y) / 2);
    else if (warp_to_y > (bd->zone->y + bd->zone->h))
      warp_to_y = (bd->zone->y + bd->zone->h + bd->y) / 2;
+
+   /* TODO: handle case where another border is over the exact center,
+    * find a place where the requested border is not overlapped?
+    *
+   if (!cbd) cbd = _e_border_under_pointer_helper(bd->desk, bd, x, y);
+   if (cbd != bd)
+     {
+     }
+   */
 
    warp_to = 1;
    warp_to_win = bd->zone->container->win;
@@ -10342,7 +10364,7 @@ e_border_activate(E_Border *bd, Eina_Bool just_do_it)
              /* XXX ooffice does send this request for
                 config dialogs when the main window gets focus.
                 causing the pointer to jump back and forth.  */
-             if ((e_config->focus_policy != E_FOCUS_CLICK) &&
+             if ((e_config->focus_policy != E_FOCUS_CLICK) && (!bd->new_client) &&
                  !(bd->client.icccm.name && !strcmp(bd->client.icccm.name, "VCLSalFrame")))
                ecore_x_pointer_warp(bd->zone->container->win,
                                     bd->x + (bd->w / 2), bd->y + (bd->h / 2));
