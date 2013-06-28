@@ -6,6 +6,7 @@ Summary:        The Enlightenment window manager
 Url:            http://www.enlightenment.org/
 Group:          Graphics/EFL
 Source0:        enlightenment-%{version}.tar.bz2
+Source1001: 	enlightenment.manifest
 BuildRequires:  doxygen
 BuildRequires:  fdupes
 BuildRequires:  gettext
@@ -49,6 +50,7 @@ Development files for enlightenment
 
 %prep
 %setup -q -n %{name}-%{version}
+cp %{SOURCE1001} .
 
 
 %build
@@ -68,6 +70,7 @@ make %{?_smp_mflags}
 %lang_package
 
 %files 
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %license COPYING
 %config %{_sysconfdir}/enlightenment/sysactions.conf
@@ -79,6 +82,7 @@ make %{?_smp_mflags}
 %{_datadir}/applications/enlightenment_filemanager.desktop
 
 %files devel
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_includedir}/enlightenment/*
 %{_libdir}/pkgconfig/*.pc
