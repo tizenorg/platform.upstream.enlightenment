@@ -1,16 +1,13 @@
 #ifndef E_MOD_MAIN_H
 # define E_MOD_MAIN_H
 
-# ifndef ECORE_X_RANDR_1_2
-#  define ECORE_X_RANDR_1_2 ((1 << 16) | 2)
-# endif
+//# define LOGFNS 1
 
-# ifndef ECORE_X_RANDR_1_3
-#  define ECORE_X_RANDR_1_3 ((1 << 16) | 3)
-# endif
-
-# ifndef E_RANDR_12
-#  define E_RANDR_12 (e_randr_screen_info.rrvd_info.randr_info_12)
+# ifdef LOGFNS
+#  include <stdio.h>
+#  define LOGFN(fl, ln, fn) printf("-CONF-RANDR: %25s: %5i - %s\n", fl, ln, fn);
+# else
+#  define LOGFN(fl, ln, fn)
 # endif
 
 EAPI extern E_Module_Api e_modapi;
@@ -18,8 +15,6 @@ EAPI extern E_Module_Api e_modapi;
 EAPI void *e_modapi_init(E_Module *m);
 EAPI int e_modapi_shutdown(E_Module *m);
 EAPI int e_modapi_save(E_Module *m);
-
-extern const char *mod_dir;
 
 /**
  * @addtogroup Optional_Conf

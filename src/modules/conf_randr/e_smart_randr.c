@@ -3,24 +3,33 @@
 #include "e_smart_randr.h"
 #include "e_smart_monitor.h"
 
+#define SNAP_FUZZ 100
+
+/*
+ * TODO:
+ * 
+ * Add Poller for Output Change events to listen for hotplug (4 seconds)
+ * 
+ */
+
 /* local structures */
 typedef struct _E_Smart_Data E_Smart_Data;
 struct _E_Smart_Data
 {
-   /* scroll object */
-   Evas_Object *o_scroll;
+   /* base object */
+   Evas_Object *o_base;
 
-   /* layout object */
-   Evas_Object *o_layout;
+   /* grid object */
+   Evas_Object *o_grid;
 
-   /* list of monitor objects */
-   Eina_List *monitors;
-
-   /* changed flag */
-   Eina_Bool changed : 1;
+   /* virtual size */
+   Evas_Coord vw, vh;
 
    /* visible flag */
    Eina_Bool visible : 1;
+
+   /* list of monitors */
+   Eina_List *monitors;
 };
 
 /* local function prototypes */
@@ -32,25 +41,28 @@ static void _e_smart_show(Evas_Object *obj);
 static void _e_smart_hide(Evas_Object *obj);
 static void _e_smart_clip_set(Evas_Object *obj, Evas_Object *clip);
 static void _e_smart_clip_unset(Evas_Object *obj);
-static void _e_smart_randr_changed_set(Evas_Object *obj);
-static int _e_smart_randr_modes_sort(const void *data1, const void *data2);
 
-static Evas_Object *_e_smart_randr_monitor_find(E_Smart_Data *sd, Ecore_X_Randr_Crtc xid);
+static void _e_smart_randr_grid_cb_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED);
+static void _e_smart_randr_grid_cb_resize(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED);
 
-static void _e_smart_randr_monitor_adjacent_move(E_Smart_Data *sd, Evas_Object *obj, Evas_Object *skip);
-
-/* local callbacks prototypes for monitors */
-static void _e_smart_randr_monitor_cb_moving(void *data, Evas_Object *obj, void *event EINA_UNUSED);
-static void _e_smart_randr_monitor_cb_moved(void *data, Evas_Object *obj, void *event EINA_UNUSED);
-static void _e_smart_randr_monitor_cb_resized(void *data, Evas_Object *obj, void *event EINA_UNUSED);
-static void _e_smart_randr_monitor_cb_rotated(void *data, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED);
-static void _e_smart_randr_monitor_cb_deleted(void *data EINA_UNUSED, Evas *evas EINA_UNUSED, Evas_Object *obj, void *event EINA_UNUSED);
+static Evas_Object *_e_smart_randr_monitor_crtc_find(E_Smart_Data *sd, Ecore_X_Randr_Crtc crtc);
 static void _e_smart_randr_monitor_cb_changed(void *data, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED);
+static void _e_smart_randr_monitor_cb_moved(void *data, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED);
+static void _e_smart_randr_monitor_cb_resized(void *data, Evas_Object *obj, void *event EINA_UNUSED);
+
+static void _e_smart_randr_monitor_position_update(E_Smart_Data *sd, Evas_Object *obj, Evas_Object *skip);
+static void _e_smart_randr_monitor_position_normalize(E_Smart_Data *sd);
+
+static void _e_smart_randr_monitor_preferred_mode_size_get(Ecore_X_Randr_Output output, Evas_Coord *mw, Evas_Coord *mh);
+static Evas_Object *_e_smart_randr_clone_find(Ecore_X_Window root, Ecore_X_Randr_Output output, Ecore_X_Randr_Crtc crtc, Evas_Coord cx, Evas_Coord cy, E_Smart_Data *sd);
+static Ecore_X_Randr_Crtc _e_smart_randr_crtc_find(Ecore_X_Randr_Output output);
 
 /* external functions exposed by this widget */
 Evas_Object *
 e_smart_randr_add(Evas *evas)
 {
+   LOGFN(__FILE__, __LINE__, __FUNCTION__);
+
    static Evas_Smart *smart = NULL;
    static const Evas_Smart_Class sc = 
      {
@@ -71,416 +83,324 @@ e_smart_randr_add(Evas *evas)
 }
 
 void 
-e_smart_randr_layout_size_get(Evas_Object *obj, Evas_Coord *w, Evas_Coord *h)
+e_smart_randr_virtual_size_calc(Evas_Object *obj)
 {
    E_Smart_Data *sd;
-   Eina_List *l;
-   E_Randr_Crtc_Info *crtc;
-   Evas_Coord mw = 0, mh = 0;
+   Ecore_X_Window root = 0;
+   Ecore_X_Randr_Output *routputs;
+   Evas_Coord vw = 0, vh = 0;
+   int noutputs = 0;
+
+   LOGFN(__FILE__, __LINE__, __FUNCTION__);
+
+   /* NB: The old code here used to get the modes from the e_randr_cfg.
+    * I changed it to get directly from Xrandr because of attempts to 
+    * run this in Xephyr. Getting the information from e_randr_cfg was not 
+    * practical in those cases */
 
    /* try to get the objects smart data */
    if (!(sd = evas_object_smart_data_get(obj))) return;
 
-   /* loop the crtcs, checking for valid output */
-   EINA_LIST_FOREACH(E_RANDR_12->crtcs, l, crtc)
+   /* grab the root window */
+   root = ecore_x_window_root_first_get();
+
+   /* get list of outputs */
+   if ((routputs = ecore_x_randr_outputs_get(root, &noutputs)))
      {
-        E_Randr_Output_Info *output;
-        Eina_List *outputs = NULL, *ll;
+        int j = 0;
+        intptr_t *o;
+        Eina_List *outputs = NULL;
 
-        EINA_LIST_FOREACH(crtc->outputs, ll, output)
-          outputs = eina_list_append(outputs, output);
-
-        /* if this crtc is disabled, then no output will be assigned to it.
-         * 
-         * We need to check the possible outputs and assign one */
-        if (!crtc->current_mode)
+        for (j = 0; j < noutputs; j++)
           {
-             EINA_LIST_FOREACH(crtc->possible_outputs, ll, output)
-               {
-                  if (!(eina_list_data_find(outputs, output) == output))
-                    {
-                       if (!output->crtc) output->crtc = crtc;
-                       if (output->crtc != crtc) continue;
-                       outputs = eina_list_append(outputs, output);
-                    }
-               }
+             Ecore_X_Randr_Connection_Status status = 
+               ECORE_X_RANDR_CONNECTION_STATUS_UNKNOWN;
+
+             status = 
+               ecore_x_randr_output_connection_status_get(root, routputs[j]);
+             if (status != ECORE_X_RANDR_CONNECTION_STATUS_CONNECTED) continue;
+
+             outputs = 
+               eina_list_append(outputs, (intptr_t *)(long)routputs[j]);
           }
 
-        /* loop the outputs on this crtc */
-        EINA_LIST_FOREACH(outputs, ll, output)
+        /* loop the outputs and get the largest mode */
+        EINA_LIST_FREE(outputs, o)
           {
-             Eina_List *modes = NULL;
-             Ecore_X_Randr_Mode_Info *mode = NULL;
+             Ecore_X_Randr_Output output;
+             Ecore_X_Randr_Mode *modes;
+             Evas_Coord mw = 0, mh = 0;
+             int nmode = 0;
 
-             /* check for valid monitor */
-             if (output->monitor)
-               {
-                  /* try to get the list of modes */
-                  if (!(modes = eina_list_clone(output->monitor->modes)))
-                    continue;
+             output = (int)(long)o;
 
-                  /* sort the list of modes */
-                  modes = eina_list_sort(modes, 0, _e_smart_randr_modes_sort);
+             /* try to get the list of modes for this output */
+             modes = 
+               ecore_x_randr_output_modes_get(root, output, 
+                                              &nmode, NULL);
+             if (!modes) continue;
 
-                  /* get last mode */
-                  if ((mode = eina_list_last_data_get(modes)))
-                    {
-                       /* grab max mode size and add to return value */
-                       mw += mode->width;
-                       mh += mode->height;
-                    }
-               }
+             /* get the size of the largest mode */
+             ecore_x_randr_mode_size_get(root, modes[0], &mw, &mh);
+
+             vw += MAX(mw, mh);
+             vh += MAX(mw, mh);
+
+             /* free any allocated memory from ecore_x_randr */
+             free(modes);
           }
+
+        free(routputs);
      }
 
-   if (w) *w = mw;
-   if (h) *h = mh;
-}
+   if ((vw == 0) && (vh == 0))
+     {
+        /* by default, set virtual size to the current screen size */
+        ecore_x_randr_screen_current_size_get(root, &vw, &vh, NULL, NULL);
+     }
 
-void 
-e_smart_randr_current_size_set(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
-{
-   E_Smart_Data *sd;
+   sd->vw = vw;
+   sd->vh = vh;
 
-   /* try to get the objects smart data */
-   if (!(sd = evas_object_smart_data_get(obj))) return;
-
-   /* set the virtual size of the layout */
-   e_layout_virtual_size_set(sd->o_layout, w, h);
-
-   /* resize the layout widget
-    * 
-    * NB: This is using an arbitrary scale of 1/10th the screen size */
-   evas_object_resize(sd->o_layout, (w / 10), (h / 10));
+   /* set the grid size */
+   evas_object_grid_size_set(sd->o_grid, vw, vh);
 }
 
 void 
 e_smart_randr_monitors_create(Evas_Object *obj)
 {
    E_Smart_Data *sd;
-   Eina_List *l, *ll, *deferred = NULL;
-   E_Randr_Crtc_Info *crtc;
-   E_Randr_Output_Info *output;
    Evas *evas;
+   Ecore_X_Window root = 0;
+   Evas_Coord gx = 0, gy = 0, gw = 0, gh = 0;
+   Ecore_X_Randr_Output *outputs;
+   Evas_Object *mon;
+   Eina_List *l = NULL;
+   int noutputs = 0, count = 0;
+
+   LOGFN(__FILE__, __LINE__, __FUNCTION__);
+
+   /* NB: The old code here used to get the outputs from the e_randr_cfg.
+    * I changed it to get directly from Xrandr because of attempts to 
+    * run this in Xephyr. Getting the information from e_randr_cfg was not 
+    * practical in those cases */
 
    /* try to get the objects smart data */
    if (!(sd = evas_object_smart_data_get(obj))) return;
 
-   /* get the canvas of the layout widget */
-   evas = evas_object_evas_get(sd->o_layout);
+   /* grab the canvas of the grid object */
+   evas = evas_object_evas_get(sd->o_grid);
 
-   /* loop the crtcs, checking for valid output */
-   EINA_LIST_FOREACH(E_RANDR_12->crtcs, l, crtc)
+   /* get the geometry of the grid */
+   evas_object_geometry_get(sd->o_grid, &gx, &gy, &gw, &gh);
+
+   /* grab the root window */
+   root = ecore_x_window_root_first_get();
+
+   /* get a list of outputs from X */
+   if ((outputs = ecore_x_randr_outputs_get(root, &noutputs)))
      {
-        Eina_List *outputs = NULL;
+        int i = 0;
+        Evas_Coord nx = 0;
+        Eina_List *connected = NULL;
 
-        /* printf("Checking Crtc: %d\n", crtc->xid); */
-        /* printf("\tGeom: %d %d %d %d\n", crtc->geometry.x,  */
-        /*        crtc->geometry.y, crtc->geometry.w, crtc->geometry.h); */
-
-        EINA_LIST_FOREACH(crtc->outputs, ll, output)
-          outputs = eina_list_append(outputs, output);
-
-        /* if this crtc is disabled, then no output will be assigned to it.
-         * 
-         * We need to check the possible outputs and assign one */
-        if (!crtc->current_mode)
+        /* loop these outputs */
+        for (i = 0; i < noutputs; i++)
           {
-             /* loop the possible outputs */
-             EINA_LIST_FOREACH(crtc->possible_outputs, ll, output)
+             Ecore_X_Randr_Crtc crtc = 0;
+             Evas_Coord mw = 0, mh = 0, crtcx = 0, crtcy = 0;
+             Evas_Coord cx = 0, cy = 0, cw = 0, ch = 0;
+             Ecore_X_Randr_Connection_Status status = 
+               ECORE_X_RANDR_CONNECTION_STATUS_UNKNOWN;
+             Ecore_X_Randr_Mode mode = 0;
+
+             /* ask X if this output is connected */
+             status = 
+               ecore_x_randr_output_connection_status_get(root, outputs[i]);
+
+             /* if it's not connected, skip it */
+             if (status != ECORE_X_RANDR_CONNECTION_STATUS_CONNECTED)
+               continue;
+
+             connected = 
+               eina_list_append(connected, (intptr_t *)(long)outputs[i]);
+
+             /* for each output, try to create a monitor */
+             if (!(mon = e_smart_monitor_add(evas)))
+               continue;
+
+             /* hook into monitor changed callback */
+             evas_object_smart_callback_add(mon, "monitor_changed", 
+                                            _e_smart_randr_monitor_cb_changed, obj);
+             evas_object_smart_callback_add(mon, "monitor_moved", 
+                                            _e_smart_randr_monitor_cb_moved, obj);
+             evas_object_smart_callback_add(mon, "monitor_resized", 
+                                            _e_smart_randr_monitor_cb_resized, obj);
+
+             /* add this monitor to our list */
+             sd->monitors = eina_list_append(sd->monitors, mon);
+
+             /* tell monitor what the grid's virtual size is */
+             e_smart_monitor_grid_virtual_size_set(mon, sd->vw, sd->vh);
+
+             /* tell monitor what the grid is and it's geometry */
+             e_smart_monitor_grid_set(mon, sd->o_grid, gx, gy, gw, gh);
+
+             /* try to get the crtc of this output. If it does not have one 
+              * we will try to find a usable one */
+             if (!(crtc = ecore_x_randr_output_crtc_get(root, outputs[i])))
+               crtc = _e_smart_randr_crtc_find(outputs[i]);
+
+             /* get the geometry for this crtc */
+             ecore_x_randr_crtc_geometry_get(root, crtc, 
+                                             &cx, &cy, &cw, &ch);
+
+             e_smart_monitor_crtc_set(mon, crtc, cx, cy, cw, ch);
+
+             mode = ecore_x_randr_crtc_mode_get(root, crtc);
+
+             /* if this crtc has no mode, or it's size is 0, 
+              * then it's disabled */
+             if ((!mode) || ((cw == 0) && (ch == 0)))
                {
-                  if (!(eina_list_data_find(outputs, output) == output))
+                  /* get the size of the preferred mode for this output */
+                  _e_smart_randr_monitor_preferred_mode_size_get(outputs[i], 
+                                                                 &mw, &mh);
+                  if ((mw == 0) && (mh == 0))
+                    ecore_x_randr_crtc_size_get(root, crtc, &mw, &mh);
+
+                  /* safety */
+                  if ((mw == 0) && (mh == 0))
                     {
-                       E_Randr_Crtc_Info *pcrtc = NULL;
-
-                       if (!(pcrtc = 
-                             eina_list_last_data_get(output->possible_crtcs)))
-                         continue;
-
-                       if (!output->crtc) output->crtc = pcrtc;
-                       if ((output->crtc) && 
-                           (output->crtc != pcrtc)) continue;
-                       outputs = eina_list_append(outputs, output);
+                       mw = 640;
+                       mh = 480;
                     }
+
+                  /* tell monitor what it's current position is
+                   * NB: This also packs into the grid */
+                  e_smart_monitor_current_geometry_set(mon, nx, 0, mw, mh);
+
+                  /* tell monitor to set the background preview */
+                  e_smart_monitor_background_set(mon, nx, 0);
+
+                  crtcx = nx;
+                  crtcy = 0;
+                  nx += mw;
                }
-          }
-
-        /* loop the outputs on this crtc */
-        EINA_LIST_FOREACH(outputs, ll, output)
-          {
-             /* printf("\tChecking Output: %d %s\n", output->xid, output->name); */
-             /* printf("\tOutput Policy: %d\n", output->policy); */
-             /* printf("\tOutput Status: %d\n", output->connection_status); */
-
-             /* if (output->wired_clones) */
-             /*   printf("\tHAS WIRED CLONES !!\n"); */
-
-             if (output->connection_status == 
-                 ECORE_X_RANDR_CONNECTION_STATUS_CONNECTED)
+             else
                {
-                  Evas_Object *mon = NULL, *pmon = NULL;
-                  E_Randr_Crtc_Info *pcrtc = NULL;
+                  /* tell monitor what it's current position is
+                   * NB: This also packs into the grid */
+                  e_smart_monitor_current_geometry_set(mon, cx, cy, 
+                                                       cw, ch);
 
-                  /* if we do not have a saved config yet, and the 
-                   * policy of this output is 'none' then this could be a 
-                   * first run situation. Because ecore_x_randr does not 
-                   * tell us proper output policies 
-                   * (as in ECORE_X_RANDR_OUTPUT_POLICY_CLONE) due to 
-                   * X not setting them, we need to determine manually 
-                   * if we are in a cloned situation here, and what output 
-                   * we are cloned to */
-                  if ((!e_config->randr_serialized_setup) && 
-		      ((output->policy == ECORE_X_RANDR_OUTPUT_POLICY_CLONE) || 
-			  (output->policy == ECORE_X_RANDR_OUTPUT_POLICY_NONE)))
+                  /* tell monitor to set the background preview */
+                  e_smart_monitor_background_set(mon, cx, cy);
+
+                  crtcx = cx;
+                  crtcy = cy;
+                  nx += cw;
+               }
+
+             /* tell monitor what output it uses */
+             e_smart_monitor_output_set(mon, outputs[i]);
+
+             if (eina_list_count(connected) > 0)
+               {
+                  intptr_t *o;
+                  Evas_Object *pmon;
+
+                  EINA_LIST_FOREACH(connected, l, o)
                     {
-                       /* if we have a previous crtc, check if that is the 
-                        * one we are cloned to */
-                       if ((pcrtc = eina_list_data_get(eina_list_prev(l))))
-                         {
-                            /* we have a previous crtc. compare geometry */
-                            if ((crtc->geometry.x == pcrtc->geometry.x) && 
-                                (crtc->geometry.y == pcrtc->geometry.y))
-                              {
-                                 pmon = 
-                                   _e_smart_randr_monitor_find(sd, pcrtc->xid);
-                              }
-                         }
-                    }
-                  /* else if we have an existing configuration and this 
-                   * output is set to cloned, then see if we can create the 
-                   * cloned representation */
-                  else if ((e_config->randr_serialized_setup) && 
-                           ((output->policy == ECORE_X_RANDR_OUTPUT_POLICY_CLONE) || 
-			       (output->policy == ECORE_X_RANDR_OUTPUT_POLICY_NONE)))
-                    {
-                       /* if we have a previous crtc, check if that is the 
-                        * one we are cloned to */
-                       if ((pcrtc = eina_list_data_get(eina_list_prev(l))))
-                         {
-                            /* we have a previous crtc. compare geometry */
-                            if ((crtc->geometry.x == pcrtc->geometry.x) && 
-                                (crtc->geometry.y == pcrtc->geometry.y))
-                              {
-                                 pmon = 
-                                   _e_smart_randr_monitor_find(sd, pcrtc->xid);
-                              }
-                         }
-                       else
-                         {
-                            /* we have no previous monitor to clone this to yet
-                             * add it to the deferred list and we will check it 
-                             * after everything has been setup */
-                            deferred = eina_list_append(deferred, output);
-                            continue;
-                         }
-                    }
+                       Ecore_X_Randr_Output out;
 
-                  if ((mon = e_smart_monitor_add(evas)))
-                    {
-                       Evas_Coord cx = 0, cy = 0;
-                       Evas_Coord cw = 0, ch = 0;
+                       out = (int)(long)o;
+                       if (out == outputs[i]) continue;
 
-                       /* add this monitor to the layout */
-                       e_smart_randr_monitor_add(obj, mon);
+                       pmon = 
+                         _e_smart_randr_clone_find(root, out, crtc, 
+                                                   crtcx, crtcy, sd);
 
-                       /* tell the monitor which layout it references */
-                       e_smart_monitor_layout_set(mon, sd->o_layout);
-
-                       /* tell the monitor which output it references */
-                       e_smart_monitor_output_set(mon, output);
-
-                       /* tell the monitor which crtc it references */
-                       e_smart_monitor_crtc_set(mon, crtc);
-
-                       /* with the layout and output assigned, we can 
-                        * tell the monitor to setup
-                        * 
-                        * NB: This means filling resolutions, getting 
-                        * refresh rates, displaying monitor name, etc...
-                        * all the graphical stuff */
-                       e_smart_monitor_setup(mon);
-
-                       cx = crtc->geometry.x;
-                       cy = crtc->geometry.y;
-                       cw = crtc->geometry.w;
-                       ch = crtc->geometry.h;
-
-                       if ((cw == 0) || (ch == 0))
-                         e_smart_monitor_current_geometry_get(mon, NULL, NULL, 
-                                                              &cw, &ch);
-
-                       if (pmon)
-                         {
-                            /* set geometry so that when we "unclone" this 
-                             * one, it will unclone to the right */
-                            if (pcrtc) cx += pcrtc->geometry.w;
-                         }
-
-                       /* resize this monitor to it's current size */
-                       e_layout_child_resize(mon, cw, ch);
-
-                       /* move this monitor to it's current location */
-                       e_layout_child_move(mon, cx, cy);
-
-                       /* if we are cloned, then tell randr */
                        if (pmon) 
                          {
-                            e_smart_monitor_cloned_set(mon, EINA_TRUE);
-                            e_smart_monitor_clone_add(pmon, mon);
+                            e_smart_monitor_clone_set(mon, pmon);
+                            break;
                          }
                     }
                }
           }
+
+        free(outputs);
      }
 
-   /* all main monitors should be setup now */
-
-   /* loop any outputs we have deferred */
-   EINA_LIST_FOREACH(deferred, l, output)
+   /* check if we have only one monitor. If so, we will disable the 
+    * indicator toggle so dumb people cannot turn off their only monitor */
+   count = eina_list_count(sd->monitors);
+   EINA_LIST_FOREACH(sd->monitors, l, mon)
      {
-        Evas_Object *mon = NULL, *pmon = NULL;
-
-        if (!output->crtc) continue;
-
-        /* find a crtc that matches the geometry of this output's crtc */
-        EINA_LIST_FOREACH(E_RANDR_12->crtcs, ll, crtc)
-          {
-	     if (crtc->xid == output->crtc->xid) continue;
-
-             if ((crtc->geometry.x == output->crtc->geometry.x) && 
-                 (crtc->geometry.y == output->crtc->geometry.y))
-               {
-                  if ((pmon = _e_smart_randr_monitor_find(sd, crtc->xid)))
-                    break;
-               }
-          }
-
-        if ((mon = e_smart_monitor_add(evas)))
-          {
-             Evas_Coord cx = 0, cy = 0;
-             Evas_Coord cw = 0, ch = 0;
-
-             /* add this monitor to the layout */
-             e_smart_randr_monitor_add(obj, mon);
-
-             /* tell the monitor which layout it references */
-             e_smart_monitor_layout_set(mon, sd->o_layout);
-
-             /* tell the monitor which output it references */
-             e_smart_monitor_output_set(mon, output);
-
-	     /* tell the monitor which crtc it references */
-	     e_smart_monitor_crtc_set(mon, output->crtc);
-
-             /* with the layout and output assigned, we can 
-              * tell the monitor to setup
-              * 
-              * NB: This means filling resolutions, getting 
-              * refresh rates, displaying monitor name, etc...
-              * all the graphical stuff */
-             e_smart_monitor_setup(mon);
-
-             cx = output->crtc->geometry.x;
-             cy = output->crtc->geometry.y;
-             cw = output->crtc->geometry.w;
-             ch = output->crtc->geometry.h;
-
-	     if ((cw == 0) || (ch == 0))
-	       e_smart_monitor_current_geometry_get(mon, NULL, NULL, 
-						    &cw, &ch);
-
-	     /* set geometry so that when we "unclone" this 
-              * one, it will unclone to the right */
-	     if (pmon)
-	       {
-		  E_Randr_Output_Info *poutput;
-
-		  /* get the output from this previous monitor */
-		  if ((poutput = e_smart_monitor_output_get(pmon)))
-		    cx += poutput->crtc->geometry.w;
-	       }
-
-             /* resize this monitor to it's current size */
-             e_layout_child_resize(mon, cw, ch);
-
-             /* move this monitor to it's current location */
-             e_layout_child_move(mon, cx, cy);
-
-             /* if we are cloned, then tell randr */
-	     if (pmon) 
-	       {
-		  e_smart_monitor_cloned_set(mon, EINA_TRUE);
-		  e_smart_monitor_clone_add(pmon, mon);
-	       }
-          }
+        if (count > 1)
+          e_smart_monitor_indicator_available_set(mon, EINA_TRUE);
+        else
+          e_smart_monitor_indicator_available_set(mon, EINA_FALSE);
      }
 }
 
 void 
-e_smart_randr_monitor_add(Evas_Object *obj, Evas_Object *mon)
+e_smart_randr_min_size_get(Evas_Object *obj, Evas_Coord *mw, Evas_Coord *mh)
 {
    E_Smart_Data *sd;
 
    /* try to get the objects smart data */
    if (!(sd = evas_object_smart_data_get(obj))) return;
 
-   /* add evas callbacks for monitor resize, rotate */
-   evas_object_smart_callback_add(mon, "monitor_moving", 
-                                  _e_smart_randr_monitor_cb_moving, obj);
-   evas_object_smart_callback_add(mon, "monitor_moved", 
-                                  _e_smart_randr_monitor_cb_moved, obj);
-   evas_object_smart_callback_add(mon, "monitor_resized", 
-                                  _e_smart_randr_monitor_cb_resized, obj);
-   evas_object_smart_callback_add(mon, "monitor_rotated", 
-                                  _e_smart_randr_monitor_cb_rotated, obj);
-   evas_object_smart_callback_add(mon, "monitor_changed", 
-                                  _e_smart_randr_monitor_cb_changed, obj);
+   if (mw) *mw = (sd->vw / 10);
+   if (mh) *mh = (sd->vh / 10);
+}
 
-   /* add listener for monitor delete event */
-   evas_object_event_callback_add(mon, EVAS_CALLBACK_DEL, 
-                                  _e_smart_randr_monitor_cb_deleted, NULL);
+Eina_Bool 
+e_smart_randr_changed_get(Evas_Object *obj)
+{
+   E_Smart_Data *sd;
+   Eina_Bool changed = EINA_FALSE;
+   Eina_List *l = NULL;
+   Evas_Object *mon;
 
-   /* add monitor to layout */
-   e_layout_pack(sd->o_layout, mon);
+   /* try to get the objects smart data */
+   if (!(sd = evas_object_smart_data_get(obj))) return EINA_FALSE;
 
-   /* add this monitor to our list */
-   sd->monitors = eina_list_append(sd->monitors, mon);
+   EINA_LIST_FOREACH(sd->monitors, l, mon)
+     {
+        E_Smart_Monitor_Changes changes = E_SMART_MONITOR_CHANGED_NONE;
 
-   /* show the monitor
-    * 
-    * NB: Needed. Do Not Remove */
-   evas_object_show(mon);
+        changes = e_smart_monitor_changes_get(mon);
+        if (changes > E_SMART_MONITOR_CHANGED_NONE)
+          {
+             changed = EINA_TRUE;
+             break;
+          }
+     }
+
+   return changed;
 }
 
 void 
-e_smart_randr_monitor_del(Evas_Object *obj, Evas_Object *mon)
+e_smart_randr_changes_apply(Evas_Object *obj)
 {
    E_Smart_Data *sd;
+   Eina_List *l = NULL;
+   Evas_Object *mon;
+   Eina_Bool need_reset = EINA_FALSE;
 
    /* try to get the objects smart data */
    if (!(sd = evas_object_smart_data_get(obj))) return;
 
-   /* delete evas callbacks for monitor resize, rotate */
-   evas_object_smart_callback_del(mon, "monitor_moving", 
-                                  _e_smart_randr_monitor_cb_moving);
-   evas_object_smart_callback_del(mon, "monitor_moved", 
-                                  _e_smart_randr_monitor_cb_moved);
-   evas_object_smart_callback_del(mon, "monitor_resized", 
-                                  _e_smart_randr_monitor_cb_resized);
-   evas_object_smart_callback_del(mon, "monitor_rotated", 
-                                  _e_smart_randr_monitor_cb_rotated);
-   evas_object_smart_callback_del(mon, "monitor_changed", 
-                                  _e_smart_randr_monitor_cb_changed);
+   /* tell each monitor to apply it's changes */
+   EINA_LIST_FOREACH(sd->monitors, l, mon)
+     if (e_smart_monitor_changes_apply(mon))
+       need_reset = EINA_TRUE;
 
-   /* delete listener for monitor delete event */
-   evas_object_event_callback_del(mon, EVAS_CALLBACK_DEL, 
-                                  _e_smart_randr_monitor_cb_deleted);
-
-   /* remove monitor from layout */
-   e_layout_unpack(mon);
-
-   /* add this monitor to our list */
-   sd->monitors = eina_list_remove(sd->monitors, mon);
+   if (need_reset) 
+     ecore_x_randr_screen_reset(ecore_x_window_root_first_get());
 }
 
 Eina_List *
@@ -490,49 +410,7 @@ e_smart_randr_monitors_get(Evas_Object *obj)
 
    /* try to get the objects smart data */
    if (!(sd = evas_object_smart_data_get(obj))) return NULL;
-
-   /* return the list of monitors */
    return sd->monitors;
-}
-
-Eina_Bool 
-e_smart_randr_changed_get(Evas_Object *obj)
-{
-   E_Smart_Data *sd;
-
-   /* try to get the objects smart data */
-   if (!(sd = evas_object_smart_data_get(obj))) return EINA_FALSE;
-
-   return sd->changed;
-}
-
-void 
-e_smart_randr_changes_apply(Evas_Object *obj)
-{
-   E_Smart_Data *sd;
-   Eina_List *l = NULL;
-   Evas_Object *mon = NULL;
-
-   /* try to get the objects smart data */
-   if (!(sd = evas_object_smart_data_get(obj))) return;
-
-   /* loop the list of monitors */
-   EINA_LIST_FOREACH(sd->monitors, l, mon)
-     {
-        /* tell the monitor to apply these changes */
-        e_smart_monitor_changes_apply(mon);
-
-        /* tell monitor to reset changes
-         * 
-         * NB: This updates the monitor's "original" values with those 
-         * that are "current" */
-        e_smart_monitor_changes_reset(mon);
-     }
-
-   /* FIXME: This should maybe go into a "restore on login" option ?? */
-
-   /* tell randr to save this config */
-   e_randr_store_configuration(E_RANDR_CONFIGURATION_STORE_ALL);
 }
 
 /* local functions */
@@ -542,21 +420,30 @@ _e_smart_add(Evas_Object *obj)
    E_Smart_Data *sd;
    Evas *evas;
 
+   LOGFN(__FILE__, __LINE__, __FUNCTION__);
+
    /* try to allocate the smart data structure */
    if (!(sd = E_NEW(E_Smart_Data, 1))) return;
 
    /* grab the canvas */
    evas = evas_object_evas_get(obj);
 
-   /* create the layout */
-   sd->o_layout = e_layout_add(evas);
+   sd->o_base = edje_object_add(evas);
+   e_theme_edje_object_set(sd->o_base, "base/theme/widgets", 
+                           "e/conf/randr/main");
+   evas_object_smart_member_add(sd->o_base, obj);
 
-   /* create the scroll */
-   sd->o_scroll = e_scrollframe_add(evas);
-   e_scrollframe_child_set(sd->o_scroll, sd->o_layout);
-   evas_object_smart_member_add(sd->o_scroll, obj);
+   /* create the virtual grid */
+   sd->o_grid = evas_object_grid_add(evas);
+   edje_object_part_swallow(sd->o_base, "e.swallow.content", sd->o_grid);
 
-   /* set the objects smart data */
+   /* setup grid move callback */
+   evas_object_event_callback_add(sd->o_grid, EVAS_CALLBACK_MOVE, 
+                                  _e_smart_randr_grid_cb_move, sd);
+   evas_object_event_callback_add(sd->o_grid, EVAS_CALLBACK_RESIZE, 
+                                  _e_smart_randr_grid_cb_resize, sd);
+
+   /* set the object's smart data */
    evas_object_smart_data_set(obj, sd);
 }
 
@@ -566,18 +453,34 @@ _e_smart_del(Evas_Object *obj)
    E_Smart_Data *sd;
    Evas_Object *mon;
 
+   LOGFN(__FILE__, __LINE__, __FUNCTION__);
+
    /* try to get the objects smart data */
    if (!(sd = evas_object_smart_data_get(obj))) return;
 
-   /* delete the monitors */
+   /* free the monitors */
    EINA_LIST_FREE(sd->monitors, mon)
-     evas_object_del(mon);
+     {
+        evas_object_smart_callback_del(mon, "monitor_changed", 
+                                       _e_smart_randr_monitor_cb_changed);
+        evas_object_smart_callback_del(mon, "monitor_moved", 
+                                       _e_smart_randr_monitor_cb_moved);
+        evas_object_smart_callback_del(mon, "monitor_resized", 
+                                       _e_smart_randr_monitor_cb_resized);
+        evas_object_del(mon);
+     }
 
-   /* delete the layout object */
-   if (sd->o_layout) evas_object_del(sd->o_layout);
+   /* remove grid move callback */
+   evas_object_event_callback_del(sd->o_grid, EVAS_CALLBACK_MOVE, 
+                                  _e_smart_randr_grid_cb_move);
+   evas_object_event_callback_del(sd->o_grid, EVAS_CALLBACK_RESIZE, 
+                                  _e_smart_randr_grid_cb_resize);
 
-   /* delete the scrollframe object */
-   if (sd->o_scroll) evas_object_del(sd->o_scroll);
+   /* delete the grid object */
+   evas_object_del(sd->o_grid);
+
+   /* delete the base object */
+   evas_object_del(sd->o_base);
 
    /* try to free the allocated structure */
    E_FREE(sd);
@@ -591,11 +494,13 @@ _e_smart_move(Evas_Object *obj, Evas_Coord x, Evas_Coord y)
 {
    E_Smart_Data *sd;
 
+   LOGFN(__FILE__, __LINE__, __FUNCTION__);
+
    /* try to get the objects smart data */
    if (!(sd = evas_object_smart_data_get(obj))) return;
 
-   /* move the scroll */
-   if (sd->o_scroll) evas_object_move(sd->o_scroll, x, y);
+   /* move the base object */
+   evas_object_move(sd->o_base, x, y);
 }
 
 static void 
@@ -603,17 +508,23 @@ _e_smart_resize(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
 {
    E_Smart_Data *sd;
 
+   LOGFN(__FILE__, __LINE__, __FUNCTION__);
+
    /* try to get the objects smart data */
    if (!(sd = evas_object_smart_data_get(obj))) return;
 
-   /* resize the scroll */
-   if (sd->o_scroll) evas_object_resize(sd->o_scroll, w, h);
+   /* resize the base object */
+   evas_object_resize(sd->o_base, w, h);
 }
 
 static void 
 _e_smart_show(Evas_Object *obj)
 {
    E_Smart_Data *sd;
+   Eina_List *l = NULL;
+   Evas_Object *mon;
+
+   LOGFN(__FILE__, __LINE__, __FUNCTION__);
 
    /* try to get the objects smart data */
    if (!(sd = evas_object_smart_data_get(obj))) return;
@@ -621,8 +532,12 @@ _e_smart_show(Evas_Object *obj)
    /* if it is already visible, get out */
    if (sd->visible) return;
 
-   /* show the grid */
-   if (sd->o_scroll) evas_object_show(sd->o_scroll);
+   /* show the base object */
+   evas_object_show(sd->o_base);
+
+   /* show any monitors */
+   EINA_LIST_FOREACH(sd->monitors, l, mon)
+     evas_object_show(mon);
 
    /* set visibility flag */
    sd->visible = EINA_TRUE;
@@ -632,6 +547,10 @@ static void
 _e_smart_hide(Evas_Object *obj)
 {
    E_Smart_Data *sd;
+   Eina_List *l = NULL;
+   Evas_Object *mon;
+
+   LOGFN(__FILE__, __LINE__, __FUNCTION__);
 
    /* try to get the objects smart data */
    if (!(sd = evas_object_smart_data_get(obj))) return;
@@ -639,8 +558,12 @@ _e_smart_hide(Evas_Object *obj)
    /* if it is not visible, we have nothing to do */
    if (!sd->visible) return;
 
-   /* hide the grid */
-   if (sd->o_scroll) evas_object_hide(sd->o_scroll);
+   /* hide any monitors */
+   EINA_LIST_FOREACH(sd->monitors, l, mon)
+     evas_object_hide(mon);
+
+   /* hide the base object */
+   evas_object_hide(sd->o_base);
 
    /* set visibility flag */
    sd->visible = EINA_FALSE;
@@ -655,7 +578,7 @@ _e_smart_clip_set(Evas_Object *obj, Evas_Object *clip)
    if (!(sd = evas_object_smart_data_get(obj))) return;
 
    /* set the clip */
-   if (sd->o_scroll) evas_object_clip_set(sd->o_scroll, clip);
+   evas_object_clip_set(sd->o_base, clip);
 }
 
 static void 
@@ -667,95 +590,136 @@ _e_smart_clip_unset(Evas_Object *obj)
    if (!(sd = evas_object_smart_data_get(obj))) return;
 
    /* unset the clip */
-   if (sd->o_scroll) evas_object_clip_unset(sd->o_scroll);
+   evas_object_clip_unset(sd->o_base);
 }
 
 static void 
-_e_smart_randr_changed_set(Evas_Object *obj)
+_e_smart_randr_grid_cb_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
    E_Smart_Data *sd;
-   Evas_Object *mon = NULL;
+   Evas_Coord gx = 0, gy = 0, gw = 0, gh = 0;
    Eina_List *l = NULL;
+   Evas_Object *mon;
 
-   /* try to get the objects smart data */
-   if (!(sd = evas_object_smart_data_get(obj))) return;
+   LOGFN(__FILE__, __LINE__, __FUNCTION__);
 
-   /* default changed flag */
-   sd->changed = EINA_FALSE;
+   /* try to get the smart data */
+   if (!(sd = data)) return;
 
-   /* loop list of monitors */
+   /* get the grid geometry */
+   evas_object_geometry_get(sd->o_grid, &gx, &gy, &gw, &gh);
+
+   /* loop the monitors and update grid geometry */
    EINA_LIST_FOREACH(sd->monitors, l, mon)
-     {
-        E_Smart_Monitor_Changes changes = E_SMART_MONITOR_CHANGED_NONE;
-
-        /* determine if this monitor changed */
-        changes = e_smart_monitor_changes_get(mon);
-        if (changes > E_SMART_MONITOR_CHANGED_NONE)
-          {
-             sd->changed = EINA_TRUE;
-             break;
-          }
-     }
-
-   /* send changed signal to main dialog */
-   evas_object_smart_callback_call(obj, "changed", NULL);
+     e_smart_monitor_grid_set(mon, sd->o_grid, gx, gy, gw, gh);
 }
 
-static int 
-_e_smart_randr_modes_sort(const void *data1, const void *data2)
+static void 
+_e_smart_randr_grid_cb_resize(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
-   const Ecore_X_Randr_Mode_Info *m1, *m2 = NULL;
+   E_Smart_Data *sd;
+   Evas_Coord gx = 0, gy = 0, gw = 0, gh = 0;
+   Eina_List *l = NULL;
+   Evas_Object *mon;
 
-   if (!(m1 = data1)) return 1;
-   if (!(m2 = data2)) return -1;
+   LOGFN(__FILE__, __LINE__, __FUNCTION__);
 
-   /* second one compares to previous to determine position */
-   if (m2->width < m1->width) return 1;
-   if (m2->width > m1->width) return -1;
+   /* try to get the smart data */
+   if (!(sd = data)) return;
 
-   /* width are same, compare heights */
-   if ((m2->width == m1->width))
-     {
-        if (m2->height < m1->height) return 1;
-        if (m2->height > m1->height) return -1;
-     }
+   /* get the grid geometry */
+   evas_object_geometry_get(sd->o_grid, &gx, &gy, &gw, &gh);
 
-   return 1;
+   /* loop the monitors and update grid geometry */
+   EINA_LIST_FOREACH(sd->monitors, l, mon)
+     e_smart_monitor_grid_set(mon, sd->o_grid, gx, gy, gw, gh);
 }
 
 static Evas_Object *
-_e_smart_randr_monitor_find(E_Smart_Data *sd, Ecore_X_Randr_Crtc xid)
+_e_smart_randr_monitor_crtc_find(E_Smart_Data *sd, Ecore_X_Randr_Crtc crtc)
 {
-   Eina_List *l;
+   Eina_List *l = NULL;
    Evas_Object *mon;
 
-   /* loop the monitor list */
+   if ((!sd) || (!crtc)) return NULL;
+
    EINA_LIST_FOREACH(sd->monitors, l, mon)
      {
-        E_Randr_Output_Info *output;
+        Ecore_X_Randr_Crtc mcrtc;
 
-        /* try to grab this monitors output */
-        if ((output = e_smart_monitor_output_get(mon)))
-          {
-             /* compare the output's crtc id to the one passed in */
-             if ((output->crtc) && (output->crtc->xid == xid))
-               return mon;
-          }
+        if ((mcrtc = e_smart_monitor_crtc_get(mon)))
+          if ((mcrtc == crtc)) return mon;
      }
 
    return NULL;
 }
 
 static void 
-_e_smart_randr_monitor_adjacent_move(E_Smart_Data *sd, Evas_Object *obj, Evas_Object *skip)
+_e_smart_randr_monitor_cb_changed(void *data, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
+{
+   Evas_Object *randr;
+
+   if (!(randr = data)) return;
+
+   /* tell main dialog that something changed and to enable apply button */
+   evas_object_smart_callback_call(randr, "randr_changed", NULL);
+}
+
+static void 
+_e_smart_randr_monitor_cb_moved(void *data, Evas_Object *obj, void *event EINA_UNUSED)
+{
+   E_Smart_Data *sd;
+   Evas_Object *randr;
+
+   if (!(randr = data)) return;
+
+   /* try to get the objects smart data */
+   if (!(sd = evas_object_smart_data_get(randr))) return;
+
+   /* normalize output positions so that upper left corner of all 
+    * outputs is at 0,0 */
+   _e_smart_randr_monitor_position_normalize(sd);
+
+   /* move any monitors which are adjacent to this one to their new 
+    * positions due to the resize, specifying this resized monitor as 
+    * the one to skip */
+   _e_smart_randr_monitor_position_update(sd, obj, obj);
+
+   /* tell main dialog that something changed and to enable apply button */
+   evas_object_smart_callback_call(randr, "randr_changed", NULL);
+}
+
+static void 
+_e_smart_randr_monitor_cb_resized(void *data, Evas_Object *obj, void *event EINA_UNUSED)
+{
+   E_Smart_Data *sd;
+   Evas_Object *randr;
+
+   if (!(randr = data)) return;
+
+   /* try to get the objects smart data */
+   if (!(sd = evas_object_smart_data_get(randr))) return;
+
+   /* move any monitors which are adjacent to this one to their new 
+    * positions due to the resize, specifying this resized monitor as 
+    * the one to skip */
+   _e_smart_randr_monitor_position_update(sd, obj, obj);
+
+   /* tell main dialog that something changed and to enable apply button */
+   evas_object_smart_callback_call(randr, "randr_changed", NULL);
+}
+
+static void 
+_e_smart_randr_monitor_position_update(E_Smart_Data *sd, Evas_Object *obj, Evas_Object *skip)
 {
    Eina_List *l = NULL;
    Evas_Object *mon;
-   Eina_Rectangle o;
+   Eina_Rectangle o, op;
 
    /* get the current geometry of the monitor we were passed in */
-   e_smart_monitor_current_geometry_get(obj, &o.x, &o.y, NULL, NULL);
-   e_layout_child_geometry_get(obj, NULL, NULL, &o.w, &o.h);
+   e_smart_monitor_current_geometry_get(obj, &o.x, &o.y, &o.w, &o.h);
+
+   e_smart_monitor_previous_geometry_get(obj, &op.x, &op.y, &op.w, &op.h);
 
    /* loop the list of monitors */
    EINA_LIST_FOREACH(sd->monitors, l, mon)
@@ -767,240 +731,219 @@ _e_smart_randr_monitor_adjacent_move(E_Smart_Data *sd, Evas_Object *obj, Evas_Ob
           continue;
 
         /* get the current geometry of this monitor */
-        e_smart_monitor_current_geometry_get(mon, &m.x, &m.y, NULL, NULL);
-        e_layout_child_geometry_get(mon, NULL, NULL, &m.w, &m.h);
+        e_smart_monitor_current_geometry_get(mon, &m.x, &m.y, &m.w, &m.h);
 
         /* check if this monitor is adjacent to the original one, 
          * if it is, then we need to move it */
-        if ((m.x == o.x) || (m.y == o.y))
+
+        /* check for any monitors that are on this X axis
+         * (within a certain threshold of distance) */
+        if ((m.x >= (op.x + (op.w / 3))) && 
+            (((m.x <= ((op.x + op.w) + SNAP_FUZZ)) || 
+              (m.x <= ((op.x + op.w) - SNAP_FUZZ)))))
           {
-             if ((m.x == o.x))
+             /* don't move the monitor IF this movement would place it 
+              * outside the virual grid */
+             if (((o.x + o.w) + m.w) <= sd->vw)
+               e_smart_monitor_current_geometry_set(mon, (o.x + o.w),
+                                                    m.y, m.w, m.h);
+          }
+        else if ((m.y >= (op.y + (op.h / 3))) && 
+                 (((m.y <= ((op.y + op.h) + SNAP_FUZZ)) || 
+                   (m.y <= ((op.y + op.h) - SNAP_FUZZ)))))
+          {
+             /* don't move the monitor IF this movement would place it 
+              * outside the virual grid */
+             if (((o.y + o.h) + m.h) <= sd->vh)
+               e_smart_monitor_current_geometry_set(mon, m.x, (o.y + o.h), 
+                                                    m.w, m.h);
+          }
+
+        /* handle move case for obj */
+        else if ((o.x >= (m.x + (m.w / 3))) && 
+                 (((o.x <= ((m.x + m.w) + SNAP_FUZZ)) || 
+                   (o.x <= ((m.x + m.w) - SNAP_FUZZ)))))
+          {
+             /* don't move the monitor IF this movement would place it 
+              * outside the virual grid */
+             if (((m.x + m.w) + o.w) <= sd->vw)
+               e_smart_monitor_current_geometry_set(obj, (m.x + m.w),
+                                                    o.y, o.w, o.h);
+          }
+        else if ((o.y >= (m.y + (m.h / 3))) && 
+                 (((o.y <= ((m.y + op.h) + SNAP_FUZZ)) || 
+                   (o.y <= ((m.y + op.h) - SNAP_FUZZ)))))
+          {
+             /* don't move the monitor IF this movement would place it 
+              * outside the virual grid */
+             if (((m.y + m.h) + o.h) <= sd->vh)
+               e_smart_monitor_current_geometry_set(obj, o.x, (m.y + m.h), 
+                                                    o.w, o.h);
+          }
+
+     }
+}
+
+static void 
+_e_smart_randr_monitor_position_normalize(E_Smart_Data *sd)
+{
+   Evas_Object *mon;
+   Eina_List *l = NULL;
+   Evas_Coord minx = 0, miny = 0;
+
+   minx = 32768;
+   miny = 32768;
+
+   EINA_LIST_FOREACH(sd->monitors, l, mon)
+     {
+        Evas_Coord mx = 0, my = 0;
+
+        /* get the geometry for this monitor */
+        e_smart_monitor_current_geometry_get(mon, &mx, &my, NULL, NULL);
+        if (mx < minx) minx = mx;
+        if (my < miny) miny = my;
+     }
+
+   if ((minx) || (miny))
+     {
+        EINA_LIST_FOREACH(sd->monitors, l, mon)
+          {
+             Evas_Coord mx = 0, my = 0, mw = 0, mh = 0;
+
+             /* get the geometry for this monitor */
+             e_smart_monitor_current_geometry_get(mon, &mx, &my, &mw, &mh);
+
+             mx -= minx;
+             my -= miny;
+
+             /* move monitor to new position */
+             e_smart_monitor_current_geometry_set(mon, mx, my, mw, mh);
+          }
+     }
+}
+
+static void 
+_e_smart_randr_monitor_preferred_mode_size_get(Ecore_X_Randr_Output output, Evas_Coord *mw, Evas_Coord *mh)
+{
+   Ecore_X_Window root = 0;
+   Ecore_X_Randr_Mode *modes;
+   int n = 0, p = 0;
+
+   if (mw) *mw = 0;
+   if (mh) *mh = 0;
+
+   if (!output) return;
+
+   root = ecore_x_window_root_first_get();
+
+   if (!(modes = ecore_x_randr_output_modes_get(root, output, &n, &p)))
+     return;
+
+   if ((n > 0) && (p > 0))
+     ecore_x_randr_mode_size_get(root, modes[p - 1], mw, mh);
+   else if (n > 0)
+     ecore_x_randr_mode_size_get(root, modes[0], mw, mh);
+
+   free(modes);
+}
+
+static Evas_Object *
+_e_smart_randr_clone_find(Ecore_X_Window root, Ecore_X_Randr_Output output, Ecore_X_Randr_Crtc crtc, Evas_Coord cx, Evas_Coord cy, E_Smart_Data *sd)
+{
+   Evas_Object *mon = NULL;
+   Ecore_X_Randr_Crtc pcrtc = 0;
+   Evas_Coord px = 0, py = 0;
+
+   /* get the crtc of the previous output */
+   pcrtc = ecore_x_randr_output_crtc_get(root, output);
+   if (!pcrtc) return NULL;
+
+   /* get this crtcs geom */
+   ecore_x_randr_crtc_geometry_get(root, pcrtc, 
+                                   &px, &py, NULL, NULL);
+
+   if ((px == cx) && (py == cy))
+     {
+        Ecore_X_Randr_Orientation orient = 
+          ECORE_X_RANDR_ORIENTATION_ROT_0;
+        Ecore_X_Randr_Orientation porient = 
+          ECORE_X_RANDR_ORIENTATION_ROT_0;
+
+        porient = 
+          ecore_x_randr_crtc_orientation_get(root, pcrtc);
+
+        orient = 
+          ecore_x_randr_crtc_orientation_get(root, crtc);
+
+        if (porient == orient)
+          {
+             Ecore_X_Randr_Mode mode = 0, pmode = 0;
+             Evas_Coord pw = 0, ph = 0;
+             Evas_Coord w = 0, h = 0;
+
+             pmode = 
+               ecore_x_randr_crtc_mode_get(root, pcrtc);
+             ecore_x_randr_mode_size_get(root, pmode, &pw, &ph);
+
+             mode = 
+               ecore_x_randr_crtc_mode_get(root, crtc);
+             ecore_x_randr_mode_size_get(root, mode, &w, &h);
+
+             if ((pmode == mode) || ((pw == w) && (ph == h)))
+               mon = _e_smart_randr_monitor_crtc_find(sd, pcrtc);
+          }
+     }
+
+   return mon;
+}
+
+static Ecore_X_Randr_Crtc 
+_e_smart_randr_crtc_find(Ecore_X_Randr_Output output)
+{
+   Ecore_X_Randr_Crtc ret = 0;
+   Ecore_X_Window root = 0;
+   Ecore_X_Randr_Crtc *crtcs;
+   int ncrtcs = 0;
+
+   /* get root window */
+   root = ecore_x_window_root_first_get();
+
+   /* get possible crtcs for this output */
+   if ((crtcs = ecore_x_randr_output_possible_crtcs_get(root, output, &ncrtcs)))
+     {
+        Ecore_X_Randr_Output *outputs;
+        int i = 0, noutputs = 0;
+
+        for (i = 0; i < ncrtcs; i++)
+          {
+             int j = 0;
+
+             /* get any outputs on this crtc */
+             if (!(outputs = 
+                   ecore_x_randr_crtc_outputs_get(root, crtcs[i], &noutputs)))
+               ret = crtcs[i];
+             else if (noutputs == 0)
+               ret = crtcs[i];
+             else
                {
-                  if ((m.y >= o.y))
+                  /* loop the outputs */
+                  for (j = 0; j < noutputs; j++)
                     {
-                       /* vertical positioning */
-                       e_layout_child_move(mon, m.x, (o.y + o.h));
+                       /* check if it is this output */
+                       if (outputs[j] == output)
+                         {
+                            ret = crtcs[i];
+                            break;
+                         }
                     }
                }
-             else if ((m.y == o.y))
-               {
-                  if ((m.x >= o.x))
-                    {
-                       /* horizontal positioning */
-                       e_layout_child_move(mon, (o.x + o.w), m.y);
-                    }
-               }
+
+             free(outputs);
+             if (ret) break;
           }
-     }
-}
 
-/* local callbacks for monitors */
-
-/* callback received from a monitor object to let us know that it is moving, 
- * and we now have to check for a drop zone */
-static void 
-_e_smart_randr_monitor_cb_moving(void *data, Evas_Object *obj, void *event EINA_UNUSED)
-{
-   Evas_Object *o_randr = NULL;
-   E_Smart_Data *sd;
-   Eina_List *l = NULL;
-   Evas_Object *mon;
-   Evas_Coord ox = 0, oy = 0;
-
-   /* data is the randr object */
-   if (!(o_randr = data)) return;
-
-   /* try to get the RandR objects smart data */
-   if (!(sd = evas_object_smart_data_get(o_randr))) return;
-
-   /* get the current frame geometry of the monitor we were passed in */
-   e_smart_monitor_frame_geometry_get(obj, &ox, &oy, NULL, NULL);
-
-   /* loop the list of monitors */
-   EINA_LIST_FOREACH(sd->monitors, l, mon)
-     {
-        Evas_Coord fx = 0, fy = 0, fw = 0, fh = 0;
-
-        /* if this monitor is the one we want to skip, than skip it */
-        if (mon == obj) continue;
-
-        /* get the geometry of the monitor frame */
-        e_smart_monitor_frame_geometry_get(mon, &fx, &fy, &fw, &fh);
-
-        /* check if the moved monitor is inside an existing one */
-        if (E_INSIDE(ox, oy, fx, fy, fw, fh))
-          {
-             /* turn on the drop zone so tell user they can drop here */
-             e_smart_monitor_drop_zone_set(mon, EINA_TRUE);
-             break;
-          }
-        else
-          {
-             /* moving monitor is outside the drop zone of this monitor. 
-              * turn off drop zone hilighting */
-             e_smart_monitor_drop_zone_set(mon, EINA_FALSE);
-          }
-     }
-}
-
-/* callback received from a monitor object to let us know that it was moved, 
- * and we now have to adjust the position of any adjacent monitors */
-static void 
-_e_smart_randr_monitor_cb_moved(void *data, Evas_Object *obj, void *event EINA_UNUSED)
-{
-   Evas_Object *o_randr = NULL;
-   E_Smart_Data *sd;
-   Eina_List *l = NULL;
-   Evas_Object *mon;
-   Evas_Coord ox = 0, oy = 0;
-
-   /* data is the randr object */
-   if (!(o_randr = data)) return;
-
-   /* try to get the RandR objects smart data */
-   if (!(sd = evas_object_smart_data_get(o_randr))) return;
-
-   /* get the current frame geometry of the monitor we were passed in */
-   e_smart_monitor_frame_geometry_get(obj, &ox, &oy, NULL, NULL);
-
-   /* loop the list of monitors */
-   EINA_LIST_FOREACH(sd->monitors, l, mon)
-     {
-        Evas_Coord fx = 0, fy = 0, fw = 0, fh = 0;
-
-        /* if this monitor is the one we want to skip, than skip it */
-        if (mon == obj) continue;
-
-        /* get the geometry of the monitor frame */
-        e_smart_monitor_frame_geometry_get(mon, &fx, &fy, &fw, &fh);
-
-        /* check if the moved monitor is inside an existing one */
-        if (E_INSIDE(ox, oy, fx, fy, fw, fh))
-          {
-             /* clone this monitor into the obj monitor */
-             e_smart_monitor_clone_add(mon, obj);
-
-             /* emit signal to turn off drop zone hilight */
-             e_smart_monitor_drop_zone_set(mon, EINA_FALSE);
-
-             break;
-          }
+        free(crtcs);
      }
 
-   /* tell randr widget about changes */
-   _e_smart_randr_changed_set(o_randr);
-}
-
-/* callback received from a monitor object to let us know that it was resized, 
- * and we now have to adjust the position of any adjacent monitors */
-static void 
-_e_smart_randr_monitor_cb_resized(void *data, Evas_Object *obj, void *event EINA_UNUSED)
-{
-   Evas_Object *o_randr = NULL;
-   E_Smart_Data *sd;
-   Eina_List *l = NULL;
-   Evas_Object *mon;
-
-   /* data is the randr object */
-   if (!(o_randr = data)) return;
-
-   /* try to get the RandR objects smart data */
-   if (!(sd = evas_object_smart_data_get(o_randr))) return;
-
-   /* freeze the layout widget from redrawing while we shuffle things around */
-   e_layout_freeze(sd->o_layout);
-
-   /* move any monitors which are adjacent to this one to their new 
-    * positions because of the resize, specifying the resized monitor 
-    * as the one to skip */
-   _e_smart_randr_monitor_adjacent_move(sd, obj, obj);
-
-   /* move any Other monitors to their new positions */
-   EINA_LIST_FOREACH(sd->monitors, l, mon)
-     {
-        /* skip the current monitor */
-        if (mon == obj) continue;
-
-        /* move any monitors which are adjacent to this one to their new 
-         * positions because of the resize, specifying the resized monitor 
-         * as the one to skip */
-        _e_smart_randr_monitor_adjacent_move(sd, mon, obj);
-     }
-
-   /* thaw the layout widget, allowing redraws again */
-   e_layout_thaw(sd->o_layout);
-
-   /* tell randr widget about changes */
-   _e_smart_randr_changed_set(o_randr);
-}
-
-/* callback received from a monitor object to let us know that it was rotated, 
- * and we now have to adjust the position of any adjacent monitors */
-static void 
-_e_smart_randr_monitor_cb_rotated(void *data, Evas_Object *obj, void *event EINA_UNUSED)
-{
-   Evas_Object *o_randr = NULL;
-   E_Smart_Data *sd;
-   Eina_List *l = NULL;
-   Evas_Object *mon;
-
-   /* data is the randr object */
-   if (!(o_randr = data)) return;
-
-   /* try to get the RandR objects smart data */
-   if (!(sd = evas_object_smart_data_get(o_randr))) return;
-
-   /* freeze the layout widget from redrawing while we shuffle things around */
-   e_layout_freeze(sd->o_layout);
-
-   /* move any monitors which are adjacent to this one to their new 
-    * positions because of the resize, specifying the resized monitor 
-    * as the one to skip */
-   _e_smart_randr_monitor_adjacent_move(sd, obj, obj);
-
-   /* move any Other monitors to their new positions */
-   EINA_LIST_FOREACH(sd->monitors, l, mon)
-     {
-        /* skip the current monitor */
-        if (mon == obj) continue;
-
-        /* move any monitors which are adjacent to this one to their new 
-         * positions because of the resize, specifying the resized monitor 
-         * as the one to skip */
-        _e_smart_randr_monitor_adjacent_move(sd, mon, obj);
-     }
-
-   /* thaw the layout widget, allowing redraws again */
-   e_layout_thaw(sd->o_layout);
-
-   /* tell randr widget about changes */
-   _e_smart_randr_changed_set(o_randr);
-}
-
-static void 
-_e_smart_randr_monitor_cb_deleted(void *data EINA_UNUSED, Evas *evas EINA_UNUSED, Evas_Object *obj, void *event EINA_UNUSED)
-{
-   /* delete the smart callbacks we were listening on */
-   evas_object_smart_callback_del(obj, "monitor_moving", 
-                                  _e_smart_randr_monitor_cb_moving);
-   evas_object_smart_callback_del(obj, "monitor_moved", 
-                                  _e_smart_randr_monitor_cb_moved);
-   evas_object_smart_callback_del(obj, "monitor_resized", 
-                                  _e_smart_randr_monitor_cb_resized);
-   evas_object_smart_callback_del(obj, "monitor_rotated", 
-                                  _e_smart_randr_monitor_cb_rotated);
-   evas_object_smart_callback_del(obj, "monitor_changed", 
-                                  _e_smart_randr_monitor_cb_changed);
-}
-
-static void 
-_e_smart_randr_monitor_cb_changed(void *data, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
-{
-   Evas_Object *o_randr = NULL;
-
-   /* data is the randr object */
-   if (!(o_randr = data)) return;
-
-   /* tell randr widget about changes */
-   _e_smart_randr_changed_set(o_randr);
+   return ret;
 }

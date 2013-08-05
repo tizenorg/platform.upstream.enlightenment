@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Enlightenment 0.17\n"
 "Report-Msgid-Bugs-To: enlightenment-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2013-05-11 17:07-0300\n"
+"POT-Creation-Date: 2013-08-02 14:37-0300\n"
 "PO-Revision-Date: 2013-01-27 16:25+0100\n"
 "Last-Translator: Adrián Arévalo <adri58@gmail.com>\n"
 "Language-Team: Spanish <>\n"
@@ -818,7 +818,7 @@ msgstr "Seleccionar"
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: src/bin/e_config.c:1045
+#: src/bin/e_config.c:931
 msgid ""
 "Settings data needed upgrading. Your old settings have<br>been wiped and a "
 "new set of defaults initialized. This<br>will happen regularly during "
@@ -837,7 +837,7 @@ msgstr ""
 "defecto arreglará<br>ese fallo añadiendo esos parámentros. Ahora podrá "
 "reconfigurar las cosas a su<br>gusto"
 
-#: src/bin/e_config.c:1062
+#: src/bin/e_config.c:948
 msgid ""
 "Your settings are NEWER than Enlightenment. This is very<br>strange. This "
 "should not happen unless you downgraded<br>Enlightenment or copied the "
@@ -851,11 +851,11 @@ msgstr ""
 "versión más moderna de Enlightment. Ésto puede causar problemas y<br>como "
 "precaución, su configuración ha sido restaurada a los<br>valores por defecto."
 
-#: src/bin/e_config.c:1580 src/bin/e_config.c:2209
+#: src/bin/e_config.c:1466 src/bin/e_config.c:2091
 msgid "Enlightenment Settings Write Problems"
 msgstr "Problemas de escritura en las preferencias de Enlightenment"
 
-#: src/bin/e_config.c:1583
+#: src/bin/e_config.c:1469
 #, c-format
 msgid ""
 "Enlightenment has had an error while moving config files<br>from:<br>"
@@ -865,14 +865,15 @@ msgstr ""
 "Ha habido un error mientras se movían archivos de configuración de: %s a <br>"
 "%s<br>Se ha cancelado la operación por seguridad.<br>"
 
-#: src/bin/e_config.c:1593 src/bin/e_config.c:2222
+#: src/bin/e_config.c:1479 src/bin/e_config.c:2104
 #: src/bin/e_config_dialog.c:278 src/bin/e_eap_editor.c:860
 #: src/bin/e_eap_editor.c:923 src/bin/e_entry_dialog.c:63 src/bin/e_exec.c:613
 #: src/bin/e_fm.c:9970 src/bin/e_fm.c:10696 src/bin/e_fm_prop.c:624
 #: src/bin/e_import_config_dialog.c:540 src/bin/e_int_border_remember.c:318
 #: src/bin/e_int_border_remember.c:507 src/bin/e_module.c:431
 #: src/bin/e_module.c:798 src/bin/e_sys.c:618 src/bin/e_sys.c:659
-#: src/bin/e_utils.c:695 src/modules/comp/e_mod_config.c:914
+#: src/bin/e_update.c:76 src/bin/e_utils.c:695
+#: src/modules/comp/e_mod_config.c:914
 #: src/modules/conf_edgebindings/e_int_config_signalbindings.c:636
 #: src/modules/conf_intl/e_int_config_imc_import.c:120
 #: src/modules/conf_theme/e_int_config_theme_import.c:119
@@ -883,19 +884,19 @@ msgstr ""
 msgid "OK"
 msgstr "Aceptar"
 
-#: src/bin/e_config.c:2100
+#: src/bin/e_config.c:1982
 msgid "Settings Upgraded"
 msgstr "Configuración actualizada"
 
-#: src/bin/e_config.c:2118
+#: src/bin/e_config.c:2000
 msgid "The EET file handle is bad."
 msgstr "El identificador de archivo EET es incorrecto."
 
-#: src/bin/e_config.c:2122
+#: src/bin/e_config.c:2004
 msgid "The file data is empty."
 msgstr "El archivo de datos está vacío."
 
-#: src/bin/e_config.c:2126
+#: src/bin/e_config.c:2008
 msgid ""
 "The file is not writable. Perhaps the disk is read-only<br>or you lost "
 "permissions to your files."
@@ -903,17 +904,17 @@ msgstr ""
 "El archivo no tiene permisos de escritura. Tal vez el disco es de sólo "
 "lectura<br>o ha perdido los permisos."
 
-#: src/bin/e_config.c:2130
+#: src/bin/e_config.c:2012
 msgid "Memory ran out while preparing the write.<br>Please free up memory."
 msgstr ""
 "Se quedó sin memoria mientras se prepara la escritura.<br>Por favor, libere "
 "memoria."
 
-#: src/bin/e_config.c:2134
+#: src/bin/e_config.c:2016
 msgid "This is a generic error."
 msgstr "Este es un error genérico."
 
-#: src/bin/e_config.c:2138
+#: src/bin/e_config.c:2020
 msgid ""
 "The settings file is too large.<br>It should be very small (a few hundred KB "
 "at most)."
@@ -921,60 +922,60 @@ msgstr ""
 "El archivo de configuración es demasiado grande.<br>Debería ser muy pequeño "
 "(unos pocos cientos de KB como máximo)."
 
-#: src/bin/e_config.c:2142
+#: src/bin/e_config.c:2024
 msgid "You have I/O errors on the disk.<br>Maybe it needs replacing?"
 msgstr ""
 "Tiene errores de entrada/salida en el disco.<br>Quizá haya que cambiarlo"
 
-#: src/bin/e_config.c:2146
+#: src/bin/e_config.c:2028
 msgid "You ran out of space while writing the file."
 msgstr "Se quedó sin espacio al escribir el archivo"
 
-#: src/bin/e_config.c:2150
+#: src/bin/e_config.c:2032
 msgid "The file was closed while writing."
 msgstr "El archivo se cerró mientras se estaba escribiendo en el."
 
-#: src/bin/e_config.c:2154
+#: src/bin/e_config.c:2036
 msgid "Memory-mapping (mmap) of the file failed."
 msgstr "La asignación de memoria (mmap) del archivo ha fallado."
 
-#: src/bin/e_config.c:2158
+#: src/bin/e_config.c:2040
 msgid "X509 Encoding failed."
 msgstr "La codificación X509 ha fallado."
 
-#: src/bin/e_config.c:2162
+#: src/bin/e_config.c:2044
 msgid "Signature failed."
 msgstr "La firma falló."
 
-#: src/bin/e_config.c:2166
+#: src/bin/e_config.c:2048
 msgid "The signature was invalid."
 msgstr "Firma inválida."
 
-#: src/bin/e_config.c:2170
+#: src/bin/e_config.c:2052
 msgid "Not signed."
 msgstr "No firmado"
 
-#: src/bin/e_config.c:2174
+#: src/bin/e_config.c:2056
 msgid "Feature not implemented."
 msgstr "Función no implementada."
 
-#: src/bin/e_config.c:2178
+#: src/bin/e_config.c:2060
 msgid "PRNG was not seeded."
 msgstr ""
 
-#: src/bin/e_config.c:2182
+#: src/bin/e_config.c:2064
 msgid "Encryption failed."
 msgstr "El cifrado falló."
 
-#: src/bin/e_config.c:2186
+#: src/bin/e_config.c:2068
 msgid "Decryption failed."
 msgstr "El descifrado falló."
 
-#: src/bin/e_config.c:2190
+#: src/bin/e_config.c:2072
 msgid "The error is unknown to Enlightenment."
 msgstr "Error desconocido"
 
-#: src/bin/e_config.c:2212
+#: src/bin/e_config.c:2094
 #, c-format
 msgid ""
 "Enlightenment has had an error while writing<br>its config file.<br>"
@@ -3912,6 +3913,27 @@ msgstr "Comenzar a mover/cambiar el tamaño de los elementos"
 msgid "Set Toolbar Contents"
 msgstr "Seleccionar contenido de barra de herramientas"
 
+#: src/bin/e_update.c:78
+msgid "Bother me later"
+msgstr ""
+
+#: src/bin/e_update.c:80
+msgid "Never tell me"
+msgstr ""
+
+#: src/bin/e_update.c:83
+#, fuzzy
+msgid "Update Notice"
+msgstr "Actualizaciones"
+
+#: src/bin/e_update.c:87
+#, c-format
+msgid ""
+"Your enlightenment version is<br>not the current latest release.<br>The "
+"latest version is:<br><br>%s<br><br>Please visit www.enlightenment.org<br>or "
+"update your system packages<br>to get a new version."
+msgstr ""
+
 #: src/bin/e_utils.c:189 src/modules/conf_intl/e_int_config_imc.c:262
 #: src/modules/conf_intl/e_int_config_imc.c:511
 #, c-format
@@ -6398,10 +6420,20 @@ msgstr "Rendimiento"
 msgid "Power Management"
 msgstr "Manejo de energía"
 
-#: src/modules/conf_randr/e_int_config_randr.c:46
+#: src/modules/conf_randr/e_int_config_randr.c:48
 #: src/modules/conf_randr/e_mod_main.c:24
 msgid "Screen Setup"
 msgstr "Configuración de la pantalla"
+
+#: src/modules/conf_randr/e_int_config_randr.c:123
+#, fuzzy
+msgid "Primary Output"
+msgstr "Salida"
+
+#: src/modules/conf_randr/e_int_config_randr.c:141
+#, fuzzy
+msgid "Restore On Startup"
+msgstr "Bloquear al inicio"
 
 #: src/modules/conf_shelves/e_int_config_shelf.c:129
 #, c-format
@@ -8260,9 +8292,10 @@ msgstr ""
 "+'x''&gt;</hilight> ir ar plugin que empieza por 'x'<br>    <hilight>&lt;"
 "CONTROL+izquiera/derecha&gt;</hilight> cambiar entre losplugins<br>    "
 "<hilight>&lt;CONTROL+arriba/debajo&gt;</hilight> ir al primer/último<br>    "
-"<hilight>&lt;CONTROL+1&gt;</hilight> cambiar vista (sale de está ventana ;)"
-"<br>    <hilight>&lt;CONTROL+2&gt;</hilight> cambiar modos de vista<br>    "
-"<hilight>&lt;CONTROL+3&gt;</hilight> cambiar modos de vista de miniaturas"
+"<hilight>&lt;CONTROL+1&gt;</hilight> cambiar vista (sale de está "
+"ventana ;)<br>    <hilight>&lt;CONTROL+2&gt;</hilight> cambiar modos de "
+"vista<br>    <hilight>&lt;CONTROL+3&gt;</hilight> cambiar modos de vista de "
+"miniaturas"
 
 #: src/modules/everything/evry_view_tabs.c:93
 msgid "Back"
