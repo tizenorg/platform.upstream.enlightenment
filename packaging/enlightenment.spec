@@ -1,5 +1,5 @@
 Name:           enlightenment
-Version:        0.17.3
+Version:        0.17.4
 Release:        1
 License:        BSD 2-clause
 Summary:        The Enlightenment window manager
