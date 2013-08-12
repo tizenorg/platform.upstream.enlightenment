@@ -7,11 +7,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Enlightenment E17\n"
 "Report-Msgid-Bugs-To: enlightenment-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2013-05-11 17:07-0300\n"
+"POT-Creation-Date: 2013-08-02 14:37-0300\n"
 "PO-Revision-Date: 2009-03-08 02:01+0000\n"
 "Last-Translator: ersi <Unknown>\n"
 "Language-Team: Swedish\n"
-"Language: \n"
+"Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -866,7 +866,7 @@ msgstr "Välj en"
 msgid "Cancel"
 msgstr "Avbryt"
 
-#: src/bin/e_config.c:1045
+#: src/bin/e_config.c:931
 msgid ""
 "Settings data needed upgrading. Your old settings have<br>been wiped and a "
 "new set of defaults initialized. This<br>will happen regularly during "
@@ -877,7 +877,7 @@ msgid ""
 "the hiccup in your settings.<br>"
 msgstr ""
 
-#: src/bin/e_config.c:1062
+#: src/bin/e_config.c:948
 msgid ""
 "Your settings are NEWER than Enlightenment. This is very<br>strange. This "
 "should not happen unless you downgraded<br>Enlightenment or copied the "
@@ -886,11 +886,11 @@ msgid ""
 "to<br>defaults. Sorry for the inconvenience.<br>"
 msgstr ""
 
-#: src/bin/e_config.c:1580 src/bin/e_config.c:2209
+#: src/bin/e_config.c:1466 src/bin/e_config.c:2091
 msgid "Enlightenment Settings Write Problems"
 msgstr ""
 
-#: src/bin/e_config.c:1583
+#: src/bin/e_config.c:1469
 #, c-format
 msgid ""
 "Enlightenment has had an error while moving config files<br>from:<br>"
@@ -898,14 +898,15 @@ msgid ""
 "<br>"
 msgstr ""
 
-#: src/bin/e_config.c:1593 src/bin/e_config.c:2222
+#: src/bin/e_config.c:1479 src/bin/e_config.c:2104
 #: src/bin/e_config_dialog.c:278 src/bin/e_eap_editor.c:860
 #: src/bin/e_eap_editor.c:923 src/bin/e_entry_dialog.c:63 src/bin/e_exec.c:613
 #: src/bin/e_fm.c:9970 src/bin/e_fm.c:10696 src/bin/e_fm_prop.c:624
 #: src/bin/e_import_config_dialog.c:540 src/bin/e_int_border_remember.c:318
 #: src/bin/e_int_border_remember.c:507 src/bin/e_module.c:431
 #: src/bin/e_module.c:798 src/bin/e_sys.c:618 src/bin/e_sys.c:659
-#: src/bin/e_utils.c:695 src/modules/comp/e_mod_config.c:914
+#: src/bin/e_update.c:76 src/bin/e_utils.c:695
+#: src/modules/comp/e_mod_config.c:914
 #: src/modules/conf_edgebindings/e_int_config_signalbindings.c:636
 #: src/modules/conf_intl/e_int_config_imc_import.c:120
 #: src/modules/conf_theme/e_int_config_theme_import.c:119
@@ -916,21 +917,21 @@ msgstr ""
 msgid "OK"
 msgstr "OK"
 
-#: src/bin/e_config.c:2100
+#: src/bin/e_config.c:1982
 msgid "Settings Upgraded"
 msgstr "Inställningar uppdaterade"
 
-#: src/bin/e_config.c:2118
+#: src/bin/e_config.c:2000
 #, fuzzy
 msgid "The EET file handle is bad."
 msgstr "EET filhandtag är dåligt."
 
-#: src/bin/e_config.c:2122
+#: src/bin/e_config.c:2004
 #, fuzzy
 msgid "The file data is empty."
 msgstr "Filen data är tom."
 
-#: src/bin/e_config.c:2126
+#: src/bin/e_config.c:2008
 #, fuzzy
 msgid ""
 "The file is not writable. Perhaps the disk is read-only<br>or you lost "
@@ -939,17 +940,17 @@ msgstr ""
 "Filen är inte skrivbar. Kanske skivan är skrivskyddad<br>eller om du "
 "förlorat behörighet till dina filer."
 
-#: src/bin/e_config.c:2130
+#: src/bin/e_config.c:2012
 #, fuzzy
 msgid "Memory ran out while preparing the write.<br>Please free up memory."
 msgstr "Minne sprang ut medan du förbereder skriva.<br>Frigör minne."
 
-#: src/bin/e_config.c:2134
+#: src/bin/e_config.c:2016
 #, fuzzy
 msgid "This is a generic error."
 msgstr "Detta är en generisk fel."
 
-#: src/bin/e_config.c:2138
+#: src/bin/e_config.c:2020
 #, fuzzy
 msgid ""
 "The settings file is too large.<br>It should be very small (a few hundred KB "
@@ -958,71 +959,71 @@ msgstr ""
 "Inställningsfilen är för stor.<br>Det bör vara mycket liten (några hundra KB "
 "som mest)."
 
-#: src/bin/e_config.c:2142
+#: src/bin/e_config.c:2024
 msgid "You have I/O errors on the disk.<br>Maybe it needs replacing?"
 msgstr ""
 
-#: src/bin/e_config.c:2146
+#: src/bin/e_config.c:2028
 #, fuzzy
 msgid "You ran out of space while writing the file."
 msgstr "Du sprang ut ur rummet medan du skriver filen"
 
-#: src/bin/e_config.c:2150
+#: src/bin/e_config.c:2032
 #, fuzzy
 msgid "The file was closed while writing."
 msgstr "Ärendet avslutades på den medan du skriver."
 
-#: src/bin/e_config.c:2154
+#: src/bin/e_config.c:2036
 #, fuzzy
 msgid "Memory-mapping (mmap) of the file failed."
 msgstr "Memory -mapping (mmap) för filen misslyckades."
 
-#: src/bin/e_config.c:2158
+#: src/bin/e_config.c:2040
 #, fuzzy
 msgid "X509 Encoding failed."
 msgstr "X509 Kodning misslyckats."
 
-#: src/bin/e_config.c:2162
+#: src/bin/e_config.c:2044
 #, fuzzy
 msgid "Signature failed."
 msgstr "Signatur misslyckades."
 
-#: src/bin/e_config.c:2166
+#: src/bin/e_config.c:2048
 #, fuzzy
 msgid "The signature was invalid."
 msgstr "Signaturen var ogiltigt."
 
-#: src/bin/e_config.c:2170
+#: src/bin/e_config.c:2052
 #, fuzzy
 msgid "Not signed."
 msgstr "(Inga fönster)"
 
-#: src/bin/e_config.c:2174
+#: src/bin/e_config.c:2056
 #, fuzzy
 msgid "Feature not implemented."
 msgstr "Har inte genomförts."
 
-#: src/bin/e_config.c:2178
+#: src/bin/e_config.c:2060
 #, fuzzy
 msgid "PRNG was not seeded."
 msgstr "PRNG inte ympades."
 
-#: src/bin/e_config.c:2182
+#: src/bin/e_config.c:2064
 #, fuzzy
 msgid "Encryption failed."
 msgstr "Kryptering misslyckades."
 
-#: src/bin/e_config.c:2186
+#: src/bin/e_config.c:2068
 #, fuzzy
 msgid "Decryption failed."
 msgstr "Beskrivning: Otillgänglig"
 
-#: src/bin/e_config.c:2190
+#: src/bin/e_config.c:2072
 #, fuzzy
 msgid "The error is unknown to Enlightenment."
 msgstr "Välkommen till Enlightenment"
 
-#: src/bin/e_config.c:2212
+#: src/bin/e_config.c:2094
 #, c-format
 msgid ""
 "Enlightenment has had an error while writing<br>its config file.<br>"
@@ -4167,6 +4168,27 @@ msgstr "Flytta/ändra storlek på moduler"
 msgid "Set Toolbar Contents"
 msgstr "Ställ Verktygsfältsinnehåll"
 
+#: src/bin/e_update.c:78
+msgid "Bother me later"
+msgstr ""
+
+#: src/bin/e_update.c:80
+msgid "Never tell me"
+msgstr ""
+
+#: src/bin/e_update.c:83
+#, fuzzy
+msgid "Update Notice"
+msgstr "Tillstånd"
+
+#: src/bin/e_update.c:87
+#, c-format
+msgid ""
+"Your enlightenment version is<br>not the current latest release.<br>The "
+"latest version is:<br><br>%s<br><br>Please visit www.enlightenment.org<br>or "
+"update your system packages<br>to get a new version."
+msgstr ""
+
 #: src/bin/e_utils.c:189 src/modules/conf_intl/e_int_config_imc.c:262
 #: src/modules/conf_intl/e_int_config_imc.c:511
 #, c-format
@@ -6889,11 +6911,21 @@ msgstr "Prestanda"
 msgid "Power Management"
 msgstr "Power Management"
 
-#: src/modules/conf_randr/e_int_config_randr.c:46
+#: src/modules/conf_randr/e_int_config_randr.c:48
 #: src/modules/conf_randr/e_mod_main.c:24
 #, fuzzy
 msgid "Screen Setup"
 msgstr "Skärmsläckare"
+
+#: src/modules/conf_randr/e_int_config_randr.c:123
+#, fuzzy
+msgid "Primary Output"
+msgstr "utsignal"
+
+#: src/modules/conf_randr/e_int_config_randr.c:141
+#, fuzzy
+msgid "Restore On Startup"
+msgstr "Återställ Governor vid start"
 
 #: src/modules/conf_shelves/e_int_config_shelf.c:129
 #, fuzzy, c-format
@@ -12865,9 +12897,6 @@ msgstr ""
 
 #~ msgid "24 Hour Display"
 #~ msgstr "24 timmars visning"
-
-#~ msgid "Restore Governor on Startup"
-#~ msgstr "Återställ Governor vid start"
 
 #~ msgid "Desktop Name Position"
 #~ msgstr "Position på skrivbordsnamn"
