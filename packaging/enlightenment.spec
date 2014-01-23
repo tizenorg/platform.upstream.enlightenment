@@ -25,8 +25,11 @@ BuildRequires:  pkgconfig(ecore-input-evas)
 BuildRequires:  pkgconfig(ecore-ipc)
 
 %if %{with wayland}
-%else
+%endif
+
+%if %{with x}
 BuildRequires:  pkgconfig(ecore-x)
+BuildRequires:  pkgconfig(x11)
 %endif
 
 BuildRequires:  pkgconfig(edbus)
@@ -40,10 +43,15 @@ BuildRequires:  pkgconfig(evas)
 BuildRequires:  pkgconfig(ice)
 BuildRequires:  pkgconfig(libudev)
 BuildRequires:  pkgconfig(udev)
-BuildRequires:  pkgconfig(x11)
 BuildRequires:  pkgconfig(xext)
 BuildRequires:  pkgconfig(xcb-keysyms)
 BuildRequires:  eet-tools
+BuildRequires:  eldbus-devel
+BuildRequires:  embryo-devel
+# elementary
+# emotion
+# ephysics
+
 
 %description
 Enlightenment is a window manager.
@@ -66,8 +74,12 @@ cp %{SOURCE1001} .
 %reconfigure \
     --enable-device-udev \
 	    --enable-mount-eeze  \
-        --enable-comp
-make %{?_smp_mflags}
+    --enable-comp \
+    --enable-wayland-only \
+    --enable-wayland-clients \
+    #eol
+
+make %{?_smp_mflags} -j1
 
 %install
 %make_install
@@ -90,6 +102,7 @@ make %{?_smp_mflags}
 %{_datadir}/xsessions/enlightenment.desktop
 %{_sysconfdir}/xdg/menus/enlightenment.menu
 %{_datadir}/applications/enlightenment_filemanager.desktop
+%{_libdir}/systemd/user/e18.service
 
 %files devel
 %manifest %{name}.manifest
