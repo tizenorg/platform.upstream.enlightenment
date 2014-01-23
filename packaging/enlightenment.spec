@@ -62,7 +62,9 @@ cp %{SOURCE1001} .
 
 
 %build
-%configure  --enable-device-udev \
+
+%reconfigure \
+    --enable-device-udev \
 	    --enable-mount-eeze  \
         --enable-comp
 make %{?_smp_mflags}
