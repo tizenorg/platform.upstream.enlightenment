@@ -1,6 +1,9 @@
+%bcond_with wayland
+%bcond_with x
+
 Name:           enlightenment
-Version:        0.17.4
-Release:        1
+Version:        0.17.0
+Release:        0
 License:        BSD 2-clause
 Summary:        The Enlightenment window manager
 Url:            http://www.enlightenment.org/
@@ -20,7 +23,12 @@ BuildRequires:  pkgconfig(ecore-file)
 BuildRequires:  pkgconfig(ecore-input)
 BuildRequires:  pkgconfig(ecore-input-evas)
 BuildRequires:  pkgconfig(ecore-ipc)
+
+%if %{with wayland}
+%else
 BuildRequires:  pkgconfig(ecore-x)
+%endif
+
 BuildRequires:  pkgconfig(edbus)
 BuildRequires:  pkgconfig(edje)
 BuildRequires:  pkgconfig(eet)
