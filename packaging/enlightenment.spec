@@ -2,7 +2,7 @@
 %bcond_with x
 
 Name:           enlightenment
-Version:        0.17.0
+Version:        0.17.0+1423+g6e72cb0
 Release:        0
 License:        BSD 2-clause
 Summary:        The Enlightenment window manager
