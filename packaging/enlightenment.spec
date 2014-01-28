@@ -1,3 +1,5 @@
+%bcond_with x
+
 Name:           enlightenment
 Version:        0.17.4
 Release:        1
@@ -8,6 +10,7 @@ Group:          Graphics/EFL
 Source0:        enlightenment-%{version}.tar.bz2
 Source1001: 	enlightenment.manifest
 BuildRequires:  doxygen
+BuildRequires:  eet-tools
 BuildRequires:  fdupes
 BuildRequires:  gettext
 BuildRequires:  pam-devel
@@ -20,7 +23,6 @@ BuildRequires:  pkgconfig(ecore-file)
 BuildRequires:  pkgconfig(ecore-input)
 BuildRequires:  pkgconfig(ecore-input-evas)
 BuildRequires:  pkgconfig(ecore-ipc)
-BuildRequires:  pkgconfig(ecore-x)
 BuildRequires:  pkgconfig(edbus)
 BuildRequires:  pkgconfig(edje)
 BuildRequires:  pkgconfig(eet)
@@ -32,10 +34,15 @@ BuildRequires:  pkgconfig(evas)
 BuildRequires:  pkgconfig(ice)
 BuildRequires:  pkgconfig(libudev)
 BuildRequires:  pkgconfig(udev)
+%if %{with x}
 BuildRequires:  pkgconfig(x11)
 BuildRequires:  pkgconfig(xext)
 BuildRequires:  pkgconfig(xcb-keysyms)
-BuildRequires:  eet-tools
+BuildRequires:  pkgconfig(ecore-x)
+%else
+ExclusiveArch:
+%endif
+
 
 %description
 Enlightenment is a window manager.
