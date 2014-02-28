@@ -2,13 +2,13 @@
 
 Name:           enlightenment
 Version:        0.17.4
-Release:        1
-License:        BSD 2-clause
+Release:        0
+License:        BSD-2-Clause
 Summary:        The Enlightenment window manager
 Url:            http://www.enlightenment.org/
 Group:          Graphics/EFL
 Source0:        enlightenment-%{version}.tar.bz2
-Source1001: 	enlightenment.manifest
+Source1001:     enlightenment.manifest
 BuildRequires:  doxygen
 BuildRequires:  eet-tools
 BuildRequires:  fdupes
@@ -76,7 +76,7 @@ make %{?_smp_mflags}
 
 %lang_package
 
-%files 
+%files
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
 %license COPYING
@@ -94,6 +94,3 @@ make %{?_smp_mflags}
 %{_includedir}/enlightenment/*
 %{_libdir}/pkgconfig/*.pc
 
-
-
-%changelog
