@@ -2,14 +2,14 @@
 %bcond_with x
 
 Name:           enlightenment
-Version:        0.18.7
+Version:        0.18.0+rc2+905+gcf90b84
 Release:        0
 License:        BSD 2-clause
 Summary:        The Enlightenment window manager
 Url:            http://www.enlightenment.org/
 Group:          Graphics/EFL
 Source0:        enlightenment-%{version}.tar.bz2
-Source1001: 	enlightenment.manifest
+Source1001:     enlightenment.manifest
 BuildRequires:  doxygen
 BuildRequires:  fdupes
 BuildRequires:  gettext
@@ -25,11 +25,17 @@ BuildRequires:  pkgconfig(ecore-input-evas)
 BuildRequires:  pkgconfig(ecore-ipc)
 
 %if %{with wayland}
+BuildRequires:  pkgconfig(xcb-proto)
+BuildRequires:  pkgconfig(ecore-wayland)
+BuildRequires:  pkgconfig(wayland-server)
+BuildRequires:  pkgconfig(pixman-1)
 %endif
 
 %if %{with x}
 BuildRequires:  pkgconfig(ecore-x)
 BuildRequires:  pkgconfig(x11)
+BuildRequires:  pkgconfig(xcb-keysyms)
+BuildRequires:  pkgconfig(xext)
 %endif
 
 BuildRequires:  pkgconfig(edbus)
@@ -43,11 +49,12 @@ BuildRequires:  pkgconfig(evas)
 BuildRequires:  pkgconfig(ice)
 BuildRequires:  pkgconfig(libudev)
 BuildRequires:  pkgconfig(udev)
-BuildRequires:  pkgconfig(xext)
-BuildRequires:  pkgconfig(xcb-keysyms)
+BuildRequires:  pkgconfig(emotion)
+BuildRequires:  pkgconfig(elementary)
 BuildRequires:  eet-tools
 BuildRequires:  eldbus-devel
 BuildRequires:  embryo-devel
+BuildRequires:  eolian-devel
 # elementary
 # emotion
 # ephysics
@@ -73,13 +80,26 @@ cp %{SOURCE1001} .
 
 %reconfigure \
     --enable-device-udev \
-	    --enable-mount-eeze  \
+    --enable-mount-eeze  \
     --enable-comp \
-    --enable-wayland-only \
+%if %{with wayland}
+    --enable-wl-drm \
     --enable-wayland-clients \
+%if %{with x}
+    --enable-drm \
+    --enable-wayland \
+%else
+    --enable-wayland-only \
+    --disable-shot \
+    --disable-xkbswitch \
+    --disable-conf-randr \
+    --disable-everything \
+    --disable-wl-x11 \
+%endif
+%endif
     #eol
 
-make %{?_smp_mflags} -j1
+make %{?_smp_mflags} -j1 V=1
 
 %install
 %make_install
@@ -91,7 +111,7 @@ make %{?_smp_mflags} -j1
 
 %lang_package
 
-%files 
+%files
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
 %license COPYING
@@ -109,7 +129,3 @@ make %{?_smp_mflags} -j1
 %defattr(-,root,root,-)
 %{_includedir}/enlightenment/*
 %{_libdir}/pkgconfig/*.pc
-
-
-
-%changelog
