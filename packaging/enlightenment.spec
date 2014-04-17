@@ -30,8 +30,6 @@ BuildRequires:  pkgconfig(ecore-ipc)
 %if %{with x}
 BuildRequires:  pkgconfig(ecore-x)
 BuildRequires:  pkgconfig(x11)
-%else
-ExclusiveArch:	
 %endif
 
 BuildRequires:  pkgconfig(edbus)
@@ -53,11 +51,6 @@ BuildRequires:  embryo-devel
 # elementary
 # emotion
 # ephysics
-
-
-%if !%{with x}
-ExclusiveArch:
-%endif
 
 
 %description
@@ -109,7 +102,7 @@ make %{?_smp_mflags} -j1
 %{_datadir}/xsessions/enlightenment.desktop
 %{_sysconfdir}/xdg/menus/enlightenment.menu
 %{_datadir}/applications/enlightenment_filemanager.desktop
-/usr/lib/systemd/user/e18.service
+%{_libdir}/systemd/user/e18.service
 
 %files devel
 %manifest %{name}.manifest
