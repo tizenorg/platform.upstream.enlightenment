@@ -16,6 +16,8 @@ BuildRequires:  gettext
 BuildRequires:  pam-devel
 BuildRequires:  pkgconfig(alsa)
 BuildRequires:  pkgconfig(dbus-1)
+BuildRequires:  pkgconfig(pixman-1)
+#
 BuildRequires:  pkgconfig(ecore)
 BuildRequires:  pkgconfig(ecore-con)
 BuildRequires:  pkgconfig(ecore-evas)
@@ -28,7 +30,6 @@ BuildRequires:  pkgconfig(ecore-ipc)
 BuildRequires:  pkgconfig(xcb-proto)
 BuildRequires:  pkgconfig(ecore-wayland)
 BuildRequires:  pkgconfig(wayland-server)
-BuildRequires:  pkgconfig(pixman-1)
 %endif
 
 %if %{with x}
@@ -58,6 +59,7 @@ BuildRequires:  eolian-devel
 # elementary
 # emotion
 # ephysics
+Recommends:       %{name}-locale = %{version}-%{release}
 
 
 %description
@@ -99,7 +101,7 @@ cp %{SOURCE1001} .
 %endif
     #eol
 
-make %{?_smp_mflags} -j1 V=1
+make %{?_smp_mflags} V=1
 
 %install
 %make_install
@@ -122,7 +124,7 @@ make %{?_smp_mflags} -j1 V=1
 %{_datadir}/xsessions/enlightenment.desktop
 %{_sysconfdir}/xdg/menus/enlightenment.menu
 %{_datadir}/applications/enlightenment_filemanager.desktop
-%{_libdir}/systemd/user/e18.service
+%{_userunitdir}/e18.service
 
 %files devel
 %manifest %{name}.manifest
