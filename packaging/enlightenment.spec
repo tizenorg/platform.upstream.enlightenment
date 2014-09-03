@@ -1,7 +1,7 @@
 %bcond_with x
 
 Name:           enlightenment
-Version:        0.17.4
+Version:        0.19.0
 Release:        0
 License:        BSD-2-Clause
 Summary:        The Enlightenment window manager
@@ -31,6 +31,7 @@ BuildRequires:  pkgconfig(efreet)
 BuildRequires:  pkgconfig(eina)
 BuildRequires:  pkgconfig(eio)
 BuildRequires:  pkgconfig(evas)
+BuildRequires:  pkgconfig(elementary)
 BuildRequires:  pkgconfig(ice)
 BuildRequires:  pkgconfig(libudev)
 BuildRequires:  pkgconfig(udev)
@@ -61,9 +62,10 @@ cp %{SOURCE1001} .
 
 
 %build
-%configure  --enable-device-udev \
-	    --enable-mount-eeze  \
-        --enable-comp
+%autogen \
+      --enable-device-udev \
+      --enable-mount-eeze  \
+      --enable-comp
 make %{?_smp_mflags}
 
 %install
@@ -85,12 +87,12 @@ make %{?_smp_mflags}
 %{_libdir}/enlightenment/*
 %{_datadir}/enlightenment/*
 %{_datadir}/xsessions/enlightenment.desktop
-%{_sysconfdir}/xdg/menus/enlightenment.menu
+%{_sysconfdir}/xdg/menus/e-applications.menu
 %{_datadir}/applications/enlightenment_filemanager.desktop
+%{_libdir}/systemd/user/enlightenment.service
 
 %files devel
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_includedir}/enlightenment/*
 %{_libdir}/pkgconfig/*.pc
-
