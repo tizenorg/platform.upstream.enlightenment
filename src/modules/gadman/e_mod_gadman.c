@@ -1,7 +1,6 @@
 #include "e_mod_gadman.h"
 
 /* local protos */
-static Eina_Bool _e_gadman_reset_timer(void *d);
 static void             _attach_menu(void *data, E_Gadcon_Client *gcc, E_Menu *menu);
 static void             _save_widget_position(E_Gadcon_Client *gcc);
 static void             _apply_widget_position(E_Gadcon_Client *gcc);
@@ -10,9 +9,7 @@ static Eina_Bool _gadman_module_init_end_cb(void *d __UNUSED__, int type __UNUSE
 static Evas_Object     *_create_mover(E_Gadcon *gc);
 static Evas_Object     *_get_mover(E_Gadcon_Client *gcc);
 static E_Gadcon        *_gadman_gadcon_new(const char *name, Gadman_Layer_Type layer, E_Zone *zone, E_Gadcon_Location *loc);
-
-static void             on_shape_change(void *data, E_Container_Shape *es, E_Container_Shape_Change ch);
-
+static void _gadman_overlay_create(void);
 static void             on_top(void *data, Evas_Object *o, const char *em, const char *src);
 static void             on_right(void *data, Evas_Object *o, const char *em, const char *src);
 static void             on_down(void *data, Evas_Object *o, const char *em, const char *src);
@@ -39,8 +36,7 @@ static void             _e_gadman_client_remove(void *data __UNUSED__, E_Gadcon_
 
 static void             _e_gadman_handlers_add(void);
 static void             _e_gadman_handler_del(void);
-static Eina_Bool        _e_gadman_cb_zone_add(void *data __UNUSED__, int type __UNUSED__, void *event);
-static Eina_Bool        _e_gadman_cb_zone_del(void *data __UNUSED__, int type __UNUSED__, void *event);
+static Eina_Bool        _e_gadman_cb_zone_change(void *data __UNUSED__, int type __UNUSED__, void *event);
 static E_Gadcon_Client *gadman_gadget_place(E_Gadcon_Client *gcc, const E_Gadcon_Client_Class *cc, E_Config_Gadcon_Client *cf, Gadman_Layer_Type layer, E_Zone *zone);
 
 static E_Gadcon        *gadman_gadcon_get(const E_Zone *zone, Gadman_Layer_Type layer);
@@ -48,35 +44,39 @@ static Eina_Bool gadman_locked;
 Manager *Man = NULL;
 static Eina_List *_gadman_hdls = NULL;
 static Eina_Hash *_gadman_gadgets = NULL;
+static Ecore_Job *gadman_reset_job = NULL;
+
+/* for locking geometry during our own move/resize */
+static Eina_Bool mover_lock = EINA_FALSE;
 
 /* Implementation */
 void
-gadman_reset(void)
+gadman_reset(void *d EINA_UNUSED)
 {
    E_Gadcon *gc;
    unsigned int layer;
    const Eina_List *l;
    E_Zone *zone;
 
+   E_FREE_FUNC(gadman_reset_job, ecore_job_del);
    if (gadman_locked) return;
-   E_FREE_LIST(Man->drag_handlers, ecore_event_handler_del);   
+   evas_event_freeze(Man->comp->evas);
    for (layer = 0; layer < GADMAN_LAYER_COUNT; layer++)
      {
-        EINA_LIST_FREE(Man->gadcons[layer], gc)
-          e_object_del(E_OBJECT(gc));
+        E_FREE_LIST(Man->gadcons[layer], e_object_del);
         Man->gadgets[layer] = eina_list_free(Man->gadgets[layer]);
-
-        if (Man->movers[layer]) evas_object_del(Man->movers[layer]);
-        Man->movers[layer] = NULL;
+        E_FREE_FUNC(Man->movers[layer], evas_object_del);
      }
-   Man->gc_top = NULL;
+   evas_object_hide(Man->overlay);
+   E_FREE_FUNC(Man->overlay, evas_object_del);
+   E_FREE_FUNC(Man->full_bg, evas_object_del);
    if (_gadman_gadgets)
      {
         eina_hash_free_cb_set(_gadman_gadgets, EINA_FREE_CB(eina_list_free));
         eina_hash_free(_gadman_gadgets);
      }
    /* iterating through zones - and making gadmans on each */
-   EINA_LIST_FOREACH(Man->container->zones, l, zone)
+   EINA_LIST_FOREACH(Man->comp->zones, l, zone)
      {
         const char *layer_name[] = {"gadman", "gadman_top"};
 
@@ -86,9 +86,19 @@ gadman_reset(void)
              Man->gadcons[layer] = eina_list_append(Man->gadcons[layer], gc);
           }
      }
+   _gadman_overlay_create();
 
    _gadman_gadgets = eina_hash_string_superfast_new(NULL);
    gadman_update_bg();
+   Man->visible = !Man->visible;
+   {
+      int prev = Man->conf->anim_bg;
+      Man->conf->anim_bg = 0;
+      gadman_gadgets_toggle();
+      Man->conf->anim_bg = prev;
+   }
+   edje_object_message_signal_process(Man->full_bg);
+   evas_event_thaw(Man->comp->evas);
 }
 
 void
@@ -102,33 +112,26 @@ gadman_init(E_Module *m)
 
    Man->module = m;
    gadman_locked = e_module_loading_get();
-   Man->container = e_container_current_get(e_manager_current_get());
-   Man->width = Man->container->w;
-   Man->height = Man->container->h;
-
-   /* Check if composite is enable */
-   if (ecore_x_screen_is_composited(0) || e_config->use_composite)
-     Man->use_composite = 1;
-
-   /* with this we can trap screen resolution change (a better way?)*/
-   e_container_shape_change_callback_add(Man->container, on_shape_change, NULL);
+   Man->comp = e_util_comp_current_get();
+   Man->width = Man->comp->man->w;
+   Man->height = Man->comp->man->h;
 
    /* create and register "desktop" location */
-   location = Man->location[GADMAN_LAYER_BG] = e_gadcon_location_new("Desktop", E_GADCON_SITE_DESKTOP,
-                                    _e_gadman_client_add, NULL,
+   location = Man->location[GADMAN_LAYER_BG] = e_gadcon_location_new(_("Desktop"), E_GADCON_SITE_DESKTOP,
+                                    _e_gadman_client_add, (intptr_t*)(long)GADMAN_LAYER_BG,
                                     _e_gadman_client_remove, NULL);
    e_gadcon_location_set_icon_name(location, "preferences-desktop");
    e_gadcon_location_register(location);
 
    /* create and register "desktop hover" location */
-   location = Man->location[GADMAN_LAYER_TOP] = e_gadcon_location_new("Desktop Hover", E_GADCON_SITE_DESKTOP,
-                                    _e_gadman_client_add, NULL,
+   location = Man->location[GADMAN_LAYER_TOP] = e_gadcon_location_new(_("Desktop Overlay"), E_GADCON_SITE_DESKTOP,
+                                    _e_gadman_client_add, (intptr_t*)(long)GADMAN_LAYER_TOP,
                                     _e_gadman_client_remove, NULL);
    e_gadcon_location_set_icon_name(location, "preferences-desktop");
    e_gadcon_location_register(location);
 
    _e_gadman_handlers_add();
-   Man->gadman_reset_timer = ecore_timer_add(0.1, _e_gadman_reset_timer, NULL);
+   if (!gadman_locked) gadman_reset_job = ecore_job_add(gadman_reset, NULL);
 }
 
 void
@@ -136,9 +139,9 @@ gadman_shutdown(void)
 {
    unsigned int layer;
 
+   E_FREE_FUNC(gadman_reset_job, ecore_job_del);
    _e_gadman_handler_del();
 
-   e_container_shape_change_callback_del(Man->container, on_shape_change, NULL);
    gadman_gadget_edit_end(NULL, NULL, NULL, NULL);
 
    for (layer = 0; layer < GADMAN_LAYER_COUNT; layer++)
@@ -153,18 +156,13 @@ gadman_shutdown(void)
    eina_stringshare_del(Man->icon_name);
 
    /* free manager */
-   if (Man->top_ee)
-     {
-        e_canvas_del(Man->top_ee);
-        //ecore_evas_free(Man->top_ee);
-     }
+   evas_object_hide(Man->overlay);
+   E_FREE_FUNC(Man->overlay, evas_object_del);
    if (_gadman_gadgets)
      {
         eina_hash_free_cb_set(_gadman_gadgets, EINA_FREE_CB(eina_list_free));
         eina_hash_free(_gadman_gadgets);
      }
-   if (Man->gadman_reset_timer) ecore_timer_del(Man->gadman_reset_timer);
-   E_FREE_LIST(Man->drag_handlers, ecore_event_handler_del);
    _gadman_gadgets = NULL;
    free(Man);
 }
@@ -207,7 +205,10 @@ gadman_gadcon_place_job(E_Gadcon_Client *gcc)
    _apply_widget_position(gcc);
    if (gcc == gcc->gadcon->drag_gcc)
      gadman_gadget_edit_start(gcc);
-   evas_object_show(gcc->o_frame);
+   if (Man->visible || (!eina_list_data_find(Man->gadcons[GADMAN_LAYER_TOP], gcc->gadcon)))
+     e_gadcon_client_show(gcc);
+   else
+     e_gadcon_client_hide(gcc);
 }
 
 static void
@@ -234,6 +235,28 @@ _gadman_gadget_free(void *data __UNUSED__, void *obj)
    if (!edit) return;
    gcc->gadcon->editing = 1; // may get unset from a dialog, force here to prevent crash
    gadman_gadget_edit_end(NULL, NULL, NULL, NULL);
+}
+
+static void
+_gadman_gadget_size_hints_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   E_Gadcon_Client *gcc = data;
+   int w, h;
+
+   evas_object_geometry_get(obj, NULL, NULL, &w, &h);
+   /* size hints change for either min or aspect */
+   if (gcc->min.w || gcc->min.h)
+     {
+        w = MAX(w, gcc->min.w);
+        h = MAX(h, gcc->min.h);
+     }
+   if (gcc->aspect.w && gcc->aspect.h)
+     {
+        w = MAX(w, gcc->aspect.w);
+        h = MAX(h, gcc->aspect.h);
+     }
+   evas_object_resize(gcc->o_frame, w, h);
+   _save_widget_position(gcc);
 }
 
 static E_Gadcon_Client *
@@ -295,9 +318,17 @@ gadman_gadget_place(E_Gadcon_Client *gcc, const E_Gadcon_Client_Class *cc, E_Con
    edje_object_part_swallow(gcc->o_frame, "e.swallow.content", gcc->o_base);
    evas_object_event_callback_add(gcc->o_frame, EVAS_CALLBACK_MOUSE_DOWN,
                                   on_frame_click, gcc);
+   evas_object_event_callback_add(gcc->o_frame, EVAS_CALLBACK_CHANGED_SIZE_HINTS,
+                                  _gadman_gadget_size_hints_cb, gcc);
 
+   gcc->hidden = 1;
    if (gcc->gadcon->id == ID_GADMAN_LAYER_TOP)
-     edje_object_signal_emit(gcc->o_frame, "e,state,visibility,hide", "e");
+     {
+        edje_object_signal_emit(gcc->o_frame, "e,state,visibility,hide", "e");
+        evas_object_layer_set(gcc->o_frame, E_LAYER_POPUP);
+     }
+   else
+     evas_object_layer_set(gcc->o_frame, E_LAYER_DESKTOP);
    if (cc->name)
      {
         l = eina_hash_find(_gadman_gadgets, cc->name);
@@ -374,6 +405,24 @@ gadman_edit(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *e
    _apply_widget_position(data);
 }
 
+static void
+_gadman_gadget_edit_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   int w, h;
+   if (mover_lock) return;
+   evas_object_geometry_get(obj, NULL, NULL, &w, &h);
+   evas_object_resize(_get_mover(data), w, h);
+}
+
+static void
+_gadman_gadget_edit_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   int x, y;
+   if (mover_lock) return;
+   evas_object_geometry_get(obj, &x, &y, NULL, NULL);
+   evas_object_move(_get_mover(data), x, y);
+}
+
 void
 gadman_gadget_edit_start(E_Gadcon_Client *gcc)
 {
@@ -397,12 +446,15 @@ gadman_gadget_edit_start(E_Gadcon_Client *gcc)
    mover = _get_mover(gcc);
    if (!mover) return;
    evas_object_geometry_get(gcc->o_frame, &x, &y, &w, &h);
+   evas_object_event_callback_add(gcc->o_frame, EVAS_CALLBACK_RESIZE, _gadman_gadget_edit_resize_cb, gcc);
+   evas_object_event_callback_add(gcc->o_frame, EVAS_CALLBACK_MOVE, _gadman_gadget_edit_move_cb, gcc);
    Man->drag_gcc[gcc->gadcon->id - ID_GADMAN_LAYER_BASE] = gcc;
 
    evas_object_move(mover, x, y);
    evas_object_resize(mover, w, h);
    evas_object_raise(mover);
-   evas_object_show(mover);
+   if (Man->visible || (!eina_list_data_find(Man->gadcons[GADMAN_LAYER_TOP], gc)))
+     evas_object_show(mover);
    evas_object_event_callback_del(mover, EVAS_CALLBACK_HIDE, gadman_edit);
    evas_object_event_callback_add(mover, EVAS_CALLBACK_HIDE, gadman_edit, gcc);
 }
@@ -413,7 +465,7 @@ gadman_gadget_edit_end(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const
    unsigned int layer;
    E_Gadcon_Client *drag_gcc = NULL;
 
-   for (layer = GADMAN_LAYER_COUNT - 1; layer < UINT_MAX; layer--)
+   for (layer = GADMAN_LAYER_COUNT - 1; layer < GADMAN_LAYER_COUNT; layer--)
      {
         const Eina_List *l;
         E_Gadcon *gc;
@@ -428,6 +480,11 @@ gadman_gadget_edit_end(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const
         EINA_LIST_FOREACH(Man->gadcons[layer], l, gc)
           gc->editing = 0;
         drag_gcc = Man->drag_gcc[layer];
+        if (drag_gcc)
+          {
+             evas_object_event_callback_del_full(drag_gcc->o_frame, EVAS_CALLBACK_RESIZE, _gadman_gadget_edit_resize_cb, drag_gcc);
+             evas_object_event_callback_del_full(drag_gcc->o_frame, EVAS_CALLBACK_MOVE, _gadman_gadget_edit_move_cb, drag_gcc);
+          }
         Man->drag_gcc[layer] = NULL;
         break;
      }
@@ -443,11 +500,12 @@ void
 gadman_gadgets_show(void)
 {
    Eina_List *l, *ll;
+   E_Gadcon *gc;
    E_Gadcon_Client *gcc;
-   E_Config_Gadcon_Client *cf_gcc;
+   Eina_Bool editing = EINA_FALSE;
 
    Man->visible = 1;
-   ecore_evas_show(Man->top_ee);
+   evas_object_show(Man->overlay);
 
    if (Man->conf->bg_type == BG_STD)
      {
@@ -469,29 +527,30 @@ gadman_gadgets_show(void)
      }
 
    /* Showing top gadgets */
-   EINA_LIST_FOREACH_SAFE(Man->gadgets[GADMAN_LAYER_TOP], l, ll, cf_gcc)
+   EINA_LIST_FOREACH(Man->gadcons[GADMAN_LAYER_TOP], l, gc)
      {
-        gcc = e_gadcon_client_find(NULL, cf_gcc);
-        if (!gcc)
+        EINA_LIST_FOREACH(gc->clients, ll, gcc)
           {
-             Man->gadgets[GADMAN_LAYER_TOP] = eina_list_remove_list(Man->gadgets[GADMAN_LAYER_TOP], l);
-             continue;
+             if (Man->conf->anim_gad)
+               edje_object_signal_emit(gcc->o_frame,
+                                       "e,state,visibility,show", "e");
+             else
+               edje_object_signal_emit(gcc->o_frame,
+                                       "e,state,visibility,show,now", "e");
+             e_gadcon_client_show(gcc);
           }
-        if (Man->conf->anim_gad)
-          edje_object_signal_emit(gcc->o_frame,
-                                  "e,state,visibility,show", "e");
-        else
-          edje_object_signal_emit(gcc->o_frame,
-                                  "e,state,visibility,show,now", "e");
+        gc->drop_handler->hidden = 0;
+        editing = gc->editing;
      }
+   if (editing && gcc) evas_object_show(_get_mover(gcc));
 }
 
 void
 gadman_gadgets_hide(void)
 {
    Eina_List *l, *ll;
+   E_Gadcon *gc;
    E_Gadcon_Client *gcc;
-   E_Config_Gadcon_Client *cf_gcc;
    Eina_Bool editing = EINA_FALSE;
 
    Man->visible = 0;
@@ -516,25 +575,23 @@ gadman_gadgets_hide(void)
      }
 
    /* Hiding top gadgets */
-   EINA_LIST_FOREACH_SAFE(Man->gadgets[GADMAN_LAYER_TOP], l, ll, cf_gcc)
+   EINA_LIST_FOREACH(Man->gadcons[GADMAN_LAYER_TOP], l, gc)
      {
-        gcc = e_gadcon_client_find(NULL, cf_gcc);
-        if (!gcc)
+        gc->drop_handler->hidden = 1;
+        editing = gc->editing;
+        EINA_LIST_FOREACH(gc->clients, ll, gcc)
           {
-             Man->gadgets[GADMAN_LAYER_TOP] = eina_list_remove_list(Man->gadgets[GADMAN_LAYER_TOP], l);
-             continue;
+             if (Man->conf->anim_gad)
+               edje_object_signal_emit(gcc->o_frame,
+                                       "e,state,visibility,hide", "e");
+             else
+               edje_object_signal_emit(gcc->o_frame,
+                                       "e,state,visibility,hide,now", "e");
+             e_gadcon_client_hide(gcc);
           }
-        editing = gcc->gadcon->editing;
-        if (Man->conf->anim_gad)
-          edje_object_signal_emit(gcc->o_frame,
-                                  "e,state,visibility,hide", "e");
-        else
-          edje_object_signal_emit(gcc->o_frame,
-                                  "e,state,visibility,hide,now", "e");
      }
    if (editing)
      gadman_gadget_edit_end(NULL, NULL, NULL, NULL);
-   E_FREE_LIST(Man->drag_handlers, ecore_event_handler_del);
 }
 
 void
@@ -550,9 +607,9 @@ void
 gadman_update_bg(void)
 {
    Evas_Object *obj;
-   const char *ext;
 
-   if (!Man->gc_top) return;
+   if (!Man->gadcons[GADMAN_LAYER_TOP]) return;
+   if (!Man->conf) return;
    obj = edje_object_part_swallow_get(Man->full_bg, "e.swallow.bg");
    if (obj)
      {
@@ -573,28 +630,27 @@ gadman_update_bg(void)
            r = (double)Man->conf->color_r * (200. / 255.);
            g = (double)Man->conf->color_g * (200. / 255.);
            b = (double)Man->conf->color_b * (200. / 255.);
-           obj = evas_object_rectangle_add(Man->gc_top->evas);
+           obj = evas_object_rectangle_add(Man->comp->evas);
            evas_object_color_set(obj, lround(r), lround(g), lround(b), 200);
            edje_object_part_swallow(Man->full_bg, "e.swallow.bg", obj);
         }
         break;
 
       case BG_CUSTOM:
-        ext = strrchr(Man->conf->custom_bg, '.');
-        if (!strcmp(ext, ".edj") || !strcmp(ext, ".EDJ"))
+        if (eina_str_has_extension(Man->conf->custom_bg, ".edj"))
           {
-             //THIS IS FOR E17 backgrounds
-             obj = edje_object_add(Man->gc_top->evas);
+             //THIS IS FOR E19 backgrounds
+             obj = edje_object_add(Man->comp->evas);
              edje_object_file_set(obj, Man->conf->custom_bg,
                                   "e/desktop/background");
           }
         else
           {
              //THIS IS FOR A NORMAL IMAGE
-             obj = evas_object_image_add(Man->gc_top->evas);
+             obj = evas_object_image_add(Man->comp->evas);
              evas_object_image_file_set(obj, Man->conf->custom_bg, NULL);
-             evas_object_image_fill_set(obj, 0, 0, Man->container->w,
-                                        Man->container->h);
+             evas_object_image_fill_set(obj, 0, 0, Man->comp->man->w,
+                                        Man->comp->man->h);
           }
         edje_object_part_swallow(Man->full_bg, "e.swallow.bg", obj);
         break;
@@ -625,6 +681,9 @@ _gadman_gadcon_dnd_enter_cb(E_Gadcon *gc, E_Gadcon_Client *gcc)
 {
 
    /* only use this for dragging gadcons around the desktop */
+   if ((!eina_list_data_find(Man->gadcons[GADMAN_LAYER_BG], gc)) &&
+       (!eina_list_data_find(Man->gadcons[GADMAN_LAYER_TOP], gc)))
+     return;
    if (gc != gcc->gadcon) return;
    //INF("ENTER: %u", e_object_ref_get((void*)gcc));
    gadman_gadget_edit_start(gcc);
@@ -637,6 +696,9 @@ _gadman_gadcon_dnd_leave_cb(E_Gadcon *gc, E_Gadcon_Client *gcc)
    E_Gadcon_Client *drag_gcc = NULL;
 
    /* only use this for dragging gadcons around the desktop */
+   if ((!eina_list_data_find(Man->gadcons[GADMAN_LAYER_BG], gc)) &&
+       (!eina_list_data_find(Man->gadcons[GADMAN_LAYER_TOP], gc)))
+     return;
    if (gc != gcc->gadcon) return;
    //INF("LEAVE: %u", e_object_ref_get((void*)gcc));
    Man->drag_gcc[gcc->gadcon->id - ID_GADMAN_LAYER_BASE] = NULL;
@@ -662,11 +724,15 @@ static void
 _gadman_gadcon_dnd_move_cb(E_Gadcon *gc, E_Gadcon_Client *gcc)
 {
    Evas_Object *mover;
-   int x, y;
+   E_Zone *zone;
+   int x, y, mx, my;
    int ox, oy, ow, oh;
 
-   /* only use this for dragging gadcons around the desktop */
    if (gc != gcc->gadcon) return;
+   /* only use this for dragging gadcons around the desktop */
+   if ((!eina_list_data_find(Man->gadcons[GADMAN_LAYER_BG], gc)) &&
+       (!eina_list_data_find(Man->gadcons[GADMAN_LAYER_TOP], gc)))
+     return;
 
    mover = _get_mover(gcc);
    evas_object_geometry_get(gcc->o_frame, &x, &y, NULL, NULL);
@@ -674,12 +740,17 @@ _gadman_gadcon_dnd_move_cb(E_Gadcon *gc, E_Gadcon_Client *gcc)
 
    /* don't go out of the screen */
    x = MAX(x, gcc->dx), y = MAX(y, gcc->dy);
-   x = MIN(x, Man->width - ow + gcc->dx), y = MIN(y, Man->height - ow + gcc->dy);
+
+   /* adjust in case one screen is larger than another */
+   zone = e_gadcon_zone_get(gc);
+   mx = MIN(Man->width, zone->x + zone->w), my = MIN(Man->height, zone->y + zone->h);
+   x = MIN(x, mx - ow + gcc->dx), y = MIN(y, my - oh + gcc->dy);
 
    evas_object_move(gcc->o_frame, x - gcc->dx, y - gcc->dy);
    evas_object_move(mover, x - gcc->dx, y - gcc->dy);
    evas_object_raise(gcc->o_frame);
    evas_object_raise(mover);
+   _save_widget_position(gcc);
 }
 
 static void
@@ -691,8 +762,11 @@ _gadman_gadcon_dnd_drop_cb(E_Gadcon *gc, E_Gadcon_Client *gcc)
    Evas_Object *mover;
    int gx, gy;
 
-   /* only use this for dragging gadcons around the desktop */
    if (gc != gcc->gadcon) return;
+   /* only use this for dragging gadcons around the desktop */
+   if ((!eina_list_data_find(Man->gadcons[GADMAN_LAYER_BG], gc)) &&
+       (!eina_list_data_find(Man->gadcons[GADMAN_LAYER_TOP], gc)))
+     return;
 
    gcc->moving = 0;
    gcc->dx = gcc->dy = 0;
@@ -700,7 +774,7 @@ _gadman_gadcon_dnd_drop_cb(E_Gadcon *gc, E_Gadcon_Client *gcc)
    /* checking if zone was changed for dragged gadget */
    mover = _get_mover(gcc);
    evas_object_geometry_get(mover, &gx, &gy, NULL, NULL);
-   dst_zone = e_container_zone_at_point_get(e_container_current_get(e_manager_current_get()), gx, gy);
+   dst_zone = e_comp_zone_xy_get(e_util_comp_current_get(), gx, gy);
    if (dst_zone && (gcc->gadcon->zone != dst_zone))
      {
         unsigned int layer = gcc->gadcon->id - ID_GADMAN_LAYER_BASE;
@@ -710,8 +784,36 @@ _gadman_gadcon_dnd_drop_cb(E_Gadcon *gc, E_Gadcon_Client *gcc)
         if (dst_gadcon)
           {
              dst_gadcon->cf->clients = eina_list_append(dst_gadcon->cf->clients, cf);
-             e_config_save_queue();
           }
+     }
+   _save_widget_position(gcc);
+   e_config_save_queue();
+}
+
+static void
+_gadman_overlay_create(void)
+{
+   Eina_List *l;
+   E_Gadcon *gc;
+
+   /* create full background object */
+   Man->full_bg = edje_object_add(Man->comp->evas);
+   evas_object_geometry_set(Man->full_bg, 0, 0, Man->comp->man->w, Man->comp->man->h);
+   e_theme_edje_object_set(Man->full_bg, "base/theme/gadman",
+                           "e/gadman/full_bg");
+   edje_object_signal_callback_add(Man->full_bg, "mouse,down,*",
+                                   "grabber", on_bg_click, NULL);
+   edje_object_signal_callback_add(Man->full_bg, "e,action,hide,stop",
+                                   "", on_hide_stop, NULL);
+
+   Man->overlay = e_comp_object_util_add(Man->full_bg, E_COMP_OBJECT_TYPE_NONE);
+   evas_object_layer_set(Man->overlay, E_LAYER_CLIENT_FULLSCREEN);
+
+   /* create placeholder rect to maintain our dnd stacking layer */
+   EINA_LIST_FOREACH(Man->gadcons[GADMAN_LAYER_TOP], l, gc)
+     {
+        gc->drop_handler->base = Man->overlay;
+        gc->drop_handler->hidden = 1;
      }
 }
 
@@ -731,60 +833,11 @@ _gadman_gadcon_new(const char *name, Gadman_Layer_Type layer, E_Zone *zone, E_Ga
    gc->orient = E_GADCON_ORIENT_FLOAT;
    gc->location = loc;
 
-   /* Create ecore fullscreen window */
-   if (layer > GADMAN_LAYER_BG)
-     {
-        if (!Man->top_ee)
-          {
-             Man->top_ee = e_canvas_new(Man->container->win, 0, 0, 0, 0, 1, 1,
-                                        &(Man->top_win));
-          }
+   gc->evas = Man->comp->evas;
+   e_gadcon_ecore_evas_set(gc, Man->comp->ee);
+   e_gadcon_xdnd_window_set(gc, Man->comp->ee_win);
+   e_gadcon_dnd_window_set(gc, Man->comp->ee_win);
 
-        if (Man->use_composite)
-          {
-             ecore_evas_alpha_set(Man->top_ee, 1);
-             Man->top_win = ecore_evas_software_x11_window_get(Man->top_ee);
-             ecore_x_window_shape_rectangle_set(Man->top_win, 0, 0,
-                                                Man->width, Man->height);
-          }
-        else
-          ecore_evas_shaped_set(Man->top_ee, 1);
-
-        e_canvas_add(Man->top_ee); //??
-        e_container_window_raise(Man->container, Man->top_win, E_LAYER_POPUP);
-
-        ecore_evas_move_resize(Man->top_ee, 0, 0, Man->width, Man->height);
-        ecore_evas_hide(Man->top_ee);
-
-        gc->evas = ecore_evas_get(Man->top_ee);
-        e_gadcon_ecore_evas_set(gc, Man->top_ee);
-
-        /* create full background object */
-        Man->full_bg = edje_object_add(gc->evas);
-        e_theme_edje_object_set(Man->full_bg, "base/theme/gadman",
-                                "e/gadman/full_bg");
-        edje_object_signal_callback_add(Man->full_bg, "mouse,down,*",
-                                        "grabber", on_bg_click, NULL);
-        edje_object_signal_callback_add(Man->full_bg, "e,action,hide,stop",
-                                        "", on_hide_stop, NULL);
-
-        evas_object_move(Man->full_bg, 0, 0);
-        evas_object_resize(Man->full_bg, Man->width, Man->height);
-        evas_object_show(Man->full_bg);
-
-        e_drop_xdnd_register_set(Man->top_win, 1);
-        e_gadcon_xdnd_window_set(gc, Man->top_win);
-        e_gadcon_dnd_window_set(gc, Man->top_win);
-     }
-   /* ... or use the e background window */
-   else
-     {
-        gc->evas = Man->container->bg_evas;
-        e_gadcon_ecore_evas_set(gc, Man->container->bg_ecore_evas);
-        e_gadcon_xdnd_window_set(gc, Man->container->bg_win);
-        e_gadcon_dnd_window_set(gc, Man->container->event_win);
-        e_drop_xdnd_register_set(Man->container->bg_win, 1);
-     }
    e_gadcon_drop_handler_add(gc, _gadman_gadcon_dnd_enter_cb, _gadman_gadcon_dnd_leave_cb,
                              _gadman_gadcon_dnd_move_cb, _gadman_gadcon_dnd_drop_cb,
                              zone->x, zone->y, zone->w, zone->h);
@@ -832,11 +885,20 @@ _gadman_gadcon_new(const char *name, Gadman_Layer_Type layer, E_Zone *zone, E_Ga
    if (!Man->movers[layer])
      Man->movers[layer] = _create_mover(gc);
 
-   /* Assigning top gadcon - needed in gadman_update_bg() */
-   if ((layer > GADMAN_LAYER_BG) && !Man->gc_top)
-     Man->gc_top = gc;
-
    return gc;
+}
+
+static void
+_mover_del(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   unsigned int layer;
+
+   for (layer = 0; layer < GADMAN_LAYER_COUNT; layer++)
+     {
+        if (Man->movers[layer] != obj) continue;
+        Man->movers[layer] = NULL;
+        return;
+     }
 }
 
 static Evas_Object *
@@ -846,6 +908,13 @@ _create_mover(E_Gadcon *gc)
 
    /* create mover object */
    mover = edje_object_add(gc->evas);
+   if (gc->id == ID_GADMAN_LAYER_BG)
+     {
+        evas_object_layer_set(mover, E_LAYER_DESKTOP);
+        evas_object_event_callback_add(mover, EVAS_CALLBACK_DEL, _mover_del, NULL);
+     }
+   else
+     evas_object_layer_set(mover, E_LAYER_MENU);
    e_theme_edje_object_set(mover, "base/theme/gadman", "e/gadman/control");
 
    edje_object_signal_callback_add(mover, "e,action,move,start", "",
@@ -878,10 +947,6 @@ _create_mover(E_Gadcon *gc)
    edje_object_signal_callback_add(mover, "e,action,resize,up,go", "",
                                    on_top, (void *)DRAG_MOVE);
 
-   evas_object_move(mover, 20, 30);
-   evas_object_resize(mover, 100, 100);
-   evas_object_hide(mover);
-
    return mover;
 }
 
@@ -896,15 +961,20 @@ _save_widget_position(E_Gadcon_Client *gcc)
 {
    int x, y, w, h;
 
-   if (!gcc->cf) return;
-
    evas_object_geometry_get(gcc->o_frame, &x, &y, &w, &h);
-   gcc->config.pos_x = gcc->cf->geom.pos_x = (double)x / (double)gcc->gadcon->zone->w;
-   gcc->config.pos_y = gcc->cf->geom.pos_y = (double)y / (double)gcc->gadcon->zone->h;
-   gcc->config.size_w = gcc->cf->geom.size_w = (double)w / (double)gcc->gadcon->zone->w;
-   gcc->config.size_h = gcc->cf->geom.size_h = (double)h / (double)gcc->gadcon->zone->h;
-
-   e_config_save_queue();
+   x -= gcc->gadcon->zone->x, y -= gcc->gadcon->zone->y;
+   gcc->config.pos_x = (double)x / (double)gcc->gadcon->zone->w;
+   gcc->config.pos_y = (double)y / (double)gcc->gadcon->zone->h;
+   gcc->config.size_w = (double)w / (double)gcc->gadcon->zone->w;
+   gcc->config.size_h = (double)h / (double)gcc->gadcon->zone->h;
+   if (gcc->cf)
+     {
+        gcc->cf->geom.pos_x = gcc->config.pos_x;
+        gcc->cf->geom.pos_y = gcc->config.pos_y;
+        gcc->cf->geom.size_w = gcc->config.size_w;
+        gcc->cf->geom.size_h = gcc->config.size_h;
+        e_config_save_queue();
+     }
 }
 
 static void
@@ -925,7 +995,7 @@ _apply_widget_position(E_Gadcon_Client *gcc)
    /* something broke the config's geom, make it visible so it can be
     * resized/deleted
     */
-   if ((!gcc->cf->geom.pos_x) && (!gcc->cf->geom.pos_y) && (!gcc->cf->geom.size_w) && (!gcc->cf->geom.size_h))
+   if ((gcc->cf->geom.pos_x < 0) || (gcc->cf->geom.pos_y < 0) || (!gcc->cf->geom.size_w) || (!gcc->cf->geom.size_h))
      {
         gcc->cf->style = eina_stringshare_add(gcc->client_class->default_style ?: E_GADCON_CLIENT_STYLE_INSET);
         gcc->style = eina_stringshare_ref(gcc->cf->style);
@@ -992,64 +1062,70 @@ _attach_menu(void *data __UNUSED__, E_Gadcon_Client *gcc, E_Menu *menu)
    e_menu_item_callback_set(mi, on_menu_edit, gcc);
 
    /* plain / inset */
-   if (!gcc->cf->style)
-     gcc->cf->style = eina_stringshare_add(E_GADCON_CLIENT_STYLE_INSET);
+   if (gcc->cf)
+     {
+        if (!gcc->cf->style)
+          gcc->cf->style = eina_stringshare_add(E_GADCON_CLIENT_STYLE_INSET);
 
-   mn = e_menu_new();
-   mi = e_menu_item_new(mn);
-   e_menu_item_label_set(mi, _("Plain"));
-   e_menu_item_radio_set(mi, 1);
-   e_menu_item_radio_group_set(mi, 1);
-   if (!strcmp(gcc->cf->style, E_GADCON_CLIENT_STYLE_PLAIN))
-     e_menu_item_toggle_set(mi, 1);
-   e_menu_item_callback_set(mi, on_menu_style_plain, gcc);
+        mn = e_menu_new();
+        mi = e_menu_item_new(mn);
+        e_menu_item_label_set(mi, _("Plain"));
+        e_menu_item_radio_set(mi, 1);
+        e_menu_item_radio_group_set(mi, 1);
+        if (!strcmp(gcc->cf->style, E_GADCON_CLIENT_STYLE_PLAIN))
+          e_menu_item_toggle_set(mi, 1);
+        e_menu_item_callback_set(mi, on_menu_style_plain, gcc);
 
-   mi = e_menu_item_new(mn);
-   e_menu_item_label_set(mi, _("Inset"));
-   e_menu_item_radio_set(mi, 1);
-   e_menu_item_radio_group_set(mi, 1);
-   if (!strcmp(gcc->cf->style, E_GADCON_CLIENT_STYLE_INSET))
-     e_menu_item_toggle_set(mi, 1);
-   e_menu_item_callback_set(mi, on_menu_style_inset, gcc);
+        mi = e_menu_item_new(mn);
+        e_menu_item_label_set(mi, _("Inset"));
+        e_menu_item_radio_set(mi, 1);
+        e_menu_item_radio_group_set(mi, 1);
+        if (!strcmp(gcc->cf->style, E_GADCON_CLIENT_STYLE_INSET))
+          e_menu_item_toggle_set(mi, 1);
+        e_menu_item_callback_set(mi, on_menu_style_inset, gcc);
 
-   mi = e_menu_item_new(mn);
-   e_menu_item_separator_set(mi, 1);
+        mi = e_menu_item_new(mn);
+        e_menu_item_separator_set(mi, 1);
 
-   /* orient */
-   mi = e_menu_item_new(mn);
-   e_menu_item_label_set(mi, _("Free"));
-   e_menu_item_radio_set(mi, 1);
-   e_menu_item_radio_group_set(mi, 2);
-   if (gcc->cf->orient == E_GADCON_ORIENT_FLOAT)
-     e_menu_item_toggle_set(mi, 1);
-   e_menu_item_callback_set(mi, on_menu_style_float, gcc);
+        /* orient */
+        mi = e_menu_item_new(mn);
+        e_menu_item_label_set(mi, _("Free"));
+        e_menu_item_radio_set(mi, 1);
+        e_menu_item_radio_group_set(mi, 2);
+        if (gcc->cf->orient == E_GADCON_ORIENT_FLOAT)
+          e_menu_item_toggle_set(mi, 1);
+        if (!mi->toggle)
+          e_menu_item_callback_set(mi, on_menu_style_float, gcc);
 
-   mi = e_menu_item_new(mn);
-   e_menu_item_label_set(mi, _("Horizontal"));
-   e_menu_item_radio_set(mi, 1);
-   e_menu_item_radio_group_set(mi, 2);
-   if (gcc->cf->orient == E_GADCON_ORIENT_HORIZ)
-     e_menu_item_toggle_set(mi, 1);
-   e_menu_item_callback_set(mi, on_menu_style_horiz, gcc);
+        mi = e_menu_item_new(mn);
+        e_menu_item_label_set(mi, _("Horizontal"));
+        e_menu_item_radio_set(mi, 1);
+        e_menu_item_radio_group_set(mi, 2);
+        if (gcc->cf->orient == E_GADCON_ORIENT_HORIZ)
+          e_menu_item_toggle_set(mi, 1);
+        if (!mi->toggle)
+          e_menu_item_callback_set(mi, on_menu_style_horiz, gcc);
 
-   mi = e_menu_item_new(mn);
-   e_menu_item_label_set(mi, _("Vertical"));
-   e_menu_item_radio_set(mi, 1);
-   e_menu_item_radio_group_set(mi, 2);
-   if (gcc->cf->orient == E_GADCON_ORIENT_VERT)
-     e_menu_item_toggle_set(mi, 1);
-   e_menu_item_callback_set(mi, on_menu_style_vert, gcc);
+        mi = e_menu_item_new(mn);
+        e_menu_item_label_set(mi, _("Vertical"));
+        e_menu_item_radio_set(mi, 1);
+        e_menu_item_radio_group_set(mi, 2);
+        if (gcc->cf->orient == E_GADCON_ORIENT_VERT)
+          e_menu_item_toggle_set(mi, 1);
+        if (!mi->toggle)
+          e_menu_item_callback_set(mi, on_menu_style_vert, gcc);
 
-   mi = e_menu_item_new(menu);
-   e_menu_item_label_set(mi, _("Appearance"));
-   e_util_menu_item_theme_icon_set(mi, "preferences-look");
-   e_menu_item_submenu_set(mi, mn);
-   e_object_unref(E_OBJECT(mn));
+        mi = e_menu_item_new(menu);
+        e_menu_item_label_set(mi, _("Appearance"));
+        e_util_menu_item_theme_icon_set(mi, "preferences-look");
+        e_menu_item_submenu_set(mi, mn);
+        e_object_unref(E_OBJECT(mn));
 
-   mi = e_menu_item_new(menu);
-   e_menu_item_separator_set(mi, 1);
+        mi = e_menu_item_new(menu);
+        e_menu_item_separator_set(mi, 1);
 
-   e_gadcon_client_add_location_menu(gcc, menu);
+        e_gadcon_client_add_location_menu(gcc, menu);
+     }
 
    /* Remove this gadgets */
    mi = e_menu_item_new(menu);
@@ -1065,24 +1141,6 @@ _attach_menu(void *data __UNUSED__, E_Gadcon_Client *gcc, E_Menu *menu)
    e_menu_item_label_set(mi, _("Add other gadgets"));
    e_util_menu_item_theme_icon_set(mi, "list-add");
    e_menu_item_callback_set(mi, on_menu_add, gcc);
-}
-
-/* Callbacks */
-static void
-on_shape_change(void *data __UNUSED__, E_Container_Shape *es, E_Container_Shape_Change ch __UNUSED__)
-{
-   E_Container *con;
-
-   con = e_container_shape_container_get(es);
-   if ((con->w == Man->width) && (con->h == Man->height)) return;
-
-   /* The screen size is changed */
-   Man->width = con->w;
-   Man->height = con->h;
-   if (Man->gadman_reset_timer)
-     ecore_timer_reset(Man->gadman_reset_timer);
-   else
-     Man->gadman_reset_timer = ecore_timer_add(3.0, _e_gadman_reset_timer, NULL);
 }
 
 static void
@@ -1114,39 +1172,30 @@ on_menu_style_inset(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__
 static void
 _menu_style_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient)
 {
-   int w, h;
+   int ow, oh, w, h;
+   Eina_Bool same;
+
+   same = (((orient == E_GADCON_ORIENT_LEFT) && (gcc->cf->orient == E_GADCON_ORIENT_FLOAT)) ||
+       ((orient == E_GADCON_ORIENT_FLOAT) && (gcc->cf->orient == E_GADCON_ORIENT_LEFT)));
    gcc->cf->orient = orient;
+   evas_object_geometry_get(gcc->o_frame, NULL, NULL, &ow, &oh);
 
    if (gcc->client_class->func.orient)
      gcc->client_class->func.orient(gcc, orient);
 
-   if (orient == E_GADCON_ORIENT_VERT)
+   if (same)
      {
-        w = DEFAULT_SIZE_W * Man->width;
-        if (w < gcc->min.w) w = gcc->min.w;
-
-        if (gcc->aspect.w && gcc->aspect.h)
-          h = ((float)gcc->aspect.h / (float)gcc->aspect.w) * w;
-        else
-          {
-             h = DEFAULT_SIZE_H * Man->height;
-             if (h < gcc->min.h) h = gcc->min.h;
-          }
+        w = ow, h = oh;
      }
-   else
+   else 
      {
-        h = DEFAULT_SIZE_H * Man->height;
-        if (h < gcc->min.h) h = gcc->min.h;
-
-        if (gcc->aspect.w && gcc->aspect.h)
-          w = ((float)gcc->aspect.w / (float)gcc->aspect.h) * h;
-        else
-          {
-             w = DEFAULT_SIZE_W * Man->width;
-             if (w < gcc->min.w) w = gcc->min.w;
-          }
+        /* just flip aspect */
+        w = oh;
+        h = ow;
      }
 
+   gcc->max.w = w;
+   gcc->max.h = h;
    evas_object_resize(gcc->o_frame, w, h);
    _save_widget_position(gcc);
 }
@@ -1180,7 +1229,7 @@ on_menu_add(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
 {
    if (Man->visible)
      gadman_gadgets_hide();
-   e_configure_registry_call("extensions/gadman", m->zone->container, NULL);
+   e_configure_registry_call("extensions/gadman", m->zone->comp, NULL);
 }
 
 static void
@@ -1231,8 +1280,11 @@ on_top(void *data, Evas_Object *o __UNUSED__, const char *em __UNUSED__, const c
    int layer = Man->visible;
 
    drag_gcc = Man->drag_gcc[layer];
+   if (!drag_gcc) return;
 
    mover = _get_mover(drag_gcc);
+   if (!mover) return;
+   mover_lock = EINA_TRUE;
 
    if (action == DRAG_START)
      {
@@ -1267,12 +1319,20 @@ on_top(void *data, Evas_Object *o __UNUSED__, const char *em __UNUSED__, const c
              my = drag_gcc->dy;
           }
 
+        if (drag_gcc->aspect.w && drag_gcc->aspect.h)
+          {
+             ow = h * drag_gcc->aspect.w / drag_gcc->aspect.h;
+          }
+
         evas_object_resize(mover, ow, h);
         evas_object_move(mover, ox, my - drag_gcc->dy);
 
+        drag_gcc->max.w = ow, drag_gcc->max.h = h;
         evas_object_resize(drag_gcc->o_frame, ow, h);
         evas_object_move(drag_gcc->o_frame, ox, my - drag_gcc->dy);
+        _save_widget_position(drag_gcc);
      }
+   mover_lock = EINA_FALSE;
 }
 
 static void
@@ -1286,8 +1346,11 @@ on_right(void *data, Evas_Object *o __UNUSED__, const char *em __UNUSED__, const
    int layer = Man->visible;
 
    drag_gcc = Man->drag_gcc[layer];
+   if (!drag_gcc) return;
 
    mover = _get_mover(drag_gcc);
+   if (!mover) return;
+   mover_lock = EINA_TRUE;
 
    action = (int)(long)data;
    if (action == DRAG_START)
@@ -1314,9 +1377,16 @@ on_right(void *data, Evas_Object *o __UNUSED__, const char *em __UNUSED__, const
         /* don't go out of the screen */
         if (w > (Man->width - ox)) w = Man->width - ox;
 
+        if (drag_gcc->aspect.w && drag_gcc->aspect.h)
+          {
+             oh = w * drag_gcc->aspect.h / drag_gcc->aspect.w;
+          }
+        drag_gcc->max.w = w, drag_gcc->max.h = oh;
         evas_object_resize(mover, w, oh);
         evas_object_resize(drag_gcc->o_frame, w, oh);
+        _save_widget_position(drag_gcc);
      }
+   mover_lock = EINA_FALSE;
 }
 
 static void
@@ -1330,8 +1400,11 @@ on_down(void *data, Evas_Object *o __UNUSED__, const char *em __UNUSED__, const 
    int layer = Man->visible;
 
    drag_gcc = Man->drag_gcc[layer];
+   if (!drag_gcc) return;
 
    mover = _get_mover(drag_gcc);
+   if (!mover) return;
+   mover_lock = EINA_TRUE;
 
    if (action == DRAG_START)
      {
@@ -1356,10 +1429,16 @@ on_down(void *data, Evas_Object *o __UNUSED__, const char *em __UNUSED__, const 
         if (h < drag_gcc->min.h) h = drag_gcc->min.h;
         /* don't go out of the screen */
         if (h > (Man->height - oy)) h = Man->height - oy;
-
+        if (drag_gcc->aspect.w && drag_gcc->aspect.h)
+          {
+             ow = h * drag_gcc->aspect.w / drag_gcc->aspect.h;
+          }
         evas_object_resize(mover, ow, h);
+        drag_gcc->max.w = ow, drag_gcc->max.h = h;
         evas_object_resize(drag_gcc->o_frame, ow, h);
+        _save_widget_position(drag_gcc);
      }
+   mover_lock = EINA_FALSE;
 }
 
 static void
@@ -1373,8 +1452,11 @@ on_left(void *data, Evas_Object *o __UNUSED__, const char *em __UNUSED__, const 
    int layer = Man->visible;
 
    drag_gcc = Man->drag_gcc[layer];
+   if (!drag_gcc) return;
 
    mover = _get_mover(drag_gcc);
+   if (!mover) return;
+   mover_lock = EINA_TRUE;
    if (action == DRAG_START)
      {
         drag_gcc->resizing = 1;
@@ -1407,13 +1489,19 @@ on_left(void *data, Evas_Object *o __UNUSED__, const char *em __UNUSED__, const 
              w += mx - drag_gcc->dx;
              mx = drag_gcc->dx;
           }
-
+        if (drag_gcc->aspect.w && drag_gcc->aspect.h)
+          {
+             oh = w * drag_gcc->aspect.h / drag_gcc->aspect.w;
+          }
         evas_object_resize(mover, w, oh);
         evas_object_move(mover, mx - drag_gcc->dx, oy);
 
+        drag_gcc->max.w = w, drag_gcc->max.h = oh;
         evas_object_resize(drag_gcc->o_frame, w, oh);
         evas_object_move(drag_gcc->o_frame, mx - drag_gcc->dx, oy);
+        _save_widget_position(drag_gcc);
      }
+   mover_lock = EINA_FALSE;
 }
 
 static void
@@ -1446,7 +1534,7 @@ on_move(void *data, Evas_Object *o __UNUSED__, const char *em __UNUSED__, const 
    drag_gcc->dx = mx - ox;
    drag_gcc->dy = my - oy;
 
-   drag_gcc->drag.drag = drag = e_drag_new(gc->zone->container, mx, my,
+   drag_gcc->drag.drag = drag = e_drag_new(gc->zone->comp, mx, my,
                      drag_types, 1, drag_gcc, -1, NULL,
                      e_gadcon_drag_finished_cb);
    if (!drag) return;
@@ -1462,8 +1550,8 @@ on_move(void *data, Evas_Object *o __UNUSED__, const char *em __UNUSED__, const 
 
    e_drag_object_set(drag, o);
    e_drag_resize(drag, ow, oh);
-   evas_object_hide(o);
    e_drag_start(drag, mx, my);
+   e_drag_hide(drag);
 }
 
 static void
@@ -1475,13 +1563,13 @@ on_bg_click(void *data __UNUSED__, Evas_Object *o __UNUSED__, const char *em __U
 static void
 on_hide_stop(void *data __UNUSED__, Evas_Object *o __UNUSED__, const char *em __UNUSED__, const char *src __UNUSED__)
 {
-   ecore_evas_hide(Man->top_ee);
+   evas_object_hide(Man->overlay);
 }
 
 static int
-_e_gadman_client_add(void *data __UNUSED__, E_Gadcon_Client *gcc, const E_Gadcon_Client_Class *cc)
+_e_gadman_client_add(void *data, E_Gadcon_Client *gcc, const E_Gadcon_Client_Class *cc)
 {
-   return !!gadman_gadget_add(cc, gcc, GADMAN_LAYER_BG);
+   return !!gadman_gadget_add(cc, gcc, (intptr_t)data);
 }
 
 static void
@@ -1495,8 +1583,9 @@ _e_gadman_client_remove(void *data __UNUSED__, E_Gadcon_Client *gcc)
 static void
 _e_gadman_handlers_add(void)
 {
-   E_LIST_HANDLER_APPEND(_gadman_hdls, E_EVENT_ZONE_ADD, _e_gadman_cb_zone_add, NULL);
-   E_LIST_HANDLER_APPEND(_gadman_hdls, E_EVENT_ZONE_DEL, _e_gadman_cb_zone_del, NULL);
+   E_LIST_HANDLER_APPEND(_gadman_hdls, E_EVENT_ZONE_ADD, _e_gadman_cb_zone_change, NULL);
+   E_LIST_HANDLER_APPEND(_gadman_hdls, E_EVENT_ZONE_MOVE_RESIZE, _e_gadman_cb_zone_change, NULL);
+   E_LIST_HANDLER_APPEND(_gadman_hdls, E_EVENT_ZONE_DEL, _e_gadman_cb_zone_change, NULL);
    E_LIST_HANDLER_APPEND(_gadman_hdls, E_EVENT_MODULE_UPDATE, _gadman_module_cb, NULL);
    E_LIST_HANDLER_APPEND(_gadman_hdls, E_EVENT_MODULE_INIT_END, _gadman_module_init_end_cb, NULL);
 }
@@ -1511,7 +1600,7 @@ static Eina_Bool
 _gadman_module_init_end_cb(void *d __UNUSED__, int type __UNUSED__, void *event __UNUSED__)
 {
    gadman_locked = EINA_FALSE;
-   gadman_reset();
+   gadman_reset(NULL);
    return ECORE_CALLBACK_RENEW;
 }
 
@@ -1537,34 +1626,64 @@ _gadman_module_cb(void *d __UNUSED__, int type __UNUSED__, E_Event_Module_Update
 }
 
 static Eina_Bool
-_e_gadman_reset_timer(void *d __UNUSED__)
+_e_gadman_cb_zone_change(void *data __UNUSED__, int type, void *event)
 {
-   if (!Man) return EINA_FALSE;
+   E_Gadcon *gc;
+   Eina_List *l, *ll;
+   E_Event_Zone_Move_Resize *ev = event;
+   const char *layer_name[] = {"gadman", "gadman_top"};
+   int layer;
+   E_Gadcon_Client *gcc;
 
-   Man->gadman_reset_timer = NULL;
-   gadman_reset();
-   return EINA_FALSE;
-}
-
-static Eina_Bool
-_e_gadman_cb_zone_add(void *data __UNUSED__, int type __UNUSED__, void *event __UNUSED__)
-{
    if (!Man) return ECORE_CALLBACK_RENEW;
-   if (Man->gadman_reset_timer)
-     ecore_timer_reset(Man->gadman_reset_timer);
-   else
-     Man->gadman_reset_timer = ecore_timer_add(3.0, _e_gadman_reset_timer, NULL);
+   if (gadman_locked) return ECORE_CALLBACK_RENEW;
+   if (type == E_EVENT_ZONE_MOVE_RESIZE)
+     {
+        /* probably zone dirty being set */
+        EINA_LIST_FOREACH(Man->gadcons[GADMAN_LAYER_BG], l, gc)
+          {
+             if (e_gadcon_zone_get(gc) != ev->zone) continue;
+             EINA_LIST_FOREACH(gc->clients, ll, gcc)
+               _apply_widget_position(gcc);
+             return ECORE_CALLBACK_RENEW;
+          }
+     }
+   if (type == E_EVENT_ZONE_DEL)
+     {
+        for (layer = 0; layer < GADMAN_LAYER_COUNT; layer++)
+          {
+             EINA_LIST_FOREACH(Man->gadcons[layer], l, gc)
+               {
+                  if (e_gadcon_zone_get(gc) != ev->zone) continue;
+                  e_object_del(E_OBJECT(gc));
+                  Man->gadcons[layer] = eina_list_remove_list(Man->gadcons[layer], l);
+                  E_FREE_FUNC(Man->movers[layer], evas_object_del);
+                  break;
+               }
+          }
+        if (ev->zone->comp == Man->comp)
+          {
+             evas_object_hide(Man->overlay);
+             E_FREE_FUNC(Man->overlay, evas_object_del);
+             _gadman_overlay_create();
+          }
+        return ECORE_CALLBACK_RENEW;
+     }
+
+   for (layer = 0; layer < GADMAN_LAYER_COUNT; layer++)
+     {
+        Eina_Bool found = EINA_FALSE;
+        EINA_LIST_FOREACH(Man->gadcons[GADMAN_LAYER_BG], l, gc)
+          if (e_gadcon_zone_get(gc) == ev->zone)
+            {
+               found = EINA_TRUE;
+               break;
+            }
+        if (found) continue;
+        gc = _gadman_gadcon_new(layer_name[layer], layer, ev->zone, Man->location[layer]);
+        Man->gadcons[layer] = eina_list_append(Man->gadcons[layer], gc);
+        gc->drop_handler->base = Man->overlay;
+        gc->drop_handler->hidden = 1;
+     }
    return ECORE_CALLBACK_PASS_ON;
 }
-
-static Eina_Bool
-_e_gadman_cb_zone_del(void *data __UNUSED__, int type __UNUSED__, void *event __UNUSED__)
-{
-   if (!Man) return ECORE_CALLBACK_RENEW;
-   if (Man->gadman_reset_timer)
-     ecore_timer_reset(Man->gadman_reset_timer);
-   else
-     Man->gadman_reset_timer = ecore_timer_add(3.0, _e_gadman_reset_timer, NULL);
-   return ECORE_CALLBACK_RENEW;
-}
-

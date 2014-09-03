@@ -44,7 +44,7 @@ static const char *_icon_previews[4] =
 #define PREVIEW_SIZE (48)
 
 E_Config_Dialog *
-e_int_config_xsettings(E_Container *con, const char *params __UNUSED__)
+e_int_config_xsettings(E_Comp *comp, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -58,24 +58,10 @@ e_int_config_xsettings(E_Container *con, const char *params __UNUSED__)
    v->basic.apply_cfdata = _basic_apply;
    v->basic.check_changed = _basic_check_changed;
 
-   cfd = e_config_dialog_new(con, _("Application Theme Settings"),
+   cfd = e_config_dialog_new(comp, _("Application Theme Settings"),
                              "E", "appearance/xsettings",
                              "preferences-desktop-theme", 0, v, NULL);
    return cfd;
-}
-
-static void
-_settings_changed(void *data, Evas_Object *obj EINA_UNUSED)
-{
-   E_Config_Dialog_Data *cfdata = data;
-   Eina_Bool disable;
-
-   disable = !cfdata->enable_xsettings;
-   e_widget_disabled_set(cfdata->gui.icon_enable_apps, disable);
-   e_widget_disabled_set(cfdata->gui.icon_enable_enlightenment, disable);
-   e_widget_disabled_set(cfdata->gui.match_theme, disable);
-   e_widget_disabled_set(cfdata->gui.widget_list, disable);
-   e_widget_disabled_set(cfdata->gui.icon_list, disable);
 }
 
 static void *
@@ -182,7 +168,9 @@ _basic_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
         ecore_event_add(E_EVENT_CONFIG_ICON_THEME, ev, NULL, NULL);
      }
 
+#ifndef HAVE_WAYLAND_ONLY
    e_xsettings_config_update();
+#endif
 
    return 1;
 }
@@ -292,7 +280,7 @@ _fill_files_ilist(void *data)
                {
                   char label[256];
                   const char *value;
-                  ssize_t len = sizeof(label);
+                  ssize_t len = sizeof(label) - 1;
 
                   tmp += 1;
                   value = eina_stringshare_add(tmp);
@@ -465,9 +453,9 @@ _icon_theme_changed(void *data, Evas_Object *o __UNUSED__)
 }
 
 static Evas_Object *
-_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
-   Evas_Object *otb, *ol, *ilist, *of, *ow;
+   Evas_Object *otb, *ol, *ilist, *of, *ow, *oc;
    struct _fill_icon_themes_data *d;
    unsigned int i;
 
@@ -494,10 +482,11 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
     * e_widget_list_object_append(o, ow, 0, 0, 0.0); */
 
    // >> advanced
-   ow = e_widget_check_add(evas, _("Enable X Application Settings"),
+   oc = e_widget_check_add(evas, _("Enable X Application Settings"),
                            &(cfdata->enable_xsettings));
-   e_widget_on_change_hook_set(ow, _settings_changed, cfdata);
-   e_widget_list_object_append(ol, ow, 0, 0, 0.0);
+   e_widget_list_object_append(ol, oc, 0, 0, 0.0);
+   e_widget_check_widget_disable_on_unchecked_add(oc, ilist);
+   e_widget_check_widget_disable_on_unchecked_add(oc, ow);
    e_widget_toolbook_page_append(otb, NULL, _("GTK Applications"), ol, 
                                  1, 1, 1, 1, 0.5, 0.0);
 
@@ -531,6 +520,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 
    cfdata->gui.icon_enable_apps = ow = e_widget_check_add(evas, _("Enable icon theme for applications"),
                            &(cfdata->match_e17_icon_theme));
+   e_widget_check_widget_disable_on_unchecked_add(oc, ow);
    e_widget_list_object_append(ol, ow, 0, 0, 0.0);
 
    cfdata->gui.icon_enable_enlightenment = ow = e_widget_check_add(evas, _("Enable icon theme for Enlightenment"),
@@ -541,7 +531,6 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
                                  1, 1, 1, 1, 0.5, 0.0);
 
    e_widget_toolbook_page_show(otb, 0);
-   e_dialog_resizable_set(cfd->dia, 1);
 
    _fill_files_ilist(cfdata);
 

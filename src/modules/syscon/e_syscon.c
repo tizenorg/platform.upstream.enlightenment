@@ -2,11 +2,7 @@
 #include "e_mod_main.h"
 
 /* local subsystem functions */
-static Eina_Bool _cb_key_down(void *data, int type, void *event);
-static Eina_Bool _cb_mouse_down(void *data, int type, void *event);
-static Eina_Bool _cb_mouse_up(void *data, int type, void *event);
-static Eina_Bool _cb_mouse_move(void *data, int type, void *event);
-static Eina_Bool _cb_mouse_wheel(void *data, int type, void *event);
+static Eina_Bool _cb_key_down(__UNUSED__ void *data, Ecore_Event_Key *ev);
 static void      _cb_signal_close(void *data, Evas_Object *obj, const char *emission, const char *source);
 static void      _cb_signal_syscon(void *data, Evas_Object *obj, const char *emission, const char *source);
 static void      _cb_signal_action(void *data, Evas_Object *obj, const char *emission, const char *source);
@@ -14,8 +10,7 @@ static void      _cb_signal_action_extra(void *data, Evas_Object *obj, const cha
 static Eina_Bool _cb_timeout_defaction(void *data);
 
 /* local subsystem globals */
-static E_Popup *popup = NULL;
-static Ecore_X_Window input_window = 0;
+static Evas_Object *popup = NULL;
 static const char *do_defact = NULL;
 static Eina_List *handlers = NULL;
 static Evas_Object *o_bg = NULL;
@@ -28,6 +23,12 @@ static int inevas = 0;
 static Ecore_Timer *deftimer = NULL;
 static double show_time = 0.0;
 static int act_count = 0;
+
+static void
+_cb_del(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED)
+{
+   e_syscon_hide();
+}
 
 /* externally accessible functions */
 int
@@ -52,6 +53,7 @@ e_syscon_show(E_Zone *zone, const char *defact)
    int iw, ih;
    Eina_List *l;
    double t;
+   Evas *evas;
 
    t = ecore_loop_time_get();
    if (popup)
@@ -78,44 +80,11 @@ e_syscon_show(E_Zone *zone, const char *defact)
         return 0;
      }
 
-   input_window = ecore_x_window_input_new(zone->container->win, zone->x,
-                                           zone->y, zone->w, zone->h);
-   ecore_x_window_show(input_window);
-   if (!e_grabinput_get(input_window, 1, input_window))
-     {
-        ecore_x_window_free(input_window);
-        input_window = 0;
-        return 0;
-     }
+   if (!e_comp_grab_input(e_comp_get(zone), 1, 1)) return 0;
+   evas = e_comp_get(zone)->evas;
+   evas_event_freeze(evas);
 
-   popup = e_popup_new(zone, 0, 0, 1, 1);
-   if (!popup)
-     {
-        e_grabinput_release(input_window, input_window);
-        ecore_x_window_free(input_window);
-        input_window = 0;
-        return 0;
-     }
-   evas_event_freeze(popup->evas);
-   e_popup_layer_set(popup, E_LAYER_POPUP);
-
-   handlers = eina_list_append
-       (handlers, ecore_event_handler_add
-         (ECORE_EVENT_KEY_DOWN, _cb_key_down, NULL));
-   handlers = eina_list_append
-       (handlers, ecore_event_handler_add
-         (ECORE_EVENT_MOUSE_BUTTON_DOWN, _cb_mouse_down, NULL));
-   handlers = eina_list_append
-       (handlers, ecore_event_handler_add
-         (ECORE_EVENT_MOUSE_BUTTON_UP, _cb_mouse_up, NULL));
-   handlers = eina_list_append
-       (handlers, ecore_event_handler_add
-         (ECORE_EVENT_MOUSE_MOVE, _cb_mouse_move, NULL));
-   handlers = eina_list_append
-       (handlers, ecore_event_handler_add
-         (ECORE_EVENT_MOUSE_WHEEL, _cb_mouse_wheel, NULL));
-
-   o = edje_object_add(popup->evas);
+   o = edje_object_add(evas);
    o_bg = o;
    e_theme_edje_object_set(o, "base/theme/syscon",
                            "e/widgets/syscon/main");
@@ -125,6 +94,10 @@ e_syscon_show(E_Zone *zone, const char *defact)
    edje_object_signal_callback_add(o, "e,action,syscon", "*",
                                    _cb_signal_syscon, NULL);
 
+   popup = e_comp_object_util_add(o_bg, E_COMP_OBJECT_TYPE_POPUP);
+   evas_object_data_set(popup, "zone", zone);
+   evas_object_layer_set(popup, E_LAYER_POPUP);
+   e_comp_object_util_autoclose(popup, _cb_del, _cb_key_down, NULL);
    act_count = 0;
    show_time = t;
 
@@ -135,19 +108,22 @@ e_syscon_show(E_Zone *zone, const char *defact)
    // extra (example for illume):
    //  home | close | kill
 
-   o = e_flowlayout_add(popup->evas);
+   o = e_flowlayout_add(evas);
+   e_comp_object_util_del_list_append(popup, o);
    o_flow_main = o;
    e_flowlayout_orientation_set(o, 1);
    e_flowlayout_flowdirection_set(o, 1, 1);
    e_flowlayout_homogenous_set(o, 1);
 
-   o = e_flowlayout_add(popup->evas);
+   o = e_flowlayout_add(evas);
+   e_comp_object_util_del_list_append(popup, o);
    o_flow_secondary = o;
    e_flowlayout_orientation_set(o, 1);
    e_flowlayout_flowdirection_set(o, 1, 1);
    e_flowlayout_homogenous_set(o, 1);
 
-   o = e_flowlayout_add(popup->evas);
+   o = e_flowlayout_add(evas);
+   e_comp_object_util_del_list_append(popup, o);
    o_flow_extra = o;
    e_flowlayout_orientation_set(o, 1);
    e_flowlayout_flowdirection_set(o, 1, 1);
@@ -182,7 +158,7 @@ e_syscon_show(E_Zone *zone, const char *defact)
         else if ((!strcmp(sca->action, "hibernate")) &&
                  (!e_sys_action_possible_get(E_SYS_HIBERNATE)))
           disabled = 1;
-        o = edje_object_add(popup->evas);
+        o = edje_object_add(evas);
         edje_object_signal_callback_add(o, "e,action,click", "",
                                         _cb_signal_action, sca);
         if (sca->button)
@@ -198,7 +174,7 @@ e_syscon_show(E_Zone *zone, const char *defact)
                                   _(e_action_predef_label_get(sca->action, sca->params)));
         if (sca->icon)
           {
-             o2 = e_icon_add(popup->evas);
+             o2 = e_icon_add(evas);
              e_util_icon_theme_set(o2, sca->icon);
              edje_object_part_swallow(o, "e.swallow.icon", o2);
              evas_object_show(o2);
@@ -232,7 +208,7 @@ e_syscon_show(E_Zone *zone, const char *defact)
         char buf[1024];
 
         sca = l->data;
-        o = edje_object_add(popup->evas);
+        o = edje_object_add(evas);
         edje_object_signal_callback_add(o, "e,action,click", "", _cb_signal_action_extra, sca);
         if (sca->button_name)
           {
@@ -246,7 +222,7 @@ e_syscon_show(E_Zone *zone, const char *defact)
         edje_object_part_text_set(o, "e.text.label", sca->label);
         if (sca->icon_group)
           {
-             o2 = edje_object_add(popup->evas);
+             o2 = edje_object_add(evas);
              e_util_edje_icon_set(o2, sca->icon_group);
              edje_object_part_swallow(o, "e.swallow.icon", o2);
              evas_object_show(o2);
@@ -274,29 +250,25 @@ e_syscon_show(E_Zone *zone, const char *defact)
    edje_object_calc_force(o_bg);
 
    e_flowlayout_size_min_get(o_flow_main, &mw, &mh);
-   edje_extern_object_min_size_set(o_flow_main, mw, mh);
+   evas_object_size_hint_min_set(o_flow_main, mw, mh);
    edje_object_part_swallow(o_bg, "e.swallow.main", o_flow_main);
    e_flowlayout_size_min_get(o_flow_secondary, &mw, &mh);
-   edje_extern_object_min_size_set(o_flow_secondary, mw, mh);
+   evas_object_size_hint_min_set(o_flow_secondary, mw, mh);
    edje_object_part_swallow(o_bg, "e.swallow.secondary", o_flow_secondary);
    e_flowlayout_size_min_get(o_flow_extra, &mw, &mh);
-   edje_extern_object_min_size_set(o_flow_extra, mw, mh);
+   evas_object_size_hint_min_set(o_flow_extra, mw, mh);
    edje_object_part_swallow(o_bg, "e.swallow.extra", o_flow_extra);
 
    edje_object_size_min_calc(o_bg, &mw, &mh);
 
    w = mw;
    if (w > zw) w = zw;
-   x = zx - zone->x + (zw - w) / 2;
+   x = zx + (zw - w) / 2;
    h = mh;
    if (h > zh) h = zh;
-   y = zy - zone->y + (zh - h) / 2;
+   y = zy + (zh - h) / 2;
 
-   e_popup_move_resize(popup, x, y, w, h);
-   evas_object_move(o_bg, 0, 0);
-   evas_object_resize(o_bg, w, h);
-   evas_object_show(o_bg);
-   e_popup_edje_bg_object_set(popup, o_bg);
+   evas_object_geometry_set(popup, x, y, w, h);
 
    if (e_config->syscon.do_input)
      {
@@ -305,9 +277,10 @@ e_syscon_show(E_Zone *zone, const char *defact)
         if (defact) do_defact = eina_stringshare_add(defact);
      }
 
-   evas_event_thaw(popup->evas);
+   evas_event_thaw(evas);
    inevas = 0;
-   e_popup_show(popup);
+   evas_object_show(popup);
+   evas_object_focus_set(popup, 1);
    return 1;
 }
 
@@ -316,35 +289,19 @@ e_syscon_hide(void)
 {
    if (!popup) return;
 
-   if (deftimer)
-     {
-        ecore_timer_del(deftimer);
-        deftimer = NULL;
-     }
-   if (do_defact) eina_stringshare_del(do_defact);
-   do_defact = NULL;
-   while (handlers)
-     {
-        ecore_event_handler_del(handlers->data);
-        handlers = eina_list_remove_list(handlers, handlers);
-     }
-   e_popup_hide(popup);
-   e_object_del(E_OBJECT(popup));
-   popup = NULL;
-   e_grabinput_release(input_window, input_window);
-   ecore_x_window_free(input_window);
-   input_window = 0;
+   E_FREE_FUNC(deftimer, ecore_timer_del);
+   eina_stringshare_replace(&do_defact, NULL);
+   E_FREE_LIST(handlers, ecore_event_handler_del);
+   e_comp_ungrab_input(e_comp_util_evas_object_comp_get(popup), 1, 1);
+   evas_object_hide(popup);
+   E_FREE_FUNC(popup, evas_object_del);
    o_selected_flow = o_selected = o_flow_extra = o_flow_main = o_flow_secondary = NULL;
 }
 
 /* local subsystem functions */
 static Eina_Bool
-_cb_key_down(__UNUSED__ void *data, __UNUSED__ int type, void *event)
+_cb_key_down(__UNUSED__ void *data, Ecore_Event_Key *ev)
 {
-   Ecore_Event_Key *ev;
-
-   ev = event;
-   if (ev->event_window != input_window) return ECORE_CALLBACK_PASS_ON;
    if (!strcmp(ev->key, "Escape"))
      e_syscon_hide();
    else if ((!strcmp(ev->key, "Left")) || (!strcmp(ev->key, "Up")))
@@ -360,7 +317,7 @@ _cb_key_down(__UNUSED__ void *data, __UNUSED__ int type, void *event)
           }
         else
           {
-             edje_object_signal_emit(o_selected, "e,state,focused", "e");
+             edje_object_signal_emit(o_selected, "e,state,unfocused", "e");
              o_selected = e_flowlayout_pack_object_prev(o_selected_flow, o_selected);
              if (!o_selected)
                {
@@ -384,7 +341,7 @@ _cb_key_down(__UNUSED__ void *data, __UNUSED__ int type, void *event)
                     }
                }
           }
-        edje_object_signal_emit(o_selected, "e,state,unfocused", "e");
+        edje_object_signal_emit(o_selected, "e,state,focused", "e");
      }
    else if ((!strcmp(ev->key, "Right")) || (!strcmp(ev->key, "Down")) || (!strcmp(ev->key, "Tab")))
      {
@@ -392,7 +349,7 @@ _cb_key_down(__UNUSED__ void *data, __UNUSED__ int type, void *event)
           o_selected_flow = o_flow_main, o_selected = e_flowlayout_pack_object_first(o_flow_main);
         else
           {
-             edje_object_signal_emit(o_selected, "e,state,focused", "e");
+             edje_object_signal_emit(o_selected, "e,state,unfocused", "e");
              o_selected = e_flowlayout_pack_object_next(o_selected_flow, o_selected);
              if (!o_selected)
                {
@@ -416,9 +373,9 @@ _cb_key_down(__UNUSED__ void *data, __UNUSED__ int type, void *event)
                     }
                }
           }
-        edje_object_signal_emit(o_selected, "e,state,unfocused", "e");
+        edje_object_signal_emit(o_selected, "e,state,focused", "e");
      }
-   else if ((!strcmp(ev->keyname, "KP_Enter")) || (!strcmp(ev->keyname, "Return")))
+   else if ((!strcmp(ev->key, "KP_Enter")) || (!strcmp(ev->key, "Return")))
      {
         if (!o_selected) return ECORE_CALLBACK_RENEW;
         edje_object_signal_emit(o_selected, "e,state,focused", "e");
@@ -440,7 +397,7 @@ _cb_key_down(__UNUSED__ void *data, __UNUSED__ int type, void *event)
                     {
                        if (popup)
                          {
-                            e_syscon_show(popup->zone, do_defact);
+                            e_syscon_show(evas_object_data_get(popup, "zone"), do_defact);
                          }
                     }
                   else
@@ -469,67 +426,6 @@ _cb_key_down(__UNUSED__ void *data, __UNUSED__ int type, void *event)
           }
      }
 
-   return ECORE_CALLBACK_PASS_ON;
-}
-
-static Eina_Bool
-_cb_mouse_down(__UNUSED__ void *data, __UNUSED__ int type, void *event)
-{
-   Ecore_Event_Mouse_Button *ev;
-   Evas_Button_Flags flags = EVAS_BUTTON_NONE;
-
-   ev = event;
-   if (ev->event_window != input_window) return ECORE_CALLBACK_PASS_ON;
-   if (ev->double_click) flags |= EVAS_BUTTON_DOUBLE_CLICK;
-   if (ev->triple_click) flags |= EVAS_BUTTON_TRIPLE_CLICK;
-   if ((ev->x < popup->x) || (ev->x >= (popup->x + popup->w)) ||
-       (ev->y < popup->y) || (ev->y >= (popup->y + popup->h)))
-     {
-        e_syscon_hide();
-        return ECORE_CALLBACK_PASS_ON;
-     }
-   evas_event_feed_mouse_down(popup->evas, ev->buttons, flags, ev->timestamp, NULL);
-   return ECORE_CALLBACK_PASS_ON;
-}
-
-static Eina_Bool
-_cb_mouse_up(__UNUSED__ void *data, __UNUSED__ int type, void *event)
-{
-   Ecore_Event_Mouse_Button *ev;
-
-   ev = event;
-   if (ev->event_window != input_window) return ECORE_CALLBACK_PASS_ON;
-   evas_event_feed_mouse_up(popup->evas, ev->buttons, EVAS_BUTTON_NONE,
-                            ev->timestamp, NULL);
-   return ECORE_CALLBACK_PASS_ON;
-}
-
-static Eina_Bool
-_cb_mouse_move(__UNUSED__ void *data, __UNUSED__ int type, void *event)
-{
-   Ecore_Event_Mouse_Move *ev;
-
-   ev = event;
-   if (ev->event_window != input_window) return ECORE_CALLBACK_PASS_ON;
-   if (!inevas)
-     {
-        evas_event_feed_mouse_in(popup->evas, ev->timestamp, NULL);
-        inevas = 1;
-     }
-   evas_event_feed_mouse_move(popup->evas, ev->x - popup->x, ev->y - popup->y,
-                              ev->timestamp, NULL);
-   return ECORE_CALLBACK_PASS_ON;
-}
-
-static Eina_Bool
-_cb_mouse_wheel(__UNUSED__ void *data, __UNUSED__ int type, void *event)
-{
-   Ecore_Event_Mouse_Wheel *ev;
-
-   ev = event;
-   if (ev->event_window != input_window) return ECORE_CALLBACK_PASS_ON;
-   evas_event_feed_mouse_wheel(popup->evas, ev->direction, ev->z,
-                               ev->timestamp, NULL);
    return ECORE_CALLBACK_PASS_ON;
 }
 

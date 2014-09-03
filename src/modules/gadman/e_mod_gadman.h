@@ -48,27 +48,21 @@ typedef enum
 struct _Manager
 {
    Eina_List   *gadcons[GADMAN_LAYER_COUNT];
-   E_Gadcon    *gc_top;
    E_Gadcon_Location *location[GADMAN_LAYER_COUNT];
    Eina_List   *gadgets[GADMAN_LAYER_COUNT];
-   Ecore_Timer *gadman_reset_timer;
    Evas_Object *movers[GADMAN_LAYER_COUNT];
    Evas_Object *full_bg;
    const char  *icon_name;
    E_Gadcon_Client *drag_gcc[GADMAN_LAYER_COUNT];
 
-   Eina_List *drag_handlers;
-
    Eina_List *waiting;
    Ecore_Event_Handler *add;
    
    int             visible;
-   int             use_composite;
-   Ecore_X_Window  top_win;
-   Ecore_Evas     *top_ee;
-   E_Container    *container;
+   Evas_Object     *overlay;
+   E_Comp    *comp;
 
-   Evas_Coord  width, height;
+   int  width, height;
    
    E_Module                *module;
    E_Config_Dialog         *config_dialog;
@@ -91,7 +85,7 @@ void             gadman_gadgets_toggle(void);
 void             gadman_update_bg(void);
 Eina_Bool gadman_gadget_add_handler(void *d, int type, E_Event_Gadcon_Client_Add *ev);
 
-E_Config_Dialog *_config_gadman_module(E_Container *con, const char *params __UNUSED__);
+E_Config_Dialog *_config_gadman_module(E_Comp *comp, const char *params __UNUSED__);
 
 /**
  * @addtogroup Optional_Gadgets

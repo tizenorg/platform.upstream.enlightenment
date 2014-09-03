@@ -55,6 +55,8 @@ static void             _cb_button_click(void *data, Evas_Object *obj, const cha
 static void             _cb_scroll_resize(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info);
 static void             _box_button_append(Instance *inst, const char *label, Edje_Signal_Cb func);
 static void             _box_button_free(Nav_Item *ni);
+static void _cb_fm_mouse_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info);
+
 
 static Eina_List *instances = NULL;
 static const char *_nav_mod_dir = NULL;
@@ -213,6 +215,7 @@ _box_button_cb_dnd_selection_notify(void *data, const char *type, void *event)
    if (!args) goto out;
    args = e_util_string_append_quoted(args, &size, &length, inst->dnd_path);
    if (!args) goto out;
+#ifndef HAVE_WAYLAND_ONLY
    if (link_drop || (e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_LINK))
      e_fm2_client_file_symlink(inst->o_fm, args);
    else if (e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_COPY)
@@ -221,6 +224,7 @@ _box_button_cb_dnd_selection_notify(void *data, const char *type, void *event)
      e_fm2_client_file_move(inst->o_fm, args);
    else if (e_drop_handler_action_get() == ECORE_X_ATOM_XDND_ACTION_ASK)
      e_fm2_drop_menu(inst->o_fm, args);
+#endif
    free(args);
 out:
    E_FREE(inst->dnd_path);
@@ -288,6 +292,8 @@ _gc_init(E_Gadcon *gc, const char *name, const char *id, const char *style)
 
    inst->tbar = tbar;
    inst->o_fm = o_fm;
+
+   evas_object_event_callback_add(o_fm, EVAS_CALLBACK_MOUSE_DOWN, _cb_fm_mouse_down, inst);
 
    snprintf(buf, sizeof(buf), "%s/e-module-efm_nav.edj", _nav_mod_dir);
    inst->theme = eina_stringshare_add(buf);
@@ -391,6 +397,9 @@ _gc_shutdown(E_Gadcon_Client *gcc)
    if (!inst) return;
    instances = eina_list_remove(instances, inst);
 
+   evas_object_event_callback_del_full(inst->o_fm,
+                                       EVAS_CALLBACK_MOUSE_DOWN,
+                                       _cb_fm_mouse_down, inst);
    evas_object_event_callback_del_full(inst->o_fm,
                                        EVAS_CALLBACK_KEY_DOWN,
                                        _cb_key_down, inst);
@@ -507,7 +516,7 @@ _cb_mouse_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void
 
    m = e_menu_new();
    m = e_gadcon_client_util_menu_items_append(inst->gcc, m, 0);
-   ecore_x_pointer_xy_get(zone->container->win, &x, &y);
+   ecore_evas_pointer_xy_get(zone->comp->ee, &x, &y);
    e_menu_activate_mouse(m, zone, x, y, 1, 1,
                          E_MENU_POP_DIRECTION_AUTO, ev->timestamp);
    evas_event_feed_mouse_up(inst->gcc->gadcon->evas, ev->button,
@@ -588,6 +597,18 @@ _cb_favorites_click(void *data, Evas_Object *obj __UNUSED__, const char *emissio
 }
 
 static void
+_cb_fm_mouse_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
+{
+   Instance *inst = data;
+   Evas_Event_Mouse_Down *ev = event_info;
+
+   if (ev->button == 9)
+     _cb_forward_click(inst, NULL, NULL, NULL);
+   else if (ev->button == 8)
+     _cb_back_click(inst, NULL, NULL, NULL);
+}
+
+static void
 _cb_changed(void *data, Evas_Object *obj __UNUSED__, void *event_info)
 {
    Instance *inst;
@@ -631,7 +652,7 @@ _box_button_free(Nav_Item *ni)
    e_box_unpack(ni->o);
    evas_object_del(ni->o);
    E_FREE_LIST(ni->handlers, ecore_event_handler_del);
-   if (ni->monitor) eio_monitor_del(ni->monitor);
+   eio_monitor_del(ni->monitor);
    eina_stringshare_del(ni->path);
    free(ni);
 }
@@ -674,7 +695,6 @@ _box_button_append(Instance *inst, const char *label, Edje_Signal_Cb func)
    ni->path = eina_stringshare_add(path);
    ni->monitor = eio_monitor_stringshared_add(ni->path);
    E_LIST_HANDLER_APPEND(ni->handlers, EIO_MONITOR_SELF_DELETED, _event_deleted, ni);
-   E_LIST_HANDLER_APPEND(ni->handlers, EIO_MONITOR_SELF_RENAME, _event_deleted, ni);
    E_LIST_HANDLER_APPEND(ni->handlers, EIO_MONITOR_ERROR, _event_deleted, ni);
 }
 

@@ -17,8 +17,8 @@
 # define USE_IPC
 # if 0
 #  define OBJECT_PARANOIA_CHECK
-#  define OBJECT_CHECK
 # endif
+# define OBJECT_CHECK
 
 # ifndef _FILE_OFFSET_BITS
 #  define _FILE_OFFSET_BITS 64
@@ -79,6 +79,7 @@ void *alloca (size_t);
 # include <errno.h>
 # include <signal.h>
 # include <inttypes.h>
+# include <assert.h>
 
 # ifdef HAVE_GETTEXT
 #  include <libintl.h>
@@ -97,12 +98,13 @@ void *alloca (size_t);
 # endif
 
 # include <setjmp.h>
+# include <Eo.h>
 # include <Eina.h>
 # include <Eet.h>
 # include <Evas.h>
 # include <Evas_Engine_Buffer.h>
 # include <Ecore.h>
-# include <Ecore_X.h>
+# include <Ecore_Getopt.h>
 # include <Ecore_Evas.h>
 # include <Ecore_Input.h>
 # include <Ecore_Input_Evas.h>
@@ -112,11 +114,18 @@ void *alloca (size_t);
 # include <Efreet.h>
 # include <Efreet_Mime.h>
 # include <Edje.h>
-# include <E_DBus.h>
+# include <Eldbus.h>
 # include <Eio.h>
+# include <Emotion.h>
+# include <Elementary.h>
 
 # ifdef HAVE_HAL
 #  include <E_Hal.h>
+# endif
+
+# ifdef HAVE_WAYLAND
+#  include <Ecore_Wayland.h>
+#  include <uuid.h>
 # endif
 
 # ifdef EAPI
@@ -172,7 +181,8 @@ typedef struct _E_Rect         E_Rect;
 #ifndef MAX
 # define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #endif
-# define E_FN_DEL(_fn, _h) if (_h) { _fn((void*)_h); _h = NULL; }
+
+# define E_FREE_FUNC(_h, _fn) do { if (_h) { _fn((void*)_h); _h = NULL; } } while (0)
 # define E_INTERSECTS(x, y, w, h, xx, yy, ww, hh) \
   (((x) < ((xx) + (ww))) && ((y) < ((yy) + (hh))) && (((x) + (w)) > (xx)) && (((y) + (h)) > (yy)))
 # define E_INSIDE(x, y, xx, yy, ww, hh) \
@@ -196,6 +206,12 @@ typedef struct _E_Rect         E_Rect;
     }                               \
   while (0)
 
+# define E_LIST_REVERSE_FREE(list, data)         \
+  for (data = eina_list_last_data_get(list);          \
+       list;                                     \
+       list = eina_list_remove_list(list, eina_list_last(list)), \
+       data = eina_list_last_data_get(list))
+
 # define E_LIST_FOREACH(list, func)    \
   do                                \
     {                               \
@@ -213,10 +229,8 @@ typedef struct _E_Rect         E_Rect;
     { \
        Ecore_Event_Handler *_eh; \
        _eh = ecore_event_handler_add(type, (Ecore_Event_Handler_Cb)callback, data); \
-       if (_eh) \
-         list = eina_list_append(list, _eh); \
-       else \
-         fprintf(stderr, "E_LIST_HANDLER_APPEND\n"); \
+       assert(_eh); \
+       list = eina_list_append(list, _eh); \
     } \
   while (0)
 
@@ -248,10 +262,6 @@ typedef struct _E_Rect         E_Rect;
        }                                                          \
   }
 
-#if (EINA_VERSION_MAJOR == 1) && (EINA_VERSION_MINOR < 8)
-# define eina_list_last_data_get(X) eina_list_data_get(eina_list_last(X))
-#endif
-
 # define E_REMOTE_OPTIONS 1
 # define E_REMOTE_OUT     2
 # define E_WM_IN          3
@@ -264,17 +274,7 @@ typedef struct _E_Rect         E_Rect;
 # undef E_TYPEDEFS
 # include "e_includes.h"
 
-EAPI E_Before_Idler *e_main_idler_before_add(int (*func)(void *data), void *data, int once);
-EAPI void            e_main_idler_before_del(E_Before_Idler *eb);
 EAPI double          e_main_ts(const char *str);
-
-struct _E_Before_Idler
-{
-   int       (*func)(void *data);
-   void     *data;
-   Eina_Bool once : 1;
-   Eina_Bool delete_me : 1;
-};
 
 struct _E_Rect
 {
@@ -299,7 +299,8 @@ extern EAPI Eina_Bool e_nopause;
 extern EAPI Eina_Bool e_precache_end;
 extern EAPI Eina_Bool x_fatal;
 
-EAPI void e_alert_composite_win(Ecore_X_Window root, Ecore_X_Window win);
+extern EINTERN const char *e_first_frame;
+extern EINTERN double e_first_frame_start_time;
 
 //#define SMARTERR(args...) abort()
 #define SMARTERRNR() return

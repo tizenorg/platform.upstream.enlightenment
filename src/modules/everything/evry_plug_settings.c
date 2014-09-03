@@ -165,7 +165,7 @@ _action(Evry_Action *action)
 
    snprintf(buf, sizeof(buf), "%s/%s", it->ecat->cat, it->eci->item);
 
-   e_configure_registry_call(buf, e_container_current_get(e_manager_current_get()), NULL);
+   e_configure_registry_call(buf, NULL, NULL);
 
    return EVRY_ACTION_FINISHED;
 }
@@ -180,11 +180,11 @@ _plugins_init(const Evry_API *_api)
 
    E_SETTINGS = evry->type_register("E_SETTINGS");
 
-   p = EVRY_PLUGIN_BASE("Settings", "configure", E_SETTINGS, _begin, _finish, _fetch);
+   p = EVRY_PLUGIN_BASE(N_("Settings"), "configure", E_SETTINGS, _begin, _finish, _fetch);
    p->browse = &_browse;
    evry->plugin_register(p, EVRY_PLUGIN_SUBJECT, 10);
 
-   act = EVRY_ACTION_NEW("Show Dialog", E_SETTINGS, 0,
+   act = EVRY_ACTION_NEW(N_("Show Dialog"), E_SETTINGS, 0,
                          "preferences-advanced", _action, _action_check);
 
    evry->action_register(act, 0);

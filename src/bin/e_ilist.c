@@ -12,7 +12,7 @@ struct _E_Smart_Data
    Eina_List    *items;
    Eina_List    *selected_items;
    int           selected;
-   const char *theme;
+   const char   *theme;
    unsigned char selector : 1;
    unsigned char multi_select : 1;
    unsigned char on_hold : 1;
@@ -25,34 +25,34 @@ struct _E_Smart_Data
    } typebuf;
 };
 
-static void      _e_smart_init(void);
-static void      _e_smart_add(Evas_Object *obj);
-static void      _e_smart_del(Evas_Object *obj);
-static void      _e_smart_show(Evas_Object *obj);
-static void      _e_smart_hide(Evas_Object *obj);
-static void      _e_smart_move(Evas_Object *obj, Evas_Coord x, Evas_Coord y);
-static void      _e_smart_resize(Evas_Object *obj, Evas_Coord w, Evas_Coord h);
-static void      _e_smart_color_set(Evas_Object *obj, int r, int g, int b, int a);
-static void      _e_smart_clip_set(Evas_Object *obj, Evas_Object *clip);
-static void      _e_smart_clip_unset(Evas_Object *obj);
-static void      _e_smart_reconfigure(E_Smart_Data *sd);
-static void      _e_smart_event_mouse_down(void *data, Evas *evas, Evas_Object *obj, void *event_info);
-static void      _e_smart_event_mouse_up(void *data, Evas *evas, Evas_Object *obj, void *event_info);
-static void      _e_smart_event_key_down(void *data, Evas *evas, Evas_Object *obj, void *event_info);
+static void          _e_smart_init(void);
+static void          _e_smart_add(Evas_Object *obj);
+static void          _e_smart_del(Evas_Object *obj);
+static void          _e_smart_show(Evas_Object *obj);
+static void          _e_smart_hide(Evas_Object *obj);
+static void          _e_smart_move(Evas_Object *obj, Evas_Coord x, Evas_Coord y);
+static void          _e_smart_resize(Evas_Object *obj, Evas_Coord w, Evas_Coord h);
+static void          _e_smart_color_set(Evas_Object *obj, int r, int g, int b, int a);
+static void          _e_smart_clip_set(Evas_Object *obj, Evas_Object *clip);
+static void          _e_smart_clip_unset(Evas_Object *obj);
+static void          _e_smart_reconfigure(E_Smart_Data *sd);
+static void          _e_smart_event_mouse_down(void *data, Evas *evas, Evas_Object *obj, void *event_info);
+static void          _e_smart_event_mouse_up(void *data, Evas *evas, Evas_Object *obj, void *event_info);
+static void          _e_smart_event_key_down(void *data, Evas *evas, Evas_Object *obj, void *event_info);
 
-static void      _e_typebuf_add(Evas_Object *obj, const char *s);
-static void      _e_typebuf_match(Evas_Object *obj);
-static Eina_Bool _e_typebuf_timer_cb(void *data);
-static void      _e_typebuf_timer_update(Evas_Object *obj);
-static void      _e_typebuf_timer_delete(Evas_Object *obj);
-static void      _e_typebuf_clean(Evas_Object *obj);
+static void          _e_typebuf_add(Evas_Object *obj, const char *s);
+static void          _e_typebuf_match(Evas_Object *obj);
+static Eina_Bool     _e_typebuf_timer_cb(void *data);
+static void          _e_typebuf_timer_update(Evas_Object *obj);
+static void          _e_typebuf_timer_delete(Evas_Object *obj);
+static void          _e_typebuf_clean(Evas_Object *obj);
 
 static E_Ilist_Item *_e_ilist_item_new(E_Smart_Data *sd, Evas_Object *icon, Evas_Object *end, const char *label, int header, Ecore_End_Cb func, Ecore_End_Cb func_hilight, void *data, void *data2);
-static void      _e_ilist_item_theme_set(E_Ilist_Item *si, Eina_Bool custom, Eina_Bool header, Eina_Bool even);
-static void      _e_ilist_widget_hack_cb(E_Smart_Data *sd, Evas_Object *obj __UNUSED__, Evas_Object *scr);
+static void          _e_ilist_item_theme_set(E_Ilist_Item *si, Eina_Bool custom, Eina_Bool header, Eina_Bool even);
+static void          _e_ilist_widget_hack_cb(E_Smart_Data *sd, Evas_Object *obj __UNUSED__, Evas_Object *scr);
 
-static void      _item_select(E_Ilist_Item *si);
-static void      _item_unselect(E_Ilist_Item *si);
+static void          _item_select(E_Ilist_Item *si);
+static void          _item_unselect(E_Ilist_Item *si);
 
 static Evas_Smart *_e_smart = NULL;
 
@@ -466,7 +466,6 @@ e_ilist_remove_num(Evas_Object *obj, int n)
     */
    if (!resize) return;
    if (!sd->items) return;
-   si = eina_list_data_get(sd->items);
    evas_object_resize(sd->o_smart, w, sd->h - h);
 }
 
@@ -541,7 +540,7 @@ e_ilist_nth_icon_set(Evas_Object *obj, int n, Evas_Object *icon)
    si->o_icon = icon;
    if (si->o_icon)
      {
-        edje_extern_object_min_size_set(si->o_icon, sd->iw, sd->ih);
+        evas_object_size_hint_min_set(si->o_icon, sd->iw, sd->ih);
         edje_object_part_swallow(si->o_base, "e.swallow.icon", si->o_icon);
         evas_object_show(si->o_icon);
      }
@@ -575,7 +574,7 @@ e_ilist_nth_end_set(Evas_Object *obj, int n, Evas_Object *end)
    si->o_end = end;
    if (si->o_end)
      {
-        edje_extern_object_min_size_set(si->o_end, sd->iw, sd->ih);
+        evas_object_size_hint_min_set(si->o_end, sd->iw, sd->ih);
         edje_object_part_swallow(si->o_base, "e.swallow.end", si->o_end);
         evas_object_show(si->o_end);
      }
@@ -622,7 +621,7 @@ e_ilist_icon_size_set(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
 
         if (!si) continue;
         if (!si->o_icon) continue;
-        edje_extern_object_min_size_set(si->o_icon, w, h);
+        evas_object_size_hint_min_set(si->o_icon, w, h);
         edje_object_part_swallow(si->o_base, "e.swallow.icon", si->o_icon);
 
         if (si->o_end)
@@ -635,7 +634,7 @@ e_ilist_icon_size_set(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
                   ew = w;
                   eh = h;
                }
-             edje_extern_object_min_size_set(si->o_end, ew, eh);
+             evas_object_size_hint_min_set(si->o_end, ew, eh);
           }
 
         edje_object_size_min_calc(si->o_base, &mw, &mh);
@@ -973,7 +972,7 @@ _e_smart_event_key_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj, voi
    if (ev->event_flags & EVAS_EVENT_FLAG_ON_HOLD) sd->on_hold = 1;
    else sd->on_hold = 0;
 
-   if ((!strcmp(ev->keyname, "Up")) || (!strcmp(ev->keyname, "KP_Up")))
+   if ((!strcmp(ev->key, "Up")) || (!strcmp(ev->key, "KP_Up")))
      {
         n = ns;
         do
@@ -999,7 +998,7 @@ _e_smart_event_key_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj, voi
                e_ilist_selected_set(sd->o_smart, n);
           }
      }
-   else if ((!strcmp(ev->keyname, "Down")) || (!strcmp(ev->keyname, "KP_Down")))
+   else if ((!strcmp(ev->key, "Down")) || (!strcmp(ev->key, "KP_Down")))
      {
         n = ns;
         do
@@ -1025,7 +1024,7 @@ _e_smart_event_key_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj, voi
                e_ilist_selected_set(sd->o_smart, n);
           }
      }
-   else if ((!strcmp(ev->keyname, "Home")) || (!strcmp(ev->keyname, "KP_Home")))
+   else if ((!strcmp(ev->key, "Home")) || (!strcmp(ev->key, "KP_Home")))
      {
         n = -1;
         do
@@ -1051,7 +1050,7 @@ _e_smart_event_key_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj, voi
                e_ilist_selected_set(sd->o_smart, n);
           }
      }
-   else if ((!strcmp(ev->keyname, "End")) || (!strcmp(ev->keyname, "KP_End")))
+   else if ((!strcmp(ev->key, "End")) || (!strcmp(ev->key, "KP_End")))
      {
         n = eina_list_count(sd->items);
         do
@@ -1077,9 +1076,9 @@ _e_smart_event_key_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj, voi
                e_ilist_selected_set(sd->o_smart, n);
           }
      }
-   else if ((!strcmp(ev->keyname, "Return")) ||
-            (!strcmp(ev->keyname, "KP_Enter")) ||
-            (!strcmp(ev->keyname, "space") && !sd->typebuf.buf))
+   else if ((!strcmp(ev->key, "Return")) ||
+            (!strcmp(ev->key, "KP_Enter")) ||
+            (!strcmp(ev->key, "space") && !sd->typebuf.buf))
      {
         if (!sd->on_hold)
           {
@@ -1090,9 +1089,9 @@ _e_smart_event_key_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj, voi
                }
           }
      }
-   else if (!strcmp(ev->keyname, "Escape"))
+   else if (!strcmp(ev->key, "Escape"))
      _e_typebuf_clean(obj);
-   else if (strcmp(ev->keyname, "BackSpace") && strcmp(ev->keyname, "Tab") && ev->string)
+   else if (strcmp(ev->key, "BackSpace") && strcmp(ev->key, "Tab") && ev->string)
      _e_typebuf_add(obj, ev->string);
 
    sd->on_hold = 0;
@@ -1361,7 +1360,7 @@ _e_ilist_item_new(E_Smart_Data *sd, Evas_Object *icon, Evas_Object *end, const c
    si->o_icon = icon;
    if (si->o_icon)
      {
-        edje_extern_object_min_size_set(si->o_icon, sd->iw, sd->ih);
+        evas_object_size_hint_min_set(si->o_icon, sd->iw, sd->ih);
         edje_object_part_swallow(si->o_base, "e.swallow.icon", si->o_icon);
         evas_object_show(si->o_icon);
      }
@@ -1376,7 +1375,7 @@ _e_ilist_item_new(E_Smart_Data *sd, Evas_Object *icon, Evas_Object *end, const c
              ew = sd->iw;
              eh = sd->ih;
           }
-        edje_extern_object_min_size_set(si->o_end, ew, eh);
+        evas_object_size_hint_min_set(si->o_end, ew, eh);
         edje_object_part_swallow(si->o_base, "e.swallow.end", si->o_end);
         evas_object_show(si->o_end);
      }
@@ -1392,3 +1391,4 @@ _e_ilist_item_new(E_Smart_Data *sd, Evas_Object *icon, Evas_Object *end, const c
                                   _e_smart_event_mouse_up, si);
    return si;
 }
+

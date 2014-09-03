@@ -20,6 +20,9 @@
 #include <errno.h>
 
 #include <Eina.h>
+#include <Evas.h>
+
+# define E_CSERVE
 
 static Eina_Bool stop_ptrace = EINA_FALSE;
 
@@ -95,7 +98,7 @@ next:
 }
 
 /* maximum number of arguments added above */
-#define VALGRIND_MAX_ARGS 10
+#define VALGRIND_MAX_ARGS 11
 /* bitmask with all supported bits set */
 #define VALGRIND_MODE_ALL 15
 
@@ -118,6 +121,7 @@ valgrind_append(char **dst, int valgrind_gdbserver, int valgrind_mode, int valgr
    if (valgrind_gdbserver) dst[i++] = "--db-attach=yes";
    if (!valgrind_mode) return 0;
    dst[i++] = valgrind_path;
+   dst[i++] = "--num-callers=40";
    dst[i++] = "--track-origins=yes";
    dst[i++] = "--malloc-fill=13"; /* invalid pointer, make it crash */
    if (valgrind_log)
@@ -233,6 +237,32 @@ _sigusr1(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__)
    sigaction(SIGUSR1, &action, NULL);
 }
 
+#ifdef E_CSERVE
+static pid_t
+_cserve2_start()
+{
+   pid_t cs_child;
+   cs_child = fork();
+   if (cs_child == 0)
+     {
+        char *cs_args[2] = { NULL, NULL };
+
+        cs_args[0] = (char *)evas_cserve_path_get();
+        execv(cs_args[0], cs_args);
+        exit(-1);
+     }
+   else if (cs_child > 0)
+     {
+        putenv("EVAS_CSERVE2=1");
+     }
+   else
+     {
+        unsetenv("EVAS_CSERVE2");
+     }
+   return cs_child;
+}
+#endif
+
 int
 main(int argc, char **argv)
 {
@@ -244,10 +274,17 @@ main(int argc, char **argv)
    const char *valgrind_log = NULL;
    Eina_Bool really_know = EINA_FALSE;
    struct sigaction action;
+   pid_t child = -1;
+#ifdef E_CSERVE
+   pid_t cs_child = -1;
+   Eina_Bool cs_use = EINA_FALSE;
+#endif
 #if !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__FreeBSD__) && \
-   !(defined (__MACH__) && defined (__APPLE__))
+   !defined(__FreeBSD_kernel__) && !(defined (__MACH__) && defined (__APPLE__))
    Eina_Bool restart = EINA_TRUE;
 #endif
+
+   unsetenv("NOTIFY_SOCKET");
 
    /* Setup USR1 to detach from the child process and let it get gdb by advanced users */
    action.sa_sigaction = _sigusr1;
@@ -408,20 +445,27 @@ main(int argc, char **argv)
      really_know = EINA_TRUE;
 
 #if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || \
-   (defined (__MACH__) && defined (__APPLE__))
+   defined(__FreeBSD_kernel__) || (defined (__MACH__) && defined (__APPLE__))
    execv(args[0], args);
 #endif
 
    /* not run at the moment !! */
 
 #if !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__FreeBSD__) && \
-   !(defined (__MACH__) && defined (__APPLE__))
+   !defined(__FreeBSD_kernel__) && !(defined (__MACH__) && defined (__APPLE__))
+
+#ifdef E_CSERVE
+   if (getenv("E_CSERVE"))
+     {
+        cs_use = EINA_TRUE;
+        cs_child = _cserve2_start();
+     }
+#endif
+
    /* Now looping until */
    while (restart)
      {
-        pid_t child;
-
-	stop_ptrace = EINA_FALSE;
+        stop_ptrace = EINA_FALSE;
 
         child = fork();
 
@@ -444,12 +488,14 @@ main(int argc, char **argv)
              pid_t result;
              int status;
              Eina_Bool done = EINA_FALSE;
+             Eina_Bool remember_sigill = EINA_FALSE;
+             Eina_Bool remember_sigusr1 = EINA_FALSE;
+	     Eina_Bool bad_kernel = EINA_FALSE;
+
 #ifdef HAVE_SYS_PTRACE_H
              if (!really_know)
                ptrace(PT_ATTACH, child, NULL, NULL);
-#endif
              result = waitpid(child, &status, 0);
-#ifdef HAVE_SYS_PTRACE_H
              if ((!really_know) && (!stop_ptrace))
                {
                   if (WIFSTOPPED(status))
@@ -458,10 +504,12 @@ main(int argc, char **argv)
 #endif
              while (!done)
                {
-                  Eina_Bool remember_sigill = EINA_FALSE;
-                  Eina_Bool remember_sigusr1 = EINA_FALSE;
-
-                  result = waitpid(child, &status, 0);
+                  result = waitpid(child, &status, WNOHANG);
+                  if (!result)
+                    {
+                       /* Wait for evas_cserve2 and E */
+                       result = waitpid(-1, &status, 0);
+                    }
 
                   if (result == child)
                     {
@@ -473,6 +521,7 @@ main(int argc, char **argv)
                             int r = 0;
                             int back;
 
+                            memset(&sig, 0, sizeof(siginfo_t));
 #ifdef HAVE_SYS_PTRACE_H
                             if (!really_know)
                               r = ptrace(PT_GETSIGINFO, child, NULL, &sig);
@@ -497,7 +546,7 @@ main(int argc, char **argv)
                             if (r != 0 ||
                                 (sig.si_signo != SIGSEGV &&
                                  sig.si_signo != SIGFPE &&
-                                 sig.si_signo != SIGBUS &&
+//                                 sig.si_signo != SIGBUS &&
                                  sig.si_signo != SIGABRT))
                               {
 #ifdef HAVE_SYS_PTRACE_H
@@ -508,17 +557,37 @@ main(int argc, char **argv)
                               }
 #ifdef HAVE_SYS_PTRACE_H
                             if (!really_know)
-                              /* E17 should be in pause, we can detach */
+                              /* E19 should be in pause, we can detach */
                               ptrace(PT_DETACH, child, NULL, back);
 #endif
                             /* And call gdb if available */
                             r = 0;
-                            if (home)
+
+			    /* Check if patch to prevent ptrace to another process is present in the kernel. */
+			    {
+			       int fd;
+			       char c;
+
+			       fd = open("/proc/sys/kernel/yama/ptrace_scope", O_RDONLY);
+			       if (fd != -1)
+				 {
+				    if (read(fd, &c, sizeof (c)) == sizeof (c) && c != '0')
+				      bad_kernel = EINA_TRUE;
+				 }
+			       close(fd);
+			    }
+
+                            if (home && !bad_kernel)
                               {
                                  /* call e_sys gdb */
-                                 snprintf(buffer, 4096,
-                                          "%s/enlightenment/utils/enlightenment_sys gdb %i %s/.e-crashdump.txt",
-                                          eina_prefix_lib_get(pfx),
+                                 snprintf(buffer, sizeof(buffer),
+                                          "gdb "
+                                          "--pid=%i "
+                                          "-batch "
+                                          "-ex 'set logging file %s/.e-crashdump.txt' "
+					  "-ex 'set logging on' "
+                                          "-ex 'thread apply all backtrace full' "
+                                          "-ex detach > /dev/null 2>&1 < /dev/zero",
                                           child,
                                           home);
                                  r = system(buffer);
@@ -530,20 +599,20 @@ main(int argc, char **argv)
                                           "%s/.e-crashdump.txt",
                                           home);
 
-                                 backtrace_str = strdup(buffer);
+				 backtrace_str = strdup(buffer);
                                  r = WEXITSTATUS(r);
                               }
 
                             /* call e_alert */
                             snprintf(buffer, 4096,
                                      backtrace_str ?
-                                     "%s/enlightenment/utils/enlightenment_alert %i %i '%s' %i" :
-                                     "%s/enlightenment/utils/enlightenment_alert %i %i '%s' %i",
+                                     "%s/enlightenment/utils/enlightenment_alert %i %i %i '%s'" :
+                                     "%s/enlightenment/utils/enlightenment_alert %i %i %i",
                                      eina_prefix_lib_get(pfx),
                                      sig.si_signo == SIGSEGV && remember_sigusr1 ? SIGILL : sig.si_signo,
                                      child,
-                                     backtrace_str,
-                                     r);
+                                     r,
+                                     backtrace_str);
                             r = system(buffer);
 
                             /* kill e */
@@ -583,7 +652,41 @@ main(int argc, char **argv)
                               }
                          }
                     }
+#ifdef E_CSERVE
+                  else if (cs_use && (result == cs_child))
+                    {
+                       if (WIFSIGNALED(status))
+                         {
+                            printf("E - cserve2 terminated with signal %d\n",
+                                   WTERMSIG(status));
+                            cs_child = _cserve2_start();
+                         }
+                       else if (WIFEXITED(status))
+                         {
+                            printf("E - cserve2 exited with code %d\n",
+                                   WEXITSTATUS(status));
+                            cs_child = -1;
+                         }
+                    }
+#endif
                }
+          }
+     }
+#endif
+
+#ifdef E_CSERVE
+   if (cs_child > 0)
+     {
+        pid_t result;
+        int status;
+
+        alarm(2);
+        kill(cs_child, SIGINT);
+        result = waitpid(cs_child, &status, 0);
+        if (result != cs_child)
+          {
+             printf("E - cserve2 did not shutdown in 2 seconds, killing!\n");
+             kill(cs_child, SIGKILL);
           }
      }
 #endif

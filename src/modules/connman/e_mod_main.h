@@ -30,9 +30,6 @@ struct E_Connman_Instance
           {
              Evas_Object *list;
              Evas_Object *powered;
-
-             Ecore_X_Window input_win;
-             Ecore_Event_Handler *input_mouse_up;
           } popup;
      } ui;
 };
@@ -60,10 +57,10 @@ EAPI int e_modapi_save(E_Module *m);
 
 void econnman_popup_del(E_Connman_Instance *inst);
 const char *e_connman_theme_path(void);
-E_Config_Dialog *e_connman_config_dialog_new(E_Container *con,
+E_Config_Dialog *e_connman_config_dialog_new(E_Comp *comp,
                                              E_Connman_Module_Context *ctxt);
 
-E_Connman_Agent *econnman_agent_new(E_DBus_Connection *edbus_conn) EINA_ARG_NONNULL(1);
+E_Connman_Agent *econnman_agent_new(Eldbus_Connection *eldbus_conn) EINA_ARG_NONNULL(1);
 void econnman_agent_del(E_Connman_Agent *agent);
 
 /**

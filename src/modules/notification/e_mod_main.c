@@ -1,11 +1,5 @@
 #include "e_mod_main.h"
 
-/* Callback function protos */
-static int  _notification_cb_notify(E_Notification_Daemon *daemon,
-                                    E_Notification        *n);
-static void _notification_cb_close_notification(E_Notification_Daemon *daemon,
-                                                unsigned int           id);
-
 /* Config function protos */
 static Config *_notification_cfg_new(void);
 static void    _notification_cfg_free(Config *cfg);
@@ -17,26 +11,15 @@ Config *notification_cfg = NULL;
 static E_Config_DD *conf_edd = NULL;
 
 static unsigned int
-_notification_notify(E_Notification *n)
+_notification_notify(E_Notification_Notify *n)
 {
-   const char *appname;
-   unsigned int replaces_id, new_id;
-   int popuped;
+   unsigned int new_id;
 
    if (e_desklock_state_get()) return 0;
-   appname = e_notification_app_name_get(n);
-   replaces_id = e_notification_replaces_id_get(n);
-   if (replaces_id) new_id = replaces_id;
-   else new_id = notification_cfg->next_id++;
 
-   e_notification_id_set(n, new_id);
-
-   popuped = notification_popup_notify(n, replaces_id, appname);
-   if (!popuped)
-     {
-        e_notification_hint_urgency_set(n, 4);
-        notification_popup_notify(n, replaces_id, appname);
-     }
+   notification_cfg->next_id++;
+   new_id = notification_cfg->next_id;
+   notification_popup_notify(n, new_id);
 
    return new_id;
 }
@@ -46,14 +29,14 @@ _notification_show_common(const char *summary,
                           const char *body,
                           int         replaces_id)
 {
-   E_Notification *n = e_notification_full_new
-       ("enlightenment", replaces_id, "enlightenment", summary, body, -1);
-
-   if (!n)
-     return;
-
-   _notification_notify(n);
-   e_notification_unref(n);
+   E_Notification_Notify n;
+   memset(&n, 0, sizeof(E_Notification_Notify));
+   n.app_name = "enlightenment";
+   n.replaces_id = replaces_id;
+   n.icon.icon = "enlightenment";
+   n.summary = summary;
+   n.body = body;
+   e_notification_client_send(&n, NULL, NULL);
 }
 
 static void
@@ -137,10 +120,30 @@ _notification_cb_initial_mode_timer(Config *m_cfg)
 /* Module Api Functions */
 EAPI E_Module_Api e_modapi = {E_MODULE_API_VERSION, "Notification"};
 
+static const E_Notification_Server_Info server_info = {
+   .name = "e17",
+   .vendor = "enlightenment.org",
+   .version = "0.17",
+   .spec_version = "1.2",
+   .capabilities = { "body", "body-markup", NULL }
+};
+
+/* Callbacks */
+static unsigned int
+_notification_cb_notify(void *data EINA_UNUSED, E_Notification_Notify *n)
+{
+   return _notification_notify(n);
+}
+
+static void
+_notification_cb_close(void *data EINA_UNUSED, unsigned int id)
+{
+   notification_popup_close(id);
+}
+
 EAPI void *
 e_modapi_init(E_Module *m)
 {
-   E_Notification_Daemon *d;
    char buf[PATH_MAX];
 
    snprintf(buf, sizeof(buf), "%s/e-module-notification.edj", m->dir);
@@ -178,26 +181,24 @@ e_modapi_init(E_Module *m)
      }
 
    if (!notification_cfg)
+     notification_cfg = _notification_cfg_new();
+   /* upgrades */
+   if (notification_cfg->version - (MOD_CONFIG_FILE_EPOCH * 1000000) < 1)
      {
-        notification_cfg = _notification_cfg_new();
+        if (notification_cfg->dual_screen) notification_cfg->dual_screen = POPUP_DISPLAY_POLICY_MULTI;
      }
+   notification_cfg->version = MOD_CONFIG_FILE_VERSION;
 
    /* set up the notification daemon */
-   e_notification_daemon_init();
-   d = e_notification_daemon_add("e_notification_module", "Enlightenment");
-   if (!d)
+   if (!e_notification_server_register(&server_info, _notification_cb_notify,
+                                       _notification_cb_close, NULL))
      {
-        _notification_cfg_free(notification_cfg);
-        notification_cfg = NULL;
-        e_util_dialog_show(_("Error During DBus Init!"),
-                           _("Error during DBus init! Please check if "
-                              "dbus is correctly installed and running."));
+        e_util_dialog_show(_("Error during notification server initialization"),
+                           _("Ensure there's no other module acting as a server "
+                             "and that D-Bus is correctly installed and "
+                             "running"));
         return NULL;
      }
-   notification_cfg->daemon = d;
-   e_notification_daemon_data_set(d, notification_cfg);
-   e_notification_daemon_callback_notify_set(d, _notification_cb_notify);
-   e_notification_daemon_callback_close_notification_set(d, _notification_cb_close_notification);
 
    notification_cfg->last_config_mode.presentation = e_config->mode.presentation;
    notification_cfg->last_config_mode.offline = e_config->mode.offline;
@@ -208,6 +209,7 @@ e_modapi_init(E_Module *m)
        (0.1, (Ecore_Task_Cb)_notification_cb_initial_mode_timer, notification_cfg);
 
    notification_mod = m;
+
    return m;
 }
 
@@ -225,9 +227,9 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    e_configure_registry_category_del("extensions");
 
    notification_popup_shutdown();
+   e_notification_server_unregister();
 
-   e_notification_daemon_free(notification_cfg->daemon);
-   e_notification_daemon_shutdown();
+
    _notification_cfg_free(notification_cfg);
    E_CONFIG_DD_FREE(conf_edd);
    notification_mod = NULL;
@@ -239,21 +241,6 @@ EAPI int
 e_modapi_save(E_Module *m __UNUSED__)
 {
    return e_config_domain_save("module.notification", conf_edd, notification_cfg);
-}
-
-/* Callbacks */
-static int
-_notification_cb_notify(E_Notification_Daemon *d __UNUSED__,
-                        E_Notification        *n)
-{
-   return _notification_notify(n);
-}
-
-static void
-_notification_cb_close_notification(E_Notification_Daemon *d __UNUSED__,
-                                    unsigned int           id)
-{
-   notification_popup_close(id);
 }
 
 static Config *
@@ -270,7 +257,7 @@ _notification_cfg_new(void)
    cfg->timeout = 5.0;
    cfg->force_timeout = 0;
    cfg->ignore_replacement = 0;
-   cfg->dual_screen = 0;
+   cfg->dual_screen = POPUP_DISPLAY_POLICY_FIRST;
    cfg->corner = CORNER_TR;
 
    return cfg;
@@ -281,4 +268,3 @@ _notification_cfg_free(Config *cfg)
 {
    free(cfg);
 }
-

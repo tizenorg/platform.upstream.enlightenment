@@ -651,25 +651,13 @@ _fetch(Evry_Plugin *plugin, const char *input)
 
    IF_RELEASE(p->input);
 
-   if (!p->parent && input && !strncmp(input, "/", 1))
+   if (!p->parent && input && (input[0] == '/'))
      {
-        char *path = NULL;
-
         if (p->command != CMD_SHOW_ROOT)
           {
              _free_files(p);
 
-             IF_RELEASE(p->directory);
-
-             if (path)
-               {
-                  p->directory = eina_stringshare_add(path);
-                  free(path);
-               }
-             else
-               {
-                  p->directory = eina_stringshare_add("/");
-               }
+             eina_stringshare_replace(&p->directory, input);
 
              _read_directory(p);
 
@@ -1314,37 +1302,37 @@ _plugins_init(const Evry_API *api)
   if (_register) evry->action_register(act, prio++);                         \
   _actions = eina_list_append(_actions, act);                                \
 
-   ACTION_NEW("Copy To ...", EVRY_TYPE_FILE, "go-next",
+   ACTION_NEW(N_("Copy To ..."), EVRY_TYPE_FILE, "go-next",
               _file_copy_action, NULL, 1);
    act->it2.subtype = EVRY_TYPE_DIR;
    EVRY_ITEM_DATA_INT_SET(act, ACT_COPY);
 
-   ACTION_NEW("Move To ...", EVRY_TYPE_FILE, "go-next",
+   ACTION_NEW(N_("Move To ..."), EVRY_TYPE_FILE, "go-next",
               _file_copy_action, NULL, 1);
    act->it2.subtype = EVRY_TYPE_DIR;
    EVRY_ITEM_DATA_INT_SET(act, ACT_MOVE);
 
-   ACTION_NEW("Move to Trash", 0, "user-trash",
+   ACTION_NEW(N_("Move to Trash"), 0, "user-trash",
               _file_trash_action, NULL, 1);
    EVRY_ITEM_DATA_INT_SET(act, ACT_TRASH);
 
-   ACTION_NEW("Open Directory", 0, "folder-open",
+   ACTION_NEW(N_("Open Directory"), 0, "folder-open",
               _open_folder_action, _open_folder_check, 1);
    act->remember_context = EINA_TRUE;
 
-   ACTION_NEW("Sort by Date", 0, "go-up",
+   ACTION_NEW(N_("Sort by Date"), 0, "go-up",
               _file_sort_action, NULL, 0);
    EVRY_ITEM_DATA_INT_SET(act, ACT_SORT_DATE);
    act_sort_date = act;
 
-   ACTION_NEW("Sort by Name", 0, "go-up",
+   ACTION_NEW(N_("Sort by Name"), 0, "go-up",
               _file_sort_action, NULL, 0);
    EVRY_ITEM_DATA_INT_SET(act, ACT_SORT_NAME);
    act_sort_name = act;
 
 #undef ACTION_NEW
 
-   p = EVRY_PLUGIN_BASE("Files", _module_icon, EVRY_TYPE_FILE,
+   p = EVRY_PLUGIN_BASE(N_("Files"), _module_icon, EVRY_TYPE_FILE,
                         _begin, _finish, _fetch);
    p->input_type = EVRY_TYPE_FILE;
    p->cb_key_down = &_cb_key_down;
@@ -1357,7 +1345,7 @@ _plugins_init(const Evry_API *api)
    if (evry->plugin_register(p, EVRY_PLUGIN_SUBJECT, 2))
      p->config->min_query = 1;
 
-   p = EVRY_PLUGIN_BASE("Files", _module_icon, EVRY_TYPE_FILE,
+   p = EVRY_PLUGIN_BASE(N_("Files"), _module_icon, EVRY_TYPE_FILE,
                         _begin, _finish, _fetch);
    p->cb_key_down = &_cb_key_down;
    p->browse = &_browse;
@@ -1370,7 +1358,7 @@ _plugins_init(const Evry_API *api)
    if (!_conf->show_recent && !_conf->search_recent)
      return EINA_TRUE;
 
-   p = EVRY_PLUGIN_BASE("Recent Files", _module_icon, EVRY_TYPE_FILE,
+   p = EVRY_PLUGIN_BASE(N_("Recent Files"), _module_icon, EVRY_TYPE_FILE,
                         _recentf_begin, _finish, _recentf_fetch);
    p->browse = &_recentf_browse;
    p->config_path = eina_stringshare_ref(config_path);
@@ -1382,7 +1370,7 @@ _plugins_init(const Evry_API *api)
      }
    _plugins = eina_list_append(_plugins, p);
 
-   p = EVRY_PLUGIN_BASE("Recent Files", _module_icon, EVRY_TYPE_FILE,
+   p = EVRY_PLUGIN_BASE(N_("Recent Files"), _module_icon, EVRY_TYPE_FILE,
                         _recentf_begin, _finish, _recentf_fetch);
    p->browse = &_recentf_browse;
    p->config_path = eina_stringshare_ref(config_path);
@@ -1439,7 +1427,7 @@ static Evas_Object *_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dia
 static int          _basic_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
 
 static E_Config_Dialog *
-_conf_dialog(E_Container *con, const char *params __UNUSED__)
+_conf_dialog(E_Comp *comp, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd = NULL;
    E_Config_Dialog_View *v = NULL;
@@ -1454,7 +1442,7 @@ _conf_dialog(E_Container *con, const char *params __UNUSED__)
    v->basic.create_widgets = _basic_create;
    v->basic.apply_cfdata = _basic_apply;
 
-   cfd = e_config_dialog_new(con, _("Everything Files"), "everything-files",
+   cfd = e_config_dialog_new(comp, _("Everything Files"), "everything-files",
                              "extensions/everything-files", _module_icon, 0, v, NULL);
 
    _conf->cfd = cfd;

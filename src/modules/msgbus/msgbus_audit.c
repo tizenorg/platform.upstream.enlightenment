@@ -10,24 +10,35 @@ static int _log_dom = -1;
 #define INF(...) EINA_LOG_DOM_INFO(_log_dom, __VA_ARGS__)
 #define ERR(...) EINA_LOG_DOM_ERR(_log_dom, __VA_ARGS__)
 
-static DBusMessage*
-cb_audit_timer_dump(E_DBus_Object *obj __UNUSED__, DBusMessage *msg)
+static Eldbus_Message *
+cb_audit_timer_dump(const Eldbus_Service_Interface *iface __UNUSED__,
+                    const Eldbus_Message *msg)
 {
-   DBusMessage *reply;
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
    char *tmp;
 
    tmp = ecore_timer_dump();
-   if (!tmp) tmp = strdup("Not enable, recompile Ecore with ecore_timer_dump.");
-
-   reply = dbus_message_new_method_return(msg);
-   dbus_message_append_args(reply, DBUS_TYPE_STRING, &tmp, DBUS_TYPE_INVALID);
+   if (!tmp)
+     eldbus_message_arguments_append(reply, "s",
+                                    "Not enable, recompile Ecore with ecore_timer_dump.");
+   else
+     eldbus_message_arguments_append(reply, "s", tmp);
 
    return reply;
 }
 
+static const Eldbus_Method methods[] = {
+   { "Timers", NULL, ELDBUS_ARGS({"s", ""}), cb_audit_timer_dump },
+   { }
+};
+
+static const Eldbus_Service_Interface_Desc audit = {
+  "org.enlightenment.wm.Audit", methods
+};
+
 void msgbus_audit_init(Eina_Array *ifaces)
 {
-   E_DBus_Interface *iface;
+   Eldbus_Service_Interface *iface;
 
    if (_log_dom == -1)
      {
@@ -36,13 +47,7 @@ void msgbus_audit_init(Eina_Array *ifaces)
 	  EINA_LOG_ERR("could not register msgbus_audit log domain!");
      }
 
-   iface = e_dbus_interface_new("org.enlightenment.wm.Audit");
+   iface = e_msgbus_interface_attach(&audit);
    if (iface)
-     {
-        e_dbus_interface_method_add(iface, "Timers", "", "s",
-                                    cb_audit_timer_dump);
-	e_msgbus_interface_attach(iface);
-	eina_array_push(ifaces, iface);
-     }
+     eina_array_push(ifaces, iface);
 }
-

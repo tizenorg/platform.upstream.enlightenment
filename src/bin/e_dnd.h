@@ -13,6 +13,7 @@ typedef struct _E_Event_Dnd_Enter E_Event_Dnd_Enter;
 typedef struct _E_Event_Dnd_Move  E_Event_Dnd_Move;
 typedef struct _E_Event_Dnd_Leave E_Event_Dnd_Leave;
 typedef struct _E_Event_Dnd_Drop  E_Event_Dnd_Drop;
+typedef struct E_Dnd_X_Moz_Url    E_Dnd_X_Moz_Url;
 
 #else
 #ifndef E_DND_H
@@ -37,23 +38,17 @@ struct _E_Drag
       void  (*key_up)(E_Drag *drag, Ecore_Event_Key *e);
    } cb;
 
-   E_Container       *container;
-   Ecore_Evas        *ecore_evas;
+   E_Comp           *comp;
    Evas              *evas;
-   Ecore_X_Window     evas_win;
-   E_Container_Shape *shape;
+   Evas_Object       *comp_object;
    Evas_Object       *object;
 
    int                x, y, w, h;
    int                dx, dy;
 
-   int                shape_rects_num;
-   Ecore_X_Rectangle *shape_rects;
-
    E_Layer            layer;
    unsigned char      visible : 1;
-   unsigned char      need_shape_export : 1;
-   unsigned char      xy_update : 1;
+   Eina_Bool          ended : 1;
 
    unsigned int       num_types;
    const char        *types[];
@@ -72,26 +67,28 @@ struct _E_Drop_Handler
    } cb;
 
    E_Object     *obj;
+   Evas_Object *base;
    int           x, y, w, h;
 
-   unsigned char active : 1;
-   unsigned char entered : 1;
    const char   *active_type;
+   Eina_Bool active : 1;
+   Eina_Bool entered : 1;
+   Eina_Bool hidden : 1;
    unsigned int  num_types;
-   const char   *types[];
+   Eina_Stringshare *types[];
 };
 
 struct _E_Event_Dnd_Enter
 {
    void        *data;
    int          x, y;
-   Ecore_X_Atom action;
+   unsigned int action;
 };
 
 struct _E_Event_Dnd_Move
 {
    int          x, y;
-   Ecore_X_Atom action;
+   unsigned int action;
 };
 
 struct _E_Event_Dnd_Leave
@@ -105,13 +102,20 @@ struct _E_Event_Dnd_Drop
    int   x, y;
 };
 
+struct E_Dnd_X_Moz_Url
+{
+   Eina_Inarray *links;
+   Eina_Inarray *link_names;
+};
+
 EINTERN int          e_dnd_init(void);
 EINTERN int          e_dnd_shutdown(void);
 
 EAPI int             e_dnd_active(void);
 
+EAPI E_Drag         *e_drag_current_get(void);
 /* x and y are the top left coords of the object that is to be dragged */
-EAPI E_Drag         *e_drag_new(E_Container *container, int x, int y,
+EAPI E_Drag         *e_drag_new(E_Comp *comp, int x, int y,
                                 const char **types, unsigned int num_types,
                                 void *data, int size,
                                 void *(*convert_cb)(E_Drag * drag, const char *type),
@@ -120,7 +124,6 @@ EAPI Evas           *e_drag_evas_get(const E_Drag *drag);
 EAPI void            e_drag_object_set(E_Drag *drag, Evas_Object *object);
 EAPI void            e_drag_move(E_Drag *drag, int x, int y);
 EAPI void            e_drag_resize(E_Drag *drag, int w, int h);
-EAPI void            e_drag_idler_before(void);
 EAPI void            e_drag_key_down_cb_set(E_Drag *drag, void (*func)(E_Drag *drag, Ecore_Event_Key *e));
 EAPI void            e_drag_key_up_cb_set(E_Drag *drag, void (*func)(E_Drag *drag, Ecore_Event_Key *e));
 
@@ -141,15 +144,25 @@ EAPI E_Drop_Handler *e_drop_handler_add(E_Object *obj,
 EAPI void         e_drop_handler_geometry_set(E_Drop_Handler *handler, int x, int y, int w, int h);
 EAPI int          e_drop_inside(const E_Drop_Handler *handler, int x, int y);
 EAPI void         e_drop_handler_del(E_Drop_Handler *handler);
-EAPI int          e_drop_xdnd_register_set(Ecore_X_Window win, int reg);
+EAPI int          e_drop_xdnd_register_set(Ecore_Window win, int reg);
 EAPI void         e_drop_handler_responsive_set(E_Drop_Handler *handler);
 EAPI int          e_drop_handler_responsive_get(const E_Drop_Handler *handler);
-EAPI void         e_drop_handler_action_set(Ecore_X_Atom action);
-EAPI Ecore_X_Atom e_drop_handler_action_get(void);
+EAPI void         e_drop_handler_action_set(unsigned int action);
+EAPI unsigned int e_drop_handler_action_get(void);
+EAPI Eina_List *e_dnd_util_text_uri_list_convert(char *data, int size);
+
+
+static inline void
+e_drag_show(E_Drag *drag)
+{
+   drag->visible = 1;
+}
+
+static inline void
+e_drag_hide(E_Drag *drag)
+{
+   drag->visible = 0;
+}
 
 #endif
-#endif
-
-#ifndef MIN
-# define MIN(x, y) (((x) > (y)) ? (y) : (x))
 #endif

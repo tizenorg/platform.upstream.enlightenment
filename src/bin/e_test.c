@@ -1,21 +1,40 @@
 #include "e.h"
 
-static void _e_test_internal(E_Container *con);
+static void _e_test_internal(E_Comp *c);
+
+#ifdef DESKMIRROR_TEST
+
+static Eina_Bool
+deskmirror_test(void *d EINA_UNUSED)
+{
+   E_Zone *zone;
+   Evas_Object *o;
+
+   zone = e_util_zone_current_get(e_manager_current_get());
+   o = e_deskmirror_add(e_desk_current_get(zone), 0, 0);
+   evas_object_move(o, zone->x + zone->w - (zone->w / 4), zone->y + zone->h / 2);
+   evas_object_resize(o, zone->w / 4, zone->h / 4);
+   evas_object_layer_set(o, E_LAYER_POPUP);
+   evas_object_show(o);
+
+   o = e_deskmirror_add(e_desk_current_get(zone), 0, 0);
+   evas_object_move(o, zone->x, zone->y + zone->h / 2);
+   evas_object_resize(o, zone->w / 2, zone->h / 2);
+   evas_object_layer_set(o, E_LAYER_POPUP);
+   evas_object_show(o);
+   return EINA_FALSE;
+}
+
+#endif
 
 EAPI void
 e_test(void)
 {
-   Eina_List *l, *ll;
-   E_Manager *man;
-   E_Container *con;
+   E_LIST_FOREACH(e_comp_list(), _e_test_internal);
 
-   EINA_LIST_FOREACH(e_manager_list(), l, man)
-     {
-	EINA_LIST_FOREACH(man->containers, ll, con)
-	  {
-	     _e_test_internal(con);
-	  }
-     }
+#ifdef DESKMIRROR_TEST
+   ecore_timer_add(2.0, deskmirror_test, NULL);
+#endif
 }
 
 #if 0
@@ -29,29 +48,30 @@ _e_test_timer(void *data)
    m = data;
    if (m)
      {
-	e_menu_deactivate(m);
-	e_object_del(E_OBJECT(m));
-	ecore_timer_add(0.05, _e_test_timer, NULL);
-	return 0;
+        e_menu_deactivate(m);
+        e_object_del(E_OBJECT(m));
+        ecore_timer_add(0.05, _e_test_timer, NULL);
+        return 0;
      }
    managers = e_manager_list();
    EINA_LIST_FOREACH(managers, l, man)
      {
-	m = e_int_menus_main_new();
-	e_menu_activate_mouse(m,
-			      e_container_zone_number_get(e_container_current_get(man), 0),
-			      0, 0, 1, 1, E_MENU_POP_DIRECTION_DOWN, 0);
-	ecore_timer_add(0.05, _e_test_timer, m);
-	return 0;
+        m = e_int_menus_main_new();
+        e_menu_activate_mouse(m,
+                              eina_list_data_get(man->comp->zones),
+                              0, 0, 1, 1, E_MENU_POP_DIRECTION_DOWN, 0);
+        ecore_timer_add(0.05, _e_test_timer, m);
+        return 0;
      }
    return 0;
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
    _e_test_timer(NULL);
 }
+
 #elif 0
 static void
 _e_test_resize(E_Win *win)
@@ -72,12 +92,12 @@ _e_test_delete(E_Win *win)
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
    E_Win *win;
    Evas_Object *o;
 
-   win = e_win_new(con);
+   win = e_win_new(c);
    e_win_resize_callback_set(win, _e_test_resize);
    e_win_delete_callback_set(win, _e_test_delete);
    e_win_placed_set(win, 0);
@@ -94,6 +114,7 @@ _e_test_internal(E_Container *con)
 
    win->data = o;
 }
+
 #elif 0
 static int
 _e_test_timer(void *data)
@@ -109,7 +130,7 @@ _e_test_timer(void *data)
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
    E_Menu *m;
    Eina_List *l;
@@ -117,13 +138,14 @@ _e_test_internal(E_Container *con)
 
    EINA_LIST_FOREACH(e_manager_list(), l, man)
      {
-	m = e_int_menus_main_new();
-	e_menu_activate_mouse(m,
-			      e_container_zone_number_get(e_container_current_get(man), 0),
-			      0, 0, 1, 1, E_MENU_POP_DIRECTION_DOWN, 0);
-	ecore_timer_add(0.02, _e_test_timer, m);
+        m = e_int_menus_main_new();
+        e_menu_activate_mouse(m,
+                              eina_list_data_get(man->comp->zones),
+                              0, 0, 1, 1, E_MENU_POP_DIRECTION_DOWN, 0);
+        ecore_timer_add(0.02, _e_test_timer, m);
      }
 }
+
 #elif 0
 static void
 _e_test_dialog_del(void *obj)
@@ -135,11 +157,11 @@ _e_test_dialog_del(void *obj)
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
    E_Dialog *dia;
 
-   dia = e_dialog_new(con, "E", "_test");
+   dia = e_dialog_new(c, "E", "_test");
    e_object_del_attach_func_set(E_OBJECT(dia), _e_test_dialog_del);
    e_dialog_title_set(dia, "A Test Dialog");
    e_dialog_text_set(dia, "A Test Dialog<br>And another line<br><hilight>Hilighted Text</hilight>");
@@ -150,6 +172,7 @@ _e_test_internal(E_Container *con)
    e_win_centered_set(dia->win, 1);
    e_dialog_show(dia);
 }
+
 #elif 0
 static void
 _e_test_click(void *data, Evas *e, Evas_Object *obj, void *event_info)
@@ -165,12 +188,12 @@ _e_test_click(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
    E_Dialog *dia;
    Evas_Object *o, *o2, *o3;
 
-   dia = e_dialog_new(con, "E", "_test");
+   dia = e_dialog_new(c, "E", "_test");
    e_dialog_title_set(dia, "A Test Dialog");
 
    o = e_icon_add(dia->win->evas);
@@ -198,17 +221,18 @@ _e_test_internal(E_Container *con)
 
    evas_object_focus_set(o, 1);
 }
+
 #elif 0
 static E_Dialog *
-_e_test_dia(E_Container *con)
+_e_test_dia(E_Comp *c)
 {
    E_Config_Dialog *dia;
 
-   dia = e_int_config_modules(con);
+   dia = e_int_config_modules(c);
    return dia;
 }
 
-static E_Container *tcon = NULL;
+static E_Comp *tcon = NULL;
 
 static int
 _e_test_timer(void *data)
@@ -217,24 +241,25 @@ _e_test_timer(void *data)
 
    if (data == NULL)
      {
-	dia = _e_test_dia(tcon);
-	ecore_timer_add(0.2, _e_test_timer, dia);
+        dia = _e_test_dia(tcon);
+        ecore_timer_add(0.2, _e_test_timer, dia);
      }
    else
      {
-	dia = data;
-	e_object_del(E_OBJECT(dia));
-	ecore_timer_add(0.2, _e_test_timer, NULL);
+        dia = data;
+        e_object_del(E_OBJECT(dia));
+        ecore_timer_add(0.2, _e_test_timer, NULL);
      }
    return 0;
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
-   tcon = con;
+   tcon = c;
    _e_test_timer(NULL);
 }
+
 #elif 0
 
 struct _tmp
@@ -263,18 +288,18 @@ _e_test_resize(void *data, Evas *e, Evas_Object *obj, void *event_info)
    evas_object_geometry_get(data, NULL, NULL, &w, &h);
    if (vw >= mw)
      {
-	if (w != vw) evas_object_resize(data, vw, h);
+        if (w != vw) evas_object_resize(data, vw, h);
      }
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
    E_Dialog *dia;
    Evas_Coord mw, mh, vw, vh;
    Evas_Object *o, *o2, *o3, *o4;
 
-   dia = e_dialog_new(con, "E", "_test");
+   dia = e_dialog_new(c, "E", "_test");
    e_dialog_title_set(dia, "A Test Dialog");
 
    o = e_ilist_add(dia->win->evas);
@@ -284,7 +309,7 @@ _e_test_internal(E_Container *con)
    e_livethumb_vsize_set(o3, 160, 96);
    o4 = edje_object_add(e_livethumb_evas_get(o3));
    e_theme_edje_object_set(o4, "base/theme/borders",
-			   "e/widgets/border/default/border");
+                           "e/widgets/border/default/border");
    e_livethumb_thumb_set(o3, o4);
    e_ilist_append(o, o3, "Item 1", 0, _e_test_sel, NULL, NULL, NULL);
 
@@ -347,6 +372,7 @@ _e_test_internal(E_Container *con)
 
    evas_object_focus_set(o, 1);
 }
+
 #elif 0
 static void
 _e_test_cb_e_smart_pan_changed_hook(void *data, Evas_Object *obj, void *event_info)
@@ -355,13 +381,13 @@ _e_test_cb_e_smart_pan_changed_hook(void *data, Evas_Object *obj, void *event_in
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
    E_Dialog *dia;
    Evas_Object *o;
    Evas_Coord mw, mh;
 
-   dia = e_dialog_new(con, "E", "_test");
+   dia = e_dialog_new(c, "E", "_test");
    e_dialog_title_set(dia, "A Test Dialog");
 
    o = e_slider_add(dia->win->evas);
@@ -381,41 +407,42 @@ _e_test_internal(E_Container *con)
 
    evas_object_focus_set(o, 1);
 }
+
 #elif 0
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
    E_Dialog *dia;
    Evas_Object *o;
    Evas_Coord mw, mh;
 
-   dia = e_dialog_new(con, "E", "_test");
+   dia = e_dialog_new(c, "E", "_test");
    e_dialog_title_set(dia, "A Test Dialog");
 
    o = e_widget_textblock_add(dia->win->evas);
 #if 0
    e_widget_textblock_markup_set(o,
-				 "<title>A title</title>"
-				 "This is some text<br>"
-				 "Blah blah<br>"
-				 "<hilight>hilighted text</hilight><br>"
-				 "<br>"
-				 "More lines of text<br>"
-				 "And yet more lines of text<br>"
-				 "A very very long line of text that SHOULD be getting word wrapped because it is so long.<br>"
-				 "And another line<br>"
-				 "Some more<br>"
-				 "Smelly fish on a stick<br>"
-				 "Whatever."
-				 );
+                                 "<title>A title</title>"
+                                 "This is some text<br>"
+                                 "Blah blah<br>"
+                                 "<hilight>hilighted text</hilight><br>"
+                                 "<br>"
+                                 "More lines of text<br>"
+                                 "And yet more lines of text<br>"
+                                 "A very very long line of text that SHOULD be getting word wrapped because it is so long.<br>"
+                                 "And another line<br>"
+                                 "Some more<br>"
+                                 "Smelly fish on a stick<br>"
+                                 "Whatever."
+                                 );
 #else
    e_widget_textblock_plain_set(o,
-				"And here is some plaintext\n"
-				"with some newlines & other special characters\n"
-				"that should get escaped like < and >.\n"
-				"\n"
-				"\tTabs should become 8 spaces too.\n"
-				);
+                                "And here is some plaintext\n"
+                                "with some newlines & other special characters\n"
+                                "that should get escaped like < and >.\n"
+                                "\n"
+                                "\tTabs should become 8 spaces too.\n"
+                                );
 #endif
    evas_object_show(o);
 
@@ -427,6 +454,7 @@ _e_test_internal(E_Container *con)
 
    evas_object_focus_set(o, 1);
 }
+
 #elif 0
 static void
 _e_test_cb_button(void *data1, void *data2)
@@ -476,19 +504,19 @@ _e_test_cb_favorites_files_changed(void *data, Evas_Object *obj, void *event_inf
    if (!p1) goto done;
    EINA_LIST_FOREACH(icons, l, ici)
      {
-	if (ici->link)
-	  {
-	     p2 = ecore_file_realpath(ici->link);
-	     if (!strcmp(p1, p2))
-	       {
-		  e_fm2_select_set(obj, ici->file);
-		  E_FREE(p2);
-		  goto done;
-	       }
-	     E_FREE(p2);
-	  }
+        if (ici->link)
+          {
+             p2 = ecore_file_realpath(ici->link);
+             if (!strcmp(p1, p2))
+               {
+                  e_fm2_select_set(obj, ici->file);
+                  E_FREE(p2);
+                  goto done;
+               }
+             E_FREE(p2);
+          }
      }
-   done:
+done:
    E_FREE(p1);
    eina_list_free(icons);
 }
@@ -500,14 +528,14 @@ _e_test_cb_selected(void *data, Evas_Object *obj, void *event_info)
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
    E_Dialog *dia;
    Evas_Object *ofm, *ofm2, *of, *ob, *ot;
    Evas_Coord mw, mh;
    E_Fm2_Config fmc;
 
-   dia = e_dialog_new(con, "E", "_test");
+   dia = e_dialog_new(c, "E", "_test");
    e_dialog_title_set(dia, "A Test Dialog");
 
    /* a table for layout */
@@ -537,14 +565,14 @@ _e_test_internal(E_Container *con)
 
    e_fm2_path_set(ofm, "~/", "/");
    ob = e_widget_button_add(dia->win->evas, "Up a directory", NULL,
-			   _e_test_cb_button, ofm, NULL);
+                            _e_test_cb_button, ofm, NULL);
    e_widget_table_object_append(ot, ob, 1, 0, 1, 1, 0, 0, 1, 0);
    evas_object_show(ob);
    evas_object_smart_callback_add(ofm, "changed", _e_test_cb_changed, ob);
    evas_object_smart_callback_add(ofm, "selected", _e_test_cb_selected, NULL);
    of = e_widget_scrollframe_pan_add(dia->win->evas, ofm,
-				     e_fm2_pan_set, e_fm2_pan_get,
-				     e_fm2_pan_max_get, e_fm2_pan_child_size_get);
+                                     e_fm2_pan_set, e_fm2_pan_get,
+                                     e_fm2_pan_max_get, e_fm2_pan_child_size_get);
    e_widget_size_min_set(of, 128, 128);
    e_widget_table_object_append(ot, of, 1, 1, 1, 1, 1, 1, 1, 1);
    evas_object_show(ofm);
@@ -578,8 +606,8 @@ _e_test_internal(E_Container *con)
    evas_object_smart_callback_add(ofm, "files_changed", _e_test_cb_favorites_files_changed, ofm2);
    evas_object_smart_callback_add(ofm, "selected", _e_test_cb_favorites_selected, ofm2);
    of = e_widget_scrollframe_pan_add(dia->win->evas, ofm,
-				     e_fm2_pan_set, e_fm2_pan_get,
-				     e_fm2_pan_max_get, e_fm2_pan_child_size_get);
+                                     e_fm2_pan_set, e_fm2_pan_get,
+                                     e_fm2_pan_max_get, e_fm2_pan_child_size_get);
    e_widget_size_min_set(of, 128, 128);
    e_widget_table_object_append(ot, of, 0, 1, 1, 1, 0, 1, 0, 1);
    evas_object_show(ofm);
@@ -596,8 +624,8 @@ _e_test_internal(E_Container *con)
    e_win_centered_set(dia->win, 1);
    e_dialog_show(dia);
    e_win_resize(dia->win, 400, 300);
-
 }
+
 #elif 0
 static void
 _e_test_cb_changed(void *data, Evas_Object *obj)
@@ -613,18 +641,18 @@ _e_test_cb_selected(void *data, Evas_Object *obj)
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
    E_Dialog *dia;
    Evas_Object *o;
    Evas_Coord mw, mh;
 
-   dia = e_dialog_new(con, "E", "_test");
+   dia = e_dialog_new(c, "E", "_test");
    e_dialog_title_set(dia, "A Test Dialog");
 
    o = e_widget_fsel_add(dia->win->evas, "~/", "/tst", NULL, NULL,
-			 _e_test_cb_selected, dia,
-			 _e_test_cb_changed, dia, 0);
+                         _e_test_cb_selected, dia,
+                         _e_test_cb_changed, dia, 0);
    evas_object_show(o);
    e_widget_size_min_get(o, &mw, &mh);
    e_dialog_content_set(dia, o, mw, mh);
@@ -635,8 +663,8 @@ _e_test_internal(E_Container *con)
    e_win_centered_set(dia->win, 1);
    e_dialog_show(dia);
    e_win_resize(dia->win, 400, 300);
-
 }
+
 #elif 0
 
 static void
@@ -646,25 +674,25 @@ _e_test_cb_ok(E_Color_Dialog *dia, E_Color *color, void *data)
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
    E_Color_Dialog *d;
 
-   d = e_color_dialog_new(con, NULL, EINA_FALSE);
+   d = e_color_dialog_new(c, NULL, EINA_FALSE);
    e_color_dialog_show(d);
    e_color_dialog_select_callback_set(d, _e_test_cb_ok, NULL);
 }
 
 #elif 0
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
    E_Dialog *dia;
    Evas_Object *o, *ob, *of;
    Evas_Coord mw, mh;
    int i;
 
-   dia = e_dialog_new(con, "E", "_test");
+   dia = e_dialog_new(c, "E", "_test");
    e_dialog_title_set(dia, "A Test Dialog");
 
    of = e_scrollframe_add(dia->win->evas);
@@ -674,36 +702,36 @@ _e_test_internal(E_Container *con)
 
    for (i = 0; i < 8; i++)
      {
-   o = e_slidesel_add(dia->win->evas);
-   e_slidesel_item_distance_set(o, 64);
-   e_slidesel_item_add(o, "blah / item 1",
-		       "/home/raster/pix/OLD/Download/Crystalline____a.jpg",
-		       NULL, NULL);
-   e_slidesel_item_add(o, "blah / smelly fish",
-		       "/home/raster/pix/OLD/Download/Reluctant_Sunrise.jpg",
-		       NULL, NULL);
-   e_slidesel_item_add(o, "blah / pong",
-		       "/home/raster/pix/OLD/Download/Soft_Wings.jpg",
-		       NULL, NULL);
-   e_slidesel_item_add(o, "blah / on a stick",
-		       "/home/raster/pix/OLD/Download/Stock_rose_1.jpg",
-		       NULL, NULL);
-   e_slidesel_item_add(o, "blah / oath",
-		       "/home/raster/pix/OLD/Download/The_Eyes_Of_A_Killer.jpg",
-		       NULL, NULL);
-   e_slidesel_item_add(o, "blah / yiiihaaaaa",
-		       "/home/raster/pix/OLD/Download/lady_bug.jpg",
-		       NULL, NULL);
-   e_slidesel_item_add(o, "blah / blah blah blah",
-		       "/home/raster/pix/OLD/Download/ocean_rocks_covered_by_ash.jpg",
-		       NULL, NULL);
-   e_slidesel_item_add(o, "blah / bing bing bing",
-		       "/home/raster/pix/OLD/Download/orange_chair_heaven_falling.jpg",
-		       NULL, NULL);
+        o = e_slidesel_add(dia->win->evas);
+        e_slidesel_item_distance_set(o, 64);
+        e_slidesel_item_add(o, "blah / item 1",
+                            "/home/raster/pix/OLD/Download/Crystalline____a.jpg",
+                            NULL, NULL);
+        e_slidesel_item_add(o, "blah / smelly fish",
+                            "/home/raster/pix/OLD/Download/Reluctant_Sunrise.jpg",
+                            NULL, NULL);
+        e_slidesel_item_add(o, "blah / pong",
+                            "/home/raster/pix/OLD/Download/Soft_Wings.jpg",
+                            NULL, NULL);
+        e_slidesel_item_add(o, "blah / on a stick",
+                            "/home/raster/pix/OLD/Download/Stock_rose_1.jpg",
+                            NULL, NULL);
+        e_slidesel_item_add(o, "blah / oath",
+                            "/home/raster/pix/OLD/Download/The_Eyes_Of_A_Killer.jpg",
+                            NULL, NULL);
+        e_slidesel_item_add(o, "blah / yiiihaaaaa",
+                            "/home/raster/pix/OLD/Download/lady_bug.jpg",
+                            NULL, NULL);
+        e_slidesel_item_add(o, "blah / blah blah blah",
+                            "/home/raster/pix/OLD/Download/ocean_rocks_covered_by_ash.jpg",
+                            NULL, NULL);
+        e_slidesel_item_add(o, "blah / bing bing bing",
+                            "/home/raster/pix/OLD/Download/orange_chair_heaven_falling.jpg",
+                            NULL, NULL);
 
-   e_box_pack_end(ob, o);
-   e_box_pack_options_set(o, 1, 1, 1, 0, 0.5, 0.5, 300, 100, 300, 100);
-   evas_object_show(o);
+        e_box_pack_end(ob, o);
+        e_box_pack_options_set(o, 1, 1, 1, 0, 0.5, 0.5, 300, 100, 300, 100);
+        evas_object_show(o);
      }
 
    /* fixme... more */
@@ -723,13 +751,12 @@ _e_test_internal(E_Container *con)
    e_win_centered_set(dia->win, 1);
    e_dialog_show(dia);
    e_win_resize(dia->win, 400, 400);
-
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
-   ecore_timer_add(1.0, _e_test_timer, con);
+   ecore_timer_add(1.0, _e_test_timer, c);
 }
 
 #elif 0
@@ -737,13 +764,13 @@ _e_test_internal(E_Container *con)
 static int
 _e_test_timer(void *data)
 {
-   E_Container *con;
+   E_Comp *c;
    E_Dialog *dia;
    Evas_Object *o, *ic;
    Evas_Coord mw, mh;
 
-   con = data;
-   dia = e_dialog_new(con, "E", "_test");
+   c = data;
+   dia = e_dialog_new(c, "E", "_test");
    e_dialog_title_set(dia, "A Test Dialog");
 
    o = e_widget_toolbar_add(dia->win->evas, 48, 48);
@@ -794,9 +821,9 @@ _e_test_timer(void *data)
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
-   ecore_timer_add(1.0, _e_test_timer, con);
+   ecore_timer_add(1.0, _e_test_timer, c);
 }
 
 #elif 0
@@ -804,13 +831,13 @@ _e_test_internal(E_Container *con)
 static int
 _e_test_timer(void *data)
 {
-   E_Container *con;
+   E_Comp *c;
    E_Dialog *dia;
    Evas_Object *o, *ic;
    Evas_Coord mw, mh;
 
-   con = data;
-   dia = e_dialog_new(con, "E", "_test");
+   c = data;
+   dia = e_dialog_new(c, "E", "_test");
    e_dialog_title_set(dia, "A Test Dialog");
 
    o = e_widget_toolbar_add(dia->win->evas, 48, 48);
@@ -861,139 +888,15 @@ _e_test_timer(void *data)
 }
 
 static void
-_e_test_internal(E_Container *con)
+_e_test_internal(E_Comp *c)
 {
-   ecore_timer_add(1.0, _e_test_timer, con);
-}
-
-#elif 0
-static void
-delorig(void *data, Evas *e, Evas_Object *obj, void *event_info)
-{
-   evas_object_del(data);
-}
-
-static void
-movorig(void *data, Evas *e, Evas_Object *obj, void *event_info)
-{
-   Evas_Coord x, y;
-   evas_object_geometry_get(obj, &x, &y, NULL, NULL);
-   evas_object_move(data, x, y);
-}
-
-static void
-reszorig(void *data, Evas *e, Evas_Object *obj, void *event_info)
-{
-   Evas_Coord w, h;
-   evas_object_geometry_get(obj, NULL, NULL, &w, &h);
-   evas_object_resize(data, w / 8, h / 8);
-}
-
-static void
-newwin(Evas *e, E_Manager *man, E_Manager_Comp_Source *src)
-{
-   Evas_Object *o, *orig;
-   Evas_Coord x, y, w, h;
-
-   if (!e_manager_comp_src_image_get(man, src)) return;
-
-   orig = e_manager_comp_src_shadow_get(man, src);
-   o = e_manager_comp_src_image_mirror_add(man, src);
-   evas_object_color_set(o, 200, 200, 200, 200);
-   evas_object_event_callback_add(orig, EVAS_CALLBACK_DEL, delorig, o);
-   evas_object_event_callback_add(orig, EVAS_CALLBACK_MOVE, movorig, o);
-   evas_object_event_callback_add(orig, EVAS_CALLBACK_RESIZE, reszorig, o);
-   evas_object_geometry_get(orig, &x, &y, &w, &h);
-
-   evas_object_move(o, x, y);
-   evas_object_resize(o, w / 8, h / 8);
-
-   evas_object_show(o);
-   e_manager_comp_evas_update(man);
-}
-
-static void
-setup(E_Manager *man)
-{
-   Eina_List *list, *l;
-   E_Manager_Comp_Source *src;
-   Evas *e;
-
-   e = e_manager_comp_evas_get(man);
-   list = (Eina_List *)e_manager_comp_src_list(man);
-   EINA_LIST_FOREACH(list, l, src)
-     {
-        newwin(e, man, src);
-     }
-}
-
-static void
-handler(void *data, const char *name, const char *info, int val,
-        E_Object *obj, void *msgdata)
-{
-   E_Manager *man = (E_Manager *)obj;
-   E_Manager_Comp_Source *src = (E_Manager_Comp_Source *)msgdata;
-   Evas *e;
-
-   printf("handler... '%s' '%s'\n", name, info);
-   if (strcmp(name, "comp.manager")) return;
-
-   e = e_manager_comp_evas_get(man);
-   if (!strcmp(info, "change.comp"))
-     {
-        if (!e) printf("TTT: No comp manager\n");
-        else printf("TTT: comp canvas = %p\n", e);
-        if (e) setup(man);
-     }
-   else if (!strcmp(info, "resize.comp"))
-     {
-        printf("%s: %p | %p\n", info, man, src);
-     }
-   else if (!strcmp(info, "add.src"))
-     {
-        printf("%s: %p | %p\n", info, man, src);
-        newwin(e, man, src);
-     }
-   else if (!strcmp(info, "del.src"))
-     {
-        printf("%s: %p | %p\n", info, man, src);
-     }
-   else if (!strcmp(info, "config.src"))
-     {
-        printf("%s: %p | %p\n", info, man, src);
-     }
-   else if (!strcmp(info, "visibility.src"))
-     {
-        printf("%s: %p | %p\n", info, man, src);
-     }
-}
-
-static Eina_Bool
-_e_test_timer(void *data)
-{
-   Eina_List *list, *l, *wins;
-   E_Manager *man;
-
-   printf("shetup\n");
-   e_msg_handler_add(handler, NULL);
-   list = e_manager_list();
-   EINA_LIST_FOREACH(list, l, man)
-     {
-        Evas *e = e_manager_comp_evas_get(man);
-        if (e) setup(man);
-     }
-   return 0;
-}
-
-static void
-_e_test_internal(E_Container *con)
-{
-   ecore_timer_add(3.0, _e_test_timer, con);
+   ecore_timer_add(1.0, _e_test_timer, c);
 }
 
 #else
 static void
-_e_test_internal(E_Container *con __UNUSED__)
+_e_test_internal(E_Comp *c __UNUSED__)
 {
 }
+
 #endif

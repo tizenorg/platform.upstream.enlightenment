@@ -383,6 +383,7 @@ _item_desktop_add(Plugin *p, Efreet_Desktop *desktop, int match)
 {
    Evry_Item_App *app = NULL;
 
+   if (desktop->no_display) return;
    if ((app = eina_hash_find(p->added, desktop->exec)))
      {
         if (eina_list_data_find_list(p->base.items, app))
@@ -810,8 +811,9 @@ _complete(Evry_Plugin *plugin __UNUSED__, const Evry_Item *it, char **input)
    GET_APP(app, it);
 
    char buf[128];
+   if (it->subtype != EVRY_TYPE_APP) return 0;
 
-   if (app->desktop)
+   if ((app->desktop) && (app->desktop->exec))
      {
         char *space = strchr(app->desktop->exec, ' ');
 
@@ -931,7 +933,7 @@ _edit_app_action(Evry_Action *act)
         desktop->exec = strdup(app->file);
      }
 
-   e_desktop_edit(e_container_current_get(e_manager_current_get()), desktop);
+   e_desktop_edit(NULL, desktop);
 
    return 1;
 }
@@ -1008,7 +1010,7 @@ _new_app_action(Evry_Action *act)
           desktop->mime_types = eina_list_clone(app->desktop->mime_types);
      }
    if (desktop)
-     e_desktop_edit(e_container_current_get(e_manager_current_get()), desktop);
+     e_desktop_edit(NULL, desktop);
 
    return 1;
 }
@@ -1137,7 +1139,7 @@ _plugins_init(const Evry_API *api)
 
    config_path = eina_stringshare_add("launcher/everything-apps");
 
-   p = EVRY_PLUGIN_BASE("Applications", _module_icon, EVRY_TYPE_APP,
+   p = EVRY_PLUGIN_BASE(N_("Applications"), _module_icon, EVRY_TYPE_APP,
                         _begin, _finish, _fetch);
    p->complete = &_complete;
    p->browse = &_browse;
@@ -1145,7 +1147,7 @@ _plugins_init(const Evry_API *api)
    evry->plugin_register(p, EVRY_PLUGIN_SUBJECT, 1);
    _plugins = eina_list_append(_plugins, p);
 
-   p = EVRY_PLUGIN_BASE("Exebuf", _module_icon, EVRY_TYPE_APP,
+   p = EVRY_PLUGIN_BASE(N_("Exebuf"), _module_icon, EVRY_TYPE_APP,
                         _begin_exe, _finish_exe, _fetch_exe);
    p->complete = &_complete;
    p->config_path = eina_stringshare_ref(config_path);
@@ -1153,74 +1155,74 @@ _plugins_init(const Evry_API *api)
    if (evry->plugin_register(p, EVRY_PLUGIN_SUBJECT, 3))
      p->config->min_query = 3;
 
-   p = EVRY_PLUGIN_BASE("Applications", _module_icon, EVRY_TYPE_APP,
+   p = EVRY_PLUGIN_BASE(N_("Applications"), _module_icon, EVRY_TYPE_APP,
                         _begin_mime, _finish, _fetch);
    p->complete = &_complete;
    p->config_path = eina_stringshare_ref(config_path);
    evry->plugin_register(p, EVRY_PLUGIN_OBJECT, 1);
    _plugins = eina_list_append(_plugins, p);
 
-   p = EVRY_PLUGIN_BASE("Open with...", _module_icon, EVRY_TYPE_APP,
+   p = EVRY_PLUGIN_BASE(N_("Open with..."), _module_icon, EVRY_TYPE_APP,
                         _begin_mime, _finish_mime, _fetch_mime);
    p->config_path = eina_stringshare_ref(config_path);
    evry->plugin_register(p, EVRY_PLUGIN_ACTION, 1);
    _plugins = eina_list_append(_plugins, p);
 
-   act = EVRY_ACTION_NEW("Launch",
+   act = EVRY_ACTION_NEW(N_("Launch"),
                          EVRY_TYPE_APP, 0,
                          "system-run",
                          _exec_app_action,
                          _exec_app_check_item);
    _actions = eina_list_append(_actions, act);
 
-   act = EVRY_ACTION_NEW("Open File...",
+   act = EVRY_ACTION_NEW(N_("Open File..."),
                          EVRY_TYPE_APP, EVRY_TYPE_FILE,
                          "document-open",
                          _exec_app_action,
                          _exec_app_check_item);
    _actions = eina_list_append(_actions, act);
 
-   act = EVRY_ACTION_NEW("Run in Terminal",
+   act = EVRY_ACTION_NEW(N_("Run in Terminal"),
                          EVRY_TYPE_APP, 0,
                          "system-run",
                          _exec_term_action,
                          _exec_term_check_item);
    _actions = eina_list_append(_actions, act);
 
-   act = EVRY_ACTION_NEW("Edit Application Entry",
+   act = EVRY_ACTION_NEW(N_("Edit Application Entry"),
                          EVRY_TYPE_APP, 0,
                          "everything-launch",
                          _edit_app_action,
                          _edit_app_check_item);
    _actions = eina_list_append(_actions, act);
 
-   act = EVRY_ACTION_NEW("New Application Entry",
+   act = EVRY_ACTION_NEW(N_("New Application Entry"),
                          EVRY_TYPE_APP, 0,
                          "everything-launch",
                          _new_app_action,
                          _new_app_check_item);
    _actions = eina_list_append(_actions, act);
 
-   act = EVRY_ACTION_NEW("Run with Sudo",
+   act = EVRY_ACTION_NEW(N_("Run with Sudo"),
                          EVRY_TYPE_APP, 0,
                          "system-run",
                          _exec_sudo_action, NULL);
    _actions = eina_list_append(_actions, act);
 
-   act = EVRY_ACTION_NEW("Open with...",
+   act = EVRY_ACTION_NEW(N_("Open with..."),
                          EVRY_TYPE_FILE, EVRY_TYPE_APP,
                          "everything-launch",
                          _exec_file_action, NULL);
    _act_open_with = EVRY_ITEM(act);
    _actions = eina_list_append(_actions, act);
 
-   act = EVRY_ACTION_NEW("Open Terminal here",
+   act = EVRY_ACTION_NEW(N_("Open Terminal here"),
                          EVRY_TYPE_FILE, 0,
                          "system-run",
                          _open_term_action, NULL);
    _actions = eina_list_append(_actions, act);
 
-   act = EVRY_ACTION_NEW("Run Executable",
+   act = EVRY_ACTION_NEW(N_("Run Executable"),
                          EVRY_TYPE_FILE, 0,
                          "system-run",
                          _run_executable,
@@ -1283,7 +1285,7 @@ static Evas_Object *_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dia
 static int          _basic_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
 
 static E_Config_Dialog *
-_conf_dialog(E_Container *con, const char *params __UNUSED__)
+_conf_dialog(E_Comp *comp, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd = NULL;
    E_Config_Dialog_View *v = NULL;
@@ -1298,7 +1300,7 @@ _conf_dialog(E_Container *con, const char *params __UNUSED__)
    v->basic.create_widgets = _basic_create;
    v->basic.apply_cfdata = _basic_apply;
 
-   cfd = e_config_dialog_new(con, _("Everything Applications"), "everything-apps",
+   cfd = e_config_dialog_new(comp, _("Everything Applications"), "everything-apps",
                              "launcher/everything-apps", _module_icon, 0, v, NULL);
 
    _conf->cfd = cfd;

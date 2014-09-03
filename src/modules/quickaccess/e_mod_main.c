@@ -5,7 +5,6 @@ static E_Config_DD *conf_edd = NULL;
 Mod *qa_mod = NULL;
 Config *qa_config = NULL;
 
-
 /**
  * in priority order:
  *
@@ -26,6 +25,23 @@ Config *qa_config = NULL;
 EAPI E_Module_Api e_modapi = {E_MODULE_API_VERSION, "Quickaccess"};
 
 //////////////////////////////
+static void
+_e_modapi_shutdown(void)
+{
+   e_qa_shutdown();
+
+   conf_edd = e_qa_config_dd_free();
+   eina_log_domain_unregister(_e_quick_access_log_dom);
+   _e_quick_access_log_dom = -1;
+
+   e_configure_registry_item_del("launcher/quickaccess");
+   e_configure_registry_category_del("launcher");
+
+   e_qa_config_free(qa_config);
+   E_FREE(qa_mod);
+   qa_config = NULL;
+}
+
 EAPI void *
 e_modapi_init(E_Module *m)
 {
@@ -40,6 +56,7 @@ e_modapi_init(E_Module *m)
    qa_mod = E_NEW(Mod, 1);
    qa_mod->module = m;
    m->data = qa_mod;
+   e_module_delayed_set(m, 0);
    conf_edd = e_qa_config_dd_new();
    qa_config = e_config_domain_load("module.quickaccess", conf_edd);
    if (qa_config)
@@ -55,11 +72,11 @@ e_modapi_init(E_Module *m)
    qa_config->config_version = MOD_CONFIG_FILE_VERSION;
 
    _e_quick_access_log_dom = eina_log_domain_register("quickaccess", EINA_COLOR_ORANGE);
-   eina_log_domain_level_set("quickaccess", EINA_LOG_LEVEL_DBG);
+   eina_log_domain_level_set("quickaccess", EINA_LOG_LEVEL_ERR);
 
    if (!e_qa_init())
      {
-        e_modapi_shutdown(NULL);
+        _e_modapi_shutdown();
         return NULL;
      }
 
@@ -69,18 +86,7 @@ e_modapi_init(E_Module *m)
 EAPI int
 e_modapi_shutdown(E_Module *m __UNUSED__)
 {
-   e_qa_shutdown();
-
-   conf_edd = e_qa_config_dd_free();
-   eina_log_domain_unregister(_e_quick_access_log_dom);
-   _e_quick_access_log_dom = -1;
-
-   e_configure_registry_item_del("launcher/quickaccess");
-   e_configure_registry_category_del("launcher");
-
-   e_qa_config_free(qa_config);
-   E_FREE(qa_mod);
-   qa_config = NULL;
+   _e_modapi_shutdown();
    return 1;
 }
 

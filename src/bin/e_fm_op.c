@@ -113,6 +113,8 @@ static int           _e_fm_op_destroy_atom(E_Fm_Op_Task *task);
 static void          _e_fm_op_random_buf(char *buf, ssize_t len);
 static void          _e_fm_op_random_char(char *buf, size_t len);
 
+static int           _e_fm_op_make_copy_name(const char *abs, char *buf, size_t buf_size);
+
 Eina_List *_e_fm_op_work_queue = NULL, *_e_fm_op_scan_queue = NULL;
 Ecore_Idler *_e_fm_op_work_idler_p = NULL, *_e_fm_op_scan_idler_p = NULL;
 
@@ -142,17 +144,17 @@ struct _E_Fm_Op_Task
       size_t      done;
    } dst;
 
-   int          started, finished;
-   unsigned int passes;
-   off_t pos;
+   int           started, finished;
+   unsigned int  passes;
+   off_t         pos;
 
-   void        *data;
+   void         *data;
 
    E_Fm_Op_Task *parent;
-   E_Fm_Op_Type type;
-   E_Fm_Op_Type overwrite;
+   E_Fm_Op_Type  type;
+   E_Fm_Op_Type  overwrite;
 
-   Eina_List   *link;
+   Eina_List    *link;
 };
 
 struct _E_Fm_Op_Copy_Data
@@ -167,8 +169,8 @@ main(int argc, char **argv)
    int i, last;
    E_Fm_Op_Type type;
 
+   ecore_app_no_system_modules();
    ecore_init();
-   eina_init();
 
    _e_fm_op_stdin_buffer = malloc(READBUFSIZE);
    if (!_e_fm_op_stdin_buffer) return 0;
@@ -239,20 +241,43 @@ main(int argc, char **argv)
                {
                   const char *name;
                   size_t name_len;
+                  char *dir;
+                  int r;
+                  Eina_Bool make_copy;
 
                   /* Don't move a dir into itself */
                   if (ecore_file_is_dir(argv[i]) &&
                       (strcmp(argv[i], p2) == 0))
                     goto skip_arg;
 
+                  make_copy = EINA_FALSE;
+                  /* Don't move/rename/symlink into same directory
+                   * in case of copy, make copy name automatically */
+                  dir = ecore_file_dir_get(argv[i]);
+                  if (dir)
+                    {
+                       r = (strcmp(dir, p2) == 0);
+                       E_FREE(dir);
+                       if (r)
+                         {
+                            if (type == E_FM_OP_COPY) make_copy = EINA_TRUE;
+                            else goto skip_arg;
+                         }
+                    }
+
                   name = ecore_file_file_get(argv[i]);
                   if (!name) goto skip_arg;
                   name_len = strlen(name);
                   if (p2_len + name_len >= PATH_MAX) goto skip_arg;
                   memcpy(p3, name, name_len + 1);
+                  if (make_copy)
+                    {
+                      if (_e_fm_op_make_copy_name(buf, p3, PATH_MAX - p2_len - 1))
+                         goto skip_arg;
+                    }
 
                   if ((type == E_FM_OP_SYMLINK) &&
-                           (symlink(argv[i], buf) == 0))
+                      (symlink(argv[i], buf) == 0))
                     {
                        done++;
                        _e_fm_op_update_progress_report_simple
@@ -363,7 +388,7 @@ skip_arg:
              if (i) goto quit;
 
              if ((type == E_FM_OP_SYMLINK) &&
-                      (symlink(argv[2], argv[3]) == 0))
+                 (symlink(argv[2], argv[3]) == 0))
                {
                   _e_fm_op_update_progress_report_simple(100, argv[2], argv[3]);
                   goto quit;
@@ -404,7 +429,6 @@ skip_arg:
    ecore_main_loop_begin();
 
 quit:
-   eina_shutdown();
    ecore_shutdown();
 
    E_FREE(_e_fm_op_stdin_buffer);
@@ -874,6 +898,7 @@ _e_fm_op_scan_idler(void *data __UNUSED__)
           {
              ntask = _e_fm_op_task_new();
              ntask->type = E_FM_OP_COPY_STAT_INFO;
+             ntask->parent = task;
              ntask->src.name = eina_stringshare_add(task->src.name);
              memcpy(&(ntask->src.st), &(task->src.st), sizeof(struct stat));
 
@@ -899,6 +924,7 @@ _e_fm_op_scan_idler(void *data __UNUSED__)
         ntask = _e_fm_op_task_new();
         ntask->type = task->type;
         ntask->src.name = eina_stringshare_add(info->path);
+        ntask->parent = task;
 
         if (task->dst.name)
           {
@@ -957,7 +983,8 @@ _e_fm_op_send_error(E_Fm_Op_Task *task, E_Fm_Op_Type type, const char *fmt, ...)
         *((int *)(buf + sizeof(int))) = type;
         *((int *)(buf + (2 * sizeof(int)))) = len + 1;
 
-        write(STDOUT_FILENO, buf, (3 * sizeof(int)) + len + 1);
+        if (write(STDOUT_FILENO, buf, (3 * sizeof(int)) + len + 1) < 0)
+          perror("write");
 
         E_FM_OP_DEBUG("%s", str);
         E_FM_OP_DEBUG(" Error sent.\n");
@@ -973,8 +1000,25 @@ static void
 _e_fm_op_rollback(E_Fm_Op_Task *task)
 {
    E_Fm_Op_Copy_Data *data;
+   E_Fm_Op_Task *t;
+   Eina_List *l, *ll;
 
    if (!task) return;
+
+   EINA_LIST_FOREACH_SAFE(_e_fm_op_scan_queue, l, ll, t)
+     {
+        if (t == task) continue;
+        if (t->parent != task) continue;
+        _e_fm_op_scan_queue = eina_list_remove_list(_e_fm_op_scan_queue, l);
+        _e_fm_op_task_free(t);
+     }
+   EINA_LIST_FOREACH_SAFE(_e_fm_op_work_queue, l, ll, t)
+     {
+        if (t == task) continue;
+        if (t->parent != task) continue;
+        _e_fm_op_work_queue = eina_list_remove_list(_e_fm_op_work_queue, l);
+        _e_fm_op_task_free(t);
+     }
 
    if (task->type == E_FM_OP_COPY)
      {
@@ -1036,7 +1080,8 @@ _e_fm_op_update_progress_report(int percent, int eta, double elapsed, off_t done
    P(dst);
 #undef P
 
-   write(STDOUT_FILENO, data, (3 * sizeof(int)) + size);
+   if (write(STDOUT_FILENO, data, (3 * sizeof(int)) + size) < 0)
+     perror("write");
 
    E_FM_OP_DEBUG("Time left: %d at %e\n", eta, elapsed);
    E_FM_OP_DEBUG("Progress %d. \n", percent);
@@ -1122,8 +1167,10 @@ _e_fm_op_copy_stat_info(E_Fm_Op_Task *task)
 
    if (!task->dst.name) return;
 
-   chmod(task->dst.name, task->src.st.st_mode);
-   chown(task->dst.name, task->src.st.st_uid, task->src.st.st_gid);
+   if (chmod(task->dst.name, task->src.st.st_mode) < 0)
+     perror("chmod");
+   if (chown(task->dst.name, task->src.st.st_uid, task->src.st.st_gid) < 0)
+     perror("chown");
    ut.actime = task->src.st.st_atime;
    ut.modtime = task->src.st.st_mtime;
    utime(task->dst.name, &ut);
@@ -1462,6 +1509,8 @@ _e_fm_op_scan_atom(E_Fm_Op_Task *task)
 
    if (task->type == E_FM_OP_COPY)
      {
+        Eina_List *l;
+
         _e_fm_op_update_progress(NULL, 0, task->src.st.st_size);
 
         ctask = _e_fm_op_task_new();
@@ -1469,6 +1518,17 @@ _e_fm_op_scan_atom(E_Fm_Op_Task *task)
         memcpy(&(ctask->src.st), &(task->src.st), sizeof(struct stat));
         if (task->dst.name)
           ctask->dst.name = eina_stringshare_add(task->dst.name);
+        if (task->parent)
+          ctask->parent = task->parent;
+        else
+          {
+             EINA_LIST_FOREACH(_e_fm_op_scan_queue, l, rtask)
+               if (rtask->parent == task)
+                 rtask->parent = ctask;
+             EINA_LIST_FOREACH(_e_fm_op_work_queue, l, rtask)
+               if (rtask->parent == task)
+                 rtask->parent = ctask;
+          }
         ctask->type = E_FM_OP_COPY;
 
         _e_fm_op_work_queue = eina_list_append(_e_fm_op_work_queue, ctask);
@@ -1705,30 +1765,30 @@ _e_fm_op_destroy_atom(E_Fm_Op_Task *task)
 
    if (fd == -1)
      {
-       E_FM_OP_DEBUG("Secure remove: %s\n", task->src.name);
-       struct stat st2;
+        E_FM_OP_DEBUG("Secure remove: %s\n", task->src.name);
+        struct stat st2;
 
-       if (!S_ISREG(task->src.st.st_mode))
-         goto finish;
+        if (!S_ISREG(task->src.st.st_mode))
+          goto finish;
 
-       if (task->src.st.st_nlink > 1)
-         goto finish;
+        if (task->src.st.st_nlink > 1)
+          goto finish;
 
-       if ((fd = open(task->src.name, O_WRONLY|O_NOFOLLOW, 0)) == -1)
-         goto finish;
+        if ((fd = open(task->src.name, O_WRONLY | O_NOFOLLOW, 0)) == -1)
+          goto finish;
 
-       if (fstat(fd, &st2) == -1)
-         goto finish;
+        if (fstat(fd, &st2) == -1)
+          goto finish;
 
-       if (st2.st_dev != task->src.st.st_dev ||
-           st2.st_ino != task->src.st.st_ino ||
-           st2.st_mode != task->src.st.st_mode)
-         goto finish;
+        if (st2.st_dev != task->src.st.st_dev ||
+            st2.st_ino != task->src.st.st_ino ||
+            st2.st_mode != task->src.st.st_mode)
+          goto finish;
 
-       if ((buf = malloc(READBUFSIZE)) == NULL)
-         goto finish;
+        if ((buf = malloc(READBUFSIZE)) == NULL)
+          goto finish;
 
-       task->src.st.st_size = st2.st_size;
+        task->src.st.st_size = st2.st_size;
      }
 
    if (task->pos + READBUFSIZE > task->src.st.st_size) sz = task->src.st.st_size - task->pos;
@@ -1742,26 +1802,26 @@ _e_fm_op_destroy_atom(E_Fm_Op_Task *task)
 
    task->pos += sz;
 
-   _e_fm_op_update_progress_report_simple(lround((double) ((task->pos + (task->passes * task->src.st.st_size)) /
-                                          (double)(task->src.st.st_size * NB_PASS)) * 100.),
+   _e_fm_op_update_progress_report_simple(lround((double)((task->pos + (task->passes * task->src.st.st_size)) /
+                                                          (double)(task->src.st.st_size * NB_PASS)) * 100.),
                                           "/dev/urandom", task->src.name);
 
    if (task->pos >= task->src.st.st_size)
      {
-       task->passes++;
+        task->passes++;
 
-       if (task->passes == NB_PASS)
-         goto finish;
-       if (lseek(fd, SEEK_SET, 0) == -1)
-         goto finish;
+        if (task->passes == NB_PASS)
+          goto finish;
+        if (lseek(fd, 0, SEEK_SET) == -1)
+          goto finish;
 
-       task->pos = 0;
+        task->pos = 0;
      }
 
    return 1;
 
 finish:
-   close(fd);
+   if (fd != -1) close(fd);
    fd = -1;
    E_FREE(buf);
    task->finished = 1;
@@ -1791,7 +1851,7 @@ _e_fm_op_random_char(char *buf, size_t len)
 {
    size_t i;
    static int sranded = 0;
-   
+
    if (!sranded)
      {
         srand((unsigned int)time(NULL));
@@ -1802,4 +1862,42 @@ _e_fm_op_random_char(char *buf, size_t len)
      {
         buf[i] = (rand() % 256) + 'a';
      }
+}
+
+static int
+_e_fm_op_make_copy_name(const char *abs, char *buf, size_t buf_size)
+{
+   size_t name_len;
+   size_t file_len;
+   char *name;
+   char *ext;
+   char *copy_str;
+
+   if (!ecore_file_exists(abs))
+      return 0;
+
+   file_len = strlen(buf);
+
+   /* TODO: need to make a policy regarding copy postfix:
+    * currently attach " (copy)" continuasly
+    *
+    * TODO: i18n */
+   copy_str = "(copy)";
+   if (strlen(copy_str) + file_len + 1 >= buf_size) return 1;
+
+   name = ecore_file_strip_ext(buf);
+   name_len = strlen(name);
+   E_FREE(name);
+
+   if (file_len == name_len) ext = NULL;
+   else ext = strdup(buf + name_len);
+
+   if (ext)
+     {
+        sprintf(buf + name_len, " %s%s", copy_str, ext);
+        E_FREE(ext);
+     }
+   else sprintf(buf + name_len, " %s", copy_str);
+
+   return _e_fm_op_make_copy_name(abs, buf, buf_size);
 }

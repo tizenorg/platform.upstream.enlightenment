@@ -110,7 +110,7 @@ _econnman_popup_selected_cb(void *data)
      return;
 
    cs = econnman_manager_find_service(inst->ctxt->cm, path);
-   if (cs == NULL)
+   if (!cs)
      return;
 
    switch (cs->state)
@@ -148,7 +148,7 @@ _econnman_popup_update(struct Connman_Manager *cm, E_Connman_Instance *inst)
         Evas_Object *end = _econnman_service_new_end(cs, evas);
         e_widget_ilist_append_full(list, icon, end, cs->name ?: hidden,
                                    _econnman_popup_selected_cb,
-                                   inst, cs->obj.path);
+                                   inst, cs->path);
      }
 
    e_widget_ilist_thaw(list);
@@ -177,60 +177,13 @@ econnman_mod_services_changed(struct Connman_Manager *cm)
      }
 }
 
-static Eina_Bool
-_econnman_popup_input_window_mouse_up_cb(void *data, int type, void *event)
-{
-   Ecore_Event_Mouse_Button *ev = event;
-   E_Connman_Instance *inst = data;
-
-   if (ev->window != inst->ui.popup.input_win)
-     return ECORE_CALLBACK_PASS_ON;
-
-   econnman_popup_del(inst);
-
-   return ECORE_CALLBACK_PASS_ON;
-}
-
-static void
-_econnman_popup_input_window_destroy(E_Connman_Instance *inst)
-{
-   ecore_x_window_free(inst->ui.popup.input_win);
-   inst->ui.popup.input_win = 0;
-
-   ecore_event_handler_del(inst->ui.popup.input_mouse_up);
-   inst->ui.popup.input_mouse_up = NULL;
-}
-
-static void
-_econnman_popup_input_window_create(E_Connman_Instance *inst)
-{
-   Ecore_X_Window_Configure_Mask mask;
-   Ecore_X_Window w, popup_w;
-   E_Manager *man;
-
-   man = e_manager_current_get();
-
-   w = ecore_x_window_input_new(man->root, 0, 0, man->w, man->h);
-   mask = (ECORE_X_WINDOW_CONFIGURE_MASK_STACK_MODE |
-           ECORE_X_WINDOW_CONFIGURE_MASK_SIBLING);
-   popup_w = inst->popup->win->evas_win;
-   ecore_x_window_configure(w, mask, 0, 0, 0, 0, 0, popup_w,
-                            ECORE_X_WINDOW_STACK_BELOW);
-   ecore_x_window_show(w);
-
-   inst->ui.popup.input_mouse_up =
-      ecore_event_handler_add(ECORE_EVENT_MOUSE_BUTTON_UP,
-                              _econnman_popup_input_window_mouse_up_cb, inst);
-
-   inst->ui.popup.input_win = w;
-}
-
 static void
 _econnman_app_launch(E_Connman_Instance *inst)
 {
-   Efreet_Desktop *desktop = efreet_util_desktop_name_find("EConnMan");
+   Efreet_Desktop *desktop;
    E_Zone *zone;
 
+   desktop = efreet_util_desktop_file_id_find("econnman.desktop");
    if (!desktop)
      {
         e_util_dialog_internal
@@ -250,7 +203,7 @@ _econnman_app_launch(E_Connman_Instance *inst)
 }
 
 static void
-_econnman_configure_cb(void *data, void *data2 __UNUSED__)
+_econnman_configure_cb(void *data, void *data2 EINA_UNUSED)
 {
    E_Connman_Instance *inst = data;
    econnman_popup_del(inst);
@@ -258,7 +211,7 @@ _econnman_configure_cb(void *data, void *data2 __UNUSED__)
 }
 
 static void
-_econnman_powered_changed(void *data, Evas_Object *obj, void *info __UNUSED__)
+_econnman_powered_changed(void *data, Evas_Object *obj EINA_UNUSED, void *info EINA_UNUSED)
 {
    E_Connman_Instance *inst = data;
    E_Connman_Module_Context *ctxt = inst->ctxt;
@@ -293,6 +246,20 @@ _e_connman_widget_size_set(E_Connman_Instance *inst, Evas_Object *widget, Evas_C
 }
 
 static void
+_econnman_popup_del_cb(void *obj)
+{
+   econnman_popup_del(e_object_data_get(obj));
+}
+
+static void
+_econnman_popup_del(void *data, Evas_Object *obj EINA_UNUSED)
+{
+   E_Connman_Instance *inst = data;
+
+   E_FREE_FUNC(inst->popup, e_object_del);
+}
+
+static void
 _econnman_popup_new(E_Connman_Instance *inst)
 {
    E_Connman_Module_Context *ctxt = inst->ctxt;
@@ -304,12 +271,12 @@ _econnman_popup_new(E_Connman_Instance *inst)
    if (!ctxt->cm)
      return;
 
-   inst->popup = e_gadcon_popup_new(inst->gcc);
-   evas = inst->popup->win->evas;
+   inst->popup = e_gadcon_popup_new(inst->gcc, 0);
+   evas = e_comp_get(inst->gcc)->evas;
 
    list = e_widget_list_add(evas, 0, 0);
    inst->ui.popup.list = e_widget_ilist_add(evas, 24, 24, NULL);
-   e_widget_size_min_set(inst->ui.popup.list, 120, 100);
+   e_widget_size_min_set(inst->ui.popup.list, 60, 100);
    e_widget_list_object_append(list, inst->ui.popup.list, 1, 1, 0.5);
 
    ck = e_widget_check_add(evas, _("Wifi On"), &(ctxt->powered));
@@ -320,28 +287,31 @@ _econnman_popup_new(E_Connman_Instance *inst)
 
    _econnman_popup_update(ctxt->cm, inst);
 
-   bt = e_widget_button_add(evas, _("Configure"), NULL,
-                            _econnman_configure_cb, inst, NULL);
-   e_widget_list_object_append(list, bt, 1, 0, 0.5);
+   if (efreet_util_desktop_file_id_find("econnman.desktop"))
+     {
+        bt = e_widget_button_add(evas, _("Configure"), NULL,
+                                 _econnman_configure_cb, inst, NULL);
+        e_widget_list_object_append(list, bt, 1, 0, 0.5);
+     }
 
    /* 30,40 % -- min vga, max uvga */
-   _e_connman_widget_size_set(inst, list, 30, 40, 192, 192, 384, 384);
+   _e_connman_widget_size_set(inst, list, 10, 30, 192, 192, 384, 384);
    e_gadcon_popup_content_set(inst->popup, list);
+   e_comp_object_util_autoclose(inst->popup->comp_object, _econnman_popup_del, NULL, inst);
    e_gadcon_popup_show(inst->popup);
-   _econnman_popup_input_window_create(inst);
+   e_object_data_set(E_OBJECT(inst->popup), inst);
+   E_OBJECT_DEL_SET(inst->popup, _econnman_popup_del_cb);
 }
 
 void
 econnman_popup_del(E_Connman_Instance *inst)
 {
-   if (!inst->popup) return;
-   _econnman_popup_input_window_destroy(inst);
-   e_object_del(E_OBJECT(inst->popup));
-   inst->popup = NULL;
+   E_FREE_FUNC(inst->popup, e_object_del);
+   inst->ui.popup.powered = inst->ui.popup.list = NULL;
 }
 
 static void
-_econnman_mod_manager_update_inst(E_Connman_Module_Context *ctxt,
+_econnman_mod_manager_update_inst(E_Connman_Module_Context *ctxt EINA_UNUSED,
                                   E_Connman_Instance *inst,
                                   enum Connman_State state,
                                   enum Connman_Service_Type type)
@@ -441,7 +411,8 @@ econnman_mod_manager_inout(struct Connman_Manager *cm)
 }
 
 static void
-_econnman_menu_cb_configure(void *data, E_Menu *menu, E_Menu_Item *mi)
+_econnman_menu_cb_configure(void *data, E_Menu *menu EINA_UNUSED,
+                            E_Menu_Item *mi EINA_UNUSED)
 {
    E_Connman_Instance *inst = data;
    _econnman_app_launch(inst);
@@ -469,7 +440,8 @@ _econnman_menu_new(E_Connman_Instance *inst, Evas_Event_Mouse_Down *ev)
 }
 
 static void
-_econnman_cb_mouse_down(void *data, Evas *evas, Evas_Object *obj, void *event)
+_econnman_cb_mouse_down(void *data, Evas *evas EINA_UNUSED,
+                        Evas_Object *obj EINA_UNUSED, void *event)
 {
    E_Connman_Instance *inst = data;
    Evas_Event_Mouse_Down *ev = event;
@@ -481,8 +453,6 @@ _econnman_cb_mouse_down(void *data, Evas *evas, Evas_Object *obj, void *event)
      {
         if (!inst->popup)
           _econnman_popup_new(inst);
-        else
-          econnman_popup_del(inst);
      }
    else if (ev->button == 3)
      _econnman_menu_new(inst, ev);
@@ -555,20 +525,20 @@ _gc_shutdown(E_Gadcon_Client *gcc)
 }
 
 static void
-_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient)
+_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient EINA_UNUSED)
 {
    e_gadcon_client_aspect_set(gcc, 16, 16);
    e_gadcon_client_min_size_set(gcc, 16, 16);
 }
 
 static const char *
-_gc_label(const E_Gadcon_Client_Class *client_class)
+_gc_label(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    return _(_e_connman_Name);
 }
 
 static Evas_Object *
-_gc_icon(const E_Gadcon_Client_Class *client_class, Evas *evas)
+_gc_icon(const E_Gadcon_Client_Class *client_class EINA_UNUSED, Evas *evas)
 {
    Evas_Object *o;
 
@@ -578,7 +548,7 @@ _gc_icon(const E_Gadcon_Client_Class *client_class, Evas *evas)
 }
 
 static const char *
-_gc_id_new(const E_Gadcon_Client_Class *client_class)
+_gc_id_new(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    E_Connman_Module_Context *ctxt;
    Eina_List *instances;
@@ -608,7 +578,7 @@ static const E_Gadcon_Client_Class _gc_class =
 EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, _e_connman_Name };
 
 static E_Config_Dialog *
-_econnman_config(E_Container *con, const char *params)
+_econnman_config(E_Comp *comp, const char *params EINA_UNUSED)
 {
    E_Connman_Module_Context *ctxt;
 
@@ -620,7 +590,7 @@ _econnman_config(E_Container *con, const char *params)
      return NULL;
 
    if (!ctxt->conf_dialog)
-     ctxt->conf_dialog = e_connman_config_dialog_new(con, ctxt);
+     ctxt->conf_dialog = e_connman_config_dialog_new(comp, ctxt);
 
    return ctxt->conf_dialog;
 }
@@ -649,7 +619,7 @@ EAPI void *
 e_modapi_init(E_Module *m)
 {
    E_Connman_Module_Context *ctxt;
-   E_DBus_Connection *c;
+   Eldbus_Connection *c;
 
    if (_e_connman_log_dom < 0)
      {
@@ -665,8 +635,8 @@ e_modapi_init(E_Module *m)
    ctxt = E_NEW(E_Connman_Module_Context, 1);
    if (!ctxt)
      goto error_connman_context;
-
-   c = e_dbus_bus_get(DBUS_BUS_SYSTEM);
+   eldbus_init();
+   c = eldbus_connection_get(ELDBUS_CONNECTION_TYPE_SYSTEM);
    if (!c)
      goto error_dbus_bus_get;
    if (!e_connman_system_init(c))
@@ -681,6 +651,7 @@ e_modapi_init(E_Module *m)
    return ctxt;
 
 error_connman_system_init:
+   eldbus_connection_unref(c);
 error_dbus_bus_get:
    E_FREE(ctxt);
 error_connman_context:
@@ -712,6 +683,7 @@ e_modapi_shutdown(E_Module *m)
      return 0;
 
    e_connman_system_shutdown();
+   eldbus_shutdown();
 
    _econnman_instances_free(ctxt);
    _econnman_configure_registry_unregister();

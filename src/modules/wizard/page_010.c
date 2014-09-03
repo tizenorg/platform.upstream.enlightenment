@@ -23,6 +23,7 @@ const E_Intl_Pair basic_language_predefined_pairs[] =
    {"en_US.UTF-8", "us_flag.png", "English"},
    {"en_GB.UTF-8", "gb_flag.png", "British English"},
    {"el_GR.UTF-8", "gr_flag.png", "Ελληνικά"},
+   {"eo_US.UTF-8", "epo_flag.png", "Esperanto"},
    {"eo.UTF-8", "epo_flag.png", "Esperanto"},
    {"es_AR.UTF-8", "ar_flag.png", "Español"},
    {"et_ET.UTF-8", "ee_flag.png", "Eesti keel"},
@@ -159,7 +160,7 @@ wizard_page_show(E_Wizard_Page *pg)
    o = e_widget_list_add(pg->evas, 1, 0);
    e_wizard_title_set(_("Language"));
    of = e_widget_framelist_add(pg->evas, _("Select one"), 0);
-   ob = e_widget_ilist_add(pg->evas, 32 * e_scale, 32 * e_scale, &lang);
+   ob = e_widget_ilist_add(pg->evas,10 * e_scale, 10 * e_scale, &lang);
    e_widget_size_min_set(ob, 140 * e_scale, 140 * e_scale);
 
    e_widget_ilist_freeze(ob);
@@ -180,12 +181,25 @@ wizard_page_show(E_Wizard_Page *pg)
           }
         else
           ic = NULL;
-        e_widget_ilist_append(ob, ic, _(pair->locale_translation),
-                              NULL, NULL, pair->locale_key);
+        if (ic)
+          evas_object_size_hint_aspect_set
+          (ic, EVAS_ASPECT_CONTROL_VERTICAL, 20, 10);
         if (e_intl_language_get())
           {
-             if (!strcmp(pair->locale_key, e_intl_language_get())) sel = i;
+             if (!strcmp(pair->locale_key, e_intl_language_get()))
+               {
+                  snprintf(buf, sizeof(buf), "System Default [%s]", pair->locale_translation);
+                  e_widget_ilist_nth_label_set(ob, 0, _(buf));
+                  e_widget_ilist_nth_icon_set(ob, 0, ic);
+                  sel = 0;
+               }
+            else
+              e_widget_ilist_append(ob, ic, _(pair->locale_translation),
+                                    NULL, NULL, pair->locale_key);
           }
+        else
+          e_widget_ilist_append(ob, ic, _(pair->locale_translation),
+                                NULL, NULL, pair->locale_key);
      }
    e_widget_ilist_go(ob);
    e_widget_ilist_thaw(ob);

@@ -33,7 +33,7 @@
 #define EVRY_TYPE_APP	     3
 #define EVRY_TYPE_ACTION     4
 #define EVRY_TYPE_PLUGIN     5
-#define EVRY_TYPE_BORDER     6
+#define EVRY_TYPE_CLIENT     6
 #define EVRY_TYPE_TEXT	     7
 #define NUM_EVRY_TYPES	     8
 
@@ -188,10 +188,10 @@ struct _Evry_Event_Action_Performed
   eina_stringshare_replace(&(EVRY_ITEM(_it)->icon), _icon);
 
 #define CHECK_TYPE(_item, _type) \
-  (((Evry_Item *)_item)->type == _type)
+  ((Evry_Item *)_item)->type == _type
 
 #define CHECK_SUBTYPE(_item, _type) \
-  (((Evry_Item *)_item)->subtype == _type)
+  ((Evry_Item *)_item)->subtype == _type
 
 #define IS_BROWSEABLE(_item) ((Evry_Item *)_item)->browseable
 

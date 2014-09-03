@@ -1,24 +1,27 @@
 #include "e.h"
 
 /* function protos */
-static void *_create_data(E_Config_Dialog *cfd);
-static void _free_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
-static int  _basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata);
-static int  _basic_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
+static void        *_create_data(E_Config_Dialog *cfd);
+static void         _free_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
+static int          _basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata);
+static int          _basic_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
 static Evas_Object *_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata);
-static void _fill_remembers(E_Config_Dialog_Data *cfdata);
-static void _cb_delete(void *data, void *data2);
-static void _cb_list_change(void *data, Evas_Object *obj);
+static void         _fill_remembers(E_Config_Dialog_Data *cfdata);
+static void         _cb_edit(void *data, void *data2 __UNUSED__);
+static void         _cb_delete(void *data, void *data2);
+static void         _cb_list_change(void *data, Evas_Object *obj);
 
-struct _E_Config_Dialog_Data 
+struct _E_Config_Dialog_Data
 {
-   Evas_Object *list, *btn, *name, *class, *title, *role;
-   int remember_dialogs;
-   int remember_fm_wins;
+   Evas_Object *list, *btn, *btn2, *name, *class, *title, *role;
+   int          remember_dialogs;
+   int          remember_fm_wins;
+   int          remember_internal_fm_windows_globally;
+   Eina_List *cfds;
 };
 
 E_Config_Dialog *
-e_int_config_remembers(E_Container *con, const char *params __UNUSED__) 
+e_int_config_remembers(E_Comp *comp, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -32,8 +35,8 @@ e_int_config_remembers(E_Container *con, const char *params __UNUSED__)
    v->basic.create_widgets = _basic_create;
    v->basic.check_changed = _basic_check_changed;
 
-   cfd = e_config_dialog_new(con, _("Window Remembers"), "E", 
-                             "windows/window_remembers", 
+   cfd = e_config_dialog_new(comp, _("Window Remembers"), "E",
+                             "windows/window_remembers",
                              "preferences-desktop-window-remember", 0, v, NULL);
    return cfd;
 }
@@ -68,7 +71,7 @@ _cb_sort(const void *data1, const void *data2)
    else if (rem2->role)
      d2 = rem2->role;
 
-   if (!strcmp(d1, d2)) 
+   if (!strcmp(d1, d2))
      return -1;
    else
      return strcmp(d1, d2);
@@ -80,67 +83,58 @@ _create_data(E_Config_Dialog *cfd __UNUSED__)
    E_Config_Dialog_Data *cfdata;
 
    cfdata = E_NEW(E_Config_Dialog_Data, 1);
-   cfdata->remember_dialogs = (e_config->remember_internal_windows & E_REMEMBER_INTERNAL_DIALOGS);
-   cfdata->remember_fm_wins = (e_config->remember_internal_windows & E_REMEMBER_INTERNAL_FM_WINS);
-   
+   cfdata->remember_dialogs = e_config->remember_internal_windows;
+   cfdata->remember_fm_wins = e_config->remember_internal_fm_windows;
+   cfdata->remember_internal_fm_windows_globally = e_config->remember_internal_fm_windows_globally;
+
    return cfdata;
 }
 
-static void 
-_free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+static void
+_free_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
 {
-   E_FREE(cfdata);
+   EINA_LIST_FREE(cfdata->cfds, cfd)
+     E_OBJECT_DEL_SET(cfd, NULL);
+   free(cfdata);
 }
 
 static int
 _basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 {
-   return ((cfdata->remember_dialogs) &&
-	   !(e_config->remember_internal_windows & E_REMEMBER_INTERNAL_DIALOGS)) ||
-          ((!cfdata->remember_dialogs) &&
-	   (e_config->remember_internal_windows & E_REMEMBER_INTERNAL_DIALOGS)) ||
-          ((cfdata->remember_fm_wins) &&
-	   !(e_config->remember_internal_windows & E_REMEMBER_INTERNAL_FM_WINS)) ||
-          ((!cfdata->remember_fm_wins) &&
-	   (e_config->remember_internal_windows & E_REMEMBER_INTERNAL_FM_WINS));
+   return (cfdata->remember_dialogs != e_config->remember_internal_windows) ||
+          (cfdata->remember_fm_wins != e_config->remember_internal_fm_windows) ||
+          (cfdata->remember_internal_fm_windows_globally != e_config->remember_internal_fm_windows_globally);
 }
 
 static int
 _basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 {
-   if (cfdata->remember_dialogs)
-     e_config->remember_internal_windows |= E_REMEMBER_INTERNAL_DIALOGS;
-   else
-     e_config->remember_internal_windows &= ~E_REMEMBER_INTERNAL_DIALOGS;
-
-   if (cfdata->remember_fm_wins)
-     e_config->remember_internal_windows |= E_REMEMBER_INTERNAL_FM_WINS;
-   else
-     e_config->remember_internal_windows &= ~E_REMEMBER_INTERNAL_FM_WINS;
+   e_config->remember_internal_windows = cfdata->remember_dialogs;
+   e_config->remember_internal_fm_windows = cfdata->remember_fm_wins;
+   e_config->remember_internal_fm_windows_globally = cfdata->remember_internal_fm_windows_globally;
 
    e_config_save_queue();
    return 1;
 }
 
 static Evas_Object *
-_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
-   Evas_Object *ol, *of2, *ow;
+   Evas_Object *ol, *of2, *ow, *oc;
    Evas_Coord mw, mh;
 
-   e_dialog_resizable_set(cfd->dia, 1);
    ol = e_widget_list_add(evas, 0, 0);
 
    ow = e_widget_check_add(evas, _("Remember internal dialogs"),
                            &(cfdata->remember_dialogs));
    e_widget_list_object_append(ol, ow, 1, 0, 0.0);
-   ow = e_widget_check_add(evas, _("Remember file manager windows"),
+   oc = e_widget_check_add(evas, _("Remember file manager windows"),
                            &(cfdata->remember_fm_wins));
+   e_widget_list_object_append(ol, oc, 1, 0, 0.0);
+   ow = e_widget_check_add(evas, _("Don't remember file manager windows by directory"),
+                           &(cfdata->remember_internal_fm_windows_globally));
+   e_widget_check_widget_disable_on_unchecked_add(oc, ow);
    e_widget_list_object_append(ol, ow, 1, 0, 0.0);
-
-   ow = e_widget_button_add(evas, _("Delete"), "list-remove",
-			    _cb_delete, cfdata, NULL);
-   cfdata->btn = ow;
 
    ow = e_widget_ilist_add(evas, 1, 1, NULL);
    cfdata->list = ow;
@@ -184,14 +178,21 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 
    e_widget_list_object_append(ol, cfdata->list, 1, 1, 0.0);
    e_widget_list_object_append(ol, of2, 1, 0, 0.0);
-   e_widget_list_object_append(ol, cfdata->btn, 1, 0, 0.0);
+
+   of2 = e_widget_list_add(evas, 1, 1);
+
+   cfdata->btn = ow = e_widget_button_add(evas, _("Edit"), "edit-rename", _cb_edit, cfdata, NULL);
+   e_widget_list_object_append(of2, ow, 1, 1, 0.5);
+   cfdata->btn2 = ow = e_widget_button_add(evas, _("Delete"), "list-remove", _cb_delete, cfdata, NULL);
+   e_widget_list_object_append(of2, ow, 1, 1, 0.5);
+   e_widget_list_object_append(ol, of2, 1, 0, 0.5);
 
    _cb_list_change(cfdata, NULL);
    return ol;
 }
 
-static void 
-_fill_remembers(E_Config_Dialog_Data *cfdata) 
+static void
+_fill_remembers(E_Config_Dialog_Data *cfdata)
 {
    Evas *evas;
    Eina_List *l = NULL;
@@ -212,7 +213,7 @@ _fill_remembers(E_Config_Dialog_Data *cfdata)
    e_util_icon_theme_set(ic, "preferences-applications");
    e_widget_ilist_header_append(cfdata->list, ic, _("Applications"));
 
-   for (l = ll; l; l = l->next) 
+   for (l = ll; l; l = l->next)
      {
         E_Remember *rem = NULL;
 
@@ -222,7 +223,7 @@ _fill_remembers(E_Config_Dialog_Data *cfdata)
         if ((rem->name) && (!strcmp(rem->name, "E"))) continue;
         /* Filter out the module config remembers */
         if ((rem->class) && (rem->class[0] == '_')) continue;
-	
+
         if (rem->name)
           e_widget_ilist_append(cfdata->list, NULL, rem->name, NULL, rem, NULL);
         else if (rem->class)
@@ -246,14 +247,14 @@ _fill_remembers(E_Config_Dialog_Data *cfdata)
 
         /* Garuntee we add only E's internal remembers */
         if ((!rem->name) || (strcmp(rem->name, "E"))) continue;
-	
+
         e_widget_ilist_append(cfdata->list, NULL, rem->class, NULL, rem, NULL);
      }
 
    ic = e_icon_add(evas);
    e_util_icon_theme_set(ic, "preferences-plugin");
    e_widget_ilist_header_append(cfdata->list, ic, _("Modules"));
-   for (l = ll; l; l = l->next) 
+   for (l = ll; l; l = l->next)
      {
         E_Remember *rem = NULL;
 
@@ -282,6 +283,36 @@ _fill_remembers(E_Config_Dialog_Data *cfdata)
 }
 
 static void
+_cb_edit_del(void *obj)
+{
+   E_Config_Dialog_Data *cfdata;
+
+   cfdata = e_object_data_get(obj);
+   cfdata->cfds = eina_list_remove(cfdata->cfds, obj);
+   _fill_remembers(cfdata);
+}
+
+static void
+_cb_edit(void *data, void *data2 __UNUSED__)
+{
+   E_Config_Dialog_Data *cfdata = data;
+   const Eina_List *l;
+   E_Ilist_Item *ili;
+
+   EINA_LIST_FOREACH(e_widget_ilist_selected_items_get(cfdata->list), l, ili)
+     {
+        E_Remember *rem;
+        E_Config_Dialog *cfd;
+
+        rem = e_widget_ilist_item_data_get(ili);
+        cfd = e_int_client_remember_edit(rem);
+        e_object_data_set(E_OBJECT(cfd), cfdata);
+        E_OBJECT_DEL_SET(cfd, _cb_edit_del);
+        cfdata->cfds = eina_list_append(cfdata->cfds, cfd);
+     }
+}
+
+static void
 _cb_delete(void *data, void *data2 __UNUSED__)
 {
    E_Config_Dialog_Data *cfdata;
@@ -290,7 +321,7 @@ _cb_delete(void *data, void *data2 __UNUSED__)
    int last_selected = -1;
 
    if (!(cfdata = data)) return;
-   for (i = 0, l = e_widget_ilist_items_get(cfdata->list); l; l = l->next, i++) 
+   for (i = 0, l = e_widget_ilist_items_get(cfdata->list); l; l = l->next, i++)
      {
         E_Ilist_Item *item = NULL;
         E_Remember *rem = NULL;
@@ -299,9 +330,9 @@ _cb_delete(void *data, void *data2 __UNUSED__)
         if ((!item) || (!item->selected)) continue;
         if (!(rem = e_widget_ilist_nth_data_get(cfdata->list, i))) continue;
         e_remember_del(rem);
-	last_selected = i;
+        last_selected = i;
         changed = 1;
-	++deleted;
+        ++deleted;
      }
 
    if (changed) e_config_save_queue();
@@ -327,38 +358,38 @@ _cb_list_change(void *data, Evas_Object *obj __UNUSED__)
 
    if ((selected = e_widget_ilist_selected_items_get(cfdata->list)))
      {
-	if ((item = eina_list_last_data_get(selected)))
-	  rem = e_widget_ilist_item_data_get(item);
+        if ((item = eina_list_last_data_get(selected)))
+          rem = e_widget_ilist_item_data_get(item);
      }
 
    if (!rem)
      {
-	e_widget_label_text_set(cfdata->name, _("No selection"));
-	e_widget_disabled_set(cfdata->name, 1);
-	e_widget_label_text_set(cfdata->class, _("No selection"));
-	e_widget_disabled_set(cfdata->class, 1);
-	e_widget_label_text_set(cfdata->title, _("No selection"));
-	e_widget_disabled_set(cfdata->title, 1);
-	e_widget_label_text_set(cfdata->role, _("No selection"));
-	e_widget_disabled_set(cfdata->role, 1);
+        e_widget_label_text_set(cfdata->name, _("No selection"));
+        e_widget_disabled_set(cfdata->name, 1);
+        e_widget_label_text_set(cfdata->class, _("No selection"));
+        e_widget_disabled_set(cfdata->class, 1);
+        e_widget_label_text_set(cfdata->title, _("No selection"));
+        e_widget_disabled_set(cfdata->title, 1);
+        e_widget_label_text_set(cfdata->role, _("No selection"));
+        e_widget_disabled_set(cfdata->role, 1);
      }
    else
      {
-	e_widget_label_text_set(cfdata->name,
-				rem->name ? rem->name : _("Any"));
-	e_widget_disabled_set(cfdata->name, !rem->name);
+        e_widget_label_text_set(cfdata->name,
+                                rem->name ? rem->name : _("Any"));
+        e_widget_disabled_set(cfdata->name, !rem->name);
 
-	e_widget_label_text_set(cfdata->class,
-				rem->class ? rem->class : _("Any"));
-	e_widget_disabled_set(cfdata->class, !rem->class);
+        e_widget_label_text_set(cfdata->class,
+                                rem->class ? rem->class : _("Any"));
+        e_widget_disabled_set(cfdata->class, !rem->class);
 
-	e_widget_label_text_set(cfdata->title,
-				rem->title ? rem->title : _("Any"));
-	e_widget_disabled_set(cfdata->title, !rem->title);
+        e_widget_label_text_set(cfdata->title,
+                                rem->title ? rem->title : _("Any"));
+        e_widget_disabled_set(cfdata->title, !rem->title);
 
-	e_widget_label_text_set(cfdata->role,
-				rem->role ? rem->role : _("Any"));
-	e_widget_disabled_set(cfdata->role, !rem->role);
+        e_widget_label_text_set(cfdata->role,
+                                rem->role ? rem->role : _("Any"));
+        e_widget_disabled_set(cfdata->role, !rem->role);
      }
 
    if (e_widget_ilist_selected_count_get(cfdata->list) < 1)
@@ -366,3 +397,4 @@ _cb_list_change(void *data, Evas_Object *obj __UNUSED__)
    else
      e_widget_disabled_set(cfdata->btn, 0);
 }
+

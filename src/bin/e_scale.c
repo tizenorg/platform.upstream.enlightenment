@@ -18,25 +18,30 @@ e_scale_shutdown(void)
 EAPI void
 e_scale_update(void)
 {
-   int dpi;
    char buf[128];
 
    if (e_config->scale.use_dpi)
      {
-	dpi = ecore_x_dpi_get();
-	e_scale = (double)dpi / (double)e_config->scale.base_dpi;
-	if (e_scale > e_config->scale.max) e_scale = e_config->scale.max;
-	else if (e_scale < e_config->scale.min) e_scale = e_config->scale.min;
+#ifndef HAVE_WAYLAND_ONLY
+        if (e_comp_get(NULL)->comp_type == E_PIXMAP_TYPE_X)
+          e_scale = (double)ecore_x_dpi_get() / (double)e_config->scale.base_dpi;
+#endif
+        if (e_scale > e_config->scale.max) e_scale = e_config->scale.max;
+        else if (e_scale < e_config->scale.min)
+          e_scale = e_config->scale.min;
      }
    else if (e_config->scale.use_custom)
      {
-	e_scale = e_config->scale.factor;
-	if (e_scale > e_config->scale.max) e_scale = e_config->scale.max;
-	else if (e_scale < e_config->scale.min) e_scale = e_config->scale.min;
+        e_scale = e_config->scale.factor;
+        if (e_scale > e_config->scale.max) e_scale = e_config->scale.max;
+        else if (e_scale < e_config->scale.min)
+          e_scale = e_config->scale.min;
      }
-
+   elm_config_scale_set(e_scale);
+   elm_config_all_flush();
    edje_scale_set(e_scale);
    snprintf(buf, sizeof(buf), "%1.3f", e_scale);
    e_util_env_set("E_SCALE", buf);
    e_hints_scale_update();
 }
+

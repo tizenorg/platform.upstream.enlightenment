@@ -14,6 +14,10 @@ find_rules(void)
 {
    int i = 0;
    const char *lstfiles[] = {
+#ifdef XKB_BASE
+      XKB_BASE "/rules/xorg.lst",
+      XKB_BASE "/rules/xfree86.lst",
+#endif
 #if defined __NetBSD__
       "/usr/X11R7/lib/X11/xkb/rules/xorg.lst",
 #elif defined __OpenBSD__
@@ -162,7 +166,7 @@ parse_rules(void)
      {
         if (fgets(buf, sizeof(buf), f))
           {
-             char *n, *p, *tmp, *tok, *txt;
+             char *n, *p, *tmp, *tok, *txt, *c;
 
              n = strchr(buf, '\n');
              if (n) *n = '\0';
@@ -176,7 +180,9 @@ parse_rules(void)
              variant->name = eina_stringshare_add(strtok(tmp, " "));
 
              tok = strtok(NULL, " ");
-             *strchr(tok, ':') = '\0';
+             c = strchr(tok, ':');
+             if (c)
+               *c = '\0';
 
              layout = eina_list_search_unsorted(layouts, layout_sort_by_name_cb, tok);
              layout->variants = eina_list_append(layout->variants, variant);
@@ -205,7 +211,7 @@ parse_rules(void)
      {
         if (fgets(buf, sizeof(buf), f))
           {
-             char *n, *p, *tmp, *name, *txt;
+             char *n, *p, *t, *tmp, *name, *txt;
 
              n = strchr(buf, '\n');
              if (n) *n = '\0';
@@ -230,11 +236,12 @@ parse_rules(void)
                      /* A hack to get it to parse right if
                       * the group name contains a space
                       */
-                     if (strstr(p, "  "))
+                     t = strstr(p, "  ");
+                     if (t)
                        {
-                          p = strstr(p, "  ");
-                          while (p[0] == ' ')
-                            ++p;
+                          while (t[0] == ' ')
+                            ++t;
+                          p = t;
                        }
 
                      txt = evas_textblock_text_markup_to_utf8(NULL, p);

@@ -10,28 +10,31 @@ static void _e_obj_dialog_cb_resize(E_Win *win);
 
 /* externally accessible functions */
 
+static void
+_key_down_cb(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event)
+{
+   Evas_Event_Key_Down *ev = event;
+
+   if (!strcmp(ev->key, "Escape") && data)
+     _e_obj_dialog_cb_delete(data);
+}
+
 EAPI E_Obj_Dialog *
-e_obj_dialog_new(E_Container *con, char *title, char *class_name, char *class_class)
+e_obj_dialog_new(E_Comp *c, char *title, char *class_name, char *class_class)
 {
    E_Obj_Dialog *od;
-   E_Manager *man;
    Evas_Object *o;
+   Eina_Bool kg;
+   Evas_Modifier_Mask mask;
 
-   if (!con)
-     {
-	man = e_manager_current_get();
-	if (!man) return NULL;
-	con = e_container_current_get(man);
-	if (!con) con = e_container_number_get(man, 0);
-	if (!con) return NULL;
-     }
+   if (!c) c = e_util_comp_current_get();
    od = E_OBJECT_ALLOC(E_Obj_Dialog, E_OBJ_DIALOG_TYPE, _e_obj_dialog_free);
    if (!od) return NULL;
-   od->win = e_win_new(con);
+   od->win = e_win_new(c);
    if (!od->win)
      {
-	free(od);
-	return NULL;
+        free(od);
+        return NULL;
      }
    e_win_delete_callback_set(od->win, _e_obj_dialog_cb_delete);
    e_win_resize_callback_set(od->win, _e_obj_dialog_cb_resize);
@@ -45,6 +48,13 @@ e_obj_dialog_new(E_Container *con, char *title, char *class_name, char *class_cl
 
    e_win_centered_set(od->win, 1);
    od->cb_delete = NULL;
+
+   mask = 0;
+   kg = evas_object_key_grab(o, "Escape", mask, ~mask, 0);
+   if (!kg)
+     fprintf(stderr, "ERROR: unable to redirect \"Escape\" key events to object %p.\n", o);
+   evas_object_event_callback_add(o, EVAS_CALLBACK_KEY_DOWN,
+                                  _key_down_cb, od->win);
 
    return od;
 }
@@ -60,14 +70,8 @@ e_obj_dialog_icon_set(E_Obj_Dialog *od, char *icon)
 {
    E_OBJECT_CHECK(od);
    E_OBJECT_TYPE_CHECK(od, E_OBJ_DIALOG_TYPE);
-   if (od->win->border->internal_icon)
-     {
-	eina_stringshare_del(od->win->border->internal_icon);
-	od->win->border->internal_icon = NULL;
-     }
-   if (icon)
-     od->win->border->internal_icon = eina_stringshare_add(icon);
-}
+   eina_stringshare_replace(&od->win->client->internal_icon, icon);
+ }
 
 EAPI void
 e_obj_dialog_show(E_Obj_Dialog *od)
@@ -86,9 +90,9 @@ e_obj_dialog_show(E_Obj_Dialog *od)
    edje_object_size_max_get(od->bg_object, &w, &h);
    if ((w > 0) && (h > 0))
      {
-	if (w < mw) w = mw;
-	if (h < mh) h = mh;
-	e_win_size_max_set(od->win, w, h);
+        if (w < mw) w = mw;
+        if (h < mh) h = mh;
+        e_win_size_max_set(od->win, w, h);
      }
    s = edje_object_data_get(od->bg_object, "borderless");
    if (s && (!strcmp(s, "1")))
@@ -117,7 +121,7 @@ e_obj_dialog_obj_theme_set(E_Obj_Dialog *od, char *theme_cat, char *theme_obj)
    evas_object_move(od->bg_object, 0, 0);
    evas_object_show(od->bg_object);
    edje_object_signal_callback_add(od->bg_object, "e,action,close", "",
-				   _e_obj_dialog_cb_close, od);
+                                   _e_obj_dialog_cb_close, od);
 }
 
 /* local subsystem functions */
@@ -159,3 +163,4 @@ _e_obj_dialog_cb_resize(E_Win *win)
    od = win->data;
    evas_object_resize(od->bg_object, od->win->w, od->win->h);
 }
+

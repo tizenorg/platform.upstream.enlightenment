@@ -52,15 +52,12 @@ struct _E_Menu
    E_Menu_Item         *parent_item;
 
    /* only useful if realized != 0 (ie menu is ACTUALLY realized) */
-   Ecore_Evas          *ecore_evas;
-   Evas                *evas;
-   Ecore_X_Window       evas_win;
+   Ecore_Job           *dangling_job;
+   Evas                 *evas;
+   Evas_Object         *comp_object;
    Evas_Object         *bg_object;
    Evas_Object         *container_object;
    Evas_Coord           container_x, container_y, container_w, container_h;
-   E_Container_Shape   *shape;
-   int                  shape_rects_num;
-   Ecore_X_Rectangle   *shape_rects;
 
    struct {
       void *data;
@@ -74,8 +71,6 @@ struct _E_Menu
    Eina_Bool        pending_new_submenu : 1;
    Eina_Bool        have_submenu : 1;
    Eina_Bool        in_active_list : 1;
-   Eina_Bool        shaped : 1;
-   Eina_Bool        need_shape_export : 1;
 };
 
 struct _E_Menu_Item
@@ -98,8 +93,6 @@ struct _E_Menu_Item
    Evas_Object   *icon_object;
    Evas_Object   *label_object;
    Evas_Object   *submenu_object;
-
-   Evas_Object   *event_object;
 
    Eina_List	 *list_position;
 
@@ -153,17 +146,18 @@ struct _E_Menu_Category_Callback
 {
    const char *category;
    void *data;
-   void (*create) (E_Menu *m, void *category_data, void *data);
-   void (*free) (void *data);
+   void (*create) (void *data, E_Menu *m, void *category_data);
+   Ecore_Cb free;
 };
 
 
 EINTERN int          e_menu_init(void);
 EINTERN int          e_menu_shutdown(void);
 
+EAPI void         e_menu_hide_all(void);
 EAPI E_Menu      *e_menu_new(void);
 EAPI void         e_menu_activate_key(E_Menu *m, E_Zone *zone, int x, int y, int w, int h, int dir);
-EAPI void         e_menu_activate_mouse(E_Menu *m, E_Zone *zone, int x, int y, int w, int h, int dir, Ecore_X_Time activate_time);
+EAPI void         e_menu_activate_mouse(E_Menu *m, E_Zone *zone, int x, int y, int w, int h, int dir, unsigned int activate_time);
 EAPI void         e_menu_activate(E_Menu *m, E_Zone *zone, int x, int y, int w, int h, int dir);
 EAPI void         e_menu_deactivate(E_Menu *m);
 EAPI int          e_menu_freeze(E_Menu *m);
@@ -174,7 +168,7 @@ EAPI void         e_menu_icon_file_set(E_Menu *m, const char *icon);
 /* menu categories functions */
 EAPI void         e_menu_category_set(E_Menu *m, const char *category);
 EAPI void         e_menu_category_data_set(char *category, void *data);
-EAPI E_Menu_Category_Callback  *e_menu_category_callback_add(char *category, void (*create) (E_Menu *m, void *category_data, void *data), void (free) (void *data), void *data);
+EAPI E_Menu_Category_Callback  *e_menu_category_callback_add(char *category, void (*create_cb) (void *data, E_Menu *m, void *category_data), Ecore_Cb free_cb, void *data);
 EAPI void         e_menu_category_callback_del(E_Menu_Category_Callback *cb);
 
 
@@ -209,9 +203,7 @@ EAPI void         e_menu_item_disabled_set(E_Menu_Item *mi, int disable);
 
 EAPI void         e_menu_idler_before(void);
 
-EAPI Ecore_X_Window e_menu_grab_window_get(void);
-
-EAPI E_Menu      *e_menu_find_by_window(Ecore_X_Window win);
+EAPI Ecore_Window e_menu_grab_window_get(void);
 
 #endif
 #endif

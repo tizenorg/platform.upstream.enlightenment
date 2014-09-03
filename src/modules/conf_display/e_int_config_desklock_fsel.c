@@ -6,6 +6,7 @@ struct _E_Config_Dialog_Data
    Evas_Object *o_list, *o_up;
    int          fmdir;
    char        *bg;
+   int          hide_logo;
 };
 
 /* local function prototypes */
@@ -22,14 +23,12 @@ static void         _cb_dir_up(void *data1, void *data2);
 E_Config_Dialog *
 e_int_config_desklock_fsel(E_Config_Dialog *parent, Evas_Object *bg)
 {
-   E_Container *con;
+   E_Comp *comp = NULL;
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
 
    if (parent)
-     con = parent->con;
-   else
-     con = e_container_current_get(e_manager_current_get());
+     comp = parent->comp;
 
    v = E_NEW(E_Config_Dialog_View, 1);
    v->create_cfdata = _create_data;
@@ -38,9 +37,10 @@ e_int_config_desklock_fsel(E_Config_Dialog *parent, Evas_Object *bg)
    v->basic_only = 1;
    v->normal_win = 1;
 
-   cfd = e_config_dialog_new(con, _("Select a Background..."),
+   cfd = e_config_dialog_new(comp, _("Select a Background..."),
                              "E", "_desklock_fsel_dialog",
-                             "enlightenment/background", 0, v, parent);
+                             "enlightenment/background", 0, v, bg);
+   cfd->data = parent;
    e_object_data_set(E_OBJECT(cfd), bg);
    return cfd;
 }
@@ -52,7 +52,7 @@ _create_data(E_Config_Dialog *cfd __UNUSED__)
    E_Config_Dialog_Data *cfdata;
 
    cfdata = E_NEW(E_Config_Dialog_Data, 1);
-   cfdata->fmdir = 0;
+
    return cfdata;
 }
 
@@ -60,11 +60,12 @@ static void
 _free_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
 {
    const char *bg_file = NULL;
+   Eina_Bool hide_logo = cfdata->hide_logo;
 
    if (cfdata->bg) bg_file = strdup(cfdata->bg);
    E_FREE(cfdata->bg);
    E_FREE(cfdata);
-   e_int_config_desklock_fsel_done(cfd->data, e_object_data_get(E_OBJECT(cfd)), bg_file);
+   e_int_config_desklock_fsel_done(cfd->data, e_object_data_get(E_OBJECT(cfd)), bg_file, hide_logo);
 }
 
 static Evas_Object *
@@ -72,10 +73,24 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
 {
    Evas_Object *o, *ow, *ot, *rt;
    E_Radio_Group *rg;
+   const char *file = NULL;
    char path[PATH_MAX];
+   size_t len;
 
    /* Content */
    o = e_widget_list_add(evas, 0, 0);
+
+   len = e_user_dir_concat_static(path, "backgrounds");
+   e_widget_preview_file_get(cfd->data, &file, NULL);
+   if (file)
+     {
+        cfdata->bg = strdup(file);
+        cfdata->fmdir = strncmp(file, path, len);
+        if (cfdata->fmdir)
+          e_prefix_data_concat_static(path, "data/backgrounds");
+     }
+   else
+     cfdata->bg = NULL;
 
    rg = e_widget_radio_group_new(&(cfdata->fmdir));
    ot = e_widget_table_add(evas, 0);
@@ -92,11 +107,6 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
                             _cb_dir_up, cfdata, NULL);
    cfdata->o_up = ow;
    e_widget_table_object_append(ot, ow, 0, 1, 1, 1, 0, 0, 0, 0);
-
-   if (cfdata->fmdir == 1)
-     e_prefix_data_concat_static(path, "data/backgrounds");
-   else
-     e_user_dir_concat_static(path, "backgrounds");
 
    cfdata->o_list = e_widget_flist_add(evas);
    {
@@ -115,7 +125,10 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    e_widget_flist_path_set(cfdata->o_list, path, "/");
    e_widget_size_min_set(cfdata->o_list, 200, 160);
    e_widget_table_object_append(ot, cfdata->o_list, 0, 2, 1, 1, 1, 1, 1, 1);
+
    e_widget_list_object_append(o, ot, 1, 1, 0.5);
+   ow = e_widget_check_add(evas, _("Hide Logo"), &cfdata->hide_logo);
+   e_widget_list_object_append(o, ow, 1, 1, 0.5);
 
    return o;
 }
