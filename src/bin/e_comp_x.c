@@ -4998,7 +4998,8 @@ _e_comp_x_setup(E_Comp *c, Ecore_X_Window root, int w, int h)
         // gl drivers etc. - this addresses a vbox crash bug with vm
         // opengl acceleration
         elm_config_preferred_engine_set("none");
-        elm_config_accel_preference_override_set(EINA_TRUE);
+        /* Comment out this for now, it can be removed if Elementary is updated. */
+        // elm_config_accel_preference_override_set(EINA_TRUE);
         elm_config_all_flush();
         elm_config_save();
      }
