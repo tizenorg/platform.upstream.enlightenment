@@ -162,7 +162,7 @@ _e_mod_run_cb(void *data, E_Menu *m, E_Menu_Item *mi __UNUSED__)
                   if ((eci->pri >= 0) && (eci == data))
                     {
                        snprintf(buf, sizeof(buf), "%s/%s", ecat->cat, eci->item);
-                       e_configure_registry_call(buf, m->zone->container, NULL);
+                       e_configure_registry_call(buf, m->zone->comp, NULL);
                     }
                }
           }
@@ -201,7 +201,7 @@ static void
 _config_item_activate_cb(void *data, E_Menu *m, E_Menu_Item *mi __UNUSED__)
 {
    E_Configure_Cat *ecat = data;
-   e_configure_show(m->zone->container, ecat->cat);
+   e_configure_show(m->zone->comp, ecat ? ecat->cat : NULL);
 }
 
 static void
@@ -251,6 +251,7 @@ e_mod_config_menu_add(void *data __UNUSED__, E_Menu *m)
    mi = e_menu_item_new(m);
    e_menu_item_label_set(mi, _("All"));
    e_menu_item_submenu_set(mi, sub);
+   e_menu_item_callback_set(mi, _config_item_activate_cb, NULL);
    e_object_unref(E_OBJECT(sub));
 }
 
@@ -371,8 +372,8 @@ _e_mod_action_conf_cb(E_Object *obj, const char *params)
      {
         if (obj->type == E_MANAGER_TYPE)
           zone = e_util_zone_current_get((E_Manager *)obj);
-        else if (obj->type == E_CONTAINER_TYPE)
-          zone = e_util_zone_current_get(((E_Container *)obj)->manager);
+        else if (obj->type == E_COMP_TYPE)
+          zone = e_zone_current_get((E_Comp*)obj);
         else if (obj->type == E_ZONE_TYPE)
           zone = ((E_Zone *)obj);
         else
@@ -380,16 +381,16 @@ _e_mod_action_conf_cb(E_Object *obj, const char *params)
      }
    if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
    if ((zone) && (params))
-     e_configure_registry_call(params, zone->container, params);
+     e_configure_registry_call(params, zone->comp, params);
    else if (zone)
-     e_configure_show(zone->container, params);
+     e_configure_show(zone->comp, params);
 }
 
 /* menu item callback(s) */
 static void
 _e_mod_conf_cb(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
 {
-   e_configure_show(m->zone->container, NULL);
+   e_configure_show(m->zone->comp, NULL);
 }
 
 static void

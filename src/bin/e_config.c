@@ -1,12 +1,13 @@
 #include "e.h"
 
-#if ((E17_PROFILE >= LOWRES_PDA) && (E17_PROFILE <= HIRES_PDA))
+#if ((E19_PROFILE >= LOWRES_PDA) && (E19_PROFILE <= HIRES_PDA))
 #define DEF_MENUCLICK             1.25
 #else
 #define DEF_MENUCLICK             0.25
 #endif
 
-EAPI E_Config * e_config = NULL;
+EAPI E_Config *e_config = NULL;
+EAPI E_Config_Bindings *e_bindings = NULL;
 
 static int _e_config_revisions = 9;
 
@@ -22,6 +23,7 @@ static E_Powersave_Deferred_Action *_e_config_save_defer = NULL;
 static const char *_e_config_profile = NULL;
 
 static E_Config_DD *_e_config_edd = NULL;
+static E_Config_DD *_e_config_binding_edd = NULL;
 static E_Config_DD *_e_config_module_edd = NULL;
 static E_Config_DD *_e_config_font_fallback_edd = NULL;
 static E_Config_DD *_e_config_font_default_edd = NULL;
@@ -37,7 +39,7 @@ static E_Config_DD *_e_config_desktop_bg_edd = NULL;
 static E_Config_DD *_e_config_desklock_bg_edd = NULL;
 static E_Config_DD *_e_config_desktop_name_edd = NULL;
 static E_Config_DD *_e_config_desktop_window_profile_edd = NULL;
-static E_Config_DD *_e_config_remember_edd = NULL;
+static E_Config_DD *_e_config_menu_applications_edd = NULL;
 static E_Config_DD *_e_config_color_class_edd = NULL;
 static E_Config_DD *_e_config_gadcon_edd = NULL;
 static E_Config_DD *_e_config_gadcon_client_edd = NULL;
@@ -95,6 +97,32 @@ _e_config_profile_name_get(Eet_File *ef)
 }
 
 static void
+_e_config_edd_shutdown(void)
+{
+   E_CONFIG_DD_FREE(_e_config_edd);
+   E_CONFIG_DD_FREE(_e_config_module_edd);
+   E_CONFIG_DD_FREE(_e_config_font_default_edd);
+   E_CONFIG_DD_FREE(_e_config_font_fallback_edd);
+   E_CONFIG_DD_FREE(_e_config_theme_edd);
+   E_CONFIG_DD_FREE(_e_config_path_append_edd);
+   E_CONFIG_DD_FREE(_e_config_desktop_bg_edd);
+   E_CONFIG_DD_FREE(_e_config_desklock_bg_edd);
+   E_CONFIG_DD_FREE(_e_config_desktop_name_edd);
+   E_CONFIG_DD_FREE(_e_config_desktop_window_profile_edd);
+   E_CONFIG_DD_FREE(e_remember_edd);
+   E_CONFIG_DD_FREE(_e_config_menu_applications_edd);
+   E_CONFIG_DD_FREE(_e_config_gadcon_edd);
+   E_CONFIG_DD_FREE(_e_config_gadcon_client_edd);
+   E_CONFIG_DD_FREE(_e_config_shelf_edd);
+   E_CONFIG_DD_FREE(_e_config_shelf_desk_edd);
+   E_CONFIG_DD_FREE(_e_config_mime_icon_edd);
+   E_CONFIG_DD_FREE(_e_config_syscon_action_edd);
+   E_CONFIG_DD_FREE(_e_config_env_var_edd);
+   E_CONFIG_DD_FREE(_e_config_xkb_layout_edd);
+   E_CONFIG_DD_FREE(_e_config_xkb_option_edd);
+}
+
+static void
 _e_config_edd_init(Eina_Bool old)
 {
 
@@ -144,7 +172,8 @@ _e_config_edd_init(Eina_Bool old)
 #define D _e_config_shelf_edd
    E_CONFIG_VAL(D, T, name, STR);
    E_CONFIG_VAL(D, T, id, INT);
-   E_CONFIG_VAL(D, T, container, INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(D, T, "container", manager, EET_T_INT);
+   E_CONFIG_VAL(D, T, manager /*container */, INT);
    E_CONFIG_VAL(D, T, zone, INT);
    E_CONFIG_VAL(D, T, layer, INT);
    E_CONFIG_VAL(D, T, popup, UCHAR);
@@ -167,13 +196,15 @@ _e_config_edd_init(Eina_Bool old)
 #define T E_Config_Desklock_Background
 #define D _e_config_desklock_bg_edd
    E_CONFIG_VAL(D, T, file, STR);
+   E_CONFIG_VAL(D, T, hide_logo, UCHAR);
 
    _e_config_desktop_bg_edd = E_CONFIG_DD_NEW("E_Config_Desktop_Background", E_Config_Desktop_Background);
 #undef T
 #undef D
 #define T E_Config_Desktop_Background
 #define D _e_config_desktop_bg_edd
-   E_CONFIG_VAL(D, T, container, INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(D, T, "container", manager, EET_T_INT);
+   E_CONFIG_VAL(D, T, manager /*container */, INT);
    E_CONFIG_VAL(D, T, zone, INT);
    E_CONFIG_VAL(D, T, desk_x, INT);
    E_CONFIG_VAL(D, T, desk_y, INT);
@@ -184,7 +215,8 @@ _e_config_edd_init(Eina_Bool old)
 #undef D
 #define T E_Config_Desktop_Name
 #define D _e_config_desktop_name_edd
-   E_CONFIG_VAL(D, T, container, INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(D, T, "container", manager, EET_T_INT);
+   E_CONFIG_VAL(D, T, manager /*container */, INT);
    E_CONFIG_VAL(D, T, zone, INT);
    E_CONFIG_VAL(D, T, desk_x, INT);
    E_CONFIG_VAL(D, T, desk_y, INT);
@@ -195,7 +227,7 @@ _e_config_edd_init(Eina_Bool old)
 #undef D
 #define T E_Config_Desktop_Window_Profile
 #define D _e_config_desktop_window_profile_edd
-   E_CONFIG_VAL(D, T, container, INT);
+   E_CONFIG_VAL(D, T, manager, INT);
    E_CONFIG_VAL(D, T, zone, INT);
    E_CONFIG_VAL(D, T, desk_x, INT);
    E_CONFIG_VAL(D, T, desk_y, INT);
@@ -207,14 +239,6 @@ _e_config_edd_init(Eina_Bool old)
 #define T E_Path_Dir
 #define D _e_config_path_append_edd
    E_CONFIG_VAL(D, T, dir, STR);
-
-   _e_config_theme_edd = E_CONFIG_DD_NEW("E_Config_Theme", E_Config_Theme);
-#undef T
-#undef D
-#define T E_Config_Theme
-#define D _e_config_theme_edd
-   E_CONFIG_VAL(D, T, category, STR);
-   E_CONFIG_VAL(D, T, file, STR);
 
    _e_config_module_edd = E_CONFIG_DD_NEW("E_Config_Module", E_Config_Module);
 #undef T
@@ -244,91 +268,24 @@ _e_config_edd_init(Eina_Bool old)
 #define D _e_config_font_fallback_edd
    E_CONFIG_VAL(D, T, name, STR);
 
-   _e_config_bindings_mouse_edd = E_CONFIG_DD_NEW("E_Config_Binding_Mouse",
-                                                  E_Config_Binding_Mouse);
+   _e_config_menu_applications_edd = E_CONFIG_DD_NEW("E_Int_Menu_Applications",
+                                                     E_Int_Menu_Applications);
 #undef T
 #undef D
-#define T E_Config_Binding_Mouse
-#define D _e_config_bindings_mouse_edd
-   E_CONFIG_VAL(D, T, context, INT);
-   E_CONFIG_VAL(D, T, modifiers, INT);
-   E_CONFIG_VAL(D, T, action, STR);
-   E_CONFIG_VAL(D, T, params, STR);
-   E_CONFIG_VAL(D, T, button, UCHAR);
-   E_CONFIG_VAL(D, T, any_mod, UCHAR);
+#define T E_Int_Menu_Applications
+#define D _e_config_menu_applications_edd
+   E_CONFIG_VAL(D, T, orig_path, STR);
+   E_CONFIG_VAL(D, T, try_exec, STR);
+   E_CONFIG_VAL(D, T, exec, STR);
+   E_CONFIG_VAL(D, T, load_time, LL);
+   E_CONFIG_VAL(D, T, exec_valid, INT);
 
-   _e_config_bindings_key_edd = E_CONFIG_DD_NEW("E_Config_Binding_Key",
-                                                E_Config_Binding_Key);
-#undef T
-#undef D
-#define T E_Config_Binding_Key
-#define D _e_config_bindings_key_edd
-   E_CONFIG_VAL(D, T, context, INT);
-   E_CONFIG_VAL(D, T, modifiers, INT);
-   E_CONFIG_VAL(D, T, key, STR);
-   E_CONFIG_VAL(D, T, action, STR);
-   E_CONFIG_VAL(D, T, params, STR);
-   E_CONFIG_VAL(D, T, any_mod, UCHAR);
-
-   _e_config_bindings_edge_edd = E_CONFIG_DD_NEW("E_Config_Binding_Edge",
-                                                 E_Config_Binding_Edge);
-#undef T
-#undef D
-#define T E_Config_Binding_Edge
-#define D _e_config_bindings_edge_edd
-   E_CONFIG_VAL(D, T, context, INT);
-   E_CONFIG_VAL(D, T, modifiers, INT);
-   E_CONFIG_VAL(D, T, action, STR);
-   E_CONFIG_VAL(D, T, params, STR);
-   E_CONFIG_VAL(D, T, edge, UCHAR);
-   E_CONFIG_VAL(D, T, any_mod, UCHAR);
-   E_CONFIG_VAL(D, T, delay, FLOAT);
-
-   _e_config_bindings_signal_edd = E_CONFIG_DD_NEW("E_Config_Binding_Signal",
-                                                   E_Config_Binding_Signal);
-#undef T
-#undef D
-#define T E_Config_Binding_Signal
-#define D _e_config_bindings_signal_edd
-   E_CONFIG_VAL(D, T, context, INT);
-   E_CONFIG_VAL(D, T, signal, STR);
-   E_CONFIG_VAL(D, T, source, STR);
-   E_CONFIG_VAL(D, T, modifiers, INT);
-   E_CONFIG_VAL(D, T, any_mod, UCHAR);
-   E_CONFIG_VAL(D, T, action, STR);
-   E_CONFIG_VAL(D, T, params, STR);
-
-   _e_config_bindings_wheel_edd = E_CONFIG_DD_NEW("E_Config_Binding_Wheel",
-                                                  E_Config_Binding_Wheel);
-#undef T
-#undef D
-#define T E_Config_Binding_Wheel
-#define D _e_config_bindings_wheel_edd
-   E_CONFIG_VAL(D, T, context, INT);
-   E_CONFIG_VAL(D, T, direction, INT);
-   E_CONFIG_VAL(D, T, z, INT);
-   E_CONFIG_VAL(D, T, modifiers, INT);
-   E_CONFIG_VAL(D, T, any_mod, UCHAR);
-   E_CONFIG_VAL(D, T, action, STR);
-   E_CONFIG_VAL(D, T, params, STR);
-
-   _e_config_bindings_acpi_edd = E_CONFIG_DD_NEW("E_Config_Binding_Acpi",
-                                                 E_Config_Binding_Acpi);
-#undef T
-#undef D
-#define T E_Config_Binding_Acpi
-#define D _e_config_bindings_acpi_edd
-   E_CONFIG_VAL(D, T, context, INT);
-   E_CONFIG_VAL(D, T, type, INT);
-   E_CONFIG_VAL(D, T, status, INT);
-   E_CONFIG_VAL(D, T, action, STR);
-   E_CONFIG_VAL(D, T, params, STR);
-
-   _e_config_remember_edd = E_CONFIG_DD_NEW("E_Remember", E_Remember);
+   e_remember_edd = E_CONFIG_DD_NEW("E_Remember", E_Remember);
 #undef T
 #undef D
 #define T E_Remember
-#define D _e_config_remember_edd
+#define D e_remember_edd
+   E_CONFIG_VAL(D, T, version, UINT);
    E_CONFIG_VAL(D, T, match, INT);
    E_CONFIG_VAL(D, T, no_reopen, INT);
    E_CONFIG_VAL(D, T, apply_first_only, UCHAR);
@@ -388,6 +345,7 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, prop.icon_preference, UCHAR);
    E_CONFIG_VAL(D, T, prop.desktop_file, STR);
    E_CONFIG_VAL(D, T, prop.offer_resistance, UCHAR);
+   E_CONFIG_VAL(D, T, prop.opacity, UCHAR);
 
    _e_config_color_class_edd = E_CONFIG_DD_NEW("E_Color_Class", E_Color_Class);
 #undef T
@@ -464,8 +422,8 @@ _e_config_edd_init(Eina_Bool old)
 #define D _e_config_edd
    /**/ /* == already configurable via ipc */
    E_CONFIG_VAL(D, T, config_version, INT); /**/
+   E_CONFIG_VAL(D, T, config_type, UINT); /**/
    E_CONFIG_VAL(D, T, show_splash, INT); /**/
-   E_CONFIG_VAL(D, T, init_default_theme, STR); /**/
    E_CONFIG_VAL(D, T, desktop_default_background, STR); /**/
    E_CONFIG_VAL(D, T, desktop_default_name, STR); /**/
    E_CONFIG_VAL(D, T, desktop_default_window_profile, STR); /**/
@@ -488,7 +446,6 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, zone_desks_y_count, INT); /**/
    E_CONFIG_VAL(D, T, show_desktop_icons, INT); /**/
    E_CONFIG_VAL(D, T, edge_flip_dragging, INT); /**/
-   E_CONFIG_VAL(D, T, use_composite, INT); /**/
    E_CONFIG_VAL(D, T, language, STR); /**/
    E_CONFIG_VAL(D, T, no_module_delay, INT); /**/
    E_CONFIG_VAL(D, T, desklock_language, STR); /**/
@@ -496,7 +453,6 @@ _e_config_edd_init(Eina_Bool old)
    EET_DATA_DESCRIPTOR_ADD_LIST_STRING(D, T, "bad_modules", bad_modules);
    E_CONFIG_LIST(D, T, font_fallbacks, _e_config_font_fallback_edd); /**/
    E_CONFIG_LIST(D, T, font_defaults, _e_config_font_default_edd); /**/
-   E_CONFIG_LIST(D, T, themes, _e_config_theme_edd); /**/
    E_CONFIG_LIST(D, T, mouse_bindings, _e_config_bindings_mouse_edd); /**/
    E_CONFIG_LIST(D, T, key_bindings, _e_config_bindings_key_edd); /**/
    E_CONFIG_LIST(D, T, edge_bindings, _e_config_bindings_edge_edd); /**/
@@ -506,7 +462,6 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_LIST(D, T, path_append_data, _e_config_path_append_edd); /**/
    E_CONFIG_LIST(D, T, path_append_images, _e_config_path_append_edd); /**/
    E_CONFIG_LIST(D, T, path_append_fonts, _e_config_path_append_edd); /**/
-   E_CONFIG_LIST(D, T, path_append_themes, _e_config_path_append_edd); /**/
    E_CONFIG_LIST(D, T, path_append_init, _e_config_path_append_edd); /**/
    E_CONFIG_LIST(D, T, path_append_icons, _e_config_path_append_edd); /**/
    E_CONFIG_LIST(D, T, path_append_modules, _e_config_path_append_edd); /**/
@@ -530,6 +485,7 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, geometry_auto_move, INT); /**/
    E_CONFIG_VAL(D, T, winlist_warp_while_selecting, INT); /**/
    E_CONFIG_VAL(D, T, winlist_warp_at_end, INT); /**/
+   E_CONFIG_VAL(D, T, winlist_no_warp_on_direction, INT); /**/
    E_CONFIG_VAL(D, T, winlist_warp_speed, DOUBLE); /**/
    E_CONFIG_VAL(D, T, winlist_scroll_animate, INT); /**/
    E_CONFIG_VAL(D, T, winlist_scroll_speed, DOUBLE); /**/
@@ -542,6 +498,7 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, winlist_list_jump_desk_while_selecting, INT); /**/
    E_CONFIG_VAL(D, T, winlist_list_focus_while_selecting, INT); /**/
    E_CONFIG_VAL(D, T, winlist_list_raise_while_selecting, INT); /**/
+   E_CONFIG_VAL(D, T, winlist_list_move_after_select, INT); /**/
    E_CONFIG_VAL(D, T, winlist_pos_align_x, DOUBLE); /**/
    E_CONFIG_VAL(D, T, winlist_pos_align_y, DOUBLE); /**/
    E_CONFIG_VAL(D, T, winlist_pos_size_w, DOUBLE); /**/
@@ -561,8 +518,11 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, transition_start, STR); /**/
    E_CONFIG_VAL(D, T, transition_desk, STR); /**/
    E_CONFIG_VAL(D, T, transition_change, STR); /**/
-   E_CONFIG_LIST(D, T, remembers, _e_config_remember_edd);
+   E_CONFIG_LIST(D, T, remembers, e_remember_edd);
+   E_CONFIG_LIST(D, T, menu_applications, _e_config_menu_applications_edd);
    E_CONFIG_VAL(D, T, remember_internal_windows, INT);
+   E_CONFIG_VAL(D, T, remember_internal_fm_windows, UCHAR);
+   E_CONFIG_VAL(D, T, remember_internal_fm_windows_globally, UCHAR);
    E_CONFIG_VAL(D, T, move_info_follows, INT); /**/
    E_CONFIG_VAL(D, T, resize_info_follows, INT); /**/
    E_CONFIG_VAL(D, T, move_info_visible, INT); /**/
@@ -570,6 +530,8 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, focus_last_focused_per_desktop, INT); /**/
    E_CONFIG_VAL(D, T, focus_revert_on_hide_or_close, INT); /**/
    E_CONFIG_VAL(D, T, pointer_slide, INT); /**/
+   E_CONFIG_VAL(D, T, disable_all_pointer_warps, INT); /**/
+   E_CONFIG_VAL(D, T, pointer_warp_speed, DOUBLE); /**/
    E_CONFIG_VAL(D, T, use_e_cursor, INT); /**/
    E_CONFIG_VAL(D, T, cursor_size, INT); /**/
    E_CONFIG_VAL(D, T, menu_autoscroll_margin, INT); /**/
@@ -581,7 +543,6 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, transient.layer, INT); /**/
    E_CONFIG_VAL(D, T, transient.desktop, INT); /**/
    E_CONFIG_VAL(D, T, transient.iconify, INT); /**/
-   E_CONFIG_VAL(D, T, modal_windows, INT); /**/
    E_CONFIG_VAL(D, T, menu_eap_name_show, INT); /**/
    E_CONFIG_VAL(D, T, menu_eap_generic_show, INT); /**/
    E_CONFIG_VAL(D, T, menu_eap_comment_show, INT); /**/
@@ -597,8 +558,8 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_LIST(D, T, gadcons, _e_config_gadcon_edd);
    E_CONFIG_LIST(D, T, shelves, _e_config_shelf_edd);
    E_CONFIG_VAL(D, T, font_hinting, INT); /**/
-   E_CONFIG_VAL(D, T, desklock_personal_passwd, STR);
-   E_CONFIG_VAL(D, T, desklock_background, STR);
+   E_CONFIG_VAL(D, T, desklock_passwd, INT);
+   E_CONFIG_VAL(D, T, desklock_pin, INT);
    E_CONFIG_LIST(D, T, desklock_backgrounds, _e_config_desklock_bg_edd); /**/
    E_CONFIG_VAL(D, T, desklock_auth_method, INT);
    E_CONFIG_VAL(D, T, desklock_login_box_zone, INT);
@@ -621,6 +582,9 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, screensaver_ask_presentation, UCHAR);
    E_CONFIG_VAL(D, T, screensaver_ask_presentation_timeout, DOUBLE);
 
+   E_CONFIG_VAL(D, T, screensaver_wake_on_notify, INT);
+   E_CONFIG_VAL(D, T, screensaver_wake_on_urgent, INT);
+
    E_CONFIG_VAL(D, T, screensaver_suspend, UCHAR);
    E_CONFIG_VAL(D, T, screensaver_suspend_on_ac, UCHAR);
    E_CONFIG_VAL(D, T, screensaver_suspend_delay, DOUBLE);
@@ -632,6 +596,7 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, dpms_standby_timeout, INT);
    E_CONFIG_VAL(D, T, dpms_suspend_timeout, INT);
    E_CONFIG_VAL(D, T, dpms_off_timeout, INT);
+   E_CONFIG_VAL(D, T, no_dpms_on_fullscreen, UCHAR);
 
    E_CONFIG_VAL(D, T, clientlist_group_by, INT);
    E_CONFIG_VAL(D, T, clientlist_include_all_zones, INT);
@@ -649,6 +614,7 @@ _e_config_edd_init(Eina_Bool old)
 
    E_CONFIG_VAL(D, T, border_raise_on_mouse_action, INT);
    E_CONFIG_VAL(D, T, border_raise_on_focus, INT);
+   E_CONFIG_VAL(D, T, raise_on_revert_focus, INT);
    E_CONFIG_VAL(D, T, desk_flip_wrap, INT);
    E_CONFIG_VAL(D, T, fullscreen_flip, INT);
    E_CONFIG_VAL(D, T, multiscreen_flip, INT);
@@ -657,8 +623,8 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, icon_theme_overrides, UCHAR);
 
    E_CONFIG_VAL(D, T, desk_flip_animate_mode, INT);
+   E_CONFIG_VAL(D, T, desk_flip_animate_type, STR);
    E_CONFIG_VAL(D, T, desk_flip_animate_interpolation, INT);
-   E_CONFIG_VAL(D, T, desk_flip_animate_time, DOUBLE);
 
    E_CONFIG_VAL(D, T, wallpaper_import_last_dev, STR);
    E_CONFIG_VAL(D, T, wallpaper_import_last_path, STR);
@@ -669,10 +635,11 @@ _e_config_edd_init(Eina_Bool old)
 
    E_CONFIG_VAL(D, T, desk_auto_switch, INT);
 
-   E_CONFIG_VAL(D, T, screen_limits,  INT);
+   E_CONFIG_VAL(D, T, screen_limits, INT);
 
    E_CONFIG_VAL(D, T, thumb_nice, INT);
 
+   E_CONFIG_VAL(D, T, menu_icons_hide, UCHAR);
    E_CONFIG_VAL(D, T, menu_favorites_show, INT);
    E_CONFIG_VAL(D, T, menu_apps_show, INT);
    E_CONFIG_VAL(D, T, menu_gadcon_client_toplevel, INT);
@@ -767,6 +734,7 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_LIST(D, T, xkb.used_layouts, _e_config_xkb_layout_edd);
    E_CONFIG_LIST(D, T, xkb.used_options, _e_config_xkb_option_edd);
    E_CONFIG_VAL(D, T, xkb.only_label, INT);
+   E_CONFIG_VAL(D, T, xkb.dont_touch_my_damn_keyboard, UCHAR);
    E_CONFIG_VAL(D, T, xkb.default_model, STR);
 
    if (old)
@@ -789,37 +757,6 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, exe_always_single_instance, UCHAR);
 
    E_CONFIG_VAL(D, T, use_desktop_window_profile, INT);
-}
-
-static void
-_e_config_edd_shutdown(void)
-{
-   E_CONFIG_DD_FREE(_e_config_edd);
-   E_CONFIG_DD_FREE(_e_config_module_edd);
-   E_CONFIG_DD_FREE(_e_config_font_default_edd);
-   E_CONFIG_DD_FREE(_e_config_font_fallback_edd);
-   E_CONFIG_DD_FREE(_e_config_theme_edd);
-   E_CONFIG_DD_FREE(_e_config_bindings_mouse_edd);
-   E_CONFIG_DD_FREE(_e_config_bindings_key_edd);
-   E_CONFIG_DD_FREE(_e_config_bindings_edge_edd);
-   E_CONFIG_DD_FREE(_e_config_bindings_signal_edd);
-   E_CONFIG_DD_FREE(_e_config_bindings_wheel_edd);
-   E_CONFIG_DD_FREE(_e_config_bindings_acpi_edd);
-   E_CONFIG_DD_FREE(_e_config_path_append_edd);
-   E_CONFIG_DD_FREE(_e_config_desktop_bg_edd);
-   E_CONFIG_DD_FREE(_e_config_desklock_bg_edd);
-   E_CONFIG_DD_FREE(_e_config_desktop_name_edd);
-   E_CONFIG_DD_FREE(_e_config_desktop_window_profile_edd);
-   E_CONFIG_DD_FREE(_e_config_remember_edd);
-   E_CONFIG_DD_FREE(_e_config_gadcon_edd);
-   E_CONFIG_DD_FREE(_e_config_gadcon_client_edd);
-   E_CONFIG_DD_FREE(_e_config_shelf_edd);
-   E_CONFIG_DD_FREE(_e_config_shelf_desk_edd);
-   E_CONFIG_DD_FREE(_e_config_mime_icon_edd);
-   E_CONFIG_DD_FREE(_e_config_syscon_action_edd);
-   E_CONFIG_DD_FREE(_e_config_env_var_edd);
-   E_CONFIG_DD_FREE(_e_config_xkb_layout_edd);
-   E_CONFIG_DD_FREE(_e_config_xkb_option_edd);
 }
 
 /* externally accessible functions */
@@ -897,7 +834,102 @@ e_config_init(void)
           e_util_env_set("E_CONF_PROFILE", _e_config_profile);
      }
 
+   _e_config_bindings_mouse_edd = E_CONFIG_DD_NEW("E_Config_Binding_Mouse",
+                                                  E_Config_Binding_Mouse);
+#undef T
+#undef D
+#define T E_Config_Binding_Mouse
+#define D _e_config_bindings_mouse_edd
+   E_CONFIG_VAL(D, T, context, INT);
+   E_CONFIG_VAL(D, T, modifiers, INT);
+   E_CONFIG_VAL(D, T, action, STR);
+   E_CONFIG_VAL(D, T, params, STR);
+   E_CONFIG_VAL(D, T, button, UCHAR);
+   E_CONFIG_VAL(D, T, any_mod, UCHAR);
+
+   _e_config_bindings_key_edd = E_CONFIG_DD_NEW("E_Config_Binding_Key",
+                                                E_Config_Binding_Key);
+#undef T
+#undef D
+#define T E_Config_Binding_Key
+#define D _e_config_bindings_key_edd
+   E_CONFIG_VAL(D, T, context, INT);
+   E_CONFIG_VAL(D, T, modifiers, INT);
+   E_CONFIG_VAL(D, T, key, STR);
+   E_CONFIG_VAL(D, T, action, STR);
+   E_CONFIG_VAL(D, T, params, STR);
+   E_CONFIG_VAL(D, T, any_mod, UCHAR);
+
+   _e_config_bindings_edge_edd = E_CONFIG_DD_NEW("E_Config_Binding_Edge",
+                                                 E_Config_Binding_Edge);
+#undef T
+#undef D
+#define T E_Config_Binding_Edge
+#define D _e_config_bindings_edge_edd
+   E_CONFIG_VAL(D, T, context, INT);
+   E_CONFIG_VAL(D, T, modifiers, INT);
+   E_CONFIG_VAL(D, T, action, STR);
+   E_CONFIG_VAL(D, T, params, STR);
+   E_CONFIG_VAL(D, T, edge, UCHAR);
+   E_CONFIG_VAL(D, T, any_mod, UCHAR);
+   E_CONFIG_VAL(D, T, drag_only, UCHAR);
+   E_CONFIG_VAL(D, T, delay, FLOAT);
+
+   _e_config_bindings_signal_edd = E_CONFIG_DD_NEW("E_Config_Binding_Signal",
+                                                   E_Config_Binding_Signal);
+#undef T
+#undef D
+#define T E_Config_Binding_Signal
+#define D _e_config_bindings_signal_edd
+   E_CONFIG_VAL(D, T, context, INT);
+   E_CONFIG_VAL(D, T, signal, STR);
+   E_CONFIG_VAL(D, T, source, STR);
+   E_CONFIG_VAL(D, T, modifiers, INT);
+   E_CONFIG_VAL(D, T, any_mod, UCHAR);
+   E_CONFIG_VAL(D, T, action, STR);
+   E_CONFIG_VAL(D, T, params, STR);
+
+   _e_config_bindings_wheel_edd = E_CONFIG_DD_NEW("E_Config_Binding_Wheel",
+                                                  E_Config_Binding_Wheel);
+#undef T
+#undef D
+#define T E_Config_Binding_Wheel
+#define D _e_config_bindings_wheel_edd
+   E_CONFIG_VAL(D, T, context, INT);
+   E_CONFIG_VAL(D, T, direction, INT);
+   E_CONFIG_VAL(D, T, z, INT);
+   E_CONFIG_VAL(D, T, modifiers, INT);
+   E_CONFIG_VAL(D, T, any_mod, UCHAR);
+   E_CONFIG_VAL(D, T, action, STR);
+   E_CONFIG_VAL(D, T, params, STR);
+
+   _e_config_bindings_acpi_edd = E_CONFIG_DD_NEW("E_Config_Binding_Acpi",
+                                                 E_Config_Binding_Acpi);
+#undef T
+#undef D
+#define T E_Config_Binding_Acpi
+#define D _e_config_bindings_acpi_edd
+   E_CONFIG_VAL(D, T, context, INT);
+   E_CONFIG_VAL(D, T, type, INT);
+   E_CONFIG_VAL(D, T, status, INT);
+   E_CONFIG_VAL(D, T, action, STR);
+   E_CONFIG_VAL(D, T, params, STR);
+
    _e_config_edd_init(EINA_FALSE);
+
+   _e_config_binding_edd = E_CONFIG_DD_NEW("E_Config_Bindings", E_Config_Bindings);
+#undef T
+#undef D
+#define T E_Config_Bindings
+#define D _e_config_binding_edd
+   E_CONFIG_VAL(D, T, config_version, UINT); /**/
+   E_CONFIG_LIST(D, T, mouse_bindings, _e_config_bindings_mouse_edd); /**/
+   E_CONFIG_LIST(D, T, key_bindings, _e_config_bindings_key_edd); /**/
+   E_CONFIG_LIST(D, T, edge_bindings, _e_config_bindings_edge_edd); /**/
+   E_CONFIG_LIST(D, T, signal_bindings, _e_config_bindings_signal_edd); /**/
+   E_CONFIG_LIST(D, T, wheel_bindings, _e_config_bindings_wheel_edd); /**/
+   E_CONFIG_LIST(D, T, acpi_bindings, _e_config_bindings_acpi_edd); /**/
+
    e_config_load();
 
    e_config_save_queue();
@@ -908,6 +940,13 @@ EINTERN int
 e_config_shutdown(void)
 {
    eina_stringshare_del(_e_config_profile);
+   E_CONFIG_DD_FREE(_e_config_binding_edd);
+   E_CONFIG_DD_FREE(_e_config_bindings_mouse_edd);
+   E_CONFIG_DD_FREE(_e_config_bindings_key_edd);
+   E_CONFIG_DD_FREE(_e_config_bindings_edge_edd);
+   E_CONFIG_DD_FREE(_e_config_bindings_signal_edd);
+   E_CONFIG_DD_FREE(_e_config_bindings_wheel_edd);
+   E_CONFIG_DD_FREE(_e_config_bindings_acpi_edd);
    _e_config_edd_shutdown();
    return 1;
 }
@@ -959,7 +998,7 @@ e_config_load(void)
              e_config = e_config_domain_load("e", _e_config_edd);
           }
      }
-while (!e_config)
+   while (!e_config)
      {
         _e_config_edd_shutdown();
         _e_config_edd_init(EINA_TRUE);
@@ -1014,13 +1053,66 @@ while (!e_config)
         //e_sys_action_do(E_SYS_RESTART, NULL);
         return;
      }
+
+#define CONFIG_VERSION_CHECK(VERSION) \
+  if (e_config->config_version - (E_CONFIG_FILE_EPOCH * 1000000) < (VERSION))
+
+#define CONFIG_VERSION_UPDATE_INFO(VERSION) \
+  INF("Performing config upgrade for %d.%d", E_CONFIG_FILE_EPOCH, VERSION);
+
+   /* this should be 6, an xkb fix fucked up the ordering and this is now really broken */
+   CONFIG_VERSION_CHECK(8)
+     {
+        /* e_bindings config domain didn't exist before this version, so we have to do this
+         * check before we load or else we wipe configs :(
+         */
+#undef SET
+#define SET(X) e_bindings->X = e_config->X, e_config->X = NULL
+
+        //CONFIG_VERSION_UPDATE_INFO(6);
+        if (e_config->mouse_bindings || e_config->key_bindings || e_config->edge_bindings ||
+            e_config->signal_bindings || e_config->wheel_bindings || e_config->acpi_bindings)
+          {
+             e_bindings = E_NEW(E_Config_Bindings, 1);
+             SET(mouse_bindings);
+             SET(key_bindings);
+             SET(edge_bindings);
+             SET(signal_bindings);
+             SET(wheel_bindings);
+             SET(acpi_bindings);
+             e_config_domain_save("e_bindings", _e_config_binding_edd, e_bindings);
+#undef SET
+          }
+        else
+          e_bindings = e_config_domain_load("e_bindings", _e_config_binding_edd);
+     }
+   else
+     e_bindings = e_config_domain_load("e_bindings", _e_config_binding_edd);
+
+   if (e_bindings && (e_bindings->config_version != E_CONFIG_BINDINGS_VERSION))
+     {
+        Eina_Stringshare *prof;
+
+        e_config_bindings_free(e_bindings);
+        prof = eina_stringshare_ref(e_config_profile_get());
+        e_config_profile_set("standard");
+        e_bindings = e_config_domain_system_load("e_bindings", _e_config_binding_edd);
+        e_config_profile_set(prof);
+        eina_stringshare_del(prof);
+        ecore_timer_add(1.0, _e_config_cb_timer,
+                        _("Your bindings settings version does not match the current settings version.<br>"
+                          "As a result, all bindings have been reloaded from defaults.<br>"
+                          "Sorry for the inconvenience.<br>"));
+     }
+
    if (e_config->config_version < E_CONFIG_FILE_VERSION)
      {
-        if (e_config->config_version - (E_CONFIG_FILE_EPOCH * 1000000) < 5)
+        CONFIG_VERSION_CHECK(5)
           {
              E_Config_XKB_Layout *cl;
              Eina_List *l;
 
+            CONFIG_VERSION_UPDATE_INFO(5);
             if (e_config->xkb.cur_layout || e_config->xkb.selected_layout || e_config->xkb.desklock_layout)
               {
                  EINA_LIST_FOREACH(e_config->xkb.used_layouts, l, cl)
@@ -1038,195 +1130,390 @@ while (!e_config)
                    }
               }
           }
+/* this gets done above but I'm leaving it here so it can be seen
+        CONFIG_VERSION_CHECK(6)
+          {
+             CONFIG_VERSION_UPDATE_INFO(6);
+             e_bindings = E_NEW(E_Config_Bindings, 1);
+#undef SET
+#define SET(X) e_bindings->X = e_config->X, e_config->X = NULL
+
+             SET(mouse_bindings);
+             SET(key_bindings);
+             SET(edge_bindings);
+             SET(signal_bindings);
+             SET(wheel_bindings);
+             SET(acpi_bindings);
+#undef SET
+             e_config_domain_save("e_bindings", _e_config_binding_edd, e_bindings);
+          }
+*/
+        CONFIG_VERSION_CHECK(8)
+          {
+             CONFIG_VERSION_UPDATE_INFO(8);
+             if (!e_config->config_type)
+               {
+                  /* I guess this probably isn't great, but whatever */
+                  if (eina_list_count(e_bindings->key_bindings) > 2)
+                    e_config->config_type = E_CONFIG_PROFILE_TYPE_DESKTOP;
+                  else
+                    e_config->config_type = E_CONFIG_PROFILE_TYPE_TABLET;
+               }
+          }
+        CONFIG_VERSION_CHECK(10)
+          {
+             int do_conf = 0;
+             Eina_List *l, *ll;
+             E_Config_Module *em;
+             int enabled = 0, delayed = 0, priority = 0;
+
+             CONFIG_VERSION_UPDATE_INFO(10);
+             EINA_LIST_FOREACH_SAFE(e_config->modules, l, ll, em)
+               {
+                  Eina_Bool do_free = EINA_FALSE;
+
+                  if (!e_util_strcmp(em->name, "comp"))
+                    do_free = EINA_TRUE;
+                  else if ((!e_util_strcmp(em->name, "conf_keybindings")) || (!e_util_strcmp(em->name, "conf_edgebindings")))
+                    {
+                       do_conf += do_free = EINA_TRUE;
+                       enabled |= em->enabled;
+                       delayed |= em->delayed;
+                       priority = MIN(priority, em->priority);
+                    }
+                  if (do_free)
+                    {
+                       e_config->modules = eina_list_remove_list(e_config->modules, l);
+                       eina_stringshare_del(em->name);
+                       free(em);
+                    }
+                  if (do_conf == 2) break;
+               }
+             if (do_conf)
+               {
+                  em = E_NEW(E_Config_Module, 1);
+                  em->name = eina_stringshare_add("conf_bindings");
+                  em->enabled = !!enabled;
+                  em->delayed = !!delayed;
+                  em->priority = priority;
+                  e_config->modules = eina_list_append(e_config->modules, em);
+               }
+          }
+        CONFIG_VERSION_CHECK(11)
+          {
+             CONFIG_VERSION_UPDATE_INFO(11);
+             e_config->pointer_warp_speed = e_config->winlist_warp_speed;
+             e_config->winlist_warp_speed = 0;
+
+             if (e_config->focus_policy == E_FOCUS_CLICK)
+               {
+                  if (e_config->border_raise_on_focus)
+                    {
+                       /* approximate expected behavior from removed option */
+                       e_config->always_click_to_focus = 1;
+                       e_config->always_click_to_raise = 1;
+                    }
+               }
+          }
+        CONFIG_VERSION_CHECK(12)
+          {
+             CONFIG_VERSION_UPDATE_INFO(12);
+             switch (e_config->desk_flip_animate_mode)
+               {
+                case 1: //pane
+                  e_config->desk_flip_animate_type = eina_stringshare_add("auto/pane");
+                  break;
+                case 2: //zoom, now known as diagonal
+                  e_config->desk_flip_animate_type = eina_stringshare_add("auto/diagonal");
+                  break;
+                default:
+                  break;
+               }
+          }
+        CONFIG_VERSION_CHECK(14)
+          {
+             Eina_List *files, *l;
+             Eina_Bool fail = EINA_FALSE;
+             E_Config_Shelf *cf_es;
+             E_Remember *rem;
+             char buf[PATH_MAX], buf2[PATH_MAX], *f;
+
+             CONFIG_VERSION_UPDATE_INFO(14);
+
+             EINA_LIST_FOREACH(e_config->shelves, l, cf_es)
+               {
+                  if (cf_es->popup)
+                    {
+                       if (cf_es->layer)
+                         cf_es->layer = E_LAYER_CLIENT_ABOVE;
+                       else
+                         cf_es->layer = E_LAYER_CLIENT_DESKTOP;
+                    }
+                  else if (!cf_es->layer)
+                    cf_es->layer = E_LAYER_DESKTOP; //redundant, but whatever
+                  cf_es->popup = 0;
+               }
+
+             /* E19 layer values are higher */
+             EINA_LIST_FOREACH(e_config->remembers, l, rem)
+               if (rem->apply & E_REMEMBER_APPLY_LAYER)
+                 rem->prop.layer += 100;
+
+             // copy all of ~/.e/e/themes/* into ~/.elementary/themes
+             // and delete original data in ~/.e/e/themes
+             ecore_file_mkpath(elm_theme_user_dir_get());
+             snprintf(buf, sizeof(buf), "%s/themes", e_user_dir_get());
+             files = ecore_file_ls(buf);
+             EINA_LIST_FREE(files, f)
+               {
+                  snprintf(buf, sizeof(buf), "%s/themes/%s",
+                           e_user_dir_get(), f);
+                  snprintf(buf2, sizeof(buf2), "%s/%s",
+                           elm_theme_user_dir_get(), f);
+                  if (!ecore_file_cp(buf, buf2)) fail = EINA_TRUE;
+               }
+             if (!fail)
+               {
+                  snprintf(buf, sizeof(buf), "%s/themes", e_user_dir_get());
+                  ecore_file_recursive_rm(buf);
+               }
+          }
+        CONFIG_VERSION_CHECK(15)
+          {
+             E_Config_Module *em;
+             Eina_List *l;
+             Eina_Bool found = EINA_FALSE;
+
+             CONFIG_VERSION_UPDATE_INFO(15);
+             if (e_config->desklock_use_custom_desklock)
+               e_config->desklock_auth_method = E_DESKLOCK_AUTH_METHOD_EXTERNAL;
+
+             EINA_LIST_FOREACH(e_config->modules, l, em)
+               if (!strcmp(em->name, "lokker"))
+                 {
+                    found = EINA_TRUE;
+                    break;
+                 }
+             if (!found)
+               {
+                  /* add new desklock module */
+                  em = E_NEW(E_Config_Module, 1);
+                  em->name = eina_stringshare_add("lokker");
+                  em->enabled = 1;
+                  em->delayed = 0;
+                  e_config->modules = eina_list_append(e_config->modules, em);
+               }
+          }
+        CONFIG_VERSION_CHECK(17)
+          {
+             E_Config_Module *em;
+             Eina_List *l;
+
+             CONFIG_VERSION_UPDATE_INFO(17);
+
+             EINA_LIST_FOREACH(e_config->modules, l, em)
+               if (!strcmp(em->name, "pager16"))
+                 {
+                    eina_stringshare_replace(&em->name, "pager");
+                    break;
+                 }
+          }
      }
+   if (!e_config->remember_internal_fm_windows)
+     e_config->remember_internal_fm_windows = !!(e_config->remember_internal_windows & E_REMEMBER_INTERNAL_FM_WINS);
 
-     e_config->config_version = E_CONFIG_FILE_VERSION;
+   e_bindings->config_version = E_CONFIG_BINDINGS_VERSION;
+   e_config->config_version = E_CONFIG_FILE_VERSION;
 
-     /* limit values so they are sane */
-     E_CONFIG_LIMIT(e_config->menus_scroll_speed, 1.0, 20000.0);
-     E_CONFIG_LIMIT(e_config->show_splash, 0, 1);
-     E_CONFIG_LIMIT(e_config->menus_fast_mouse_move_threshhold, 1.0, 2000.0);
-     E_CONFIG_LIMIT(e_config->menus_click_drag_timeout, 0.0, 10.0);
-     E_CONFIG_LIMIT(e_config->border_shade_animate, 0, 1);
-     E_CONFIG_LIMIT(e_config->border_shade_transition, 0, 8);
-     E_CONFIG_LIMIT(e_config->border_shade_speed, 1.0, 20000.0);
-     E_CONFIG_LIMIT(e_config->framerate, 1.0, 200.0);
-     E_CONFIG_LIMIT(e_config->priority, 0, 19);
-     E_CONFIG_LIMIT(e_config->image_cache, 0, 256 * 1024);
-     E_CONFIG_LIMIT(e_config->font_cache, 0, 32 * 1024);
-     E_CONFIG_LIMIT(e_config->edje_cache, 0, 256);
-     E_CONFIG_LIMIT(e_config->edje_collection_cache, 0, 512);
-     E_CONFIG_LIMIT(e_config->cache_flush_poll_interval, 8, 32768);
-     E_CONFIG_LIMIT(e_config->zone_desks_x_count, 1, 64);
-     E_CONFIG_LIMIT(e_config->zone_desks_y_count, 1, 64);
-     E_CONFIG_LIMIT(e_config->show_desktop_icons, 0, 1);
-     E_CONFIG_LIMIT(e_config->edge_flip_dragging, 0, 1);
-     E_CONFIG_LIMIT(e_config->window_placement_policy, E_WINDOW_PLACEMENT_SMART, E_WINDOW_PLACEMENT_MANUAL);
-     E_CONFIG_LIMIT(e_config->window_grouping, 0, 1);
-     E_CONFIG_LIMIT(e_config->focus_policy, 0, 2);
-     E_CONFIG_LIMIT(e_config->focus_setting, 0, 3);
-     E_CONFIG_LIMIT(e_config->pass_click_on, 0, 1);
-     E_CONFIG_LIMIT(e_config->window_activehint_policy, 0, 2);
-     E_CONFIG_LIMIT(e_config->always_click_to_raise, 0, 1);
-     E_CONFIG_LIMIT(e_config->always_click_to_focus, 0, 1);
-     E_CONFIG_LIMIT(e_config->use_auto_raise, 0, 1);
-     E_CONFIG_LIMIT(e_config->auto_raise_delay, 0.0, 5.0);
-     E_CONFIG_LIMIT(e_config->use_resist, 0, 1);
-     E_CONFIG_LIMIT(e_config->drag_resist, 0, 100);
-     E_CONFIG_LIMIT(e_config->desk_resist, 0, 100);
-     E_CONFIG_LIMIT(e_config->window_resist, 0, 100);
-     E_CONFIG_LIMIT(e_config->gadget_resist, 0, 100);
-     E_CONFIG_LIMIT(e_config->geometry_auto_move, 0, 1);
-     E_CONFIG_LIMIT(e_config->geometry_auto_resize_limit, 0, 1);
-     E_CONFIG_LIMIT(e_config->winlist_warp_while_selecting, 0, 1);
-     E_CONFIG_LIMIT(e_config->winlist_warp_at_end, 0, 1);
-     E_CONFIG_LIMIT(e_config->winlist_warp_speed, 0.0, 1.0);
-     E_CONFIG_LIMIT(e_config->winlist_scroll_animate, 0, 1);
-     E_CONFIG_LIMIT(e_config->winlist_scroll_speed, 0.0, 1.0);
-     E_CONFIG_LIMIT(e_config->winlist_list_show_iconified, 0, 1);
-     E_CONFIG_LIMIT(e_config->winlist_list_show_other_desk_iconified, 0, 1);
-     E_CONFIG_LIMIT(e_config->winlist_list_show_other_screen_iconified, 0, 1);
-     E_CONFIG_LIMIT(e_config->winlist_list_show_other_desk_windows, 0, 1);
-     E_CONFIG_LIMIT(e_config->winlist_list_show_other_screen_windows, 0, 1);
-     E_CONFIG_LIMIT(e_config->winlist_list_uncover_while_selecting, 0, 1);
-     E_CONFIG_LIMIT(e_config->winlist_list_jump_desk_while_selecting, 0, 1);
-     E_CONFIG_LIMIT(e_config->winlist_pos_align_x, 0.0, 1.0);
-     E_CONFIG_LIMIT(e_config->winlist_pos_align_y, 0.0, 1.0);
-     E_CONFIG_LIMIT(e_config->winlist_pos_size_w, 0.0, 1.0);
-     E_CONFIG_LIMIT(e_config->winlist_pos_size_h, 0.0, 1.0);
-     E_CONFIG_LIMIT(e_config->winlist_pos_min_w, 0, 4000);
-     E_CONFIG_LIMIT(e_config->winlist_pos_min_h, 0, 4000);
-     E_CONFIG_LIMIT(e_config->winlist_pos_max_w, 8, 4000);
-     E_CONFIG_LIMIT(e_config->winlist_pos_max_h, 8, 4000);
-     E_CONFIG_LIMIT(e_config->maximize_policy, E_MAXIMIZE_FULLSCREEN, E_MAXIMIZE_DIRECTION);
-     E_CONFIG_LIMIT(e_config->allow_manip, 0, 1);
-     E_CONFIG_LIMIT(e_config->border_fix_on_shelf_toggle, 0, 1);
-     E_CONFIG_LIMIT(e_config->allow_above_fullscreen, 0, 1);
-     E_CONFIG_LIMIT(e_config->kill_if_close_not_possible, 0, 1);
-     E_CONFIG_LIMIT(e_config->kill_process, 0, 1);
-     E_CONFIG_LIMIT(e_config->kill_timer_wait, 0.0, 120.0);
-     E_CONFIG_LIMIT(e_config->ping_clients, 0, 1);
-     E_CONFIG_LIMIT(e_config->move_info_follows, 0, 1);
-     E_CONFIG_LIMIT(e_config->resize_info_follows, 0, 1);
-     E_CONFIG_LIMIT(e_config->move_info_visible, 0, 1);
-     E_CONFIG_LIMIT(e_config->resize_info_visible, 0, 1);
-     E_CONFIG_LIMIT(e_config->focus_last_focused_per_desktop, 0, 1);
-     E_CONFIG_LIMIT(e_config->focus_revert_on_hide_or_close, 0, 1);
-     E_CONFIG_LIMIT(e_config->pointer_slide, 0, 1);
-     E_CONFIG_LIMIT(e_config->show_cursor, 0, 1);
-     E_CONFIG_LIMIT(e_config->use_e_cursor, 0, 1);
-     E_CONFIG_LIMIT(e_config->cursor_size, 0, 1024);
-     E_CONFIG_LIMIT(e_config->menu_autoscroll_margin, 0, 50);
-     E_CONFIG_LIMIT(e_config->menu_autoscroll_cursor_margin, 0, 50);
-     E_CONFIG_LIMIT(e_config->menu_eap_name_show, 0, 1);
-     E_CONFIG_LIMIT(e_config->menu_eap_generic_show, 0, 1);
-     E_CONFIG_LIMIT(e_config->menu_eap_comment_show, 0, 1);
-     E_CONFIG_LIMIT(e_config->use_app_icon, 0, 1);
-     E_CONFIG_LIMIT(e_config->cnfmdlg_disabled, 0, 1);
-     E_CONFIG_LIMIT(e_config->cfgdlg_auto_apply, 0, 1);
-     E_CONFIG_LIMIT(e_config->cfgdlg_default_mode, 0, 1);
-     E_CONFIG_LIMIT(e_config->font_hinting, 0, 2);
-     E_CONFIG_LIMIT(e_config->desklock_login_box_zone, -2, 1000);
-     E_CONFIG_LIMIT(e_config->desklock_autolock_screensaver, 0, 1);
-     E_CONFIG_LIMIT(e_config->desklock_post_screensaver_time, 0.0, 300.0);
-     E_CONFIG_LIMIT(e_config->desklock_autolock_idle, 0, 1);
-     E_CONFIG_LIMIT(e_config->desklock_autolock_idle_timeout, 1.0, 5400.0);
-     E_CONFIG_LIMIT(e_config->desklock_use_custom_desklock, 0, 1);
-     E_CONFIG_LIMIT(e_config->desklock_ask_presentation, 0, 1);
-     E_CONFIG_LIMIT(e_config->desklock_ask_presentation_timeout, 1.0, 300.0);
-     E_CONFIG_LIMIT(e_config->border_raise_on_mouse_action, 0, 1);
-     E_CONFIG_LIMIT(e_config->border_raise_on_focus, 0, 1);
-     E_CONFIG_LIMIT(e_config->desk_flip_wrap, 0, 1);
-     E_CONFIG_LIMIT(e_config->fullscreen_flip, 0, 1);
-     E_CONFIG_LIMIT(e_config->icon_theme_overrides, 0, 1);
-     E_CONFIG_LIMIT(e_config->remember_internal_windows, 0, 3);
-     E_CONFIG_LIMIT(e_config->desk_auto_switch, 0, 1);
+   /* limit values so they are sane */
+   E_CONFIG_LIMIT(e_config->menus_scroll_speed, 1.0, 20000.0);
+   E_CONFIG_LIMIT(e_config->show_splash, 0, 1);
+   E_CONFIG_LIMIT(e_config->menus_fast_mouse_move_threshhold, 1.0, 2000.0);
+   E_CONFIG_LIMIT(e_config->menus_click_drag_timeout, 0.0, 10.0);
+   E_CONFIG_LIMIT(e_config->border_shade_animate, 0, 1);
+   E_CONFIG_LIMIT(e_config->border_shade_transition, 0, 8);
+   E_CONFIG_LIMIT(e_config->border_shade_speed, 1.0, 20000.0);
+   E_CONFIG_LIMIT(e_config->framerate, 1.0, 200.0);
+   E_CONFIG_LIMIT(e_config->priority, 0, 19);
+   E_CONFIG_LIMIT(e_config->image_cache, 0, 256 * 1024);
+   E_CONFIG_LIMIT(e_config->font_cache, 0, 32 * 1024);
+   E_CONFIG_LIMIT(e_config->edje_cache, 0, 256);
+   E_CONFIG_LIMIT(e_config->edje_collection_cache, 0, 512);
+   E_CONFIG_LIMIT(e_config->cache_flush_poll_interval, 8, 32768);
+   E_CONFIG_LIMIT(e_config->zone_desks_x_count, 1, 64);
+   E_CONFIG_LIMIT(e_config->zone_desks_y_count, 1, 64);
+   E_CONFIG_LIMIT(e_config->show_desktop_icons, 0, 1);
+   E_CONFIG_LIMIT(e_config->edge_flip_dragging, 0, 1);
+   E_CONFIG_LIMIT(e_config->window_placement_policy, E_WINDOW_PLACEMENT_SMART, E_WINDOW_PLACEMENT_MANUAL);
+   E_CONFIG_LIMIT(e_config->window_grouping, 0, 1);
+   E_CONFIG_LIMIT(e_config->focus_policy, 0, 2);
+   E_CONFIG_LIMIT(e_config->focus_setting, 0, 3);
+   E_CONFIG_LIMIT(e_config->pass_click_on, 0, 1);
+   E_CONFIG_LIMIT(e_config->window_activehint_policy, E_ACTIVEHINT_POLICY_IGNORE, E_ACTIVEHINT_POLICY_LAST - 1);
+   E_CONFIG_LIMIT(e_config->always_click_to_raise, 0, 1);
+   E_CONFIG_LIMIT(e_config->always_click_to_focus, 0, 1);
+   E_CONFIG_LIMIT(e_config->use_auto_raise, 0, 1);
+   E_CONFIG_LIMIT(e_config->auto_raise_delay, 0.0, 9.9);
+   E_CONFIG_LIMIT(e_config->use_resist, 0, 1);
+   E_CONFIG_LIMIT(e_config->drag_resist, 0, 100);
+   E_CONFIG_LIMIT(e_config->desk_resist, 0, 100);
+   E_CONFIG_LIMIT(e_config->window_resist, 0, 100);
+   E_CONFIG_LIMIT(e_config->gadget_resist, 0, 100);
+   E_CONFIG_LIMIT(e_config->geometry_auto_move, 0, 1);
+   E_CONFIG_LIMIT(e_config->geometry_auto_resize_limit, 0, 1);
+   E_CONFIG_LIMIT(e_config->winlist_warp_while_selecting, 0, 1);
+   E_CONFIG_LIMIT(e_config->winlist_warp_at_end, 0, 1);
+   E_CONFIG_LIMIT(e_config->winlist_no_warp_on_direction, 0, 1);
+   E_CONFIG_LIMIT(e_config->winlist_warp_speed, 0.0, 1.0);
+   E_CONFIG_LIMIT(e_config->winlist_scroll_animate, 0, 1);
+   E_CONFIG_LIMIT(e_config->winlist_scroll_speed, 0.0, 1.0);
+   E_CONFIG_LIMIT(e_config->winlist_list_show_iconified, 0, 1);
+   E_CONFIG_LIMIT(e_config->winlist_list_show_other_desk_iconified, 0, 1);
+   E_CONFIG_LIMIT(e_config->winlist_list_show_other_screen_iconified, 0, 1);
+   E_CONFIG_LIMIT(e_config->winlist_list_show_other_desk_windows, 0, 1);
+   E_CONFIG_LIMIT(e_config->winlist_list_show_other_screen_windows, 0, 1);
+   E_CONFIG_LIMIT(e_config->winlist_list_uncover_while_selecting, 0, 1);
+   E_CONFIG_LIMIT(e_config->winlist_list_jump_desk_while_selecting, 0, 1);
+   E_CONFIG_LIMIT(e_config->winlist_pos_align_x, 0.0, 1.0);
+   E_CONFIG_LIMIT(e_config->winlist_pos_align_y, 0.0, 1.0);
+   E_CONFIG_LIMIT(e_config->winlist_pos_size_w, 0.0, 1.0);
+   E_CONFIG_LIMIT(e_config->winlist_pos_size_h, 0.0, 1.0);
+   E_CONFIG_LIMIT(e_config->winlist_pos_min_w, 0, 4000);
+   E_CONFIG_LIMIT(e_config->winlist_pos_min_h, 0, 4000);
+   E_CONFIG_LIMIT(e_config->winlist_pos_max_w, 8, 4000);
+   E_CONFIG_LIMIT(e_config->winlist_pos_max_h, 8, 4000);
+   E_CONFIG_LIMIT(e_config->maximize_policy, E_MAXIMIZE_FULLSCREEN, E_MAXIMIZE_DIRECTION);
+   E_CONFIG_LIMIT(e_config->allow_manip, 0, 1);
+   E_CONFIG_LIMIT(e_config->border_fix_on_shelf_toggle, 0, 1);
+   E_CONFIG_LIMIT(e_config->allow_above_fullscreen, 0, 1);
+   E_CONFIG_LIMIT(e_config->kill_if_close_not_possible, 0, 1);
+   E_CONFIG_LIMIT(e_config->kill_process, 0, 1);
+   E_CONFIG_LIMIT(e_config->kill_timer_wait, 0.0, 120.0);
+   E_CONFIG_LIMIT(e_config->ping_clients, 0, 1);
+   E_CONFIG_LIMIT(e_config->move_info_follows, 0, 1);
+   E_CONFIG_LIMIT(e_config->resize_info_follows, 0, 1);
+   E_CONFIG_LIMIT(e_config->move_info_visible, 0, 1);
+   E_CONFIG_LIMIT(e_config->resize_info_visible, 0, 1);
+   E_CONFIG_LIMIT(e_config->focus_last_focused_per_desktop, 0, 1);
+   E_CONFIG_LIMIT(e_config->focus_revert_on_hide_or_close, 0, 1);
+   E_CONFIG_LIMIT(e_config->pointer_slide, 0, 1);
+   E_CONFIG_LIMIT(e_config->disable_all_pointer_warps, 0, 1);
+   E_CONFIG_LIMIT(e_config->pointer_warp_speed, 0.0, 1.0);
+   E_CONFIG_LIMIT(e_config->show_cursor, 0, 1);
+   E_CONFIG_LIMIT(e_config->use_e_cursor, 0, 1);
+   E_CONFIG_LIMIT(e_config->cursor_size, 0, 1024);
+   E_CONFIG_LIMIT(e_config->menu_autoscroll_margin, 0, 50);
+   E_CONFIG_LIMIT(e_config->menu_autoscroll_cursor_margin, 0, 50);
+   E_CONFIG_LIMIT(e_config->menu_eap_name_show, 0, 1);
+   E_CONFIG_LIMIT(e_config->menu_eap_generic_show, 0, 1);
+   E_CONFIG_LIMIT(e_config->menu_eap_comment_show, 0, 1);
+   E_CONFIG_LIMIT(e_config->use_app_icon, 0, 1);
+   E_CONFIG_LIMIT(e_config->cnfmdlg_disabled, 0, 1);
+   E_CONFIG_LIMIT(e_config->cfgdlg_auto_apply, 0, 1);
+   E_CONFIG_LIMIT(e_config->cfgdlg_default_mode, 0, 1);
+   E_CONFIG_LIMIT(e_config->font_hinting, 0, 2);
+   E_CONFIG_LIMIT(e_config->desklock_login_box_zone, -2, 1000);
+   E_CONFIG_LIMIT(e_config->desklock_autolock_screensaver, 0, 1);
+   E_CONFIG_LIMIT(e_config->desklock_post_screensaver_time, 0.0, 300.0);
+   E_CONFIG_LIMIT(e_config->desklock_autolock_idle, 0, 1);
+   E_CONFIG_LIMIT(e_config->desklock_autolock_idle_timeout, 1.0, 5400.0);
+   E_CONFIG_LIMIT(e_config->desklock_use_custom_desklock, 0, 1);
+   E_CONFIG_LIMIT(e_config->desklock_ask_presentation, 0, 1);
+   E_CONFIG_LIMIT(e_config->desklock_ask_presentation_timeout, 1.0, 300.0);
+   E_CONFIG_LIMIT(e_config->border_raise_on_mouse_action, 0, 1);
+   E_CONFIG_LIMIT(e_config->border_raise_on_focus, 0, 1);
+   E_CONFIG_LIMIT(e_config->raise_on_revert_focus, 0, 1);
+   E_CONFIG_LIMIT(e_config->desk_flip_wrap, 0, 1);
+   E_CONFIG_LIMIT(e_config->fullscreen_flip, 0, 1);
+   E_CONFIG_LIMIT(e_config->icon_theme_overrides, 0, 1);
+   E_CONFIG_LIMIT(e_config->remember_internal_windows, 0, 3);
+   E_CONFIG_LIMIT(e_config->remember_internal_fm_windows, 0, 1);
+   E_CONFIG_LIMIT(e_config->remember_internal_fm_windows_globally, 0, 1);
+   E_CONFIG_LIMIT(e_config->desk_auto_switch, 0, 1);
 
-     E_CONFIG_LIMIT(e_config->screen_limits, 0, 2);
+   E_CONFIG_LIMIT(e_config->screen_limits, 0, 2);
 
-     E_CONFIG_LIMIT(e_config->dpms_enable, 0, 1);
-     E_CONFIG_LIMIT(e_config->dpms_standby_enable, 0, 1);
-     E_CONFIG_LIMIT(e_config->dpms_suspend_enable, 0, 1);
-     E_CONFIG_LIMIT(e_config->dpms_off_enable, 0, 1);
-     E_CONFIG_LIMIT(e_config->dpms_standby_timeout, 30, 5400);
-     E_CONFIG_LIMIT(e_config->dpms_suspend_timeout, 30, 5400);
-     E_CONFIG_LIMIT(e_config->dpms_off_timeout, 30, 5400);
+   E_CONFIG_LIMIT(e_config->dpms_enable, 0, 1);
+   E_CONFIG_LIMIT(e_config->dpms_standby_enable, 0, 1);
+   E_CONFIG_LIMIT(e_config->dpms_suspend_enable, 0, 1);
+   E_CONFIG_LIMIT(e_config->dpms_off_enable, 0, 1);
+   E_CONFIG_LIMIT(e_config->dpms_standby_timeout, 30, 5400);
+   E_CONFIG_LIMIT(e_config->dpms_suspend_timeout, 30, 5400);
+   E_CONFIG_LIMIT(e_config->dpms_off_timeout, 30, 5400);
 
-     E_CONFIG_LIMIT(e_config->backlight.timer, 1, 3600);
+   E_CONFIG_LIMIT(e_config->backlight.timer, 1, 3600);
 
-     E_CONFIG_LIMIT(e_config->screensaver_timeout, 30, 5400);
-     E_CONFIG_LIMIT(e_config->screensaver_interval, 0, 5400);
-     E_CONFIG_LIMIT(e_config->screensaver_blanking, 0, 2);
-     E_CONFIG_LIMIT(e_config->screensaver_expose, 0, 2);
-     E_CONFIG_LIMIT(e_config->screensaver_ask_presentation, 0, 1);
-     E_CONFIG_LIMIT(e_config->screensaver_ask_presentation_timeout, 1.0, 300.0);
+   E_CONFIG_LIMIT(e_config->screensaver_timeout, 30, 5400);
+   E_CONFIG_LIMIT(e_config->screensaver_interval, 0, 5400);
+   E_CONFIG_LIMIT(e_config->screensaver_blanking, 0, 2);
+   E_CONFIG_LIMIT(e_config->screensaver_expose, 0, 2);
+   E_CONFIG_LIMIT(e_config->screensaver_ask_presentation, 0, 1);
+   E_CONFIG_LIMIT(e_config->screensaver_ask_presentation_timeout, 1.0, 300.0);
 
-     E_CONFIG_LIMIT(e_config->clientlist_group_by, 0, 2);
-     E_CONFIG_LIMIT(e_config->clientlist_include_all_zones, 0, 1);
-     E_CONFIG_LIMIT(e_config->clientlist_separate_with, 0, 2);
-     E_CONFIG_LIMIT(e_config->clientlist_sort_by, 0, 3);
-     E_CONFIG_LIMIT(e_config->clientlist_separate_iconified_apps, 0, 2);
-     E_CONFIG_LIMIT(e_config->clientlist_warp_to_iconified_desktop, 0, 1);
-     E_CONFIG_LIMIT(e_config->mouse_hand, 0, 1);
-     E_CONFIG_LIMIT(e_config->clientlist_limit_caption_len, 0, 1);
-     E_CONFIG_LIMIT(e_config->clientlist_max_caption_len, 2, E_CLIENTLIST_MAX_CAPTION_LEN);
+   E_CONFIG_LIMIT(e_config->screensaver_wake_on_notify, 0, 1);
+   E_CONFIG_LIMIT(e_config->screensaver_wake_on_urgent, 0, 1);
 
-     E_CONFIG_LIMIT(e_config->mouse_accel_numerator, 1, 10);
-     E_CONFIG_LIMIT(e_config->mouse_accel_denominator, 1, 10);
-     E_CONFIG_LIMIT(e_config->mouse_accel_threshold, 1, 10);
+   E_CONFIG_LIMIT(e_config->clientlist_group_by, 0, 2);
+   E_CONFIG_LIMIT(e_config->clientlist_include_all_zones, 0, 1);
+   E_CONFIG_LIMIT(e_config->clientlist_separate_with, 0, 2);
+   E_CONFIG_LIMIT(e_config->clientlist_sort_by, 0, 3);
+   E_CONFIG_LIMIT(e_config->clientlist_separate_iconified_apps, 0, 2);
+   E_CONFIG_LIMIT(e_config->clientlist_warp_to_iconified_desktop, 0, 1);
+   E_CONFIG_LIMIT(e_config->mouse_hand, 0, 1);
+   E_CONFIG_LIMIT(e_config->clientlist_limit_caption_len, 0, 1);
+   E_CONFIG_LIMIT(e_config->clientlist_max_caption_len, 2, E_CLIENTLIST_MAX_CAPTION_LEN);
 
-     E_CONFIG_LIMIT(e_config->menu_favorites_show, 0, 1);
-     E_CONFIG_LIMIT(e_config->menu_apps_show, 0, 1);
-     E_CONFIG_LIMIT(e_config->menu_gadcon_client_toplevel, 0, 1);
+   E_CONFIG_LIMIT(e_config->mouse_accel_numerator, 1, 10);
+   E_CONFIG_LIMIT(e_config->mouse_accel_denominator, 1, 10);
+   E_CONFIG_LIMIT(e_config->mouse_accel_threshold, 1, 10);
 
-     E_CONFIG_LIMIT(e_config->ping_clients_interval, 16, 1024);
+   E_CONFIG_LIMIT(e_config->menu_favorites_show, 0, 1);
+   E_CONFIG_LIMIT(e_config->menu_apps_show, 0, 1);
+   E_CONFIG_LIMIT(e_config->menu_gadcon_client_toplevel, 0, 1);
 
-     E_CONFIG_LIMIT(e_config->mode.presentation, 0, 1);
-     E_CONFIG_LIMIT(e_config->mode.offline, 0, 1);
+   E_CONFIG_LIMIT(e_config->ping_clients_interval, 16, 1024);
 
-     E_CONFIG_LIMIT(e_config->exec.expire_timeout, 0.1, 1000);
-     E_CONFIG_LIMIT(e_config->exec.show_run_dialog, 0, 1);
-     E_CONFIG_LIMIT(e_config->exec.show_exit_dialog, 0, 1);
+   E_CONFIG_LIMIT(e_config->mode.presentation, 0, 1);
+   E_CONFIG_LIMIT(e_config->mode.offline, 0, 1);
 
-     E_CONFIG_LIMIT(e_config->null_container_win, 0, 1);
+   E_CONFIG_LIMIT(e_config->exec.expire_timeout, 0.1, 1000);
+   E_CONFIG_LIMIT(e_config->exec.show_run_dialog, 0, 1);
+   E_CONFIG_LIMIT(e_config->exec.show_exit_dialog, 0, 1);
 
-     E_CONFIG_LIMIT(e_config->powersave.none, 0.01, 5400.00);
-     E_CONFIG_LIMIT(e_config->powersave.low, 0.01, 5400.00);
-     E_CONFIG_LIMIT(e_config->powersave.medium, 0.01, 5400.00);
-     E_CONFIG_LIMIT(e_config->powersave.high, 0.01, 5400.00);
-     E_CONFIG_LIMIT(e_config->powersave.extreme, 0.01, 5400.00);
-     E_CONFIG_LIMIT(e_config->powersave.min, E_POWERSAVE_MODE_NONE, E_POWERSAVE_MODE_EXTREME);
-     E_CONFIG_LIMIT(e_config->powersave.max, E_POWERSAVE_MODE_NONE, E_POWERSAVE_MODE_EXTREME);
+   E_CONFIG_LIMIT(e_config->null_container_win, 0, 1);
 
-     E_CONFIG_LIMIT(e_config->border_keyboard.move.dx, 1, 255);
-     E_CONFIG_LIMIT(e_config->border_keyboard.move.dy, 1, 255);
-     E_CONFIG_LIMIT(e_config->border_keyboard.resize.dx, 1, 255);
-     E_CONFIG_LIMIT(e_config->border_keyboard.resize.dy, 1, 255);
+   E_CONFIG_LIMIT(e_config->powersave.none, 0.01, 5400.00);
+   E_CONFIG_LIMIT(e_config->powersave.low, 0.01, 5400.00);
+   E_CONFIG_LIMIT(e_config->powersave.medium, 0.01, 5400.00);
+   E_CONFIG_LIMIT(e_config->powersave.high, 0.01, 5400.00);
+   E_CONFIG_LIMIT(e_config->powersave.extreme, 0.01, 5400.00);
+   E_CONFIG_LIMIT(e_config->powersave.min, E_POWERSAVE_MODE_NONE, E_POWERSAVE_MODE_EXTREME);
+   E_CONFIG_LIMIT(e_config->powersave.max, E_POWERSAVE_MODE_NONE, E_POWERSAVE_MODE_EXTREME);
 
-     E_CONFIG_LIMIT(e_config->multiscreen_flip, 0, 1);
+   E_CONFIG_LIMIT(e_config->border_keyboard.move.dx, 1, 255);
+   E_CONFIG_LIMIT(e_config->border_keyboard.move.dy, 1, 255);
+   E_CONFIG_LIMIT(e_config->border_keyboard.resize.dx, 1, 255);
+   E_CONFIG_LIMIT(e_config->border_keyboard.resize.dy, 1, 255);
 
-     if (!e_config->icon_theme)
-       e_config->icon_theme = eina_stringshare_add("hicolor"); // FDO default
+   E_CONFIG_LIMIT(e_config->multiscreen_flip, 0, 1);
 
-     /* FIXME: disabled auto apply because it causes problems */
-     e_config->cfgdlg_auto_apply = 0;
-     /* FIXME: desklock personalized password id disabled for security reasons */
-     e_config->desklock_auth_method = 0;
-     if (e_config->desklock_personal_passwd)
-       eina_stringshare_del(e_config->desklock_personal_passwd);
-     e_config->desklock_personal_passwd = NULL;
+   E_CONFIG_LIMIT(e_config->backlight.normal, 0.1, 1.0);
+   E_CONFIG_LIMIT(e_config->backlight.dim, 0.1, 1.0);
+   E_CONFIG_LIMIT(e_config->backlight.idle_dim, 0.1, 1.0);
 
-     ecore_event_add(E_EVENT_CONFIG_LOADED, NULL, NULL, NULL);
+   if (!e_config->icon_theme)
+     e_config->icon_theme = eina_stringshare_add("hicolor");  // FDO default
+
+   /* FIXME: disabled auto apply because it causes problems */
+   e_config->cfgdlg_auto_apply = 0;
+
+   ecore_event_add(E_EVENT_CONFIG_LOADED, NULL, NULL, NULL);
 }
 
 EAPI int
 e_config_save(void)
 {
-   if (_e_config_save_defer)
-     {
-        e_powersave_deferred_action_del(_e_config_save_defer);
-        _e_config_save_defer = NULL;
-     }
+   E_FREE_FUNC(_e_config_save_defer, e_powersave_deferred_action_del);
    _e_config_save_cb(NULL);
    return e_config_domain_save("e", _e_config_edd, e_config);
 }
@@ -1453,38 +1740,34 @@ e_config_domain_system_load(const char *domain, E_Config_DD *edd)
 static void
 _e_config_mv_error(const char *from, const char *to)
 {
-   if (!_e_config_error_dialog)
-     {
-        E_Dialog *dia;
+   E_Dialog *dia;
+   char buf[8192];
 
-        dia = e_dialog_new(e_container_current_get(e_manager_current_get()),
-                           "E", "_sys_error_logout_slow");
-        if (dia)
-          {
-             char buf[8192];
+   if (_e_config_error_dialog) return;
 
-             e_dialog_title_set(dia, _("Enlightenment Settings Write Problems"));
-             e_dialog_icon_set(dia, "dialog-error", 64);
-             snprintf(buf, sizeof(buf),
-                      _("Enlightenment has had an error while moving config files<br>"
-                        "from:<br>"
-                        "%s<br>"
-                        "<br>"
-                        "to:<br>"
-                        "%s<br>"
-                        "<br>"
-                        "The rest of the write has been aborted for safety.<br>"),
-                      from, to);
-             e_dialog_text_set(dia, buf);
-             e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
-             e_dialog_button_focus_num(dia, 0);
-             e_win_centered_set(dia->win, 1);
-             e_object_del_attach_func_set(E_OBJECT(dia),
-                                          _e_config_error_dialog_cb_delete);
-             e_dialog_show(dia);
-             _e_config_error_dialog = dia;
-          }
-     }
+   dia = e_dialog_new(NULL, "E", "_sys_error_logout_slow");
+   EINA_SAFETY_ON_NULL_RETURN(dia);
+
+   e_dialog_title_set(dia, _("Enlightenment Settings Write Problems"));
+   e_dialog_icon_set(dia, "dialog-error", 64);
+   snprintf(buf, sizeof(buf),
+            _("Enlightenment has had an error while moving config files<br>"
+              "from:<br>"
+              "%s<br>"
+              "<br>"
+              "to:<br>"
+              "%s<br>"
+              "<br>"
+              "The rest of the write has been aborted for safety.<br>"),
+            from, to);
+   e_dialog_text_set(dia, buf);
+   e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
+   e_dialog_button_focus_num(dia, 0);
+   e_win_centered_set(dia->win, 1);
+   e_object_del_attach_func_set(E_OBJECT(dia),
+                                _e_config_error_dialog_cb_delete);
+   e_dialog_show(dia);
+   _e_config_error_dialog = dia;
 }
 
 EAPI int
@@ -1624,7 +1907,7 @@ e_config_binding_mouse_match(E_Config_Binding_Mouse *eb_in)
    Eina_List *l;
    E_Config_Binding_Mouse *eb;
 
-   EINA_LIST_FOREACH(e_config->mouse_bindings, l, eb)
+   EINA_LIST_FOREACH(e_bindings->mouse_bindings, l, eb)
      {
         if ((eb->context == eb_in->context) &&
             (eb->button == eb_in->button) &&
@@ -1645,7 +1928,7 @@ e_config_binding_key_match(E_Config_Binding_Key *eb_in)
    Eina_List *l;
    E_Config_Binding_Key *eb;
 
-   EINA_LIST_FOREACH(e_config->mouse_bindings, l, eb)
+   EINA_LIST_FOREACH(e_bindings->mouse_bindings, l, eb)
      {
         if ((eb->context == eb_in->context) &&
             (eb->modifiers == eb_in->modifiers) &&
@@ -1667,13 +1950,14 @@ e_config_binding_edge_match(E_Config_Binding_Edge *eb_in)
    Eina_List *l;
    E_Config_Binding_Edge *eb;
 
-   EINA_LIST_FOREACH(e_config->edge_bindings, l, eb)
+   EINA_LIST_FOREACH(e_bindings->edge_bindings, l, eb)
      {
         if ((eb->context == eb_in->context) &&
             (eb->modifiers == eb_in->modifiers) &&
             (eb->any_mod == eb_in->any_mod) &&
             (eb->edge == eb_in->edge) &&
             (eb->delay == eb_in->delay) &&
+            (eb->drag_only == eb_in->drag_only) &&
             (((eb->action) && (eb_in->action) && (!strcmp(eb->action, eb_in->action))) ||
              ((!eb->action) && (!eb_in->action))) &&
             (((eb->params) && (eb_in->params) && (!strcmp(eb->params, eb_in->params))) ||
@@ -1689,7 +1973,7 @@ e_config_binding_signal_match(E_Config_Binding_Signal *eb_in)
    Eina_List *l;
    E_Config_Binding_Signal *eb;
 
-   EINA_LIST_FOREACH(e_config->signal_bindings, l, eb)
+   EINA_LIST_FOREACH(e_bindings->signal_bindings, l, eb)
      {
         if ((eb->context == eb_in->context) &&
             (eb->modifiers == eb_in->modifiers) &&
@@ -1713,7 +1997,7 @@ e_config_binding_wheel_match(E_Config_Binding_Wheel *eb_in)
    Eina_List *l;
    E_Config_Binding_Wheel *eb;
 
-   EINA_LIST_FOREACH(e_config->wheel_bindings, l, eb)
+   EINA_LIST_FOREACH(e_bindings->wheel_bindings, l, eb)
      {
         if ((eb->context == eb_in->context) &&
             (eb->direction == eb_in->direction) &&
@@ -1735,7 +2019,7 @@ e_config_binding_acpi_match(E_Config_Binding_Acpi *eb_in)
    Eina_List *l;
    E_Config_Binding_Acpi *eb;
 
-   EINA_LIST_FOREACH(e_config->acpi_bindings, l, eb)
+   EINA_LIST_FOREACH(e_bindings->acpi_bindings, l, eb)
      {
         if ((eb->context == eb_in->context) &&
             (eb->type == eb_in->type) &&
@@ -1757,6 +2041,76 @@ e_config_mode_changed(void)
    ecore_event_add(E_EVENT_CONFIG_MODE_CHANGED, NULL, NULL, NULL);
 }
 
+EAPI void
+e_config_binding_acpi_free(E_Config_Binding_Acpi *eba)
+{
+   if (!eba) return;
+   eina_stringshare_del(eba->action);
+   eina_stringshare_del(eba->params);
+   free(eba);
+}
+
+EAPI void
+e_config_binding_key_free(E_Config_Binding_Key *ebk)
+{
+   if (!ebk) return;
+   eina_stringshare_del(ebk->key);
+   eina_stringshare_del(ebk->action);
+   eina_stringshare_del(ebk->params);
+   free(ebk);
+}
+
+EAPI void
+e_config_binding_edge_free(E_Config_Binding_Edge *ebe)
+{
+   if (!ebe) return;
+   eina_stringshare_del(ebe->action);
+   eina_stringshare_del(ebe->params);
+   free(ebe);
+}
+
+EAPI void
+e_config_binding_mouse_free(E_Config_Binding_Mouse *ebm)
+{
+   if (!ebm) return;
+   eina_stringshare_del(ebm->action);
+   eina_stringshare_del(ebm->params);
+   free(ebm);
+}
+
+EAPI void
+e_config_binding_wheel_free(E_Config_Binding_Wheel *ebw)
+{
+   if (!ebw) return;
+   eina_stringshare_del(ebw->action);
+   eina_stringshare_del(ebw->params);
+   free(ebw);
+}
+
+EAPI void
+e_config_binding_signal_free(E_Config_Binding_Signal *ebs)
+{
+   if (!ebs) return;
+   eina_stringshare_del(ebs->signal);
+   eina_stringshare_del(ebs->source);
+   eina_stringshare_del(ebs->action);
+   eina_stringshare_del(ebs->params);
+   free(ebs);
+}
+
+EAPI void
+e_config_bindings_free(E_Config_Bindings *ecb)
+{
+   if (!ecb) return;
+   E_FREE_LIST(ecb->mouse_bindings, e_config_binding_mouse_free);
+   E_FREE_LIST(ecb->key_bindings, e_config_binding_key_free);
+   E_FREE_LIST(ecb->edge_bindings, e_config_binding_edge_free);
+   E_FREE_LIST(ecb->signal_bindings, e_config_binding_signal_free);
+   E_FREE_LIST(ecb->wheel_bindings, e_config_binding_wheel_free);
+   E_FREE_LIST(ecb->acpi_bindings, e_config_binding_acpi_free);
+   free(ecb);
+}
+
 /* local subsystem functions */
 static void
 _e_config_save_cb(void *data __UNUSED__)
@@ -1764,29 +2118,24 @@ _e_config_save_cb(void *data __UNUSED__)
    e_config_profile_save();
    e_module_save_all();
    e_config_domain_save("e", _e_config_edd, e_config);
+   e_config_domain_save("e_bindings", _e_config_binding_edd, e_bindings);
    _e_config_save_defer = NULL;
 }
 
 static void
 _e_config_free(E_Config *ecf)
 {
-   E_Config_Binding_Signal *ebs;
-   E_Config_Binding_Mouse *ebm;
-   E_Config_Binding_Wheel *ebw;
    E_Config_Syscon_Action *sca;
-   E_Config_Binding_Key *ebk;
-   E_Config_Binding_Edge *ebe;
-   E_Config_Binding_Acpi *eba;
    E_Font_Fallback *eff;
    E_Config_Module *em;
    E_Font_Default *efd;
-   E_Config_Theme *et;
    E_Color_Class *cc;
    E_Path_Dir *epd;
    E_Remember *rem;
    E_Config_Env_Var *evr;
    E_Config_XKB_Option *op;
    E_Config_Desktop_Window_Profile *wp;
+   E_Int_Menu_Applications *ema;
 
    if (!ecf) return;
 
@@ -1821,51 +2170,6 @@ _e_config_free(E_Config *ecf)
         if (efd->font) eina_stringshare_del(efd->font);
         E_FREE(efd);
      }
-   EINA_LIST_FREE(ecf->themes, et)
-     {
-        if (et->category) eina_stringshare_del(et->category);
-        if (et->file) eina_stringshare_del(et->file);
-        E_FREE(et);
-     }
-   EINA_LIST_FREE(ecf->mouse_bindings, ebm)
-     {
-        if (ebm->action) eina_stringshare_del(ebm->action);
-        if (ebm->params) eina_stringshare_del(ebm->params);
-        E_FREE(ebm);
-     }
-   EINA_LIST_FREE(ecf->key_bindings, ebk)
-     {
-        if (ebk->key) eina_stringshare_del(ebk->key);
-        if (ebk->action) eina_stringshare_del(ebk->action);
-        if (ebk->params) eina_stringshare_del(ebk->params);
-        E_FREE(ebk);
-     }
-   EINA_LIST_FREE(ecf->edge_bindings, ebe)
-     {
-        if (ebe->action) eina_stringshare_del(ebe->action);
-        if (ebe->params) eina_stringshare_del(ebe->params);
-        E_FREE(ebe);
-     }
-   EINA_LIST_FREE(ecf->signal_bindings, ebs)
-     {
-        if (ebs->signal) eina_stringshare_del(ebs->signal);
-        if (ebs->source) eina_stringshare_del(ebs->source);
-        if (ebs->action) eina_stringshare_del(ebs->action);
-        if (ebs->params) eina_stringshare_del(ebs->params);
-        E_FREE(ebs);
-     }
-   EINA_LIST_FREE(ecf->wheel_bindings, ebw)
-     {
-        if (ebw->action) eina_stringshare_del(ebw->action);
-        if (ebw->params) eina_stringshare_del(ebw->params);
-        E_FREE(ebw);
-     }
-   EINA_LIST_FREE(ecf->acpi_bindings, eba)
-     {
-        if (eba->action) eina_stringshare_del(eba->action);
-        if (eba->params) eina_stringshare_del(eba->params);
-        E_FREE(eba);
-     }
    EINA_LIST_FREE(ecf->path_append_data, epd)
      {
         if (epd->dir) eina_stringshare_del(epd->dir);
@@ -1877,11 +2181,6 @@ _e_config_free(E_Config *ecf)
         E_FREE(epd);
      }
    EINA_LIST_FREE(ecf->path_append_fonts, epd)
-     {
-        if (epd->dir) eina_stringshare_del(epd->dir);
-        E_FREE(epd);
-     }
-   EINA_LIST_FREE(ecf->path_append_themes, epd)
      {
         if (epd->dir) eina_stringshare_del(epd->dir);
         E_FREE(epd);
@@ -1921,12 +2220,18 @@ _e_config_free(E_Config *ecf)
         if (rem->prop.command) eina_stringshare_del(rem->prop.command);
         E_FREE(rem);
      }
+   EINA_LIST_FREE(ecf->menu_applications, ema)
+     {
+        if (ema->orig_path) eina_stringshare_del(ema->orig_path);
+        if (ema->try_exec) eina_stringshare_del(ema->try_exec);
+        if (ema->exec) eina_stringshare_del(ema->exec);
+        E_FREE(ema);
+     }
    EINA_LIST_FREE(ecf->color_classes, cc)
      {
         if (cc->name) eina_stringshare_del(cc->name);
         E_FREE(cc);
      }
-   if (ecf->init_default_theme) eina_stringshare_del(ecf->init_default_theme);
    if (ecf->desktop_default_background) eina_stringshare_del(ecf->desktop_default_background);
    if (ecf->desktop_default_name) eina_stringshare_del(ecf->desktop_default_name);
    if (ecf->desktop_default_window_profile) eina_stringshare_del(ecf->desktop_default_window_profile);
@@ -1938,13 +2243,12 @@ _e_config_free(E_Config *ecf)
    e_config_xkb_layout_free(ecf->xkb.current_layout);
    e_config_xkb_layout_free(ecf->xkb.sel_layout);
    e_config_xkb_layout_free(ecf->xkb.lock_layout);
+   eina_stringshare_del(ecf->desk_flip_animate_type);
    if (ecf->transition_start) eina_stringshare_del(ecf->transition_start);
    if (ecf->transition_desk) eina_stringshare_del(ecf->transition_desk);
    if (ecf->transition_change) eina_stringshare_del(ecf->transition_change);
    if (ecf->input_method) eina_stringshare_del(ecf->input_method);
    if (ecf->exebuf_term_cmd) eina_stringshare_del(ecf->exebuf_term_cmd);
-   if (ecf->desklock_personal_passwd) eina_stringshare_del(ecf->desklock_personal_passwd);
-   if (ecf->desklock_background) eina_stringshare_del(ecf->desklock_background);
    if (ecf->icon_theme) eina_stringshare_del(ecf->icon_theme);
    if (ecf->wallpaper_import_last_dev) eina_stringshare_del(ecf->wallpaper_import_last_dev);
    if (ecf->wallpaper_import_last_path) eina_stringshare_del(ecf->wallpaper_import_last_path);
@@ -2082,8 +2386,7 @@ _e_config_eet_close_handle(Eet_File *ef, char *file)
           {
              E_Dialog *dia;
 
-             dia = e_dialog_new(e_container_current_get(e_manager_current_get()),
-                                "E", "_sys_error_logout_slow");
+             dia = e_dialog_new(NULL, "E", "_sys_error_logout_slow");
              if (dia)
                {
                   char buf[8192];
@@ -2114,3 +2417,4 @@ _e_config_eet_close_handle(Eet_File *ef, char *file)
      }
    return 1;
 }
+

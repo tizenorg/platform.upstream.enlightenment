@@ -9,14 +9,15 @@ static int          _basic_check_changed(E_Config_Dialog *cfd, E_Config_Dialog_D
 static Evas_Object *_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata);
 
 static void         _cb_method_change(void *data, Evas_Object *obj, void *event_info);
+static void         _login_method_change(void *data, Evas_Object *obj, void *event_info);
 static void         _cb_login_change(void *data, Evas_Object *obj);
 static int          _zone_count_get(void);
 
 static void         _cb_bg_mouse_down(void *data, Evas *evas, Evas_Object *obj, void *event);
-static void         _cb_ask_presentation_changed(void *data, Evas_Object *obj);
 
 struct _E_Config_Dialog_Data
 {
+   Evas_Object *lock_cmd_entry, *passwd_entry, *pin_entry;
    E_Config_Dialog *cfd, *bg_fsel;
 
    /* Common vars */
@@ -27,9 +28,11 @@ struct _E_Config_Dialog_Data
    int              start_locked;
    int              lock_on_suspend;
    int              auto_lock;
-   int              locking_method;
+   int              desklock_auth_method;
    int              login_zone;
    int              zone;
+   char            *desklock_personal_passwd;
+   char            *pin_str;
    char            *custom_lock_cmd;
 
    /* Layout */
@@ -44,7 +47,6 @@ struct _E_Config_Dialog_Data
    E_Desklock_Background_Method bg_method;
    int              bg_method_prev;
    Eina_List       *bgs;
-   int              custom_lock;
    int              ask_presentation;
    double           ask_presentation_timeout;
 
@@ -52,16 +54,14 @@ struct _E_Config_Dialog_Data
    {
       Evas_Object *kbd_list;
       Evas_Object *loginbox_slider;
-      Evas_Object *post_screensaver_slider;
       Evas_Object *auto_lock_slider;
-      Evas_Object *ask_presentation_slider;
       Evas_Object *o_table;
       Eina_List *bgs;
    } gui;
 };
 
 E_Config_Dialog *
-e_int_config_desklock(E_Container *con, const char *params __UNUSED__)
+e_int_config_desklock(E_Comp *comp, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -77,29 +77,52 @@ e_int_config_desklock(E_Container *con, const char *params __UNUSED__)
    v->basic.check_changed = _basic_check_changed;
    v->override_auto_apply = 1;
 
-   cfd = e_config_dialog_new(con, _("Screen Lock Settings"), "E",
+   cfd = e_config_dialog_new(comp, _("Screen Lock Settings"), "E",
                              "screen/screen_lock", "preferences-system-lock-screen",
                              0, v, NULL);
    return cfd;
 }
 
 void
-e_int_config_desklock_fsel_done(E_Config_Dialog *cfd, Evas_Object *bg, const char *bg_file)
+e_int_config_desklock_fsel_done(E_Config_Dialog *cfd, Evas_Object *bg, const char *bg_file, Eina_Bool hide_logo)
 {
    E_Config_Dialog_Data *cfdata;
    Eina_List *l;
-   const char *cbg;
+   E_Config_Desklock_Background *cbg;
+   Eina_Stringshare *bg_name;
+   Evas_Object *o;
+   unsigned int n = 0;
 
    if (!(cfdata = cfd->cfdata)) return;
    cfdata->bg_fsel = NULL;
    if (!bg_file) return;
-   e_widget_preview_file_get(bg, &cbg, NULL);
-   l = eina_list_data_find_list(cfdata->bgs, cbg);
-   if (l && l->data)
-     eina_stringshare_replace((const char**)&l->data, bg_file);
-   else
-     eina_list_data_set(l, eina_stringshare_add(bg_file));
+   e_widget_preview_file_get(bg, &bg_name, NULL);
+   EINA_LIST_FOREACH(cfdata->gui.bgs, l, o)
+     {
+        if (o == bg) break;
+        n++;
+     }
+   cbg = eina_list_nth(cfdata->bgs, n);
+   if (!cbg) return; //wtf
+   eina_stringshare_replace(&cbg->file, bg_file);
+   cbg->hide_logo = hide_logo;
    e_widget_preview_edje_set(bg, bg_file, "e/desktop/background");
+}
+
+static E_Config_Desklock_Background *
+desklock_bg_dup(const E_Config_Desklock_Background *cbg, const char *str)
+{
+   E_Config_Desklock_Background *ret;
+
+   ret = E_NEW(E_Config_Desklock_Background, 1);
+   if (cbg)
+     {
+        ret->file = eina_stringshare_ref(cbg->file);
+        ret->hide_logo = cbg->hide_logo;
+     }
+   else
+     ret->file = eina_stringshare_add(str);
+   return ret;
 }
 
 static void
@@ -111,24 +134,27 @@ _fill_data(E_Config_Dialog_Data *cfdata)
 
    cfdata->zone_count = _zone_count_get();
    EINA_LIST_FOREACH(e_config->desklock_backgrounds, l, bg)
-     cfdata->bgs = eina_list_append(cfdata->bgs, eina_stringshare_ref(bg->file));
+     cfdata->bgs = eina_list_append(cfdata->bgs, desklock_bg_dup(bg, NULL));
    if (!cfdata->bgs)
      for (x = 0; x < cfdata->zone_count; x++)
-     cfdata->bgs = eina_list_append(cfdata->bgs, eina_stringshare_add("theme_desklock_background"));
+       cfdata->bgs = eina_list_append(cfdata->bgs, desklock_bg_dup(NULL, "theme_desklock_background"));
 
-   if (!e_util_strcmp(eina_list_data_get(cfdata->bgs), "theme_desklock_background"))
+   bg = eina_list_data_get(cfdata->bgs);
+   if (!e_util_strcmp(bg->file, "theme_desklock_background"))
      cfdata->bg_method = E_DESKLOCK_BACKGROUND_METHOD_THEME_DESKLOCK;
-   else if (!e_util_strcmp(eina_list_data_get(cfdata->bgs), "theme_background"))
+   else if (!e_util_strcmp(bg->file, "theme_background"))
      cfdata->bg_method = E_DESKLOCK_BACKGROUND_METHOD_THEME;
-   else if (!e_util_strcmp(eina_list_data_get(cfdata->bgs), "user_background"))
+   else if (!e_util_strcmp(bg->file, "user_background"))
      cfdata->bg_method = E_DESKLOCK_BACKGROUND_METHOD_WALLPAPER;
    else
      cfdata->bg_method = E_DESKLOCK_BACKGROUND_METHOD_CUSTOM;
 
    cfdata->bg_method_prev = cfdata->bg_method;
+#ifndef HAVE_WAYLAND_ONLY
    cfdata->use_xscreensaver = ecore_x_screensaver_event_available_get();
+#endif
 
-   cfdata->custom_lock = e_config->desklock_use_custom_desklock;
+   cfdata->desklock_auth_method = e_config->desklock_auth_method;
    if (e_config->desklock_custom_desklock_cmd)
      cfdata->custom_lock_cmd = strdup(e_config->desklock_custom_desklock_cmd);
 
@@ -169,35 +195,18 @@ _create_data(E_Config_Dialog *cfd)
 static void
 _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 {
-   const char *bg;
+   E_Config_Desklock_Background *bg;
    if (cfdata->bg_fsel)
      e_object_del(E_OBJECT(cfdata->bg_fsel));
    E_FREE(cfdata->custom_lock_cmd);
+   E_FREE(cfdata->desklock_personal_passwd);
+   E_FREE(cfdata->pin_str);
    EINA_LIST_FREE(cfdata->bgs, bg)
-     eina_stringshare_del(bg);
-   E_FREE(cfdata);
-}
-
-static void
-_basic_auto_lock_cb_changed(void *data, Evas_Object *o __UNUSED__)
-{
-   E_Config_Dialog_Data *cfdata;
-   int disable;
-
-   if (!(cfdata = data)) return;
-   disable = ((!cfdata->use_xscreensaver) || (!cfdata->auto_lock));
-   e_widget_disabled_set(cfdata->gui.auto_lock_slider, disable);
-}
-
-static void
-_basic_screensaver_lock_cb_changed(void *data, Evas_Object *o __UNUSED__)
-{
-   E_Config_Dialog_Data *cfdata;
-   int disable;
-
-   if (!(cfdata = data)) return;
-   disable = ((!cfdata->use_xscreensaver) || (!cfdata->screensaver_lock));
-   e_widget_disabled_set(cfdata->gui.post_screensaver_slider, disable);
+     {
+        eina_stringshare_del(bg->file);
+        free(bg);
+     }
+   free(cfdata);
 }
 
 static Evas_Object *
@@ -205,15 +214,14 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
 {
    E_Config_XKB_Layout *cl;
    int grp = 0;
-   Evas_Object *otb, *ol, *ow, *of, *ot;
-   Eina_List *l, *ll, *lll;
+   Evas_Object *otb, *ol, *ow, *of, *ot, *oc;
+   const Eina_List *l, *ll;
    E_Zone *zone;
    E_Radio_Group *rg;
-   E_Manager *man;
-   E_Container *con;
+   E_Comp *comp;
    int screen_count, x = 0;
 
-   screen_count = ecore_x_xinerama_screen_count_get();
+   screen_count = eina_list_count(e_xinerama_screens_get());
 
    otb = e_widget_toolbook_add(evas, (24 * e_scale), (24 * e_scale));
 
@@ -226,12 +234,43 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    e_widget_disabled_set(ow, !cfdata->use_xscreensaver);
    e_widget_list_object_append(ol, ow, 1, 1, 0.5);
 
-   of = e_widget_framelist_add(evas, _("Custom Screenlock Command"), 0);
-   ow = e_widget_entry_add(evas, &(cfdata->custom_lock_cmd), NULL, NULL, NULL);
+   rg = e_widget_radio_group_new(&(cfdata->desklock_auth_method));
+   ow = e_widget_radio_add(evas, _("Use System Authentication"), E_DESKLOCK_AUTH_METHOD_SYSTEM, rg);
+   evas_object_smart_callback_add(ow, "changed", _login_method_change, cfdata);
+   e_widget_list_object_append(ol, ow, 1, 1, 0.5);
+   ow = e_widget_radio_add(evas, _("Use Personal Screenlock Password"), E_DESKLOCK_AUTH_METHOD_PERSONAL, rg);
+   evas_object_smart_callback_add(ow, "changed", _login_method_change, cfdata);
+   e_widget_list_object_append(ol, ow, 1, 1, 0.5);
+   ow = e_widget_radio_add(evas, _("Use PIN"), E_DESKLOCK_AUTH_METHOD_PIN, rg);
+   evas_object_smart_callback_add(ow, "changed", _login_method_change, cfdata);
+   e_widget_list_object_append(ol, ow, 1, 1, 0.5);
+   ow = e_widget_radio_add(evas, _("Use External Screenlock Command"), E_DESKLOCK_AUTH_METHOD_EXTERNAL, rg);
+   evas_object_smart_callback_add(ow, "changed", _login_method_change, cfdata);
+   e_widget_list_object_append(ol, ow, 1, 1, 0.5);
+
+   of = e_widget_framelist_add(evas, _("Personal Screenlock Password"), 0);
+   cfdata->passwd_entry = ow = e_widget_entry_add(evas, &(cfdata->desklock_personal_passwd), NULL, NULL, NULL);
+   e_widget_entry_password_set(ow, 1);
+   e_widget_framelist_object_append(of, ow);
+   e_widget_list_object_append(ol, of, 1, 1, 0.5);
+
+   of = e_widget_framelist_add(evas, _("PIN Entry"), 0);
+   cfdata->pin_entry = ow = e_widget_entry_add(evas, &(cfdata->pin_str), NULL, NULL, NULL);
+   e_widget_entry_password_set(ow, 1);
+   e_widget_framelist_object_append(of, ow);
+   e_widget_list_object_append(ol, of, 1, 1, 0.5);
+
+   of = e_widget_framelist_add(evas, _("External Screenlock Command"), 0);
+   cfdata->lock_cmd_entry = ow = e_widget_entry_add(evas, &(cfdata->custom_lock_cmd), NULL, NULL, NULL);
    e_widget_framelist_object_append(of, ow);
 
-   ow = e_widget_check_add(evas, _("Use Custom Screenlock Command"), &cfdata->custom_lock);
-   e_widget_framelist_object_append(of, ow);
+   e_widget_disabled_set(cfdata->passwd_entry,
+     (cfdata->desklock_auth_method != E_DESKLOCK_AUTH_METHOD_PERSONAL));
+   e_widget_disabled_set(cfdata->pin_entry,
+     (cfdata->desklock_auth_method != E_DESKLOCK_AUTH_METHOD_PIN));
+   e_widget_disabled_set(cfdata->lock_cmd_entry,
+     (cfdata->desklock_auth_method != E_DESKLOCK_AUTH_METHOD_EXTERNAL));
+
    e_widget_list_object_append(ol, of, 1, 1, 0.5);
    e_widget_toolbook_page_append(otb, NULL, _("Locking"), ol,
                                  1, 0, 1, 0, 0.5, 0.0);
@@ -306,41 +345,37 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
 
    /* Timers */
    ol = e_widget_list_add(evas, 0, 0);
-   ow = e_widget_check_add(evas, _("Lock after X screensaver activates"),
+   oc = e_widget_check_add(evas, _("Lock after X screensaver activates"),
                            &cfdata->screensaver_lock);
-   e_widget_on_change_hook_set(ow, _basic_screensaver_lock_cb_changed, cfdata);
-   e_widget_disabled_set(ow, !cfdata->use_xscreensaver);
-   e_widget_list_object_append(ol, ow, 1, 1, 0.5);
+   e_widget_disabled_set(oc, !cfdata->use_xscreensaver);
+   e_widget_list_object_append(ol, oc, 1, 1, 0.5);
 
    ow = e_widget_slider_add(evas, 1, 0, _("%1.0f seconds"), 0.0, 300.0, 10.0, 0,
                             &(cfdata->post_screensaver_time), NULL, 100);
-   cfdata->gui.post_screensaver_slider = ow;
    e_widget_disabled_set(ow, !cfdata->use_xscreensaver);
+   if (cfdata->use_xscreensaver)
+     e_widget_check_widget_disable_on_unchecked_add(oc, ow);
    e_widget_list_object_append(ol, ow, 1, 1, 0.5);
 
-   ow = e_widget_check_add(evas, _("Lock when idle time exceeded"),
+   oc = e_widget_check_add(evas, _("Lock when idle time exceeded"),
                            &cfdata->auto_lock);
-   e_widget_on_change_hook_set(ow, _basic_auto_lock_cb_changed, cfdata);
-   e_widget_list_object_append(ol, ow, 1, 1, 0.5);
+   e_widget_list_object_append(ol, oc, 1, 1, 0.5);
 
    ow = e_widget_slider_add(evas, 1, 0, _("%1.0f minutes"), 1.0, 90.0, 1.0, 0,
                             &(cfdata->idle_time), NULL, 100);
-   cfdata->gui.auto_lock_slider = ow;
-   e_widget_disabled_set(ow, !cfdata->use_xscreensaver);
+   e_widget_check_widget_disable_on_unchecked_add(oc, ow);
    e_widget_list_object_append(ol, ow, 1, 1, 0.5);
    e_widget_toolbook_page_append(otb, NULL, _("Timers"), ol,
                                  1, 0, 1, 0, 0.5, 0.0);
 
    /* Presentation */
    ol = e_widget_list_add(evas, 0, 0);
-   ow = e_widget_check_add(evas, _("Suggest if deactivated before"),
+   oc = e_widget_check_add(evas, _("Suggest if deactivated before"),
                            &(cfdata->ask_presentation));
-   e_widget_on_change_hook_set(ow, _cb_ask_presentation_changed, cfdata);
-   e_widget_list_object_append(ol, ow, 1, 1, 0.5);
+   e_widget_list_object_append(ol, oc, 1, 1, 0.5);
    ow = e_widget_slider_add(evas, 1, 0, _("%1.0f seconds"), 1.0, 300.0, 10.0, 0,
                             &(cfdata->ask_presentation_timeout), NULL, 100);
-   cfdata->gui.ask_presentation_slider = ow;
-   e_widget_disabled_set(ow, (!cfdata->ask_presentation));
+   e_widget_check_widget_disable_on_unchecked_add(oc, ow);
    e_widget_list_object_append(ol, ow, 1, 1, 0.5);
    e_widget_toolbook_page_append(otb, NULL, _("Presentation Mode"), ol,
                                  1, 0, 1, 0, 0.5, 0.0);
@@ -369,27 +404,23 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
 
    cfdata->gui.o_table = ot = e_widget_table_add(evas, 1);
 
-   EINA_LIST_FOREACH(e_manager_list(), l, man)
-     EINA_LIST_FOREACH(man->containers, ll, con)
-       EINA_LIST_FOREACH(con->zones, lll, zone)
-         {
-            ow = e_widget_preview_add(evas, 100, 140);
-            cfdata->gui.bgs = eina_list_append(cfdata->gui.bgs, ow);
-            evas_object_data_set(ow, "zone", zone);
-            e_widget_disabled_set(ow,
-              (cfdata->bg_method < E_DESKLOCK_BACKGROUND_METHOD_CUSTOM));
-            evas_object_event_callback_add(ow, EVAS_CALLBACK_MOUSE_DOWN, _cb_bg_mouse_down, cfdata);
-            e_widget_table_object_append(cfdata->gui.o_table, ow, x++, 0, 1, 1, 1, 1, 1, 1);
-         }
+   EINA_LIST_FOREACH(e_comp_list(), l, comp)
+     EINA_LIST_FOREACH(comp->zones, ll, zone)
+       {
+          ow = e_widget_preview_add(evas, 100, 140);
+          cfdata->gui.bgs = eina_list_append(cfdata->gui.bgs, ow);
+          evas_object_data_set(ow, "zone", zone);
+          e_widget_disabled_set(ow,
+            (cfdata->bg_method < E_DESKLOCK_BACKGROUND_METHOD_CUSTOM));
+          evas_object_event_callback_add(ow, EVAS_CALLBACK_MOUSE_DOWN, _cb_bg_mouse_down, cfdata);
+          e_widget_table_object_append(cfdata->gui.o_table, ow, x++, 0, 1, 1, 1, 1, 1, 1);
+       }
    _cb_method_change(cfdata, NULL, NULL);
    e_widget_list_object_append(ol, cfdata->gui.o_table, 1, 1, 0.5);
    e_widget_toolbook_page_append(otb, NULL, _("Wallpaper"), ol,
                                  1, 0, 1, 0, 0.5, 0.0);
 
    e_widget_toolbook_page_show(otb, 0);
-
-   _basic_auto_lock_cb_changed(cfdata, NULL);
-   _basic_screensaver_lock_cb_changed(cfdata, NULL);
 
    return otb;
 }
@@ -398,9 +429,33 @@ static int
 _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 {
    const Eina_List *l;
-   const char *bg;
    E_Config_Desklock_Background *cbg;
 
+   e_config->desklock_auth_method = cfdata->desklock_auth_method;
+   if (e_config->desklock_auth_method == E_DESKLOCK_AUTH_METHOD_PERSONAL)
+     {
+        e_config->desklock_passwd =
+          eina_hash_djb2(cfdata->desklock_personal_passwd,
+          strlen(cfdata->desklock_personal_passwd));
+     }
+   else if (cfdata->desklock_auth_method == E_DESKLOCK_AUTH_METHOD_PIN)
+     {
+        if (cfdata->pin_str && cfdata->pin_str[0])
+          {
+             int test;
+             char *pp;
+
+             errno = 0;
+             test = strtol(cfdata->pin_str, &pp, 10);
+             if (errno) return 0; //NAN
+             if (pp && pp[0]) return 0;
+             if (test < 1) return 0;
+             e_config->desklock_pin = eina_hash_djb2(cfdata->pin_str, strlen(cfdata->pin_str));
+          }
+        else
+          /* dumb, but let them do what they want... */
+          e_config->desklock_pin = 0;
+     }
    e_config->desklock_start_locked = cfdata->start_locked;
    e_config->desklock_on_suspend = cfdata->lock_on_suspend;
    e_config->desklock_autolock_idle = cfdata->auto_lock;
@@ -434,12 +489,10 @@ _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
              eina_stringshare_del(cbg->file);
              free(cbg);
           }
-        EINA_LIST_FOREACH(cfdata->bgs, l, bg)
+        EINA_LIST_FOREACH(cfdata->bgs, l, cbg)
           {
-             cbg = E_NEW(E_Config_Desklock_Background, 1);
-             cbg->file = eina_stringshare_ref(bg);
-             e_config->desklock_backgrounds = eina_list_append(e_config->desklock_backgrounds, cbg);
-             e_filereg_register(bg);
+             e_config->desklock_backgrounds = eina_list_append(e_config->desklock_backgrounds, desklock_bg_dup(cbg, NULL));
+             e_filereg_register(cbg->file);
           }
      }
 
@@ -448,7 +501,6 @@ _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
    else
      e_config->desklock_login_box_zone = cfdata->zone;
 
-   e_config->desklock_use_custom_desklock = cfdata->custom_lock;
    if (cfdata->custom_lock_cmd)
      eina_stringshare_replace(&e_config->desklock_custom_desklock_cmd,
                               cfdata->custom_lock_cmd);
@@ -476,6 +528,23 @@ _basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfda
    if (e_config->desklock_autolock_idle != cfdata->auto_lock)
      return 1;
 
+   if (e_config->desklock_auth_method != cfdata->desklock_auth_method)
+     return 1;
+   if (e_config->desklock_auth_method == E_DESKLOCK_AUTH_METHOD_PERSONAL)
+     {
+        if (e_config->desklock_passwd !=
+          eina_hash_djb2(cfdata->desklock_personal_passwd,
+          strlen(cfdata->desklock_personal_passwd)))
+          return 1;
+     }
+   if (e_config->desklock_auth_method == E_DESKLOCK_AUTH_METHOD_PIN)
+     {
+        if (e_config->desklock_pin !=
+          eina_hash_djb2(cfdata->pin_str,
+          strlen(cfdata->pin_str)))
+          return 1;
+     }
+
    if (e_config->desklock_autolock_screensaver != cfdata->screensaver_lock)
      return 1;
 
@@ -490,9 +559,11 @@ _basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfda
    ll = cfdata->bgs;
    EINA_LIST_FOREACH(e_config->desklock_backgrounds, l, cbg)
      {
-        if (!ll) return 1;
-        if (cbg->file != ll->data) return 1;
-        ll = ll->next;
+        E_Config_Desklock_Background *cbg2 = eina_list_data_get(ll);
+        if (!cbg2) return 1;
+        if (cbg->file != cbg2->file) return 1;
+        if (cbg->hide_logo != cbg2->hide_logo) return 1;
+        ll = eina_list_next(ll);
      }
 
    if (cfdata->login_zone < 0)
@@ -505,9 +576,6 @@ _basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfda
         if (e_config->desklock_login_box_zone != cfdata->zone)
           return 1;
      }
-
-   if (e_config->desklock_use_custom_desklock != cfdata->custom_lock)
-     return 1;
 
    if (e_config->desklock_custom_desklock_cmd && cfdata->custom_lock_cmd)
      {
@@ -529,6 +597,7 @@ _cb_method_change(void *data, Evas_Object *obj __UNUSED__, void *event_info __UN
    Evas_Object *bg;
    const char *theme = NULL;
    int x;
+   E_Config_Desklock_Background *cbg;
 
    if (!(cfdata = data)) return;
    EINA_LIST_FOREACH(cfdata->gui.bgs, l, bg)
@@ -538,10 +607,13 @@ _cb_method_change(void *data, Evas_Object *obj __UNUSED__, void *event_info __UN
    switch (cfdata->bg_method)
      {
       case E_DESKLOCK_BACKGROUND_METHOD_THEME_DESKLOCK:
-        EINA_LIST_FREE(cfdata->bgs, theme)
-          eina_stringshare_del(theme);
+        EINA_LIST_FREE(cfdata->bgs, cbg)
+          {
+             eina_stringshare_del(cbg->file);
+             free(cbg);
+          }
         for (x = 0; x < cfdata->zone_count; x++)
-          cfdata->bgs = eina_list_append(cfdata->bgs, eina_stringshare_add("theme_desklock_background"));
+          cfdata->bgs = eina_list_append(cfdata->bgs, desklock_bg_dup(NULL, "theme_desklock_background"));
         theme = e_theme_edje_file_get("base/theme/desklock",
                                       "e/desklock/background");
         if (theme)
@@ -556,10 +628,13 @@ _cb_method_change(void *data, Evas_Object *obj __UNUSED__, void *event_info __UN
           {
              EINA_LIST_FOREACH(cfdata->gui.bgs, l, bg)
                e_widget_preview_edje_set(bg, theme, "e/desktop/background");
-             EINA_LIST_FREE(cfdata->bgs, theme)
-               eina_stringshare_del(theme);
+             EINA_LIST_FREE(cfdata->bgs, cbg)
+               {
+                  eina_stringshare_del(cbg->file);
+                  free(cbg);
+               }
              for (x = 0; x < cfdata->zone_count; x++)
-               cfdata->bgs = eina_list_append(cfdata->bgs, eina_stringshare_add("theme_background"));
+               cfdata->bgs = eina_list_append(cfdata->bgs, desklock_bg_dup(NULL, "theme_background"));
           }
         break;
 
@@ -572,25 +647,23 @@ _cb_method_change(void *data, Evas_Object *obj __UNUSED__, void *event_info __UN
                {
                   EINA_LIST_FOREACH(cfdata->gui.bgs, l, bg)
                     e_widget_preview_edje_set(bg, e_config->desktop_default_background, "e/desktop/background");
-                  EINA_LIST_FREE(cfdata->bgs, theme)
-                    eina_stringshare_del(theme);
+                  EINA_LIST_FREE(cfdata->bgs, cbg)
+                    {
+                       eina_stringshare_del(cbg->file);
+                       free(cbg);
+                    }
                   for (y = 0; y < cfdata->zone_count; y++)
-                    cfdata->bgs = eina_list_append(cfdata->bgs, eina_stringshare_add("user_background"));
+                    cfdata->bgs = eina_list_append(cfdata->bgs, desklock_bg_dup(NULL, "user_background"));
                }
              /* attempt to set wallpaper from desktop 0,0 on each zone as a desklock bg */
              EINA_LIST_FOREACH(e_config->desktop_backgrounds, l, cdb)
                if ((!cdb->desk_x) && (!cdb->desk_y))
                  {
-                    Eina_List *ll;
-                    ll = eina_list_nth_list(cfdata->bgs, cdb->zone);
-                    if (ll)
-                      {
-                         theme = eina_list_data_get(ll);
-                         eina_stringshare_replace(&theme, cdb->file);
-                         eina_list_data_set(ll, theme);
-                      }
+                    cbg = eina_list_nth(cfdata->bgs, cdb->zone);
+                    if (cbg)
+                      eina_stringshare_refplace(&cbg->file, cdb->file);
                     else
-                      cfdata->bgs = eina_list_append(cfdata->bgs, cdb->file);
+                      cfdata->bgs = eina_list_append(cfdata->bgs, desklock_bg_dup(NULL, cdb->file));
                     bg = eina_list_nth(cfdata->gui.bgs, cdb->zone);
                     if (bg)
                       e_widget_preview_edje_set(bg, cdb->file, "e/desktop/background");
@@ -600,26 +673,31 @@ _cb_method_change(void *data, Evas_Object *obj __UNUSED__, void *event_info __UN
           {
              EINA_LIST_FOREACH(cfdata->gui.bgs, l, bg)
                e_widget_preview_edje_set(bg, e_config->desktop_default_background, "e/desktop/background");
-             EINA_LIST_FREE(cfdata->bgs, theme)
-               eina_stringshare_del(theme);
+             EINA_LIST_FREE(cfdata->bgs, cbg)
+               {
+                  eina_stringshare_del(cbg->file);
+                  free(cbg);
+               }
              for (x = 0; x < cfdata->zone_count; x++)
-               cfdata->bgs = eina_list_append(cfdata->bgs, eina_stringshare_add("user_background"));
+               cfdata->bgs = eina_list_append(cfdata->bgs, desklock_bg_dup(NULL, "user_background"));
           }
         break;
 
       case E_DESKLOCK_BACKGROUND_METHOD_CUSTOM:
         {
              Eina_List *ll;
-             E_Config_Desklock_Background *cbg;
 
-             EINA_LIST_FREE(cfdata->bgs, theme)
-               eina_stringshare_del(theme);
+             EINA_LIST_FREE(cfdata->bgs, cbg)
+               {
+                  eina_stringshare_del(cbg->file);
+                  free(cbg);
+               }
              ll = cfdata->gui.bgs;
              EINA_LIST_FOREACH(e_config->desklock_backgrounds, l, cbg)
                {
                   if (!ll) break;
                   e_widget_preview_edje_set(ll->data, cbg->file, "e/desktop/background");
-                  cfdata->bgs = eina_list_append(cfdata->bgs, eina_stringshare_ref(cbg->file));
+                  cfdata->bgs = eina_list_append(cfdata->bgs, desklock_bg_dup(cbg, NULL));
                   ll = ll->next;
                }
         }
@@ -627,6 +705,34 @@ _cb_method_change(void *data, Evas_Object *obj __UNUSED__, void *event_info __UN
 
       default:
         break;
+     }
+}
+
+static void
+_login_method_change(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   E_Config_Dialog_Data *cfdata = data;
+
+   e_widget_disabled_set(cfdata->passwd_entry,
+     (cfdata->desklock_auth_method != E_DESKLOCK_AUTH_METHOD_PERSONAL));
+   if (!e_widget_disabled_get(cfdata->passwd_entry))
+     {
+        e_widget_entry_select_all(cfdata->passwd_entry);
+        e_widget_focus_set(cfdata->passwd_entry, 1);
+     }
+   e_widget_disabled_set(cfdata->pin_entry,
+     (cfdata->desklock_auth_method != E_DESKLOCK_AUTH_METHOD_PIN));
+   if (!e_widget_disabled_get(cfdata->pin_entry))
+     {
+        e_widget_entry_select_all(cfdata->pin_entry);
+        e_widget_focus_set(cfdata->pin_entry, 1);
+     }
+   e_widget_disabled_set(cfdata->lock_cmd_entry,
+     (cfdata->desklock_auth_method != E_DESKLOCK_AUTH_METHOD_EXTERNAL));
+   if (!e_widget_disabled_get(cfdata->lock_cmd_entry))
+     {
+        e_widget_entry_select_all(cfdata->lock_cmd_entry);
+        e_widget_focus_set(cfdata->lock_cmd_entry, 1);
      }
 }
 
@@ -643,17 +749,11 @@ static int
 _zone_count_get(void)
 {
    int num = 0;
-   E_Manager *m;
-   Eina_List *ml;
+   const Eina_List *l;
+   E_Comp *comp;
 
-   EINA_LIST_FOREACH(e_manager_list(), ml, m)
-     {
-        Eina_List *cl;
-        E_Container *con;
-
-        EINA_LIST_FOREACH(m->containers, cl, con)
-          num += eina_list_count(con->zones);
-     }
+   EINA_LIST_FOREACH(e_comp_list(), l, comp)
+     num += eina_list_count(comp->zones);
    return num;
 }
 
@@ -668,16 +768,5 @@ _cb_bg_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj, void *eve
      e_win_raise(cfdata->bg_fsel->dia->win);
    else
      cfdata->bg_fsel = e_int_config_desklock_fsel(cfdata->cfd, obj);
-}
-
-static void
-_cb_ask_presentation_changed(void *data, Evas_Object *obj __UNUSED__)
-{
-   E_Config_Dialog_Data *cfdata;
-   Eina_Bool disable;
-
-   if (!(cfdata = data)) return;
-   disable = (!cfdata->ask_presentation);
-   e_widget_disabled_set(cfdata->gui.ask_presentation_slider, disable);
 }
 

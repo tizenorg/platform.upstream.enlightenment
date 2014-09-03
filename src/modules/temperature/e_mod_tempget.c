@@ -10,7 +10,7 @@ _temperature_cb_exe_data(void *data, __UNUSED__ int type, void *event)
 
    ev = event;
    inst = data;
-   if (ev->exe != inst->tempget_exe) return ECORE_CALLBACK_PASS_ON;
+   if ((!inst->tempget_exe) || (ev->exe != inst->tempget_exe)) return ECORE_CALLBACK_PASS_ON;
    temp = -999;
    if ((ev->lines) && (ev->lines[0].line))
      {
@@ -35,7 +35,7 @@ _temperature_cb_exe_data(void *data, __UNUSED__ int type, void *event)
           {
              /* enable therm object */
              edje_object_signal_emit(inst->o_temp, "e,state,known", "");
-             inst->have_temp = 1;
+             inst->have_temp = EINA_TRUE;
           }
 
         if (inst->units == FAHRENHEIT) 
@@ -56,7 +56,7 @@ _temperature_cb_exe_data(void *data, __UNUSED__ int type, void *event)
              edje_object_signal_emit(inst->o_temp, "e,state,unknown", "");
              edje_object_part_text_set(inst->o_temp, "e.text.reading", "N/A");
              _temperature_face_level_set(inst, 0.5);
-             inst->have_temp = 0;
+             inst->have_temp = EINA_FALSE;
           }
      }
    return ECORE_CALLBACK_DONE;
@@ -70,7 +70,7 @@ _temperature_cb_exe_del(void *data, __UNUSED__ int type, void *event)
 
    ev = event;
    inst = data;
-   if (ev->exe != inst->tempget_exe) return ECORE_CALLBACK_PASS_ON;
+   if ((!inst->tempget_exe) || (ev->exe != inst->tempget_exe)) return ECORE_CALLBACK_PASS_ON;
    inst->tempget_exe = NULL;
    return ECORE_CALLBACK_DONE;
 }

@@ -7,6 +7,8 @@ struct _E_Config_Dialog_Data
    int               show_label, eap_label;
    int               lock_move;
    int               track_launch;
+   int               dont_add_nonorder;
+   int               icon_menu_mouseover;
 
    Evas_Object      *tlist;
    Evas_Object      *radio_name;
@@ -50,7 +52,7 @@ _config_ibar_module(Config_Item *ci)
             e_module_dir_get(ibar_config->module));
 
    /* Create The Dialog */
-   cfd = e_config_dialog_new(e_container_current_get(e_manager_current_get()),
+   cfd = e_config_dialog_new(NULL,
                              _("IBar Settings"),
                              "E", "_e_mod_ibar_config_dialog",
                              buf, 0, v, ci);
@@ -67,7 +69,9 @@ _fill_data(Config_Item *ci, E_Config_Dialog_Data *cfdata)
    cfdata->show_label = ci->show_label;
    cfdata->eap_label = ci->eap_label;
    cfdata->lock_move = ci->lock_move;
+   cfdata->dont_add_nonorder = ci->dont_add_nonorder;
    cfdata->track_launch = !ci->dont_track_launch;
+   cfdata->icon_menu_mouseover = !ci->dont_icon_menu_mouseover;
 }
 
 static void *
@@ -144,7 +148,11 @@ _basic_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dial
    of = e_widget_framelist_add(evas, _("Misc"), 0);
    ob = e_widget_check_add(evas, _("Lock icon move"), &(cfdata->lock_move));
    e_widget_framelist_object_append(of, ob);
+   ob = e_widget_check_add(evas, _("Don't add items on launch"), &(cfdata->dont_add_nonorder));
+   e_widget_framelist_object_append(of, ob);
    ob = e_widget_check_add(evas, _("Track launch"), &(cfdata->track_launch));
+   e_widget_framelist_object_append(of, ob);
+   ob = e_widget_check_add(evas, _("Menu on mouse over"), &(cfdata->icon_menu_mouseover));
    e_widget_framelist_object_append(of, ob);
 
    e_widget_list_object_append(o, of, 1, 1, 0.5);
@@ -164,7 +172,9 @@ _basic_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
    ci->show_label = cfdata->show_label;
    ci->eap_label = cfdata->eap_label;
    ci->lock_move = cfdata->lock_move;
+   ci->dont_add_nonorder = cfdata->dont_add_nonorder;
    ci->dont_track_launch = !cfdata->track_launch;
+   ci->dont_icon_menu_mouseover = !cfdata->icon_menu_mouseover;
    _ibar_config_update(ci);
    e_config_save_queue();
    return 1;
@@ -212,8 +222,7 @@ _cb_config(void *data, void *data2 __UNUSED__)
    e_user_dir_snprintf(path, sizeof(path), "applications/bar/%s/.order",
                        cfdata->dir);
    e_configure_registry_call("internal/ibar_other",
-                             e_container_current_get(e_manager_current_get()),
-                             path);
+                             NULL, path);
 }
 
 static void

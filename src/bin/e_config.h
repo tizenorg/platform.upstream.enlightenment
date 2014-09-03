@@ -4,7 +4,6 @@
 
 typedef struct _E_Config                    E_Config;
 typedef struct _E_Config_Module             E_Config_Module;
-typedef struct _E_Config_Theme              E_Config_Theme;
 typedef struct _E_Config_Binding_Mouse      E_Config_Binding_Mouse;
 typedef struct _E_Config_Binding_Key        E_Config_Binding_Key;
 typedef struct _E_Config_Binding_Edge       E_Config_Binding_Edge;
@@ -27,6 +26,16 @@ typedef struct _E_Config_XKB_Option         E_Config_XKB_Option;
 
 typedef struct _E_Event_Config_Icon_Theme   E_Event_Config_Icon_Theme;
 
+typedef struct E_Config_Bindings E_Config_Bindings;
+
+typedef enum
+{
+   E_CONFIG_PROFILE_TYPE_NONE,
+   E_CONFIG_PROFILE_TYPE_MOBILE,
+   E_CONFIG_PROFILE_TYPE_TABLET,
+   E_CONFIG_PROFILE_TYPE_DESKTOP
+} E_Config_Profile_Type;
+
 #else
 #ifndef E_CONFIG_H
 #define E_CONFIG_H
@@ -38,14 +47,16 @@ typedef struct _E_Event_Config_Icon_Theme   E_Event_Config_Icon_Theme;
 /* increment this whenever a new set of config values are added but the users
  * config doesn't need to be wiped - simply new values need to be put in
  */
-#define E_CONFIG_FILE_GENERATION 7
+#define E_CONFIG_FILE_GENERATION 17
 #define E_CONFIG_FILE_VERSION    ((E_CONFIG_FILE_EPOCH * 1000000) + E_CONFIG_FILE_GENERATION)
+
+#define E_CONFIG_BINDINGS_VERSION 0 // DO NOT INCREMENT UNLESS YOU WANT TO WIPE ALL BINDINGS!!!!!
 
 struct _E_Config
 {
    int         config_version; // INTERNAL
+   E_Config_Profile_Type config_type; // INTERNAL
    int         show_splash; // GUI
-   const char *init_default_theme; // GUI
    const char *desktop_default_background; // GUI
    Eina_List  *desktop_backgrounds; // GUI
    const char *desktop_default_name;
@@ -68,7 +79,6 @@ struct _E_Config
    int         zone_desks_y_count; // GUI
    int         show_desktop_icons; // GUI
    int         edge_flip_dragging; // GUI
-   int         use_composite; // GUI
    int         no_module_delay; // GUI
    const char *language; // GUI
    const char *desklock_language; // GUI
@@ -76,17 +86,18 @@ struct _E_Config
    Eina_List  *bad_modules; // GUI
    Eina_List  *font_fallbacks; // GUI
    Eina_List  *font_defaults; // GUI
-   Eina_List  *themes; // GUI
+
+   /* NO LONGER SAVED WITH THIS STRUCT */
    Eina_List  *mouse_bindings; // GUI
    Eina_List  *key_bindings; // GUI
    Eina_List  *edge_bindings; // GUI
-   Eina_List  *signal_bindings;
+   Eina_List  *signal_bindings; // GUI
    Eina_List  *wheel_bindings; // GUI
    Eina_List  *acpi_bindings; // GUI
+
    Eina_List  *path_append_data; // GUI
    Eina_List  *path_append_images; // GUI
    Eina_List  *path_append_fonts; // GUI
-   Eina_List  *path_append_themes; // GUI
    Eina_List  *path_append_init; // GUI
    Eina_List  *path_append_icons; // GUI
    Eina_List  *path_append_modules; // GUI
@@ -111,7 +122,8 @@ struct _E_Config
    int         geometry_auto_resize_limit; // GUI
    int         winlist_warp_while_selecting; // GUI
    int         winlist_warp_at_end; // GUI
-   double      winlist_warp_speed; // GUI
+   int         winlist_no_warp_on_direction; // GUI
+   double      winlist_warp_speed; // GUI **** NO LONGER USED!!!
    int         winlist_scroll_animate; // GUI
    double      winlist_scroll_speed; // GUI
    int         winlist_list_show_iconified; // GUI
@@ -123,6 +135,7 @@ struct _E_Config
    int         winlist_list_jump_desk_while_selecting; // GUI
    int         winlist_list_focus_while_selecting; // GUI
    int         winlist_list_raise_while_selecting; // GUI
+   int         winlist_list_move_after_select; // GUI
    double      winlist_pos_align_x; // GUI
    double      winlist_pos_align_y; // GUI
    double      winlist_pos_size_w; // GUI
@@ -144,13 +157,17 @@ struct _E_Config
    const char *transition_change; // GUI
    Eina_List  *remembers; // GUI
    int         remember_internal_windows; // GUI
+   Eina_Bool  remember_internal_fm_windows; // GUI
+   Eina_Bool  remember_internal_fm_windows_globally; // GUI
    int         move_info_follows; // GUI
    int         resize_info_follows; // GUI
    int         move_info_visible; // GUI
    int         resize_info_visible; // GUI
    int         focus_last_focused_per_desktop; // GUI
    int         focus_revert_on_hide_or_close; // GUI
+   int         disable_all_pointer_warps; // GUI
    int         pointer_slide; // GUI
+   double      pointer_warp_speed; // GUI
    int         use_e_cursor; // GUI
    int         cursor_size; // GUI
    int         menu_autoscroll_margin; // GUI
@@ -166,12 +183,12 @@ struct _E_Config
       int desktop;      // GUI
       int iconify;      // GUI
    } transient;
-   int                       modal_windows;
    int                       menu_eap_name_show; // GUI
    int                       menu_eap_generic_show; // GUI
    int                       menu_eap_comment_show; // GUI
    int                       menu_favorites_show; // GUI
    int                       menu_apps_show; // GUI
+   Eina_Bool                menu_icons_hide; // GUI
    int                       menu_gadcon_client_toplevel; // GUI
    int                       fullscreen_policy; // GUI
    const char               *exebuf_term_cmd; // GUI
@@ -184,8 +201,8 @@ struct _E_Config
    Eina_List                *shelves; // GUI
    int                       font_hinting; // GUI
 
-   const char               *desklock_personal_passwd; // GUI
-   const char               *desklock_background; // OLD DON'T USE
+   int                       desklock_passwd; // GUI // hashed
+   int                       desklock_pin; // GUI // hashed
    Eina_List                *desklock_backgrounds; // GUI
    int                       desklock_auth_method; // GUI
    int                       desklock_login_box_zone; // GUI
@@ -208,6 +225,9 @@ struct _E_Config
    unsigned char             screensaver_ask_presentation; // GUI
    double                    screensaver_ask_presentation_timeout; // GUI
 
+   int                       screensaver_wake_on_notify; // GUI
+   int                       screensaver_wake_on_urgent; // GUI
+
    unsigned char             screensaver_suspend; // GUI
    unsigned char             screensaver_suspend_on_ac; // GUI
    double                    screensaver_suspend_delay; // GUI
@@ -219,6 +239,7 @@ struct _E_Config
    int                       dpms_suspend_timeout; // GUI
    int                       dpms_off_enable; // GUI
    int                       dpms_off_timeout; // GUI
+   unsigned char             no_dpms_on_fullscreen; // GUI
 
    int                       clientlist_group_by; // GUI
    int                       clientlist_include_all_zones; // GUI
@@ -236,6 +257,7 @@ struct _E_Config
 
    int                       border_raise_on_mouse_action; // GUI
    int                       border_raise_on_focus; // GUI
+   int                       raise_on_revert_focus; // GUI
    int                       desk_flip_wrap; // GUI
    int                       fullscreen_flip; // GUI
    int                       multiscreen_flip; // GUI
@@ -243,9 +265,14 @@ struct _E_Config
    const char               *icon_theme; // GUI
    unsigned char             icon_theme_overrides; // GUI
 
+   /* modes:
+    * 1-"pane") horizontal or vertical movement to/from next/previous "screen"
+    * 2-"zoom") 45degree diagonal movement based on border position
+    */
    int                       desk_flip_animate_mode; // GUI
+   /* types based on theme */
+   Eina_Stringshare         *desk_flip_animate_type; // GUI
    int                       desk_flip_animate_interpolation; // GUI
-   double                    desk_flip_animate_time; // GUI
 
    const char               *wallpaper_import_last_dev; // INTERNAL
    const char               *wallpaper_import_last_path; // INTERNAL
@@ -341,7 +368,7 @@ struct _E_Config
       double        dim; // GUI
       double        transition; // GUI
       double        timer; // GUI
-      const char   *sysdev; // GUI  
+      const char   *sysdev; // GUI
       unsigned char idle_dim; // GUI
       E_Backlight_Mode mode; /* not saved, display-only */
    } backlight;
@@ -376,7 +403,7 @@ struct _E_Config
       const char   *xft_rgba;
       const char   *net_theme_name;  // GUI
       const char   *net_theme_name_detected; // not saved
-      const char   *net_icon_theme_name;  // GUI
+      const char   *net_icon_theme_name;
       const char   *gtk_font_name;
    } xsettings;
 
@@ -396,6 +423,7 @@ struct _E_Config
       E_Config_XKB_Layout *current_layout;
       E_Config_XKB_Layout *sel_layout;
       E_Config_XKB_Layout *lock_layout;
+      Eina_Bool dont_touch_my_damn_keyboard;
 
       /* NO LONGER USED BECAUSE I SUCK
        * -zmike, 31 January 2013
@@ -405,13 +433,26 @@ struct _E_Config
       const char *desklock_layout;
    } xkb;
    
-   unsigned char exe_always_single_instance;
+   Eina_List  *menu_applications;
+   unsigned char exe_always_single_instance; // GUI
    int           use_desktop_window_profile; // GUI
+};
+
+struct E_Config_Bindings
+{
+   unsigned int config_version;
+   Eina_List  *mouse_bindings; // GUI
+   Eina_List  *key_bindings; // GUI
+   Eina_List  *edge_bindings; // GUI
+   Eina_List  *signal_bindings; // GUI
+   Eina_List  *wheel_bindings; // GUI
+   Eina_List  *acpi_bindings; // GUI
 };
 
 struct _E_Config_Desklock_Background
 {
    const char *file;
+   Eina_Bool hide_logo;
 };
 
 struct _E_Config_Env_Var
@@ -436,12 +477,6 @@ struct _E_Config_Module
    unsigned char enabled;
    unsigned char delayed;
    int           priority;
-};
-
-struct _E_Config_Theme
-{
-   const char *category;
-   const char *file;
 };
 
 struct _E_Config_Binding_Mouse
@@ -473,6 +508,7 @@ struct _E_Config_Binding_Edge
    const char   *params;
    unsigned char edge;
    unsigned char any_mod;
+   Eina_Bool    drag_only;
 };
 
 struct _E_Config_Binding_Signal
@@ -505,7 +541,7 @@ struct _E_Config_Binding_Acpi
 
 struct _E_Config_Desktop_Background
 {
-   int         container;
+   int         manager;
    int         zone;
    int         desk_x;
    int         desk_y;
@@ -514,7 +550,7 @@ struct _E_Config_Desktop_Background
 
 struct _E_Config_Desktop_Name
 {
-   int         container;
+   int         manager;
    int         zone;
    int         desk_x;
    int         desk_y;
@@ -523,7 +559,7 @@ struct _E_Config_Desktop_Name
 
 struct _E_Config_Desktop_Window_Profile
 {
-   int         container;
+   int         manager;
    int         zone;
    int         desk_x;
    int         desk_y;
@@ -562,9 +598,9 @@ struct _E_Config_Shelf
 {
    const char   *name;
    int           id;
-   int           container, zone;
-   int           layer;
-   unsigned char popup;
+   int           manager, zone;
+   int           layer; //E_Layer
+   unsigned char popup; //DEAD
    int           orient;
    unsigned char fit_along;
    unsigned char fit_size;
@@ -639,7 +675,17 @@ EAPI E_Config_Binding_Wheel  *e_config_binding_wheel_match(E_Config_Binding_Whee
 EAPI E_Config_Binding_Acpi   *e_config_binding_acpi_match(E_Config_Binding_Acpi *eb_in);
 EAPI void                     e_config_mode_changed(void);
 
-extern EAPI E_Config * e_config;
+
+EAPI void e_config_bindings_free(E_Config_Bindings *ecb);
+EAPI void e_config_binding_signal_free(E_Config_Binding_Signal *ebs);
+EAPI void e_config_binding_wheel_free(E_Config_Binding_Wheel *ebw);
+EAPI void e_config_binding_mouse_free(E_Config_Binding_Mouse *ebm);
+EAPI void e_config_binding_edge_free(E_Config_Binding_Edge *ebe);
+EAPI void e_config_binding_key_free(E_Config_Binding_Key *ebk);
+EAPI void e_config_binding_acpi_free(E_Config_Binding_Acpi *eba);
+
+extern EAPI E_Config *e_config;
+extern EAPI E_Config_Bindings *e_bindings;
 
 extern EAPI int E_EVENT_CONFIG_ICON_THEME;
 extern EAPI int E_EVENT_CONFIG_MODE_CHANGED;

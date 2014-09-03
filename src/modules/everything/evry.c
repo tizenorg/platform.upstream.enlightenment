@@ -64,6 +64,7 @@ static void           _evry_view_hide(Evry_Window *win, Evry_View *v, int slide)
 static void           _evry_item_desel(Evry_State *s);
 static void           _evry_item_sel(Evry_State *s, Evry_Item *it);
 
+static void           _evry_cb_show(Evry_Window *win, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED);
 static Eina_Bool      _evry_cb_key_down(void *data, int type, void *event);
 static Eina_Bool      _evry_cb_selection_notify(void *data, int type, void *event);
 static Eina_Bool      _evry_cb_mouse(void *data, int type, void *event);
@@ -177,18 +178,18 @@ evry_show(E_Zone *zone, E_Zone_Edge edge, const char *params, Eina_Bool popup)
 
    if (popup)
      {
-        e_win_layer_set(win->ewin, E_WIN_LAYER_ABOVE);
-        ecore_x_netwm_window_type_set(win->ewin->evas_win,
-                                      ECORE_X_WINDOW_TYPE_UTILITY);
-
+#ifndef HAVE_WAYLAND_ONLY
+        if (e_comp_get(win->ewin)->comp_type == E_PIXMAP_TYPE_X)
+          ecore_x_netwm_window_type_set(win->ewin->evas_win,
+                                        ECORE_X_WINDOW_TYPE_UTILITY);
+#endif
         ecore_evas_name_class_set(win->ewin->ecore_evas, "E", "everything");
 
-        ecore_evas_show(win->ewin->ecore_evas);
+        e_win_show(win->ewin);
+        win->ewin->client->netwm.state.skip_taskbar = 1;
+        EC_CHANGED(win->ewin->client);
 
-        if (e_grabinput_get(win->ewin->evas_win, 0, win->ewin->evas_win))
-          win->grab = 1;
-        else
-          ERR("could not acquire grab");
+        win->grab = 1;
      }
 
    evry_history_load();
@@ -203,51 +204,27 @@ evry_show(E_Zone *zone, E_Zone_Edge edge, const char *params, Eina_Bool popup)
    _evry_selector_new(win, EVRY_PLUGIN_ACTION);
    _evry_selector_new(win, EVRY_PLUGIN_OBJECT);
 
-   win->handlers = eina_list_append
-       (win->handlers, ecore_event_handler_add
-         (ECORE_EVENT_KEY_DOWN,
-         _evry_cb_key_down, win));
+   E_LIST_HANDLER_APPEND(win->handlers, ECORE_EVENT_KEY_DOWN, _evry_cb_key_down, win);
+#ifndef HAVE_WAYLAND_ONLY
+        if (e_comp_get(win->ewin)->comp_type == E_PIXMAP_TYPE_X)
+   E_LIST_HANDLER_APPEND(win->handlers, ECORE_X_EVENT_SELECTION_NOTIFY, _evry_cb_selection_notify, win);
+#endif
+   evas_object_event_callback_add(win->ewin->client->frame, EVAS_CALLBACK_SHOW, (Evas_Object_Event_Cb)_evry_cb_show, win);
 
-   win->handlers = eina_list_append
-       (win->handlers, ecore_event_handler_add
-         (ECORE_X_EVENT_SELECTION_NOTIFY,
-         _evry_cb_selection_notify, win));
+   E_LIST_HANDLER_APPEND(win->handlers, EVRY_EVENT_ITEM_CHANGED, _evry_cb_item_changed, win);
 
-   win->handlers = eina_list_append
-       (win->handlers, evry_event_handler_add
-         (EVRY_EVENT_ITEM_CHANGED,
-         _evry_cb_item_changed, win));
+   E_LIST_HANDLER_APPEND(win->handlers, ECORE_EVENT_MOUSE_BUTTON_DOWN, _evry_cb_mouse, win);
 
-   win->handlers = eina_list_append
-       (win->handlers, ecore_event_handler_add
-         (ECORE_EVENT_MOUSE_BUTTON_DOWN,
-         _evry_cb_mouse, win));
-
-   win->handlers = eina_list_append
-       (win->handlers, ecore_event_handler_add
-         (ECORE_EVENT_MOUSE_BUTTON_UP,
-         _evry_cb_mouse, win));
+   E_LIST_HANDLER_APPEND(win->handlers, ECORE_EVENT_MOUSE_BUTTON_UP, _evry_cb_mouse, win);
    E_LIST_HANDLER_APPEND(win->handlers, E_EVENT_DESKLOCK, _evry_cb_desklock, win);
 #if 0
-   win->handlers = eina_list_append
-       (win->handlers, ecore_event_handler_add
-         (ECORE_EVENT_MOUSE_MOVE,
-         _evry_cb_mouse, win));
+   E_LIST_HANDLER_APPEND(win->handlers, ECORE_EVENT_MOUSE_MOVE, _evry_cb_mouse, win);
 
-   win->handlers = eina_list_append
-       (win->handlers, ecore_event_handler_add
-         (ECORE_EVENT_MOUSE_WHEEL,
-         _evry_cb_mouse, win));
+   E_LIST_HANDLER_APPEND(win->handlers, ECORE_EVENT_MOUSE_WHEEL, _evry_cb_mouse, win);
 
-   win->handlers = eina_list_append
-       (win->handlers, ecore_event_handler_add
-         (ECORE_X_EVENT_MOUSE_IN,
-         _evry_cb_mouse_in, win));
+   E_LIST_HANDLER_APPEND(win->handlers, ECORE_X_EVENT_MOUSE_IN, _evry_cb_mouse_in, win);
 
-   win->handlers = eina_list_append
-       (win->handlers, ecore_event_handler_add
-         (ECORE_X_EVENT_MOUSE_OUT,
-         _evry_cb_mouse_out, win));
+   E_LIST_HANDLER_APPEND(win->handlers, ECORE_X_EVENT_MOUSE_OUT, _evry_cb_mouse_out, win);
 #endif
    _evry_selector_plugins_get(SUBJ_SEL, NULL, params);
    _evry_selector_update(SUBJ_SEL);
@@ -305,6 +282,7 @@ evry_hide(Evry_Window *win, int clear)
 
    if (!win) return;
 
+   e_win_delete_callback_set(win->ewin, NULL);
    e_win_hide(win->ewin);
    _evry_state_clear(win);
 
@@ -358,8 +336,11 @@ evry_hide(Evry_Window *win, int clear)
 
    win->visible = EINA_FALSE;
 
-   for (i = 0; win->sel_list[i]; i++)
-     _evry_selector_free(win->sel_list[i]);
+   if (win->sel_list)
+     {
+        for (i = 0; win->sel_list[i]; i++)
+          _evry_selector_free(win->sel_list[i]);
+     }
 
    E_FREE(win->sel_list);
 
@@ -783,14 +764,12 @@ _evry_window_new(E_Zone *zone, E_Zone_Edge edge)
    Evas_Object *o;
    const char *tmp;
    int offset_s = 0;
-   const char *shape_option;
 
    win = E_NEW(Evry_Window, 1);
-   win->ewin = e_win_new(zone->container);
+   win->ewin = e_win_new(zone->comp);
    e_win_borderless_set(win->ewin, 1);
    e_win_no_remember_set(win->ewin, 1);
    e_win_placed_set(win->ewin, 1);
-   e_object_delay_del_set(E_OBJECT(win->ewin), NULL); //prevent deferred delete
    ecore_evas_override_set(win->ewin->ecore_evas, 1);
    win->evas = e_win_evas_get(win->ewin);
    win->zone = zone;
@@ -801,27 +780,13 @@ _evry_window_new(E_Zone *zone, E_Zone_Edge edge)
    e_theme_edje_object_set(o, "base/theme/modules/everything",
                            "e/modules/everything/main");
 
-   if ((shape_option = edje_object_data_get(o, "shaped")) &&
-       (!strcmp(shape_option, "1")))
-     {
-        win->shaped = EINA_TRUE;
+   edje_object_signal_emit(o, "e,state,composited", "e");
+   edje_object_signal_emit(o, "list:e,state,composited", "e");
+   edje_object_message_signal_process(o);
+   edje_object_calc_force(o);
 
-        if (e_config->use_composite)
-          {
-             ecore_evas_alpha_set(win->ewin->ecore_evas, 1);
-             win->ewin->evas_win = ecore_evas_software_x11_window_get(win->ewin->ecore_evas);
-             edje_object_signal_emit(o, "e,state,composited", "e");
-             edje_object_signal_emit(o, "list:e,state,composited", "e");
-             edje_object_message_signal_process(o);
-             edje_object_calc_force(o);
-
-             tmp = edje_object_data_get(o, "shadow_offset");
-             offset_s = tmp ? atoi(tmp) : 0;
-          }
-        else
-          ecore_evas_shaped_set(win->ewin->ecore_evas, 1);
-     }
-
+   tmp = edje_object_data_get(o, "shadow_offset");
+   offset_s = tmp ? atoi(tmp) : 0;
    edje_object_size_min_calc(o, &mw, &mh);
 
    if (edge == E_ZONE_EDGE_NONE)
@@ -895,14 +860,11 @@ _evry_window_new(E_Zone *zone, E_Zone_Edge edge)
    win->ewin->w = mw;
    win->ewin->h = mh;
 
-   o = win->o_main;
-   evas_object_move(o, 0, 0);
    evas_object_resize(o, mw, mh);
    evas_object_show(o);
 
-   evas_event_feed_mouse_in(win->evas, ecore_x_current_time_get(), NULL);
-   evas_event_feed_mouse_move(win->evas, -1000000, -1000000,
-                              ecore_x_current_time_get(), NULL);
+   evas_event_feed_mouse_in(win->evas, 0, NULL);
+   evas_event_feed_mouse_move(win->evas, -1000000, -1000000, 0, NULL);
 
    e_win_delete_callback_set(win->ewin, _evry_cb_win_delete);
    e_win_resize_callback_set(win->ewin, _evry_cb_win_resize);
@@ -978,7 +940,7 @@ _evry_cb_mouse(void *data, int type, void *event)
              memcpy(sel + sel_length + s_len, "\r\n", 2);
              sel_length += s_len + 2;
 
-             d = e_drag_new(e_container_current_get(e_manager_current_get()),
+             d = e_drag_new(e_util_comp_current_get()),
                             ev->x, ev->y,
                             drag_types, 1, sel, sel_length, NULL,
                             _evry_cb_drag_finished);
@@ -1001,7 +963,8 @@ _evry_cb_mouse(void *data, int type, void *event)
      {
         win->mouse_out = 0;
 
-        if (!E_INSIDE(ev->x, ev->y, 0, 0, w->w, w->h))
+        if (!E_INSIDE(e_comp_canvas_x_root_adjust(w->comp, ev->root.x),
+                      e_comp_canvas_y_root_adjust(w->comp, ev->root.y), w->x, w->y, w->w, w->h))
           {
              win->mouse_out = 1;
              return ECORE_CALLBACK_PASS_ON;
@@ -1014,7 +977,8 @@ _evry_cb_mouse(void *data, int type, void *event)
         win->mouse_button = 0;
 
         if (win->mouse_out &&
-            !E_INSIDE(ev->x, ev->y, 0, 0, w->w, w->h))
+            (!E_INSIDE(e_comp_canvas_x_root_adjust(w->comp, ev->root.x),
+                      e_comp_canvas_y_root_adjust(w->comp, ev->root.y), w->x, w->y, w->w, w->h)))
           {
              evry_hide(win, 0);
              return ECORE_CALLBACK_PASS_ON;
@@ -1027,13 +991,7 @@ _evry_cb_mouse(void *data, int type, void *event)
 static void
 _evry_window_free(Evry_Window *win)
 {
-   if (win->ewin->border)
-     ecore_x_window_hide(win->ewin->border->win);
-   else
-     ecore_x_window_hide(win->ewin->evas_win);
-
    evas_event_freeze(win->evas);
-   evas_object_del(win->o_main);
    if (!e_object_is_del(E_OBJECT(win->ewin)))
      e_object_del(E_OBJECT(win->ewin));
    E_FREE(win);
@@ -1162,6 +1120,17 @@ static void
 _evry_selector_free(Evry_Selector *sel)
 {
    Evry_Window *win = sel->win;
+   Evas_Object *o;
+
+   if ((o = edje_object_part_swallow_get(win->o_main, sel->edje_part)))
+     {
+        evas_object_event_callback_del_full(o, EVAS_CALLBACK_MOUSE_DOWN,
+                                       _evry_selector_cb_down, sel);
+        evas_object_event_callback_del_full(o, EVAS_CALLBACK_MOUSE_UP,
+                                       _evry_selector_cb_up, sel);
+        evas_object_event_callback_del_full(o, EVAS_CALLBACK_MOUSE_WHEEL,
+                                       _evry_selector_cb_wheel, sel);
+     }
 
    _evry_selector_item_clear(sel);
 
@@ -1577,6 +1546,9 @@ _evry_state_pop(Evry_Selector *sel, int immediate)
 
    if (!s->delete_me)
      {
+        if (win->state_clearing == s)
+          win->state_clearing = NULL;
+        ecore_timer_del(s->clear_timer);
         E_FREE(s->inp);
         E_FREE(s);
      }
@@ -1961,16 +1933,18 @@ _evry_cb_key_down(void *data, int type __UNUSED__, void *event)
         E_Win *ewin = win->ewin;
 
         e_grabinput_release(ewin->evas_win, ewin->evas_win);
-        if (!win->shaped)
-          e_win_borderless_set(ewin, 0);
-        ecore_evas_lower(ewin->ecore_evas);
-        ewin->border = e_border_new(ewin->container, ewin->evas_win, 1, 1);
-        // dont need this - special stuff - here it is needed
-        ewin->border->ignore_first_unmap = 1;
-        ewin->border->internal = 1;
-        ewin->border->internal_ecore_evas = ewin->ecore_evas;
-        ewin->border->internal_no_remember = 1;
-        e_border_show(ewin->border);
+        evas_object_layer_set(ewin->client->frame, E_LAYER_CLIENT_NORMAL);
+#ifndef HAVE_WAYLAND_ONLY
+        if (e_comp_get(ewin)->comp_type == E_PIXMAP_TYPE_X)
+          ecore_x_netwm_window_type_set(ewin->evas_win,
+                                        ECORE_X_WINDOW_TYPE_DIALOG);
+#endif
+        EC_CHANGED(ewin->client);
+        ewin->client->netwm.fetch.type = 1;
+        ewin->client->netwm.state.skip_taskbar = 0;
+        ewin->client->netwm.update.state = 1;
+        ewin->client->internal_no_remember = 1;
+        e_win_borderless_set(ewin, 0);
 
         win->grab = 0;
         return ECORE_CALLBACK_PASS_ON;
@@ -1982,7 +1956,7 @@ _evry_cb_key_down(void *data, int type __UNUSED__, void *event)
         E_Config_Binding_Key *binding;
         E_Binding_Modifier mod;
 
-	EINA_LIST_FOREACH(e_config->key_bindings, l, binding)
+	       EINA_LIST_FOREACH(e_bindings->key_bindings, l, binding)
           {
              if (binding->action && strcmp(binding->action, "everything")) continue;
 
@@ -1997,7 +1971,7 @@ _evry_cb_key_down(void *data, int type __UNUSED__, void *event)
              if (ev->modifiers & ECORE_EVENT_MODIFIER_WIN)
                mod |= E_BINDING_MODIFIER_WIN;
 
-             if (!(binding->key && (!strcmp(binding->key, ev->keyname)) &&
+             if (!(binding->key && (!strcmp(binding->key, ev->key)) &&
                    (((unsigned int)binding->modifiers == mod) || (binding->any_mod))))
                continue;
 
@@ -2151,9 +2125,14 @@ _evry_cb_key_down(void *data, int type __UNUSED__, void *event)
           _evry_plugin_action(sel, 0);
         else if (!strcmp(ev->key, "v"))
           {
-             win->request_selection = EINA_TRUE;
-             ecore_x_selection_primary_request
-               (win->ewin->evas_win, ECORE_X_SELECTION_TARGET_UTF8_STRING);
+#ifndef HAVE_WAYLAND_ONLY
+             if (e_comp_get(win->ewin)->comp_type == E_PIXMAP_TYPE_X)
+               {
+                  win->request_selection = EINA_TRUE;
+                  ecore_x_selection_primary_request
+                    (win->ewin->evas_win, ECORE_X_SELECTION_TARGET_UTF8_STRING);
+               }
+#endif
           }
         else
           {
@@ -2730,7 +2709,7 @@ evry_view_toggle(Evry_State *s, const char *trigger)
 {
    Evry_View *view, *v = NULL;
    Eina_List *l, *ll;
-   Eina_Bool triggered = FALSE;
+   Eina_Bool triggered = EINA_FALSE;
    Evry_Window *win = s->selector->win;
 
    if (trigger)
@@ -2876,7 +2855,7 @@ _evry_matches_update(Evry_Selector *sel, int async)
                {
                   s->inp[0] = ':';
 
-                  if (s->inp + len_trigger)
+                  if (s->inp[len_trigger])
                     strcpy(s->inp + 1, s->inp + len_trigger);
                   else
                     s->inp[1] = 0;
@@ -3059,6 +3038,14 @@ _evry_plugin_list_insert(Evry_State *s, Evry_Plugin *p)
      s->cur_plugins = eina_list_append(s->cur_plugins, p);
 }
 
+static void
+_evry_cb_show(Evry_Window *win, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   if (win->grab)
+     e_grabinput_get(win->ewin->evas_win, 0, win->ewin->evas_win);
+}
+
+#ifndef HAVE_WAYLAND_ONLY
 static Eina_Bool
 _evry_cb_selection_notify(void *data, int type __UNUSED__, void *event)
 {
@@ -3088,6 +3075,7 @@ _evry_cb_selection_notify(void *data, int type __UNUSED__, void *event)
 
    return ECORE_CALLBACK_PASS_ON;
 }
+#endif
 
 void
 evry_item_app_free(Evry_Item_App *app)

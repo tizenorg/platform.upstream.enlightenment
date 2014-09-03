@@ -28,20 +28,20 @@
 # define E_OBJECT_CHECK_RETURN(x, ret)           do {if (e_object_error(E_OBJECT(x))) return ret;} while (0)
 #  define E_OBJECT_TYPE_CHECK(x, tp)             do {if ((E_OBJECT(x)->type) != (tp)) { fprintf(stderr, "Object type check failed in %s\n", __FUNCTION__); return;} } while (0)
 #  define E_OBJECT_TYPE_CHECK_RETURN(x, tp, ret) do {if ((E_OBJECT(x)->type) != tp) { fprintf(stderr, "Object type check failed in %s\n", __FUNCTION__); return ret;} } while (0)
-# define E_OBJECT_IF_NOT_TYPE(x, tp)             if (E_OBJECT(x)->type != (tp))
+#  define E_OBJECT_IF_NOT_TYPE(x, tp)            if (E_OBJECT(x)->type != (tp))
 #else
 # ifdef OBJECT_CHECK
-#  define E_OBJECT_CHECK(x)                       do {if ((!E_OBJECT(x)) || (E_OBJECT(x)->magic != E_OBJECT_MAGIC)) return;} while (0)
-#  define E_OBJECT_CHECK_RETURN(x, ret)           do {if ((!E_OBJECT(x)) || (E_OBJECT(x)->magic != E_OBJECT_MAGIC)) return ret;} while (0)
-#  define E_OBJECT_TYPE_CHECK(x, tp)              do {if ((E_OBJECT(x)->type) != (tp)) { fprintf(stderr, "Object type check failed in %s\n", __FUNCTION__); return;} } while (0)
-#  define E_OBJECT_TYPE_CHECK_RETURN(x, tp, ret)  do {if ((E_OBJECT(x)->type) != (tp)) { fprintf(stderr, "Object type check failed in %s\n", __FUNCTION__); return ret;} } while (0)
-# define E_OBJECT_IF_NOT_TYPE(x, type)            if (E_OBJECT(x)->type != (type))
+#  define E_OBJECT_CHECK(x)                       do {if ((!E_OBJECT(x)) || (E_OBJECT(x)->magic != (int)E_OBJECT_MAGIC)) return;} while (0)
+#  define E_OBJECT_CHECK_RETURN(x, ret)           do {if ((!E_OBJECT(x)) || (E_OBJECT(x)->magic != (int)E_OBJECT_MAGIC)) return ret;} while (0)
+#  define E_OBJECT_TYPE_CHECK(x, tp)              do {if ((E_OBJECT(x)->type) != (int)(tp)) { fprintf(stderr, "Object type check failed in %s\n", __FUNCTION__); return;} } while (0)
+#  define E_OBJECT_TYPE_CHECK_RETURN(x, tp, ret)  do {if ((E_OBJECT(x)->type) != (int)(tp)) { fprintf(stderr, "Object type check failed in %s\n", __FUNCTION__); return ret;} } while (0)
+#  define E_OBJECT_IF_NOT_TYPE(x, tp)             if (E_OBJECT(x)->type != (int)(tp))
 # else
 #  define E_OBJECT_CHECK(x)
 #  define E_OBJECT_CHECK_RETURN(x, ret)
 #  define E_OBJECT_TYPE_CHECK(x, type)
 #  define E_OBJECT_TYPE_CHECK_RETURN(x, type, ret)
-# define E_OBJECT_IF_NOT_TYPE(x, type)
+#  define E_OBJECT_IF_NOT_TYPE(x, type)
 # endif
 #endif
 
@@ -68,6 +68,7 @@ struct _E_Object
    void                    *data;
    Ecore_Job               *delay_del_job;
    int                      walking_list;
+   Eina_Bool                ref_debug : 1;
    Eina_Bool                deleted : 1;
 };
 
@@ -99,6 +100,8 @@ EAPI void  e_object_del_attach_func_set (E_Object *obj, E_Object_Cleanup_Func fu
 EAPI E_Object_Delfn *e_object_delfn_add (E_Object *obj, void (*func) (void *data, void *obj), void *data);
 EAPI void            e_object_delfn_del (E_Object *obj, E_Object_Delfn *dfn);
 EAPI void            e_object_delfn_clear(E_Object *obj);
+
+EAPI void e_object_ref_debug_set(E_Object *obj, Eina_Bool set);
 
 /*
 EAPI void  e_object_breadcrumb_add      (E_Object *obj, char *crumb);

@@ -12,15 +12,14 @@ struct _E_Resist_Rect
 static void _e_resist_rects(Eina_List *rects, int px, int py, int pw, int ph, int x, int y, int w, int h, int *rx, int *ry, int *rw, int *rh);
 
 EAPI int
-e_resist_container_border_position(E_Container *con, Eina_List *skiplist,
+e_resist_client_position(E_Comp *c, Eina_List *skiplist,
                                    int px, int py, int pw, int ph,
                                    int x, int y, int w, int h,
                                    int *rx, int *ry, int *rw, int *rh)
 {
-   Eina_List *l, *ll, *rects = NULL;
+   Eina_List *l, *rects = NULL;
    E_Resist_Rect *r;
-   E_Border_List *bl;
-   E_Border *bd, *bd2;
+   E_Client *ec;
    E_Desk *desk;
    E_Shelf *es;
    E_Zone *zone;
@@ -50,64 +49,30 @@ e_resist_container_border_position(E_Container *con, Eina_List *skiplist,
      rects = eina_list_append(rects, r);                          \
   }
 
-   EINA_LIST_FOREACH(con->zones, l, zone)
+   EINA_LIST_FOREACH(c->zones, l, zone)
      {
         HOLDER(zone->x, zone->y, zone->w, zone->h, e_config->desk_resist);
      }
    /* FIXME: need to add resist or complete BLOCKS for things like ibar */
    /* can add code here to add more fake obstacles with custom resist values */
    /* here if need be - ie xinerama middle between screens and panels etc. */
-
-   bl = e_container_border_list_first(con);
-   while ((bd = e_container_border_list_next(bl)))
+   E_CLIENT_FOREACH(c, ec)
      {
-        if (bd->visible)
+        if (e_client_util_ignored_get(ec) || (!evas_object_visible_get(ec->frame))) continue;
+        if (ec->offer_resistance && (!eina_list_data_find(skiplist, ec)))
           {
-             int ok;
-
-             ok = 1;
-             EINA_LIST_FOREACH(skiplist, ll, bd2)
-               {
-                  if (bd2 == bd)
-                    {
-                       ok = 0;
-                       break;
-                    }
-               }
-             if (ok && bd->offer_resistance)
-               {
-                  OBSTACLE(bd->x, bd->y, bd->w, bd->h, e_config->window_resist);
-               }
+             OBSTACLE(ec->x, ec->y, ec->w, ec->h, e_config->window_resist);
           }
      }
-   e_container_border_list_free(bl);
 
-   desk = e_desk_current_get(e_zone_current_get(con));
-   EINA_LIST_FOREACH(e_shelf_list(), l, es)
+   desk = e_desk_current_get(e_zone_current_get(c));
+   l = e_shelf_list_all();
+   EINA_LIST_FREE(l, es)
      {
-        Eina_List *ll2;
-        E_Config_Shelf_Desk *sd;
-
-        if (es->zone->container == con)
+        if (e_shelf_desk_visible(es, desk))
           {
-             if (es->cfg->desk_show_mode)
-               {
-                  EINA_LIST_FOREACH(es->cfg->desk_list, ll2, sd)
-                    {
-                       if (!sd) continue;
-                       if ((sd->x == desk->x) && (sd->y == desk->y))
-                         {
-                            OBSTACLE(es->x + es->zone->x, es->y + es->zone->y, es->w, es->h,
-                                     e_config->gadget_resist);
-                            break;
-                         }
-                    }
-               }
-             else
-               {
-                  OBSTACLE(es->x + es->zone->x, es->y + es->zone->y, es->w, es->h,
-                           e_config->gadget_resist);
-               }
+             OBSTACLE(es->x + es->zone->x, es->y + es->zone->y, es->w, es->h,
+                      e_config->gadget_resist);
           }
      }
    if (rects)
@@ -123,7 +88,7 @@ e_resist_container_border_position(E_Container *con, Eina_List *skiplist,
 }
 
 EAPI int
-e_resist_container_gadman_position(E_Container *con, Eina_List *skiplist __UNUSED__,
+e_resist_gadman_position(E_Comp *c EINA_UNUSED, Eina_List *skiplist __UNUSED__,
                                    int px, int py, int pw, int ph,
                                    int x, int y, int w, int h,
                                    int *rx, int *ry)
@@ -139,9 +104,10 @@ e_resist_container_gadman_position(E_Container *con, Eina_List *skiplist __UNUSE
         return 0;
      }
 
-   EINA_LIST_FOREACH(e_shelf_list(), l, es)
+   l = e_shelf_list_all();
+   EINA_LIST_FREE(l, es)
      {
-        if (es->zone->container == con)
+        if (e_shelf_desk_visible(es, e_desk_current_get(es->zone)))
           {
              OBSTACLE(es->x + es->zone->x, es->y + es->zone->y, es->w, es->h,
                       e_config->gadget_resist);

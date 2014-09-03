@@ -10,7 +10,6 @@
 static void      _import_edj_gen(E_Import_Config_Dialog *import);
 static Eina_Bool _import_cb_edje_cc_exit(void *data, int type, void *event);
 
-
 static void
 _import_edj_gen(E_Import_Config_Dialog *import)
 {
@@ -21,6 +20,7 @@ _import_edj_gen(E_Import_Config_Dialog *import)
    int w = 0, h = 0;
    const char *file, *locale;
    char buf[PATH_MAX], cmd[PATH_MAX], tmpn[PATH_MAX], ipart[PATH_MAX], enc[128];
+   Eina_Tmpstr *path = NULL;
    char *imgdir = NULL, *fstrip;
    int cr, cg, cb, ca;
    FILE *f;
@@ -51,8 +51,8 @@ _import_edj_gen(E_Import_Config_Dialog *import)
         return;
      }
 
-   strcpy(tmpn, "/tmp/e_bgdlg_new.edc-tmp-XXXXXX");
-   fd = mkstemp(tmpn);
+   strcpy(tmpn, "e_bgdlg_new.edc-tmp-XXXXXX");
+   fd = eina_file_mkstemp(tmpn, &path);
    if (fd < 0)
      {
         printf("Error Creating tmp file: %s\n", strerror(errno));
@@ -102,13 +102,12 @@ _import_edj_gen(E_Import_Config_Dialog *import)
                 "group { name: \"e/desktop/background\";\n"
                 "%s"
                 "data { item: \"style\" \"0\"; }\n"
-                "max: %i %i;\n"
                 "parts {\n"
                 "part { name: \"bg\"; mouse_events: 0;\n"
                 "description { state: \"default\" 0.0;\n"
                 "image { normal: \"%s\"; scale_hint: STATIC; }\n"
                 "} } } } }\n"
-                , fstrip, enc, anim ? "" : "data.item: \"noanimation\" \"1\";\n", w, h, fstrip);
+                , fstrip, enc, anim ? "" : "data.item: \"noanimation\" \"1\";\n", fstrip);
         break;
 
       case IMPORT_TILE:
@@ -118,7 +117,6 @@ _import_edj_gen(E_Import_Config_Dialog *import)
                 "group { name: \"e/desktop/background\";\n"
                 "data { item: \"style\" \"1\"; }\n"
                 "%s"
-                "max: %i %i;\n"
                 "parts {\n"
                 "part { name: \"bg\"; mouse_events: 0;\n"
                 "description { state: \"default\" 0.0;\n"
@@ -127,7 +125,7 @@ _import_edj_gen(E_Import_Config_Dialog *import)
                 "relative: 0.0 0.0;\n"
                 "offset: %i %i;\n"
                 "} } } } } } }\n"
-                , fstrip, enc, anim ? "" : "data.item: \"noanimation\" \"1\";\n", w, h, fstrip, w, h);
+                , fstrip, enc, anim ? "" : "data.item: \"noanimation\" \"1\";\n", fstrip, w, h);
         break;
 
       case IMPORT_CENTER:
@@ -137,7 +135,6 @@ _import_edj_gen(E_Import_Config_Dialog *import)
                 "group { name: \"e/desktop/background\";\n"
                 "data { item: \"style\" \"2\"; }\n"
                 "%s"
-                "max: %i %i;\n"
                 "parts {\n"
                 "part { name: \"col\"; type: RECT; mouse_events: 0;\n"
                 "description { state: \"default\" 0.0;\n"
@@ -148,7 +145,7 @@ _import_edj_gen(E_Import_Config_Dialog *import)
                 "min: %i %i; max: %i %i;\n"
                 "image { normal: \"%s\"; }\n"
                 "} } } } }\n"
-                , fstrip, enc, anim ? "" : "data.item: \"noanimation\" \"1\";\n", w, h, cr, cg, cb, ca, w, h, w, h, fstrip);
+                , fstrip, enc, anim ? "" : "data.item: \"noanimation\" \"1\";\n", cr, cg, cb, ca, w, h, w, h, fstrip);
         break;
 
       case IMPORT_SCALE_ASPECT_IN:
@@ -160,7 +157,6 @@ _import_edj_gen(E_Import_Config_Dialog *import)
                 "group { name: \"e/desktop/background\";\n"
                 "data { item: \"style\" \"3\"; }\n"
                 "%s"
-                "max: %i %i;\n"
                 "parts {\n"
                 "part { name: \"col\"; type: RECT; mouse_events: 0;\n"
                 "description { state: \"default\" 0.0;\n"
@@ -172,7 +168,7 @@ _import_edj_gen(E_Import_Config_Dialog *import)
                 "image { normal: \"%s\";  scale_hint: STATIC; }\n"
                 "} } } } }\n"
                 , fstrip, enc, anim ? "" : "data.item: \"noanimation\" \"1\";\n",
-                w, h, cr, cg, cb, ca, (double)w / (double)h, (double)w / (double)h, fstrip);
+                cr, cg, cb, ca, (double)w / (double)h, (double)w / (double)h, fstrip);
         setlocale(LC_NUMERIC, locale);
         break;
 
@@ -185,7 +181,6 @@ _import_edj_gen(E_Import_Config_Dialog *import)
                 "group { name: \"e/desktop/background\";\n"
                 "data { item: \"style\" \"4\"; }\n"
                 "%s"
-                "max: %i %i;\n"
                 "parts {\n"
                 "part { name: \"bg\"; mouse_events: 0;\n"
                 "description { state: \"default\" 0.0;\n"
@@ -193,7 +188,7 @@ _import_edj_gen(E_Import_Config_Dialog *import)
                 "image { normal: \"%s\";  scale_hint: STATIC; }\n"
                 "} } } } }\n"
                 , fstrip, enc, anim ? "" : "data.item: \"noanimation\" \"1\";\n",
-                w, h, (double)w / (double)h, (double)w / (double)h, fstrip);
+                (double)w / (double)h, (double)w / (double)h, fstrip);
         setlocale(LC_NUMERIC, locale);
         break;
 
@@ -206,7 +201,6 @@ _import_edj_gen(E_Import_Config_Dialog *import)
                 "group { name: \"e/desktop/background\";\n"
                 "data { item: \"style\" \"4\"; }\n"
                 "%s"
-                "max: %i %i;\n"
                 "script {\n"
                 "public cur_anim; public cur_x; public cur_y; public prev_x;\n"
                 "public prev_y; public total_x; public total_y; \n"
@@ -257,7 +251,7 @@ _import_edj_gen(E_Import_Config_Dialog *import)
                 " set_float(prev_x, 0.0); set_float(prev_y, 0.0);\n"
                 "} } } } }\n"
                 , fstrip, enc, anim ? "" : "data.item: \"noanimation\" \"1\";\n",
-                w, h, (double)w / (double)h, (double)w / (double)h, fstrip);
+                (double)w / (double)h, (double)w / (double)h, fstrip);
         setlocale(LC_NUMERIC, locale);
         break;
 
@@ -268,8 +262,8 @@ _import_edj_gen(E_Import_Config_Dialog *import)
 
    fclose(f);
 
-   snprintf(cmd, sizeof(cmd), "edje_cc -v %s %s %s",
-            ipart, tmpn, e_util_filename_escape(buf));
+   snprintf(cmd, sizeof(cmd), "%s/edje_cc -v %s %s %s", e_prefix_bin_get(),
+            ipart, path, e_util_filename_escape(buf));
 
    import->tmpf = strdup(tmpn);
    import->fdest = eina_stringshare_add(buf);
@@ -277,6 +271,8 @@ _import_edj_gen(E_Import_Config_Dialog *import)
      ecore_event_handler_add(ECORE_EXE_EVENT_DEL,
                              _import_cb_edje_cc_exit, import);
    import->exe = ecore_exe_run(cmd, import);
+
+   eina_tmpstr_del(path);
 }
 
 static Eina_Bool
@@ -301,7 +297,7 @@ _import_cb_edje_cc_exit(void *data, __UNUSED__ int type, void *event)
    if (r && import->ok)
      {
         e_object_ref(E_OBJECT(import));
-        import->ok((void*)import->fdest, import);
+        import->ok((void *)import->fdest, import);
         e_object_del(E_OBJECT(import));
         e_object_unref(E_OBJECT(import));
      }
@@ -369,7 +365,7 @@ _import_cb_ok(void *data, E_Dialog *dia __UNUSED__)
    if (r)
      {
         e_object_ref(E_OBJECT(import));
-        if (import->ok) import->ok((void*)buf, import);
+        if (import->ok) import->ok((void *)buf, import);
         e_object_del(E_OBJECT(import));
         e_object_unref(E_OBJECT(import));
      }
@@ -378,16 +374,16 @@ _import_cb_ok(void *data, E_Dialog *dia __UNUSED__)
 }
 
 static void
-_e_import_config_preview_size_get(int size, int w, int h,int *tw, int *th)
+_e_import_config_preview_size_get(int size, int w, int h, int *tw, int *th)
 {
    if (size <= 0) return;
    double aspect;
-   aspect = (double)w/h;
-   
-   if(w > size)
+   aspect = (double)w / h;
+
+   if (w > size)
      {
         w = size;
-        h = (w/aspect);
+        h = (w / aspect);
      }
    *tw = w;
    *th = h;
@@ -397,8 +393,11 @@ static void
 _e_import_config_dia_del(void *data)
 {
    E_Dialog *dia = data;
+   E_Import_Config_Dialog *import;
 
-   e_object_del(dia->data);
+   import = dia->data;
+   dia->data = NULL;
+   e_object_del(E_OBJECT(import));
 }
 
 static void
@@ -408,7 +407,8 @@ _e_import_config_dialog_del(void *data)
 
    if (import->exe_handler) ecore_event_handler_del(import->exe_handler);
    import->exe_handler = NULL;
-   if (import->tmpf) unlink(import->tmpf);
+   if (import->tmpf && (unlink(import->tmpf) < 0))
+     ERR("Could not delete tmpfile '%s'", import->tmpf);
    free(import->tmpf);
    eina_stringshare_del(import->fdest);
    import->exe = NULL;
@@ -425,16 +425,17 @@ _e_import_config_dialog_win_del(E_Win *win)
 
    dia = win->data;
    import = dia->data;
+   if (!import) return;
    e_object_ref(E_OBJECT(import));
    if (import->cancel) import->cancel(import);
    e_object_del(E_OBJECT(import));
    e_object_unref(E_OBJECT(import));
 }
+
 ///////////////////////////////////////////////////////////////////////////////////
 
-
 EAPI E_Import_Config_Dialog *
-e_import_config_dialog_show(E_Container *con, const char *path, Ecore_End_Cb ok, Ecore_Cb cancel)
+e_import_config_dialog_show(E_Comp *c, const char *path, Ecore_End_Cb ok, Ecore_Cb cancel)
 {
    Evas *evas;
    E_Dialog *dia;
@@ -448,14 +449,14 @@ e_import_config_dialog_show(E_Container *con, const char *path, Ecore_End_Cb ok,
    import = E_OBJECT_ALLOC(E_Import_Config_Dialog, E_IMPORT_CONFIG_DIALOG_TYPE, _e_import_config_dialog_del);
    if (!import) return NULL;
 
-   dia = e_dialog_new(con, "E", "_import_config_dialog");
+   dia = e_dialog_new(c, "E", "_import_config_dialog");
    if (!dia)
      {
         e_object_del(E_OBJECT(import));
         return NULL;
      }
    e_dialog_resizable_set(dia, 1);
-   
+
    e_dialog_title_set(dia, _("Import Settings..."));
    dia->data = import;
    import->dia = dia;
@@ -475,14 +476,14 @@ e_import_config_dialog_show(E_Container *con, const char *path, Ecore_End_Cb ok,
 
    ot = e_widget_list_add(evas, 0, 0);
    frame = e_widget_frametable_add(evas, _("Preview"), 1);
-   
+
    preview = evas_object_image_add(evas);
    evas_object_image_file_set(preview, path, NULL);
-   evas_object_image_size_get(preview,&w, &h);
+   evas_object_image_size_get(preview, &w, &h);
    evas_object_del(preview);
 
    _e_import_config_preview_size_get(320, w, h, &tw, &th);
-   
+
    preview = e_widget_preview_add(evas, tw, th);
    e_widget_preview_thumb_set(preview, path, NULL, tw, th);
 
@@ -502,7 +503,7 @@ e_import_config_dialog_show(E_Container *con, const char *path, Ecore_End_Cb ok,
                                  "enlightenment/wallpaper_tile",
                                  24, 24, IMPORT_TILE, rg);
    e_widget_frametable_object_append(of, ord, 2, 0, 1, 1, 1, 0, 1, 0);
-   
+
    ord = e_widget_radio_icon_add(evas, _("Within"),
                                  "enlightenment/wallpaper_scale_aspect_in",
                                  24, 24, IMPORT_SCALE_ASPECT_IN, rg);
@@ -546,3 +547,4 @@ e_import_config_dialog_show(E_Container *con, const char *path, Ecore_End_Cb ok,
 
    return import;
 }
+

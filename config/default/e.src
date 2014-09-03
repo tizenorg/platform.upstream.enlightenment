@@ -1,7 +1,7 @@
 group "E_Config" struct {
-  value "config_version" int: 1000000;
+  value "config_version" int: 1000014;
+  value "config_type" uint: 0; // this profile seems to just be super minimalist
   value "show_splash" int: 0;
-  value "init_default_theme" string: "default.edj";
   value "desktop_default_name" string: "%i-%i";
   value "desktop_default_window_profile" string: "";
   value "menus_scroll_speed" double: 1000.0;
@@ -20,7 +20,7 @@ group "E_Config" struct {
   value "zone_desks_y_count" int: 1;
   value "show_desktop_icons" int: 1;
   value "edge_flip_dragging" int: 0;
-  value "use_composite" int: 0;
+  value "use_shaped_win" int: 0;
   value "no_module_delay" int: 1;
   group "modules" list {
     group "E_Config_Module" struct {
@@ -28,320 +28,6 @@ group "E_Config" struct {
       value "enabled" uchar: 1;
       value "delayed" uchar: 0;
       value "priority" int: 0;
-    }
-  }
-  group "themes" list {
-    group "E_Config_Theme" struct {
-      value "category" string: "theme";
-      value "file" string: "default.edj";
-    }
-  }
-  group "mouse_bindings" list {
-    group "E_Config_Binding_Mouse" struct {
-      value "context" int: 3;
-      value "modifiers" int: 0;
-      value "action" string: "menu_show";
-      value "params" string: "main";
-      value "button" uchar: 1;
-      value "any_mod" uchar: 0;
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,1,double";
-      value "source" string: "e.event.titlebar";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_shaded_toggle";
-      value "params" string: "up";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,2";
-      value "source" string: "e.event.titlebar";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_shaded_toggle";
-      value "params" string: "up";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,wheel,?,1";
-      value "source" string: "e.event.titlebar";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_shaded";
-      value "params" string: "0 up";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,wheel,?,-1";
-      value "source" string: "e.event.titlebar";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_shaded";
-      value "params" string: "1 up";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,clicked,3";
-      value "source" string: "e.event.titlebar";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_menu";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,clicked,?";
-      value "source" string: "e.event.icon";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_menu";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,clicked,[12]";
-      value "source" string: "e.event.close";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_close";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,clicked,3";
-      value "source" string: "e.event.close";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_kill";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,clicked,1";
-      value "source" string: "e.event.maximize";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_maximized_toggle";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,clicked,2";
-      value "source" string: "e.event.maximize";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_maximized_toggle";
-      value "params" string: "smart";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,clicked,3";
-      value "source" string: "e.event.maximize";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_maximized_toggle";
-      value "params" string: "expand";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,clicked,?";
-      value "source" string: "e.event.minimize";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_iconic_toggle";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,clicked,?";
-      value "source" string: "e.event.shade";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_shaded_toggle";
-      value "params" string: "up";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,clicked,?";
-      value "source" string: "e.event.lower";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_lower";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,1";
-      value "source" string: "e.event.icon";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_drag_icon";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,1";
-      value "source" string: "e.event.titlebar";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_move";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,up,1";
-      value "source" string: "e.event.titlebar";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_move";
-      value "params" string: "end";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,1";
-      value "source" string: "e.event.resize.tl";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_resize";
-      value "params" string: "tl";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,1";
-      value "source" string: "e.event.resize.t";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_resize";
-      value "params" string: "t";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,1";
-      value "source" string: "e.event.resize.tr";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_resize";
-      value "params" string: "tr";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,1";
-      value "source" string: "e.event.resize.r";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_resize";
-      value "params" string: "r";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,1";
-      value "source" string: "e.event.resize.br";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_resize";
-      value "params" string: "br";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,1";
-      value "source" string: "e.event.resize.b";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_resize";
-      value "params" string: "b";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,1";
-      value "source" string: "e.event.resize.bl";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_resize";
-      value "params" string: "bl";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,1";
-      value "source" string: "e.event.resize.l";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_resize";
-      value "params" string: "l";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,up,1";
-      value "source" string: "e.event.resize.*";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_resize";
-      value "params" string: "end";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,down,3";
-      value "source" string: "e.event.resize.*";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_move";
-    }
-  }
-  group "signal_bindings" list {
-    group "E_Config_Binding_Signal" struct {
-      value "context" int: 2;
-      value "signal" string: "mouse,up,3";
-      value "source" string: "e.event.resize.*";
-      value "modifiers" int: 0;
-      value "any_mod" uchar: 1;
-      value "action" string: "window_move";
-      value "params" string: "end";
     }
   }
   value "window_placement_policy" int: 0;
@@ -362,7 +48,7 @@ group "E_Config" struct {
   value "geometry_auto_move" int: 1;
   value "winlist_warp_while_selecting" int: 0;
   value "winlist_warp_at_end" int: 1;
-  value "winlist_warp_speed" double: 0.1;
+  value "pointer_warp_speed" double: 0.1;
   value "winlist_scroll_animate" int: 1;
   value "winlist_scroll_speed" double: 0.1;
   value "winlist_list_show_iconified" int: 1;
@@ -467,7 +153,6 @@ group "E_Config" struct {
   value "mouse_accel_denominator" int: 1;
   value "mouse_accel_threshold" int: 4;
   value "border_raise_on_mouse_action" int: 1;
-  value "border_raise_on_focus" int: 1;
   value "desk_flip_wrap" int: 0;
   value "fullscreen_flip" int: 1;
   value "icon_theme" string: "Tango";
@@ -479,6 +164,7 @@ group "E_Config" struct {
   value "theme_default_border_style" string: "default";
   value "desk_auto_switch" int: 0;
   value "thumb_nice" int: 0;
+  value "screen_limits" int: 0;
   value "menu_favorites_show" int: 1;
   value "menu_apps_show" int: 1;
   value "ping_clients_interval" int: 16;
@@ -515,9 +201,11 @@ group "E_Config" struct {
   value "exec.show_run_dialog" uchar: 1;
   value "exec.show_exit_dialog" uchar: 1;
   value "null_container_win" uchar: 1;
-  value "backlight.normal" double: 1.0;
+  value "backlight.normal" double: 1.0
   value "backlight.dim" double: 0.3;
   value "backlight.transition" double: 0.5;
+  value "backlight.timer" double: 1.0;
+  value "backlight.idle_dim" uchar: 0;
   value "device_desktop" int: 0;
   value "device_auto_mount" int: 0;
   value "device_auto_open" int: 0;

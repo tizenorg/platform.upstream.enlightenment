@@ -1,7 +1,16 @@
 #include "config.h"
 
+#define __USE_MISC
+#define _SVID_SOURCE
+#ifdef HAVE_FEATURES_H
+# include <features.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_ENVIRON
+# define _GNU_SOURCE 1
+#endif
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
@@ -16,22 +25,28 @@
 #endif
 #include <Eina.h>
 
+#ifdef HAVE_ENVIRON
+extern char **environ;
+#endif
+
+double e_sys_l2ping(const char *bluetooth_mac);
+
 /* local subsystem functions */
 #ifdef HAVE_EEZE_MOUNT
 static Eina_Bool mountopts_check(const char *opts);
 static Eina_Bool mount_args_check(int argc, char **argv, const char *action);
 #endif
-static int auth_action_ok(char *a,
-                          gid_t gid,
-                          gid_t *gl,
-                          int gn,
-                          gid_t egid);
-static int auth_etc_enlightenment_sysactions(char *a,
-                                             char *u,
-                                             char **g);
-static void auth_etc_enlightenment_sysactions_perm(char *path);
-static char *get_word(char *s,
-                      char *d);
+static int       auth_action_ok(char *a,
+                                gid_t gid,
+                                gid_t *gl,
+                                int gn,
+                                gid_t egid);
+static int       auth_etc_enlightenment_sysactions(char *a,
+                                                   char *u,
+                                                   char **g);
+static void      auth_etc_enlightenment_sysactions_perm(char *path);
+static char     *get_word(char *s,
+                          char *d);
 
 /* local subsystem globals */
 static Eina_Hash *actions = NULL;
@@ -51,7 +66,6 @@ main(int argc,
    const char *act;
 #endif
    gid_t gid, gl[65536], egid;
-   int pid = 0;
 
    for (i = 1; i < argc; i++)
      {
@@ -73,28 +87,18 @@ main(int argc,
              test = 1;
              action = argv[2];
           }
-   else if (!strcmp(argv[1], "gdb"))
-     {
-        if (argc != 4) exit(1);
-        char *end = NULL;
-
-        action = argv[1];
-        pid = strtoul(argv[2], &end, 10);
-        if (end == NULL || *end != '\0')
-          {
-             printf("Invalid pid for '%s'.\n", argv[3]);
-             exit(0);
-          }
-
-        output = argv[3];
-     }
+	else if (!strcmp(argv[1], "l2ping"))
+	  {
+	     action = argv[1];
+	     output = argv[2];
+	  }
 #ifdef HAVE_EEZE_MOUNT
         else
           {
              const char *s;
 
              s = strrchr(argv[1], '/');
-             if ((!s) || (!s[1])) exit(1); /* eeze always uses complete path */
+             if ((!s) || (!s[1])) exit(1);  /* eeze always uses complete path */
              s++;
              if (strcmp(s, "mount") && strcmp(s, "umount") && strcmp(s, "eject")) exit(1);
              mnt = EINA_TRUE;
@@ -154,30 +158,134 @@ main(int argc,
         exit(20);
      }
 
-   if (!strcmp(action, "gdb"))
+   if (!test && !strcmp(action, "l2ping"))
      {
-        char buffer[4096];
-        int r;
+        char tmp[128];
+	double latency;
 
-	snprintf(buffer, 4096,
-                 "%s --pid=%i "
-		 "-ex 'set logging file %s' "
-		 "-ex 'set logging on' "
-		 "-ex 'thread apply all backtrace full' "
-		 "-ex detach -ex quit > /dev/null 2> /dev/null",
-                 cmd,
-		 pid,
-		 output ?: "e-output.txt");
+	latency = e_sys_l2ping(output);
 
-        r = system(buffer);
+	eina_convert_dtoa(latency, tmp);
+	fputs(tmp, stdout);
 
-        exit(WEXITSTATUS(r));
+	return (latency < 0) ? 1 : 0;
      }
+   /* sanitize environment */
+#ifdef HAVE_UNSETENV
+# define NOENV(x) unsetenv(x)
+   /* pass 1 - just nuke known dangerous env vars brutally if possible via
+    * unsetenv(). if you don't have unsetenv... there's pass 2 and 3 */
+   NOENV("IFS");
+   NOENV("CDPATH");
+   NOENV("LOCALDOMAIN");
+   NOENV("RES_OPTIONS");
+   NOENV("HOSTALIASES");
+   NOENV("NLSPATH");
+   NOENV("PATH_LOCALE");
+   NOENV("COLORTERM");
+   NOENV("LANG");
+   NOENV("LANGUAGE");
+   NOENV("LINGUAS");
+   NOENV("TERM");
+   NOENV("LD_PRELOAD");
+   NOENV("LD_LIBRARY_PATH");
+   NOENV("SHLIB_PATH");
+   NOENV("LIBPATH");
+   NOENV("AUTHSTATE");
+   NOENV("DYLD_*");
+   NOENV("KRB_CONF*");
+   NOENV("KRBCONFDIR");
+   NOENV("KRBTKFILE");
+   NOENV("KRB5_CONFIG*");
+   NOENV("KRB5_KTNAME");
+   NOENV("VAR_ACE");
+   NOENV("USR_ACE");
+   NOENV("DLC_ACE");
+   NOENV("TERMINFO");
+   NOENV("TERMINFO_DIRS");
+   NOENV("TERMPATH");
+   NOENV("TERMCAP");
+   NOENV("ENV");
+   NOENV("BASH_ENV");
+   NOENV("PS4");
+   NOENV("GLOBIGNORE");
+   NOENV("SHELLOPTS");
+   NOENV("JAVA_TOOL_OPTIONS");
+   NOENV("PERLIO_DEBUG");
+   NOENV("PERLLIB");
+   NOENV("PERL5LIB");
+   NOENV("PERL5OPT");
+   NOENV("PERL5DB");
+   NOENV("FPATH");
+   NOENV("NULLCMD");
+   NOENV("READNULLCMD");
+   NOENV("ZDOTDIR");
+   NOENV("TMPPREFIX");
+   NOENV("PYTHONPATH");
+   NOENV("PYTHONHOME");
+   NOENV("PYTHONINSPECT");
+   NOENV("RUBYLIB");
+   NOENV("RUBYOPT");
+# ifdef HAVE_ENVIRON
+   if (environ)
+     {
+        int again;
+        char *tmp, *p;
+
+        /* go over environment array again and again... safely */
+        do
+          {
+             again = 0;
+
+             /* walk through and find first entry that we don't like */
+             for (i = 0; environ[i]; i++)
+               {
+                  /* if it begins with any of these, it's possibly nasty */
+                  if ((!strncmp(environ[i], "LD_", 3)) ||
+                      (!strncmp(environ[i], "_RLD_", 5)) ||
+                      (!strncmp(environ[i], "LC_", 3)) ||
+                      (!strncmp(environ[i], "LDR_", 3)))
+                    {
+                       /* unset it */
+                       tmp = strdup(environ[i]);
+                       if (!tmp) abort();
+                       p = strchr(tmp, '=');
+                       if (!p) abort();
+                       *p = 0;
+                       NOENV(tmp);
+                       free(tmp);
+                       /* and mark our do to try again from the start in case
+                        * unsetenv changes environ ptr */
+                       again = 1;
+                       break;
+                    }
+               }
+          }
+        while (again);
+     }
+# endif
+#endif
+
+   /* pass 2 - clear entire environment so it doesn't exist at all. if you
+    * can't do this... you're possibly in trouble... but the worst is still
+    * fixed in pass 3 */
+#ifdef HAVE_CLEARENV
+   clearenv();
+#else
+# ifdef HAVE_ENVIRON
+   environ = NULL;
+# endif
+#endif
+
+   /* pass 3 - set path and ifs to minimal defaults */
+   putenv("PATH=/bin:/usr/bin:/sbin:/usr/sbin");
+   putenv("IFS= \t\n");
+
    if ((!test)
 #ifdef HAVE_EEZE_MOUNT
-    && (!mnt)
+       && (!mnt)
 #endif
-      )
+       )
      return system(cmd);
 #ifdef HAVE_EEZE_MOUNT
    if (mnt)
@@ -290,36 +398,36 @@ mountopts_check(const char *opts)
   if (!strncmp(p, OPT, sizeof(OPT) - 1))
 
         CMP("nosuid,")
-          {
-             nosuid = EINA_TRUE;
-             continue;
-          }
+        {
+           nosuid = EINA_TRUE;
+           continue;
+        }
         CMP("nodev,")
-          {
-             nodev = EINA_TRUE;
-             continue;
-          }
+        {
+           nodev = EINA_TRUE;
+           continue;
+        }
         CMP("noexec,")
-          {
-             noexec = EINA_TRUE;
-             continue;
-          }
+        {
+           noexec = EINA_TRUE;
+           continue;
+        }
         CMP("utf8,") continue;
         CMP("utf8=0,") continue;
         CMP("utf8=1,") continue;
         CMP("iocharset=utf8,") continue;
         CMP("uid=")
-          {
-             p += 4;
-             errno = 0;
-             muid = strtoul(p, &end, 10);
-             if (muid == ULONG_MAX) return EINA_FALSE;
-             if (errno) return EINA_FALSE;
-             if (end[0] != ',') return EINA_FALSE;
-             if (muid != uid) return EINA_FALSE;
-             nuid = EINA_TRUE;
-             continue;
-          }
+        {
+           p += 4;
+           errno = 0;
+           muid = strtoul(p, &end, 10);
+           if (muid == ULONG_MAX) return EINA_FALSE;
+           if (errno) return EINA_FALSE;
+           if (end[0] != ',') return EINA_FALSE;
+           if (muid != uid) return EINA_FALSE;
+           nuid = EINA_TRUE;
+           continue;
+        }
         return EINA_FALSE;
      }
    if ((!nosuid) || (!nodev) || (!noexec) || (!nuid)) return EINA_FALSE;
@@ -347,7 +455,7 @@ mount_args_check(int argc, char **argv, const char *action)
    if (!strcmp(action, "mount"))
      {
         /* will ALWAYS be:
-         /path/to/mount -o nosuid,uid=XYZ,[utf8,] UUID=XXXX-XXXX[-XXXX-XXXX] /media/$devnode
+           /path/to/mount -o nosuid,uid=XYZ,[utf8,] UUID=XXXX-XXXX[-XXXX-XXXX] /media/$devnode
          */
         if (argc != 6) return EINA_FALSE;
         if (argv[2][0] == '-')
@@ -366,7 +474,7 @@ mount_args_check(int argc, char **argv, const char *action)
              if (strncmp(argv[4], "/dev/", 5)) return EINA_FALSE;
              if (stat(argv[4], &st)) return EINA_FALSE;
           }
-        
+
         node = strrchr(argv[5], '/');
         if (!node) return EINA_FALSE;
         if (!node[1]) return EINA_FALSE;
@@ -377,7 +485,7 @@ mount_args_check(int argc, char **argv, const char *action)
    else if (!strcmp(action, "umount"))
      {
         /* will ALWAYS be:
-         /path/to/umount /dev/$devnode
+           /path/to/umount /dev/$devnode
          */
         if (argc != 3) return EINA_FALSE;
         if (strncmp(argv[2], "/dev/", 5)) return EINA_FALSE;
@@ -388,16 +496,16 @@ mount_args_check(int argc, char **argv, const char *action)
         if (node - argv[2] != 4) return EINA_FALSE;
         /* this is good, but it prevents umounting user-mounted removable media;
          * need to figure out a better way...
-         * 
-        snprintf(buf, sizeof(buf), "/media%s", node);
-        if (stat(buf, &st)) return EINA_FALSE;
-        if (!S_ISDIR(st.st_mode)) return EINA_FALSE;
-        */
+         *
+           snprintf(buf, sizeof(buf), "/media%s", node);
+           if (stat(buf, &st)) return EINA_FALSE;
+           if (!S_ISDIR(st.st_mode)) return EINA_FALSE;
+         */
      }
    else if (!strcmp(action, "eject"))
      {
         /* will ALWAYS be:
-         /path/to/eject /dev/$devnode
+           /path/to/eject /dev/$devnode
          */
         if (argc != 3) return EINA_FALSE;
         if (strncmp(argv[2], "/dev/", 5)) return EINA_FALSE;
@@ -410,6 +518,7 @@ mount_args_check(int argc, char **argv, const char *action)
    else return EINA_FALSE;
    return EINA_TRUE;
 }
+
 #endif
 
 static int
@@ -539,7 +648,8 @@ auth_etc_enlightenment_sysactions(char *a,
           }
         else if (!strcmp(id, "action:"))
           {
-             while ((*pp) && (isspace(*pp))) pp++;
+             while ((*pp) && (isspace(*pp)))
+               pp++;
              s = eina_hash_find(actions, ugname);
              if (s) eina_hash_del(actions, ugname, s);
              if (!actions) actions = eina_hash_string_superfast_new(free);
@@ -617,3 +727,4 @@ get_word(char *s,
    *p2 = 0;
    return p1;
 }
+

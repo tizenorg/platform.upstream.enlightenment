@@ -19,6 +19,8 @@ struct _E_Smart_Data
    void         *on_focus_data;
    void          (*on_change_func)(void *data, Evas_Object *obj);
    void         *on_change_data;
+   void          (*on_disable_func)(void *data, Evas_Object *obj);
+   void         *on_disable_data;
    void         *data;
    unsigned char can_focus : 1;
    unsigned char child_can_focus : 1;
@@ -92,6 +94,14 @@ e_widget_on_change_hook_set(Evas_Object *obj, void (*func)(void *data, Evas_Obje
    API_ENTRY return;
    sd->on_change_func = func;
    sd->on_change_data = data;
+}
+
+EAPI void
+e_widget_on_disable_hook_set(Evas_Object *obj, void (*func)(void *data, Evas_Object *obj), void *data)
+{
+   API_ENTRY return;
+   sd->on_disable_func = func;
+   sd->on_disable_data = data;
 }
 
 EAPI void
@@ -437,9 +447,9 @@ EAPI void
 e_widget_disabled_set(Evas_Object *obj, int disabled)
 {
    API_ENTRY return;
-   if (sd->disabled == disabled) return;
-   sd->disabled = disabled;
-   if (sd->focused)
+   if (sd->disabled == !!disabled) return;
+   sd->disabled = !!disabled;
+   if (sd->focused && sd->disabled)
      {
         Evas_Object *o = NULL, *parent = NULL;
 
@@ -450,13 +460,15 @@ e_widget_disabled_set(Evas_Object *obj, int disabled)
              if (!o) break;
              parent = o;
           }
-        if (!e_widget_focus_jump(parent, 1))
+        e_widget_focus_jump(parent, 1);
+        if (sd->focused)
           {
              sd->focused = 0;
              if (sd->focus_func) sd->focus_func(obj);
           }
      }
    if (sd->disable_func) sd->disable_func(obj);
+   if (sd->on_disable_func) sd->on_disable_func(sd->on_disable_data, obj);
 }
 
 EAPI int

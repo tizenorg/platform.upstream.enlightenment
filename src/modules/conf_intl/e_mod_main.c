@@ -29,6 +29,7 @@ e_modapi_init(E_Module *m)
                                  "preferences-imc", e_int_config_imc);
    conf_module = m;
    e_module_delayed_set(m, 1);
+
    return m;
 }
 
@@ -47,6 +48,7 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    e_configure_registry_item_del("language/desklock_language_settings");
    e_configure_registry_item_del("language/language_settings");
    e_configure_registry_category_del("language");
+
    conf_module = NULL;
    return 1;
 }

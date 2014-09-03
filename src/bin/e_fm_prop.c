@@ -94,7 +94,7 @@ struct _E_Config_Dialog_Data
 
 /* a nice easy setup function that does the dirty work */
 EAPI E_Config_Dialog *
-e_fm_prop_file(E_Container *con, E_Fm2_Icon *ic)
+e_fm_prop_file(E_Comp *c, E_Fm2_Icon *ic)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -111,7 +111,7 @@ e_fm_prop_file(E_Container *con, E_Fm2_Icon *ic)
    v->advanced.create_widgets = _advanced_create_widgets;
 #endif
    /* create config dialog for NULL object/data */
-   cfd = e_config_dialog_new(con,
+   cfd = e_config_dialog_new(c,
                              _("File Properties"),
                              "E", "_fm_prop",
                              "enlightenment/file_properties", 0, v, ic);
@@ -555,8 +555,8 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
 
         if (cfdata->fi->broken_link)
           {
-            ob = e_widget_label_add(evas, _("This link is broken."));
-            e_widget_frametable_object_append(ot, ob, 0, 1, 1, 1, 1, 0, 1, 0);
+             ob = e_widget_label_add(evas, _("This link is broken."));
+             e_widget_frametable_object_append(ot, ob, 0, 1, 1, 1, 1, 0, 1, 0);
           }
 
         e_widget_table_object_append(o, ot, 1, 1, 2, 1, 1, 1, 1, 1);
@@ -605,7 +605,7 @@ _cb_icon_sel(void *data, void *data2)
    cfd = data2;
    if (!cfd) return;
 
-   dia = e_dialog_new(cfd->con, "E", "_fm2_file_properties_icon_select_dialog");
+   dia = e_dialog_new(cfd->comp, "E", "_fm2_file_properties_icon_select_dialog");
    if (!dia) return;
 //   if (cfdata->type == EDJ)
 //     e_dialog_title_set(dia, _("Select an Edj File"));

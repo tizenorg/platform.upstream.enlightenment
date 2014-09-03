@@ -10,6 +10,7 @@ struct _E_Config_Dialog_Data
    Evas_Object *o_randr;
 
    int restore, primary;
+   Eina_Bool changed;
 };
 
 /* local function prototypes */
@@ -23,7 +24,7 @@ static void _randr_cb_changed(void *data, Evas_Object *obj, void *event EINA_UNU
 
 /* public functions */
 E_Config_Dialog *
-e_int_config_randr(E_Container *con, const char *params EINA_UNUSED)
+e_int_config_randr(E_Comp *comp, const char *params EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -45,7 +46,7 @@ e_int_config_randr(E_Container *con, const char *params EINA_UNUSED)
    v->override_auto_apply = EINA_TRUE;
 
    /* create new dialog */
-   cfd = e_config_dialog_new(con, _("Screen Setup"), 
+   cfd = e_config_dialog_new(comp, _("Screen Setup"), 
                              "E", "screen/screen_setup",
                              "preferences-system-screen-resolution", 
                              0, v, NULL);
@@ -154,19 +155,13 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 static int 
 _basic_apply(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
-   Eina_Bool change_primary = EINA_FALSE;
-
-   change_primary = (e_randr_cfg->primary != cfdata->primary);
-
    e_randr_cfg->primary = cfdata->primary;
    e_randr_cfg->restore = cfdata->restore;
-   e_randr_config_save();
-
-   if (change_primary)
-     ecore_x_randr_primary_output_set(ecore_x_window_root_first_get(), 
-                                      (Ecore_X_Randr_Output)cfdata->primary);
 
    e_smart_randr_changes_apply(cfdata->o_randr);
+
+   e_randr_config_apply();
+   e_randr_config_save();
 
    return 1;
 }
@@ -175,17 +170,17 @@ static int
 _basic_check(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    return ((e_randr_cfg->restore != cfdata->restore) || 
-           (e_randr_cfg->primary != cfdata->primary));
+           (e_randr_cfg->primary != (unsigned int)cfdata->primary) ||
+           cfdata->changed);
 }
 
 static void 
 _randr_cb_changed(void *data, Evas_Object *obj, void *event EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
-   Eina_Bool changed = EINA_FALSE;
 
    if (!(cfd = data)) return;
 
-   changed = e_smart_randr_changed_get(obj);
-   e_config_dialog_changed_set(cfd, changed);
+   cfd->cfdata->changed = e_smart_randr_changed_get(obj);
+   e_config_dialog_changed_set(cfd, cfd->cfdata->changed);
 }

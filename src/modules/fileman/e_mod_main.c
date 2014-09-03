@@ -3,6 +3,7 @@
 /* actual module specifics */
 static void _e_mod_action_fileman_cb(E_Object   *obj,
                                      const char *params);
+static void _e_mod_action_fileman_reset_cb(E_Object *obj EINA_UNUSED, const char *params EINA_UNUSED);
 static void      _e_mod_menu_add(void   *data, E_Menu *m);
 static void      _e_mod_fileman_config_load(void);
 static void      _e_mod_fileman_config_free(void);
@@ -12,6 +13,7 @@ static Eina_Bool _e_mod_zone_add(void *data,
 
 static E_Module *conf_module = NULL;
 static E_Action *act = NULL;
+static E_Action *act2 = NULL;
 static E_Int_Menu_Augmentation *maug = NULL;
 static Ecore_Event_Handler *zone_add_handler = NULL;
 
@@ -28,9 +30,8 @@ EAPI E_Module_Api e_modapi =
 EAPI void *
 e_modapi_init(E_Module *m)
 {
-   Eina_List *l, *ll, *lll;
-   E_Manager *man;
-   E_Container *con;
+   const Eina_List *l, *ll;
+   E_Comp *comp;
    E_Zone *zone;
 
    conf_module = m;
@@ -55,27 +56,22 @@ e_modapi_init(E_Module *m)
         e_action_predef_name_set(N_("Launch"), N_("File Manager"),
                                  "fileman", NULL, "syntax: /path/to/dir or ~/path/to/dir or favorites or desktop, examples: /boot/grub, ~/downloads", 1);
      }
+   act2 = e_action_add("fileman_reset");
+   if (act2)
+     act2->func.go = _e_mod_action_fileman_reset_cb;
    maug = e_int_menus_menu_augmentation_add_sorted("main/1", _("Navigate"), _e_mod_menu_add, NULL, NULL, NULL);
    e_module_delayed_set(m, 1);
 
    e_fwin_init();
 
    /* Hook into zones */
-   for (l = e_manager_list(); l; l = l->next)
-     {
-        man = l->data;
-        for (ll = man->containers; ll; ll = ll->next)
-          {
-             con = ll->data;
-             for (lll = con->zones; lll; lll = lll->next)
-               {
-                  zone = lll->data;
-                  if (e_fwin_zone_find(zone)) continue;
-                  if (fileman_config->view.show_desktop_icons)
-                    e_fwin_zone_new(zone, e_mod_fileman_path_find(zone));
-               }
-          }
-     }
+   EINA_LIST_FOREACH(e_comp_list(), l, comp)
+     EINA_LIST_FOREACH(comp->zones, ll, zone)
+       {
+          if (e_fwin_zone_find(zone)) continue;
+          if (e_config->show_desktop_icons)
+            e_fwin_zone_new(zone, e_mod_fileman_path_find(zone));
+       }
    zone_add_handler = ecore_event_handler_add(E_EVENT_ZONE_ADD,
                                               _e_mod_zone_add, NULL);
 
@@ -91,9 +87,8 @@ e_modapi_init(E_Module *m)
 EAPI int
 e_modapi_shutdown(E_Module *m __UNUSED__)
 {
-   Eina_List *l, *ll, *lll;
-   E_Manager *man;
-   E_Container *con;
+   const Eina_List *l, *ll;
+   E_Comp *comp;
    E_Zone *zone;
    E_Config_Dialog *cfd;
 
@@ -103,20 +98,9 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    zone_add_handler = NULL;
 
    /* Unhook zone fm */
-   for (l = e_manager_list(); l; l = l->next)
-     {
-        man = l->data;
-        for (ll = man->containers; ll; ll = ll->next)
-          {
-             con = ll->data;
-             for (lll = con->zones; lll; lll = lll->next)
-               {
-                  zone = lll->data;
-                  if (!zone) continue;
-                  e_fwin_zone_shutdown(zone);
-               }
-          }
-     }
+   EINA_LIST_FOREACH(e_comp_list(), l, comp)
+     EINA_LIST_FOREACH(comp->zones, ll, zone)
+       e_fwin_zone_shutdown(zone);
 
    e_fwin_nav_shutdown();
    
@@ -134,6 +118,11 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
         e_action_del("fileman");
         act = NULL;
      }
+   if (act2)
+     {
+        e_action_del("fileman_reset");
+        act2 = NULL;
+     }
    while ((cfd = e_config_dialog_get("E", "fileman/mime_edit_dialog")))
       e_object_del(E_OBJECT(cfd));
    while ((cfd = e_config_dialog_get("E", "fileman/file_icons")))
@@ -146,6 +135,7 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    e_configure_registry_category_del("fileman");
 
    e_config_domain_save("module.fileman", conf_edd, fileman_config);
+
    _e_mod_fileman_config_free();
    E_CONFIG_DD_FREE(conf_edd);
    E_CONFIG_DD_FREE(paths_edd);
@@ -165,6 +155,12 @@ e_modapi_save(E_Module *m __UNUSED__)
 
 /* action callback */
 static void
+_e_mod_action_fileman_reset_cb(E_Object *obj EINA_UNUSED, const char *params EINA_UNUSED)
+{
+   e_fwin_reload_all();
+}
+
+static void
 _e_mod_action_fileman_cb(E_Object   *obj,
                          const char *params)
 {
@@ -174,32 +170,32 @@ _e_mod_action_fileman_cb(E_Object   *obj,
      {
         if (obj->type == E_MANAGER_TYPE)
           zone = e_util_zone_current_get((E_Manager *)obj);
-        else if (obj->type == E_CONTAINER_TYPE)
-          zone = e_util_zone_current_get(((E_Container *)obj)->manager);
+        else if (obj->type == E_COMP_TYPE)
+          zone = e_zone_current_get((E_Comp *)obj);
         else if (obj->type == E_ZONE_TYPE)
-          zone = e_util_zone_current_get(((E_Zone *)obj)->container->manager);
+          zone = e_zone_current_get(((E_Zone *)obj)->comp);
         else
-          zone = e_util_zone_current_get(e_manager_current_get());
+          zone = e_zone_current_get(e_comp_get(NULL));
      }
    if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
    if (zone)
      {
         if (params && params[0] == '/')
-          e_fwin_new(zone->container, "/", params);
+          e_fwin_new(zone->comp, "/", params);
         else if (params && params[0] == '~')
-          e_fwin_new(zone->container, "~/", params + 1);
+          e_fwin_new(zone->comp, "~/", params + 1);
         else if (params && strcmp(params, "(none)")) /* avoid matching paths that no longer exist */
           {
              char *path;
              path = e_util_shell_env_path_eval(params);
              if (path)
                {
-                  e_fwin_new(zone->container, path, "/");
+                  e_fwin_new(zone->comp, path, "/");
                   free(path);
                }
           }
         else
-          e_fwin_new(zone->container, "favorites", "/");
+          e_fwin_new(zone->comp, "favorites", "/");
      }
 }
 
@@ -238,7 +234,6 @@ _e_mod_fileman_config_load(void)
    E_CONFIG_VAL(D, T, view.link_drop, UCHAR);
    E_CONFIG_VAL(D, T, view.fit_custom_pos, UCHAR);
    E_CONFIG_VAL(D, T, view.show_full_path, UCHAR);
-   E_CONFIG_VAL(D, T, view.show_desktop_icons, UCHAR);
    E_CONFIG_VAL(D, T, view.show_toolbar, UCHAR);
    E_CONFIG_VAL(D, T, view.show_sidebar, UCHAR);
    E_CONFIG_VAL(D, T, view.desktop_navigation, UCHAR);
@@ -265,6 +260,7 @@ _e_mod_fileman_config_load(void)
    E_CONFIG_VAL(D, T, tooltip.delay, DOUBLE);
    E_CONFIG_VAL(D, T, tooltip.size, DOUBLE);
    E_CONFIG_VAL(D, T, tooltip.enable, UCHAR);
+   E_CONFIG_VAL(D, T, tooltip.clamp_size, UCHAR);
    E_CONFIG_VAL(D, T, view.spring_delay, INT);
    E_CONFIG_VAL(D, T, view.toolbar_orient, UINT);
    E_CONFIG_LIST(D, T, paths, paths_edd);
@@ -280,7 +276,7 @@ _e_mod_fileman_config_load(void)
      {
         fileman_config = E_NEW(Config, 1);
         fileman_config->view.mode = E_FM2_VIEW_MODE_GRID_ICONS;
-        fileman_config->view.show_desktop_icons = 1;
+        e_config->show_desktop_icons = 1;
         fileman_config->icon.icon.w = 48;
         fileman_config->icon.icon.h = 48;
         fileman_config->icon.extension.show = 1;
@@ -296,9 +292,8 @@ _e_mod_fileman_config_load(void)
         fileman_config->icon.max_thumb_size = 5;
         fileman_config->view.toolbar_orient = E_GADCON_ORIENT_TOP;
      }
-
-
     fileman_config->config_version = MOD_CONFIG_FILE_VERSION;
+    fileman_config->icon.icon.h = fileman_config->icon.icon.w;
 
     /* UCHAR's give nasty compile warnings about comparisons so not gonna limit those */
     E_CONFIG_LIMIT(fileman_config->view.mode, E_FM2_VIEW_MODE_ICONS, E_FM2_VIEW_MODE_LIST);
@@ -313,6 +308,7 @@ _e_mod_fileman_config_load(void)
     E_CONFIG_LIMIT(fileman_config->icon.max_thumb_size, 0, 1024);
 
     fileman_config->view.menu_shows_files = 0;
+
     e_config_save_queue();
 }
 
@@ -347,7 +343,7 @@ _e_mod_zone_add(__UNUSED__ void *data,
    ev = event;
    zone = ev->zone;
    if (e_fwin_zone_find(zone)) return ECORE_CALLBACK_PASS_ON;
-   if (fileman_config->view.show_desktop_icons)
+   if (e_config->show_desktop_icons)
      e_fwin_zone_new(zone, e_mod_fileman_path_find(zone));
    return ECORE_CALLBACK_PASS_ON;
 }
@@ -359,7 +355,7 @@ e_mod_fileman_path_find(E_Zone *zone)
    Fileman_Path *path;
 
    EINA_LIST_FOREACH(fileman_config->paths, l, path)
-     if (path->zone == zone->container->num + zone->num) break;
+     if (path->zone == zone->comp->num + zone->num) break;
    if (l && fileman_config->view.desktop_navigation) return path;
    if (l)
      {
@@ -369,14 +365,14 @@ e_mod_fileman_path_find(E_Zone *zone)
    else
      {
         path = E_NEW(Fileman_Path, 1);
-        path->zone = zone->container->num + zone->num;
+        path->zone = zone->comp->num + zone->num;
         path->dev = eina_stringshare_add("desktop");
         fileman_config->paths = eina_list_append(fileman_config->paths, path);
+        path->desktop_mode = E_FM2_VIEW_MODE_CUSTOM_ICONS;
      }
-   path->desktop_mode = E_FM2_VIEW_MODE_CUSTOM_ICONS;
-   if ((zone->container->num == 0) && (zone->num == 0))
+   if ((zone->comp->num == 0) && (zone->num == 0))
      path->path = eina_stringshare_add("/");
    else
-     path->path = eina_stringshare_printf("%d", (zone->container->num + zone->num));
+     path->path = eina_stringshare_printf("%d", (zone->comp->num + zone->num));
    return path;
 }

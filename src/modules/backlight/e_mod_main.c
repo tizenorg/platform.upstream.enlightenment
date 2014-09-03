@@ -39,9 +39,6 @@ struct _Instance
    Evas_Object     *o_backlight, *o_table, *o_slider;
    E_Gadcon_Popup  *popup;
    double           val;
-   Ecore_X_Window   input_win;
-   Ecore_Event_Handler *hand_mouse_down;
-   Ecore_Event_Handler *hand_key_down;
 };
 
 static Eina_List *backlight_instances = NULL;
@@ -63,38 +60,11 @@ _backlight_gadget_update(Instance *inst)
    edje_object_message_send(inst->o_backlight, EDJE_MESSAGE_FLOAT, 0, &msg);
 }
 
-static void
-_backlight_input_win_del(Instance *inst)
-{
-   if (!inst->input_win) return;
-   e_grabinput_release(0, inst->input_win);
-   ecore_x_window_free(inst->input_win);
-   inst->input_win = 0;
-   ecore_event_handler_del(inst->hand_mouse_down);
-   inst->hand_mouse_down = NULL;
-   ecore_event_handler_del(inst->hand_key_down);
-   inst->hand_key_down = NULL;
-}
-
 static Eina_Bool
-_backlight_input_win_mouse_down_cb(void *data, int type __UNUSED__, void *event)
+_backlight_win_key_down_cb(void *data, Ecore_Event_Key *ev)
 {
-   Ecore_Event_Mouse_Button *ev = event;
-   Instance *inst = data;
-   
-   if (ev->window != inst->input_win) return ECORE_CALLBACK_PASS_ON;
-   _backlight_popup_free(inst);
-   return ECORE_CALLBACK_PASS_ON;
-}
-
-static Eina_Bool
-_backlight_input_win_key_down_cb(void *data, int type __UNUSED__, void *event)
-{
-   Ecore_Event_Key *ev = event;
    Instance *inst = data;
    const char *keysym;
-   
-   if (ev->window != inst->input_win) return ECORE_CALLBACK_PASS_ON;
    
    keysym = ev->key;
    if (!strcmp(keysym, "Escape"))
@@ -114,6 +84,8 @@ _backlight_input_win_key_down_cb(void *data, int type __UNUSED__, void *event)
         inst->val = v;
         e_backlight_mode_set(inst->gcc->gadcon->zone, E_BACKLIGHT_MODE_NORMAL);
         e_backlight_level_set(inst->gcc->gadcon->zone, v, 0.0);
+        e_config->backlight.normal = v;
+        e_config_save_queue();
         _backlight_gadget_update(inst);
      }
    else if ((!strcmp(keysym, "Down")) ||
@@ -131,6 +103,8 @@ _backlight_input_win_key_down_cb(void *data, int type __UNUSED__, void *event)
         inst->val = v;
         e_backlight_mode_set(inst->gcc->gadcon->zone, E_BACKLIGHT_MODE_NORMAL);
         e_backlight_level_set(inst->gcc->gadcon->zone, v, 0.0);
+        e_config->backlight.normal = v;
+        e_config_save_queue();
         _backlight_gadget_update(inst);
      }
    else if ((!strcmp(keysym, "0")) ||
@@ -149,6 +123,8 @@ _backlight_input_win_key_down_cb(void *data, int type __UNUSED__, void *event)
         inst->val = v;
         e_backlight_mode_set(inst->gcc->gadcon->zone, E_BACKLIGHT_MODE_NORMAL);
         e_backlight_level_set(inst->gcc->gadcon->zone, v, 0.0);
+        e_config->backlight.normal = v;
+        e_config_save_queue();
         _backlight_gadget_update(inst);
      }
    else
@@ -157,7 +133,7 @@ _backlight_input_win_key_down_cb(void *data, int type __UNUSED__, void *event)
         E_Config_Binding_Key *binding;
         E_Binding_Modifier mod;
 
-	EINA_LIST_FOREACH(e_config->key_bindings, l, binding)
+        EINA_LIST_FOREACH(e_bindings->key_bindings, l, binding)
           {
              if (binding->action && strcmp(binding->action, "backlight")) continue;
              
@@ -172,7 +148,7 @@ _backlight_input_win_key_down_cb(void *data, int type __UNUSED__, void *event)
              if (ev->modifiers & ECORE_EVENT_MODIFIER_WIN)
                 mod |= E_BINDING_MODIFIER_WIN;
              
-             if (binding->key && (!strcmp(binding->key, ev->keyname)) &&
+             if (binding->key && (!strcmp(binding->key, ev->key)) &&
                  ((binding->modifiers == mod) || (binding->any_mod)))
                {
                   _backlight_popup_free(inst);
@@ -184,38 +160,11 @@ _backlight_input_win_key_down_cb(void *data, int type __UNUSED__, void *event)
 }
 
 static void
-_backlight_input_win_new(Instance *inst)
-{
-   Ecore_X_Window_Configure_Mask mask;
-   Ecore_X_Window w, popup_w;
-   E_Manager *man;
-   
-   man = inst->gcc->gadcon->zone->container->manager;
-   
-   w = ecore_x_window_input_new(man->root, 0, 0, man->w, man->h);
-   mask = (ECORE_X_WINDOW_CONFIGURE_MASK_STACK_MODE |
-           ECORE_X_WINDOW_CONFIGURE_MASK_SIBLING);
-   popup_w = inst->popup->win->evas_win;
-   ecore_x_window_configure(w, mask, 0, 0, 0, 0, 0, popup_w,
-                            ECORE_X_WINDOW_STACK_BELOW);
-   ecore_x_window_show(w);
-   
-   inst->hand_mouse_down =
-      ecore_event_handler_add(ECORE_EVENT_MOUSE_BUTTON_DOWN,
-                              _backlight_input_win_mouse_down_cb, inst);
-   inst->hand_key_down =
-      ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
-                              _backlight_input_win_key_down_cb, inst);
-   inst->input_win = w;
-   e_grabinput_get(0, 0, inst->input_win);
-}
-
-static void
 _backlight_settings_cb(void *d1, void *d2 __UNUSED__)
 {
    Instance *inst = d1;
    e_configure_registry_call("screen/power_management",
-                             inst->gcc->gadcon->zone->container, NULL);
+                             inst->gcc->gadcon->zone->comp, NULL);
    _backlight_popup_free(inst);
 }
 
@@ -225,6 +174,20 @@ _slider_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
    Instance *inst = data;
    e_backlight_mode_set(inst->gcc->gadcon->zone, E_BACKLIGHT_MODE_NORMAL);
    e_backlight_level_set(inst->gcc->gadcon->zone, inst->val, 0.0);
+   e_config->backlight.normal = inst->val;
+   e_config_save_queue();
+}
+
+static void
+_backlight_popup_del_cb(void *obj)
+{
+   _backlight_popup_free(e_object_data_get(obj));
+}
+
+static void
+_backlight_popup_comp_del_cb(void *data, Evas_Object *obj EINA_UNUSED)
+{
+   _backlight_popup_free(data);
 }
 
 static void
@@ -240,12 +203,12 @@ _backlight_popup_new(Instance *inst)
    inst->val = e_backlight_level_get(inst->gcc->gadcon->zone);
    _backlight_gadget_update(inst);
    
-   inst->popup = e_gadcon_popup_new(inst->gcc);
-   evas = inst->popup->win->evas;
+   inst->popup = e_gadcon_popup_new(inst->gcc, 0);
+   evas = e_comp_get(inst->popup)->evas;
    
    inst->o_table = e_widget_table_add(evas, 0);
 
-   o = e_widget_slider_add(evas, 0, 0, NULL, 0.0, 1.0, 0.05, 0, &(inst->val), NULL, 100);
+   o = e_widget_slider_add(evas, 0, 0, NULL, 0.1, 1.0, 0.05, 0, &(inst->val), NULL, 100);
    evas_object_smart_callback_add(o, "changed", _slider_cb, inst);
    inst->o_slider = o;
    e_widget_table_object_align_append(inst->o_table, o, 
@@ -258,19 +221,16 @@ _backlight_popup_new(Instance *inst)
    
    e_gadcon_popup_content_set(inst->popup, inst->o_table);
    e_gadcon_popup_show(inst->popup);
-   _backlight_input_win_new(inst);
+   e_comp_object_util_autoclose(inst->popup->comp_object, _backlight_popup_comp_del_cb,
+     _backlight_win_key_down_cb, inst);
+   e_object_data_set(E_OBJECT(inst->popup), inst);
+   E_OBJECT_DEL_SET(inst->popup, _backlight_popup_del_cb);
 }
 
 static void
 _backlight_popup_free(Instance *inst)
 {
-   if (!inst->popup) return;
-   if (inst->popup)
-     {
-        _backlight_input_win_del(inst);
-        e_object_del(E_OBJECT(inst->popup));
-        inst->popup = NULL;
-     }
+   E_FREE_FUNC(inst->popup, e_object_del);
 }
 
 static void
@@ -280,7 +240,7 @@ _backlight_menu_cb_cfg(void *data, E_Menu *menu __UNUSED__, E_Menu_Item *mi __UN
 
    _backlight_popup_free(inst);
    e_configure_registry_call("screen/power_management",
-                             inst->gcc->gadcon->zone->container, NULL);
+                             inst->gcc->gadcon->zone->comp, NULL);
 }
 
 static void
@@ -326,6 +286,8 @@ _backlight_level_decrease(Instance *inst)
    double v = inst->val - 0.1;
    if (v < 0.0) v = 0.0;
    e_backlight_level_set(inst->gcc->gadcon->zone, v, 0.0);
+   e_config->backlight.normal = v;
+   e_config_save_queue();
 }
 
 static void
@@ -334,6 +296,8 @@ _backlight_level_increase(Instance *inst)
    double v = inst->val + 0.1;
    if (v > 1.0) v = 1.0;
    e_backlight_level_set(inst->gcc->gadcon->zone, v, 0.0);
+   e_config->backlight.normal = v;
+   e_config_save_queue();
 }
 
 static void
@@ -392,7 +356,6 @@ _gc_shutdown(E_Gadcon_Client *gcc)
    Instance *inst;
    
    inst = gcc->data;
-   _backlight_input_win_del(inst);
    _backlight_popup_free(inst);
    backlight_instances = eina_list_remove(backlight_instances, inst);
    evas_object_del(inst->o_backlight);

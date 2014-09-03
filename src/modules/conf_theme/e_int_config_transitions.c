@@ -28,7 +28,7 @@ struct _E_Config_Dialog_Data
 };
 
 E_Config_Dialog *
-e_int_config_transitions(E_Container *con, const char *params __UNUSED__)
+e_int_config_transitions(E_Comp *comp, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -43,7 +43,7 @@ e_int_config_transitions(E_Container *con, const char *params __UNUSED__)
    v->basic.create_widgets = _basic_create_widgets;
    v->basic.check_changed = _basic_check_changed;
 
-   cfd = e_config_dialog_new(con, _("Transition Settings"),
+   cfd = e_config_dialog_new(comp, _("Transition Settings"),
                              "E", "appearance/transitions",
                              "preferences-transitions", 0, v, NULL);
    return cfd;
@@ -166,7 +166,7 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
    Eina_List *l;
    char *t;
 
-   zone = e_zone_current_get(cfd->con);
+   zone = e_zone_current_get(cfd->comp);
 
    o = e_widget_table_add(evas, 0);
 
@@ -198,15 +198,11 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
    e_widget_ilist_freeze(il);
    e_widget_ilist_append(il, NULL, _("None"), _trans_cb_changed, cfdata, NULL);
 
-   for (l = e_theme_transition_list(); l; l = l->next)
+   EINA_LIST_FOREACH(e_theme_transition_list(), l, t)
      {
-        t = l->data;
         if (!t) continue;
         e_widget_ilist_append(il, NULL, t, _trans_cb_changed, cfdata, NULL);
      }
-
-   EINA_LIST_FREE(l, t)
-     eina_stringshare_del(t);
 
    e_widget_ilist_go(il);
    e_widget_ilist_thaw(il);

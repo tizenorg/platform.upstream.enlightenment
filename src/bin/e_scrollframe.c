@@ -62,7 +62,7 @@ struct _E_Smart_Data
    unsigned char vbar_visible : 1;
    unsigned char extern_pan : 1;
    unsigned char one_dir_at_a_time : 1;
-   Eina_Bool key_nav : 1;
+   Eina_Bool     key_nav : 1;
 };
 
 /* local subsystem functions */
@@ -276,7 +276,7 @@ e_scrollframe_child_region_show(Evas_Object *obj, Evas_Coord x, Evas_Coord y, Ev
 
    /* Abort if the request region is already shown */
    if ((px <= x) && (py <= y) && (x + w <= px + vw) && (y + h <= py + vh))
-      return;
+     return;
 
    nx = px;
    if (x < px) nx = x;
@@ -394,15 +394,15 @@ e_scrollframe_key_navigation_set(Evas_Object *obj, Eina_Bool enabled)
 {
    API_ENTRY return;
    if (enabled == sd->key_nav)
-      return;
+     return;
 
    sd->key_nav = enabled;
    if (sd->key_nav)
-      evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN,
-            _e_smart_event_key_down, sd);
+     evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN,
+                                    _e_smart_event_key_down, sd);
    else
-      evas_object_event_callback_del_full(obj, EVAS_CALLBACK_KEY_DOWN,
-            _e_smart_event_key_down, sd);
+     evas_object_event_callback_del_full(obj, EVAS_CALLBACK_KEY_DOWN,
+                                         _e_smart_event_key_down, sd);
 }
 
 /* local subsystem functions */
@@ -700,26 +700,26 @@ _e_smart_event_key_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSE
    if (!sd->pan_obj) return;
    sd->pan_func.max_get(sd->pan_obj, &mx, &my);
    edje_object_part_geometry_get(sd->edje_obj, "e.swallow.content", NULL, NULL, &vw, &vh);
-   if (!strcmp(ev->keyname, "Left"))
+   if (!strcmp(ev->key, "Left"))
      x -= sd->step.x;
-   else if (!strcmp(ev->keyname, "Right"))
+   else if (!strcmp(ev->key, "Right"))
      x += sd->step.x;
-   else if (!strcmp(ev->keyname, "Up"))
+   else if (!strcmp(ev->key, "Up"))
      y -= sd->step.y;
-   else if (!strcmp(ev->keyname, "Home"))
+   else if (!strcmp(ev->key, "Home"))
      y = 0;
-   else if (!strcmp(ev->keyname, "End"))
+   else if (!strcmp(ev->key, "End"))
      y = my;
-   else if (!strcmp(ev->keyname, "Down"))
+   else if (!strcmp(ev->key, "Down"))
      y += sd->step.y;
-   else if (!strcmp(ev->keyname, "Prior"))
+   else if (!strcmp(ev->key, "Prior"))
      {
         if (sd->page.y < 0)
           y -= -(sd->page.y * vh) / 100;
         else
           y -= sd->page.y;
      }
-   else if (!strcmp(ev->keyname, "Next"))
+   else if (!strcmp(ev->key, "Next"))
      {
         if (sd->page.y < 0)
           y += -(sd->page.y * vh) / 100;
@@ -1157,3 +1157,4 @@ _e_smart_init(void)
       _e_smart = evas_smart_class_new(&sc);
    }
 }
+

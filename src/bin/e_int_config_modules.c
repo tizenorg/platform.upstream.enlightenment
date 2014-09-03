@@ -24,16 +24,16 @@ struct _CFType
 
 struct _E_Config_Dialog_Data
 {
-   Evas        *evas;
-   Evas_Object *l_modules;
-   Evas_Object *o_toolbar;
-   Evas_Object *b_load, *b_unload;
-   Evas_Object *o_desc;
-   Eina_List   *types;
+   Evas                *evas;
+   Evas_Object         *l_modules;
+   Evas_Object         *o_toolbar;
+   Evas_Object         *b_load, *b_unload;
+   Evas_Object         *o_desc;
+   Eina_List           *types;
    Ecore_Event_Handler *module_update;
    struct
    {
-      Eina_List   *loaded, *unloaded;
+      Eina_List *loaded, *unloaded;
    } selected;
 };
 
@@ -75,7 +75,7 @@ static void         _toolbar_select_cb(void *data, void *data2);
 
 static CFType      *_cftype_find(E_Config_Dialog_Data *cfdata, const char *key, const char *name, const char *icon);
 static CFType      *_cftype_new(const char *key, const char *name, const char *icon);
-static void         _load_modules(const char *dir, Eina_Hash *types_hash);
+static void         _load_module(E_Module_Desktop *md, Eina_Hash *types_hash);
 static Eina_Bool    _types_list_create_foreach_cb(const Eina_Hash *hash __UNUSED__, const void *key __UNUSED__, void *data, void *fdata);
 static int          _types_list_sort(const void *data1, const void *data2);
 
@@ -83,7 +83,7 @@ static void         _btn_cb_unload(void *data, void *data2);
 static void         _btn_cb_load(void *data, void *data2);
 
 EAPI E_Config_Dialog *
-e_int_config_modules(E_Container *con, const char *params __UNUSED__)
+e_int_config_modules(E_Comp *c, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd = NULL;
    E_Config_Dialog_View *v = NULL;
@@ -95,7 +95,7 @@ e_int_config_modules(E_Container *con, const char *params __UNUSED__)
    v->free_cfdata = _free_data;
    v->basic.create_widgets = _basic_create;
 
-   cfd = e_config_dialog_new(con, _("Module Settings"),
+   cfd = e_config_dialog_new(c, _("Module Settings"),
                              "E", "extensions/modules",
                              "preferences-plugin", 0, v, NULL);
    return cfd;
@@ -105,27 +105,25 @@ static void *
 _create_data(E_Config_Dialog *cfd __UNUSED__)
 {
    Eina_Hash *types_hash;
-   Eina_List *modules_paths, *l;
-   E_Path_Dir *epd;
-   E_Config_Dialog_Data *cfdata = E_NEW(E_Config_Dialog_Data, 1);
+   Eina_List *mods;
+   E_Module_Desktop *md;
+   E_Config_Dialog_Data *cfdata;
+
+   cfdata = E_NEW(E_Config_Dialog_Data, 1);
 
    types_hash = eina_hash_string_superfast_new(NULL);
-   if (!types_hash) return cfdata;
-
-   modules_paths = e_path_dir_list_get(path_modules);
-   if (!modules_paths)
+   mods = e_module_desktop_list();
+   if (!mods)
      {
         eina_hash_free(types_hash);
         return cfdata;
      }
 
-   EINA_LIST_FOREACH(modules_paths, l, epd)
+   EINA_LIST_FREE(mods, md)
      {
-        if (ecore_file_is_dir(epd->dir))
-          _load_modules(epd->dir, types_hash);
+        _load_module(md, types_hash);
+        e_module_desktop_free(md);
      }
-
-   e_path_dir_list_free(modules_paths);
 
    eina_hash_foreach(types_hash, _types_list_create_foreach_cb, cfdata);
    eina_hash_free(types_hash);
@@ -176,7 +174,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
    Evas_Object *of, *ol;
 
    e_dialog_resizable_set(cfd->dia, 1);
-   
+
    cfdata->evas = e_win_evas_get(cfd->dia->win);
 
    of = e_widget_table_add(evas, 0);
@@ -470,86 +468,54 @@ _cftype_new_from_key(const char *key)
 }
 
 static void
-_load_modules(const char *dir, Eina_Hash *types_hash)
+_load_module(E_Module_Desktop *md, Eina_Hash *types_hash)
 {
-   Eina_List *files;
-   char modpath[PATH_MAX];
-   char *mod;
-   int modpathlen;
+   CFType *cft;
+   CFModule *cfm;
+   const char *type, *mod;
+   Eina_Bool new_type = EINA_FALSE;
 
-   modpathlen = snprintf(modpath, sizeof(modpath), "%s/", dir);
-   if (modpathlen >= (int)sizeof(modpath)) return;
+   mod = ecore_file_file_get(md->dir);
+   if (md->desktop->x)
+     type = eina_hash_find(md->desktop->x, "X-Enlightenment-ModuleType");
+   else
+     type = NULL;
+   if (!type) type = "utils";  // todo: warn?
 
-   files = ecore_file_ls(dir);
-   EINA_LIST_FREE(files, mod)
+   cft = eina_hash_find(types_hash, type);
+   if (cft)
      {
-        Efreet_Desktop *desk;
-        CFType *cft;
-        CFModule *cfm;
-        const char *type;
-        Eina_Bool new_type;
-
-        snprintf(modpath + modpathlen, sizeof(modpath) - modpathlen,
-                 "%s/module.desktop", mod);
-        if (!ecore_file_exists(modpath)) goto end_mod;
-        if (!(desk = efreet_desktop_new(modpath))) goto end_mod;
-
-        if (desk->x)
-          type = eina_hash_find(desk->x, "X-Enlightenment-ModuleType");
-        else
-          type = NULL;
-        if (!type) type = "utils";  // todo: warn?
-
-        cft = eina_hash_find(types_hash, type);
-        if (cft)
-          {
-             new_type = EINA_FALSE;
-             if ((cft->modules_hash) &&
-                 (eina_hash_find(cft->modules_hash, mod)))
-               goto end_desktop;
-          }
-        else
-          {
-             cft = _cftype_new_from_key(type);
-             if (cft) new_type = EINA_TRUE;
-             else goto end_desktop;
-          }
-
-        cfm = _module_new(mod, desk);
-        if (!cfm)
-          {
-             if (new_type) _cftype_free(cft);
-             goto end_desktop;
-          }
-
-        if (!cft->modules_hash)
-          cft->modules_hash = eina_hash_string_superfast_new(NULL);
-        if (!cft->modules_hash)
-          {
-             if (new_type) _cftype_free(cft);
-             _module_free(cfm);
-             goto end_desktop;
-          }
-        eina_hash_direct_add(cft->modules_hash, cfm->short_name, cfm);
-        // TODO be paranoid about hash add failure, otherwise it will leak
-
-        cft->modules = eina_list_append(cft->modules, cfm);
-        // TODO be paranoid about list append failure, otherwise it will leak
-        cfm->module = e_module_find(mod);
-        if (cfm->module)
-          cfm->enabled = e_module_enabled_get(cfm->module);
-        else
-          cfm->enabled = 0;
-
-        if (new_type)
-          eina_hash_direct_add(types_hash, cft->key, cft);
-        // TODO be paranoid about hash add failure, otherwise it will leak
-
-end_desktop:
-        efreet_desktop_free(desk);
-end_mod:
-        free(mod);
+        new_type = EINA_FALSE;
+        if ((cft->modules_hash) &&
+            (eina_hash_find(cft->modules_hash, mod)))
+          return;
      }
+   else
+     {
+        cft = _cftype_new_from_key(type);
+        if (cft) new_type = EINA_TRUE;
+        else return;
+     }
+
+   cfm = _module_new(mod, md->desktop);
+   if (!cfm)
+     {
+        if (new_type) _cftype_free(cft);
+        return;
+     }
+
+   if (!cft->modules_hash)
+     cft->modules_hash = eina_hash_string_superfast_new(NULL);
+   eina_hash_direct_add(cft->modules_hash, cfm->short_name, cfm);
+   cft->modules = eina_list_append(cft->modules, cfm);
+   cfm->module = e_module_find(mod);
+   if (cfm->module)
+     cfm->enabled = e_module_enabled_get(cfm->module);
+   else
+     cfm->enabled = 0;
+
+   if (new_type)
+     eina_hash_direct_add(types_hash, cft->key, cft);
 }
 
 static int
@@ -616,7 +582,6 @@ _widget_list_selection_changed(void *data, Evas_Object *obj __UNUSED__)
              e_widget_disabled_set(cfdata->b_unload, 1);
           }
      }
-   
 
    if ((cfm) && (eina_list_count(cfdata->selected.loaded) + eina_list_count(cfdata->selected.unloaded) == 1))
      description = cfm->comment;

@@ -79,10 +79,10 @@ static const CFColor_Class_Description _color_classes_wm[] =
    CCDESC_T("border_title_active", N_("Border Title Active")),
    CCDESC_T("border_frame", N_("Border Frame")),
    CCDESC_T("border_frame_active", N_("Border Frame Active")),
-   CCDESC_T("error_text", N_("Error Text")),
+   CCDESC_S("comp_focus_color", N_("Composite Focus Color")),
+   CCDESC_S("comp_focus-out_color", N_("Composite Focus-out Color")),
    CCDESC_S("menu_base", N_("Menu Background Base")),
    CCDESC_T("menu_title", N_("Menu Title")),
-   CCDESC_T("menu_title_active", N_("Menu Title Active")),
    CCDESC_T("menu_item", N_("Menu Item")),
    CCDESC_T("menu_item_active", N_("Menu Item Active")),
    CCDESC_T("menu_item_disabled", N_("Menu Item Disabled")),
@@ -99,7 +99,6 @@ static const CFColor_Class_Description _color_classes_wm[] =
 };
 static const CFColor_Class_Description _color_classes_widgets[] =
 {
-   CCDESC_S("focus", N_("Focus")),
    CCDESC_T("button_text", N_("Button Text")),
    CCDESC_T("button_text_disabled", N_("Button Text Disabled")),
    CCDESC_T("check_text", N_("Check Text")),
@@ -107,6 +106,7 @@ static const CFColor_Class_Description _color_classes_widgets[] =
    CCDESC_T("entry_text", N_("Entry Text")),
    CCDESC_T("entry_text_disabled", N_("Entry Text Disabled")),
    CCDESC_T("label_text", N_("Label Text")),
+   CCDESC_T("label_text_disabled", N_("Label Text Disabled")),
    CCDESC_T("ilist_item_selected", N_("List Item Text Selected")),
    CCDESC_T("ilist_item", N_("List Item Text (Even)")),
    CCDESC_S("ilist_item_base", N_("List Item Background Base (Even)")),
@@ -115,8 +115,7 @@ static const CFColor_Class_Description _color_classes_widgets[] =
    CCDESC_T("ilist_item_header", N_("List Header Text (Even)")),
    CCDESC_S("ilist_item_header_base", N_("List Header Background Base (Even)")),
    CCDESC_T("ilist_item_header_odd", N_("List Header Text (Odd)")),
-   CCDESC_S("ilist_item_header_odd_base",
-            N_("List Header Background Base (Odd)")),
+   CCDESC_S("ilist_item_header_odd_base", N_("List Header Background Base (Odd)")),
    CCDESC_T("radio_text", N_("Radio Text")),
    CCDESC_T("radio_text_disabled", N_("Radio Text Disabled")),
    CCDESC_T("slider_text", N_("Slider Text")),
@@ -128,7 +127,8 @@ static const CFColor_Class_Description _color_classes_widgets[] =
 static const CFColor_Class_Description _color_classes_modules[] =
 {
    CCDESC_T("module_label", N_("Module Label")),
-   CCDESC_S("comp_focus-out_color", N_("Composite Focus-out Color")),
+   CCDESC_T("module_label_invisible", N_("Module Label Invisible")),
+   CCDESC_T("module_label_plain", N_("Module Label Plain")),
    {NULL, 0, NULL, COLOR_CLASS_UNKNOWN}
 };
 #undef CCDESC_S
@@ -146,7 +146,7 @@ static Eina_Bool    _fill_data_delayed(void *data);
 static Eina_Bool    _color_changed_delay(void *data);
 
 E_Config_Dialog *
-e_int_config_color_classes(E_Container *con, const char *params __UNUSED__)
+e_int_config_color_classes(E_Comp *comp, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -160,7 +160,7 @@ e_int_config_color_classes(E_Container *con, const char *params __UNUSED__)
    v->basic.apply_cfdata = _basic_apply_data;
    v->basic.create_widgets = _basic_create_widgets;
 
-   cfd = e_config_dialog_new(con, _("Colors"), "E", "appearance/colors",
+   cfd = e_config_dialog_new(comp, _("Colors"), "E", "appearance/colors",
                              "preferences-desktop-color", 0, v, NULL);
    return cfd;
 }
@@ -529,7 +529,6 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
    unsigned int i;
    const Eina_List *l;
 
-   e_dialog_resizable_set(cfd->dia, 1);
    cfdata->gui.evas = evas;
 
    ol = e_widget_list_add(evas, 0, 0);

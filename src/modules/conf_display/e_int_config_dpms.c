@@ -6,12 +6,15 @@ static int  _advanced_check_changed(E_Config_Dialog *cfd, E_Config_Dialog_Data *
 static int  _advanced_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
 static Evas_Object  *_advanced_create_widgets(E_Config_Dialog *cfd, Evas *evas,
 					      E_Config_Dialog_Data *cfdata);
+static void _cb_disable(void *data, Evas_Object *obj);
+static void _cb_ask_presentation_changed(void *data, Evas_Object *obj);
 
 struct _E_Config_Dialog_Data
 {
    E_Config_Dialog *cfd;
 
-   Evas_Object *backlight_slider;
+   Evas_Object *backlight_slider_idle;
+   Evas_Object *backlight_slider_fade;
 
    char *bl_dev;
    
@@ -21,10 +24,20 @@ struct _E_Config_Dialog_Data
    double backlight_dim;
    double backlight_timeout;
    double backlight_transition;
+
+   int ask_presentation;
+   double ask_presentation_timeout;
+
+   Eina_List *disable_list;
+
+   struct 
+     {
+        Evas_Object *ask_presentation_slider;
+     } gui;
 };
 
 E_Config_Dialog *
-e_int_config_dpms(E_Container *con, const char *params __UNUSED__)
+e_int_config_dpms(E_Comp *comp, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -41,7 +54,7 @@ e_int_config_dpms(E_Container *con, const char *params __UNUSED__)
    v->basic.check_changed = _advanced_check_changed;
    v->override_auto_apply = 1;
 
-   cfd = e_config_dialog_new(con, _("Backlight Settings"), "E",
+   cfd = e_config_dialog_new(comp, _("Backlight Settings"), "E",
 			     "screen/power_management", "preferences-system-power-management",
 			     0, v, NULL);
    return cfd;
@@ -55,6 +68,8 @@ _fill_data(E_Config_Dialog_Data *cfdata)
    cfdata->backlight_transition = e_config->backlight.transition;
    cfdata->enable_idle_dim = e_config->backlight.idle_dim;
    cfdata->backlight_timeout = e_config->backlight.timer;
+   cfdata->ask_presentation = e_config->screensaver_ask_presentation;
+   cfdata->ask_presentation_timeout = e_config->screensaver_ask_presentation_timeout;
 }
 
 static void *
@@ -83,6 +98,8 @@ _apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
    e_config->backlight.transition = cfdata->backlight_transition;
    e_config->backlight.timer = lround(cfdata->backlight_timeout);
    e_config->backlight.idle_dim = cfdata->enable_idle_dim;
+   e_config->screensaver_ask_presentation = cfdata->ask_presentation;
+   e_config->screensaver_ask_presentation_timeout = cfdata->ask_presentation_timeout;
 
    e_backlight_mode_set(NULL, E_BACKLIGHT_MODE_NORMAL);
    e_backlight_level_set(NULL, e_config->backlight.normal, -1.0);
@@ -90,7 +107,7 @@ _apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
    if ((e_config->backlight.idle_dim) &&
        (e_config->backlight.timer > (e_config->screensaver_timeout)))
      {
-        e_config->screensaver_timeout = cfdata->backlight_timeout;
+        e_config->screensaver_timeout = e_config->backlight.timer;
         e_config->dpms_standby_timeout = e_config->screensaver_timeout;
         e_config->dpms_suspend_timeout = e_config->screensaver_timeout;
         e_config->dpms_off_timeout = e_config->screensaver_timeout;
@@ -106,12 +123,17 @@ _apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 static int
 _advanced_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 {
-   e_widget_disabled_set(cfdata->backlight_slider, !cfdata->enable_idle_dim); // set state from saved config
+   // set state from saved config
+   e_widget_disabled_set(cfdata->backlight_slider_idle, !cfdata->enable_idle_dim);
+   e_widget_disabled_set(cfdata->backlight_slider_fade, !cfdata->enable_idle_dim);
+
    return (e_config->backlight.normal * 100.0 != cfdata->backlight_normal) ||
           (e_config->backlight.dim * 100.0 != cfdata->backlight_dim) ||
           (e_config->backlight.transition != cfdata->backlight_transition) ||
           (e_config->backlight.timer != cfdata->backlight_timeout) ||
-          (e_config->backlight.idle_dim != cfdata->enable_idle_dim);
+          (e_config->backlight.idle_dim != cfdata->enable_idle_dim) ||
+          (e_config->screensaver_ask_presentation != cfdata->ask_presentation) ||
+          (e_config->screensaver_ask_presentation_timeout != cfdata->ask_presentation_timeout);
 }
 
 static int
@@ -124,10 +146,13 @@ _advanced_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
 static Evas_Object *
 _advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
-   Evas_Object *o, *ob;
+   Evas_Object *otb, *o, *ob;
    Eina_List *devs, *l;
    const char *s, *label;
 
+   otb = e_widget_toolbook_add(evas, (24 * e_scale), (24 * e_scale));
+   
+   /* Dimming */
    o = e_widget_list_add(evas, 0, 0);
 /*
    {
@@ -160,10 +185,11 @@ _advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_D
    e_widget_list_object_append(o, ob, 1, 1, 0.5);
    
    ob = e_widget_check_add(evas, _("Idle Fade Time"), &(cfdata->enable_idle_dim));
+   e_widget_on_change_hook_set(ob, _cb_disable, cfdata);
    e_widget_list_object_append(o, ob, 1, 1, 0.5);
    ob = e_widget_slider_add(evas, 1, 0, _("%1.0f second(s)"), 5.0, 300.0, 1.0, 0,
 			    &(cfdata->backlight_timeout), NULL, 100);
-   cfdata->backlight_slider = ob;
+   cfdata->backlight_slider_idle = ob;
    e_widget_disabled_set(ob, !cfdata->enable_idle_dim); // set state from saved config
    e_widget_list_object_append(o, ob, 1, 1, 0.5);
    
@@ -171,6 +197,8 @@ _advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_D
    e_widget_list_object_append(o, ob, 1, 1, 0.5);
    ob = e_widget_slider_add(evas, 1, 0, _("%1.1f second(s)"), 0.0, 5.0, 0.1, 0,
 			    &(cfdata->backlight_transition), NULL, 100);
+   cfdata->backlight_slider_fade = ob;
+   e_widget_disabled_set(ob, !cfdata->enable_idle_dim); // set state from saved config
    e_widget_list_object_append(o, ob, 1, 1, 0.5);
    
    devs = (Eina_List *)e_backlight_devices_get();
@@ -195,5 +223,58 @@ _advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_D
         e_widget_ilist_go(ob);
         if (sel >= 0) e_widget_ilist_selected_set(ob, sel);
      }
-   return o;
+
+   e_widget_toolbook_page_append(otb, NULL, _("Dimming"), o, 
+                                 1, 0, 1, 0, 0.5, 0.0);
+
+   // FIXME: Disabled until someone want's to cleanup that screensaver code...   
+   /* Presentation */
+   /*
+   o = e_widget_list_add(evas, 0, 0);
+   ob = e_widget_check_add(evas, _("Suggest if deactivated before"), 
+                           &(cfdata->ask_presentation));
+   e_widget_on_change_hook_set(ob, _cb_ask_presentation_changed, cfdata);
+   cfdata->disable_list = eina_list_append(cfdata->disable_list, ob);
+   e_widget_list_object_append(o, ob, 1, 1, 0.5);
+   ob = e_widget_slider_add(evas, 1, 0, _("%1.0f seconds"),
+			    1.0, 300.0, 10.0, 0,
+			    &(cfdata->ask_presentation_timeout), NULL, 100);
+   cfdata->gui.ask_presentation_slider = ob;
+   cfdata->disable_list = eina_list_append(cfdata->disable_list, ob);
+   e_widget_list_object_append(o, ob, 1, 1, 0.5);
+   e_widget_toolbook_page_append(otb, NULL, _("Presentation"), o,
+                                 1, 0, 1, 0, 0.5, 0.0);
+   */
+   
+   e_widget_toolbook_page_show(otb, 0);
+
+   // handler for enable/disable widget array
+   _cb_disable(cfdata, NULL);
+
+   return otb;
+}
+
+static void
+_cb_disable(void *data, Evas_Object *obj __UNUSED__)
+{
+   E_Config_Dialog_Data *cfdata;
+   const Eina_List *l;
+   Evas_Object *o;
+
+   if (!(cfdata = data)) return;
+   EINA_LIST_FOREACH(cfdata->disable_list, l, o)
+     e_widget_disabled_set(o, !cfdata->enable_idle_dim);
+
+   _cb_ask_presentation_changed(cfdata, NULL);
+}
+
+static void
+_cb_ask_presentation_changed(void *data, Evas_Object *obj __UNUSED__)
+{
+   E_Config_Dialog_Data *cfdata;
+   Eina_Bool disable;
+
+   if (!(cfdata = data)) return;
+   disable = ((!cfdata->enable_idle_dim) || (!cfdata->ask_presentation));
+   e_widget_disabled_set(cfdata->gui.ask_presentation_slider, disable);
 }

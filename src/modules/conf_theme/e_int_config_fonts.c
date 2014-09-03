@@ -149,7 +149,7 @@ struct _E_Config_Dialog_Data
 };
 
 E_Config_Dialog *
-e_int_config_fonts(E_Container *con, const char *params __UNUSED__)
+e_int_config_fonts(E_Comp *comp, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -164,7 +164,7 @@ e_int_config_fonts(E_Container *con, const char *params __UNUSED__)
    v->advanced.create_widgets = _advanced_create_widgets;
    v->advanced.apply_cfdata = _advanced_apply_data;
 
-   cfd = e_config_dialog_new(con, _("Font Settings"),
+   cfd = e_config_dialog_new(comp, _("Font Settings"),
                              "E", "appearance/fonts",
                              "preferences-desktop-font", 0, v, NULL);
    return cfd;
@@ -381,7 +381,10 @@ _basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 
    e_font_apply();
    e_config_save_queue();
+
+#ifndef HAVE_WAYLAND_ONLY
    e_xsettings_config_update();
+#endif
 
    /* Apply to advanced */
    EINA_LIST_FOREACH(cfdata->text_classes, next, tc)
@@ -413,13 +416,12 @@ _font_hash_cb(const Eina_Hash *hash __UNUSED__, const void *key __UNUSED__, void
 }
 
 static Evas_Object *
-_basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *ot, *ob, *of;
 
    cfdata->evas = evas;
 
-   e_dialog_resizable_set(cfd->dia, 1);
    ot = e_widget_table_add(evas, 0);
 
    cfdata->gui.class_list = NULL;
@@ -608,7 +610,11 @@ _advanced_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfda
    e_config->font_hinting = cfdata->hinting;
    e_config_save_queue();
    e_canvas_rehint();
+
+#ifndef HAVE_WAYLAND_ONLY
    e_xsettings_config_update();
+#endif
+
    return 1;
 }
 
@@ -619,6 +625,7 @@ _advanced_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_
    E_Radio_Group *rg;
    Eina_List *next = NULL;
    int option_enable;
+   E_Font_Fallback *eff;
 
    cfdata->evas = evas;
 
@@ -695,15 +702,11 @@ _advanced_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_
    ob = e_widget_config_list_add(evas, e_widget_entry_add, _("Fallback Name"), 2);
    cfdata->gui.fallback_list = ob;
    option_enable = 0;
-   for (next = e_font_fallback_list(); next; next = next->next)
+   EINA_LIST_FOREACH(e_font_fallback_list(), next, eff)
      {
-        E_Font_Fallback *eff;
-
-        eff = next->data;
         e_widget_config_list_append(ob, eff->name);
         option_enable = 1;
      }
-   if (next) eina_list_free(next);
    ob = e_widget_check_add(evas, _("Enable Fallbacks"), &(cfdata->cur_fallbacks_enabled));
    e_widget_config_list_object_append(cfdata->gui.fallback_list, ob,
                                       0, 0, 2, 1, 1, 0, 1, 0);

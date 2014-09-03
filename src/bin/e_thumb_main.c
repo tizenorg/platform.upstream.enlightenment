@@ -88,10 +88,13 @@ main(int argc,
 
              val = argv[i] + 7;
              if (*val)
-               nice(atoi(val));
+               {
+                  if (nice(atoi(val)) < 0) perror("nice");
+               }
           }
      }
 
+   ecore_app_no_system_modules();
    ecore_init();
    ecore_app_args_set(argc, (const char **)argv);
    eet_init();
@@ -309,6 +312,12 @@ _e_thumb_generate(E_Thumb *eth)
    while (mtime_thumb <= mtime_orig)
      {
         unsigned int *data1;
+        Eina_Bool sortkey;
+        Evas_Object *im2, *bg;
+        
+        im = NULL;
+        im2 = NULL;
+        bg = NULL;
 
         ecore_file_mkdir(dbuf);
 
@@ -323,6 +332,8 @@ _e_thumb_generate(E_Thumb *eth)
         alpha = 1;
         ext = strrchr(eth->file, '.');
 
+        sortkey = EINA_FALSE;
+        
         if ((ext) && (eth->key) &&
             ((!strcasecmp(ext, ".edj")) ||
              (!strcasecmp(ext, ".eap"))))
@@ -347,10 +358,69 @@ _e_thumb_generate(E_Thumb *eth)
                   evas_object_resize(edje, ww * 4, hh * 4);
                   evas_object_show(edje);
                }
+             evas_object_move(im, 0, 0);
+             evas_object_resize(im, ww, hh);
+             sortkey = EINA_TRUE;
+          }
+        else if ((ext) &&
+                 ((!strcasecmp(ext, ".ttf")) ||
+                  (!strcasecmp(ext, ".pcf")) ||
+                  (!strcasecmp(ext, ".bdf")) ||
+                  (!strcasecmp(ext, ".ttx")) ||
+                  (!strcasecmp(ext, ".pfa")) ||
+                  (!strcasecmp(ext, ".pfb")) ||
+                  (!strcasecmp(ext, ".afm")) ||
+                  (!strcasecmp(ext, ".sfd")) ||
+                  (!strcasecmp(ext, ".snf")) ||
+                  (!strcasecmp(ext, ".otf")) ||
+                  (!strcasecmp(ext, ".psf")) ||
+                  (!strcasecmp(ext, ".ttc")) ||
+                  (!strcasecmp(ext, ".ttx")) ||
+                  (!strcasecmp(ext, ".gsf")) ||
+                  (!strcasecmp(ext, ".spd"))
+                 ))
+          {
+             Evas_Coord tx = 0, ty = 0, tw = 0, th = 0;
+             ww = eth->w;
+             hh = eth->h;
+             alpha = 0;
+
+             bg = evas_object_rectangle_add(evas);
+             evas_object_color_set(bg, 96, 96, 96, 255);
+             evas_object_move(bg, 0, 0);
+             evas_object_resize(bg, ww, hh);
+             evas_object_show(bg);
+             
+             im = evas_object_text_add(evas);
+             evas_object_text_font_set(im, eth->file, hh / 4);
+             evas_object_color_set(im, 192, 192, 192, 255);
+             evas_object_text_ellipsis_set(im, 0.0);
+             evas_object_text_text_set(im, "ABCabc");
+             evas_object_geometry_get(im, NULL, NULL, &tw, &th);
+             if (tw > ww) tw = ww;
+             tx = 0 + ((ww - tw) / 2);
+             ty = 0 + (((hh / 2) - th) / 2);
+             evas_object_move(im, tx, ty);
+             evas_object_resize(im, tw, th);
+             evas_object_show(im);
+             
+             im2 = evas_object_text_add(evas);
+             evas_object_text_font_set(im2, eth->file, hh / 4);
+             evas_object_color_set(im2, 255, 255, 255, 255);
+             evas_object_text_ellipsis_set(im2, 0.0);
+             evas_object_text_text_set(im2, "123!@?");
+             evas_object_geometry_get(im2, NULL, NULL, &tw, &th);
+             if (tw > ww) tw = ww;
+             tx = 0 + ((ww - tw) / 2);
+             ty = (hh / 2) + (((hh / 2) - th) / 2);
+             evas_object_move(im2, tx, ty);
+             evas_object_resize(im2, tw, th);
+             evas_object_show(im2);
           }
         else if (evas_object_image_extension_can_load_get(ext))
           {
              im = evas_object_image_add(evas);
+             evas_object_image_load_orientation_set(im, EINA_TRUE);
              evas_object_image_load_size_set(im, eth->w, eth->h);
              evas_object_image_file_set(im, eth->file, NULL);
              iw = 0; ih = 0;
@@ -367,12 +437,14 @@ _e_thumb_generate(E_Thumb *eth)
                     }
                   evas_object_image_fill_set(im, 0, 0, ww, hh);
                }
+             evas_object_move(im, 0, 0);
+             evas_object_resize(im, ww, hh);
+             sortkey = EINA_TRUE;
           }
         else
           goto end;
+        
         ecore_evas_alpha_set(ee, alpha);
-        evas_object_move(im, 0, 0);
-        evas_object_resize(im, ww, hh);
         ecore_evas_resize(ee, ww, hh);
         evas_object_show(im);
         if (ww <= 0) goto end;
@@ -388,137 +460,141 @@ _e_thumb_generate(E_Thumb *eth)
         eet_data_image_write(ef, "/thumbnail/data",
                              (void *)data, ww, hh, alpha,
                              0, 91, 1);
-        ww = 4; hh = 4;
-        evas_object_image_fill_set(im, 0, 0, ww, hh);
-        evas_object_resize(im, ww, hh);
-        ecore_evas_resize(ee, ww, hh);
-        data = ecore_evas_buffer_pixels_get(ee);
-        if (!data) goto end;
-
-        data1 = malloc(ww * hh * sizeof(unsigned int));
-        memcpy(data1, data, ww * hh * sizeof(unsigned int));
-        ww = 2; hh = 2;
-        evas_object_image_fill_set(im, 0, 0, ww, hh);
-        evas_object_resize(im, ww, hh);
-        ecore_evas_resize(ee, ww, hh);
-        data = ecore_evas_buffer_pixels_get(ee);
-        if (data)
+        if (sortkey)
           {
-             unsigned int *data2;
+             ww = 4; hh = 4;
+             evas_object_image_fill_set(im, 0, 0, ww, hh);
+             evas_object_resize(im, ww, hh);
+             ecore_evas_resize(ee, ww, hh);
+             data = ecore_evas_buffer_pixels_get(ee);
+             if (!data) goto end;
 
-             data2 = malloc(ww * hh * sizeof(unsigned int));
-             memcpy(data2, data, ww * hh * sizeof(unsigned int));
-             ww = 1; hh = 1;
+             data1 = malloc(ww * hh * sizeof(unsigned int));
+             memcpy(data1, data, ww * hh * sizeof(unsigned int));
+             ww = 2; hh = 2;
              evas_object_image_fill_set(im, 0, 0, ww, hh);
              evas_object_resize(im, ww, hh);
              ecore_evas_resize(ee, ww, hh);
              data = ecore_evas_buffer_pixels_get(ee);
              if (data)
                {
-                  unsigned int *data3;
-                  unsigned char id2[(21 * 4) + 1];
-                  int n, i;
-                  int hi, si, vi;
-                  float h, s, v;
-                  const int pat2[4] =
-                  {
-                     0, 3, 1, 2
-                  };
-                  const int pat1[16] =
-                  {
-                     5, 10, 6, 9,
-                     0, 15, 3, 12,
-                     1, 14, 7, 8,
-                     4, 11, 2, 13
-                  };
-
-                  /* ww = hh = 1 here */
-                  data3 = malloc(sizeof(unsigned int));
-                  memcpy(data3, data, sizeof(unsigned int));
-                  // sort_id
-                  n = 0;
+                  unsigned int *data2;
+                  
+                  data2 = malloc(ww * hh * sizeof(unsigned int));
+                  memcpy(data2, data, ww * hh * sizeof(unsigned int));
+                  ww = 1; hh = 1;
+                  evas_object_image_fill_set(im, 0, 0, ww, hh);
+                  evas_object_resize(im, ww, hh);
+                  ecore_evas_resize(ee, ww, hh);
+                  data = ecore_evas_buffer_pixels_get(ee);
+                  if (data)
+                    {
+                       unsigned int *data3;
+                       unsigned char id2[(21 * 4) + 1];
+                       int n, i;
+                       int hi, si, vi;
+                       float h, s, v;
+                       const int pat2[4] =
+                         {
+                            0, 3, 1, 2
+                         };
+                       const int pat1[16] =
+                         {
+                            5, 10, 6, 9,
+                            0, 15, 3, 12,
+                            1, 14, 7, 8,
+                            4, 11, 2, 13
+                         };
+                       
+                       /* ww = hh = 1 here */
+                       data3 = malloc(sizeof(unsigned int));
+                       memcpy(data3, data, sizeof(unsigned int));
+                       // sort_id
+                       n = 0;
 #define A(v) (((v) >> 24) & 0xff)
 #define R(v) (((v) >> 16) & 0xff)
 #define G(v) (((v) >> 8) & 0xff)
 #define B(v) (((v)) & 0xff)
 #define HSV(p)                                         \
-evas_color_rgb_to_hsv(R(p), G(p), B(p), &h, &s, &v); \
-hi = 20 * (h / 360.0);                               \
-si = 20 * s;                                         \
-vi = 20 * v;                                         \
-if (si < 2) hi = 25;
+  evas_color_rgb_to_hsv(R(p), G(p), B(p), &h, &s, &v); \
+  hi = 20 * (h / 360.0);                               \
+  si = 20 * s;                                         \
+  vi = 20 * v;                                         \
+  if (si < 2) hi = 25;
 #define SAVEHSV(h, s, v) \
-id2[n++] = 'a' + h;    \
-id2[n++] = 'a' + v;    \
-id2[n++] = 'a' + s;
+  id2[n++] = 'a' + h;    \
+  id2[n++] = 'a' + v;    \
+  id2[n++] = 'a' + s;
 #define SAVEX(x) \
-id2[n++] = 'a' + x;
+  id2[n++] = 'a' + x;
 #if 0
-                  HSV(data3[0]);
-                  SAVEHSV(hi, si, vi);
-                  for (i = 0; i < 4; i++)
-                    {
-                       HSV(data2[pat2[i]]);
+                       HSV(data3[0]);
                        SAVEHSV(hi, si, vi);
-                    }
-                  for (i = 0; i < 16; i++)
-                    {
-                       HSV(data1[pat1[i]]);
-                       SAVEHSV(hi, si, vi);
-                    }
+                       for (i = 0; i < 4; i++)
+                         {
+                            HSV(data2[pat2[i]]);
+                            SAVEHSV(hi, si, vi);
+                         }
+                       for (i = 0; i < 16; i++)
+                         {
+                            HSV(data1[pat1[i]]);
+                            SAVEHSV(hi, si, vi);
+                         }
 #else
-                  HSV(data3[0]);
-                  SAVEX(hi);
-                  for (i = 0; i < 4; i++)
-                    {
-                       HSV(data2[pat2[i]]);
+                       HSV(data3[0]);
                        SAVEX(hi);
-                    }
-                  for (i = 0; i < 16; i++)
-                    {
-                       HSV(data1[pat1[i]]);
-                       SAVEX(hi);
-                    }
-                  HSV(data3[0]);
-                  SAVEX(vi);
-                  for (i = 0; i < 4; i++)
-                    {
-                       HSV(data2[pat2[i]]);
+                       for (i = 0; i < 4; i++)
+                         {
+                            HSV(data2[pat2[i]]);
+                            SAVEX(hi);
+                         }
+                       for (i = 0; i < 16; i++)
+                         {
+                            HSV(data1[pat1[i]]);
+                            SAVEX(hi);
+                         }
+                       HSV(data3[0]);
                        SAVEX(vi);
-                    }
-                  for (i = 0; i < 16; i++)
-                    {
-                       HSV(data1[pat1[i]]);
-                       SAVEX(vi);
-                    }
-                  HSV(data3[0]);
-                  SAVEX(si);
-                  for (i = 0; i < 4; i++)
-                    {
-                       HSV(data2[pat2[i]]);
+                       for (i = 0; i < 4; i++)
+                         {
+                            HSV(data2[pat2[i]]);
+                            SAVEX(vi);
+                         }
+                       for (i = 0; i < 16; i++)
+                         {
+                            HSV(data1[pat1[i]]);
+                            SAVEX(vi);
+                         }
+                       HSV(data3[0]);
                        SAVEX(si);
-                    }
-                  for (i = 0; i < 16; i++)
-                    {
-                       HSV(data1[pat1[i]]);
-                       SAVEX(si);
-                    }
+                       for (i = 0; i < 4; i++)
+                         {
+                            HSV(data2[pat2[i]]);
+                            SAVEX(si);
+                         }
+                       for (i = 0; i < 16; i++)
+                         {
+                            HSV(data1[pat1[i]]);
+                            SAVEX(si);
+                         }
 #endif
-                  id2[n++] = 0;
-                  eet_write(ef, "/thumbnail/sort_id", id2, n, 1);
-                  free(data3);
+                       id2[n++] = 0;
+                       eet_write(ef, "/thumbnail/sort_id", id2, n, 1);
+                       free(data3);
+                    }
+                  free(data2);
                }
-             free(data2);
+             free(data1);
           }
-        free(data1);
 end:
         if (ef) eet_close(ef);
 
         /* will free all */
         if (edje) evas_object_del(edje);
         if (ee_im) ecore_evas_free(ee_im);
-        else if (im)
-          evas_object_del(im);
+        else if (im) evas_object_del(im);
+        if (im2) evas_object_del(im2);
+        if (bg) evas_object_del(bg);
         ecore_evas_free(ee);
         eet_clearcache();
         break;

@@ -3,41 +3,55 @@
    for advances in cross toolkit settings */
 
 #include <e.h>
-#include <X11/Xlib.h>
-#include <X11/Xmd.h>            /* For CARD16 */
+//#include <X11/Xlib.h>
+//#include <X11/Xmd.h>            /* For CARD16 */
 
-#define RETRY_TIMEOUT 2.0
+// define here to avoid needing x includes directly.
+#define C16                 unsigned short
+#define C32                 unsigned long
 
-#define SETTING_TYPE_INT	0
-#define SETTING_TYPE_STRING	1
-#define SETTING_TYPE_COLOR	2
+#define RETRY_TIMEOUT       2.0
+
+#define SETTING_TYPE_INT    0
+#define SETTING_TYPE_STRING 1
+#define SETTING_TYPE_COLOR  2
 
 #define OFFSET_ADD(n) ((n + 4 - 1) & (~(4 - 1)))
 
-typedef struct _Settings_Manger Settings_Manager;
-typedef struct _Setting Setting;
+typedef struct _Settings_Manager Settings_Manager;
+typedef struct _Setting         Setting;
 
-struct _Settings_Manger
+struct _Settings_Manager
 {
-   E_Manager *man;
+   E_Manager     *man;
    Ecore_X_Window selection;
-   Ecore_Timer *timer_retry;
-   unsigned long serial;
-   Ecore_X_Atom _atom_xsettings_screen;
+   Ecore_Timer   *timer_retry;
+   unsigned long  serial;
+   Ecore_X_Atom   _atom_xsettings_screen;
+   Eina_Bool enabled : 1;
 };
 
 struct _Setting
 {
-  unsigned short type;
+   unsigned short type;
 
-  const char *name;
+   const char    *name;
 
-  struct { const char *value; } s;
-  struct { int value; } i;
-  struct { unsigned short red, green, blue, alpha; } c;
+   struct
+     {
+      const char *value;
+     } s;
+   struct
+     {
+      int value;
+     } i;
+   struct
+     {
+      unsigned short red, green, blue, alpha;
+     } c;
 
-  unsigned long length;
-  unsigned long last_change;
+   unsigned long length;
+   unsigned long last_change;
 };
 
 static void _e_xsettings_apply(Settings_Manager *sm);
@@ -53,11 +67,10 @@ static Eio_File *eio_op = NULL;
 static Eina_Bool setting = EINA_FALSE;
 static Eina_Bool reset = EINA_FALSE;
 static const char _setting_icon_theme_name[] = "Net/IconThemeName";
-static const char _setting_theme_name[]      = "Net/ThemeName";
-static const char _setting_font_name[]       = "Gtk/FontName";
-static const char _setting_xft_dpi[]         = "Xft/DPI";
+static const char _setting_theme_name[] = "Net/ThemeName";
+static const char _setting_font_name[] = "Gtk/FontName";
+static const char _setting_xft_dpi[] = "Xft/DPI";
 static const char *_setting_theme = NULL;
-static unsigned int event_ignore = 0;
 
 static void _e_xsettings_done_cb(void *data, Eio_File *handler, const Eina_Stat *stat);
 
@@ -65,6 +78,7 @@ static Ecore_X_Atom
 _e_xsettings_atom_screen_get(int screen_num)
 {
    char buf[32];
+
    snprintf(buf, sizeof(buf), "_XSETTINGS_S%d", screen_num);
    return ecore_x_atom_get(buf);
 }
@@ -77,14 +91,15 @@ _e_xsettings_selection_owner_set(Settings_Manager *sm)
    Eina_Bool ret;
 
    atom = _e_xsettings_atom_screen_get(sm->man->num);
-   ecore_x_selection_owner_set(sm->selection, atom, ecore_x_current_time_get());
+   ecore_x_selection_owner_set(sm->man->comp->cm_selection, atom, 
+                               ecore_x_current_time_get());
    ecore_x_sync();
    cur_selection = ecore_x_selection_owner_get(atom);
 
-   ret = (cur_selection == sm->selection);
+   ret = (cur_selection == sm->man->comp->cm_selection);
    if (!ret)
      ERR("XSETTINGS: tried to set selection to %#x, but got %#x",
-             sm->selection, cur_selection);
+         (unsigned int)sm->man->comp->cm_selection, cur_selection);
 
    return ret;
 }
@@ -92,15 +107,12 @@ _e_xsettings_selection_owner_set(Settings_Manager *sm)
 static void
 _e_xsettings_deactivate(Settings_Manager *sm)
 {
-   Ecore_X_Window old;
+   Ecore_X_Atom atom;
 
-   if (sm->selection == 0) return;
-
-   old = sm->selection;
-   sm->selection = 0;
-   _e_xsettings_selection_owner_set(sm);
+   atom = _e_xsettings_atom_screen_get(sm->man->num);
+   ecore_x_selection_owner_set(0, atom, ecore_x_current_time_get());
    ecore_x_sync();
-   ecore_x_window_free(old);
+   sm->enabled = 0;
 }
 
 static Eina_Bool
@@ -109,29 +121,22 @@ _e_xsettings_activate(Settings_Manager *sm)
    Ecore_X_Atom atom;
    Ecore_X_Window old_win;
 
-   if (sm->selection != 0) return 1;
+   if (sm->enabled) return 1;
 
    atom = _e_xsettings_atom_screen_get(sm->man->num);
    old_win = ecore_x_selection_owner_get(atom);
    if (old_win != 0) return 0;
 
-   sm->selection = ecore_x_window_input_new(0, 0, 0, 1, 1);
-   if (sm->selection == 0)
+   if (!_e_xsettings_selection_owner_set(sm))
      return 0;
 
-   if (!_e_xsettings_selection_owner_set(sm))
-     {
-        ecore_x_window_free(sm->selection);
-        sm->selection = 0;
-        return 0;
-     }
-
-   ecore_x_client_message32_send(e_manager_current_get()->root, _atom_manager,
+   ecore_x_client_message32_send(sm->man->root, _atom_manager,
                                  ECORE_X_EVENT_MASK_WINDOW_CONFIGURE,
                                  ecore_x_current_time_get(), atom,
-                                 sm->selection, 0, 0);
+                                 sm->man->comp->cm_selection, 0, 0);
 
-   _e_xsettings_apply(sm);
+   if (settings) _e_xsettings_apply(sm);
+   sm->enabled = 1;
 
    return 1;
 }
@@ -259,6 +264,7 @@ _e_xsettings_int_set(const char *name, int value, Eina_Bool set)
    s->length = 12;
    s->length += OFFSET_ADD(strlen(name));
 }
+
 #endif
 
 static unsigned char *
@@ -272,7 +278,7 @@ _e_xsettings_copy(unsigned char *buffer, Setting *s)
    buffer += 2;
 
    str_len = strlen(s->name);
-   *(CARD16 *)(buffer) = str_len;
+   *(C16 *)(buffer) = str_len;
    buffer += 2;
 
    memcpy(buffer, s->name, str_len);
@@ -282,36 +288,36 @@ _e_xsettings_copy(unsigned char *buffer, Setting *s)
    memset(buffer, 0, len);
    buffer += len;
 
-   *(CARD32 *)(buffer) = s->last_change;
+   *(C32 *)(buffer) = s->last_change;
    buffer += 4;
 
    switch (s->type)
      {
       case SETTING_TYPE_INT:
-         *(CARD32 *)(buffer) = s->i.value;
-         buffer += 4;
-         break;
+        *(C32 *)(buffer) = s->i.value;
+        buffer += 4;
+        break;
 
       case SETTING_TYPE_STRING:
-         str_len = strlen (s->s.value);
-         *(CARD32 *)(buffer) = str_len;
-         buffer += 4;
+        str_len = strlen(s->s.value);
+        *(C32 *)(buffer) = str_len;
+        buffer += 4;
 
-         memcpy(buffer, s->s.value, str_len);
-         buffer += str_len;
+        memcpy(buffer, s->s.value, str_len);
+        buffer += str_len;
 
-         len = OFFSET_ADD(str_len) - str_len;
-         memset(buffer, 0, len);
-         buffer += len;
-         break;
+        len = OFFSET_ADD(str_len) - str_len;
+        memset(buffer, 0, len);
+        buffer += len;
+        break;
 
       case SETTING_TYPE_COLOR:
-         *(CARD16 *)(buffer) = s->c.red;
-         *(CARD16 *)(buffer + 2) = s->c.green;
-         *(CARD16 *)(buffer + 4) = s->c.blue;
-         *(CARD16 *)(buffer + 6) = s->c.alpha;
-         buffer += 8;
-         break;
+        *(C16 *)(buffer) = s->c.red;
+        *(C16 *)(buffer + 2) = s->c.green;
+        *(C16 *)(buffer + 4) = s->c.blue;
+        *(C16 *)(buffer + 6) = s->c.alpha;
+        buffer += 8;
+        break;
      }
 
    return buffer;
@@ -333,21 +339,21 @@ _e_xsettings_apply(Settings_Manager *sm)
    if (!data) return;
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-   *pos = LSBFirst;
+   *pos = 0; //LSBFirst
 #else
-   *pos = MSBFirst;
+   *pos = 1; //MSBFirst
 #endif
 
    pos += 4;
-   *(CARD32*)pos = sm->serial++;
+   *(C32 *)pos = sm->serial++;
    pos += 4;
-   *(CARD32*)pos = eina_list_count(settings);
+   *(C32 *)pos = eina_list_count(settings);
    pos += 4;
 
    EINA_LIST_FOREACH(settings, l, s)
      pos = _e_xsettings_copy(pos, s);
 
-   ecore_x_window_prop_property_set(sm->selection,
+   ecore_x_window_prop_property_set(sm->man->comp->cm_selection,
                                     _atom_xsettings,
                                     _atom_xsettings,
                                     8, data, len);
@@ -361,27 +367,35 @@ _e_xsettings_update(void)
    Eina_List *l;
 
    EINA_LIST_FOREACH(managers, l, sm)
-     if (sm->selection) _e_xsettings_apply(sm);
+     if (sm->man->comp->cm_selection) _e_xsettings_apply(sm);
 }
 
 static void
 _e_xsettings_gtk_icon_update(void)
 {
-   Eina_List *l;
-   E_Border *bd;
+   const Eina_List *l, *ll;
+   E_Client *ec;
+   E_Comp *c;
 
-   EINA_LIST_FOREACH(e_border_client_list(), l, bd)
-     if (bd->client.icccm.state) ecore_x_client_message8_send(bd->client.win, _atom_gtk_iconthemes, NULL, 0);
+   EINA_LIST_FOREACH(e_comp_list(), l, c)
+     EINA_LIST_FOREACH(c->clients, ll, ec)
+       if (ec->icccm.state)
+         ecore_x_client_message8_send(e_client_util_win_get(ec), 
+                                      _atom_gtk_iconthemes, NULL, 0);
 }
 
 static void
 _e_xsettings_gtk_rcfiles_update(void)
 {
-   Eina_List *l;
-   E_Border *bd;
+   const Eina_List *l, *ll;
+   E_Client *ec;
+   E_Comp *c;
 
-   EINA_LIST_FOREACH(e_border_client_list(), l, bd)
-     if (bd->client.icccm.state) ecore_x_client_message8_send(bd->client.win, _atom_gtk_rcfiles, NULL, 0);
+   EINA_LIST_FOREACH(e_comp_list(), l, c)
+     EINA_LIST_FOREACH(c->clients, ll, ec)
+       if (ec->icccm.state)
+         ecore_x_client_message8_send(e_client_util_win_get(ec), 
+                                      _atom_gtk_rcfiles, NULL, 0);
 }
 
 static void
@@ -397,7 +411,7 @@ _e_xsettings_icon_theme_set(void)
    if (e_config->xsettings.net_icon_theme_name)
      {
         _e_xsettings_string_set(_setting_icon_theme_name,
-                              e_config->xsettings.net_icon_theme_name);
+                                e_config->xsettings.net_icon_theme_name);
         return;
      }
 
@@ -412,12 +426,15 @@ _e_xsettings_error_cb(void *data, Eio_File *handler __UNUSED__, int error __UNUS
      {
         char buf[PATH_MAX];
         if (reset || (!l)) l = efreet_data_dirs_get();
-        else if (l) l = l->next;
+        else if (l)
+          l = l->next;
         reset = EINA_FALSE;
         if (l)
           {
-             snprintf(buf, sizeof(buf), "%s/themes/%s", (char*)eina_list_data_get(l), _setting_theme);
-             eio_op = eio_file_direct_stat(buf, _e_xsettings_done_cb, _e_xsettings_error_cb, l);
+             snprintf(buf, sizeof(buf), "%s/themes/%s", 
+                      (char *)eina_list_data_get(l), _setting_theme);
+             eio_op = eio_file_direct_stat(buf, _e_xsettings_done_cb, 
+                                           _e_xsettings_error_cb, l);
              return;
           }
      }
@@ -426,11 +443,11 @@ _e_xsettings_error_cb(void *data, Eio_File *handler __UNUSED__, int error __UNUS
    _setting_theme = NULL;
 
    if (e_config->xsettings.net_theme_name)
-     _e_xsettings_string_set(_setting_theme_name, e_config->xsettings.net_theme_name);
+     _e_xsettings_string_set(_setting_theme_name, 
+                             e_config->xsettings.net_theme_name);
    else
      _e_xsettings_string_set(_setting_theme_name, NULL);
    _e_xsettings_update();
-   _e_xsettings_gtk_rcfiles_update();
 }
 
 static void
@@ -447,7 +464,6 @@ _e_xsettings_done_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__, const 
    eio_op = NULL;
    setting = EINA_FALSE;
    _e_xsettings_update();
-   _e_xsettings_gtk_rcfiles_update();
 }
 
 static void
@@ -455,15 +471,19 @@ _e_xsettings_theme_set(void)
 {
    if (e_config->xsettings.match_e17_theme)
      {
-        E_Config_Theme *ct;
-        if ((ct = e_theme_config_get("theme")))
+        const char *file;
+        
+        file = e_theme_edje_file_get(NULL, "e/desktop/background");
+        if (file)
           {
-             if ((_setting_theme = edje_file_data_get(ct->file, "gtk-theme")))
+             if ((_setting_theme = edje_file_data_get(file, "gtk-theme")))
                {
                   char buf[PATH_MAX];
 
-                  e_user_homedir_snprintf(buf, sizeof(buf), ".themes/%s", _setting_theme);
-                  eio_op = eio_file_direct_stat(buf, _e_xsettings_done_cb, _e_xsettings_error_cb, NULL);
+                  e_user_homedir_snprintf(buf, sizeof(buf), 
+                                          ".themes/%s", _setting_theme);
+                  eio_op = eio_file_direct_stat(buf, _e_xsettings_done_cb, 
+                                                _e_xsettings_error_cb, NULL);
                   setting = EINA_TRUE;
                   return;
                }
@@ -473,7 +493,7 @@ _e_xsettings_theme_set(void)
    if (e_config->xsettings.net_theme_name)
      {
         _e_xsettings_string_set(_setting_theme_name,
-                              e_config->xsettings.net_theme_name);
+                                e_config->xsettings.net_theme_name);
         return;
      }
 
@@ -514,7 +534,8 @@ _e_xsettings_font_set(void)
                   eina_strbuf_append_char(buf, ' ');
                }
              eina_strbuf_append(buf, size_buf);
-             _e_xsettings_string_set(_setting_font_name, eina_strbuf_string_get(buf));
+             _e_xsettings_string_set(_setting_font_name, 
+                                     eina_strbuf_string_get(buf));
              eina_strbuf_free(buf);
              e_font_properties_free(efp);
              return;
@@ -530,13 +551,13 @@ _e_xsettings_font_set(void)
 static void
 _e_xsettings_xft_set(void)
 {
-
    if (e_config->scale.use_dpi)
-     _e_xsettings_int_set(_setting_xft_dpi, e_config->scale.base_dpi, EINA_TRUE);
+     _e_xsettings_int_set(_setting_xft_dpi, 
+                          e_config->scale.base_dpi, EINA_TRUE);
    else
      _e_xsettings_int_set(_setting_xft_dpi, 0, EINA_FALSE);
-
 }
+
 #endif
 
 static void
@@ -551,16 +572,16 @@ _e_xsettings_cursor_path_set(void)
    path = getenv("XCURSOR_PATH");
    if (path)
      {
-       if (!strstr(path, buf))
-         {
-           snprintf(env, sizeof(env), "%s:%s", buf, path);
-           path = env;
-         }
+        if (!strstr(path, buf))
+          {
+             snprintf(env, sizeof(env), "%s:%s", buf, path);
+             path = env;
+          }
      }
    else
      {
-       snprintf(env, sizeof(env), "%s:%s", buf, "/usr/share/icons");
-       path = env;
+        snprintf(env, sizeof(env), "%s:%s", buf, "/usr/share/icons");
+        path = env;
      }
    e_env_set("XCURSOR_PATH", path);
 }
@@ -605,7 +626,8 @@ _e_xsettings_stop(void)
         if (sm->timer_retry)
           ecore_timer_del(sm->timer_retry);
 
-        _e_xsettings_deactivate(sm);
+        if (!stopping)
+          _e_xsettings_deactivate(sm);
 
         E_FREE(sm);
      }
@@ -629,7 +651,11 @@ e_xsettings_init(void)
    _atom_gtk_rcfiles = ecore_x_atom_get("_GTK_READ_RCFILES");
 
    if (e_config->xsettings.enabled)
-     _e_xsettings_start();
+     {
+        _e_xsettings_start();
+        if (!getenv("E_RESTART"))
+          _e_xsettings_gtk_rcfiles_update();
+     }
 
    return 1;
 }
@@ -641,7 +667,6 @@ e_xsettings_shutdown(void)
    if (eio_op) eio_file_cancel(eio_op);
    eio_op = NULL;
    setting = EINA_FALSE;
-   event_ignore = 0;
 
    return 1;
 }
@@ -668,8 +693,7 @@ e_xsettings_config_update(void)
         _e_xsettings_font_set();
         _e_xsettings_update();
         _e_xsettings_gtk_icon_update();
-        _e_xsettings_gtk_rcfiles_update();
         reset = EINA_TRUE;
      }
-   event_ignore++;
 }
+

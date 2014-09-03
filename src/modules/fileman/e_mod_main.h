@@ -34,7 +34,6 @@ struct _Config
       unsigned char   link_drop;
       unsigned char   fit_custom_pos;
       unsigned char   show_full_path;
-      unsigned char   show_desktop_icons;
       unsigned char   show_toolbar;
       unsigned char   show_sidebar;
       unsigned char   desktop_navigation;
@@ -47,6 +46,7 @@ struct _Config
       double delay;
       double size;
       Eina_Bool enable;
+      Eina_Bool clamp_size;
    } tooltip;
    /* display of icons */
    struct
@@ -110,9 +110,9 @@ Fileman_Path *e_mod_fileman_path_find(E_Zone *zone);
 
 E_Menu *e_mod_menu_add(E_Menu *m, const char *path);
 
-E_Config_Dialog *e_int_config_fileman(E_Container *con, const char *params __UNUSED__);
+E_Config_Dialog *e_int_config_fileman(E_Comp *comp, const char *params __UNUSED__);
 E_Config_Dialog *e_int_config_mime_edit(E_Config_Mime_Icon *data, void *data2);
-E_Config_Dialog *e_int_config_mime(E_Container *con, const char *params __UNUSED__);
+E_Config_Dialog *e_int_config_mime(E_Comp *comp, const char *params __UNUSED__);
 void e_int_config_mime_edit_done(void *data);
 
 void e_fileman_dbus_init(void);
@@ -120,12 +120,12 @@ void e_fileman_dbus_shutdown(void);
 
 int  e_fwin_init          (void);
 int  e_fwin_shutdown      (void);
-void e_fwin_new           (E_Container *con, const char *dev, const char *path);
+void e_fwin_new           (E_Comp *comp, const char *dev, const char *path);
 void e_fwin_zone_new      (E_Zone *zone, void *path);
 void e_fwin_zone_shutdown (E_Zone *zone);
 void e_fwin_all_unsel     (void *data);
 void e_fwin_reload_all    (void);
-int  e_fwin_zone_find     (E_Zone *zone);
+void *e_fwin_zone_find     (E_Zone *zone);
 
 Eina_Bool e_fwin_nav_init(void);
 Eina_Bool e_fwin_nav_shutdown(void);

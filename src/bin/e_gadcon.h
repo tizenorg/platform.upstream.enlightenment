@@ -199,8 +199,8 @@ struct _E_Gadcon_Client
 
    struct
    {
-      Evas_Coord w, h;
-   } pad, min, aspect;
+      int w, h;
+   } pad, min, max, aspect;
 
    Ecore_Timer            *scroll_timer;
    Ecore_Timer            *instant_edit_timer;
@@ -292,6 +292,7 @@ EAPI void                    e_gadcon_populate_callback_set(E_Gadcon *gc, void (
 EAPI void                    e_gadcon_layout_policy_set(E_Gadcon *gc, E_Gadcon_Layout_Policy layout_policy);
 EAPI Eina_Bool               e_gadcon_populate(E_Gadcon *gc);
 EAPI void                    e_gadcon_unpopulate(E_Gadcon *gc);
+EAPI void                    e_gadcon_repopulate(E_Gadcon *gc);
 EAPI void                    e_gadcon_populate_class(E_Gadcon *gc, const E_Gadcon_Client_Class *cc);
 EAPI void                    e_gadcon_orient(E_Gadcon *gc, E_Gadcon_Orient orient);
 EAPI void                    e_gadcon_edit_begin(E_Gadcon *gc);
@@ -364,6 +365,8 @@ EAPI void                    e_gadcon_location_set_icon_name(E_Gadcon_Location *
 EAPI void                    e_gadcon_client_add_location_menu(E_Gadcon_Client *gcc, E_Menu *menu);
 EAPI void                    e_gadcon_drag_finished_cb(E_Drag *drag, int dropped);
 EAPI void                    e_gadcon_client_drag_set(E_Gadcon_Client *gcc);
+
+EAPI Eina_Bool              e_gadcon_client_visible_get(const E_Gadcon_Client *gcc, const E_Desk *desk);
 
 #define GADCON_CLIENT_CONFIG_GET(_type, _items, _gc_class, _id)                             \
   if (!_id)                                                                                 \
