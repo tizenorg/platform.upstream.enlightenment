@@ -801,7 +801,7 @@ _e_int_menus_apps_scan(E_Menu *m, Efreet_Menu *menu)
                   E_Menu *subm;
 
                   subm = e_menu_new();
-                  efreet_menu_ref(entry);
+                  // efreet_menu_ref(entry);
                   e_menu_pre_activate_callback_set(subm,
                                                    _e_int_menus_apps_start,
                                                    entry);
@@ -930,7 +930,7 @@ _e_int_menus_apps_start(void *data, E_Menu *m)
    _e_int_menus_apps_scan(m, menu);
    if (m->pre_activate_cb.func == _e_int_menus_apps_start)
      {
-        efreet_menu_unref(m->pre_activate_cb.data);
+        // efreet_menu_unref(m->pre_activate_cb.data);
         m->pre_activate_cb.func = NULL;
         m->pre_activate_cb.data = NULL;
      }
@@ -951,7 +951,7 @@ _e_int_menus_apps_free_hook2(void *obj)
    // unref the e menu we had pointed to in the pre activate cb */
    if (m->pre_activate_cb.func == _e_int_menus_apps_start)
      {
-        efreet_menu_unref(m->pre_activate_cb.data);
+        // efreet_menu_unref(m->pre_activate_cb.data);
         m->pre_activate_cb.func = NULL;
         m->pre_activate_cb.data = NULL;
      }

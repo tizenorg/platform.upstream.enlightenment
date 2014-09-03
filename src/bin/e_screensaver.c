@@ -442,7 +442,8 @@ e_screensaver_activate(void)
 #ifndef HAVE_WAYLAND_ONLY
    if (e_comp_get(NULL)->comp_type == E_PIXMAP_TYPE_X)
      {
-        ecore_x_screensaver_activate();
+        NULL;
+        // ecore_x_screensaver_activate();
      }
 #else
 #endif
@@ -454,7 +455,8 @@ e_screensaver_deactivate(void)
 #ifndef HAVE_WAYLAND_ONLY
    if (e_comp_get(NULL)->comp_type == E_PIXMAP_TYPE_X)
      {
-        ecore_x_screensaver_reset();
+        NULL;
+        // ecore_x_screensaver_reset();
      }
 #else
 #endif
