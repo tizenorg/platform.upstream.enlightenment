@@ -43,6 +43,7 @@ BuildRequires:  pkgconfig(ecore-x)
 %else
 ExclusiveArch:
 %endif
+Requires:       monotype-fonts
 
 
 %description
