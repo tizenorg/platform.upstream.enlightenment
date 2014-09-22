@@ -90,7 +90,7 @@ make %{?_smp_mflags}
 %{_datadir}/xsessions/enlightenment.desktop
 %{_sysconfdir}/xdg/menus/e-applications.menu
 %{_datadir}/applications/enlightenment_filemanager.desktop
-%{_libdir}/systemd/user/enlightenment.service
+/usr/lib/systemd/user/enlightenment.service
 
 %files devel
 %manifest %{name}.manifest
