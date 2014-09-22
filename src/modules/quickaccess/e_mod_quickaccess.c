@@ -15,7 +15,7 @@ static E_Grab_Dialog *eg = NULL;
 static Eina_List *_e_qa_border_hooks = NULL;
 static Eina_List *_e_qa_event_handlers = NULL;
 
-static E_Border_Menu_Hook *border_hook = NULL;
+static E_Client_Menu_Hook *border_hook = NULL;
 
 static Eina_Bool qa_running = EINA_FALSE;
 
@@ -82,32 +82,36 @@ _e_qa_entry_find_exe(const Ecore_Exe *exe)
 }
 
 static E_Quick_Access_Entry *
-_e_qa_entry_find_border(const E_Border *bd)
+_e_qa_entry_find_border(const E_Client *ec)
 {
    E_Quick_Access_Entry *entry;
    const Eina_List *n;
    EINA_LIST_FOREACH(qa_config->transient_entries, n, entry)
-     if ((entry->win == bd->client.win) || (entry->border == bd))
+     if ((ec->pixmap && (entry->win == e_client_util_win_get(ec))) || (entry->client == ec))
        return entry;
    EINA_LIST_FOREACH(qa_config->entries, n, entry)
-     if (entry->border == bd)
+     if (entry->client == ec)
        return entry;
    return NULL;
 }
 
 static E_Quick_Access_Entry *
-_e_qa_entry_find_match_stringshared(const char *name, const char *class)
+_e_qa_entry_find_match_stringshared(const char *name, const char *class, Eina_Bool nontrans)
 {
    E_Quick_Access_Entry *entry;
    const Eina_List *n;
-   EINA_LIST_FOREACH(qa_config->transient_entries, n, entry)
-     {
-        if (entry->win) continue;
-        if (entry->class != class) continue;
-        /* no entry name matches all */
-        if ((entry->name) && (entry->name != name)) continue;
 
-        return entry;
+   if (!nontrans)
+     {
+        EINA_LIST_FOREACH(qa_config->transient_entries, n, entry)
+          {
+             if (entry->win) continue;
+             if (entry->class != class) continue;
+             /* no entry name matches all */
+             if ((entry->name) && (entry->name != name)) continue;
+
+             return entry;
+          }
      }
    EINA_LIST_FOREACH(qa_config->entries, n, entry)
      {
@@ -123,14 +127,14 @@ _e_qa_entry_find_match_stringshared(const char *name, const char *class)
 }
 
 static E_Quick_Access_Entry *
-_e_qa_entry_find_match(const E_Border *bd)
+_e_qa_entry_find_match(const E_Client *ec, Eina_Bool nontrans)
 {
    const char *name, *class;
    E_Quick_Access_Entry *entry;
 
-   name = bd->client.icccm.name;
-   class = bd->client.icccm.class;
-   entry = _e_qa_entry_find_match_stringshared(name, class);
+   name = ec->icccm.name;
+   class = ec->icccm.class;
+   entry = _e_qa_entry_find_match_stringshared(name, class, nontrans);
 
    return entry;
 }
@@ -152,98 +156,106 @@ _e_qa_event_exe_del_cb(void *data, int type __UNUSED__, Ecore_Exe_Event_Del *ev)
 }
 
 static void
-_e_qa_entry_border_props_restore(E_Quick_Access_Entry *entry __UNUSED__, E_Border *bd)
+_e_qa_entry_border_props_restore(E_Quick_Access_Entry *entry __UNUSED__, E_Client *ec)
 {
 #undef SET
 #define SET(X) \
-   bd->X = 0
+   ec->X = 0
 
    SET(lock_user_iconify);
    SET(lock_client_iconify);
    SET(lock_user_sticky);
    SET(lock_client_sticky);
    SET(user_skip_winlist);
-   SET(sticky);
 #undef SET
+   e_client_unstick(ec);
 
-   bd->client.netwm.state.skip_taskbar = 0;
-   bd->client.netwm.state.skip_pager = 0;
-   bd->changed = 1;
+   ec->netwm.state.skip_taskbar = 0;
+   ec->netwm.state.skip_pager = 0;
+   ec->changed = 1;
 }
 
 static void
 _e_qa_border_activate(E_Quick_Access_Entry *entry)
 {
    entry->config.hidden = 0;
-   if (!entry->border) return;
-   if (entry->border->iconic)
+   if (!entry->client) return;
+   if (entry->client->iconic)
      {
-        if (!entry->border->lock_user_iconify)
-          e_border_uniconify(entry->border);
+        if (!entry->client->lock_user_iconify)
+          e_client_uniconify(entry->client);
      }
-   if (entry->border->shaded)
+   if (entry->client->shaded)
      {
-        if (!entry->border->lock_user_shade)
-          e_border_unshade(entry->border, entry->border->shade.dir);
+        if (!entry->client->lock_user_shade)
+          e_client_unshade(entry->client, entry->client->shade_dir);
      }
-   else if (entry->border->desk && entry->config.jump)
+   else if (entry->client->desk && entry->config.jump)
      {
-        if (!entry->border->sticky) e_desk_show(entry->border->desk);
+        if (!entry->client->sticky) e_desk_show(entry->client->desk);
      }
-   if (!entry->border->lock_user_stacking)
-     e_border_raise(entry->border);
-   e_border_show(entry->border);
-   if (!entry->border->lock_focus_out)
-     e_border_focus_set_with_pointer(entry->border);
+   if (!entry->client->lock_user_stacking)
+     evas_object_raise(entry->client->frame);
+   entry->client->hidden = 0;
+   e_client_comp_hidden_set(entry->client, 0);
+   evas_object_show(entry->client->frame);
+   if (!entry->client->lock_focus_out)
+     e_client_focus_set_with_pointer(entry->client);
 }
 
 static void
 _e_qa_border_deactivate(E_Quick_Access_Entry *entry)
 {
+   Eina_Bool focused;
    if (entry->config.jump) return;
    entry->config.hidden = 1;
-   if (!entry->border) return;
-   e_border_hide(entry->border, 3);
+   if (!entry->client) return;
+   entry->client->hidden = 1;
+   focused = entry->client->focused;
+   e_client_comp_hidden_set(entry->client, 1);
+   evas_object_hide(entry->client->frame);
+   if (focused && e_config->focus_revert_on_hide_or_close)
+     e_desk_last_focused_focus(e_desk_current_get(entry->client->zone));
 }
 
 static void
 _e_qa_entry_border_props_apply(E_Quick_Access_Entry *entry)
 {
-   if (!entry->border) return;
+   if (!entry->client) return;
    
-   if (entry->config.autohide && (!entry->border->focused))
+   if (entry->config.autohide && (!entry->client->focused))
      _e_qa_border_deactivate(entry);
 #define SET(X) \
-   entry->border->X = 1
+   entry->client->X = 1
    if (entry->config.jump)
      {
-        entry->border->client.netwm.state.skip_taskbar = 0;
-        entry->border->client.netwm.state.skip_pager = 0;
+        entry->client->netwm.state.skip_taskbar = 0;
+        entry->client->netwm.state.skip_pager = 0;
      }
    else
      {
         if (qa_config->skip_taskbar)
-          SET(client.netwm.state.skip_taskbar);
+          SET(netwm.state.skip_taskbar);
         if (qa_config->skip_pager)
-          SET(client.netwm.state.skip_pager);
-        SET(sticky);
+          SET(netwm.state.skip_pager);
+        e_client_stick(entry->client);
      }
-   //bd->client.e.state.centered = 1;
+   //ec->e.state.centered = 1;
    SET(lock_user_iconify);
    SET(lock_client_iconify);
    SET(lock_user_sticky);
    SET(lock_client_sticky);
    SET(user_skip_winlist);
-   SET(changed);
+   EC_CHANGED(entry->client);
 #undef SET
 }
 
 static void
-_e_qa_entry_border_associate(E_Quick_Access_Entry *entry, E_Border *bd)
+_e_qa_entry_border_associate(E_Quick_Access_Entry *entry, E_Client *ec)
 {
    if (entry->exe) entry->exe = NULL;  /* not waiting anymore */
 
-   entry->border = bd;
+   entry->client = ec;
    /* FIXME: doesn't work, causes window to flicker on associate
    if (entry->config.hidden)
      _e_qa_border_deactivate(entry);
@@ -260,7 +272,7 @@ _e_qa_entry_relaunch_setup_continue(void *data, E_Dialog *dia)
 
    if (dia) e_object_del(E_OBJECT(dia));
    entry->dia = NULL;
-   if (!entry->border->client.icccm.command.argv)
+   if (!entry->client->icccm.command.argv)
      {
         e_util_dialog_show(_("Quickaccess Error"), _("Could not determine command for starting this application!"));
         /* FIXME: e_entry_dialog? */
@@ -268,12 +280,12 @@ _e_qa_entry_relaunch_setup_continue(void *data, E_Dialog *dia)
      }
    entry->config.relaunch = 1;
    buf[0] = 0;
-   for (i = 0; i < entry->border->client.icccm.command.argc; i++)
+   for (i = 0; i < entry->client->icccm.command.argc; i++)
      {
         if ((sizeof(buf) - strlen(buf)) <
-            (strlen(entry->border->client.icccm.command.argv[i]) - 2))
+            (strlen(entry->client->icccm.command.argv[i]) - 2))
           break;
-        strcat(buf, entry->border->client.icccm.command.argv[i]);
+        strcat(buf, entry->client->icccm.command.argv[i]);
         strcat(buf, " ");
      }
    entry->cmd = eina_stringshare_add(buf);
@@ -386,7 +398,7 @@ _e_qa_entry_relaunch_setup(E_Quick_Access_Entry *entry)
         entry->config.relaunch = 0;
         return;
      }
-   if (!entry->border->client.icccm.command.argv)
+   if (!entry->client->icccm.command.argv)
      {
         free(opt);
         e_util_dialog_show(_("Quickaccess Error"), _("Could not determine command for starting this application!"));
@@ -395,16 +407,16 @@ _e_qa_entry_relaunch_setup(E_Quick_Access_Entry *entry)
      }
 
    buf[0] = 0;
-   for (i = 0; i < entry->border->client.icccm.command.argc; i++)
+   for (i = 0; i < entry->client->icccm.command.argc; i++)
      {
         if ((sizeof(buf) - strlen(buf)) <
-            (strlen(entry->border->client.icccm.command.argv[i]) - 2))
+            (strlen(entry->client->icccm.command.argv[i]) - 2))
           break;
-        strcat(buf, entry->border->client.icccm.command.argv[i]);
+        strcat(buf, entry->client->icccm.command.argv[i]);
         strcat(buf, " ");
      }
    name = entry->name;
-   entry->name = eina_stringshare_printf("e-%s-%u", entry->name, entry->border->client.netwm.pid);
+   entry->name = eina_stringshare_printf("e-%s-%u", entry->name, entry->client->netwm.pid);
    while (i)
      {
         i = 0;
@@ -415,7 +427,7 @@ _e_qa_entry_relaunch_setup(E_Quick_Access_Entry *entry)
              if ((e->name == entry->name) || (e->id == entry->name))
                {
                   eina_stringshare_del(entry->name);
-                  entry->name = eina_stringshare_printf("e-%s-%u%d", entry->name, entry->border->client.netwm.pid, i);
+                  entry->name = eina_stringshare_printf("e-%s-%u%d", entry->name, entry->client->netwm.pid, i);
                   i++;
                   break;
                }
@@ -459,13 +471,13 @@ _e_qa_border_new(E_Quick_Access_Entry *entry)
 static void
 _e_qa_del_cb(E_Object *obj __UNUSED__, const char *params __UNUSED__)
 {
-   _e_qa_bd_menu_del(_e_qa_entry_find_border(e_border_focused_get()), NULL, NULL);
+   _e_qa_bd_menu_del(_e_qa_entry_find_border(e_client_focused_get()), NULL, NULL);
 }
 
 static void
 _e_qa_add_cb(E_Object *obj __UNUSED__, const char *params __UNUSED__)
 {
-   _e_qa_bd_menu_del(e_border_focused_get(), NULL, NULL);
+   _e_qa_bd_menu_del(e_client_focused_get(), NULL, NULL);
 }
 
 static void
@@ -488,11 +500,11 @@ _e_qa_toggle_cb(E_Object *obj __UNUSED__, const char *params)
         return;
      }
 
-   if (entry->border)
+   if (entry->client)
      {
         if (entry->help_watch)
           _e_qa_help_activate_hook(entry);
-        if ((!entry->config.jump) && entry->border->visible && ((entry->border->client.icccm.accepts_focus && entry->border->focused) || entry->config.hide_when_behind))
+        if ((!entry->config.jump) && evas_object_visible_get(entry->client->frame) && ((entry->client->icccm.accepts_focus && entry->client->focused) || entry->config.hide_when_behind))
           {
              _e_qa_border_deactivate(entry);
              return;
@@ -510,48 +522,56 @@ _e_qa_toggle_cb(E_Object *obj __UNUSED__, const char *params)
      }
 }
 
-static void
-_e_qa_border_eval_pre_post_fetch_cb(void *data __UNUSED__, void *border)
+static Eina_Bool
+_e_qa_client_is_valid(const E_Client *ec)
 {
-   E_Border *bd = border;
+   if (e_client_util_ignored_get(ec)) return EINA_FALSE;
+   if (ec->internal) return EINA_FALSE;
+   if ((!ec->icccm.class) || (!ec->icccm.class[0])) return EINA_FALSE;
+   if ((!ec->icccm.name) || (!ec->icccm.name[0])) return EINA_FALSE;
+   return EINA_TRUE;
+}
+
+static void
+_e_qa_border_eval_pre_post_fetch_cb(void *data __UNUSED__, E_Client *ec)
+{
    E_Quick_Access_Entry *entry;
 
-   if ((!bd->new_client) || (bd->internal)) return;
-   if ((!bd->client.icccm.class) || (!bd->client.icccm.class[0])) return;
-   if ((!bd->client.icccm.name) || (!bd->client.icccm.name[0])) return;
+   if ((!ec->new_client) || (!_e_qa_client_is_valid(ec))) return;
 
-   entry = _e_qa_entry_find_match(bd);
+   entry = _e_qa_entry_find_match(ec, 0);
    if (!entry) return;
-   DBG("border=%p matches entry %s", bd, entry->id);
-   _e_qa_entry_border_associate(entry, bd);
+   DBG("border=%p matches entry %s", ec, entry->id);
+   _e_qa_entry_border_associate(entry, ec);
 }
 
 static Eina_Bool
-_e_qa_event_border_focus_out_cb(void *data __UNUSED__, int type __UNUSED__, E_Event_Border_Focus_Out *ev)
+_e_qa_event_border_focus_out_cb(void *data __UNUSED__, int type __UNUSED__, E_Event_Client *ev)
 {
    E_Quick_Access_Entry *entry;
 
-   entry = _e_qa_entry_find_border(ev->border);
+   entry = _e_qa_entry_find_border(ev->ec);
    if (entry && entry->config.autohide) _e_qa_border_deactivate(entry);
    return ECORE_CALLBACK_RENEW;
 }
 
-static Eina_Bool
-_e_qa_event_module_init_end_cb(void *data __UNUSED__, int type __UNUSED__, void *ev __UNUSED__)
+static void
+_e_qa_begin(void)
 {
    Eina_List *l, *ll;
    E_Quick_Access_Entry *entry;
    unsigned int count;
+   E_Client *ec;
    /* assume that by now, e has successfully placed all windows */
    count = eina_list_count(qa_config->transient_entries);
    EINA_LIST_FOREACH_SAFE(qa_config->transient_entries, l, ll, entry)
      {
-        if (entry->border) continue;
-        entry->border = e_border_find_by_client_window(entry->win);
-        if (entry->border)
+        if (entry->client) continue;
+        entry->client = e_pixmap_find_client(E_PIXMAP_TYPE_X, entry->win);
+        if (entry->client)
           {
              DBG("qa window for %u:transient:%s still exists; restoring", entry->win, entry->id);
-             _e_qa_entry_border_associate(entry, entry->border);
+             _e_qa_entry_border_associate(entry, entry->client);
              continue;
           }
         DBG("qa window for %u:transient:%s no longer exists; deleting", entry->win, entry->id);
@@ -559,23 +579,44 @@ _e_qa_event_module_init_end_cb(void *data __UNUSED__, int type __UNUSED__, void 
      }
    if (count != eina_list_count(qa_config->transient_entries)) e_bindings_reset();
    qa_running = EINA_TRUE;
+   count = 0;
    EINA_LIST_FOREACH(qa_config->entries, l, entry)
      {
-        if (entry->config.relaunch && (!entry->border))
+        if (entry->config.relaunch && (!entry->client))
           {
              DBG("qa window for relaunch entry %s not present, starting", entry->id);
              _e_qa_border_new(entry);
           }
+        if (entry->client) continue;
+        count++;
      }
-   return ECORE_CALLBACK_RENEW;
+   if (count)
+     {
+        E_Comp *comp;
+        const Eina_List *lll;
+        /* some non-transient entries exist without assigned borders
+         * try assigning from existing borders
+         */
+        EINA_LIST_FOREACH(e_comp_list(), lll, comp)
+          EINA_LIST_FOREACH(comp->clients, l, ec)
+            {
+               if (e_client_util_ignored_get(ec)) continue;
+               entry = _e_qa_entry_find_match(ec, 1);
+               if ((!entry) || entry->client) continue;
+               DBG("border=%p matches entry %s", ec, entry->id);
+               _e_qa_entry_border_associate(entry, ec);
+               count--;
+               if (!count) break;
+            }
+     }
 }
 
 static Eina_Bool
-_e_qa_event_border_remove_cb(void *data __UNUSED__, int type __UNUSED__, E_Event_Border_Remove *ev)
+_e_qa_event_border_remove_cb(void *data __UNUSED__, int type __UNUSED__, E_Event_Client *ev)
 {
    E_Quick_Access_Entry *entry;
 
-   entry = _e_qa_entry_find_border(ev->border);
+   entry = _e_qa_entry_find_border(ev->ec);
    if (!entry) return ECORE_CALLBACK_RENEW;
    if (entry->transient)
      {
@@ -584,7 +625,7 @@ _e_qa_event_border_remove_cb(void *data __UNUSED__, int type __UNUSED__, E_Event
         return ECORE_CALLBACK_RENEW;
      }
    else if (entry->config.relaunch) _e_qa_border_new(entry);
-   entry->border = NULL;
+   entry->client = NULL;
 
    return ECORE_CALLBACK_RENEW;
 }
@@ -601,25 +642,25 @@ _e_qa_entry_transient_convert(E_Quick_Access_Entry *entry)
         return;
      }
    entry->transient = EINA_TRUE;
-   entry->win = entry->border->client.win;
+   entry->win = e_client_util_win_get(entry->client);
    eina_list_move(&qa_config->transient_entries, &qa_config->entries, entry);
    eina_stringshare_replace(&entry->cmd, NULL);
    entry->config.relaunch = 0;
 }
 
 static E_Quick_Access_Entry *
-_e_qa_entry_transient_new(E_Border *bd)
+_e_qa_entry_transient_new(E_Client *ec)
 {
    E_Quick_Access_Entry *entry;
    char buf[8192];
 
-   snprintf(buf, sizeof(buf), "%s:%u:%s", bd->client.icccm.name ?: "", bd->client.win, bd->client.icccm.class ?: "");
+   snprintf(buf, sizeof(buf), "%s:%u:%s", ec->icccm.name ?: "", (unsigned int)e_client_util_win_get(ec), ec->icccm.class ?: "");
 
    entry = e_qa_entry_new(buf, EINA_TRUE);
-   entry->win = bd->client.win;
-   entry->name = eina_stringshare_ref(bd->client.icccm.name);
-   entry->class = eina_stringshare_ref(bd->client.icccm.class);
-   _e_qa_entry_border_associate(entry, bd);
+   entry->win = e_client_util_win_get(ec);
+   entry->name = eina_stringshare_ref(ec->icccm.name);
+   entry->class = eina_stringshare_ref(ec->icccm.class);
+   _e_qa_entry_border_associate(entry, ec);
    qa_config->transient_entries = eina_list_append(qa_config->transient_entries, entry);
    e_config_save_queue();
    return entry;
@@ -629,15 +670,15 @@ static Eina_Bool
 _grab_key_down_cb(void *data, int type __UNUSED__, void *event)
 {
    Ecore_Event_Key *ev = event;
-   E_Border *bd = data;
+   E_Client *ec = data;
    E_Config_Binding_Key *bi;
    E_Quick_Access_Entry *entry;
    unsigned int mod = E_BINDING_MODIFIER_NONE;
 
-   if (!strcmp(ev->keyname, "Control_L") || !strcmp(ev->keyname, "Control_R") ||
-       !strcmp(ev->keyname, "Shift_L") || !strcmp(ev->keyname, "Shift_R") ||
-       !strcmp(ev->keyname, "Alt_L") || !strcmp(ev->keyname, "Alt_R") ||
-       !strcmp(ev->keyname, "Super_L") || !strcmp(ev->keyname, "Super_R"))
+   if (!strcmp(ev->key, "Control_L") || !strcmp(ev->key, "Control_R") ||
+       !strcmp(ev->key, "Shift_L") || !strcmp(ev->key, "Shift_R") ||
+       !strcmp(ev->key, "Alt_L") || !strcmp(ev->key, "Alt_R") ||
+       !strcmp(ev->key, "Super_L") || !strcmp(ev->key, "Super_R"))
      return ECORE_CALLBACK_RENEW;
 
    if (ev->modifiers & ECORE_EVENT_MODIFIER_SHIFT)
@@ -655,18 +696,18 @@ _grab_key_down_cb(void *data, int type __UNUSED__, void *event)
         e_object_del(E_OBJECT(eg));
         return ECORE_CALLBACK_RENEW;
      }
-   entry = _e_qa_entry_transient_new(bd);
+   entry = _e_qa_entry_transient_new(ec);
 
    bi = E_NEW(E_Config_Binding_Key, 1);
 
    bi->context = E_BINDING_CONTEXT_ANY;
    bi->modifiers = mod;
-   bi->key = eina_stringshare_add(ev->keyname);
+   bi->key = eina_stringshare_add(ev->key);
    bi->action = eina_stringshare_ref(_act_toggle);
    bi->params = eina_stringshare_ref(entry->id);
 
    e_managers_keys_ungrab();
-   e_config->key_bindings = eina_list_append(e_config->key_bindings, bi);
+   e_bindings->key_bindings = eina_list_append(e_bindings->key_bindings, bi);
    e_bindings_key_add(bi->context, bi->key, bi->modifiers, bi->any_mod, bi->action, bi->params);
    e_managers_keys_grab();
    e_config_save_queue();
@@ -709,7 +750,7 @@ _e_qa_bd_menu_jump(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
    if (entry->config.jump)
      {
         entry->config.autohide = entry->config.hide_when_behind = 0;
-        _e_qa_entry_border_props_restore(entry, entry->border);
+        _e_qa_entry_border_props_restore(entry, entry->client);
      }
    else
      _e_qa_entry_border_props_apply(entry);
@@ -757,11 +798,11 @@ _e_qa_bd_menu_config(void *data __UNUSED__, E_Menu *m __UNUSED__, E_Menu_Item *m
 static void
 _e_qa_bd_menu_add(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
 {
-   E_Border *bd = data;
-   if (!bd) return;
+   E_Client *ec = data;
+   if (!ec) return;
    if (eg) return;
-   eg = e_grab_dialog_show(NULL, EINA_FALSE, _grab_key_down_cb, NULL, NULL, bd);
-   e_object_data_set(E_OBJECT(eg), bd);
+   eg = e_grab_dialog_show(NULL, EINA_FALSE, _grab_key_down_cb, NULL, NULL, ec);
+   e_object_data_set(E_OBJECT(eg), ec);
    e_object_del_attach_func_set(E_OBJECT(eg), _grab_wnd_hide);
 }
 
@@ -837,20 +878,20 @@ _e_qa_bd_menu_pre(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi)
 }
 
 static void
-_e_qa_bd_menu_hook(void *d __UNUSED__, E_Border *bd)
+_e_qa_bd_menu_hook(void *d __UNUSED__, E_Client *ec)
 {
    E_Menu_Item *mi;
    E_Menu *m;
    E_Quick_Access_Entry *entry;
    char buf[PATH_MAX];
 
-   if (!bd->border_menu) return;
-   m = bd->border_menu;
+   if (!ec->border_menu) return;
+   m = ec->border_menu;
 
    /* position menu item just before first separator */
    mi = m->items->next->data;
    mi = e_menu_item_new_relative(m, mi);
-   entry = _e_qa_entry_find_border(bd);
+   entry = _e_qa_entry_find_border(ec);
    if (entry)
      {
         e_menu_item_label_set(mi, _("Quickaccess..."));
@@ -860,7 +901,7 @@ _e_qa_bd_menu_hook(void *d __UNUSED__, E_Border *bd)
    else
      {
         e_menu_item_label_set(mi, _("Add Quickaccess"));
-        e_menu_item_callback_set(mi, _e_qa_bd_menu_add, bd);
+        e_menu_item_callback_set(mi, _e_qa_bd_menu_add, ec);
      }
    snprintf(buf, sizeof(buf), "%s/e-module-quickaccess.edj", e_module_dir_get(qa_mod->module));
    e_menu_item_icon_edje_set(mi, buf, "icon");
@@ -882,7 +923,7 @@ _e_qa_help_timeout(void *data __UNUSED__)
    if (qa_mod->demo_dia)
      {
         E_Quick_Access_Entry *entry;
-        entry = _e_qa_entry_find_border(qa_mod->demo_dia->win->border);
+        entry = _e_qa_entry_find_border(qa_mod->demo_dia->win->client);
         e_qa_entry_free(entry);
         e_object_del(E_OBJECT(qa_mod->demo_dia));
      }
@@ -959,7 +1000,7 @@ _e_qa_help5(void *data __UNUSED__)
 {
    char buf[PATH_MAX];
 
-   if (_e_qa_entry_find_border(qa_mod->demo_dia->win->border))
+   if (_e_qa_entry_find_border(qa_mod->demo_dia->win->client))
      {
         qa_mod->help_timer = ecore_timer_add(1, _e_qa_help_timer_cb, NULL);
         return;
@@ -1011,7 +1052,7 @@ _e_qa_help_activate_hook(E_Quick_Access_Entry *entry)
       default:
         snprintf(buf, sizeof(buf), "%s/e-module-quickaccess.edj", e_module_dir_get(qa_mod->module));
         if (entry->config.hidden)
-          _e_qa_border_activate(_e_qa_entry_find_border(qa_mod->demo_dia->win->border));
+          _e_qa_border_activate(_e_qa_entry_find_border(qa_mod->demo_dia->win->client));
         qa_mod->help_dia = (E_Object*)e_confirm_dialog_show(_("Quickaccess Help"), buf,
                                                              _("Well done.<br>"
                                                                "Now to delete the entry we just made..."),
@@ -1040,7 +1081,7 @@ _e_qa_help_qa_added_cb(void *data __UNUSED__)
    E_Quick_Access_Entry *entry;
 
    ecore_timer_thaw(qa_mod->help_timeout);
-   if ((!qa_mod->demo_dia) || (!_e_qa_entry_find_border(qa_mod->demo_dia->win->border)))
+   if ((!qa_mod->demo_dia) || (!_e_qa_entry_find_border(qa_mod->demo_dia->win->client)))
      {
         _e_qa_help_timeout(NULL);
         return;
@@ -1078,11 +1119,11 @@ _e_qa_help_bd_menu2_del(void *data __UNUSED__)
 static Eina_Bool
 _e_qa_help_timer_helper(void)
 {
-   E_Border *bd;
+   E_Client *ec;
    E_Menu_Item *mi;
    Eina_List *items;
 
-   bd = qa_mod->demo_dia->win->border;
+   ec = qa_mod->demo_dia->win->client;
    ecore_timer_interval_set(qa_mod->help_timer, 0.2);
    mi = e_menu_item_active_get();
    if (qa_mod->menu)
@@ -1113,7 +1154,7 @@ _e_qa_help_timer_helper(void)
              qa_mod->help_timer = NULL;
              return EINA_FALSE;
           }
-        items = bd->border_menu->items;
+        items = ec->border_menu->items;
      }
    do
      {
@@ -1135,17 +1176,17 @@ _e_qa_help_timer_helper(void)
 static Eina_Bool
 _e_qa_help_timer2_cb(void *data __UNUSED__)
 {
-   E_Border *bd;
+   E_Client *ec;
 
-   if ((!qa_mod->demo_dia) || (!qa_mod->demo_dia->win) || (!qa_mod->demo_dia->win->border))
+   if ((!qa_mod->demo_dia) || (!qa_mod->demo_dia->win) || (!qa_mod->demo_dia->win->client))
      /* FIXME */
      return EINA_TRUE;
 
-   bd = qa_mod->demo_dia->win->border;
+   ec = qa_mod->demo_dia->win->client;
    switch (qa_mod->demo_state)
      {
       case 0:
-        e_object_free_attach_func_set(E_OBJECT(bd->border_menu), _e_qa_help_bd_menu2_del);
+        e_object_free_attach_func_set(E_OBJECT(ec->border_menu), _e_qa_help_bd_menu2_del);
         break;
       default:
         if (_e_qa_help_timer_helper()) break;
@@ -1159,19 +1200,19 @@ _e_qa_help_timer2_cb(void *data __UNUSED__)
 static Eina_Bool
 _e_qa_help_timer_cb(void *data __UNUSED__)
 {
-   E_Border *bd;
+   E_Client *ec;
 
-   if ((!qa_mod->demo_dia) || (!qa_mod->demo_dia->win) || (!qa_mod->demo_dia->win->border))
+   if ((!qa_mod->demo_dia) || (!qa_mod->demo_dia->win) || (!qa_mod->demo_dia->win->client))
      /* wait longer */
      return EINA_TRUE;
 
-   bd = qa_mod->demo_dia->win->border;
+   ec = qa_mod->demo_dia->win->client;
    switch (qa_mod->demo_state)
      {
       case 0:
-        e_int_border_menu_show(bd, bd->x + bd->w * .5, bd->y + 5, 0, 0);
+        e_int_client_menu_show(ec, ec->x + ec->w * .5, ec->y + 5, 0, 0);
         ecore_timer_interval_set(qa_mod->help_timer, 0.8);
-        e_object_free_attach_func_set(E_OBJECT(bd->border_menu), _e_qa_help_bd_menu_del);
+        e_object_free_attach_func_set(E_OBJECT(ec->border_menu), _e_qa_help_bd_menu_del);
         break;
       default:
         if (!_e_qa_help_timer_helper()) return EINA_FALSE;
@@ -1274,8 +1315,7 @@ _e_qa_first_run(void)
 Eina_Bool
 e_qa_init(void)
 {
-   Ecore_Event_Handler *eh;
-   E_Border_Hook *h;
+   E_Client_Hook *h;
 
    _act_toggle = eina_stringshare_add("qa_toggle");
    _e_qa_toggle = e_action_add(_act_toggle);
@@ -1292,21 +1332,15 @@ e_qa_init(void)
         return EINA_FALSE;
      }
 #define CB(id, func)                                             \
-  h = e_border_hook_add(E_BORDER_HOOK_##id, _e_qa_border_##func##_cb, NULL); \
+  h = e_client_hook_add(E_CLIENT_HOOK_##id, _e_qa_border_##func##_cb, NULL); \
   _e_qa_border_hooks = eina_list_append(_e_qa_border_hooks, h)
 
    CB(EVAL_PRE_POST_FETCH, eval_pre_post_fetch);
 #undef CB
 
-#define CB(id, func)                                 \
-  eh = ecore_event_handler_add(id, (Ecore_Event_Handler_Cb)_e_qa_event_##func##_cb, NULL); \
-  _e_qa_event_handlers = eina_list_append(_e_qa_event_handlers, eh)
-
-   CB(E_EVENT_BORDER_FOCUS_OUT, border_focus_out);
-   CB(E_EVENT_BORDER_REMOVE, border_remove);
-   CB(E_EVENT_MODULE_INIT_END, module_init_end);
-   CB(ECORE_EXE_EVENT_DEL, exe_del);
-#undef CB
+   E_LIST_HANDLER_APPEND(_e_qa_event_handlers, E_EVENT_CLIENT_FOCUS_OUT, (Ecore_Event_Handler_Cb)_e_qa_event_border_focus_out_cb, NULL);
+   E_LIST_HANDLER_APPEND(_e_qa_event_handlers, E_EVENT_CLIENT_REMOVE, (Ecore_Event_Handler_Cb)_e_qa_event_border_remove_cb, NULL);
+   E_LIST_HANDLER_APPEND(_e_qa_event_handlers, ECORE_EXE_EVENT_DEL, (Ecore_Event_Handler_Cb)_e_qa_event_exe_del_cb, NULL);
 
    _e_qa_toggle->func.go = _e_qa_toggle_cb;
    e_action_predef_name_set(_e_qa_name, _lbl_toggle, _act_toggle, NULL, _("quick access name/identifier"), 1);
@@ -1316,8 +1350,10 @@ e_qa_init(void)
    e_action_predef_name_set(_e_qa_name, _lbl_del, _act_del, NULL, NULL, 0);
    INF("loaded qa module, registered %s action.", _act_toggle);
    
-   border_hook = e_int_border_menu_hook_add(_e_qa_bd_menu_hook, NULL);
+   border_hook = e_int_client_menu_hook_add(_e_qa_bd_menu_hook, NULL);
    if (!qa_config->first_run) _e_qa_first_run();
+   else
+     _e_qa_begin();
 
    return EINA_TRUE;
 }
@@ -1348,10 +1384,10 @@ e_qa_shutdown(void)
      }
 
    E_FREE_LIST(_e_qa_event_handlers, ecore_event_handler_del);
-   E_FREE_LIST(_e_qa_border_hooks, e_border_hook_del);
+   E_FREE_LIST(_e_qa_border_hooks, e_client_hook_del);
    if (qa_mod->help_timeout) ecore_timer_del(qa_mod->help_timeout);
    _e_qa_help_timeout(NULL);
-   e_int_border_menu_hook_del(border_hook);
+   e_int_client_menu_hook_del(border_hook);
    border_hook = NULL;
    INF("unloaded quickaccess module, unregistered %s action.", _act_toggle);
    eina_stringshare_del(_act_toggle);
@@ -1364,7 +1400,7 @@ e_qa_entry_free(E_Quick_Access_Entry *entry)
 {
    if (!entry) return;
    if (entry->exe_handler) ecore_event_handler_del(entry->exe_handler);
-   if (entry->border) _e_qa_entry_border_props_restore(entry, entry->border);
+   if (entry->client) _e_qa_entry_border_props_restore(entry, entry->client);
    if (entry->cfg_entry) e_qa_config_entry_free(entry);
    e_qa_entry_bindings_cleanup(entry);
    e_bindings_reset();

@@ -4,7 +4,7 @@
 static void _e_bg_signal(void *data, Evas_Object *obj, const char *emission, const char *source);
 static void _e_bg_event_bg_update_free(void *data, void *event);
 static void e_bg_handler_set(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const char *path);
-static int e_bg_handler_test(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const char *path);
+static int  e_bg_handler_test(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const char *path);
 static void _e_bg_handler_image_imported(const char *image_path, void *data);
 
 /* local subsystem globals */
@@ -76,16 +76,16 @@ e_bg_shutdown(void)
  * The most specific match will be returned
  */
 EAPI const E_Config_Desktop_Background *
-e_bg_config_get(int container_num, int zone_num, int desk_x, int desk_y)
+e_bg_config_get(int manager_num, int zone_num, int desk_x, int desk_y)
 {
-   Eina_List *l, *ll, *entries;
+   Eina_List *l, *entries;
    E_Config_Desktop_Background *bg = NULL, *cfbg = NULL;
    const char *bgfile = "";
    char *entry;
    int current_spec = 0; /* how specific the setting is - we want the least general one that applies */
 
    /* look for desk specific background. */
-   if (container_num >= 0 || zone_num >= 0 || desk_x >= 0 || desk_y >= 0)
+   if (manager_num >= 0 || zone_num >= 0 || desk_x >= 0 || desk_y >= 0)
      {
         EINA_LIST_FOREACH(e_config->desktop_backgrounds, l, cfbg)
           {
@@ -93,8 +93,8 @@ e_bg_config_get(int container_num, int zone_num, int desk_x, int desk_y)
 
              if (!cfbg) continue;
              spec = 0;
-             if (cfbg->container == container_num) spec++;
-             else if (cfbg->container >= 0)
+             if (cfbg->manager == manager_num) spec++;
+             else if (cfbg->manager >= 0)
                continue;
              if (cfbg->zone == zone_num) spec++;
              else if (cfbg->zone >= 0)
@@ -121,18 +121,17 @@ e_bg_config_get(int container_num, int zone_num, int desk_x, int desk_y)
              if (eina_str_has_extension(bgfile, ".edj"))
                {
                   entries = edje_file_collection_list(bgfile);
-                  if (entries)
+                  EINA_LIST_FREE(entries, entry)
                     {
-                       EINA_LIST_FOREACH(entries, ll, entry)
+                       if (!strcmp(entry, "e/desktop/background"))
                          {
-                            if (!strcmp(entry, "e/desktop/background"))
-                              {
-                                 bg = cfbg;
-                                 current_spec = spec;
-                              }
+                            bg = cfbg;
+                            current_spec = spec;
+                            break;
                          }
-                       edje_file_collection_list_free(entries);
+                       eina_stringshare_del(entry);
                     }
+                  E_FREE_LIST(entries, eina_stringshare_del);
                }
              else
                {
@@ -145,13 +144,13 @@ e_bg_config_get(int container_num, int zone_num, int desk_x, int desk_y)
 }
 
 EAPI Eina_Stringshare *
-e_bg_file_get(int container_num, int zone_num, int desk_x, int desk_y)
+e_bg_file_get(int manager_num, int zone_num, int desk_x, int desk_y)
 {
    const E_Config_Desktop_Background *cfbg;
    const char *bgfile = NULL;
    int ok = 0;
 
-   cfbg = e_bg_config_get(container_num, zone_num, desk_x, desk_y);
+   cfbg = e_bg_config_get(manager_num, zone_num, desk_x, desk_y);
 
    /* fall back to default */
    if (cfbg)
@@ -187,7 +186,7 @@ e_bg_file_get(int container_num, int zone_num, int desk_x, int desk_y)
      ok = 1;
    if (!ok)
      eina_stringshare_replace(&bgfile, e_theme_edje_file_get("base/theme/background",
-                                       "e/desktop/background"));
+                                                             "e/desktop/background"));
 
    return bgfile;
 }
@@ -209,9 +208,9 @@ e_bg_zone_update(E_Zone *zone, E_Bg_Transition transition)
 
    desk = e_desk_current_get(zone);
    if (desk)
-     bgfile = e_bg_file_get(zone->container->num, zone->num, desk->x, desk->y);
+     bgfile = e_bg_file_get(zone->comp->num, zone->num, desk->x, desk->y);
    else
-     bgfile = e_bg_file_get(zone->container->num, zone->num, -1, -1);
+     bgfile = e_bg_file_get(zone->comp->num, zone->num, -1, -1);
 
    if (zone->bg_object)
      {
@@ -222,29 +221,22 @@ e_bg_zone_update(E_Zone *zone, E_Bg_Transition transition)
      }
 
    if (transition == E_BG_TRANSITION_NONE)
-     {
-        if (zone->bg_object)
-          {
-             evas_object_del(zone->bg_object);
-             zone->bg_object = NULL;
-          }
-     }
+     E_FREE_FUNC(zone->bg_object, evas_object_del);
    else
      {
         char buf[4096];
 
         if (zone->bg_object)
           {
-             if (zone->prev_bg_object)
-               evas_object_del(zone->prev_bg_object);
+             E_FREE_FUNC(zone->prev_bg_object, evas_object_del);
              zone->prev_bg_object = zone->bg_object;
-             if (zone->transition_object)
-               evas_object_del(zone->transition_object);
-             zone->transition_object = NULL;
              zone->bg_object = NULL;
+             E_FREE_FUNC(zone->transition_object, evas_object_del);
           }
-        o = edje_object_add(zone->container->bg_evas);
+        o = edje_object_add(zone->comp->evas);
+        evas_object_repeat_events_set(o, 1);
         zone->transition_object = o;
+        evas_object_name_set(zone->transition_object, "zone->transition_object");
         /* FIXME: segv if zone is deleted while up??? */
         evas_object_data_set(o, "e_zone", zone);
         snprintf(buf, sizeof(buf), "e/transitions/%s", trans);
@@ -252,47 +244,50 @@ e_bg_zone_update(E_Zone *zone, E_Bg_Transition transition)
         edje_object_signal_callback_add(o, "e,state,done", "*", _e_bg_signal, zone);
         evas_object_move(o, zone->x, zone->y);
         evas_object_resize(o, zone->w, zone->h);
-        evas_object_layer_set(o, -1);
+        evas_object_layer_set(o, E_LAYER_BG);
         evas_object_clip_set(o, zone->bg_clip_object);
         evas_object_show(o);
      }
    if (eina_str_has_extension(bgfile, ".edj"))
      {
-        o = edje_object_add(zone->container->bg_evas);
-        evas_object_data_set(o, "e_zone", zone);
+        o = edje_object_add(zone->comp->evas);
         edje_object_file_set(o, bgfile, "e/desktop/background");
         if (edje_object_data_get(o, "noanimation"))
           edje_object_animation_set(o, EINA_FALSE);
      }
    else
      {
-        o = e_icon_add(zone->container->bg_evas);
-        evas_object_data_set(o, "e_zone", zone);
+        o = e_icon_add(zone->comp->evas);
         e_icon_file_key_set(o, bgfile, NULL);
         e_icon_fill_inside_set(o, 0);
      }
+   evas_object_data_set(o, "e_zone", zone);
+   evas_object_repeat_events_set(o, 1);
    zone->bg_object = o;
+   evas_object_name_set(zone->bg_object, "zone->bg_object");
    if (transition == E_BG_TRANSITION_NONE)
      {
         evas_object_move(o, zone->x, zone->y);
         evas_object_resize(o, zone->w, zone->h);
-        evas_object_layer_set(o, -1);
+        evas_object_layer_set(o, E_LAYER_BG);
      }
    evas_object_clip_set(o, zone->bg_clip_object);
    evas_object_show(o);
 
    if (transition != E_BG_TRANSITION_NONE)
      {
-        edje_extern_object_max_size_set(zone->prev_bg_object, 65536, 65536);
-        edje_extern_object_min_size_set(zone->prev_bg_object, 0, 0);
         edje_object_part_swallow(zone->transition_object, "e.swallow.bg.old",
                                  zone->prev_bg_object);
-        edje_extern_object_max_size_set(zone->bg_object, 65536, 65536);
-        edje_extern_object_min_size_set(zone->bg_object, 0, 0);
         edje_object_part_swallow(zone->transition_object, "e.swallow.bg.new",
                                  zone->bg_object);
         edje_object_signal_emit(zone->transition_object, "e,action,start", "e");
      }
+   if (zone->bg_object) evas_object_name_set(zone->bg_object, "zone->bg_object");
+   if (zone->prev_bg_object) evas_object_name_set(zone->prev_bg_object, "zone->prev_bg_object");
+   if (zone->transition_object) evas_object_name_set(zone->transition_object, "zone->transition_object");
+   evas_object_move(zone->transition_object, zone->x, zone->y);
+   evas_object_resize(zone->transition_object, zone->w, zone->h);
+   e_comp_canvas_zone_update(zone);
 end:
    eina_stringshare_del(bgfile);
 }
@@ -327,7 +322,7 @@ e_bg_default_set(const char *file)
      e_config->desktop_default_background = NULL;
 
    ev = E_NEW(E_Event_Bg_Update, 1);
-   ev->container = -1;
+   ev->manager = -1;
    ev->zone = -1;
    ev->desk_x = -1;
    ev->desk_y = -1;
@@ -335,7 +330,7 @@ e_bg_default_set(const char *file)
 }
 
 EAPI void
-e_bg_add(int container, int zone, int desk_x, int desk_y, const char *file)
+e_bg_add(int manager, int zone, int desk_x, int desk_y, const char *file)
 {
    const Eina_List *l;
    E_Config_Desktop_Background *cfbg;
@@ -346,7 +341,7 @@ e_bg_add(int container, int zone, int desk_x, int desk_y, const char *file)
    EINA_LIST_FOREACH(e_config->desktop_backgrounds, l, cfbg)
      {
         if ((cfbg) &&
-            (cfbg->container == container) &&
+            (cfbg->manager == manager) &&
             (cfbg->zone == zone) &&
             (cfbg->desk_x == desk_x) &&
             (cfbg->desk_y == desk_y) &&
@@ -357,9 +352,9 @@ e_bg_add(int container, int zone, int desk_x, int desk_y, const char *file)
           }
      }
 
-   e_bg_del(container, zone, desk_x, desk_y);
+   e_bg_del(manager, zone, desk_x, desk_y);
    cfbg = E_NEW(E_Config_Desktop_Background, 1);
-   cfbg->container = container;
+   cfbg->manager = manager;
    cfbg->zone = zone;
    cfbg->desk_x = desk_x;
    cfbg->desk_y = desk_y;
@@ -369,7 +364,7 @@ e_bg_add(int container, int zone, int desk_x, int desk_y, const char *file)
    e_filereg_register(cfbg->file);
 
    ev = E_NEW(E_Event_Bg_Update, 1);
-   ev->container = container;
+   ev->manager = manager;
    ev->zone = zone;
    ev->desk_x = desk_x;
    ev->desk_y = desk_y;
@@ -377,7 +372,7 @@ e_bg_add(int container, int zone, int desk_x, int desk_y, const char *file)
 }
 
 EAPI void
-e_bg_del(int container, int zone, int desk_x, int desk_y)
+e_bg_del(int manager, int zone, int desk_x, int desk_y)
 {
    Eina_List *l;
    E_Config_Desktop_Background *cfbg;
@@ -386,7 +381,7 @@ e_bg_del(int container, int zone, int desk_x, int desk_y)
    EINA_LIST_FOREACH(e_config->desktop_backgrounds, l, cfbg)
      {
         if (!cfbg) continue;
-        if ((cfbg->container == container) && (cfbg->zone == zone) &&
+        if ((cfbg->manager == manager) && (cfbg->zone == zone) &&
             (cfbg->desk_x == desk_x) && (cfbg->desk_y == desk_y))
           {
              e_config->desktop_backgrounds = eina_list_remove_list(e_config->desktop_backgrounds, l);
@@ -398,7 +393,7 @@ e_bg_del(int container, int zone, int desk_x, int desk_y)
      }
 
    ev = E_NEW(E_Event_Bg_Update, 1);
-   ev->container = container;
+   ev->manager = manager;
    ev->zone = zone;
    ev->desk_x = desk_x;
    ev->desk_y = desk_y;
@@ -408,21 +403,13 @@ e_bg_del(int container, int zone, int desk_x, int desk_y)
 EAPI void
 e_bg_update(void)
 {
-   Eina_List *l, *ll, *lll;
-   E_Manager *man;
-   E_Container *con;
+   const Eina_List *l, *ll;
+   E_Comp *c;
    E_Zone *zone;
 
-   EINA_LIST_FOREACH(e_manager_list(), l, man)
-     {
-        EINA_LIST_FOREACH(man->containers, ll, con)
-          {
-             EINA_LIST_FOREACH(con->zones, lll, zone)
-               {
-                  e_zone_bg_reconfigure(zone);
-               }
-          }
-     }
+   EINA_LIST_FOREACH(e_comp_list(), l, c)
+     EINA_LIST_FOREACH(c->zones, ll, zone)
+       e_zone_bg_reconfigure(zone);
 }
 
 /* local subsystem functions */
@@ -512,19 +499,11 @@ _e_bg_signal(void *data, Evas_Object *obj __UNUSED__, const char *emission __UNU
 {
    E_Zone *zone = data;
 
-   if (zone->prev_bg_object)
-     {
-        evas_object_del(zone->prev_bg_object);
-        zone->prev_bg_object = NULL;
-     }
-   if (zone->transition_object)
-     {
-        evas_object_del(zone->transition_object);
-        zone->transition_object = NULL;
-     }
+   E_FREE_FUNC(zone->prev_bg_object, evas_object_del);
+   E_FREE_FUNC(zone->transition_object, evas_object_del);
    evas_object_move(zone->bg_object, zone->x, zone->y);
    evas_object_resize(zone->bg_object, zone->w, zone->h);
-   evas_object_layer_set(zone->bg_object, -1);
+   evas_object_layer_set(zone->bg_object, E_LAYER_BG);
    evas_object_clip_set(zone->bg_object, zone->bg_clip_object);
    evas_object_show(zone->bg_object);
 }
@@ -538,7 +517,6 @@ _e_bg_event_bg_update_free(void *data __UNUSED__, void *event)
 static void
 _e_bg_handler_image_imported(const char *image_path, void *data __UNUSED__)
 {
-
    e_bg_default_set(image_path);
    e_bg_update();
    e_config_save_queue();

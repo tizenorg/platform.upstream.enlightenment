@@ -1,138 +1,114 @@
 #include "e_mod_tiling.h"
 
+/* There are two major concepts, (un)track and add/remove client.
+ * track - track all windows regardless if we are interested in them or not.
+ *    We need that in order to keep proper track of things as they change.
+ * add/remove: Clients should be tiled/untiled.
+ */
+
 /* types {{{ */
 
-#define TILING_OVERLAY_TIMEOUT 5.0
-#define TILING_RESIZE_STEP 5
-#define TILING_WRAP_SPEED 0.1
+#define TILING_POPUP_TIMEOUT 0.8
+#define TILING_POPUP_SIZE 100
 
-typedef enum {
-    TILING_RESIZE,
-    TILING_MOVE,
-} tiling_change_t;
+static Eina_Bool started = EINA_FALSE;
 
-typedef enum {
-    INPUT_MODE_NONE,
-    INPUT_MODE_SWAPPING,
-    INPUT_MODE_MOVING,
-    INPUT_MODE_GOING,
-    INPUT_MODE_TRANSITION,
-} tiling_input_mode_t;
-
-typedef enum {
-    MOVE_UP,
-    MOVE_DOWN,
-    MOVE_LEFT,
-    MOVE_RIGHT,
-
-    MOVE_COUNT
-} tiling_move_t;
-
-typedef struct geom_t {
-    int x, y, w, h;
+typedef struct geom_t
+{
+   int x, y, w, h;
 } geom_t;
 
-typedef struct overlay_t {
-    E_Popup *popup;
-    Evas_Object *obj;
-} overlay_t;
+typedef struct Client_Extra
+{
+   E_Client *client;
+   geom_t    expected;
+   struct
+   {
+      geom_t      geom;
+      E_Maximize  maximized;
+      const char *bordername;
+   } orig;
+   int       last_frame_adjustment; // FIXME: Hack for frame resize bug.
+   Eina_Bool floating : 1;
+   Eina_Bool tiled : 1;
+   Eina_Bool tracked : 1;
+} Client_Extra;
 
-typedef struct transition_overlay_t {
-    overlay_t overlay;
-    int stack;
-    char key[4];
-    E_Border *bd;
-} transition_overlay_t;
+typedef struct _Instance
+{
+   E_Gadcon_Client  *gcc;
+   Evas_Object      *gadget;
+   Eina_Stringshare *gad_id;
 
-typedef struct Border_Extra {
-    E_Border *border;
-    geom_t expected;
-    struct {
-         geom_t geom;
-         unsigned int layer;
-         E_Stacking  stacking;
-         E_Maximize  maximized;
-         const char *bordername;
-    } orig;
-    overlay_t overlay;
-    char key[4];
-} Border_Extra;
+   E_Menu           *lmenu;
+} Instance;
 
 struct tiling_g tiling_g = {
-    .module = NULL,
-    .config = NULL,
-    .log_domain = -1,
-    .default_keyhints = "asdfg;lkjh",
+   .module = NULL,
+   .config = NULL,
+   .log_domain = -1,
 };
 
-static void
-_add_border(E_Border *bd);
+static void _client_track(E_Client *ec);
+static void _client_untrack(E_Client *ec);
+static Eina_Bool _add_client(E_Client *ec);
+static void             _remove_client(E_Client *ec);
+static void             _client_apply_settings(E_Client *ec, Client_Extra *extra);
+static void             _foreach_desk(void (*func)(E_Desk *desk));
+static Eina_Bool _toggle_tiling_based_on_state(E_Client *ec, Eina_Bool restore);
+static void _edje_tiling_icon_set(Evas_Object *o);
+static void _desk_config_apply(E_Desk *d, int old_nb_stacks, int new_nb_stacks);
+
+/* Func Proto Requirements for Gadcon */
+static E_Gadcon_Client *_gc_init(E_Gadcon *gc, const char *name, const char *id, const char *style);
+static void             _gc_shutdown(E_Gadcon_Client *gcc);
+static void             _gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient);
+
+static const char  *_gc_label(const E_Gadcon_Client_Class *client_class EINA_UNUSED);
+static Evas_Object *_gc_icon(const E_Gadcon_Client_Class *client_class EINA_UNUSED, Evas *evas);
+static const char  *_gc_id_new(const E_Gadcon_Client_Class *client_class EINA_UNUSED);
+
+static void         _gadget_icon_set(Instance *inst);
 
 /* }}} */
 /* Globals {{{ */
 
 static struct tiling_mod_main_g
 {
-    char                  edj_path[PATH_MAX];
-    E_Config_DD          *config_edd,
-                         *vdesk_edd;
-    int                   currently_switching_desktop;
-    Ecore_X_Window        action_input_win;
-    Ecore_Event_Handler  *handler_key,
-                         *handler_border_resize,
-                         *handler_border_move,
-                         *handler_border_add,
-                         *handler_border_remove,
-                         *handler_border_iconify,
-                         *handler_border_uniconify,
-                         *handler_border_stick,
-                         *handler_border_unstick,
-                         *handler_desk_show,
-                         *handler_desk_before_show,
-                         *handler_desk_set,
-                         *handler_container_resize;
-    E_Border_Hook        *pre_border_assign_hook;
+   char                 edj_path[PATH_MAX];
+   E_Config_DD         *config_edd, *vdesk_edd;
+   Ecore_Event_Handler *handler_client_resize, *handler_client_move,
+                       *handler_client_iconify, *handler_client_uniconify,
+                       *handler_desk_set, *handler_compositor_resize;
+   E_Client_Hook       *handler_client_resize_begin, *handler_client_add;
+   E_Client_Menu_Hook  *client_menu_hook;
 
-    Tiling_Info          *tinfo;
-    Eina_Hash            *info_hash;
-    Eina_Hash            *border_extras;
-    Eina_Hash            *overlays;
+   Tiling_Info         *tinfo;
+   Eina_Hash           *info_hash;
+   Eina_Hash           *client_extras;
 
-    E_Action             *act_togglefloat,
-                         *act_addstack,
-                         *act_removestack,
-                         *act_tg_stack,
-                         *act_swap,
-                         *act_move,
-                         *act_move_left,
-                         *act_move_right,
-                         *act_move_up,
-                         *act_move_down,
-                         *act_adjusttransitions,
-                         *act_go,
-                         *act_send_ne,
-                         *act_send_nw,
-                         *act_send_se,
-                         *act_send_sw;
+   E_Action            *act_togglefloat, *act_move_up, *act_move_down, *act_move_left,
+                       *act_move_right, *act_toggle_split_mode, *act_swap_window;
 
-    int                   warp_x,
-                          warp_y,
-                          old_warp_x,
-                          old_warp_y,
-                          warp_to_x,
-                          warp_to_y;
-    Ecore_Timer          *warp_timer;
+   Tiling_Split_Type    split_type;
 
-    overlay_t             move_overlays[MOVE_COUNT];
-    transition_overlay_t *transition_overlay;
-    Ecore_Timer          *action_timer;
-    E_Border             *focused_bd;
-    void (*action_cb)(E_Border *bd, Border_Extra *extra);
+   struct {
+        Evas_Object *comp_obj;
+        Evas_Object *obj;
+        Ecore_Timer *timer;
+   } split_popup;
+} _G =
+{
+   .split_type = TILING_SPLIT_HORIZONTAL,
+};
 
-    tiling_input_mode_t   input_mode;
-    char                  keys[4];
-} _G = {
-    .input_mode = INPUT_MODE_NONE,
+/* Define the class and gadcon functions this module provides */
+static const E_Gadcon_Client_Class _gc_class =
+{
+   GADCON_CLIENT_CLASS_VERSION, "tiling",
+   { _gc_init, _gc_shutdown, _gc_orient, _gc_label, _gc_icon, _gc_id_new,
+     NULL, NULL },
+   E_GADCON_CLIENT_STYLE_PLAIN
 };
 
 /* }}} */
@@ -142,4199 +118,1689 @@ static struct tiling_mod_main_g
 static E_Desk *
 get_current_desk(void)
 {
-    E_Manager *m = e_manager_current_get();
-    E_Container *c = e_container_current_get(m);
-    E_Zone *z = e_zone_current_get(c);
+   E_Manager *m = e_manager_current_get();
+   E_Comp *c = m->comp;
+   E_Zone *z = e_zone_current_get(c);
 
-    return e_desk_current_get(z);
+   return e_desk_current_get(z);
 }
 
 static Tiling_Info *
 _initialize_tinfo(const E_Desk *desk)
 {
-    Tiling_Info *tinfo;
+   Tiling_Info *tinfo;
 
-    tinfo = E_NEW(Tiling_Info, 1);
-    tinfo->desk = desk;
-    eina_hash_direct_add(_G.info_hash, &tinfo->desk, tinfo);
+   tinfo = E_NEW(Tiling_Info, 1);
+   tinfo->desk = desk;
+   eina_hash_direct_add(_G.info_hash, &tinfo->desk, tinfo);
 
-    tinfo->conf = get_vdesk(tiling_g.config->vdesks, desk->x, desk->y,
-                            desk->zone->num);
+   tinfo->conf =
+     get_vdesk(tiling_g.config->vdesks, desk->x, desk->y, desk->zone->num);
 
-    return tinfo;
+   return tinfo;
 }
 
 static void
 check_tinfo(const E_Desk *desk)
 {
-    if (!_G.tinfo || _G.tinfo->desk != desk) {
+   if (!desk) return;
+   if (!_G.tinfo || _G.tinfo->desk != desk)
+     {
         _G.tinfo = eina_hash_find(_G.info_hash, &desk);
-        if (!_G.tinfo) {
-            /* lazy init */
-            _G.tinfo = _initialize_tinfo(desk);
-        }
-        if (!_G.tinfo->conf) {
-            _G.tinfo->conf = get_vdesk(tiling_g.config->vdesks,
-                                       desk->x, desk->y,
-                                       desk->zone->num);
-        }
-    }
+        if (!_G.tinfo)
+          {
+             /* lazy init */
+             _G.tinfo = _initialize_tinfo(desk);
+          }
+        if (!_G.tinfo->conf)
+          {
+             _G.tinfo->conf =
+               get_vdesk(tiling_g.config->vdesks, desk->x, desk->y,
+                         desk->zone->num);
+          }
+     }
 }
-
-static int
-is_floating_window(const E_Border *bd)
-{
-    return EINA_LIST_IS_IN(_G.tinfo->floating_windows, bd);
-}
-
-static int
-is_tilable(const E_Border *bd)
-{
-    if (bd->client.icccm.min_h == bd->client.icccm.max_h
-    &&  bd->client.icccm.max_h > 0)
-        return false;
-
-    if (bd->client.icccm.gravity == ECORE_X_GRAVITY_STATIC)
-        return false;
-
-    if (!tiling_g.config->tile_dialogs
-            && ((bd->client.icccm.transient_for != 0)
-                || (bd->client.netwm.type == ECORE_X_WINDOW_TYPE_DIALOG)))
-        return false;
-
-    return true;
-}
-
-static void
-change_window_border(E_Border   *bd,
-                     const char *bordername)
-{
-    eina_stringshare_replace(&bd->bordername, bordername);
-    bd->client.border.changed = true;
-    bd->changes.border = true;
-    bd->changed = true;
-
-    DBG("%p -> border %s", bd, bordername);
-}
-
-static int
-get_stack(const E_Border *bd)
-{
-    int i;
-    for (i = 0; i < TILING_MAX_STACKS; i++) {
-        if (EINA_LIST_IS_IN(_G.tinfo->stacks[i], bd))
-            return i;
-    }
-    return -1;
-}
-
-static int
-get_stack_count(void)
-{
-    int i;
-    for (i = 0; i < TILING_MAX_STACKS; i++) {
-        if (!_G.tinfo->stacks[i])
-            return i;
-    }
-    return TILING_MAX_STACKS;
-}
-
-static int
-get_window_count(void)
-{
-    int res = 0;
-    int i;
-
-    for (i = 0; i < TILING_MAX_STACKS; i++) {
-        if (!_G.tinfo->stacks[i])
-            break;
-        res += eina_list_count(_G.tinfo->stacks[i]);
-    }
-    return res;
-}
-
-static int
-get_transition_count(void)
-{
-    int res = 0;
-    int i;
-
-    for (i = 0; i < TILING_MAX_STACKS; i++) {
-        if (!_G.tinfo->stacks[i])
-            break;
-        res += eina_list_count(_G.tinfo->stacks[i]);
-    }
-    if (_G.tinfo->stacks[0])
-        res--;
-    return res;
-}
-
-static void
-_theme_edje_object_set_aux(Evas_Object *obj, const char *group)
-{
-    if (!e_theme_edje_object_set(obj, "base/theme/modules/tiling",
-                                 group)) {
-        edje_object_file_set(obj, _G.edj_path, group);
-    }
-}
-#define _theme_edje_object_set(_obj, _group)                                 \
-    if (e_config->use_composite)                                             \
-        _theme_edje_object_set_aux(_obj, _group"/composite");                \
-    else                                                                     \
-        _theme_edje_object_set_aux(_obj, _group);
 
 static Eina_Bool
-_info_hash_update(const Eina_Hash *hash __UNUSED__, const void *key __UNUSED__,
-                  void *data, void *fdata __UNUSED__)
+desk_should_tile_check(const E_Desk *desk)
 {
-    Tiling_Info *tinfo = data;
+   check_tinfo(desk);
+   return _G.tinfo && _G.tinfo->conf && _G.tinfo->conf->nb_stacks;
+}
 
-    if (tinfo->desk) {
-        tinfo->conf = get_vdesk(tiling_g.config->vdesks,
-                                tinfo->desk->x, tinfo->desk->y,
-                                tinfo->desk->zone->num);
-    } else {
+static int
+is_ignored_window(const Client_Extra *extra)
+{
+   if (extra->client->sticky || extra->client->maximized ||
+         extra->client->fullscreen || extra->floating)
+     return true;
+
+   return false;
+}
+
+static int
+is_tilable(const E_Client *ec)
+{
+   if (ec->icccm.min_h == ec->icccm.max_h && ec->icccm.max_h > 0)
+     return false;
+
+#ifndef HAVE_WAYLAND_ONLY
+   if (ec->icccm.gravity == ECORE_X_GRAVITY_STATIC)
+     return false;
+#endif
+
+   if (ec->e.state.centered)
+     return false;
+
+   if (!tiling_g.config->tile_dialogs && ((ec->icccm.transient_for != 0) ||
+                                          (ec->netwm.type == E_WINDOW_TYPE_DIALOG)))
+     return false;
+
+   if (ec->fullscreen)
+      return false;
+
+   if (ec->maximized)
+      return false;
+
+   if (ec->iconic)
+      return false;
+
+   if (ec->sticky)
+      return false;
+
+   if (e_client_util_ignored_get(ec))
+     return false;
+
+   if (e_object_is_del(E_OBJECT(ec)))
+     return false;
+
+   return true;
+}
+
+static void
+change_window_border(E_Client *ec, const char *bordername)
+{
+   ec->border.changed = 0;
+   if (e_client_border_set(ec, bordername))
+     eina_stringshare_refplace(&ec->bordername, ec->border.name);
+
+   DBG("%p -> border %s", ec, bordername);
+}
+
+static Eina_Bool
+_info_hash_update(const Eina_Hash *hash EINA_UNUSED,
+                  const void *key EINA_UNUSED, void *data, void *fdata EINA_UNUSED)
+{
+   Tiling_Info *tinfo = data;
+   int old_nb_stacks = 0, new_nb_stacks = 0;
+
+   if (tinfo->conf)
+     {
+        old_nb_stacks = tinfo->conf->nb_stacks;
+     }
+
+   if (tinfo->desk)
+     {
+        tinfo->conf =
+          get_vdesk(tiling_g.config->vdesks, tinfo->desk->x, tinfo->desk->y,
+                    tinfo->desk->zone->num);
+
+        if (tinfo->conf)
+          {
+             new_nb_stacks = tinfo->conf->nb_stacks;
+          }
+
+        _desk_config_apply((E_Desk *) tinfo->desk, old_nb_stacks, new_nb_stacks);
+     }
+   else
+     {
         tinfo->conf = NULL;
-    }
+     }
 
-    return true;
+   return true;
 }
 
 void
 e_tiling_update_conf(void)
 {
-    eina_hash_foreach(_G.info_hash, _info_hash_update, NULL);
+   eina_hash_foreach(_G.info_hash, _info_hash_update, NULL);
 }
 
 static void
-_e_border_move_resize(E_Border *bd,
-                      int       x,
-                      int       y,
-                      int       w,
-                      int       h)
+_e_client_move_resize(E_Client *ec, int x, int y, int w, int h)
 {
-    DBG("%p -> %dx%d+%d+%d", bd, w, h, x, y);
-    e_border_move_resize(bd, x, y, w, h);
+   Client_Extra *extra;
+
+   extra = eina_hash_find(_G.client_extras, &ec);
+   if (!extra)
+     {
+        ERR("No extra for %p", ec);
+        return;
+     }
+
+   extra->last_frame_adjustment =
+     MAX(ec->h - ec->client.h, ec->w - ec->client.w);
+   DBG("%p -> %dx%d+%d+%d", ec, w, h, x, y);
+   evas_object_geometry_set(ec->frame, x, y, w, h);
 }
 
 static void
-_e_border_move(E_Border *bd,
-               int       x,
-               int       y)
+_e_client_unmaximize(E_Client *ec, E_Maximize max)
 {
-    DBG("%p -> +%d+%d", bd, x, y);
-    e_border_move(bd, x, y);
+   DBG("%p -> %s", ec,
+       (max & E_MAXIMIZE_DIRECTION) ==
+       E_MAXIMIZE_NONE ? "NONE" : (max & E_MAXIMIZE_DIRECTION) ==
+       E_MAXIMIZE_VERTICAL ? "VERTICAL" : (max & E_MAXIMIZE_DIRECTION) ==
+       E_MAXIMIZE_HORIZONTAL ? "HORIZONTAL" : "BOTH");
+   e_client_unmaximize(ec, max);
 }
 
-static void
-_e_border_resize(E_Border *bd,
-                 int       w,
-                 int       h)
+static Client_Extra *
+_restore_client(E_Client *ec)
 {
-    DBG("%p -> %dx%d", bd, w, h);
-    e_border_resize(bd, w, h);
+   Client_Extra *extra;
+
+   extra = eina_hash_find(_G.client_extras, &ec);
+   if (!extra)
+     {
+        ERR("No extra for %p", ec);
+        return NULL;
+     }
+
+   if (!extra->tiled)
+     return NULL;
+
+   if (!ec->maximized && !ec->fullscreen)
+     {
+        _e_client_move_resize(ec, extra->orig.geom.x, extra->orig.geom.y,
+              extra->orig.geom.w, extra->orig.geom.h);
+        if (extra->orig.maximized != ec->maximized)
+          {
+             e_client_maximize(ec, extra->orig.maximized);
+             ec->maximized = extra->orig.maximized;
+          }
+     }
+
+   DBG("Change window border back to %s for %p", extra->orig.bordername, ec);
+   change_window_border(ec,
+                        (extra->orig.bordername) ? extra->orig.bordername : "default");
+
+   return extra;
 }
 
-static void
-_e_border_maximize(E_Border *bd, E_Maximize max)
+static Client_Extra *
+_get_or_create_client_extra(E_Client *ec)
 {
-    DBG("%p -> %s", bd,
-        (max & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_NONE ? "NONE" :
-        (max & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_VERTICAL ? "VERTICAL" :
-        (max & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_HORIZONTAL ? "HORIZONTAL" :
-        "BOTH");
-    DBG("new_client:%s, bd->maximized=%x",
-        bd->new_client? "true": "false",
-        bd->maximized);
-    e_border_maximize(bd, max);
-}
+   Client_Extra *extra;
 
-static void
-_e_border_unmaximize(E_Border *bd, E_Maximize max)
-{
-    DBG("%p -> %s", bd,
-        (max & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_NONE ? "NONE" :
-        (max & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_VERTICAL ? "VERTICAL" :
-        (max & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_HORIZONTAL ? "HORIZONTAL" :
-        "BOTH");
-    e_border_unmaximize(bd, max);
-}
+   extra = eina_hash_find(_G.client_extras, &ec);
+   if (!extra)
+     {
+        extra = E_NEW(Client_Extra, 1);
+        *extra = (Client_Extra)
+        {
+           .client = ec, .expected =
+           {
+              .x = ec->x, .y = ec->y, .w = ec->w, .h = ec->h,
+           }
 
-static void
-_restore_border(E_Border *bd)
-{
-    Border_Extra *extra;
+           , .orig =
+           {
+              .geom =
+              {
+                 .x = ec->x, .y = ec->y, .w = ec->w, .h = ec->h,
+              }
 
-    extra = eina_hash_find(_G.border_extras, &bd);
-    if (!extra) {
-         ERR("No extra for %p", bd);
-         return;
-    }
-    _e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
-    _e_border_move_resize(bd,
-                          extra->orig.geom.x,
-                          extra->orig.geom.y,
-                          extra->orig.geom.w,
-                          extra->orig.geom.h);
-    e_border_layer_set(bd, extra->orig.layer);
-    if (extra->orig.maximized) {
-        e_border_maximize(bd, extra->orig.maximized);
-        bd->maximized = extra->orig.maximized;
-    }
+              , .maximized = ec->maximized, .bordername =
+                eina_stringshare_add(ec->bordername),
+           }
 
-    DBG("Change window border back to %s for %p",
-        extra->orig.bordername, bd);
-    change_window_border(bd, (extra->orig.bordername)
-                         ? extra->orig.bordername : "default");
-}
-
-static Border_Extra *
-_get_or_create_border_extra(E_Border *bd)
-{
-    Border_Extra *extra;
-
-    extra = eina_hash_find(_G.border_extras, &bd);
-    if (!extra) {
-        extra = E_NEW(Border_Extra, 1);
-        *extra = (Border_Extra) {
-            .border = bd,
-            .expected = {
-                .x = bd->x,
-                .y = bd->y,
-                .w = bd->w,
-                .h = bd->h,
-            },
-            .orig = {
-                .geom = {
-                    .x = bd->x,
-                    .y = bd->y,
-                    .w = bd->w,
-                    .h = bd->h,
-                },
-                .layer = bd->layer,
-                .stacking = bd->client.netwm.state.stacking,
-                .maximized = bd->maximized,
-                .bordername = eina_stringshare_add(bd->bordername),
-            },
+           ,
         };
-        eina_hash_direct_add(_G.border_extras, &extra->border, extra);
-    } else {
-        extra->expected = (geom_t) {
-            .x = bd->x,
-            .y = bd->y,
-            .w = bd->w,
-            .h = bd->h,
+        eina_hash_direct_add(_G.client_extras, &extra->client, extra);
+     }
+   else
+     {
+        extra->expected = (geom_t)
+        {
+           .x = ec->x, .y = ec->y, .w = ec->w, .h = ec->h,
         };
-    }
+        extra->orig.geom = extra->expected;
+        extra->orig.maximized = ec->maximized;
+        eina_stringshare_replace(&extra->orig.bordername, ec->bordername);
+     }
 
-    return extra;
+   return extra;
+}
+
+void
+tiling_e_client_move_resize_extra(E_Client *ec, int x, int y, int w, int h)
+{
+   Client_Extra *extra = eina_hash_find(_G.client_extras, &ec);
+
+   if (!extra)
+     {
+        ERR("No extra for %p", ec);
+        return;
+     }
+
+   extra->expected = (geom_t)
+   {
+      .x = x, .y = y, .w = w, .h = h,
+   };
+
+   _e_client_move_resize(ec, x, y, w, h);
+}
+
+static Client_Extra *
+tiling_entry_no_desk_func(E_Client *ec)
+{
+   if (!ec)
+     return NULL;
+
+   Client_Extra *extra = eina_hash_find(_G.client_extras, &ec);
+
+   if (!extra)
+     ERR("No extra for %p", ec);
+
+   return extra;
+}
+
+static Client_Extra *
+tiling_entry_func(E_Client *ec)
+{
+   Client_Extra *extra;
+
+   if (!is_tilable(ec))
+     return NULL;
+
+   extra = tiling_entry_no_desk_func(ec);
+
+   if (!extra)
+      return NULL;
+
+   if (!desk_should_tile_check(ec->desk))
+     return NULL;
+
+   return extra;
 }
 
 /* }}} */
-/* Overlays {{{*/
+/* Reorganize Stacks {{{ */
 
 static void
-_overlays_free_cb(void *data)
+_reapply_tree(void)
 {
-    Border_Extra *extra = data;
+   int zx, zy, zw, zh;
 
-    if (extra->overlay.obj) {
-        evas_object_del(extra->overlay.obj);
-        extra->overlay.obj = NULL;
-    }
-    if (extra->overlay.popup) {
-        e_object_del(E_OBJECT(extra->overlay.popup));
-        extra->overlay.popup = NULL;
-    }
+   if (_G.tinfo->tree)
+     {
+        e_zone_desk_useful_geometry_get(_G.tinfo->desk->zone, _G.tinfo->desk, &zx, &zy, &zw, &zh);
 
-    extra->key[0] = '\0';
+        tiling_window_tree_apply(_G.tinfo->tree, zx, zy, zw, zh,
+                                 tiling_g.config->window_padding);
+     }
 }
 
-static void
-end_special_input(void)
+void
+_restore_free_client(void *_item)
 {
-    int i;
-
-    if (_G.input_mode == INPUT_MODE_NONE)
-        return;
-
-    if (_G.overlays) {
-        eina_hash_free(_G.overlays);
-        _G.overlays = NULL;
-    }
-
-    if (_G.handler_key) {
-        ecore_event_handler_del(_G.handler_key);
-        _G.handler_key = NULL;
-    }
-    if (_G.action_input_win) {
-        e_grabinput_release(_G.action_input_win, _G.action_input_win);
-        ecore_x_window_free(_G.action_input_win);
-        _G.action_input_win = 0;
-    }
-    if (_G.action_timer) {
-        ecore_timer_del(_G.action_timer);
-        _G.action_timer = NULL;
-    }
-
-    _G.focused_bd = NULL;
-    _G.action_cb = NULL;
-
-    switch(_G.input_mode) {
-      case INPUT_MODE_MOVING:
-        for (i = 0; i < MOVE_COUNT; i++) {
-            overlay_t *overlay = &_G.move_overlays[i];
-
-            if (overlay->obj) {
-                evas_object_del(overlay->obj);
-                overlay->obj = NULL;
-            }
-            if (overlay->popup) {
-                e_object_del(E_OBJECT(overlay->popup));
-                overlay->popup = NULL;
-            }
-        }
-        break;
-      case INPUT_MODE_TRANSITION:
-        if (_G.transition_overlay) {
-            if (_G.transition_overlay->overlay.obj) {
-                evas_object_del(_G.transition_overlay->overlay.obj);
-            }
-            if (_G.transition_overlay->overlay.popup) {
-                e_object_del(E_OBJECT(_G.transition_overlay->overlay.popup));
-            }
-            E_FREE(_G.transition_overlay);
-            _G.transition_overlay = NULL;
-        }
-        break;
-      default:
-        break;
-    }
-
-    _G.input_mode = INPUT_MODE_NONE;
-}
-
-static Eina_Bool
-overlay_key_down(void *data __UNUSED__,
-		 int type __UNUSED__,
-		 void *event)
-{
-    Ecore_Event_Key *ev = event;
-    Border_Extra *extra;
-
-    if (ev->event_window != _G.action_input_win)
-        return ECORE_CALLBACK_PASS_ON;
-
-    if (strcmp(ev->key, "Return") == 0)
-        goto stop;
-    if (strcmp(ev->key, "Escape") == 0)
-        goto stop;
-    if (strcmp(ev->key, "Backspace") == 0) {
-        char *key = _G.keys;
-
-        while (*key)
-            key++;
-        *key = '\0';
-        return ECORE_CALLBACK_RENEW;
-    }
-
-    if (ev->key[0] && !ev->key[1] && strchr(tiling_g.config->keyhints,
-                                            ev->key[1])) {
-        char *key = _G.keys;
-
-        while (*key)
-            key++;
-        *key++ = ev->key[0];
-        *key = '\0';
-
-        extra = eina_hash_find(_G.overlays, _G.keys);
-        if (extra) {
-            _G.action_cb(_G.focused_bd, extra);
-        } else {
-            return ECORE_CALLBACK_RENEW;
-        }
-    }
-
-stop:
-    end_special_input();
-    return ECORE_CALLBACK_DONE;
-}
-
-static Eina_Bool
-_timeout_cb(void *data __UNUSED__)
-{
-    end_special_input();
-    return ECORE_CALLBACK_CANCEL;
-}
-
-static void
-_do_overlay(E_Border *focused_bd,
-            void (*action_cb)(E_Border *, Border_Extra *),
-            tiling_input_mode_t input_mode)
-{
-    Ecore_X_Window parent;
-    int nb_win;
-    int hints_len;
-    int key_len;
-    int n = 0;
-    int nmax;
-    int i;
-
-    end_special_input();
-
-    nb_win = get_window_count();
-    if (nb_win < 2) {
-        return;
-    }
-
-    _G.input_mode = input_mode;
-
-    _G.focused_bd = focused_bd;
-    _G.action_cb = action_cb;
-
-    _G.overlays = eina_hash_string_small_new(_overlays_free_cb);
-
-    hints_len = strlen(tiling_g.config->keyhints);
-    key_len = 1;
-    nmax = hints_len;
-    if (hints_len < nb_win) {
-        key_len = 2;
-        nmax *= hints_len;
-        if (hints_len * hints_len < nb_win) {
-            key_len = 3;
-            nmax *= hints_len;
-        }
-    }
-
-    for (i = 0; i < TILING_MAX_STACKS; i++) {
-        Eina_List *l;
-        E_Border *bd;
-
-        if (!_G.tinfo->stacks[i])
-            break;
-        EINA_LIST_FOREACH(_G.tinfo->stacks[i], l, bd) {
-            if (bd != focused_bd && n < nmax) {
-                Border_Extra *extra;
-                Evas_Coord ew, eh;
-
-                extra = eina_hash_find(_G.border_extras, &bd);
-                if (!extra) {
-                    ERR("No extra for %p", bd);
-                    continue;
-                }
-
-                extra->overlay.popup = e_popup_new(bd->zone, 0, 0, 1, 1);
-                if (!extra->overlay.popup)
-                    continue;
-
-                e_popup_layer_set(extra->overlay.popup, E_LAYER_NORMAL);
-                extra->overlay.obj =
-                    edje_object_add(extra->overlay.popup->evas);
-                e_theme_edje_object_set(extra->overlay.obj,
-                                        "base/theme/borders",
-                                        "e/widgets/border/default/resize");
-
-                switch (key_len) {
-                  case 1:
-                    extra->key[0] = tiling_g.config->keyhints[n];
-                    extra->key[1] = '\0';
-                    break;
-                  case 2:
-                    extra->key[0] = tiling_g.config->keyhints[n / hints_len];
-                    extra->key[1] = tiling_g.config->keyhints[n % hints_len];
-                    extra->key[2] = '\0';
-                    break;
-                  case 3:
-                    extra->key[0] = tiling_g.config->keyhints[n / hints_len / hints_len];
-                    extra->key[0] = tiling_g.config->keyhints[n / hints_len];
-                    extra->key[1] = tiling_g.config->keyhints[n % hints_len];
-                    extra->key[2] = '\0';
-                    break;
-                }
-                n++;
-
-                eina_hash_add(_G.overlays, extra->key, extra);
-                edje_object_part_text_set(extra->overlay.obj,
-                                          "e.text.label",
-                                          extra->key);
-                edje_object_size_min_calc(extra->overlay.obj, &ew, &eh);
-                evas_object_move(extra->overlay.obj, 0, 0);
-                evas_object_resize(extra->overlay.obj, ew, eh);
-                evas_object_show(extra->overlay.obj);
-                e_popup_edje_bg_object_set(extra->overlay.popup,
-                                           extra->overlay.obj);
-
-                evas_object_show(extra->overlay.obj);
-                e_popup_show(extra->overlay.popup);
-
-                e_popup_move_resize(extra->overlay.popup,
-                                    (bd->x - extra->overlay.popup->zone->x) +
-                                    ((bd->w - ew) / 2),
-                                    (bd->y - extra->overlay.popup->zone->y) +
-                                    ((bd->h - eh) / 2),
-                                    ew, eh);
-
-                e_popup_show(extra->overlay.popup);
-            }
-        }
-    }
-
-    /* Get input */
-    parent = _G.tinfo->desk->zone->container->win;
-    _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
-    if (!_G.action_input_win) {
-        end_special_input();
-        return;
-    }
-
-    ecore_x_window_show(_G.action_input_win);
-    if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
-        end_special_input();
-        return;
-    }
-    _G.action_timer = ecore_timer_add(TILING_OVERLAY_TIMEOUT,
-                                      _timeout_cb, NULL);
-
-    _G.keys[0] = '\0';
-    _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
-                                             overlay_key_down, NULL);
-}
-
-/* }}} */
-/* Reorganize Stacks {{{*/
-
-static void
-_reorganize_stack(int stack)
-{
-    Eina_List *l;
-
-    if (stack < 0 || stack >= TILING_MAX_STACKS
-        || !_G.tinfo->stacks[stack])
-        return;
-
-    if (_G.tinfo->stacks[stack]->next) {
-        int zx, zy, zw, zh, i = 0, count;
-
-        e_zone_useful_geometry_get(_G.tinfo->desk->zone, &zx, &zy, &zw, &zh);
-
-        count = eina_list_count(_G.tinfo->stacks[stack]);
-
-        if (_G.tinfo->conf->use_rows) {
-            int y, w, h, cw;
-
-            y = _G.tinfo->pos[stack];
-            cw = 0;
-            w = zw / count;
-            h = _G.tinfo->size[stack];
-
-            for (l = _G.tinfo->stacks[stack]; l; l = l->next, i++) {
-                E_Border *bd = l->data;
-                Border_Extra *extra;
-                int d = (i * 2 * zw) % count
-                    - (2 * cw) % count;
-
-                extra = eina_hash_find(_G.border_extras, &bd);
-                if (!extra) {
-                    ERR("No extra for %p", bd);
-                    continue;
-                }
-
-                if ((bd->maximized & E_MAXIMIZE_HORIZONTAL) && count != 1) {
-                    _e_border_unmaximize(bd, E_MAXIMIZE_HORIZONTAL);
-                }
-                /* let's use a bresenham here */
-
-                extra->expected.x = cw + zx;
-                extra->expected.y = y;
-                extra->expected.w = w + d;
-                extra->expected.h = h;
-                cw += extra->expected.w;
-
-                _e_border_move_resize(bd,
-                                      extra->expected.x,
-                                      extra->expected.y,
-                                      extra->expected.w,
-                                      extra->expected.h);
-            }
-        } else {
-            int x, w, h, ch;
-
-            x = _G.tinfo->pos[stack];
-            ch = 0;
-            w = _G.tinfo->size[stack];
-            h = zh / count;
-
-            for (l = _G.tinfo->stacks[stack]; l; l = l->next, i++) {
-                E_Border *bd = l->data;
-                Border_Extra *extra;
-                int d = (i * 2 * zh) % count
-                    - (2 * ch) % count;
-
-                extra = eina_hash_find(_G.border_extras, &bd);
-                if (!extra) {
-                    ERR("No extra for %p", bd);
-                    continue;
-                }
-
-                if ((bd->maximized & E_MAXIMIZE_VERTICAL) && count != 1) {
-                    _e_border_unmaximize(bd, E_MAXIMIZE_VERTICAL);
-                }
-                /* let's use a bresenham here */
-
-                extra->expected.x = x;
-                extra->expected.y = ch + zy;
-                extra->expected.w = w;
-                extra->expected.h = h + d;
-                ch += extra->expected.h;
-
-                _e_border_move_resize(bd,
-                                      extra->expected.x,
-                                      extra->expected.y,
-                                      extra->expected.w,
-                                      extra->expected.h);
-            }
-        }
-    } else {
-        Border_Extra *extra;
-        E_Border *bd = _G.tinfo->stacks[stack]->data;
-
-        extra = eina_hash_find(_G.border_extras, &bd);
-        if (!extra) {
-            ERR("No extra for %p", bd);
-            return;
-        }
-
-        if (_G.tinfo->conf->use_rows) {
-            int x, w;
-
-            e_zone_useful_geometry_get(_G.tinfo->desk->zone,
-                                       &x, NULL, &w, NULL);
-
-            extra->expected.x = x;
-            extra->expected.y = _G.tinfo->pos[stack];
-            extra->expected.w = w;
-            extra->expected.h = _G.tinfo->size[stack];
-
-            _e_border_move_resize(bd,
-                                  extra->expected.x,
-                                  extra->expected.y,
-                                  extra->expected.w,
-                                  extra->expected.h);
-
-            _e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_HORIZONTAL);
-        } else {
-            int y, h;
-
-            e_zone_useful_geometry_get(_G.tinfo->desk->zone,
-                                       NULL, &y, NULL, &h);
-
-            extra->expected.x = _G.tinfo->pos[stack];
-            extra->expected.y = y;
-            extra->expected.w = _G.tinfo->size[stack];
-            extra->expected.h = h;
-
-            _e_border_move_resize(bd,
-                                  extra->expected.x,
-                                  extra->expected.y,
-                                  extra->expected.w,
-                                  extra->expected.h);
-
-            _e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
-        }
-    }
-}
-
-static void
-_move_resize_stack(int stack, int delta_pos, int delta_size)
-{
-    Eina_List *list = _G.tinfo->stacks[stack];
-    Eina_List *l;
-
-    for (l = list; l; l = l->next) {
-        E_Border *bd = l->data;
-        Border_Extra *extra;
-
-        extra = eina_hash_find(_G.border_extras, &bd);
-        if (!extra) {
-            ERR("No extra for %p", bd);
-            continue;
-        }
-
-        if (_G.tinfo->conf->use_rows) {
-            extra->expected.y += delta_pos;
-            extra->expected.h += delta_size;
-        } else {
-            extra->expected.x += delta_pos;
-            extra->expected.w += delta_size;
-        }
-
-        _e_border_move_resize(bd,
-                              extra->expected.x,
-                              extra->expected.y,
-                              extra->expected.w,
-                              extra->expected.h);
-    }
-
-    _G.tinfo->pos[stack] += delta_pos;
-    _G.tinfo->size[stack] += delta_size;
-}
-
-static void
-_set_stack_geometry(int stack, int pos, int size)
-{
-    Eina_List *l;
-    for (l = _G.tinfo->stacks[stack]; l; l = l->next) {
-        E_Border *bd = l->data;
-        Border_Extra *extra;
-
-        extra = eina_hash_find(_G.border_extras, &bd);
-        if (!extra) {
-            ERR("No extra for %p", bd);
-            continue;
-        }
-        DBG("expected: %dx%d+%d+%d (%p)",
-            extra->expected.w,
-            extra->expected.h,
-            extra->expected.x,
-            extra->expected.y,
-            bd);
-
-        if (_G.tinfo->conf->use_rows) {
-            extra->expected.y = pos;
-            extra->expected.h = size;
-
-            if (bd->maximized) {
-                if (l->next && (bd->maximized & E_MAXIMIZE_HORIZONTAL))
-                    _e_border_unmaximize(bd, E_MAXIMIZE_HORIZONTAL);
-                if (_G.tinfo->stacks[1] && (bd->maximized & E_MAXIMIZE_VERTICAL))
-                    _e_border_unmaximize(bd, E_MAXIMIZE_VERTICAL);
-            }
-        } else {
-            extra->expected.x = pos;
-            extra->expected.w = size;
-
-            if (bd->maximized) {
-                if (l->next && (bd->maximized & E_MAXIMIZE_VERTICAL))
-                    _e_border_unmaximize(bd, E_MAXIMIZE_VERTICAL);
-                if (_G.tinfo->stacks[1] && (bd->maximized & E_MAXIMIZE_HORIZONTAL))
-                    _e_border_unmaximize(bd, E_MAXIMIZE_HORIZONTAL);
-            }
-        }
-
-        _e_border_move_resize(bd,
-                              extra->expected.x,
-                              extra->expected.y,
-                              extra->expected.w,
-                              extra->expected.h);
-    }
-    _G.tinfo->pos[stack] = pos;
-    _G.tinfo->size[stack] = size;
-}
-
-static void
-_add_stack(void)
-{
-    int nb_borders;
-    Eina_List *l;
-    int i;
-
-    if (_G.tinfo->conf->nb_stacks == TILING_MAX_STACKS)
-        return;
-
-    _G.tinfo->conf->nb_stacks++;
-
-    if (_G.tinfo->conf->nb_stacks == 1) {
-        for (l = e_border_focus_stack_get(); l; l = l->next) {
-            E_Border *bd;
-
-            bd = l->data;
-            if (bd->desk == _G.tinfo->desk)
-                _add_border(bd);
-        }
-    }
-    nb_borders = get_window_count();
-    if (_G.tinfo->stacks[_G.tinfo->conf->nb_stacks - 2]
-    &&  nb_borders >= _G.tinfo->conf->nb_stacks)
-    {
-        int nb_stacks = _G.tinfo->conf->nb_stacks - 1;
-        int pos, s;
-        /* Add stack */
-
-        if (_G.tinfo->conf->use_rows)
-            e_zone_useful_geometry_get(_G.tinfo->desk->zone,
-                                       NULL, &pos, NULL, &s);
-        else
-            e_zone_useful_geometry_get(_G.tinfo->desk->zone,
-                                       &pos, NULL, &s, NULL);
-
-        for (i = 0; i <= nb_stacks; i++) {
-            int size = 0;
-
-            size = s / (nb_stacks + 1 - i);
-
-            _set_stack_geometry(i, pos, size);
-
-            s -= size;
-            pos += size;
-        }
-        for (i = nb_stacks - 1; i >= 0; i--) {
-            if (eina_list_count(_G.tinfo->stacks[i]) == 1) {
-                _G.tinfo->stacks[i+1] = _G.tinfo->stacks[i];
-                _reorganize_stack(i+1);
-            } else {
-                E_Border *bd = eina_list_last(_G.tinfo->stacks[i])->data;
-
-                EINA_LIST_REMOVE(_G.tinfo->stacks[i], bd);
-                _reorganize_stack(i);
-
-                _G.tinfo->stacks[i+1] = NULL;
-                EINA_LIST_APPEND(_G.tinfo->stacks[i+1], bd);
-                _reorganize_stack(i+1);
-                return;
-            }
-        }
-    }
-}
-
-static void
-_remove_stack(void)
-{
-    int i;
-    Eina_List *l;
-
-    if (!_G.tinfo->conf->nb_stacks)
-        return;
-
-    _G.tinfo->conf->nb_stacks--;
-
-    if (!_G.tinfo->conf->nb_stacks) {
-        for (i = 0; i < TILING_MAX_STACKS; i++) {
-            for (l = _G.tinfo->stacks[i]; l; l = l->next) {
-                E_Border *bd = l->data;
-
-                _restore_border(bd);
-            }
-            eina_list_free(_G.tinfo->stacks[i]);
-            _G.tinfo->stacks[i] = NULL;
-        }
-        e_place_zone_region_smart_cleanup(_G.tinfo->desk->zone);
-    } else {
-        int nb_stacks = _G.tinfo->conf->nb_stacks;
-        int stack = _G.tinfo->conf->nb_stacks;
-        int pos, s;
-
-        if (_G.tinfo->stacks[stack]) {
-            _G.tinfo->stacks[stack-1] = eina_list_merge(
-                _G.tinfo->stacks[stack-1], _G.tinfo->stacks[stack]);
-            _reorganize_stack(stack-1);
-        }
-
-        if (_G.tinfo->conf->use_rows) {
-            e_zone_useful_geometry_get(_G.tinfo->desk->zone,
-                                       NULL, &pos, NULL, &s);
-        } else {
-            e_zone_useful_geometry_get(_G.tinfo->desk->zone,
-                                       &pos, NULL, &s, NULL);
-        }
-        for (i = 0; i < nb_stacks; i++) {
-            int size = 0;
-
-            size = s / (nb_stacks - i);
-
-            _set_stack_geometry(i, pos, size);
-
-            s -= size;
-            pos += size;
-        }
-    }
-}
-
-static void
-_toggle_rows_cols(void)
-{
-    int i;
-#if 0
-    Eina_List *wins = NULL;
-    E_Border *bd;
-
-    _G.tinfo->conf->use_rows = !_G.tinfo->conf->use_rows;
-    for (i = 0; i < TILING_MAX_STACKS; i++) {
-        EINA_LIST_FREE(_G.tinfo->stacks[i], bd) {
-            EINA_LIST_APPEND(wins, bd);
-            _restore_border(bd);
-        }
-        _G.tinfo->stacks[i] = NULL;
-        _G.tinfo->pos[i] = 0;
-        _G.tinfo->size[i] = 0;
-    }
-
-    DBG("reinsert (use_rows: %s)",
-        _G.tinfo->conf->use_rows ? "true":"false");
-
-    EINA_LIST_FREE(wins, bd) {
-        _add_border(bd);
-    }
-#else
-    int nb_stacks = _G.tinfo->conf->nb_stacks;
-    int pos, s;
-
-    _G.tinfo->conf->use_rows = !_G.tinfo->conf->use_rows;
-
-    if (_G.tinfo->conf->use_rows)
-        e_zone_useful_geometry_get(_G.tinfo->desk->zone,
-                                   NULL, &pos, NULL, &s);
-    else
-        e_zone_useful_geometry_get(_G.tinfo->desk->zone,
-                                   &pos, NULL, &s, NULL);
-
-    for (i = 0; i < nb_stacks; i++) {
-        int size = 0;
-
-        size = s / (nb_stacks - i);
-
-        _set_stack_geometry(i, pos, size);
-
-        s -= size;
-        pos += size;
-    }
-    for (i = 0; i < nb_stacks; i++) {
-        _reorganize_stack(i);
-    }
-#endif
+   Window_Tree *item = _item;
+
+   if (item->client)
+     {
+        _restore_client(item->client);
+
+        Client_Extra *extra = eina_hash_find(_G.client_extras, &item->client);
+
+        if (extra)
+          {
+             extra->tiled = EINA_FALSE;
+          }
+     }
+   free(item);
 }
 
 void
 change_desk_conf(struct _Config_vdesk *newconf)
 {
-    E_Manager *m;
-    E_Container *c;
-    E_Zone *z;
-    E_Desk *d;
-    int old_nb_stacks = 0,
-        new_nb_stacks = newconf->nb_stacks;
-    int i;
-    Eina_List *l;
+   E_Manager *m;
+   E_Comp *c;
+   E_Zone *z;
+   E_Desk *d;
+   int old_nb_stacks, new_nb_stacks = newconf->nb_stacks;
 
-    m = e_manager_current_get();
-    if (!m) return;
-    c = e_container_current_get(m);
-    if (!c) return;
-    z = e_container_zone_number_get(c, newconf->zone_num);
-    if (!z) return;
-    d = e_desk_at_xy_get(z, newconf->x, newconf->y);
-    if (!d) return;
+   m = e_manager_current_get();
+   if (!m)
+     return;
+   c = m->comp;
+   z = e_comp_zone_number_get(c, newconf->zone_num);
+   if (!z)
+     return;
+   d = e_desk_at_xy_get(z, newconf->x, newconf->y);
+   if (!d)
+     return;
 
-    check_tinfo(d);
-    if (_G.tinfo->conf) {
-        old_nb_stacks = _G.tinfo->conf->nb_stacks;
-        if (_G.tinfo->conf->use_rows != newconf->use_rows) {
-            _G.tinfo->conf = newconf;
-            _G.tinfo->conf->use_rows = !_G.tinfo->conf->use_rows;
-            _toggle_rows_cols();
-            return;
-        }
-    } else {
-        newconf->nb_stacks = 0;
-    }
-    _G.tinfo->conf = newconf;
-    _G.tinfo->conf->nb_stacks = old_nb_stacks;
+   check_tinfo(d);
+   old_nb_stacks = _G.tinfo->conf->nb_stacks;
 
-    if (new_nb_stacks == old_nb_stacks)
-        return;
+   _G.tinfo->conf = newconf;
+   _G.tinfo->conf->nb_stacks = new_nb_stacks;
 
-    if (new_nb_stacks == 0) {
-        for (i = 0; i < TILING_MAX_STACKS; i++) {
-            for (l = _G.tinfo->stacks[i]; l; l = l->next) {
-                E_Border *bd = l->data;
-
-                _restore_border(bd);
-            }
-            eina_list_free(_G.tinfo->stacks[i]);
-            _G.tinfo->stacks[i] = NULL;
-        }
-        e_place_zone_region_smart_cleanup(z);
-    } else if (new_nb_stacks > old_nb_stacks) {
-        for (i = new_nb_stacks; i > old_nb_stacks; i--) {
-            _add_stack();
-        }
-    } else {
-        for (i = new_nb_stacks; i < old_nb_stacks; i++) {
-            _remove_stack();
-        }
-    }
-    _G.tinfo->conf->nb_stacks = new_nb_stacks;
+   _desk_config_apply(d, old_nb_stacks, new_nb_stacks);
 }
 
 static void
-_e_mod_action_add_stack_cb(E_Object   *obj __UNUSED__,
-                           const char *params __UNUSED__)
+_desk_config_apply(E_Desk *d, int old_nb_stacks, int new_nb_stacks)
 {
-    E_Desk *desk = get_current_desk();
+   check_tinfo(d);
 
-    end_special_input();
+   if (new_nb_stacks == 0)
+     {
+        tiling_window_tree_walk(_G.tinfo->tree, _restore_free_client);
+        _G.tinfo->tree = NULL;
+     }
+   else if (new_nb_stacks == old_nb_stacks)
+     {
+        E_Client *ec;
 
-    check_tinfo(desk);
-    if (!_G.tinfo->conf)
-        return;
+        E_CLIENT_FOREACH(e_comp_get(NULL), ec)
+          {
+             _client_apply_settings(ec, NULL);
+          }
 
-    _add_stack();
+        _reapply_tree();
+     }
+   else
+     {
+        /* Add all the existing windows. */
+        E_Client *ec;
 
-    e_config_save_queue();
+        E_CLIENT_FOREACH(e_comp_get(NULL), ec)
+          {
+             _add_client(ec);
+          }
+
+        _reapply_tree();
+     }
 }
-
-static void
-_e_mod_action_remove_stack_cb(E_Object   *obj __UNUSED__,
-                              const char *params __UNUSED__)
-{
-    E_Desk *desk = get_current_desk();
-
-    end_special_input();
-
-    check_tinfo(desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks)
-        return;
-
-    _remove_stack();
-
-    e_config_save_queue();
-}
-
-static void
-_e_mod_action_tg_stack_cb(E_Object   *obj __UNUSED__,
-                          const char *params __UNUSED__)
-{
-    E_Desk *desk = get_current_desk();
-
-    end_special_input();
-
-    check_tinfo(desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks)
-        return;
-
-    _toggle_rows_cols();
-
-    e_config_save_queue();
-}
-
 
 /* }}} */
-/* Reorganize windows {{{*/
+/* Reorganize windows {{{ */
 
 static void
-_add_border(E_Border *bd)
+_client_apply_settings(E_Client *ec, Client_Extra *extra)
 {
-    Border_Extra *extra;
-    int stack;
-    int i;
+   if (!extra)
+     {
+        extra = tiling_entry_func(ec);
+     }
 
-    if (!bd) {
-        return;
-    }
-    if (is_floating_window(bd)) {
-        return;
-    }
-    if (!is_tilable(bd)) {
-        return;
-    }
-    if (bd->fullscreen) {
-         return;
-    }
+   if (!extra || !extra->tiled)
+      return;
 
-    if (!_G.tinfo || !_G.tinfo->conf || !_G.tinfo->conf->nb_stacks) {
-        return;
-    }
+   if (ec->maximized)
+     _e_client_unmaximize(ec, E_MAXIMIZE_BOTH);
 
-    extra = _get_or_create_border_extra(bd);
+   if (!tiling_g.config->show_titles && (!ec->bordername ||
+                                         strcmp(ec->bordername, "pixel")))
+     change_window_border(ec, "pixel");
+   else if (tiling_g.config->show_titles && (ec->bordername &&
+                                         !strcmp(ec->bordername, "pixel")))
+     change_window_border(ec, (extra->orig.bordername) ? extra->orig.bordername : "default");
 
-    /* Stack tiled window below so that winlist doesn't mix up stacking */
-    e_border_layer_set(bd, E_LAYER_BELOW);
-
-    DBG("adding %p", bd);
-
-    if (_G.tinfo->stacks[0]) {
-        DBG("got stack 0");
-        if (_G.tinfo->stacks[_G.tinfo->conf->nb_stacks - 1]) {
-            DBG("using last stack");
-            stack = _G.tinfo->conf->nb_stacks - 1;
-
-            if (!_G.tinfo->stacks[stack]->next) {
-                _e_border_unmaximize(_G.tinfo->stacks[stack]->data,
-                                    E_MAXIMIZE_BOTH);
-            }
-            EINA_LIST_APPEND(_G.tinfo->stacks[stack], bd);
-            _reorganize_stack(stack);
-            if (bd->maximized)
-                _e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
-        } else {
-            /* Add stack */
-            int nb_stacks = get_stack_count();
-            int x, y, w, h;
-            int pos, s, size = 0;
-
-            DBG("add stack");
-
-            assert((0 <= nb_stacks) && (nb_stacks < TILING_MAX_STACKS));
-            e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
-
-            if (_G.tinfo->conf->use_rows) {
-                pos = y;
-                s = h;
-            } else {
-                pos = x;
-                s = w;
-            }
-
-            EINA_LIST_APPEND(_G.tinfo->stacks[nb_stacks], bd);
-
-            for (i = 0; i < nb_stacks; i++) {
-
-                size = s / (nb_stacks + 1 - i);
-
-                _set_stack_geometry(i, pos, size);
-
-                s -= size;
-                pos += size;
-            }
-
-            _G.tinfo->pos[nb_stacks] = pos;
-            _G.tinfo->size[nb_stacks] = size;
-            if (_G.tinfo->conf->use_rows) {
-                extra->expected.x = x;
-                extra->expected.y = pos;
-                extra->expected.w = w;
-                extra->expected.h = size;
-                _e_border_maximize(bd, E_MAXIMIZE_EXPAND |
-                                      E_MAXIMIZE_HORIZONTAL);
-            } else {
-                extra->expected.x = pos;
-                extra->expected.y = y;
-                extra->expected.w = size;
-                extra->expected.h = h;
-                _e_border_maximize(bd, E_MAXIMIZE_EXPAND |
-                                      E_MAXIMIZE_VERTICAL);
-            }
-            _e_border_move_resize(bd,
-                                  extra->expected.x,
-                                  extra->expected.y,
-                                  extra->expected.w,
-                                  extra->expected.h);
-
-            stack = nb_stacks;
-        }
-    } else {
-        DBG("lonely window");
-        e_zone_useful_geometry_get(bd->zone,
-                                   &extra->expected.x,
-                                   &extra->expected.y,
-                                   &extra->expected.w,
-                                   &extra->expected.h);
-
-        if (bd->maximized & E_MAXIMIZE_BOTH)
-            _e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
-        _e_border_move_resize(bd,
-                              extra->expected.x,
-                              extra->expected.y,
-                              extra->expected.w,
-                              extra->expected.h);
-        _e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
-        EINA_LIST_APPEND(_G.tinfo->stacks[0], bd);
-        if (_G.tinfo->conf->use_rows) {
-            e_zone_useful_geometry_get(bd->zone,
-                                       NULL, &_G.tinfo->pos[0],
-                                       NULL, &_G.tinfo->size[0]);
-        } else {
-            e_zone_useful_geometry_get(bd->zone,
-                                       &_G.tinfo->pos[0], NULL,
-                                       &_G.tinfo->size[0], NULL);
-        }
-        stack = 0;
-    }
-    DBG("expected: %dx%d+%d+%d (%p)",
-        extra->expected.w,
-        extra->expected.h,
-        extra->expected.x,
-        extra->expected.y,
-        bd);
 }
 
 static void
-_remove_border(E_Border *bd)
+_e_client_check_based_on_state_cb(void *data, Evas_Object *obj EINA_UNUSED,
+      void *event_info EINA_UNUSED)
 {
-    int stack;
-    int nb_stacks;
-    int i, j;
+   E_Client *ec = data;
+   _toggle_tiling_based_on_state(ec, EINA_TRUE);
+}
 
-    nb_stacks = get_stack_count();
+static Eina_Bool
+_add_client(E_Client *ec)
+{
+   /* Should I need to check that the client is not already added? */
+   if (!ec)
+     {
+        return EINA_FALSE;
+     }
 
-    stack = get_stack(bd);
-    if (stack < 0)
-        return;
+   Client_Extra *extra = _get_or_create_client_extra(ec);
+   _client_track(ec);
 
-    DBG("removing %p (%d%c)", bd, stack, _G.tinfo->conf->use_rows? 'r':'c');
+   if (!is_tilable(ec))
+     {
+        return EINA_FALSE;
+     }
 
-    EINA_LIST_REMOVE(_G.tinfo->stacks[stack], bd);
-    eina_hash_del(_G.border_extras, bd, NULL);
+   if (!desk_should_tile_check(ec->desk))
+      return EINA_FALSE;
 
-    if (_G.tinfo->stacks[stack]) {
-        _reorganize_stack(stack);
-    } else {
-        int nb_borders = get_window_count();
+   if (is_ignored_window(extra))
+      return EINA_FALSE;
 
-        if (nb_stacks > nb_borders) {
-            int pos, s;
-            /* Remove stack */
+   if (_G.split_type == TILING_SPLIT_FLOAT)
+     {
+        extra->floating = EINA_TRUE;
+        return EINA_FALSE;
+     }
 
-            nb_stacks--;
+   if (extra->tiled)
+      return EINA_FALSE;
 
-            assert((0 <= nb_stacks) && (nb_stacks < TILING_MAX_STACKS - 1));
+   extra->tiled = EINA_TRUE;
 
-            for (i = stack; i < nb_stacks; i++) {
-                _G.tinfo->stacks[i] = _G.tinfo->stacks[i+1];
-            }
-            _G.tinfo->stacks[nb_stacks] = NULL;
-            if (_G.tinfo->conf->use_rows) {
-                e_zone_useful_geometry_get(bd->zone,
-                                           NULL, &pos, NULL, &s);
-            } else {
-                e_zone_useful_geometry_get(bd->zone,
-                                           &pos, NULL, &s, NULL);
-            }
-            for (i = 0; i < nb_stacks; i++) {
-                int size;
+   DBG("adding %p", ec);
 
-                size = s / (nb_stacks - i);
+   _client_apply_settings(ec, extra);
 
-                _set_stack_geometry(i, pos, size);
+   /* Window tree updating. */
+   {
+      E_Client *ec_focused = e_client_focused_get();
 
-                s -= size;
-                pos += size;
-            }
-        } else {
-            for (i = stack+1; i < nb_stacks; i++) {
-                if (eina_list_count(_G.tinfo->stacks[i]) > 1) {
-                    for (j = stack; j < i - 1; j++) {
-                        _G.tinfo->stacks[j] = _G.tinfo->stacks[j+1];
-                        _reorganize_stack(j);
-                    }
-                    bd = _G.tinfo->stacks[i]->data;
-                    EINA_LIST_REMOVE(_G.tinfo->stacks[i], bd);
-                    _reorganize_stack(i);
+      /* If focused is NULL, it should return the root. */
+      Window_Tree *parent = tiling_window_tree_client_find(_G.tinfo->tree,
+                                                           ec_focused);
 
-                    _G.tinfo->stacks[i-1] = NULL;
-                    EINA_LIST_APPEND(_G.tinfo->stacks[i-1], bd);
-                    _reorganize_stack(i-1);
-                    return;
-                }
-            }
-            for (i = stack-1; i >= 0; i--) {
-                if (eina_list_count(_G.tinfo->stacks[i]) == 1) {
-                    _G.tinfo->stacks[i+1] = _G.tinfo->stacks[i];
-                    _reorganize_stack(i+1);
-                } else {
-                    bd = eina_list_last(_G.tinfo->stacks[i])->data;
-                    EINA_LIST_REMOVE(_G.tinfo->stacks[i], bd);
-                    _reorganize_stack(i);
-
-                    _G.tinfo->stacks[i+1] = NULL;
-                    EINA_LIST_APPEND(_G.tinfo->stacks[i+1], bd);
-                    _reorganize_stack(i+1);
-                    return;
-                }
-            }
+      if (!parent && (ec_focused != ec))
+        {
+           Client_Extra *extra_focused =
+             eina_hash_find(_G.client_extras, &ec_focused);
+           if (_G.tinfo->tree && extra_focused && extra_focused->tiled)
+             {
+                ERR("Couldn't find tree item for focused client %p. Using root..", e_client_focused_get());
+             }
         }
-    }
+
+      _G.tinfo->tree =
+        tiling_window_tree_add(_G.tinfo->tree, parent, ec, _G.split_type);
+   }
+
+   if (started)
+     _reapply_tree();
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_client_remove_no_apply(E_Client *ec)
+{
+   if (!ec)
+      return EINA_FALSE;
+
+   DBG("removing %p", ec);
+
+   Client_Extra *extra = eina_hash_find(_G.client_extras, &ec);
+
+   if (!extra)
+     {
+        if (is_tilable(ec))
+          {
+             ERR("No extra for %p", ec);
+          }
+        return EINA_FALSE;
+     }
+
+   if (!extra->tiled)
+      return EINA_FALSE;
+
+   extra->tiled = EINA_FALSE;
+
+   /* Window tree updating. */
+     {
+        /* If focused is NULL, it should return the root. */
+        Window_Tree *item = tiling_window_tree_client_find(_G.tinfo->tree, ec);
+
+        if (!item)
+          {
+             ERR("Couldn't find tree item for client %p!", ec);
+             return EINA_FALSE;
+          }
+
+        _G.tinfo->tree = tiling_window_tree_remove(_G.tinfo->tree, item);
+     }
+
+   return EINA_TRUE;
 }
 
 static void
-_move_resize_border_stack(E_Border *bd, Border_Extra *extra,
-                          int stack, tiling_change_t change)
+_remove_client(E_Client *ec)
 {
-#define _MOVE_RESIZE_BORDER_STACK(_pos, _size)                               \
-    if (change == TILING_RESIZE) {                                           \
-        if (stack == TILING_MAX_STACKS || !_G.tinfo->stacks[stack + 1]) {    \
-            /* You're not allowed to resize */                               \
-            bd->_size = extra->expected._size;                               \
-        } else {                                                             \
-            int delta = bd->_size - extra->expected._size;                   \
-                                                                             \
-            if (delta + 1 > _G.tinfo->size[stack + 1])                       \
-                delta = _G.tinfo->size[stack + 1] - 1;                       \
-                                                                             \
-            _move_resize_stack(stack, 0, delta);                             \
-            _move_resize_stack(stack + 1, delta, -delta);                    \
-            extra->expected._size = bd->_size;                               \
-        }                                                                    \
-    } else {                                                                 \
-        if (stack == 0) {                                                    \
-            /* You're not allowed to move */                                 \
-            bd->_pos = extra->expected._pos;                                 \
-        } else {                                                             \
-            int delta = bd->_pos - extra->expected._pos;                     \
-                                                                             \
-            if (delta + 1 > _G.tinfo->size[stack - 1])                       \
-                delta = _G.tinfo->size[stack - 1] - 1;                       \
-                                                                             \
-            _move_resize_stack(stack, delta, -delta);                        \
-            _move_resize_stack(stack - 1, 0, delta);                         \
-            extra->expected._pos = bd->_pos;                                 \
-        }                                                                    \
-    }
-    if (_G.tinfo->conf->use_rows) {
-        _MOVE_RESIZE_BORDER_STACK(y, h)
-    } else {
-        _MOVE_RESIZE_BORDER_STACK(x, w)
-    }
-#undef _MOVE_RESIZE_BORDER_STACK
-}
-
-static void
-_move_resize_border_in_stack(E_Border *bd, Border_Extra *extra,
-                              int stack, tiling_change_t change)
-{
-    Eina_List *l;
-
-    l = eina_list_data_find_list(_G.tinfo->stacks[stack], bd);
-    if (!l) {
-        ERR("unable to bd %p in stack %d", bd, stack);
-        return;
-    }
-
-    switch (change) {
-      case TILING_RESIZE:
-        if (!l->next) {
-            if (l->prev) {
-                E_Border *prevbd = l->prev->data;
-                Border_Extra *prevextra;
-
-                prevextra = eina_hash_find(_G.border_extras, &prevbd);
-                if (!prevextra) {
-                    ERR("No extra for %p", prevbd);
-                    return;
-                }
-
-                if (_G.tinfo->conf->use_rows) {
-                    int delta;
-
-                    delta = bd->w - extra->expected.w;
-                    prevextra->expected.w -= delta;
-                    extra->expected.x -= delta;
-                    extra->expected.w = bd->w;
-                } else {
-                    int delta;
-
-                    delta = bd->h - extra->expected.h;
-                    prevextra->expected.h -= delta;
-                    extra->expected.y -= delta;
-                    extra->expected.h = bd->h;
-                }
-
-                _e_border_resize(prevbd,
-                                 prevextra->expected.w,
-                                 prevextra->expected.h);
-                _e_border_move(bd,
-                               extra->expected.x,
-                               extra->expected.y);
-            } else {
-                /* You're not allowed to resize */
-                _e_border_resize(bd,
-                                 extra->expected.w,
-                                 extra->expected.h);
-            }
-        } else {
-            E_Border *nextbd = l->next->data;
-            Border_Extra *nextextra;
-
-            nextextra = eina_hash_find(_G.border_extras, &nextbd);
-            if (!nextextra) {
-                ERR("No extra for %p", nextbd);
-                return;
-            }
-
-            if (_G.tinfo->conf->use_rows) {
-                int min_width = MAX(nextbd->client.icccm.base_w, 1);
-                int delta;
-
-                delta = bd->w - extra->expected.w;
-                if (nextextra->expected.w - delta < min_width)
-                    delta = nextextra->expected.w - min_width;
-
-                nextextra->expected.x += delta;
-                nextextra->expected.w -= delta;
-
-                extra->expected.w += delta;
-            } else {
-                int min_height = MAX(nextbd->client.icccm.base_h, 1);
-                int delta;
-
-                delta = bd->h - extra->expected.h;
-                if (nextextra->expected.h - delta < min_height)
-                    delta = nextextra->expected.h - min_height;
-
-                nextextra->expected.y += delta;
-                nextextra->expected.h -= delta;
-
-                extra->expected.h += delta;
-            }
-
-            _e_border_move_resize(nextbd,
-                                  nextextra->expected.x,
-                                  nextextra->expected.y,
-                                  nextextra->expected.w,
-                                  nextextra->expected.h);
-            _e_border_move_resize(bd,
-                                  extra->expected.x,
-                                  extra->expected.y,
-                                  extra->expected.w,
-                                  extra->expected.h);
-        }
-        break;
-      case TILING_MOVE:
-        if (!l->prev) {
-            /* You're not allowed to move */
-            if (_G.tinfo->conf->use_rows) {
-                bd->x = extra->expected.x;
-            } else {
-                bd->y = extra->expected.y;
-            }
-            _e_border_move(bd,
-                           extra->expected.x,
-                           extra->expected.y);
-            DBG("trying to move %p, but !l->prev", bd);
-        } else {
-            E_Border *prevbd = l->prev->data;
-            Border_Extra *prevextra;
-
-            prevextra = eina_hash_find(_G.border_extras, &prevbd);
-            if (!prevextra) {
-                ERR("No extra for %p", prevbd);
-                return;
-            }
-
-            if (_G.tinfo->conf->use_rows) {
-                int delta = bd->x - extra->expected.x;
-                int min_width = MAX(prevbd->client.icccm.base_w, 1);
-
-                if (prevextra->expected.w - delta < min_width)
-                    delta = prevextra->expected.w - min_width;
-
-                prevextra->expected.w += delta;
-
-                extra->expected.x += delta;
-                extra->expected.w -= delta;
-            } else {
-                int delta = bd->y - extra->expected.y;
-                int min_height = MAX(prevbd->client.icccm.base_h, 1);
-
-                if (prevextra->expected.h - delta < min_height)
-                    delta = prevextra->expected.h - min_height;
-
-                prevextra->expected.h += delta;
-
-                extra->expected.y += delta;
-                extra->expected.h -= delta;
-            }
-
-            _e_border_resize(prevbd,
-                             prevextra->expected.w,
-                             prevextra->expected.h);
-            _e_border_move_resize(bd,
-                                  extra->expected.x,
-                                  extra->expected.y,
-                                  extra->expected.w,
-                                  extra->expected.h);
-        }
-        break;
-      default:
-        ERR("invalid tiling change: %d", change);
-    }
+   if (_client_remove_no_apply(ec))
+     _reapply_tree();
 }
 
 /* }}} */
 /* Toggle Floating {{{ */
 
 static void
-toggle_floating(E_Border *bd)
+toggle_floating(E_Client *ec)
 {
-    if (!bd)
-        return;
-    check_tinfo(bd->desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks)
-        return;
+   Client_Extra *extra = tiling_entry_no_desk_func(ec);
 
-    if (EINA_LIST_IS_IN(_G.tinfo->floating_windows, bd)) {
-        EINA_LIST_REMOVE(_G.tinfo->floating_windows, bd);
+   if (!extra)
+     {
+        return;
+     }
 
-        _add_border(bd);
-    } else {
-        _remove_border(bd);
-        _restore_border(bd);
-        EINA_LIST_APPEND(_G.tinfo->floating_windows, bd);
-    }
+   extra->floating = !extra->floating;
+
+   if (!desk_should_tile_check(ec->desk))
+     return;
+
+   /* This is the new state, act accordingly. */
+   if (extra->floating)
+     {
+        _restore_client(ec);
+        _remove_client(ec);
+     }
+   else
+     {
+        _add_client(ec);
+     }
+}
+
+void
+tiling_e_client_does_not_fit(E_Client *ec)
+{
+   toggle_floating(ec);
 }
 
 static void
-_e_mod_action_toggle_floating_cb(E_Object   *obj __UNUSED__,
-                                 const char *params __UNUSED__)
+_e_mod_action_toggle_floating_cb(E_Object *obj EINA_UNUSED,
+                                 const char *params EINA_UNUSED)
 {
-    end_special_input();
+   toggle_floating(e_client_focused_get());
+}
 
-    toggle_floating(e_border_focused_get());
+static E_Client *_go_mouse_client = NULL;
+
+static void
+_e_mod_action_swap_window_go_mouse(E_Object *obj EINA_UNUSED,
+                                   const char *params EINA_UNUSED,
+                                   E_Binding_Event_Mouse_Button *ev EINA_UNUSED)
+{
+   E_Client *ec = e_client_under_pointer_get(get_current_desk(), NULL);
+
+   Client_Extra *extra = tiling_entry_func(ec);
+
+   if (!extra || !extra->tiled)
+     return;
+
+   _go_mouse_client = ec;
+}
+
+static void
+_e_mod_action_swap_window_end_mouse(E_Object *obj EINA_UNUSED,
+                                    const char *params EINA_UNUSED,
+                                    E_Binding_Event_Mouse_Button *ev EINA_UNUSED)
+{
+   E_Client *ec = e_client_under_pointer_get(get_current_desk(), NULL);
+   E_Client *first_ec = _go_mouse_client;
+
+   _go_mouse_client = NULL;
+
+   if (!first_ec)
+     return;
+
+   Client_Extra *extra = tiling_entry_func(ec);
+
+   if (!extra || !extra->tiled)
+     return;
+
+   /* XXX: Only support swap on the first desk for now. */
+   if (ec->desk != first_ec->desk)
+     return;
+
+   Window_Tree *item, *first_item;
+
+   item = tiling_window_tree_client_find(_G.tinfo->tree, ec);
+
+   if (!item)
+     return;
+
+   first_item = tiling_window_tree_client_find(_G.tinfo->tree, first_ec);
+
+   if (!first_item)
+     return;
+
+   item->client = first_ec;
+   first_item->client = ec;
+
+   _reapply_tree();
+}
+
+static void
+_e_mod_menu_border_cb(void *data, E_Menu *m EINA_UNUSED,
+                      E_Menu_Item *mi EINA_UNUSED)
+{
+   E_Client *ec = data;
+
+   toggle_floating(ec);
 }
 
 /* }}} */
-/* {{{ Swap */
+/* {{{ Move windows */
 
 static void
-_action_swap(E_Border *bd_1,
-             Border_Extra *extra_2)
+_action_swap(int cross_edge)
 {
-    Border_Extra *extra_1;
-    E_Border *bd_2 = extra_2->border;
-    Eina_List *l_1 = NULL,
-              *l_2 = NULL;
-    geom_t gt;
-    unsigned int bd_2_maximized;
-    int i;
+   E_Desk *desk;
+   E_Client *focused_ec;
 
-    extra_1 = eina_hash_find(_G.border_extras, &bd_1);
-    if (!extra_1) {
-        ERR("No extra for %p", bd_1);
-        return;
-    }
+   desk = get_current_desk();
+   if (!desk)
+     return;
 
-    for (i = 0; i < TILING_MAX_STACKS; i++) {
-        if ((l_1 = eina_list_data_find_list(_G.tinfo->stacks[i], bd_1))) {
-            break;
-        }
-    }
-    for (i = 0; i < TILING_MAX_STACKS; i++) {
-        if ((l_2 = eina_list_data_find_list(_G.tinfo->stacks[i], bd_2))) {
-            break;
-        }
-    }
+   focused_ec = e_client_focused_get();
+   if (!focused_ec || focused_ec->desk != desk)
+     return;
 
-    if (!l_1 || !l_2) {
-        return;
-    }
+   if (!desk_should_tile_check(desk))
+     return;
 
-    l_1->data = bd_2;
-    l_2->data = bd_1;
+   Window_Tree *item =
+     tiling_window_tree_client_find(_G.tinfo->tree, focused_ec);
 
-    gt = extra_2->expected;
-    extra_2->expected = extra_1->expected;
-    extra_1->expected = gt;
+   if (item)
+     {
+        tiling_window_tree_node_move(item, cross_edge);
 
-    bd_2_maximized = bd_2->maximized;
-    if (bd_2->maximized)
-        _e_border_unmaximize(bd_2, E_MAXIMIZE_BOTH);
-    if (bd_1->maximized) {
-        _e_border_unmaximize(bd_1, E_MAXIMIZE_BOTH);
-        _e_border_maximize(bd_2, bd_1->maximized);
-    }
-    if (bd_2_maximized) {
-        _e_border_maximize(bd_1, bd_2_maximized);
-    }
-    _e_border_move_resize(bd_1,
-                          extra_1->expected.x,
-                          extra_1->expected.y,
-                          extra_1->expected.w,
-                          extra_1->expected.h);
-    _e_border_move_resize(bd_2,
-                          extra_2->expected.x,
-                          extra_2->expected.y,
-                          extra_2->expected.w,
-                          extra_2->expected.h);
+        _reapply_tree();
+     }
 }
 
 static void
-_e_mod_action_swap_cb(E_Object   *obj __UNUSED__,
-                      const char *params __UNUSED__)
+_e_mod_action_move_left_cb(E_Object *obj EINA_UNUSED,
+                           const char *params EINA_UNUSED)
 {
-    E_Desk *desk;
-    E_Border *focused_bd;
+   _action_swap(TILING_WINDOW_TREE_EDGE_LEFT);
+}
 
-    desk = get_current_desk();
-    if (!desk)
-        return;
+static void
+_e_mod_action_move_right_cb(E_Object *obj EINA_UNUSED,
+                            const char *params EINA_UNUSED)
+{
+   _action_swap(TILING_WINDOW_TREE_EDGE_RIGHT);
+}
 
-    focused_bd = e_border_focused_get();
-    if (!focused_bd || focused_bd->desk != desk)
-        return;
+static void
+_e_mod_action_move_up_cb(E_Object *obj EINA_UNUSED,
+                         const char *params EINA_UNUSED)
+{
+   _action_swap(TILING_WINDOW_TREE_EDGE_TOP);
+}
 
-    check_tinfo(desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks) {
-        return;
-    }
-
-    _do_overlay(focused_bd, _action_swap, INPUT_MODE_SWAPPING);
+static void
+_e_mod_action_move_down_cb(E_Object *obj EINA_UNUSED,
+                           const char *params EINA_UNUSED)
+{
+   _action_swap(TILING_WINDOW_TREE_EDGE_BOTTOM);
 }
 
 /* }}} */
-/* Move {{{*/
-
-static void
-_check_moving_anims(const E_Border *bd, const Border_Extra *extra, int stack)
-{
-    Eina_List *l = NULL;
-    overlay_t *overlay;
-    int nb_stacks = get_stack_count();
-
-    if (stack < 0) {
-        stack = get_stack(bd);
-        if (stack < 0)
-            return;
-    }
-    if (!extra) {
-        extra = eina_hash_find(_G.border_extras, &bd);
-        if (!extra) {
-            ERR("No extra for %p", bd);
-            return;
-        }
-    }
-    l = eina_list_data_find_list(_G.tinfo->stacks[stack], bd);
-    if (!l)
-        return;
-
-    /* move left */
-    overlay = &_G.move_overlays[MOVE_LEFT];
-    if ((_G.tinfo->conf->use_rows && l->prev)
-    || (!_G.tinfo->conf->use_rows && !_G.tinfo->stacks[TILING_MAX_STACKS -1]
-        && (bd != _G.tinfo->stacks[0]->data || _G.tinfo->stacks[0]->next)))
-    {
-        if (overlay->popup) {
-            Evas_Coord ew, eh;
-
-            edje_object_size_min_calc(overlay->obj, &ew, &eh);
-            e_popup_move(_G.move_overlays[MOVE_LEFT].popup,
-                         extra->expected.x - ew/2,
-                         extra->expected.y + extra->expected.h/2 - eh/2);
-        } else {
-            Evas_Coord ew, eh;
-
-            overlay->popup = e_popup_new(bd->zone, 0, 0, 1, 1);
-            if (!overlay->popup)
-                return;
-
-            e_popup_layer_set(overlay->popup, E_LAYER_NORMAL);
-            overlay->obj = edje_object_add(overlay->popup->evas);
-            _theme_edje_object_set(overlay->obj,
-                                   "modules/tiling/move/left");
-            edje_object_size_min_calc(overlay->obj, &ew, &eh);
-            e_popup_edje_bg_object_set(overlay->popup,
-                                       overlay->obj);
-            evas_object_show(overlay->obj);
-            e_popup_move_resize(overlay->popup,
-                                extra->expected.x - ew/2
-                                                  - overlay->popup->zone->x,
-                                extra->expected.y + extra->expected.h/2
-                                                  - eh/2
-                                                  - overlay->popup->zone->y,
-                                ew,
-                                eh);
-            evas_object_resize(overlay->obj, ew, eh);
-
-            e_popup_show(overlay->popup);
-        }
-    } else if (overlay->popup) {
-        if (overlay->obj) {
-            evas_object_del(overlay->obj);
-            overlay->obj = NULL;
-        }
-        if (overlay->popup) {
-            e_object_del(E_OBJECT(overlay->popup));
-            overlay->popup = NULL;
-        }
-    }
-
-    /* move right */
-    overlay = &_G.move_overlays[MOVE_RIGHT];
-    if ((_G.tinfo->conf->use_rows && l->next)
-    || (!_G.tinfo->conf->use_rows && (
-            stack != TILING_MAX_STACKS - 1
-            && ((stack == nb_stacks - 1 && _G.tinfo->stacks[stack]->next)
-                || (stack != nb_stacks - 1))))) {
-        if (overlay->popup) {
-            Evas_Coord ew, eh;
-
-            edje_object_size_min_calc(overlay->obj, &ew, &eh);
-            e_popup_move(_G.move_overlays[MOVE_RIGHT].popup,
-                         extra->expected.x + extra->expected.w - ew/2,
-                         extra->expected.y + extra->expected.h/2 - eh/2);
-        } else {
-            Evas_Coord ew, eh;
-
-            overlay->popup = e_popup_new(bd->zone, 0, 0, 1, 1);
-            if (!overlay->popup)
-                return;
-
-            e_popup_layer_set(overlay->popup, E_LAYER_NORMAL);
-            overlay->obj = edje_object_add(overlay->popup->evas);
-            _theme_edje_object_set(overlay->obj,
-                                   "modules/tiling/move/right");
-            edje_object_size_min_calc(overlay->obj, &ew, &eh);
-            e_popup_edje_bg_object_set(overlay->popup,
-                                       overlay->obj);
-            evas_object_show(overlay->obj);
-            e_popup_move_resize(overlay->popup,
-                                extra->expected.x + extra->expected.w - ew/2
-                                                  - overlay->popup->zone->x,
-                                extra->expected.y + extra->expected.h/2
-                                                  - eh/2
-                                                  - overlay->popup->zone->y,
-                                ew,
-                                eh);
-            evas_object_resize(overlay->obj, ew, eh);
-
-            e_popup_show(overlay->popup);
-        }
-    } else if (overlay->popup) {
-        if (overlay->obj) {
-            evas_object_del(overlay->obj);
-            overlay->obj = NULL;
-        }
-        if (overlay->popup) {
-            e_object_del(E_OBJECT(overlay->popup));
-            overlay->popup = NULL;
-        }
-    }
-
-    /* move up */
-    overlay = &_G.move_overlays[MOVE_UP];
-    if ((!_G.tinfo->conf->use_rows && l->prev)
-    ||  (_G.tinfo->conf->use_rows && !_G.tinfo->stacks[TILING_MAX_STACKS -1]
-        && (bd != _G.tinfo->stacks[0]->data || _G.tinfo->stacks[0]->next)))
-    {
-        if (overlay->popup) {
-            Evas_Coord ew, eh;
-
-            edje_object_size_min_calc(overlay->obj, &ew, &eh);
-            e_popup_move(_G.move_overlays[MOVE_UP].popup,
-                         extra->expected.x + extra->expected.w/2 - ew/2,
-                         extra->expected.y - eh/2);
-        } else {
-            Evas_Coord ew, eh;
-
-            overlay->popup = e_popup_new(bd->zone, 0, 0, 1, 1);
-            if (!overlay->popup)
-                return;
-
-            e_popup_layer_set(overlay->popup, E_LAYER_NORMAL);
-            overlay->obj = edje_object_add(overlay->popup->evas);
-            _theme_edje_object_set(overlay->obj, "modules/tiling/move/up");
-            edje_object_size_min_calc(overlay->obj, &ew, &eh);
-            e_popup_edje_bg_object_set(overlay->popup,
-                                       overlay->obj);
-            evas_object_show(overlay->obj);
-            e_popup_move_resize(overlay->popup,
-                                extra->expected.x + extra->expected.w/2
-                                                  - ew/2
-                                                  - overlay->popup->zone->x,
-                                extra->expected.y - eh/2
-                                                  - overlay->popup->zone->y,
-                                ew,
-                                eh);
-            evas_object_resize(overlay->obj, ew, eh);
-
-            e_popup_show(overlay->popup);
-        }
-    } else if (overlay->popup) {
-        if (overlay->obj) {
-            evas_object_del(overlay->obj);
-            overlay->obj = NULL;
-        }
-        if (overlay->popup) {
-            e_object_del(E_OBJECT(overlay->popup));
-            overlay->popup = NULL;
-        }
-    }
-
-    /* move down */
-    overlay = &_G.move_overlays[MOVE_DOWN];
-    if ((!_G.tinfo->conf->use_rows && l->next)
-    || (_G.tinfo->conf->use_rows && (
-            stack != TILING_MAX_STACKS - 1
-            && ((stack == nb_stacks - 1 && _G.tinfo->stacks[stack]->next)
-                || (stack != nb_stacks - 1))))) {
-        if (overlay->popup) {
-            Evas_Coord ew, eh;
-
-            edje_object_size_min_calc(overlay->obj, &ew, &eh);
-            e_popup_move(_G.move_overlays[MOVE_DOWN].popup,
-                         extra->expected.x + extra->expected.w/2 - ew/2,
-                         extra->expected.y + extra->expected.h - eh/2);
-        } else {
-            Evas_Coord ew, eh;
-
-            overlay->popup = e_popup_new(bd->zone, 0, 0, 1, 1);
-            if (!overlay->popup)
-                return;
-
-            e_popup_layer_set(overlay->popup, E_LAYER_NORMAL);
-            overlay->obj = edje_object_add(overlay->popup->evas);
-            _theme_edje_object_set(overlay->obj,
-                                   "modules/tiling/move/down");
-            edje_object_size_min_calc(overlay->obj, &ew, &eh);
-            e_popup_edje_bg_object_set(overlay->popup,
-                                       overlay->obj);
-            evas_object_show(overlay->obj);
-            e_popup_move_resize(overlay->popup,
-                                extra->expected.x + extra->expected.w/2
-                                                  - ew/2
-                                                  - overlay->popup->zone->x,
-                                extra->expected.y + extra->expected.h - eh/2
-                                                  - overlay->popup->zone->y,
-                                ew,
-                                eh);
-            evas_object_resize(overlay->obj, ew, eh);
-
-            e_popup_show(overlay->popup);
-        }
-    } else if (overlay->popup) {
-        if (overlay->obj) {
-            evas_object_del(overlay->obj);
-            overlay->obj = NULL;
-        }
-        if (overlay->popup) {
-            e_object_del(E_OBJECT(overlay->popup));
-            overlay->popup = NULL;
-        }
-    }
-}
-
-static void
-_move_up_cols(E_Border *bd, Eina_Bool check_moving_anims)
-{
-    E_Border *bd_1 = bd,
-             *bd_2 = NULL;
-    Border_Extra *extra_1 = NULL,
-                 *extra_2 = NULL;
-    Eina_List *l_1 = NULL,
-              *l_2 = NULL;
-    int stack;
-
-    stack = get_stack(bd);
-    if (stack < 0)
-        return;
-
-    if (_G.tinfo->stacks[stack]->data == bd)
-        return;
-
-    l_1 = eina_list_data_find_list(_G.tinfo->stacks[stack], bd_1);
-    if (!l_1 || !l_1->prev)
-        return;
-    l_2 = l_1->prev;
-    bd_2 = l_2->data;
-
-    extra_1 = eina_hash_find(_G.border_extras, &bd_1);
-    if (!extra_1) {
-        ERR("No extra for %p", bd_1);
-        return;
-    }
-    extra_2 = eina_hash_find(_G.border_extras, &bd_2);
-    if (!extra_2) {
-        ERR("No extra for %p", bd_2);
-        return;
-    }
-
-    l_1->data = bd_2;
-    l_2->data = bd_1;
-
-    extra_1->expected.y = extra_2->expected.y;
-    extra_2->expected.y += extra_1->expected.h;
-
-    _e_border_move(bd_1,
-                   extra_1->expected.x,
-                   extra_1->expected.y);
-    _e_border_move(bd_2,
-                   extra_2->expected.x,
-                   extra_2->expected.y);
-
-    if (check_moving_anims)
-        _check_moving_anims(bd_1, extra_1, stack);
-
-    ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
-                         extra_1->expected.x + extra_1->expected.w/2,
-                         extra_1->expected.y + extra_1->expected.h/2);
-}
-
-static void
-_move_down_cols(E_Border *bd, Eina_Bool check_moving_anims)
-{
-    E_Border *bd_1 = bd,
-             *bd_2 = NULL;
-    Border_Extra *extra_1 = NULL,
-                 *extra_2 = NULL;
-    Eina_List *l_1 = NULL,
-              *l_2 = NULL;
-    int stack;
-
-    stack = get_stack(bd);
-    if (stack < 0)
-        return;
-
-    l_1 = eina_list_data_find_list(_G.tinfo->stacks[stack], bd_1);
-    if (!l_1 || !l_1->next)
-        return;
-    l_2 = l_1->next;
-    bd_2 = l_2->data;
-
-    extra_1 = eina_hash_find(_G.border_extras, &bd_1);
-    if (!extra_1) {
-        ERR("No extra for %p", bd_1);
-        return;
-    }
-    extra_2 = eina_hash_find(_G.border_extras, &bd_2);
-    if (!extra_2) {
-        ERR("No extra for %p", bd_2);
-        return;
-    }
-
-    l_1->data = bd_2;
-    l_2->data = bd_1;
-
-    extra_2->expected.y = extra_1->expected.y;
-    extra_1->expected.y += extra_2->expected.h;
-
-    _e_border_move(bd_1,
-                   extra_1->expected.x,
-                   extra_1->expected.y);
-    _e_border_move(bd_2,
-                   extra_2->expected.x,
-                   extra_2->expected.y);
-
-    if (check_moving_anims)
-        _check_moving_anims(bd_1, extra_1, stack);
-
-    ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
-                         extra_1->expected.x + extra_1->expected.w/2,
-                         extra_1->expected.y + extra_1->expected.h/2);
-}
-
-static void
-_move_left_cols(E_Border *bd, Eina_Bool check_moving_anims)
-{
-    Border_Extra *extra;
-    int stack;
-    int i;
-    int nb_stacks;
-
-    stack = get_stack(bd);
-    if (stack < 0)
-        return;
-
-    nb_stacks = get_stack_count();
-
-    extra = eina_hash_find(_G.border_extras, &bd);
-    if (!extra) {
-        ERR("No extra for %p", bd);
-        return;
-    }
-
-    if (stack == 0) {
-        int x, y, w, h;
-        int width = 0;
-
-        if (nb_stacks >= TILING_MAX_STACKS)
-            return;
-        if (_G.tinfo->stacks[0]->data == bd && !_G.tinfo->stacks[0]->next)
-            return;
-
-        EINA_LIST_REMOVE(_G.tinfo->stacks[0], bd);
-        for (i = TILING_MAX_STACKS - 1; i > 0; i--) {
-            _G.tinfo->stacks[i] = _G.tinfo->stacks[i - 1];
-        }
-        _G.tinfo->stacks[0] = NULL;
-        EINA_LIST_APPEND(_G.tinfo->stacks[0], bd);
-
-        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
-
-        width = w / (nb_stacks + 1);
-        _G.tinfo->pos[0] = x;
-        _G.tinfo->size[0] = width;
-        extra->expected.x = x;
-        extra->expected.y = y;
-        extra->expected.w = width;
-        extra->expected.h = h;
-
-        w -= width;
-        x += width;
-
-        for (i = 1; i <= nb_stacks; i++) {
-            width = w / (nb_stacks + 1 - i);
-
-            _set_stack_geometry(i, x, width);
-
-            w -= width;
-            x += width;
-        }
-        _reorganize_stack(1);
-
-        _e_border_move_resize(bd,
-                              extra->expected.x,
-                              extra->expected.y,
-                              extra->expected.w,
-                              extra->expected.h);
-        _e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
-
-        if (nb_stacks + 1 > _G.tinfo->conf->nb_stacks) {
-            _G.tinfo->conf->nb_stacks = nb_stacks + 1;
-            e_config_save_queue();
-        }
-        if (check_moving_anims)
-            _check_moving_anims(bd, extra, 0);
-        ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
-                             extra->expected.x + extra->expected.w/2,
-                             extra->expected.y + extra->expected.h/2);
-        return;
-    }
-
-
-    EINA_LIST_REMOVE(_G.tinfo->stacks[stack], bd);
-    EINA_LIST_APPEND(_G.tinfo->stacks[stack - 1], bd);
-
-    if (!_G.tinfo->stacks[stack]) {
-        int x, y, w, h;
-
-        /* Remove stack */
-        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
-
-        nb_stacks--;
-
-        assert((0 <= nb_stacks) && (nb_stacks < TILING_MAX_STACKS - 1));
-        for (i = stack; i < nb_stacks; i++) {
-            _G.tinfo->stacks[i] = _G.tinfo->stacks[i+1];
-        }
-        _G.tinfo->stacks[nb_stacks] = NULL;
-        for (i = 0; i < nb_stacks; i++) {
-            int width;
-
-            width = w / (nb_stacks - i);
-
-            _set_stack_geometry(i, x, width);
-
-            w -= width;
-            x += width;
-        }
-        _reorganize_stack(stack - 1);
-    } else {
-        _reorganize_stack(stack);
-        _reorganize_stack(stack - 1);
-    }
-
-    if (check_moving_anims)
-        _check_moving_anims(bd, extra, stack - 1);
-
-    ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
-                         extra->expected.x + extra->expected.w/2,
-                         extra->expected.y + extra->expected.h/2);
-}
-
-static void
-_move_right_cols(E_Border *bd, Eina_Bool check_moving_anims)
-{
-    int stack;
-    int nb_stacks;
-    Border_Extra *extra;
-    int i;
-
-    stack = get_stack(bd);
-    assert(stack >= 0);
-    if (stack == TILING_MAX_STACKS - 1)
-        return;
-
-    nb_stacks = get_stack_count();
-    assert((0 < nb_stacks) && (nb_stacks < TILING_MAX_STACKS));
-    if (stack == nb_stacks - 1 && !_G.tinfo->stacks[stack]->next)
-        return;
-
-    extra = eina_hash_find(_G.border_extras, &bd);
-    if (!extra) {
-        ERR("No extra for %p", bd);
-        return;
-    }
-
-    EINA_LIST_REMOVE(_G.tinfo->stacks[stack], bd);
-    EINA_LIST_APPEND(_G.tinfo->stacks[stack + 1], bd);
-
-    if (_G.tinfo->stacks[stack] && _G.tinfo->stacks[stack + 1]->next) {
-        _reorganize_stack(stack);
-        _reorganize_stack(stack + 1);
-        if (check_moving_anims)
-            _check_moving_anims(bd, extra, stack + 1);
-    } else
-    if (_G.tinfo->stacks[stack]) {
-        /* Add stack */
-        int x, y, w, h;
-        int width = 0;
-
-        assert(nb_stacks < TILING_MAX_STACKS);
-
-        _reorganize_stack(stack);
-
-        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
-
-        for (i = 0; i < nb_stacks; i++) {
-            width = w / (nb_stacks + 1 - i);
-
-            _set_stack_geometry(i, x, width);
-
-            w -= width;
-            x += width;
-        }
-
-        _G.tinfo->pos[nb_stacks] = x;
-        _G.tinfo->size[nb_stacks] = width;
-        extra->expected.x = x;
-        extra->expected.y = y;
-        extra->expected.w = width;
-        extra->expected.h = h;
-        _e_border_move_resize(bd,
-                              extra->expected.x,
-                              extra->expected.y,
-                              extra->expected.w,
-                              extra->expected.h);
-        _e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
-
-        if (nb_stacks + 1 > _G.tinfo->conf->nb_stacks) {
-            _G.tinfo->conf->nb_stacks = nb_stacks + 1;
-            e_config_save_queue();
-        }
-        if (check_moving_anims)
-            _check_moving_anims(bd, extra, stack + 1);
-    } else {
-        int x, y, w, h;
-
-        /* Remove stack */
-        e_zone_useful_geometry_get(_G.tinfo->desk->zone, &x, &y, &w, &h);
-
-        nb_stacks--;
-
-        assert((0 <= nb_stacks) && (nb_stacks < TILING_MAX_STACKS - 1));
-        for (i = stack; i < nb_stacks; i++) {
-             _G.tinfo->stacks[i] = _G.tinfo->stacks[i + 1];
-        }
-        for (i = 0; i < nb_stacks; i++) {
-            int width;
-
-            width = w / (nb_stacks - i);
-
-            _set_stack_geometry(i, x, width);
-
-            w -= width;
-            x += width;
-        }
-        _G.tinfo->stacks[nb_stacks] = NULL;
-        _G.tinfo->pos[nb_stacks] = 0;
-        _G.tinfo->size[nb_stacks] = 0;
-        _reorganize_stack(stack);
-        if (check_moving_anims)
-            _check_moving_anims(bd, extra, stack);
-    }
-
-    ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
-                         extra->expected.x + extra->expected.w/2,
-                         extra->expected.y + extra->expected.h/2);
-}
-
-static void
-_move_left_rows(E_Border *bd, Eina_Bool check_moving_anims)
-{
-    E_Border *bd_1 = bd,
-             *bd_2 = NULL;
-    Border_Extra *extra_1 = NULL,
-                 *extra_2 = NULL;
-    Eina_List *l_1 = NULL,
-              *l_2 = NULL;
-    int stack;
-
-    stack = get_stack(bd);
-    assert(stack >= 0);
-
-    if (_G.tinfo->stacks[stack]->data == bd)
-        return;
-
-    l_1 = eina_list_data_find_list(_G.tinfo->stacks[stack], bd_1);
-    if (!l_1 || !l_1->prev)
-        return;
-    l_2 = l_1->prev;
-    bd_2 = l_2->data;
-
-    extra_1 = eina_hash_find(_G.border_extras, &bd_1);
-    if (!extra_1) {
-        ERR("No extra for %p", bd_1);
-        return;
-    }
-    extra_2 = eina_hash_find(_G.border_extras, &bd_2);
-    if (!extra_2) {
-        ERR("No extra for %p", bd_2);
-        return;
-    }
-
-    l_1->data = bd_2;
-    l_2->data = bd_1;
-
-    extra_1->expected.x = extra_2->expected.x;
-    extra_2->expected.x += extra_1->expected.w;
-
-    _e_border_move(bd_1,
-                   extra_1->expected.x,
-                   extra_1->expected.y);
-    _e_border_move(bd_2,
-                   extra_2->expected.x,
-                   extra_2->expected.y);
-
-    if (check_moving_anims)
-        _check_moving_anims(bd_1, extra_1, stack);
-
-    ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
-                         extra_1->expected.x + extra_1->expected.w/2,
-                         extra_1->expected.y + extra_1->expected.h/2);
-}
-
-static void
-_move_right_rows(E_Border *bd, Eina_Bool check_moving_anims)
-{
-    E_Border *bd_1 = bd,
-             *bd_2 = NULL;
-    Border_Extra *extra_1 = NULL,
-                 *extra_2 = NULL;
-    Eina_List *l_1 = NULL,
-              *l_2 = NULL;
-    int stack;
-
-    stack = get_stack(bd);
-    assert(stack >= 0);
-
-    l_1 = eina_list_data_find_list(_G.tinfo->stacks[stack], bd_1);
-    if (!l_1 || !l_1->next)
-        return;
-    l_2 = l_1->next;
-    bd_2 = l_2->data;
-
-    extra_1 = eina_hash_find(_G.border_extras, &bd_1);
-    if (!extra_1) {
-        ERR("No extra for %p", bd_1);
-        return;
-    }
-    extra_2 = eina_hash_find(_G.border_extras, &bd_2);
-    if (!extra_2) {
-        ERR("No extra for %p", bd_2);
-        return;
-    }
-
-    l_1->data = bd_2;
-    l_2->data = bd_1;
-
-    extra_2->expected.x = extra_1->expected.x;
-    extra_1->expected.x += extra_2->expected.w;
-
-    _e_border_move(bd_1,
-                   extra_1->expected.x,
-                   extra_1->expected.y);
-    _e_border_move(bd_2,
-                   extra_2->expected.x,
-                   extra_2->expected.y);
-
-    if (check_moving_anims)
-        _check_moving_anims(bd_1, extra_1, stack);
-
-    ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
-                         extra_1->expected.x + extra_1->expected.w/2,
-                         extra_1->expected.y + extra_1->expected.h/2);
-}
-
-static void
-_move_up_rows(E_Border *bd, Eina_Bool check_moving_anims)
-{
-    Border_Extra *extra;
-    int stack;
-    int i;
-    int nb_stacks;
-
-    stack = get_stack(bd);
-    assert(stack >= 0);
-
-    nb_stacks = get_stack_count();
-
-    extra = eina_hash_find(_G.border_extras, &bd);
-    if (!extra) {
-        ERR("No extra for %p", bd);
-        return;
-    }
-
-    if (stack <= 0) {
-        int x, y, w, h;
-        int height = 0;
-
-        if (nb_stacks >= TILING_MAX_STACKS)
-            return;
-        if (_G.tinfo->stacks[0]->data == bd && !_G.tinfo->stacks[0]->next)
-            return;
-
-        EINA_LIST_REMOVE(_G.tinfo->stacks[0], bd);
-        for (i = TILING_MAX_STACKS - 1; i > 0; i--) {
-            _G.tinfo->stacks[i] = _G.tinfo->stacks[i-1];
-        }
-        _G.tinfo->stacks[0] = NULL;
-        EINA_LIST_APPEND(_G.tinfo->stacks[0], bd);
-
-        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
-
-        height = h / (nb_stacks + 1);
-        _G.tinfo->pos[0] = y;
-        _G.tinfo->size[0] = height;
-        extra->expected.x = x;
-        extra->expected.y = y;
-        extra->expected.w = w;
-        extra->expected.h = height;
-
-        h -= height;
-        y += height;
-
-        for (i = 1; i <= nb_stacks; i++) {
-            height = h / (nb_stacks + 1 - i);
-
-            _set_stack_geometry(i, y, height);
-
-            h -= height;
-            y += height;
-        }
-        _reorganize_stack(1);
-
-        _e_border_move_resize(bd,
-                              extra->expected.x,
-                              extra->expected.y,
-                              extra->expected.w,
-                              extra->expected.h);
-        _e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
-
-        if (nb_stacks + 1 > _G.tinfo->conf->nb_stacks) {
-            _G.tinfo->conf->nb_stacks = nb_stacks + 1;
-            e_config_save_queue();
-        }
-        if (check_moving_anims)
-            _check_moving_anims(bd, extra, 0);
-        ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
-                             extra->expected.x + extra->expected.w/2,
-                             extra->expected.y + extra->expected.h/2);
-        return;
-    }
-
-
-    EINA_LIST_REMOVE(_G.tinfo->stacks[stack], bd);
-    EINA_LIST_APPEND(_G.tinfo->stacks[stack - 1], bd);
-
-    if (!_G.tinfo->stacks[stack]) {
-        int x, y, w, h;
-
-        /* Remove stack */
-        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
-
-        nb_stacks--;
-
-        assert((0 <= nb_stacks) && (nb_stacks < TILING_MAX_STACKS - 1));
-        for (i = stack; i < nb_stacks; i++) {
-            _G.tinfo->stacks[i] = _G.tinfo->stacks[i+1];
-        }
-        _G.tinfo->stacks[nb_stacks] = NULL;
-        for (i = 0; i < nb_stacks; i++) {
-            int height;
-
-            height = h / (nb_stacks - i);
-
-            _set_stack_geometry(i, y, height);
-
-            h -= height;
-            y += height;
-        }
-        _reorganize_stack(stack - 1);
-    } else {
-        _reorganize_stack(stack);
-        _reorganize_stack(stack - 1);
-    }
-
-    if (check_moving_anims)
-        _check_moving_anims(bd, extra, stack - 1);
-
-    ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
-                         extra->expected.x + extra->expected.w/2,
-                         extra->expected.y + extra->expected.h/2);
-}
-
-static void
-_move_down_rows(E_Border *bd, Eina_Bool check_moving_anims)
-{
-    int stack;
-    int nb_stacks;
-    Border_Extra *extra;
-    int i;
-
-    stack = get_stack(bd);
-    assert(stack >= 0);
-    if (stack == TILING_MAX_STACKS - 1)
-        return;
-
-    nb_stacks = get_stack_count();
-    assert(nb_stacks >= 1);
-    if (stack == nb_stacks - 1 && !_G.tinfo->stacks[stack]->next)
-        return;
-
-    extra = eina_hash_find(_G.border_extras, &bd);
-    if (!extra) {
-        ERR("No extra for %p", bd);
-        return;
-    }
-
-    EINA_LIST_REMOVE(_G.tinfo->stacks[stack], bd);
-    EINA_LIST_APPEND(_G.tinfo->stacks[stack + 1], bd);
-
-    if (_G.tinfo->stacks[stack] && _G.tinfo->stacks[stack + 1]->next) {
-        _reorganize_stack(stack);
-        _reorganize_stack(stack + 1);
-        if (check_moving_anims)
-            _check_moving_anims(bd, extra, stack + 1);
-    } else
-    if (_G.tinfo->stacks[stack]) {
-        /* Add stack */
-        int x, y, w, h;
-        int height = 0;
-
-        assert(nb_stacks < TILING_MAX_STACKS);
-
-        _reorganize_stack(stack);
-
-        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
-
-        for (i = 0; i < nb_stacks; i++) {
-            height = h / (nb_stacks + 1 - i);
-
-            _set_stack_geometry(i, y, height);
-
-            h -= height;
-            y += height;
-        }
-
-        _G.tinfo->pos[nb_stacks] = y;
-        _G.tinfo->size[nb_stacks] = height;
-        extra->expected.x = x;
-        extra->expected.y = y;
-        extra->expected.w = w;
-        extra->expected.h = height;
-        _e_border_move_resize(bd,
-                              extra->expected.x,
-                              extra->expected.y,
-                              extra->expected.w,
-                              extra->expected.h);
-        _e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_HORIZONTAL);
-
-        if (nb_stacks + 1 > _G.tinfo->conf->nb_stacks) {
-            _G.tinfo->conf->nb_stacks = nb_stacks + 1;
-            e_config_save_queue();
-        }
-        if (check_moving_anims)
-            _check_moving_anims(bd, extra, stack + 1);
-    } else {
-        int x, y, w, h;
-
-        /* Remove stack */
-        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
-
-        nb_stacks--;
-
-        assert((0 <= nb_stacks) && (nb_stacks < TILING_MAX_STACKS - 1));
-        for (i = stack; i < nb_stacks; i++) {
-             _G.tinfo->stacks[i] = _G.tinfo->stacks[i + 1];
-        }
-        for (i = 0; i < nb_stacks; i++) {
-            int height;
-
-            height = h / (nb_stacks - i);
-
-            _set_stack_geometry(i, y, height);
-
-            h -= height;
-            y += height;
-        }
-        _G.tinfo->stacks[nb_stacks] = NULL;
-        _G.tinfo->pos[nb_stacks] = 0;
-        _G.tinfo->size[nb_stacks] = 0;
-        _reorganize_stack(stack);
-        if (check_moving_anims)
-            _check_moving_anims(bd, extra, stack);
-    }
-
-    ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
-                         extra->expected.x + extra->expected.w/2,
-                         extra->expected.y + extra->expected.h/2);
-}
+/* Toggle split mode {{{ */
 
 static Eina_Bool
-move_key_down(void *data __UNUSED__,
-              int type __UNUSED__,
-              void *event)
+_split_type_popup_timer_del_cb(void *data EINA_UNUSED)
 {
-    Ecore_Event_Key *ev = event;
+   evas_object_hide(_G.split_popup.comp_obj);
+   evas_object_del(_G.split_popup.comp_obj);
+   _G.split_popup.comp_obj = NULL;
+   _G.split_popup.obj = NULL;
+   _G.split_popup.timer = NULL;
 
-    if (ev->event_window != _G.action_input_win)
-        return ECORE_CALLBACK_PASS_ON;
-
-    /* reset timer */
-    ecore_timer_delay(_G.action_timer, TILING_OVERLAY_TIMEOUT
-                      - ecore_timer_pending_get(_G.action_timer));
-
-    if ((strcmp(ev->key, "Up") == 0)
-    ||  (strcmp(ev->key, "k") == 0))
-    {
-        if (_G.tinfo->conf->use_rows)
-            _move_up_rows(_G.focused_bd, true);
-        else
-            _move_up_cols(_G.focused_bd, true);
-        return ECORE_CALLBACK_PASS_ON;
-    } else if ((strcmp(ev->key, "Down") == 0)
-           ||  (strcmp(ev->key, "j") == 0))
-    {
-        if (_G.tinfo->conf->use_rows)
-            _move_down_rows(_G.focused_bd, true);
-        else
-            _move_down_cols(_G.focused_bd, true);
-        return ECORE_CALLBACK_PASS_ON;
-    } else if ((strcmp(ev->key, "Left") == 0)
-           ||  (strcmp(ev->key, "h") == 0))
-    {
-        if (_G.tinfo->conf->use_rows)
-            _move_left_rows(_G.focused_bd, true);
-        else
-            _move_left_cols(_G.focused_bd, true);
-        return ECORE_CALLBACK_PASS_ON;
-    } else if ((strcmp(ev->key, "Right") == 0)
-           ||  (strcmp(ev->key, "l") == 0))
-    {
-        if (_G.tinfo->conf->use_rows)
-            _move_right_rows(_G.focused_bd, true);
-        else
-            _move_right_cols(_G.focused_bd, true);
-        return ECORE_CALLBACK_PASS_ON;
-    }
-
-    if (strcmp(ev->key, "Return") == 0)
-        goto stop;
-    if (strcmp(ev->key, "Escape") == 0)
-        goto stop; /* TODO: fallback */
-
-    return ECORE_CALLBACK_PASS_ON;
-stop:
-    end_special_input();
-    return ECORE_CALLBACK_DONE;
+   return EINA_FALSE;
 }
 
 static void
-_e_mod_action_move_direct_cb(E_Object   *obj __UNUSED__,
-                             const char *params)
+_tiling_split_type_changed_popup(void)
 {
-    E_Desk *desk;
-    E_Border *focused_bd;
+   Evas_Object *comp_obj = _G.split_popup.comp_obj;
+   Evas_Object *o = _G.split_popup.obj;
 
-    desk = get_current_desk();
-    if (!desk)
-        return;
+   /* If this is not NULL, the rest isn't either. */
+   if (!o)
+     {
+        _G.split_popup.obj = o = edje_object_add(e_comp_get(NULL)->evas);
+        if (!e_theme_edje_object_set(o, "base/theme/modules/tiling",
+                 "modules/tiling/main"))
+           edje_object_file_set(o, _G.edj_path, "modules/tiling/main");
+        evas_object_resize(o, TILING_POPUP_SIZE, TILING_POPUP_SIZE);
 
-    focused_bd = e_border_focused_get();
-    if (!focused_bd || focused_bd->desk != desk)
-        return;
+        _G.split_popup.comp_obj = comp_obj = e_comp_object_util_add(o, E_COMP_OBJECT_TYPE_POPUP);
+        e_comp_object_util_center(comp_obj);
+        evas_object_layer_set(comp_obj, E_LAYER_POPUP);
+        evas_object_pass_events_set(comp_obj, EINA_TRUE);
 
-    check_tinfo(desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks) {
-        return;
-    }
+        evas_object_show(comp_obj);
 
+        _G.split_popup.timer = ecore_timer_add(TILING_POPUP_TIMEOUT, _split_type_popup_timer_del_cb, NULL);
+     }
+   else
+     {
+        ecore_timer_reset(_G.split_popup.timer);
+     }
 
-    assert(params != NULL);
-
-    switch (params[0]) {
-      case 'l': /* left */
-        if (_G.tinfo->conf->use_rows)
-            _move_left_rows(focused_bd, false);
-        else
-            _move_left_cols(focused_bd, false);
-        break;
-      case 'r': /* right */
-        if (_G.tinfo->conf->use_rows)
-            _move_right_rows(focused_bd, false);
-        else
-            _move_right_cols(focused_bd, false);
-        break;
-      case 'u': /* up */
-        if (_G.tinfo->conf->use_rows)
-            _move_up_rows(focused_bd, false);
-        else
-            _move_up_cols(focused_bd, false);
-        break;
-      case 'd': /* down */
-        if (_G.tinfo->conf->use_rows)
-            _move_down_rows(focused_bd, false);
-        else
-            _move_down_cols(focused_bd, false);
-        break;
-    }
+   _edje_tiling_icon_set(o);
 }
 
 static void
-_e_mod_action_move_cb(E_Object   *obj __UNUSED__,
-                      const char *params __UNUSED__)
+_tiling_split_type_next(void)
 {
-    E_Desk *desk;
-    E_Border *focused_bd;
-    Ecore_X_Window parent;
+   Instance *inst;
+   Eina_List *itr;
+   _G.split_type = (_G.split_type + 1) % TILING_SPLIT_LAST;
 
-    desk = get_current_desk();
-    if (!desk)
-        return;
+   /* If we don't allow floating, skip it. */
+   if (!tiling_g.config->have_floating_mode &&
+       (_G.split_type == TILING_SPLIT_FLOAT))
+     {
+        _G.split_type = (_G.split_type + 1) % TILING_SPLIT_LAST;
+     }
 
-    focused_bd = e_border_focused_get();
-    if (!focused_bd || focused_bd->desk != desk)
-        return;
+   EINA_LIST_FOREACH(tiling_g.gadget_instances, itr, inst)
+     {
+        _gadget_icon_set(inst);
+     }
 
-    check_tinfo(desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks) {
-        return;
-    }
+   _tiling_split_type_changed_popup();
+}
 
-    _G.focused_bd = focused_bd;
-
-    _G.input_mode = INPUT_MODE_MOVING;
-
-    /* Get input */
-    parent = focused_bd->zone->container->win;
-    _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
-    if (!_G.action_input_win) {
-        end_special_input();
-        return;
-    }
-
-    ecore_x_window_show(_G.action_input_win);
-    if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
-        end_special_input();
-        return;
-    }
-    _G.action_timer = ecore_timer_add(TILING_OVERLAY_TIMEOUT,
-                                      _timeout_cb, NULL);
-
-    _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
-                                             move_key_down, NULL);
-    _check_moving_anims(focused_bd, NULL, -1);
+static void
+_e_mod_action_toggle_split_mode(E_Object *obj EINA_UNUSED,
+                                const char *params EINA_UNUSED)
+{
+   _tiling_split_type_next();
 }
 
 /* }}} */
-/* Adjust Transitions {{{ */
+/* Hooks {{{ */
 
 static void
-_transition_overlays_free_cb(void *data)
+_move_or_resize(E_Client *ec)
 {
-    transition_overlay_t *trov = data;
+   Client_Extra *extra = tiling_entry_func(ec);
 
-    if (trov->overlay.obj) {
-        evas_object_del(trov->overlay.obj);
-        trov->overlay.obj = NULL;
-    }
-    if (trov->overlay.popup) {
-        e_object_del(E_OBJECT(trov->overlay.popup));
-        trov->overlay.popup = NULL;
-    }
-    if (trov != _G.transition_overlay) {
-        E_FREE(trov);
-    }
+   if (!extra || !extra->tiled)
+     {
+        return;
+     }
+
+   if ((ec->x == extra->expected.x) && (ec->y == extra->expected.y) &&
+       (ec->w == extra->expected.w) && (ec->h == extra->expected.h))
+     {
+        return;
+     }
+
+   if (!extra->last_frame_adjustment)
+     {
+        printf
+          ("This is probably because of the frame adjustment bug. Return\n");
+        _reapply_tree();
+        return;
+     }
+
+   Window_Tree *item = tiling_window_tree_client_find(_G.tinfo->tree, ec);
+
+   if (!item)
+     {
+        ERR("Couldn't find tree item for resized client %p!", ec);
+        return;
+     }
+
+   {
+      int w_dir = 1, h_dir = 1;
+      double w_diff = 1.0, h_diff = 1.0;
+
+      if (abs(extra->expected.w - ec->w) >= 1)
+        {
+           w_diff = ((double)ec->w) / extra->expected.w;
+        }
+      if (abs(extra->expected.h - ec->h) >= 1)
+        {
+           h_diff = ((double)ec->h) / extra->expected.h;
+        }
+      switch (ec->resize_mode)
+        {
+         case E_POINTER_RESIZE_L:
+         case E_POINTER_RESIZE_BL:
+           w_dir = -1;
+           break;
+
+         case E_POINTER_RESIZE_T:
+         case E_POINTER_RESIZE_TR:
+           h_dir = -1;
+           break;
+
+         case E_POINTER_RESIZE_TL:
+           w_dir = -1;
+           h_dir = -1;
+           break;
+
+         default:
+           break;
+        }
+      if ((w_diff != 1.0) || (h_diff != 1.0))
+        {
+           if (!tiling_window_tree_node_resize(item, w_dir, w_diff, h_dir,
+                                               h_diff))
+             {
+                /* FIXME: Do something? */
+             }
+        }
+   }
+
+   _reapply_tree();
 }
 
 static void
-_transition_move_cols(tiling_move_t direction)
+_resize_begin_hook(void *data EINA_UNUSED, E_Client *ec)
 {
-    int delta = TILING_RESIZE_STEP;
-    int stack;
-    E_Popup *popup = NULL;
+   Client_Extra *extra = tiling_entry_func(ec);
 
-    if (!_G.transition_overlay)
+   if (!extra || !extra->tiled)
+     {
         return;
+     }
 
-    stack = _G.transition_overlay->stack;
+   Window_Tree *item = tiling_window_tree_client_find(_G.tinfo->tree, ec);
 
-    if (_G.transition_overlay->bd) {
-        Eina_List *l = NULL;
-        E_Border *bd = _G.transition_overlay->bd,
-                 *nextbd = NULL;
-        Border_Extra *extra = NULL,
-                     *nextextra = NULL;
-        int min_height = 0;
-
-        l = eina_list_data_find_list(_G.tinfo->stacks[stack], bd);
-        if (!l) {
-            ERR("unable to bd %p in stack %d", bd, stack);
-            return;
-        }
-
-        extra = eina_hash_find(_G.border_extras, &bd);
-        if (!extra) {
-            ERR("No extra for %p", bd);
-            return;
-        }
-        nextbd = l->next->data;
-        nextextra = eina_hash_find(_G.border_extras, &nextbd);
-        if (!nextextra) {
-            ERR("No extra for %p", nextbd);
-            return;
-        }
-
-        if (direction == MOVE_UP) {
-            delta *= -1;
-        }
-
-        nextbd = l->next->data;
-        min_height = MAX(nextbd->client.icccm.base_h, 1);
-
-        if (nextextra->expected.h - delta < min_height)
-            delta = nextextra->expected.h - min_height;
-
-        nextextra->expected.y += delta;
-        nextextra->expected.h -= delta;
-        _e_border_move_resize(nextbd,
-                              nextextra->expected.x,
-                              nextextra->expected.y,
-                              nextextra->expected.w,
-                              nextextra->expected.h);
-
-        extra->expected.h += delta;
-        _e_border_move_resize(bd,
-                              extra->expected.x,
-                              extra->expected.y,
-                              extra->expected.w,
-                              extra->expected.h);
-
-        popup = _G.transition_overlay->overlay.popup;
-        e_popup_move(popup, popup->x, popup->y + delta);
-    } else {
-
-        if (stack == TILING_MAX_STACKS || !_G.tinfo->stacks[stack + 1]) {
-            return;
-        }
-        if (direction == MOVE_LEFT) {
-            delta *= -1;
-        }
-
-        if (delta + 1 > _G.tinfo->size[stack + 1])
-            delta = _G.tinfo->size[stack + 1] - 1;
-
-        _move_resize_stack(stack, 0, delta);
-        _move_resize_stack(stack+1, delta, -delta);
-
-        popup = _G.transition_overlay->overlay.popup;
-        e_popup_move(popup, popup->x + delta, popup->y);
-    }
-}
-
-static void
-_transition_move_rows(tiling_move_t direction)
-{
-    int delta = TILING_RESIZE_STEP;
-    int stack;
-    E_Popup *popup = NULL;
-
-    if (!_G.transition_overlay)
+   if (!item)
+     {
+        ERR("Couldn't find tree item for resized client %p!", ec);
         return;
+     }
 
-    stack = _G.transition_overlay->stack;
+   int edges = tiling_window_tree_edges_get(item);
 
-    if (_G.transition_overlay->bd) {
-        Eina_List *l = NULL;
-        E_Border *bd = _G.transition_overlay->bd,
-                 *nextbd = NULL;
-        Border_Extra *extra = NULL,
-                     *nextextra = NULL;
-        int min_width = 0;
+   if (edges & TILING_WINDOW_TREE_EDGE_LEFT)
+     {
+        switch (ec->resize_mode)
+          {
+           case E_POINTER_RESIZE_L:
+             ec->resize_mode = E_POINTER_RESIZE_NONE;
+             break;
 
-        l = eina_list_data_find_list(_G.tinfo->stacks[stack], bd);
-        if (!l) {
-            ERR("unable to bd %p in stack %d", bd, stack);
-            return;
-        }
+           case E_POINTER_RESIZE_TL:
+             ec->resize_mode = E_POINTER_RESIZE_T;
+             break;
 
-        extra = eina_hash_find(_G.border_extras, &bd);
-        if (!extra) {
-            ERR("No extra for %p", bd);
-            return;
-        }
-        nextbd = l->next->data;
-        nextextra = eina_hash_find(_G.border_extras, &nextbd);
-        if (!nextextra) {
-            ERR("No extra for %p", nextbd);
-            return;
-        }
+           case E_POINTER_RESIZE_BL:
+             ec->resize_mode = E_POINTER_RESIZE_B;
+             break;
 
-        if (direction == MOVE_LEFT) {
-            delta *= -1;
-        }
+           default:
+             break;
+          }
+     }
+   if (edges & TILING_WINDOW_TREE_EDGE_RIGHT)
+     {
+        switch (ec->resize_mode)
+          {
+           case E_POINTER_RESIZE_R:
+             ec->resize_mode = E_POINTER_RESIZE_NONE;
+             break;
 
-        nextbd = l->next->data;
-        min_width = MAX(nextbd->client.icccm.base_w, 1);
+           case E_POINTER_RESIZE_TR:
+             ec->resize_mode = E_POINTER_RESIZE_T;
+             break;
 
-        if (nextextra->expected.w - delta < min_width)
-            delta = nextextra->expected.w - min_width;
+           case E_POINTER_RESIZE_BR:
+             ec->resize_mode = E_POINTER_RESIZE_B;
+             break;
 
-        nextextra->expected.x += delta;
-        nextextra->expected.w -= delta;
-        _e_border_move_resize(nextbd,
-                              nextextra->expected.x,
-                              nextextra->expected.y,
-                              nextextra->expected.w,
-                              nextextra->expected.h);
+           default:
+             break;
+          }
+     }
+   if (edges & TILING_WINDOW_TREE_EDGE_TOP)
+     {
+        switch (ec->resize_mode)
+          {
+           case E_POINTER_RESIZE_T:
+             ec->resize_mode = E_POINTER_RESIZE_NONE;
+             break;
 
-        extra->expected.w += delta;
-        _e_border_move_resize(bd,
-                              extra->expected.x,
-                              extra->expected.y,
-                              extra->expected.w,
-                              extra->expected.h);
+           case E_POINTER_RESIZE_TL:
+             ec->resize_mode = E_POINTER_RESIZE_L;
+             break;
 
-        popup = _G.transition_overlay->overlay.popup;
-        e_popup_move(popup, popup->x + delta, popup->y);
-    } else {
+           case E_POINTER_RESIZE_TR:
+             ec->resize_mode = E_POINTER_RESIZE_R;
+             break;
 
-        if (stack == TILING_MAX_STACKS || !_G.tinfo->stacks[stack + 1]) {
-            return;
-        }
-        if (direction == MOVE_UP) {
-            delta *= -1;
-        }
+           default:
+             break;
+          }
+     }
+   if (edges & TILING_WINDOW_TREE_EDGE_BOTTOM)
+     {
+        switch (ec->resize_mode)
+          {
+           case E_POINTER_RESIZE_B:
+             ec->resize_mode = E_POINTER_RESIZE_NONE;
+             break;
 
-        if (delta + 1 > _G.tinfo->size[stack + 1])
-            delta = _G.tinfo->size[stack + 1] - 1;
+           case E_POINTER_RESIZE_BL:
+             ec->resize_mode = E_POINTER_RESIZE_L;
+             break;
 
-        _move_resize_stack(stack, 0, delta);
-        _move_resize_stack(stack+1, delta, -delta);
+           case E_POINTER_RESIZE_BR:
+             ec->resize_mode = E_POINTER_RESIZE_R;
+             break;
 
-        popup = _G.transition_overlay->overlay.popup;
-        e_popup_move(popup, popup->x, popup->y + delta);
-    }
+           default:
+             break;
+          }
+     }
+
+   if (!e_client_util_resizing_get(ec))
+     e_client_resize_cancel();
 }
 
 static Eina_Bool
-_transition_overlay_key_down(void *data __UNUSED__,
-                             int type __UNUSED__,
-                             void *event)
+_resize_hook(void *data EINA_UNUSED, int type EINA_UNUSED,
+             E_Event_Client *event)
 {
-    Ecore_Event_Key *ev = event;
+   E_Client *ec = event->ec;
 
-    if (ev->event_window != _G.action_input_win)
-        return ECORE_CALLBACK_PASS_ON;
+   _move_or_resize(ec);
 
-    if (strcmp(ev->key, "Return") == 0)
-        goto stop;
-    if (strcmp(ev->key, "Escape") == 0)
-        goto stop;
-
-    /* reset timer */
-    ecore_timer_delay(_G.action_timer, TILING_OVERLAY_TIMEOUT
-                      - ecore_timer_pending_get(_G.action_timer));
-
-    if (_G.transition_overlay) {
-        DBG("ev->key='%s'; %p %d", ev->key,
-            _G.transition_overlay->bd, _G.tinfo->conf->use_rows);
-        if ((strcmp(ev->key, "Up") == 0)
-            ||  (strcmp(ev->key, "k") == 0))
-        {
-            if (_G.transition_overlay->bd && !_G.tinfo->conf->use_rows) {
-                _transition_move_cols(MOVE_UP);
-                return ECORE_CALLBACK_PASS_ON;
-            } else
-            if (!_G.transition_overlay->bd && _G.tinfo->conf->use_rows) {
-                _transition_move_rows(MOVE_UP);
-                return ECORE_CALLBACK_PASS_ON;
-            }
-        } else
-        if ((strcmp(ev->key, "Down") == 0)
-        ||  (strcmp(ev->key, "j") == 0))
-        {
-            if (_G.transition_overlay->bd && !_G.tinfo->conf->use_rows) {
-                _transition_move_cols(MOVE_DOWN);
-                return ECORE_CALLBACK_PASS_ON;
-            } else
-            if (!_G.transition_overlay->bd && _G.tinfo->conf->use_rows) {
-                _transition_move_rows(MOVE_DOWN);
-                return ECORE_CALLBACK_PASS_ON;
-            }
-        } else
-        if ((strcmp(ev->key, "Left") == 0)
-        ||  (strcmp(ev->key, "h") == 0))
-        {
-            if (!_G.transition_overlay->bd && !_G.tinfo->conf->use_rows) {
-                _transition_move_cols(MOVE_LEFT);
-                return ECORE_CALLBACK_PASS_ON;
-            } else
-            if (_G.transition_overlay->bd && _G.tinfo->conf->use_rows) {
-                _transition_move_rows(MOVE_LEFT);
-                return ECORE_CALLBACK_PASS_ON;
-            }
-        } else
-        if ((strcmp(ev->key, "Right") == 0)
-        ||  (strcmp(ev->key, "l") == 0))
-        {
-            if (!_G.transition_overlay->bd && !_G.tinfo->conf->use_rows) {
-                _transition_move_cols(MOVE_RIGHT);
-                return ECORE_CALLBACK_PASS_ON;
-            } else
-            if (_G.transition_overlay->bd && _G.tinfo->conf->use_rows) {
-                _transition_move_rows(MOVE_RIGHT);
-                return ECORE_CALLBACK_PASS_ON;
-            }
-        }
-
-        return ECORE_CALLBACK_RENEW;
-    } else {
-        if (strcmp(ev->key, "Backspace") == 0) {
-            char *key = _G.keys;
-
-            while (*key)
-                key++;
-            *key = '\0';
-            return ECORE_CALLBACK_RENEW;
-        }
-        if (ev->key[0] && !ev->key[1] && strchr(tiling_g.config->keyhints,
-                                                ev->key[1]))
-        {
-            transition_overlay_t *trov = NULL;
-            E_Border *bd = NULL;
-            Border_Extra *extra = NULL;
-            Evas_Coord ew, eh;
-            char *key = _G.keys;
-
-            while (*key)
-                key++;
-            *key++ = ev->key[0];
-            *key = '\0';
-
-            trov = eina_hash_find(_G.overlays, _G.keys);
-            if (!trov) {
-                return ECORE_CALLBACK_RENEW;
-            }
-            bd = trov->bd;
-
-            _G.transition_overlay = trov;
-            eina_hash_free(_G.overlays);
-            _G.overlays = NULL;
-
-            if (bd) {
-                extra = eina_hash_find(_G.border_extras, &bd);
-                if (!extra) {
-                    ERR("No extra for %p", bd);
-                    goto stop;
-                }
-            }
-            if (!trov->overlay.popup) {
-                trov->overlay.popup = e_popup_new(_G.tinfo->desk->zone,
-                                                  0, 0, 1, 1);
-                e_popup_layer_set(trov->overlay.popup, E_LAYER_NORMAL);
-            }
-            if (!trov->overlay.obj) {
-                trov->overlay.obj =
-                    edje_object_add(trov->overlay.popup->evas);
-            }
-            if ((bd && !_G.tinfo->conf->use_rows)
-            ||  (!bd && _G.tinfo->conf->use_rows)) {
-                _theme_edje_object_set(trov->overlay.obj,
-                                       "modules/tiling/transition/horizontal");
-            } else {
-                _theme_edje_object_set(trov->overlay.obj,
-                                       "modules/tiling/transition/vertical");
-            }
-
-            edje_object_size_min_calc(trov->overlay.obj, &ew, &eh);
-            e_popup_edje_bg_object_set(trov->overlay.popup,
-                                       trov->overlay.obj);
-            evas_object_show(trov->overlay.obj);
-            if (bd) {
-                if (_G.tinfo->conf->use_rows) {
-                    e_popup_move_resize(trov->overlay.popup,
-                        (extra->expected.x - trov->overlay.popup->zone->x +
-                            extra->expected.w - (ew / 2)),
-                        (extra->expected.y - trov->overlay.popup->zone->y +
-                            ((extra->expected.h - eh) / 2)),
-                        ew, eh);
-                } else {
-                    e_popup_move_resize(trov->overlay.popup,
-                        (extra->expected.x - trov->overlay.popup->zone->x +
-                            ((extra->expected.w - ew) / 2)),
-                        (extra->expected.y - trov->overlay.popup->zone->y +
-                            extra->expected.h - (eh / 2)),
-                        ew, eh);
-                }
-            } else {
-                if (_G.tinfo->conf->use_rows) {
-                    e_popup_move_resize(trov->overlay.popup,
-                                        (trov->overlay.popup->zone->w/2 - ew/2),
-                                        (_G.tinfo->pos[trov->stack]
-                                         + _G.tinfo->size[trov->stack]
-                                         - trov->overlay.popup->zone->y - eh/2),
-                                        ew, eh);
-                } else {
-                    e_popup_move_resize(trov->overlay.popup,
-                                        (_G.tinfo->pos[trov->stack]
-                                         + _G.tinfo->size[trov->stack]
-                                         - trov->overlay.popup->zone->x - ew/2),
-                                        (trov->overlay.popup->zone->h/2 - eh/2),
-                                        ew, eh);
-                }
-            }
-            evas_object_resize(trov->overlay.obj, ew, eh);
-            e_popup_show(trov->overlay.popup);
-
-            return ECORE_CALLBACK_RENEW;
-        }
-    }
-
-stop:
-    end_special_input();
-    return ECORE_CALLBACK_DONE;
-}
-
-static void
-_do_transition_overlay(void)
-{
-    int nb_transitions;
-    Ecore_X_Window parent;
-    int hints_len;
-    int key_len;
-    int n = 0;
-    int nmax;
-    int i;
-
-    end_special_input();
-
-    nb_transitions = get_transition_count();
-    if (nb_transitions < 1) {
-        return;
-    }
-
-    _G.input_mode = INPUT_MODE_TRANSITION;
-
-    _G.overlays = eina_hash_string_small_new(_transition_overlays_free_cb);
-    hints_len = strlen(tiling_g.config->keyhints);
-    key_len = 1;
-    nmax = hints_len;
-    if (hints_len < nb_transitions) {
-        key_len = 2;
-        nmax *= hints_len;
-        if (hints_len * hints_len < nb_transitions) {
-            key_len = 3;
-            nmax *= hints_len;
-        }
-    }
-
-
-    for (i = 0; i < TILING_MAX_STACKS; i++) {
-        Eina_List *l;
-        E_Border *bd;
-
-        if (!_G.tinfo->stacks[i])
-            break;
-        EINA_LIST_FOREACH(_G.tinfo->stacks[i], l, bd) {
-            if (l->next && n < nmax) {
-                Border_Extra *extra;
-                Evas_Coord ew, eh;
-                transition_overlay_t *trov;
-
-                extra = eina_hash_find(_G.border_extras, &bd);
-                if (!extra) {
-                    ERR("No extra for %p", bd);
-                    continue;
-                }
-
-                trov = E_NEW(transition_overlay_t, 1);
-
-                trov->overlay.popup = e_popup_new(bd->zone, 0, 0, 1, 1);
-                if (!trov->overlay.popup)
-                  {
-                     E_FREE(trov);
-                     continue;
-                  }
-
-                e_popup_layer_set(trov->overlay.popup, E_LAYER_NORMAL);
-                trov->overlay.obj = edje_object_add(trov->overlay.popup->evas);
-                e_theme_edje_object_set(trov->overlay.obj,
-                                        "base/theme/borders",
-                                        "e/widgets/border/default/resize");
-
-                switch (key_len) {
-                  case 1:
-                    trov->key[0] = tiling_g.config->keyhints[n];
-                    trov->key[1] = '\0';
-                    break;
-                  case 2:
-                    trov->key[0] = tiling_g.config->keyhints[n / hints_len];
-                    trov->key[1] = tiling_g.config->keyhints[n % hints_len];
-                    trov->key[2] = '\0';
-                    break;
-                  case 3:
-                    trov->key[0] = tiling_g.config->keyhints[n / hints_len / hints_len];
-                    trov->key[0] = tiling_g.config->keyhints[n / hints_len];
-                    trov->key[1] = tiling_g.config->keyhints[n % hints_len];
-                    trov->key[2] = '\0';
-                    break;
-                }
-                n++;
-                trov->stack = i;
-                trov->bd = bd;
-
-                eina_hash_add(_G.overlays, trov->key, trov);
-                edje_object_part_text_set(trov->overlay.obj,
-                                          "e.text.label",
-                                          trov->key);
-                edje_object_size_min_calc(trov->overlay.obj, &ew, &eh);
-                evas_object_move(trov->overlay.obj, 0, 0);
-                evas_object_resize(trov->overlay.obj, ew, eh);
-                evas_object_show(trov->overlay.obj);
-                e_popup_edje_bg_object_set(trov->overlay.popup,
-                                           trov->overlay.obj);
-
-                evas_object_show(trov->overlay.obj);
-                e_popup_show(trov->overlay.popup);
-
-                if (_G.tinfo->conf->use_rows) {
-                    e_popup_move_resize(trov->overlay.popup,
-                        (extra->expected.x - trov->overlay.popup->zone->x +
-                            extra->expected.w - (ew / 2)),
-                        (extra->expected.y - trov->overlay.popup->zone->y +
-                            ((extra->expected.h - eh) / 2)),
-                        ew, eh);
-                } else {
-                    e_popup_move_resize(trov->overlay.popup,
-                        (extra->expected.x - trov->overlay.popup->zone->x +
-                            ((extra->expected.w - ew) / 2)),
-                        (extra->expected.y - trov->overlay.popup->zone->y +
-                            extra->expected.h - (eh / 2)),
-                        ew, eh);
-                }
-
-                e_popup_show(trov->overlay.popup);
-            }
-        }
-        if (i != (TILING_MAX_STACKS - 1) &&
-            _G.tinfo->stacks[i+1] && n < nmax)
-        {
-            Evas_Coord ew, eh;
-            transition_overlay_t *trov;
-
-            trov = E_NEW(transition_overlay_t, 1);
-
-            trov->overlay.popup = e_popup_new(_G.tinfo->desk->zone,
-                                              0, 0, 1, 1);
-            if (!trov->overlay.popup)
-                continue;
-
-            e_popup_layer_set(trov->overlay.popup, E_LAYER_NORMAL);
-            trov->overlay.obj = edje_object_add(trov->overlay.popup->evas);
-            e_theme_edje_object_set(trov->overlay.obj,
-                                    "base/theme/borders",
-                                    "e/widgets/border/default/resize");
-
-            switch (key_len) {
-              case 1:
-                trov->key[0] = tiling_g.config->keyhints[n];
-                trov->key[1] = '\0';
-                break;
-              case 2:
-                trov->key[0] = tiling_g.config->keyhints[n / hints_len];
-                trov->key[1] = tiling_g.config->keyhints[n % hints_len];
-                trov->key[2] = '\0';
-                break;
-              case 3:
-                trov->key[0] = tiling_g.config->keyhints[n / hints_len / hints_len];
-                trov->key[0] = tiling_g.config->keyhints[n / hints_len];
-                trov->key[1] = tiling_g.config->keyhints[n % hints_len];
-                trov->key[2] = '\0';
-                break;
-            }
-            n++;
-            trov->stack = i;
-            trov->bd = NULL;
-
-            eina_hash_add(_G.overlays, trov->key, trov);
-            edje_object_part_text_set(trov->overlay.obj,
-                                      "e.text.label",
-                                      trov->key);
-            edje_object_size_min_calc(trov->overlay.obj, &ew, &eh);
-            evas_object_move(trov->overlay.obj, 0, 0);
-            evas_object_resize(trov->overlay.obj, ew, eh);
-            evas_object_show(trov->overlay.obj);
-            e_popup_edje_bg_object_set(trov->overlay.popup,
-                                       trov->overlay.obj);
-
-            evas_object_show(trov->overlay.obj);
-            e_popup_show(trov->overlay.popup);
-
-            if (_G.tinfo->conf->use_rows) {
-                e_popup_move_resize(trov->overlay.popup,
-                                    (trov->overlay.popup->zone->w/2 - ew/2),
-                                    (_G.tinfo->pos[trov->stack]
-                                     + _G.tinfo->size[trov->stack]
-                                     - trov->overlay.popup->zone->y - eh/2),
-                                    ew, eh);
-            } else {
-                e_popup_move_resize(trov->overlay.popup,
-                                    (_G.tinfo->pos[trov->stack]
-                                     + _G.tinfo->size[trov->stack]
-                                     - trov->overlay.popup->zone->x - ew/2),
-                                    (trov->overlay.popup->zone->h/2 - eh/2),
-                                    ew, eh);
-            }
-
-            e_popup_show(trov->overlay.popup);
-        }
-    }
-
-    /* Get input */
-    parent = _G.tinfo->desk->zone->container->win;
-    _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
-    if (!_G.action_input_win) {
-        end_special_input();
-        return;
-    }
-
-    ecore_x_window_show(_G.action_input_win);
-    if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
-        end_special_input();
-        return;
-    }
-    _G.action_timer = ecore_timer_add(TILING_OVERLAY_TIMEOUT,
-                                      _timeout_cb, NULL);
-
-    _G.keys[0] = '\0';
-    _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
-                                             _transition_overlay_key_down,
-                                             NULL);
-}
-
-static void
-_e_mod_action_adjust_transitions(E_Object   *obj __UNUSED__,
-                                 const char *params __UNUSED__)
-{
-    E_Desk *desk;
-
-    desk = get_current_desk();
-    if (!desk)
-        return;
-
-    check_tinfo(desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks) {
-        return;
-    }
-
-    _do_transition_overlay();
-}
-
-/* }}} */
-/* Go {{{ */
-
-static Eina_Bool
-_warp_timer(void *data __UNUSED__)
-{
-    if (_G.warp_timer) {
-        double spd = TILING_WRAP_SPEED;
-
-        _G.old_warp_x = _G.warp_x;
-        _G.old_warp_y = _G.warp_y;
-        _G.warp_x = (_G.warp_x * (1.0 - spd)) + (_G.warp_to_x * spd);
-        _G.warp_y = (_G.warp_y * (1.0 - spd)) + (_G.warp_to_y * spd);
-
-        ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
-                             _G.warp_x, _G.warp_y);
-
-        if (abs(_G.warp_x - _G.old_warp_x) <= 1
-        &&  abs(_G.warp_y - _G.old_warp_y) <= 1) {
-            _G.warp_timer = NULL;
-            return ECORE_CALLBACK_CANCEL;
-        }
-
-        return ECORE_CALLBACK_RENEW;
-    }
-    _G.warp_timer = NULL;
-    return ECORE_CALLBACK_CANCEL;
-}
-
-static void
-_action_go(E_Border *data __UNUSED__,
-           Border_Extra *extra_2)
-{
-    E_Border *bd = extra_2->border;
-
-    _G.warp_to_x = bd->x + (bd->w / 2);
-    _G.warp_to_y = bd->y + (bd->h / 2);
-    ecore_x_pointer_xy_get(_G.tinfo->desk->zone->container->win,
-                           &_G.warp_x, &_G.warp_y);
-    e_border_focus_latest_set(bd);
-    _G.warp_timer = ecore_timer_add(0.01, _warp_timer, NULL);
-}
-
-static void
-_e_mod_action_go_cb(E_Object   *obj __UNUSED__,
-                    const char *params __UNUSED__)
-{
-    E_Desk *desk;
-
-    desk = get_current_desk();
-    if (!desk)
-        return;
-
-    check_tinfo(desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks) {
-        return;
-    }
-
-    _do_overlay(NULL, _action_go, INPUT_MODE_GOING);
-}
-
-/* }}} */
-/* Send to a corner {{{ */
-
-static void
-_e_mod_action_send_cb(E_Object   *obj __UNUSED__,
-                      const char *params) EINA_ARG_NONNULL(2)
-{
-    E_Desk *desk;
-    E_Border *bd;
-    int x, y, w, h;
-    geom_t g;
-
-    assert(params != NULL);
-
-    desk = get_current_desk();
-    if (!desk)
-        return;
-
-    bd = e_border_focused_get();
-    if (!bd || bd->desk != desk)
-        return;
-
-    if (!is_tilable(bd))
-        return;
-
-    check_tinfo(desk);
-    if (!_G.tinfo->conf)
-        return;
-
-    /* Fill initial values if not already done */
-    _get_or_create_border_extra(bd);
-
-    if (!tiling_g.config->show_titles) {
-        if ((bd->bordername && strcmp(bd->bordername, "pixel"))
-        ||  !bd->bordername)
-        {
-            change_window_border(bd, "pixel");
-        }
-    }
-
-    if (bd->maximized)
-        _e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
-
-    /* add to floating */
-    if (!EINA_LIST_IS_IN(_G.tinfo->floating_windows, bd)) {
-        _remove_border(bd);
-        EINA_LIST_APPEND(_G.tinfo->floating_windows, bd);
-    }
-
-    e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
-    g.w = w / 2;
-    g.h = h / 2;
-
-    if (params[0] == 'n') {
-        g.y = 0;
-        if (params[1] == 'w') {
-            /* NW */
-            g.x = 0;
-        } else {
-            /* NE */
-            g.x = w / 2;
-        }
-    } else {
-        g.y = h / 2;
-        if (params[1] == 'w') {
-            /* SW */
-            g.x = 0;
-        } else {
-            /* SE */
-            g.x = w / 2;
-        }
-    }
-    _e_border_move_resize(bd, g.x, g.y, g.w, g.h);
-}
-
-/* }}} */
-/* Hooks {{{*/
-
-static void
-_pre_border_assign_hook(void *data __UNUSED__,
-                        E_Border *bd)
-{
-    if (tiling_g.config->show_titles)
-        return;
-
-    if (!bd) {
-        return;
-    }
-
-    check_tinfo(bd->desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks) {
-        return;
-    }
-
-    if (is_floating_window(bd)) {
-        return;
-    }
-
-    if (!is_tilable(bd)) {
-        return;
-    }
-
-    if (bd->fullscreen) {
-         return;
-    }
-
-    /* Fill initial values if not already done */
-    _get_or_create_border_extra(bd);
-
-    if ((bd->bordername && strcmp(bd->bordername, "pixel"))
-    ||  !bd->bordername)
-    {
-        change_window_border(bd, "pixel");
-    }
-}
-
-static void _move_or_resize(E_Border *bd)
-{
-    Border_Extra *extra;
-    int stack = -1;
-
-    if (!bd) {
-        return;
-    }
-
-    check_tinfo(bd->desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks) {
-        return;
-    }
-
-    stack = get_stack(bd);
-    if (stack < 0) {
-        return;
-    }
-
-    DBG("Resize: %p / '%s' / '%s', (%d,%d), changes(size=%d, position=%d, border=%d)"
-        " g:%dx%d+%d+%d bdname:'%s' (stack:%d%c) maximized:%s fs:%s",
-        bd, bd->client.icccm.title, bd->client.netwm.name,
-        bd->desk->x, bd->desk->y,
-        bd->changes.size, bd->changes.pos, bd->changes.border,
-        bd->w, bd->h, bd->x, bd->y, bd->bordername,
-        stack, _G.tinfo->conf->use_rows? 'r':'c',
-        (bd->maximized & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_NONE ? "NONE" :
-        (bd->maximized & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_VERTICAL ? "VERTICAL" :
-        (bd->maximized & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_HORIZONTAL ? "HORIZONTAL" :
-        "BOTH", bd->fullscreen? "true": "false");
-
-    extra = eina_hash_find(_G.border_extras, &bd);
-    if (!extra) {
-        ERR("No extra for %p", bd);
-        return;
-    }
-
-    DBG("expected: %dx%d+%d+%d",
-        extra->expected.w,
-        extra->expected.h,
-        extra->expected.x,
-        extra->expected.y);
-    DBG("delta:%dx%d,%d,%d. step:%dx%d. base:%dx%d",
-        bd->w - extra->expected.w, bd->h - extra->expected.h,
-        bd->x - extra->expected.x, bd->y - extra->expected.y,
-        bd->client.icccm.step_w, bd->client.icccm.step_h,
-        bd->client.icccm.base_w, bd->client.icccm.base_h);
-
-    if (stack == 0 && !_G.tinfo->stacks[1] && !_G.tinfo->stacks[0]->next) {
-        if (bd->maximized) {
-            extra->expected.x = bd->x;
-            extra->expected.y = bd->y;
-            extra->expected.w = bd->w;
-            extra->expected.h = bd->h;
-        } else {
-            /* TODO: what if a window doesn't want to be maximized? */
-            _e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
-            _e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
-        }
-    }
-    if (bd->x == extra->expected.x && bd->y == extra->expected.y
-    &&  bd->w == extra->expected.w && bd->h == extra->expected.h)
-    {
-        return;
-    }
-    if (bd->maximized) {
-
-        if (_G.tinfo->conf->use_rows) {
-            if (bd->maximized & E_MAXIMIZE_VERTICAL) {
-                 _e_border_unmaximize(bd, E_MAXIMIZE_VERTICAL);
-                 _e_border_move_resize(bd,
-                                       extra->expected.x,
-                                       extra->expected.y,
-                                       extra->expected.w,
-                                       extra->expected.h);
-            }
-            if (bd->maximized & E_MAXIMIZE_HORIZONTAL
-            && eina_list_count(_G.tinfo->stacks[stack]) > 1) {
-                 _e_border_unmaximize(bd, E_MAXIMIZE_HORIZONTAL);
-                 _e_border_move_resize(bd,
-                                       extra->expected.x,
-                                       extra->expected.y,
-                                       extra->expected.w,
-                                       extra->expected.h);
-            }
-        } else {
-            if (bd->maximized & E_MAXIMIZE_HORIZONTAL) {
-                 _e_border_unmaximize(bd, E_MAXIMIZE_HORIZONTAL);
-                 _e_border_move_resize(bd,
-                                       extra->expected.x,
-                                       extra->expected.y,
-                                       extra->expected.w,
-                                       extra->expected.h);
-            }
-            if (bd->maximized & E_MAXIMIZE_VERTICAL
-            && eina_list_count(_G.tinfo->stacks[stack]) > 1) {
-                 _e_border_unmaximize(bd, E_MAXIMIZE_VERTICAL);
-                 _e_border_move_resize(bd,
-                                       extra->expected.x,
-                                       extra->expected.y,
-                                       extra->expected.w,
-                                       extra->expected.h);
-            }
-        }
-    }
-
-    if (abs(extra->expected.w - bd->w) >= MAX(bd->client.icccm.step_w, 1)) {
-        if (_G.tinfo->conf->use_rows)
-            _move_resize_border_in_stack(bd, extra, stack, TILING_RESIZE);
-        else
-            _move_resize_border_stack(bd, extra, stack, TILING_RESIZE);
-    }
-    if (abs(extra->expected.h - bd->h) >= MAX(bd->client.icccm.step_h, 1)) {
-        if (_G.tinfo->conf->use_rows)
-            _move_resize_border_stack(bd, extra, stack, TILING_RESIZE);
-        else
-            _move_resize_border_in_stack(bd, extra, stack, TILING_RESIZE);
-    }
-    if (extra->expected.x != bd->x) {
-        if (_G.tinfo->conf->use_rows)
-            _move_resize_border_in_stack(bd, extra, stack, TILING_MOVE);
-        else
-            _move_resize_border_stack(bd, extra, stack, TILING_MOVE);
-    }
-    if (extra->expected.y != bd->y) {
-        if (_G.tinfo->conf->use_rows)
-            _move_resize_border_stack(bd, extra, stack, TILING_MOVE);
-        else
-            _move_resize_border_in_stack(bd, extra, stack, TILING_MOVE);
-    }
-
-    if (_G.input_mode == INPUT_MODE_MOVING
-    &&  bd == _G.focused_bd) {
-        _check_moving_anims(bd, extra, stack);
-    }
+   return true;
 }
 
 static Eina_Bool
-_resize_hook(void *data __UNUSED__, int type __UNUSED__, E_Event_Border_Resize *event)
+_move_hook(void *data EINA_UNUSED, int type EINA_UNUSED, E_Event_Client *event)
 {
-    E_Border *bd = event->border;
+   E_Client *ec = event->ec;
+   Client_Extra *extra = tiling_entry_func(ec);
 
-    _move_or_resize(bd);
+   if (!extra || !extra->tiled)
+     {
+        return true;
+     }
 
-    return true;
+   e_client_act_move_end(event->ec, NULL);
+
+   _reapply_tree();
+
+   return true;
+}
+
+static void
+_frame_del_cb(void *data, Evas *evas EINA_UNUSED,
+      Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   E_Client *ec = data;
+
+   if (desk_should_tile_check(ec->desk))
+     {
+        _client_remove_no_apply(ec);
+     }
+
+   _client_untrack(ec);
+
+   eina_hash_del(_G.client_extras, &ec, NULL);
+
+   _reapply_tree();
+}
+
+static void
+_e_client_extra_unregister_callbacks(void *_client_extra)
+{
+   Client_Extra *extra = _client_extra;
+
+   _client_untrack(extra->client);
+}
+
+static void
+_client_untrack(E_Client *ec)
+{
+   Client_Extra *extra = eina_hash_find(_G.client_extras, &ec);
+
+   if (!extra->tracked)
+      return;
+
+   extra->tracked = EINA_FALSE;
+
+   evas_object_event_callback_del_full(ec->frame, EVAS_CALLBACK_DEL,
+         _frame_del_cb, ec);
+   evas_object_smart_callback_del_full(ec->frame, "maximize_done",
+         _e_client_check_based_on_state_cb, ec);
+   evas_object_smart_callback_del_full(ec->frame, "frame_recalc_done",
+         _e_client_check_based_on_state_cb, ec);
+   evas_object_smart_callback_del_full(ec->frame, "stick",
+         _e_client_check_based_on_state_cb, ec);
+   evas_object_smart_callback_del_full(ec->frame, "unstick",
+         _e_client_check_based_on_state_cb, ec);
+}
+
+static void
+_client_track(E_Client *ec)
+{
+   Client_Extra *extra = eina_hash_find(_G.client_extras, &ec);
+
+   if (extra->tracked)
+      return;
+
+   extra->tracked = EINA_TRUE;
+
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_DEL,
+         _frame_del_cb, ec);
+   evas_object_smart_callback_add(ec->frame, "maximize_done",
+         _e_client_check_based_on_state_cb, ec);
+   evas_object_smart_callback_add(ec->frame, "frame_recalc_done",
+         _e_client_check_based_on_state_cb, ec);
+   evas_object_smart_callback_add(ec->frame, "stick",
+         _e_client_check_based_on_state_cb, ec);
+   evas_object_smart_callback_add(ec->frame, "unstick",
+         _e_client_check_based_on_state_cb, ec);
+}
+
+static void
+_add_hook(void *data EINA_UNUSED, E_Client *ec)
+{
+   if (!ec)
+     return;
+
+   if (!ec->new_client)
+     return;
+
+   if (e_object_is_del(E_OBJECT(ec)))
+     return;
+
+   _add_client(ec);
 }
 
 static Eina_Bool
-_move_hook(void *data __UNUSED__, int type __UNUSED__, E_Event_Border_Move*event)
+_toggle_tiling_based_on_state(E_Client *ec, Eina_Bool restore)
 {
-    E_Border *bd = event->border;
+   Client_Extra *extra = eina_hash_find(_G.client_extras, &ec);
 
-    _move_or_resize(bd);
+   if (!extra)
+     {
+        return EINA_FALSE;
+     }
 
-    return true;
-}
+   /* This is the new state, act accordingly. */
+   if (extra->tiled && !is_tilable(ec))
+     {
+        if (restore)
+          {
+             _restore_client(ec);
+          }
+        if (desk_should_tile_check(ec->desk))
+          {
+             _remove_client(ec);
+          }
 
-static Eina_Bool
-_add_hook(void *data __UNUSED__, int type __UNUSED__, E_Event_Border_Add *event)
-{
-    E_Border *bd = event->border;
-    int stack = -1;
+        return EINA_TRUE;
+     }
+   else if (!extra->tiled && is_tilable(ec))
+     {
+        _add_client(ec);
 
-    if (_G.input_mode != INPUT_MODE_NONE
-    &&  _G.input_mode != INPUT_MODE_MOVING
-    &&  _G.input_mode != INPUT_MODE_TRANSITION)
-    {
-        end_special_input();
-    }
+        return EINA_TRUE;
+     }
 
-    check_tinfo(bd->desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks) {
-        return true;
-    }
-
-    if (!is_tilable(bd)) {
-        return true;
-    }
-
-    stack = get_stack(bd);
-    if (stack >= 0) {
-        return true;
-    }
-
-    DBG("Add: %p / '%s' / '%s', (%d,%d), changes(size=%d, position=%d, border=%d)"
-        " g:%dx%d+%d+%d bdname:'%s' (stack:%d%c) maximized:%s fs:%s",
-        bd, bd->client.icccm.title, bd->client.netwm.name,
-        bd->desk->x, bd->desk->y,
-        bd->changes.size, bd->changes.pos, bd->changes.border,
-        bd->w, bd->h, bd->x, bd->y, bd->bordername,
-        stack, _G.tinfo->conf->use_rows? 'r':'c',
-        (bd->maximized & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_NONE ? "NONE" :
-        (bd->maximized & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_VERTICAL ? "VERTICAL" :
-        (bd->maximized & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_HORIZONTAL ? "HORIZONTAL" :
-        "BOTH", bd->fullscreen? "true": "false");
-
-    _add_border(bd);
-
-    return true;
-}
-
-static Eina_Bool
-_remove_hook(void *data __UNUSED__, int type __UNUSED__, E_Event_Border_Remove *event)
-{
-    E_Border *bd = event->border;
-
-    end_special_input();
-
-    if (_G.currently_switching_desktop)
-        return true;
-
-    check_tinfo(bd->desk);
-    if (!_G.tinfo->conf)
-        return true;
-
-    if (EINA_LIST_IS_IN(_G.tinfo->floating_windows, bd)) {
-        EINA_LIST_REMOVE(_G.tinfo->floating_windows, bd);
-        return true;
-    }
-
-    _remove_border(bd);
-
-    return true;
+   return EINA_FALSE;
 }
 
 static bool
-_iconify_hook(void *data __UNUSED__, int type __UNUSED__, E_Event_Border_Iconify *event)
+_iconify_hook(void *data EINA_UNUSED, int type EINA_UNUSED,
+                E_Event_Client *event)
 {
-    E_Border *bd = event->border;
+   E_Client *ec = event->ec;
 
-    DBG("iconify hook: %p", bd);
+   if (ec->deskshow)
+     return true;
 
-    end_special_input();
+   _toggle_tiling_based_on_state(ec, EINA_FALSE);
 
-    if (bd->deskshow)
-        return true;
-
-    check_tinfo(bd->desk);
-    if (!_G.tinfo->conf)
-        return true;
-
-    if (EINA_LIST_IS_IN(_G.tinfo->floating_windows, bd)) {
-        return true;
-    }
-
-    _remove_border(bd);
-
-    return true;
+   return true;
 }
 
 static bool
-_uniconify_hook(void *data __UNUSED__, int type __UNUSED__, E_Event_Border_Uniconify *event)
+_desk_set_hook(void *data EINA_UNUSED, int type EINA_UNUSED,
+               E_Event_Client_Desk_Set *ev)
 {
-    E_Border *bd = event->border;
-    int stack = -1;
+   DBG("%p: from (%d,%d) to (%d,%d)", ev->ec, ev->desk->x, ev->desk->y,
+       ev->ec->desk->x, ev->ec->desk->y);
 
-    if (_G.input_mode != INPUT_MODE_NONE
-    &&  _G.input_mode != INPUT_MODE_MOVING
-    &&  _G.input_mode != INPUT_MODE_TRANSITION)
-    {
-        end_special_input();
-    }
+   if (desk_should_tile_check(ev->desk))
+     {
+        if (tiling_window_tree_client_find(_G.tinfo->tree, ev->ec))
+          {
+             _restore_client(ev->ec);
+             _remove_client(ev->ec);
+          }
+     }
 
-    if (bd->deskshow)
-        return true;
+   if (!desk_should_tile_check(ev->ec->desk))
+     return true;
 
-    check_tinfo(bd->desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks) {
-        return true;
-    }
+   _add_client(ev->ec);
 
-    if (!is_tilable(bd)) {
-        return true;
-    }
-
-    stack = get_stack(bd);
-    if (stack >= 0) {
-        return true;
-    }
-    _add_border(bd);
-
-    return true;
+   return true;
 }
 
-static Eina_Bool
-_stick_hook(void *data __UNUSED__, int type __UNUSED__, void *event __UNUSED__)
+static void
+_compositor_resize_hook_desk_reapply(E_Desk *desk)
 {
-    DBG("TODO");
-    return true;
-}
+   check_tinfo(desk);
+   if (!desk_should_tile_check(desk))
+     return;
 
-static Eina_Bool
-_unstick_hook(void *data __UNUSED__, int type __UNUSED__, void *event __UNUSED__)
-{
-    DBG("TODO");
-    return true;
-}
-
-static Eina_Bool
-_desk_show_hook(void *data __UNUSED__, int type __UNUSED__, void *event __UNUSED__)
-{
-    _G.currently_switching_desktop = 0;
-
-    end_special_input();
-
-    return true;
-}
-
-static Eina_Bool
-_desk_before_show_hook(void *data __UNUSED__, int type __UNUSED__, void *event __UNUSED__)
-{
-    end_special_input();
-
-    _G.currently_switching_desktop = 1;
-
-    return true;
+   _reapply_tree();
 }
 
 static bool
-_desk_set_hook(void *data __UNUSED__, int type __UNUSED__, E_Event_Border_Desk_Set *ev)
+_compositor_resize_hook(void *data EINA_UNUSED, int type EINA_UNUSED,
+                        E_Event_Compositor_Resize *ev EINA_UNUSED)
 {
-    DBG("%p: from (%d,%d) to (%d,%d)", ev->border,
-        ev->desk->x, ev->desk->y,
-        ev->border->desk->x, ev->border->desk->y);
+   _foreach_desk(_compositor_resize_hook_desk_reapply);
 
-    end_special_input();
-
-    check_tinfo(ev->desk);
-    if (!_G.tinfo->conf) {
-        return true;
-    }
-
-    if (is_floating_window(ev->border)) {
-        EINA_LIST_REMOVE(_G.tinfo->floating_windows, ev->border);
-    } else {
-        if (get_stack(ev->border) >= 0) {
-            _remove_border(ev->border);
-            _restore_border(ev->border);
-        }
-    }
-
-    check_tinfo(ev->border->desk);
-    if (!_G.tinfo->conf) {
-        return true;
-    }
-
-    if (get_stack(ev->border) < 0)
-        _add_border(ev->border);
-
-    return true;
+   return true;
 }
 
-static bool
-_container_resize_hook(void *data __UNUSED__, int type __UNUSED__, E_Event_Container_Resize *ev)
+static void
+_bd_hook(void *d EINA_UNUSED, E_Client *ec)
 {
-    Eina_List *l;
-    E_Zone *zone;
-    int x, y, i;
+   E_Menu_Item *mi;
+   E_Menu *m;
+   Eina_List *l;
 
-    EINA_LIST_FOREACH(ev->container->zones, l, zone) {
-        for (x = 0; x < zone->desk_x_count; x++) {
-            for (y = 0; y < zone->desk_y_count; y++) {
-                E_Desk *desk = zone->desks[x + (y * zone->desk_x_count)];
-                Eina_List *wins = NULL;
-                E_Border *bd;
+   if (!ec->border_menu)
+     return;
+   m = ec->border_menu;
 
-                check_tinfo(desk);
-                if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks) {
-                    continue;
-                }
+   Client_Extra *extra = eina_hash_find(_G.client_extras, &ec);
 
-                for (i = 0; i < TILING_MAX_STACKS; i++) {
-                    EINA_LIST_FREE(_G.tinfo->stacks[i], bd) {
-                        EINA_LIST_APPEND(wins, bd);
-                        _restore_border(bd);
-                    }
-                    _G.tinfo->stacks[i] = NULL;
-                    _G.tinfo->pos[i] = 0;
-                    _G.tinfo->size[i] = 0;
-                }
+   if (!extra)
+     {
+        return;
+     }
 
-                EINA_LIST_FREE(wins, bd) {
-                    _add_border(bd);
-                }
-            }
-        }
-    }
+   /* position menu item just before the last separator */
+   EINA_LIST_REVERSE_FOREACH(m->items, l, mi)
+     if (mi->separator)
+       break;
+   if ((!mi) || (!mi->separator))
+     return;
+   l = eina_list_prev(l);
+   mi = eina_list_data_get(l);
+   if (!mi)
+     return;
 
-    return true;
+   mi = e_menu_item_new_relative(m, mi);
+   e_menu_item_label_set(mi, _("Floating"));
+   e_menu_item_check_set(mi, true);
+   e_menu_item_toggle_set(mi, (extra->floating) ? true : false);
+   e_menu_item_callback_set(mi, _e_mod_menu_border_cb, ec);
 }
 
 /* }}} */
-/* Module setup {{{*/
+/* Module setup {{{ */
 
 static void
 _clear_info_hash(void *data)
 {
-    Tiling_Info *ti = data;
-    int i;
+   Tiling_Info *ti = data;
 
-    eina_list_free(ti->floating_windows);
-    for (i = 0; i < TILING_MAX_STACKS; i++) {
-        eina_list_free(ti->stacks[i]);
-        ti->stacks[i] = NULL;
-    }
-    E_FREE(ti);
+   tiling_window_tree_free(ti->tree);
+   ti->tree = NULL;
+   E_FREE(ti);
 }
 
 static void
 _clear_border_extras(void *data)
 {
-    Border_Extra *extra = data;
+   Client_Extra *extra = data;
 
-    eina_stringshare_del(extra->orig.bordername);
+   eina_stringshare_del(extra->orig.bordername);
 
-    E_FREE(extra);
+   E_FREE(extra);
 }
 
-EAPI E_Module_Api e_modapi =
-{
-    E_MODULE_API_VERSION,
-    "Tiling"
+EAPI E_Module_Api e_modapi = {
+   E_MODULE_API_VERSION,
+   "Tiling"
 };
 
 EAPI void *
 e_modapi_init(E_Module *m)
 {
-    E_Desk *desk;
-    Eina_List *l;
+   E_Desk *desk;
+   Eina_List *l;
 
-    tiling_g.module = m;
+   tiling_g.module = m;
 
-    if (tiling_g.log_domain < 0) {
+   if (tiling_g.log_domain < 0)
+     {
         tiling_g.log_domain = eina_log_domain_register("tiling", NULL);
-        if (tiling_g.log_domain < 0) {
-            EINA_LOG_CRIT("could not register log domain 'tiling'");
-        }
-    }
+        if (tiling_g.log_domain < 0)
+          {
+             EINA_LOG_CRIT("could not register log domain 'tiling'");
+          }
+     }
 
-    _G.info_hash = eina_hash_pointer_new(_clear_info_hash);
-    _G.border_extras = eina_hash_pointer_new(_clear_border_extras);
+   _G.info_hash = eina_hash_pointer_new(_clear_info_hash);
+   _G.client_extras = eina_hash_pointer_new(_clear_border_extras);
 
-    _G.pre_border_assign_hook = e_border_hook_add(
-        E_BORDER_HOOK_EVAL_PRE_BORDER_ASSIGN,
-        (void (*)(void*,void*))_pre_border_assign_hook, NULL);
+#define HANDLER(_h, _e, _f)                                \
+  _h = ecore_event_handler_add(E_EVENT_##_e,               \
+                               (Ecore_Event_Handler_Cb)_f, \
+                               NULL);
 
-#define HANDLER(_h, _e, _f)                                   \
-    _h = ecore_event_handler_add(E_EVENT_##_e,                \
-                                 (Ecore_Event_Handler_Cb) _f, \
-                                 NULL);
+   _G.handler_client_resize_begin =
+      e_client_hook_add(E_CLIENT_HOOK_RESIZE_BEGIN, _resize_begin_hook, NULL);
+   _G.handler_client_add =
+      e_client_hook_add(E_CLIENT_HOOK_EVAL_PRE_FRAME_ASSIGN, _add_hook, NULL);
+   HANDLER(_G.handler_client_resize, CLIENT_RESIZE, _resize_hook);
+   HANDLER(_G.handler_client_move, CLIENT_MOVE, _move_hook);
 
-    HANDLER(_G.handler_border_resize, BORDER_RESIZE, _resize_hook);
-    HANDLER(_G.handler_border_move, BORDER_MOVE, _move_hook);
-    HANDLER(_G.handler_border_add, BORDER_ADD, _add_hook);
-    HANDLER(_G.handler_border_remove, BORDER_REMOVE, _remove_hook);
+   HANDLER(_G.handler_client_iconify, CLIENT_ICONIFY, _iconify_hook);
+   HANDLER(_G.handler_client_uniconify, CLIENT_UNICONIFY, _iconify_hook);
 
-    HANDLER(_G.handler_border_iconify, BORDER_ICONIFY, _iconify_hook);
-    HANDLER(_G.handler_border_uniconify, BORDER_UNICONIFY, _uniconify_hook);
-    HANDLER(_G.handler_border_stick, BORDER_STICK, _stick_hook);
-    HANDLER(_G.handler_border_unstick, BORDER_UNSTICK, _unstick_hook);
-
-    HANDLER(_G.handler_desk_show, DESK_SHOW, _desk_show_hook);
-    HANDLER(_G.handler_desk_before_show, DESK_BEFORE_SHOW, _desk_before_show_hook);
-    HANDLER(_G.handler_desk_set, BORDER_DESK_SET, _desk_set_hook);
-    HANDLER(_G.handler_container_resize, CONTAINER_RESIZE, _container_resize_hook);
+   HANDLER(_G.handler_desk_set, CLIENT_DESK_SET, _desk_set_hook);
+   HANDLER(_G.handler_compositor_resize, COMPOSITOR_RESIZE,
+           _compositor_resize_hook);
 #undef HANDLER
 
-#define ACTION_ADD(_act, _cb, _title, _value, _params, _example, _editable)  \
-    {                                                                        \
-        E_Action *_action = _act;                                            \
-        const char *_name = _value;                                          \
-        if ((_action = e_action_add(_name))) {                               \
-            _action->func.go = _cb;                                          \
-            e_action_predef_name_set(N_("Tiling"), _title, _name,            \
-                                     _params, _example, _editable);          \
-        }                                                                    \
-    }
+#define ACTION_ADD(_action, _cb, _title, _value, _params, _example, _editable) \
+  {                                                                            \
+     const char *_name = _value;                                               \
+     if ((_action = e_action_add(_name))) {                                    \
+          _action->func.go = _cb;                                              \
+          e_action_predef_name_set(N_("Tiling"), _title, _name,                \
+                                   _params, _example, _editable);              \
+       }                                                                       \
+  }
 
-    /* Module's actions */
-    ACTION_ADD(_G.act_togglefloat, _e_mod_action_toggle_floating_cb,
-               N_("Toggle floating"), "toggle_floating",
-               NULL, NULL, 0);
-    ACTION_ADD(_G.act_addstack, _e_mod_action_add_stack_cb,
-               N_("Add a stack"), "add_stack",
-               NULL, NULL, 0);
-    ACTION_ADD(_G.act_removestack, _e_mod_action_remove_stack_cb,
-               N_("Remove a stack"), "remove_stack",
-               NULL, NULL, 0);
-    ACTION_ADD(_G.act_tg_stack, _e_mod_action_tg_stack_cb,
-               N_("Toggle between rows and columns"), "tg_cols_rows",
-               NULL, NULL, 0);
-    ACTION_ADD(_G.act_swap, _e_mod_action_swap_cb,
-               N_("Swap a window with an other"), "swap",
-               NULL, NULL, 0);
+   /* Module's actions */
+   ACTION_ADD(_G.act_togglefloat, _e_mod_action_toggle_floating_cb,
+              N_("Toggle floating"), "toggle_floating", NULL, NULL, 0);
 
-    ACTION_ADD(_G.act_move, _e_mod_action_move_cb,
-               N_("Move window"), "move",
-               NULL, NULL, 0);
-    ACTION_ADD(_G.act_move_left, _e_mod_action_move_direct_cb,
-               N_("Move window to the left"), "move_left",
-               "left", NULL, 0);
-    ACTION_ADD(_G.act_move_right, _e_mod_action_move_direct_cb,
-               N_("Move window to the right"), "move_right",
-               "right", NULL, 0);
-    ACTION_ADD(_G.act_move_up, _e_mod_action_move_direct_cb,
-               N_("Move window up"), "move_up",
-               "up", NULL, 0);
-    ACTION_ADD(_G.act_move_down, _e_mod_action_move_direct_cb,
-               N_("Move window down"), "move_down",
-               "down", NULL, 0);
+   ACTION_ADD(_G.act_move_up, _e_mod_action_move_up_cb,
+              N_("Move the focused window up"), "move_up", NULL, NULL, 0);
+   ACTION_ADD(_G.act_move_down, _e_mod_action_move_down_cb,
+              N_("Move the focused window down"), "move_down", NULL, NULL, 0);
+   ACTION_ADD(_G.act_move_left, _e_mod_action_move_left_cb,
+              N_("Move the focused window left"), "move_left", NULL, NULL, 0);
+   ACTION_ADD(_G.act_move_right, _e_mod_action_move_right_cb,
+              N_("Move the focused window right"), "move_right", NULL, NULL, 0);
 
-    ACTION_ADD(_G.act_adjusttransitions, _e_mod_action_adjust_transitions,
-               N_("Adjust transitions"), "adjust_transitions",
-               NULL, NULL, 0);
-    ACTION_ADD(_G.act_go, _e_mod_action_go_cb,
-               N_("Focus a particular window"), "go",
-               NULL, NULL, 0);
+   ACTION_ADD(_G.act_toggle_split_mode, _e_mod_action_toggle_split_mode,
+              N_("Toggle split mode"), "toggle_split_mode", NULL, NULL, 0);
 
-    ACTION_ADD(_G.act_send_ne, _e_mod_action_send_cb,
-               N_("Send to upper right corner"), "send_ne",
-               "ne", NULL, 0);
-    ACTION_ADD(_G.act_send_nw, _e_mod_action_send_cb,
-               N_("Send to upper left corner"), "send_nw",
-               "nw", NULL, 0);
-    ACTION_ADD(_G.act_send_se, _e_mod_action_send_cb,
-               N_("Send to lower right corner"), "send_se",
-               "se", NULL, 0);
-    ACTION_ADD(_G.act_send_sw, _e_mod_action_send_cb,
-               N_("Send to lower left corner"), "send_sw",
-               "sw", NULL, 0);
+   ACTION_ADD(_G.act_swap_window, NULL, N_("Swap window"), "swap_window", NULL,
+              NULL, 0);
+   _G.act_swap_window->func.go_mouse = _e_mod_action_swap_window_go_mouse;
+   _G.act_swap_window->func.end_mouse = _e_mod_action_swap_window_end_mouse;
+
 #undef ACTION_ADD
 
-    /* Configuration entries */
-    snprintf(_G.edj_path, sizeof(_G.edj_path),"%s/e-module-tiling.edj",
-             e_module_dir_get(m));
-    e_configure_registry_category_add("windows", 50, _("Windows"), NULL,
-                                      "preferences-system-windows");
-    e_configure_registry_item_add("windows/tiling", 150, _("Tiling"),
-                                  NULL, _G.edj_path,
-                                  e_int_config_tiling_module);
+   /* Configuration entries */
+   snprintf(_G.edj_path, sizeof(_G.edj_path), "%s/e-module-tiling.edj",
+            e_module_dir_get(m));
+   e_configure_registry_category_add("windows", 50, _("Windows"), NULL,
+                                     "preferences-system-windows");
+   e_configure_registry_item_add("windows/tiling", 150, _("Tiling"), NULL,
+                                 _G.edj_path, e_int_config_tiling_module);
 
-    /* Configuration itself */
-    _G.config_edd = E_CONFIG_DD_NEW("Tiling_Config", Config);
-    _G.vdesk_edd = E_CONFIG_DD_NEW("Tiling_Config_VDesk",
-                                   struct _Config_vdesk);
-    E_CONFIG_VAL(_G.config_edd, Config, tile_dialogs, INT);
-    E_CONFIG_VAL(_G.config_edd, Config, show_titles, INT);
-    E_CONFIG_VAL(_G.config_edd, Config, keyhints, STR);
+   /* Configuration itself */
+   _G.config_edd = E_CONFIG_DD_NEW("Tiling_Config", Config);
+   _G.vdesk_edd = E_CONFIG_DD_NEW("Tiling_Config_VDesk", struct _Config_vdesk);
 
-    E_CONFIG_LIST(_G.config_edd, Config, vdesks, _G.vdesk_edd);
-    E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, x, INT);
-    E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, y, INT);
-    E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, zone_num, INT);
-    E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, nb_stacks, INT);
-    E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, use_rows, INT);
+   E_CONFIG_VAL(_G.config_edd, Config, tile_dialogs, INT);
+   E_CONFIG_VAL(_G.config_edd, Config, show_titles, INT);
+   E_CONFIG_VAL(_G.config_edd, Config, have_floating_mode, INT);
+   E_CONFIG_VAL(_G.config_edd, Config, window_padding, INT);
 
-    tiling_g.config = e_config_domain_load("module.tiling", _G.config_edd);
-    if (!tiling_g.config) {
+   E_CONFIG_LIST(_G.config_edd, Config, vdesks, _G.vdesk_edd);
+   E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, x, INT);
+   E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, y, INT);
+   E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, zone_num, INT);
+   E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, nb_stacks, INT);
+
+   tiling_g.config = e_config_domain_load("module.tiling", _G.config_edd);
+   if (!tiling_g.config)
+     {
         tiling_g.config = E_NEW(Config, 1);
         tiling_g.config->tile_dialogs = 1;
         tiling_g.config->show_titles = 1;
-    }
-    if (!tiling_g.config->keyhints)
-        tiling_g.config->keyhints = strdup(tiling_g.default_keyhints);
-    else
-        tiling_g.config->keyhints = strdup(tiling_g.config->keyhints);
+        tiling_g.config->have_floating_mode = 1;
+        tiling_g.config->window_padding = 0;
+     }
 
-    E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
-    E_CONFIG_LIMIT(tiling_g.config->show_titles, 0, 1);
+   E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
+   E_CONFIG_LIMIT(tiling_g.config->show_titles, 0, 1);
+   E_CONFIG_LIMIT(tiling_g.config->have_floating_mode, 0, 1);
+   E_CONFIG_LIMIT(tiling_g.config->window_padding, 0, TILING_MAX_PADDING);
 
-    for (l = tiling_g.config->vdesks; l; l = l->next) {
+   for (l = tiling_g.config->vdesks; l; l = l->next)
+     {
         struct _Config_vdesk *vd;
 
         vd = l->data;
 
-        E_CONFIG_LIMIT(vd->nb_stacks, 0, TILING_MAX_STACKS);
-        E_CONFIG_LIMIT(vd->use_rows, 0, 1);
-    }
+        E_CONFIG_LIMIT(vd->nb_stacks, 0, 1);
+     }
 
-    desk = get_current_desk();
-    _G.tinfo = _initialize_tinfo(desk);
+   _G.client_menu_hook = e_int_client_menu_hook_add(_bd_hook, NULL);
 
-    _G.input_mode = INPUT_MODE_NONE;
-    _G.currently_switching_desktop = 0;
-    _G.action_cb = NULL;
+   desk = get_current_desk();
+   _G.tinfo = _initialize_tinfo(desk);
 
-    return m;
+   /* Add all the existing windows. */
+   {
+      E_Client *ec;
+
+      E_CLIENT_FOREACH(e_comp_get(NULL), ec)
+      {
+         _add_client(ec);
+      }
+   }
+   started = EINA_TRUE;
+   _reapply_tree();
+   e_gadcon_provider_register(&_gc_class);
+
+   return m;
 }
 
 static void
 _disable_desk(E_Desk *desk)
 {
-    Eina_List *l;
-    int i;
+   check_tinfo(desk);
+   if (!_G.tinfo->conf)
+     return;
 
-    check_tinfo(desk);
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_stacks) {
-        return;
-    }
-
-    for (i = 0; i < TILING_MAX_STACKS; i++) {
-        for (l = _G.tinfo->stacks[i]; l; l = l->next) {
-            E_Border *bd = l->data;
-
-            _restore_border(bd);
-        }
-        eina_list_free(_G.tinfo->stacks[i]);
-        _G.tinfo->stacks[i] = NULL;
-    }
+   tiling_window_tree_walk(_G.tinfo->tree, _restore_free_client);
+   _G.tinfo->tree = NULL;
 }
 
 static void
 _disable_all_tiling(void)
 {
-    Eina_List *l, *ll, *lll;
-    E_Manager *man;
-    E_Container *con;
-    E_Zone *zone;
-    E_Desk *desk;
-    int x, y;
+   _foreach_desk(_disable_desk);
+}
 
-    EINA_LIST_FOREACH(e_manager_list(), l, man) {
-        EINA_LIST_FOREACH(man->containers, ll, con) {
-            EINA_LIST_FOREACH(con->zones, lll, zone) {
-                for (x = 0; x < zone->desk_x_count; x++) {
-                    for (y = 0; y < zone->desk_y_count; y++) {
-                        desk = zone->desks[x + (y * zone->desk_x_count)];
+static void
+_foreach_desk(void (*func)(E_Desk *desk))
+{
+   const Eina_List *l, *ll;
+   E_Comp *comp;
+   E_Zone *zone;
+   E_Desk *desk;
+   int x, y;
 
-                        _disable_desk(desk);
+   EINA_LIST_FOREACH(e_comp_list(), l, comp)
+     {
+        EINA_LIST_FOREACH(comp->zones, ll, zone)
+          {
+             for (x = 0; x < zone->desk_x_count; x++)
+               {
+                  for (y = 0; y < zone->desk_y_count; y++)
+                    {
+                       desk = zone->desks[x + (y * zone->desk_x_count)];
+
+                       func(desk);
                     }
-                }
-                e_place_zone_region_smart_cleanup(zone);
-            }
-        }
-    }
+               }
+          }
+     }
 }
 
 EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
-    _disable_all_tiling();
+   e_gadcon_provider_unregister(&_gc_class);
+   started = EINA_FALSE;
+   _disable_all_tiling();
 
-    if (tiling_g.log_domain >= 0) {
+   e_int_client_menu_hook_del(_G.client_menu_hook);
+
+   if (tiling_g.log_domain >= 0)
+     {
         eina_log_domain_unregister(tiling_g.log_domain);
         tiling_g.log_domain = -1;
-    }
+     }
+#define SAFE_FREE(x, freefunc) \
+   if (x) \
+     { \
+        freefunc(x); \
+        x = NULL; \
+     }
+#define FREE_HANDLER(x)            \
+   SAFE_FREE(x, ecore_event_handler_del);
 
-    if (_G.pre_border_assign_hook) {
-        e_border_hook_del(_G.pre_border_assign_hook);
-        _G.pre_border_assign_hook = NULL;
-    }
+   FREE_HANDLER(_G.handler_client_resize);
+   FREE_HANDLER(_G.handler_client_move);
 
-#define FREE_HANDLER(x)              \
-    if (x) {                         \
-        ecore_event_handler_del(x);  \
-        x = NULL;                    \
-    }
-    FREE_HANDLER(_G.handler_border_resize);
-    FREE_HANDLER(_G.handler_border_move);
-    FREE_HANDLER(_G.handler_border_add);
-    FREE_HANDLER(_G.handler_border_remove);
+   FREE_HANDLER(_G.handler_client_iconify);
+   FREE_HANDLER(_G.handler_client_uniconify);
 
-    FREE_HANDLER(_G.handler_border_iconify);
-    FREE_HANDLER(_G.handler_border_uniconify);
-    FREE_HANDLER(_G.handler_border_stick);
-    FREE_HANDLER(_G.handler_border_unstick);
+   FREE_HANDLER(_G.handler_desk_set);
 
-    FREE_HANDLER(_G.handler_desk_show);
-    FREE_HANDLER(_G.handler_desk_before_show);
-    FREE_HANDLER(_G.handler_desk_set);
+   SAFE_FREE(_G.handler_client_resize_begin, e_client_hook_del);
+   SAFE_FREE(_G.handler_client_add, e_client_hook_del);
 #undef FREE_HANDLER
+#undef SAFE_FREE
 
-
-#define ACTION_DEL(act, title, value)                        \
-    if (act) {                                               \
-        e_action_predef_name_del("Tiling", title);           \
-        e_action_del(value);                                 \
-        act = NULL;                                          \
+#define ACTION_DEL(act, title, value)             \
+  if (act) {                                      \
+       e_action_predef_name_del("Tiling", title); \
+       e_action_del(value);                       \
+       act = NULL;                                \
     }
-    ACTION_DEL(_G.act_togglefloat, "Toggle floating", "toggle_floating");
-    ACTION_DEL(_G.act_addstack, "Add a stack", "add_stack");
-    ACTION_DEL(_G.act_removestack, "Remove a stack", "remove_stack");
-    ACTION_DEL(_G.act_tg_stack, "Toggle between rows and columns", "tg_cols_rows");
-    ACTION_DEL(_G.act_swap, "Swap a window with an other", "swap");
+   ACTION_DEL(_G.act_togglefloat, "Toggle floating", "toggle_floating");
+   ACTION_DEL(_G.act_move_up, "Move the focused window up", "move_up");
+   ACTION_DEL(_G.act_move_down, "Move the focused window down", "move_down");
+   ACTION_DEL(_G.act_move_left, "Move the focused window left", "move_left");
+   ACTION_DEL(_G.act_move_right, "Move the focused window right", "move_right");
 
-    ACTION_DEL(_G.act_move, "Move window", "move");
-    ACTION_DEL(_G.act_move_left, "Move window to the left", "move_left");
-    ACTION_DEL(_G.act_move_right, "Move window to the right", "move_right");
-    ACTION_DEL(_G.act_move_up, "Move window up", "move_up");
-    ACTION_DEL(_G.act_move_down, "Move window down", "move_down");
-
-    ACTION_DEL(_G.act_adjusttransitions, "Adjust transitions",
-               "adjust_transitions");
-    ACTION_DEL(_G.act_go, "Focus a particular window", "go");
-
-    ACTION_DEL(_G.act_send_ne, "Send to upper right corner", "send_ne");
-    ACTION_DEL(_G.act_send_nw, "Send to upper left corner", "send_nw");
-    ACTION_DEL(_G.act_send_se, "Send to lower right corner", "send_se");
-    ACTION_DEL(_G.act_send_sw, "Send to lower left corner", "send_sw");
+   ACTION_DEL(_G.act_toggle_split_mode, "Toggle split mode",
+              "toggle_split_mode");
+   ACTION_DEL(_G.act_swap_window, "Swap window", "swap_window");
 #undef ACTION_DEL
 
-    e_configure_registry_item_del("windows/tiling");
-    e_configure_registry_category_del("windows");
+   e_configure_registry_item_del("windows/tiling");
+   e_configure_registry_category_del("windows");
 
-    end_special_input();
+   E_FREE(tiling_g.config);
+   E_CONFIG_DD_FREE(_G.config_edd);
+   E_CONFIG_DD_FREE(_G.vdesk_edd);
 
-    free(tiling_g.config->keyhints);
-    E_FREE(tiling_g.config);
-    E_CONFIG_DD_FREE(_G.config_edd);
-    E_CONFIG_DD_FREE(_G.vdesk_edd);
+   tiling_g.module = NULL;
 
-    tiling_g.module = NULL;
+   eina_hash_free(_G.info_hash);
+   _G.info_hash = NULL;
 
-    eina_hash_free(_G.info_hash);
-    _G.info_hash = NULL;
+   eina_hash_free_cb_set(_G.client_extras, _e_client_extra_unregister_callbacks);
+   eina_hash_free(_G.client_extras);
+   _G.client_extras = NULL;
 
-    eina_hash_free(_G.border_extras);
-    _G.border_extras = NULL;
+   _G.tinfo = NULL;
 
-    _G.tinfo = NULL;
-
-    return 1;
+   return 1;
 }
 
 EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
-    e_config_domain_save("module.tiling", _G.config_edd, tiling_g.config);
+   e_config_domain_save("module.tiling", _G.config_edd, tiling_g.config);
 
-    return true;
+   return true;
 }
+
+/* GADGET STUFF. */
+
+/* Hack to properly save and free the gadget id. */
+static Eina_Stringshare *_current_gad_id = NULL;
+
+static void
+_edje_tiling_icon_set(Evas_Object *o)
+{
+   switch (_G.split_type)
+     {
+      case TILING_SPLIT_HORIZONTAL:
+        edje_object_signal_emit(o, "tiling,mode,horizontal", "e");
+        break;
+
+      case TILING_SPLIT_VERTICAL:
+        edje_object_signal_emit(o, "tiling,mode,vertical", "e");
+        break;
+
+      case TILING_SPLIT_FLOAT:
+        edje_object_signal_emit(o, "tiling,mode,floating", "e");
+        break;
+
+      default:
+        ERR("Unknown split type.");
+     }
+}
+
+static void
+_gadget_icon_set(Instance *inst)
+{
+   _edje_tiling_icon_set(inst->gadget);
+}
+
+static void
+_tiling_cb_menu_configure(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
+{
+   // FIXME here need to be some checks and return ?
+   e_int_config_tiling_module(NULL, NULL);
+}
+
+static void
+_gadget_mouse_down_cb(void *data, Evas *e, Evas_Object *obj EINA_UNUSED, void *event_info)
+{
+   Evas_Event_Mouse_Down *ev = event_info;
+   Instance *inst = data;
+
+   if (ev->button == 1) /* Change on left-click. */
+     {
+        _tiling_split_type_next();
+     }
+   else if (ev->button == 3)
+     {
+        E_Zone *zone;
+        E_Menu *m;
+        E_Menu_Item *mi;
+        int x, y;
+
+        zone = e_util_zone_current_get(e_manager_current_get());
+
+        m = e_menu_new();
+        mi = e_menu_item_new(m);
+        e_menu_item_label_set(mi, _("Settings"));
+        e_util_menu_item_theme_icon_set(mi, "configure");
+        e_menu_item_callback_set(mi, _tiling_cb_menu_configure, NULL);
+
+        m = e_gadcon_client_util_menu_items_append(inst->gcc, m, 0);
+
+        e_gadcon_canvas_zone_geometry_get(inst->gcc->gadcon, &x, &y, NULL, NULL);
+        e_menu_activate_mouse(m, zone, x + ev->output.x, y + ev->output.y,
+                              1, 1, E_MENU_POP_DIRECTION_AUTO, ev->timestamp);
+        evas_event_feed_mouse_up(e, ev->button,
+                                 EVAS_BUTTON_NONE, ev->timestamp, NULL);
+     }
+}
+
+static E_Gadcon_Client *
+_gc_init(E_Gadcon *gc, const char *name, const char *id, const char *style)
+{
+   Evas_Object *o;
+   E_Gadcon_Client *gcc;
+   Instance *inst;
+
+   inst = E_NEW(Instance, 1);
+
+   o = edje_object_add(gc->evas);
+   if (!e_theme_edje_object_set(o, "base/theme/modules/tiling",
+                                "modules/tiling/main"))
+     edje_object_file_set(o, _G.edj_path, "modules/tiling/main");
+   evas_object_show(o);
+
+   gcc = e_gadcon_client_new(gc, name, id, style, o);
+   gcc->data = inst;
+   inst->gcc = gcc;
+   inst->gad_id = _current_gad_id;
+   _current_gad_id = NULL;
+
+   evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN,
+                                  _gadget_mouse_down_cb, inst);
+
+   inst->gadget = o;
+
+   _gadget_icon_set(inst);
+
+   tiling_g.gadget_instances = eina_list_append(tiling_g.gadget_instances, inst);
+
+   return gcc;
+}
+
+static void
+_gc_shutdown(E_Gadcon_Client *gcc)
+{
+   Instance *inst;
+   Evas_Object *o;
+
+   if (!(inst = gcc->data)) return;
+
+   o = inst->gadget;
+
+   evas_object_event_callback_del_full(o, EVAS_CALLBACK_MOUSE_DOWN,
+                                       _gadget_mouse_down_cb, inst);
+
+   if (inst->gadget)
+     evas_object_del(inst->gadget);
+
+   tiling_g.gadget_instances = eina_list_remove(tiling_g.gadget_instances, inst);
+
+   eina_stringshare_del(inst->gad_id);
+
+   E_FREE(inst);
+}
+
+static void
+_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient EINA_UNUSED)
+{
+   e_gadcon_client_aspect_set(gcc, 16, 16);
+   e_gadcon_client_min_size_set(gcc, 16, 16);
+}
+
+static const char *
+_gc_label(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
+{
+   return _("Tiling");
+}
+
+static Evas_Object *
+_gc_icon(const E_Gadcon_Client_Class *client_class EINA_UNUSED, Evas *evas)
+{
+   Evas_Object *o;
+
+   o = edje_object_add(evas);
+   edje_object_file_set(o, _G.edj_path, "icon");
+   return o;
+}
+
+static const char *
+_gc_id_new(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
+{
+   char buf[1024];
+
+   snprintf(buf, sizeof(buf), "%s %d", _("Tiling"), tiling_g.gadget_number);
+
+   tiling_g.gadget_number++;
+
+   return _current_gad_id = eina_stringshare_add(buf);
+}
+
 /* }}} */

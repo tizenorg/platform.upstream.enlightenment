@@ -15,7 +15,6 @@ struct _E_Config_Dialog_Data
    int        use_e_cursor;
    int        cursor_size;
 
-   Eina_List *disable_list;
    struct
    {
       Evas_Object *idle_cursor;
@@ -28,7 +27,7 @@ struct _E_Config_Dialog_Data
 };
 
 E_Config_Dialog *
-e_int_config_mouse(E_Container *con, const char *params __UNUSED__)
+e_int_config_mouse(E_Comp *comp, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -44,7 +43,7 @@ e_int_config_mouse(E_Container *con, const char *params __UNUSED__)
    v->basic.create_widgets = _basic_create_widgets;
    v->basic.check_changed = _basic_check_changed;
 
-   cfd = e_config_dialog_new(con, _("Mouse Settings"), "E",
+   cfd = e_config_dialog_new(comp, _("Mouse Settings"), "E",
 			     "keyboard_and_mouse/mouse_settings",
 			     "preferences-desktop-mouse", 0, v, NULL);
    return cfd;
@@ -99,8 +98,8 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 static int
 _basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 {
-   Eina_List *l;
-   E_Manager *man;
+   const Eina_List *l;
+   E_Comp *comp;
 
    e_config->use_e_cursor = cfdata->use_e_cursor;
    e_config->show_cursor = cfdata->show_cursor;
@@ -114,15 +113,12 @@ _basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
    e_config_save_queue();
 
    /* Apply the above settings */
-   EINA_LIST_FOREACH(e_manager_list(), l, man)
+   EINA_LIST_FOREACH(e_comp_list(), l, comp)
      {
-        if (man->pointer && !e_config->show_cursor)
-          {
-             e_pointer_hide(man->pointer);
-             continue;
-          }
-        if (man->pointer) e_object_del(E_OBJECT(man->pointer));
-        man->pointer = e_pointer_window_new(man->root, 1);
+        if ((comp->comp_type == E_PIXMAP_TYPE_X) && (!e_config->show_cursor))
+          e_pointer_hide(comp->pointer);
+        else
+          e_pointers_size_set(e_config->cursor_size);
      }
 
    e_mouse_update();
@@ -139,23 +135,10 @@ _use_e_cursor_cb_change(void *data, Evas_Object *obj __UNUSED__)
    e_widget_disabled_set(cfdata->gui.idle_cursor, disabled);
 }
 
-static void
-_show_cursor_cb_change(void *data, Evas_Object *obj __UNUSED__)
-{
-   E_Config_Dialog_Data *cfdata = data;
-   const Eina_List *l;
-   Evas_Object *o;
-
-   EINA_LIST_FOREACH(cfdata->disable_list, l, o)
-     e_widget_disabled_set(o, !cfdata->show_cursor);
-
-   _use_e_cursor_cb_change(cfdata, NULL);
-}
-
 static Evas_Object *
 _basic_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
-   Evas_Object *otb, *ol, *of, *ob;
+   Evas_Object *otb, *ol, *of, *ob, *oc;
    E_Radio_Group *rg;
 
    otb = e_widget_toolbook_add(evas, (24 * e_scale), (24 * e_scale));
@@ -163,36 +146,35 @@ _basic_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dial
    /* Cursor */
    ol = e_widget_list_add(evas, 0, 0);
 
-   ob = e_widget_check_add(evas, _("Show Cursor"), &(cfdata->show_cursor));
-   e_widget_on_change_hook_set(ob, _show_cursor_cb_change, cfdata);
-   e_widget_list_object_append(ol, ob, 1, 0, 0.5);
+   oc = e_widget_check_add(evas, _("Show Cursor"), &(cfdata->show_cursor));
+   e_widget_list_object_append(ol, oc, 1, 0, 0.5);
 
    of = e_widget_framelist_add(evas, _("Settings"), 0);
    rg = e_widget_radio_group_new(&cfdata->use_e_cursor);
-   cfdata->disable_list = eina_list_append(cfdata->disable_list, of);
 
    ob = e_widget_label_add(evas, _("Size"));
    e_widget_framelist_object_append(of, ob);
-   cfdata->disable_list = eina_list_append(cfdata->disable_list, ob);
+   e_widget_check_widget_disable_on_unchecked_add(oc, ob);
 
    ob = e_widget_slider_add(evas, 1, 0, _("%1.0f pixels"),
                             8, 128, 4, 0, NULL, &(cfdata->cursor_size), 100);
    e_widget_framelist_object_append(of, ob);
-   cfdata->disable_list = eina_list_append(cfdata->disable_list, ob);
+   e_widget_check_widget_disable_on_unchecked_add(oc, ob);
 
    ob = e_widget_label_add(evas, _("Theme"));
    e_widget_framelist_object_append(of, ob);
-   cfdata->disable_list = eina_list_append(cfdata->disable_list, ob);
+   e_widget_check_widget_disable_on_unchecked_add(oc, ob);
 
    ob = e_widget_radio_add(evas, _("X"), 0, rg);
    e_widget_on_change_hook_set(ob, _use_e_cursor_cb_change, cfdata);
    e_widget_framelist_object_append(of, ob);
-   cfdata->disable_list = eina_list_append(cfdata->disable_list, ob);
+   e_widget_check_widget_disable_on_unchecked_add(oc, ob);
 
    ob = e_widget_radio_add(evas, _("Enlightenment"), 1, rg);
    e_widget_on_change_hook_set(ob, _use_e_cursor_cb_change, cfdata);
    e_widget_framelist_object_append(of, ob);
-   cfdata->disable_list = eina_list_append(cfdata->disable_list, ob);
+   e_widget_check_widget_disable_on_unchecked_add(oc, ob);
+   e_widget_on_disable_hook_set(ob, _use_e_cursor_cb_change, cfdata);
 
    ob = e_widget_check_add(evas, _("Idle effects"),
                            &(cfdata->idle_cursor));

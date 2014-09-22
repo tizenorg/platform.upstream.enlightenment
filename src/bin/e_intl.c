@@ -345,6 +345,8 @@ e_intl_input_method_set(const char *imc_path)
 
                   if (E_EXE_IS_VALID(imc->e_im_exec))
                     {
+                       // if you see valgrind complain about memory
+                       // definitely lost here... it's wrong.
                        _e_intl_input_method_exec = ecore_exe_run(imc->e_im_exec, NULL);
                        ecore_exe_tag_set(_e_intl_input_method_exec, "E/im_exec");
 
@@ -414,11 +416,8 @@ _e_intl_cb_exit(void *data __UNUSED__, int type __UNUSED__, void *event)
 
    ev = event;
    if (!ev->exe) return ECORE_CALLBACK_PASS_ON;
-
-   if (!(ecore_exe_tag_get(ev->exe) &&
-         (!strcmp(ecore_exe_tag_get(ev->exe), "E/im_exec")))) return 1;
-
-   _e_intl_input_method_exec = NULL;
+   if (ev->exe == _e_intl_input_method_exec)
+     _e_intl_input_method_exec = NULL;
    return ECORE_CALLBACK_PASS_ON;
 }
 
@@ -688,14 +687,14 @@ e_intl_locale_parts_get(const char *locale)
                   codeset[tmp_idx] = 0;
                   tmp_idx = 0;
                }
-             else if (tmp_idx < 32)
+             else if (tmp_idx < 31)
                codeset[tmp_idx++] = locale_char;
              else
                return NULL;
              break;
 
            case 3: /* Gathering modifier */
-             if (tmp_idx < 32)
+             if (tmp_idx < 31)
                modifier[tmp_idx++] = locale_char;
              else
                return NULL;
@@ -1054,3 +1053,4 @@ _e_intl_imc_dir_scan(const char *dir)
      }
    return imcs;
 }
+

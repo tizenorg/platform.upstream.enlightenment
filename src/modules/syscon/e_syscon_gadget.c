@@ -74,7 +74,7 @@ _cb_mouse_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void
    e_menu_item_toggle_set(mi, syscon_config->menu);
    e_menu_item_callback_set(mi, _cb_menu_change, inst);
    m = e_gadcon_client_util_menu_items_append(inst->gcc, m, 0);
-   ecore_x_pointer_xy_get(zone->container->win, &x, &y);
+   ecore_evas_pointer_xy_get(zone->comp->ee, &x, &y);
    e_menu_activate_mouse(m, zone, x, y, 1, 1,
                          E_MENU_POP_DIRECTION_AUTO, ev->timestamp);
    evas_event_feed_mouse_up(inst->gcc->gadcon->evas, ev->button,
@@ -104,7 +104,7 @@ _gc_init(E_Gadcon *gc, const char *name, const char *id, const char *style)
    e_gadcon_client_util_menu_attach(inst->gcc);
    evas_object_event_callback_add(inst->o_base, EVAS_CALLBACK_MOUSE_DOWN, _cb_mouse_down, inst);
 
-   edje_object_signal_callback_add(inst->o_base, "e,action,shutdown,show", "",
+   edje_object_signal_callback_add(inst->o_base, "e,action,shutdown,show", "e",
                                    _cb_shutdown_show, inst);
 
    instances = eina_list_append(instances, inst);
@@ -221,30 +221,30 @@ _cb_shutdown_show(void *data, Evas_Object *obj __UNUSED__, const char *emission 
              break;
           }
         e_gadcon_locked_set(inst->gcc->gadcon, EINA_TRUE);
-        e_menu_activate_mouse(inst->menu, zone, x, y, w, h, dir,
-                              ecore_x_current_time_get());
+        e_menu_activate_mouse(inst->menu, zone, x, y, w, h, dir, 0);
      }
 }
 
 static void
-_cb_menu_post(void *data, E_Menu *m __UNUSED__)
+_cb_menu_post(void *data, E_Menu *m)
 {
-   Instance *inst;
+   Instance *inst = data;
+   Eina_Bool fin;
 
-   if (!(inst = data)) return;
-   if (!inst->menu) return;
-   e_gadcon_locked_set(inst->gcc->gadcon, EINA_FALSE);
-   e_object_del(E_OBJECT(inst->menu));
+   if (stopping || (!inst->menu)) return;
+   fin = m == inst->menu;
+   e_object_del(E_OBJECT(m));
+   if (!fin) return;
+   e_gadcon_locked_set(inst->gcc->gadcon, 0);
    inst->menu = NULL;
 }
 
 static void
-_cb_menu_sel(void *data, E_Menu *m, E_Menu_Item *mi __UNUSED__)
+_cb_menu_sel(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
 {
    E_Config_Syscon_Action *sca;
    E_Action *act;
 
-   e_menu_deactivate(m);
    if (!(sca = data)) return;
    if (!(act = e_action_find(sca->action))) return;
    act->func.go(NULL, sca->params);

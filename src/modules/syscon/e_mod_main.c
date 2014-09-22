@@ -34,7 +34,7 @@ e_modapi_init(E_Module *m)
    maug = e_int_menus_menu_augmentation_add_sorted
        ("main/8", _("System"), _e_mod_menu_add, NULL, NULL, NULL);
    e_configure_registry_category_add("advanced", 80, _("Advanced"), NULL, "preferences-advanced");
-   e_configure_registry_item_add("advanced/syscon", 10, _("Syscon"), NULL, "system-shutdown", e_int_config_syscon);
+   e_configure_registry_item_add("advanced/syscon", 10, _("System Controls"), NULL, "system-shutdown", e_int_config_syscon);
    e_syscon_gadget_init(m);
    e_module_delayed_set(m, 1);
    return m;
@@ -84,10 +84,10 @@ _e_mod_action_syscon_cb(E_Object *obj, const char *params)
      {
         if (obj->type == E_MANAGER_TYPE)
           zone = e_util_zone_current_get((E_Manager *)obj);
-        else if (obj->type == E_CONTAINER_TYPE)
-          zone = e_util_zone_current_get(((E_Container *)obj)->manager);
+        else if (obj->type == E_COMP_TYPE)
+          zone = e_zone_current_get((E_Comp *)obj);
         else if (obj->type == E_ZONE_TYPE)
-          zone = e_util_zone_current_get(((E_Zone *)obj)->container->manager);
+          zone = e_util_zone_current_get(((E_Zone *)obj)->comp->man);
         else
           zone = e_util_zone_current_get(e_manager_current_get());
      }

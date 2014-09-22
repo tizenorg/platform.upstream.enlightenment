@@ -91,7 +91,7 @@ _gc_init(E_Gadcon *gc, const char *name, const char *id, const char *style)
    inst->gcc = gcc;
    inst->o_temp = o;
    inst->module = temperature_config->module;
-   inst->have_temp = -1;
+   inst->have_temp = EINA_FALSE;
 #ifdef HAVE_EEZE
    if (inst->backend == TEMPGET)
      {
@@ -321,7 +321,7 @@ temperature_face_update_config(Config_Face *inst)
 	if (!inst->tempget_exe) 
 	  {
 	     snprintf(buf, sizeof(buf),
-		      "%s/%s/tempget %i \"%s\" %i", 
+		      "exec %s/%s/tempget %i \"%s\" %i", 
 		      e_module_dir_get(temperature_config->module), MODULE_ARCH, 
 		      inst->sensor_type,
 		      (inst->sensor_name ? inst->sensor_name : "(null)"),
@@ -363,48 +363,44 @@ temperature_face_update_config(Config_Face *inst)
 }
 
 Eina_List *
-temperature_get_bus_files(const char* bus)
+temperature_get_bus_files(const char *bus)
 {
-   Eina_List *result, *therms;
+   Eina_List *result;
+   Eina_List *therms;
    char path[PATH_MAX];
    char busdir[PATH_MAX];
+   char *name;
 
    result = NULL;
-   if (result)
+
+   snprintf(busdir, sizeof(busdir), "/sys/bus/%s/devices", bus);
+   /* Look through all the devices for the given bus. */
+   therms = ecore_file_ls(busdir);
+
+   EINA_LIST_FREE(therms, name)
      {
-	snprintf(busdir, sizeof(busdir), "/sys/bus/%s/devices", bus);
-	/* Look through all the devices for the given bus. */
-	therms = ecore_file_ls(busdir);
-	if (therms)
-	  {
-	     char *name;
+        Eina_List *files;
+        char *file;
 
-	     EINA_LIST_FREE(therms, name)
-	       {
-		  Eina_List *files;
-		  char *file;
+        /* Search each device for temp*_input, these should be
+         * temperature devices. */
+        snprintf(path, sizeof(path), "%s/%s", busdir, name);
+        files = ecore_file_ls(path);
+        EINA_LIST_FREE(files, file)
+          {
+             if ((!strncmp("temp", file, 4)) &&
+                 (!strcmp("_input", &file[strlen(file) - 6])))
+               {
+                  char *f;
 
-		  /* Search each device for temp*_input, these should be 
-		   * temperature devices. */
-		  snprintf(path, sizeof(path), "%s/%s", busdir, name);
-		  files = ecore_file_ls(path);
-		  EINA_LIST_FREE(files, file)
-		    {
-		       if ((!strncmp("temp", file, 4)) && 
-			   (!strcmp("_input", &file[strlen(file) - 6])))
-			 {
-			    char *f;
-
-			    snprintf(path, sizeof(path),
-				     "%s/%s/%s", busdir, name, file);
-			    f = strdup(path);
-			    if (f) result = eina_list_append(result, f);
-			 }
-		       free(file);
-		    }
-		  free(name);
-	       }
-	  }
+                  snprintf(path, sizeof(path),
+                           "%s/%s/%s", busdir, name, file);
+                  f = strdup(path);
+                  if (f) result = eina_list_append(result, f);
+               }
+             free(file);
+          }
+        free(name);
      }
    return result;
 }
@@ -445,7 +441,7 @@ e_modapi_init(E_Module *m)
    temperature_config = e_config_domain_load("module.temperature", conf_edd);
    if (!temperature_config)
      temperature_config = E_NEW(Config, 1);
-   else
+   else if (temperature_config->faces)
      eina_hash_foreach(temperature_config->faces, _temperature_face_id_max, &uuid);
    temperature_config->module = m;
 
@@ -457,7 +453,8 @@ EAPI int
 e_modapi_shutdown(E_Module *m __UNUSED__)
 {
    e_gadcon_provider_unregister(&_gadcon_class);
-   eina_hash_foreach(temperature_config->faces, _temperature_face_shutdown, NULL);
+   if (temperature_config->faces)
+     eina_hash_foreach(temperature_config->faces, _temperature_face_shutdown, NULL);
    eina_hash_free(temperature_config->faces);
    free(temperature_config);
    temperature_config = NULL;

@@ -1,10 +1,10 @@
 #include "e.h"
 
 static Ecore_Con_Url *url_up = NULL;
-static Eina_List     *handlers = NULL;
-static Ecore_Timer   *update_timer = NULL;
-static E_Dialog      *dialog = NULL;
-static char          *machid = NULL;
+static Eina_List *handlers = NULL;
+static Ecore_Timer *update_timer = NULL;
+static E_Dialog *dialog = NULL;
+static char *machid = NULL;
 
 static void
 _update_done(void)
@@ -60,17 +60,11 @@ _never_tell_me_cb(void *data __UNUSED__, E_Dialog *dia __UNUSED__)
 static void
 _new_version(const char *ver)
 {
-   E_Manager *man;
-   E_Container *con;
    char text[2048];
 
    if (dialog) return;
-   man = e_manager_current_get();
-   if (!man) return;
-   con = e_container_current_get(man);
-   if (!con) return;
 
-   dialog = e_dialog_new(con, "E", "_update_available");
+   dialog = e_dialog_new(NULL, "E", "_update_available");
 
    e_object_del_attach_func_set(E_OBJECT(dialog), _delete_cb);
    e_dialog_button_add(dialog, _("OK"), NULL,
@@ -251,13 +245,13 @@ e_update_init(void)
    if (ecore_con_url_init())
      {
         handlers = eina_list_append
-          (handlers, ecore_event_handler_add
+            (handlers, ecore_event_handler_add
               (ECORE_CON_EVENT_URL_DATA, _upload_data_cb, NULL));
         handlers = eina_list_append
-          (handlers, ecore_event_handler_add
+            (handlers, ecore_event_handler_add
               (ECORE_CON_EVENT_URL_PROGRESS, _upload_progress_cb, NULL));
         handlers = eina_list_append
-          (handlers, ecore_event_handler_add
+            (handlers, ecore_event_handler_add
               (ECORE_CON_EVENT_URL_COMPLETE, _upload_complete_cb, NULL));
         if (e_config->update.check)
           {
@@ -292,3 +286,4 @@ e_update_shutdown(void)
      }
    return 1;
 }
+

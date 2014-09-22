@@ -545,15 +545,15 @@ _e_fm_main_eeze_volume_mount(E_Volume *v)
 
    if (v->fstype)
      {
-        if ((!strcmp(v->fstype, "vfat")) ||
+        if ((!strstr(v->fstype, "fat")) ||
             (!strcmp(v->fstype, "ntfs")) ||
             (!strcmp(v->fstype, "iso9660")) ||
             (!strcmp(v->fstype, "jfs")))
           {
-             opts |= EEZE_DISK_MOUNTOPT_UTF8;
+             opts |= EEZE_DISK_MOUNTOPT_UTF8 | EEZE_DISK_MOUNTOPT_UID;
           }
      }
-   opts |= EEZE_DISK_MOUNTOPT_UID | EEZE_DISK_MOUNTOPT_NOSUID | EEZE_DISK_MOUNTOPT_NODEV | EEZE_DISK_MOUNTOPT_NOEXEC;
+   opts |= EEZE_DISK_MOUNTOPT_NOSUID | EEZE_DISK_MOUNTOPT_NODEV | EEZE_DISK_MOUNTOPT_NOEXEC;
 
    _e_fm_main_eeze_mount_point_set(v);
    if (!v->mount_point) goto error;
@@ -668,6 +668,7 @@ _scanner_run(void)
 static Eina_Bool
 _scanner_con(void *data __UNUSED__, int type __UNUSED__, Ecore_Con_Event_Server_Del *ev __UNUSED__)
 {
+   _e_fm_main_catch(EFM_MODE_USING_EEZE_MOUNT);
    INF("Scanner connected");
    es_con = eet_connection_new(_scanner_read, _scanner_write, NULL);
    return ECORE_CALLBACK_RENEW;

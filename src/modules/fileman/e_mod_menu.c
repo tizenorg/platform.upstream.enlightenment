@@ -27,22 +27,23 @@ _e_mod_menu_gtk_cb(void           *data,
    if (fm && ((fileman_config->view.open_dirs_in_place && evas_object_data_get(fm, "page_is_window")) ||
        (fileman_config->view.desktop_navigation && evas_object_data_get(fm, "page_is_zone"))))
      e_fm2_path_set(fm, NULL, data);
-   else if (m->zone) e_fwin_new(m->zone->container, NULL, data);
+   else if (m->zone) e_fwin_new(m->zone->comp, NULL, data);
 }
 
 static void
 _e_mod_menu_virtual_cb(void           *data,
                        E_Menu         *m,
-                       E_Menu_Item *mi __UNUSED__)
+                       E_Menu_Item *mi)
 {
    Evas_Object *fm;
+   Eina_Stringshare *path = e_object_data_get(E_OBJECT(mi));
 
    m = _e_mod_menu_top_get(m);
    fm = e_object_data_get(E_OBJECT(m));
    if (fm && ((fileman_config->view.open_dirs_in_place && evas_object_data_get(fm, "page_is_window")) ||
        (fileman_config->view.desktop_navigation && evas_object_data_get(fm, "page_is_zone"))))
-     e_fm2_path_set(fm, data, "/");
-   else if (m->zone) e_fwin_new(m->zone->container, data, "/");
+     e_fm2_path_set(fm, data, path ?: "/");
+   else if (m->zone) e_fwin_new(m->zone->comp, data, path ?: "/");
 }
 
 static void
@@ -61,7 +62,7 @@ _e_mod_menu_volume_cb(void           *data,
            (fileman_config->view.desktop_navigation && evas_object_data_get(fm, "page_is_zone"))))
          e_fm2_path_set(fm, NULL, vol->mount_point);
         else if (m->zone)
-          e_fwin_new(m->zone->container, NULL, vol->mount_point);
+          e_fwin_new(m->zone->comp, NULL, vol->mount_point);
      }
    else
      {
@@ -72,7 +73,7 @@ _e_mod_menu_volume_cb(void           *data,
             (fileman_config->view.desktop_navigation && evas_object_data_get(fm, "page_is_zone"))))
           e_fm2_path_set(fm, buf, "/");
         else if (m->zone)
-          e_fwin_new(m->zone->container, buf, "/");
+          e_fwin_new(m->zone->comp, buf, "/");
      }
 }
 
@@ -93,7 +94,7 @@ _e_mod_menu_populate_cb(void      *data,
        (fileman_config->view.desktop_navigation && evas_object_data_get(fm, "page_is_zone"))))
      e_fm2_path_set(fm, data, path ?: "/");
    else if (m->zone)
-     e_fwin_new(m->zone->container, data, path ?: "/");
+     e_fwin_new(m->zone->comp, data, path ?: "/");
 }
 
 static void
@@ -223,7 +224,7 @@ _e_mod_menu_populate_err(void *data, Eio_File *handler __UNUSED__, int error __U
 static int
 _e_mod_menu_populate_sort(E_Menu_Item *a, E_Menu_Item *b)
 {
-   return strcmp(a->label, b->label);
+   return strcasecmp(a->label, b->label);
 }
 
 static void
@@ -234,12 +235,17 @@ _e_mod_menu_populate_done(void *data, Eio_File *handler __UNUSED__)
    if (!m->items)
      {
         E_Menu_Item *mi;
+        Eina_Stringshare *dev, *path;
 
         mi = e_menu_item_new(m);
         e_menu_item_label_set(mi, _("No listable items"));
-        e_menu_item_disabled_set(mi, 1);
-        /* avoid crash during cleanup_cb later */
-        eina_stringshare_ref(e_object_data_get(data));
+        dev = e_object_data_get(data);
+        path = e_object_data_get(E_OBJECT(m->parent_item));
+        e_object_data_set(E_OBJECT(mi), eina_stringshare_ref(path));
+        if (dev && (dev[0] == '/'))
+          e_menu_item_callback_set(mi, _e_mod_menu_populate_cb, dev);
+        else
+          e_menu_item_callback_set(mi, _e_mod_menu_virtual_cb, dev);
      }
    else
      m->items = eina_list_sort(m->items, 0, (Eina_Compare_Cb)_e_mod_menu_populate_sort);
@@ -476,6 +482,13 @@ _e_mod_menu_generate(void *data, E_Menu *m)
    e_menu_pre_activate_callback_set(m, NULL, NULL);
 }
 
+static void
+_e_mod_menu_navigate_cb(void *d EINA_UNUSED, E_Menu *m, E_Menu_Item *mi EINA_UNUSED)
+{
+   if (m->zone)
+     e_fwin_new(m->zone->comp, "~/", "/");
+}
+
 /* returns submenu so we can add Go to Parent */
 E_Menu *
 e_mod_menu_add(E_Menu *m, const char *path)
@@ -487,6 +500,7 @@ e_mod_menu_add(E_Menu *m, const char *path)
    mi = e_menu_item_new(m);
    e_menu_item_label_set(mi, _("Navigate..."));
    e_util_menu_item_theme_icon_set(mi, "system-file-manager");
+   e_menu_item_callback_set(mi, _e_mod_menu_navigate_cb, NULL);
    sub = e_menu_new();
    e_menu_item_submenu_set(mi, sub);
    e_object_unref(E_OBJECT(sub)); //allow deletion whenever main menu deletes

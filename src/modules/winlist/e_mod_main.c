@@ -3,7 +3,7 @@
 
 /* actual module specifics */
 static void _e_mod_action_winlist_cb(E_Object *obj, const char *params);
-static void _e_mod_action_winlist_mouse_cb(E_Object *obj, const char *params, Ecore_Event_Mouse_Button *ev);
+static void _e_mod_action_winlist_mouse_cb(E_Object *obj, const char *params, E_Binding_Event_Mouse_Button *ev);
 static void _e_mod_action_winlist_key_cb(E_Object *obj, const char *params, Ecore_Event_Key *ev);
 static void _e_mod_action_winlist_edge_cb(E_Object *obj, const char *params, E_Event_Zone_Edge *ev);
 static void _e_mod_action_winlist_signal_cb(E_Object *obj, const char *params, const char *sig, const char *src);
@@ -119,10 +119,10 @@ _e_mod_action_winlist_cb_helper(E_Object *obj, const char *params, int modifiers
      {
         if (obj->type == E_MANAGER_TYPE)
           zone = e_util_zone_current_get((E_Manager *)obj);
-        else if (obj->type == E_CONTAINER_TYPE)
-          zone = e_util_zone_current_get(((E_Container *)obj)->manager);
+        else if (obj->type == E_COMP_TYPE)
+          zone = e_util_zone_current_get(((E_Comp *)obj)->man);
         else if (obj->type == E_ZONE_TYPE)
-          zone = e_util_zone_current_get(((E_Zone *)obj)->container->manager);
+          zone = e_util_zone_current_get(((E_Zone *)obj)->comp->man);
         else
           zone = e_util_zone_current_get(e_manager_current_get());
      }
@@ -159,7 +159,6 @@ _e_mod_action_winlist_cb_helper(E_Object *obj, const char *params, int modifiers
    if (!ok)
      {
         if (!type) return;
-        if (!direction) return;
         e_winlist_modifiers_set(modifiers, type);
         return;
      }
@@ -192,9 +191,9 @@ _e_mod_action_winlist_cb(E_Object *obj, const char *params)
 }
 
 static void
-_e_mod_action_winlist_mouse_cb(E_Object *obj, const char *params, Ecore_Event_Mouse_Button *ev)
+_e_mod_action_winlist_mouse_cb(E_Object *obj, const char *params, E_Binding_Event_Mouse_Button *ev)
 {
-   _e_mod_action_winlist_cb_helper(obj, params, ev->modifiers, E_WINLIST_ACTIVATE_TYPE_MOUSE);
+   _e_mod_action_winlist_cb_helper(obj, params, e_bindings_modifiers_to_ecore_convert(ev->modifiers), E_WINLIST_ACTIVATE_TYPE_MOUSE);
 }
 
 static void

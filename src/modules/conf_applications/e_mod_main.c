@@ -86,6 +86,7 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    e_configure_registry_item_del("applications/default_applications");
    e_configure_registry_item_del("applications/desktop_environments");
    e_configure_registry_category_del("applications");
+
    conf_module = NULL;
    return 1;
 }

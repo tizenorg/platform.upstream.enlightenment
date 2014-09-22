@@ -29,6 +29,7 @@ e_modapi_init(E_Module *m)
 
    conf_module = m;
    e_module_delayed_set(m, 1);
+
    return m;
 }
 
@@ -47,6 +48,7 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
      e_object_del(E_OBJECT(cfd));
    e_configure_registry_item_del("extensions/shelves");
    e_configure_registry_category_del("extensions");
+
    conf_module = NULL;
    return 1;
 }
@@ -61,7 +63,7 @@ e_modapi_save(E_Module *m __UNUSED__)
 static void 
 _e_mod_run_cb(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
 {
-   e_configure_registry_call("extensions/shelves", m->zone->container, NULL);
+   e_configure_registry_call("extensions/shelves", m->zone->comp, NULL);
 }
 
 /* menu item add hook */

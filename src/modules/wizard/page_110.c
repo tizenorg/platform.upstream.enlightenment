@@ -1,7 +1,7 @@
 /* Setup if we need connman? */
 #include "e_wizard.h"
 #ifdef HAVE_ECONNMAN
-#include <E_DBus.h>
+#include <Eldbus.h>
 #endif
 
 static void
@@ -38,8 +38,8 @@ _recommend_connman(E_Wizard_Page *pg)
    e_wizard_button_next_enable_set(1);
 }
 
-#ifdef HAVE_ECONNMAN
-static DBusPendingCall *pending_connman;
+static Eldbus_Connection *conn;
+static Eldbus_Pending *pending_connman;
 static Ecore_Timer *connman_timeout = NULL;
 
 static Eina_Bool
@@ -63,20 +63,24 @@ _connman_fail(void *data)
      }
 
    e_config_save_queue();
-   if (pending_connman)
-     {
-        dbus_pending_call_cancel(pending_connman);
-        pending_connman = NULL;
-     }
+
    connman_timeout = NULL;
    _recommend_connman(pg);
    return EINA_FALSE;
 }
 
-static void
-_check_connman_owner(void *data, DBusMessage *msg,
-                     DBusError *err __UNUSED__)
+static Eina_Bool
+_page_next_call(void *data EINA_UNUSED)
 {
+   e_wizard_next();
+   return ECORE_CALLBACK_CANCEL;
+}
+
+static void
+_check_connman_owner(void *data, const Eldbus_Message *msg,
+                     Eldbus_Pending *pending __UNUSED__)
+{
+   const char *id;
    pending_connman = NULL;
 
    if (connman_timeout)
@@ -85,17 +89,24 @@ _check_connman_owner(void *data, DBusMessage *msg,
         connman_timeout = NULL;
      }
 
-   if (!msg)
-     {
-        _connman_fail(data);
-        return;
-     }
+   if (eldbus_message_error_get(msg, NULL, NULL))
+     goto fail;
+
+   if (!eldbus_message_arguments_get(msg, "s", &id))
+     goto fail;
+
+   if (id[0] != ':')
+     goto fail;
 
    e_wizard_button_next_enable_set(1);
-   e_wizard_next();
+   ecore_idler_add(_page_next_call, NULL);
+   return;
+   
+fail:
+   _connman_fail(data);
 }
-#endif
 /*
+
 EAPI int
 wizard_page_init(E_Wizard_Page *pg __UNUSED__, Eina_Bool *need_xdg_desktops __UNUSED__, Eina_Bool *need_xdg_icons __UNUSED__)
 {
@@ -111,33 +122,29 @@ wizard_page_shutdown(E_Wizard_Page *pg __UNUSED__)
 EAPI int
 wizard_page_show(E_Wizard_Page *pg)
 {
-   int have_connman = 0;
-#ifdef HAVE_ECONNMAN
-   E_DBus_Connection *c;
+   Eina_Bool have_connman = EINA_FALSE;
 
-   c = e_dbus_bus_get(DBUS_BUS_SYSTEM);
-   if (c)
+#ifdef HAVE_ECONNMAN
+   eldbus_init();
+   conn = eldbus_connection_get(ELDBUS_CONNECTION_TYPE_SYSTEM);
+#endif
+   if (conn)
      {
         if (pending_connman)
-          dbus_pending_call_cancel(pending_connman);
+          eldbus_pending_cancel(pending_connman);
 
-        pending_connman = e_dbus_name_has_owner(c, "net.connman",
-                                                _check_connman_owner,
-                                                pg);
-        if (pending_connman)
-          {
-             if (connman_timeout) ecore_timer_del(connman_timeout);
-             connman_timeout = ecore_timer_add(2.0, _connman_fail, pg);
-             have_connman = 1;
-             e_wizard_button_next_enable_set(0);
-          }
+        pending_connman = eldbus_name_owner_get(conn, "net.connman",
+                                               _check_connman_owner, pg);
+        if (connman_timeout)
+          ecore_timer_del(connman_timeout);
+        connman_timeout = ecore_timer_add(2.0, _connman_fail, pg);
+        have_connman = EINA_TRUE;
+        e_wizard_button_next_enable_set(0);
      }
-#endif
    if (!have_connman)
      {
         E_Config_Module *em;
         Eina_List *l;
-
         EINA_LIST_FOREACH(e_config->modules, l, em)
           {
              if (!em->name) continue;
@@ -160,10 +167,9 @@ wizard_page_show(E_Wizard_Page *pg)
 EAPI int
 wizard_page_hide(E_Wizard_Page *pg __UNUSED__)
 {
-#ifdef HAVE_ECONNMAN
    if (pending_connman)
      {
-        dbus_pending_call_cancel(pending_connman);
+        eldbus_pending_cancel(pending_connman);
         pending_connman = NULL;
      }
    if (connman_timeout)
@@ -171,6 +177,12 @@ wizard_page_hide(E_Wizard_Page *pg __UNUSED__)
         ecore_timer_del(connman_timeout);
         connman_timeout = NULL;
      }
+   if (conn)
+     eldbus_connection_unref(conn);
+   conn = NULL;
+
+#ifdef HAVE_ECONNMAN
+   eldbus_shutdown();
 #endif
 
    return 1;

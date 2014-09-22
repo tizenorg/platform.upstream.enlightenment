@@ -74,6 +74,7 @@ _basic_apply(E_Config_Dialog *dialog, E_Config_Dialog_Data *cfdata)
         conf->default_gc_id = eina_stringshare_add(id);
 
         conf->desktop_notification = ctxt->desktop_notification;
+        conf->disable_pulse = ctxt->disable_pulse;
      }
 
    return 1;
@@ -120,6 +121,10 @@ _basic_create_general(E_Config_Dialog *dialog, Evas *evas, E_Config_Dialog_Data 
    e_widget_disabled_set(chk, EINA_TRUE);
 #endif
    e_widget_list_object_append(cfdata->ui.list, chk, 1, 1, 0.5);
+
+   chk = e_widget_check_add(evas, _("Disable PulseAudio"), &ctxt->disable_pulse);
+   e_widget_check_checked_set(chk, ctxt->conf->disable_pulse);
+   e_widget_list_object_append(cfdata->ui.list, chk, 1, 1, 0.5);
 }
 
 static void
@@ -132,8 +137,8 @@ cb_mixer_app_del(E_Dialog *dialog __UNUSED__, void *data)
 static void
 cb_mixer_call(void *data, void *data2 __UNUSED__)
 {
+   Eina_List *l;
    E_Mixer_Module_Context *ctxt = data;
-   E_Container *con;
 
    if (ctxt->mixer_dialog)
      {
@@ -141,8 +146,23 @@ cb_mixer_call(void *data, void *data2 __UNUSED__)
         return;
      }
 
-   con = e_container_current_get(e_manager_current_get());
-   ctxt->mixer_dialog = e_mixer_app_dialog_new(con, cb_mixer_app_del, ctxt);
+   ctxt->mixer_dialog = e_mixer_app_dialog_new(NULL, cb_mixer_app_del, ctxt);
+
+   for (l = ctxt->instances; l; l = l->next)
+     {
+        E_Mixer_Instance *inst;
+        E_Mixer_Gadget_Config *conf;
+
+        inst = l->data;
+        conf = inst->conf;
+
+        if (conf)
+          {
+             e_mixer_app_dialog_select(ctxt->mixer_dialog, conf->card, conf->channel_name);
+             break;
+          }
+
+     }
 }
 
 static void
@@ -168,7 +188,7 @@ _basic_create(E_Config_Dialog *dialog, Evas *evas, E_Config_Dialog_Data *cfdata)
 }
 
 E_Config_Dialog *
-e_mixer_config_module_dialog_new(E_Container *con, E_Mixer_Module_Context *ctxt)
+e_mixer_config_module_dialog_new(E_Comp *comp, E_Mixer_Module_Context *ctxt)
 {
    E_Config_Dialog *dialog;
    E_Config_Dialog_View *view;
@@ -185,7 +205,7 @@ e_mixer_config_module_dialog_new(E_Container *con, E_Mixer_Module_Context *ctxt)
    view->basic.create_widgets = _basic_create;
    view->basic.apply_cfdata = _basic_apply;
 
-   dialog = e_config_dialog_new(con, _("Mixer Module Settings"),
+   dialog = e_config_dialog_new(comp, _("Mixer Module Settings"),
                                 _e_mixer_Name, "extensions/mixer",
                                 e_mixer_theme_path(), 0, view, ctxt);
 

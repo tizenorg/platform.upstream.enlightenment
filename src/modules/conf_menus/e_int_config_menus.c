@@ -3,7 +3,7 @@
 /* local structures */
 struct _E_Config_Dialog_Data 
 {
-   int show_favs, show_apps;
+   int show_favs, show_apps, hide_icons;
    int show_name, show_generic, show_comment;
    int menu_gadcon_client_toplevel;
    double scroll_speed, fast_mouse_move_threshhold;
@@ -21,7 +21,7 @@ static int _basic_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
 static int _basic_check_changed(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
 
 E_Config_Dialog *
-e_int_config_menus(E_Container *con, const char *params __UNUSED__) 
+e_int_config_menus(E_Comp *comp, const char *params __UNUSED__) 
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -35,7 +35,7 @@ e_int_config_menus(E_Container *con, const char *params __UNUSED__)
    v->basic.apply_cfdata = _basic_apply;
    v->basic.check_changed = _basic_check_changed;
 
-   cfd = e_config_dialog_new(con, _("Menu Settings"), "E", "menus/menu_settings", 
+   cfd = e_config_dialog_new(comp, _("Menu Settings"), "E", "menus/menu_settings", 
                              "preferences-menus", 0, v, NULL);
    return cfd;
 }
@@ -61,6 +61,7 @@ _fill_data(E_Config_Dialog_Data *cfdata __UNUSED__)
      cfdata->default_system_menu = NULL;
    cfdata->show_favs = e_config->menu_favorites_show;
    cfdata->show_apps = e_config->menu_apps_show;
+   cfdata->hide_icons = e_config->menu_icons_hide;
    cfdata->show_name = e_config->menu_eap_name_show;
    cfdata->show_generic = e_config->menu_eap_generic_show;
    cfdata->show_comment = e_config->menu_eap_comment_show;
@@ -162,7 +163,7 @@ _create_menus_list(Evas *evas, E_Config_Dialog_Data *cfdata)
         tdesc = NULL;
         e_user_homedir_concat(buf, sizeof(buf), 
                               ".config/menus/applications.menu");
-        snprintf(buf2, sizeof(buf2), "%s/etc/xdg/menus/enlightenment.menu", 
+        snprintf(buf2, sizeof(buf2), "%s/etc/xdg/menus/e-applications.menu", 
                  e_prefix_get());
         if (!strcmp("/etc/xdg/menus/applications.menu", file))
           {
@@ -298,6 +299,8 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
                                  0.5, 0.0);
 
    ol = e_widget_list_add(evas, 0, 0);
+   ow = e_widget_check_add(evas, _("Disable icons in menus"), &(cfdata->hide_icons));
+   e_widget_list_object_append(ol, ow, 1, 0, 0.5);
    ow = e_widget_label_add(evas, _("Menu Scroll Speed"));
    e_widget_list_object_append(ol, ow, 1, 0, 0.5);
    ow = e_widget_slider_add(evas, 1, 0, _("%5.0f pixels/s"), 0, 20000, 100, 
@@ -325,6 +328,7 @@ _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 {
    e_config->menu_favorites_show = cfdata->show_favs;
    e_config->menu_apps_show = cfdata->show_apps;
+   e_config->menu_icons_hide = cfdata->hide_icons;
    e_config->menu_eap_name_show = cfdata->show_name;
    e_config->menu_eap_generic_show = cfdata->show_generic;
    e_config->menu_eap_comment_show = cfdata->show_comment;
@@ -377,6 +381,7 @@ _basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfda
 
    return ((e_config->menu_favorites_show != cfdata->show_favs) ||
 	   (e_config->menu_apps_show != cfdata->show_apps) ||
+	   (e_config->menu_icons_hide != !!cfdata->hide_icons) ||
 	   (e_config->menu_eap_name_show != cfdata->show_name) ||
 	   (e_config->menu_eap_generic_show != cfdata->show_generic) ||
 	   (e_config->menu_eap_comment_show != cfdata->show_comment) ||

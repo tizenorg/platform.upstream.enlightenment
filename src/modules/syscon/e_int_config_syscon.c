@@ -26,12 +26,12 @@ struct _E_Config_Dialog_Data
 };
 
 E_Config_Dialog *
-e_int_config_syscon(E_Container *con, const char *params __UNUSED__)
+e_int_config_syscon(E_Comp *comp, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
 
-   if (e_config_dialog_find("E", "windows/conf_syscon")) return NULL;
+   if (e_config_dialog_find("E", "advanced/conf_syscon")) return NULL;
    v = E_NEW(E_Config_Dialog_View, 1);
 
    v->create_cfdata = _create_data;
@@ -40,8 +40,8 @@ e_int_config_syscon(E_Container *con, const char *params __UNUSED__)
    v->basic.create_widgets = _basic_create;
    v->basic.check_changed = _basic_check_changed;
 
-   cfd = e_config_dialog_new(con, _("Syscon Settings"),
-                             "E", "windows/conf_syscon",
+   cfd = e_config_dialog_new(comp, _("System Controls Settings"),
+                             "E", "advanced/conf_syscon",
                              "system-shutdown", 0, v, NULL);
    return cfd;
 }
@@ -130,9 +130,16 @@ _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static int
-_basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata __UNUSED__)
+_basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 {
-   return 1;
+   if ((cfdata->main.icon_size != e_config->syscon.main.icon_size) ||
+       (cfdata->secondary.icon_size != e_config->syscon.secondary.icon_size) ||
+       (cfdata->extra.icon_size != e_config->syscon.extra.icon_size) ||
+       (cfdata->timeout != e_config->syscon.timeout) ||
+       (cfdata->do_input != e_config->syscon.do_input))
+     return 1;
+
+   return 0;
 }
 
 static Evas_Object *
@@ -145,17 +152,17 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    ol = e_widget_list_add(evas, 0, 0);
    ob = e_widget_label_add(evas, _("Main"));
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
-   ob = e_widget_slider_add(evas, 1, 0, _("%1.0f"), 16.0, 256.0, 1.0, 0,
+   ob = e_widget_slider_add(evas, 1, 0, _("%1.0f pixels"), 16.0, 256.0, 1.0, 0,
                             NULL, &(cfdata->main.icon_size), 100);
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
    ob = e_widget_label_add(evas, _("Secondary"));
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
-   ob = e_widget_slider_add(evas, 1, 0, _("%1.0f"), 16.0, 256.0, 1.0, 0,
+   ob = e_widget_slider_add(evas, 1, 0, _("%1.0f pixels"), 16.0, 256.0, 1.0, 0,
                             NULL, &(cfdata->secondary.icon_size), 100);
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
    ob = e_widget_label_add(evas, _("Extra"));
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
-   ob = e_widget_slider_add(evas, 1, 0, _("%1.0f"), 16.0, 256.0, 1.0, 0,
+   ob = e_widget_slider_add(evas, 1, 0, _("%1.0f pixels"), 16.0, 256.0, 1.0, 0,
                             NULL, &(cfdata->extra.icon_size), 100);
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
    e_widget_toolbook_page_append(otb, NULL, _("Icon Sizes"), ol,
@@ -166,7 +173,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
    ob = e_widget_label_add(evas, _("Timeout"));
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
-   ob = e_widget_slider_add(evas, 1, 0, _("%1.1f"), 0.0, 60.0, 0.1, 0,
+   ob = e_widget_slider_add(evas, 1, 0, _("%1.1f s"), 0.0, 60.0, 0.1, 0,
                             &(cfdata->timeout), NULL, 100);
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
    e_widget_toolbook_page_append(otb, NULL, _("Default Action"), ol,

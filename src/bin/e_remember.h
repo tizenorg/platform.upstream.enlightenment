@@ -1,12 +1,14 @@
 #ifdef E_TYPEDEFS
 
 EAPI extern int E_EVENT_REMEMBER_UPDATE;
-
+EAPI extern E_Config_DD *e_remember_edd;
 typedef struct E_Event_Remember_Update
 {
-   void *border;
+   E_Client *ec;
 } E_Event_Remember_Update;
 typedef struct _E_Remember E_Remember;
+
+#define E_REMEMBER_VERSION 1
 
 #define E_REMEMBER_MATCH_NAME             (1 << 0)
 #define E_REMEMBER_MATCH_CLASS            (1 << 1)
@@ -32,6 +34,7 @@ typedef struct _E_Remember E_Remember;
 #define E_REMEMBER_SET_FOCUS_ON_START     (1 << 14)
 #define E_REMEMBER_APPLY_FULLSCREEN       (1 << 15)
 #define E_REMEMBER_APPLY_OFFER_RESISTANCE (1 << 16)
+#define E_REMEMBER_APPLY_OPACITY          (1 << 17)
 
 #define E_REMEMBER_INTERNAL_DIALOGS       (1 << 0)
 #define E_REMEMBER_INTERNAL_FM_WINS       (1 << 1)
@@ -42,6 +45,7 @@ typedef struct _E_Remember E_Remember;
 
 struct _E_Remember
 {
+   unsigned int  version;
    int           match;
    int           no_reopen;
    unsigned char apply_first_only;
@@ -104,6 +108,7 @@ struct _E_Remember
       int           head;
       const char   *command;
       const char   *desktop_file;
+      unsigned char opacity;
    } prop;
 };
 
@@ -114,11 +119,11 @@ EAPI int         e_remember_usable_get(E_Remember *rem);
 EAPI void        e_remember_use(E_Remember *rem);
 EAPI void        e_remember_unuse(E_Remember *rem);
 EAPI void        e_remember_del(E_Remember *rem);
-EAPI E_Remember *e_remember_find(E_Border *bd);
-EAPI E_Remember *e_remember_find_usable(E_Border *bd);
+EAPI E_Remember *e_remember_find(E_Client *ec);
+EAPI E_Remember *e_remember_find_usable(E_Client *ec);
 EAPI void        e_remember_match_update(E_Remember *rem);
-EAPI void        e_remember_update(E_Border *bd);
-EAPI int         e_remember_default_match_set(E_Remember *rem, E_Border *bd);
+EAPI void        e_remember_update(E_Client *ec);
+EAPI int         e_remember_default_match_set(E_Remember *rem, E_Client *ec);
 EAPI void        e_remember_internal_save(void);
 #endif
 #endif

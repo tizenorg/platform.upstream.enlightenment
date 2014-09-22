@@ -26,6 +26,7 @@ e_modapi_init(E_Module *m)
                                  e_int_config_env);
    conf_module = m;
    e_module_delayed_set(m, 1);
+
    return m;
 }
 
@@ -41,6 +42,7 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    e_configure_registry_item_del("advanced/environment_variables");
    e_configure_registry_item_del("advanced/search_directories");
    e_configure_registry_category_del("advanced");
+
    conf_module = NULL;
    return 1;
 }

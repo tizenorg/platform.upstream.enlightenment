@@ -4,6 +4,7 @@
 
 static void        *_create_data(E_Config_Dialog *cfd);
 static void         _free_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
+static int          _basic_check_changed(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
 static int          _basic_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
 static Evas_Object *_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata);
 
@@ -19,7 +20,7 @@ struct _E_Config_Dialog_Data
 
 /* a nice easy setup function that does the dirty work */
 E_Config_Dialog *
-e_int_config_deskenv(E_Container *con, const char *params __UNUSED__)
+e_int_config_deskenv(E_Comp *comp, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -33,9 +34,10 @@ e_int_config_deskenv(E_Container *con, const char *params __UNUSED__)
    v->free_cfdata = _free_data;
    v->basic.apply_cfdata = _basic_apply;
    v->basic.create_widgets = _basic_create;
+   v->basic.check_changed = _basic_check_changed;
 
    /* create config diaolg for NULL object/data */
-   cfd = e_config_dialog_new(con, _("Desktop Environments"), "E",
+   cfd = e_config_dialog_new(comp, _("Desktop Environments"), "E",
                              "windows/desktop_environments",
                              "preferences-desktop-environments", 0, v, NULL);
    return cfd;
@@ -66,6 +68,16 @@ static void
 _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 {
    E_FREE(cfdata);
+}
+
+static int
+_basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+{
+   return (e_config->deskenv.load_xrdb != cfdata->load_xrdb) ||
+          (e_config->deskenv.load_xmodmap != cfdata->load_xmodmap) ||
+          (e_config->deskenv.load_gnome != cfdata->load_gnome) ||
+          (e_config->deskenv.load_kde != cfdata->load_kde) ||
+          (e_config->exe_always_single_instance != cfdata->exe_always_single_instance);
 }
 
 /**--APPLY--**/
