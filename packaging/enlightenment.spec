@@ -91,6 +91,7 @@ make %{?_smp_mflags}
 %{_sysconfdir}/xdg/menus/e-applications.menu
 %{_datadir}/applications/enlightenment_filemanager.desktop
 /usr/lib/systemd/user/enlightenment.service
+%exclude /usr/share/enlightenment/data/config/profile.cfg
 
 %files devel
 %manifest %{name}.manifest
