@@ -79,6 +79,13 @@ _e_config_profile_name_get(Eet_File *ef)
 
         for (s = data; s < (data + data_len); s++)
           {
+             // eet can read line feed,
+             // but it has to be ignored
+             if (*s == '\n')
+               {
+                  data_len--;
+                  break;
+               }
              // if profile is not all ascii (valid printable ascii - no
              // control codes etc.) or it contains a '/' (invalid as its a
              // directory delimiter) - then it's invalid
