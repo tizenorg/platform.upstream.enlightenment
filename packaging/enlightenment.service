@@ -1,0 +1,11 @@
+[Unit]
+Description=Enlightenment service
+After=display-manager-run.service
+Requires=display-manager-run.service
+
+[Service]
+Environment=DISPLAY=:0.0
+ExecStart=/usr/bin/enlightenment_start
+
+[Install]
+WantedBy=graphical.target
