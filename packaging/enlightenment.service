@@ -4,7 +4,7 @@ After=display-manager-run.service
 Requires=display-manager-run.service
 
 [Service]
-Environment=DISPLAY=:0.0
+Environment="DISPLAY=:0.0" "HOME=%h"
 ExecStart=/usr/bin/enlightenment_start
 
 [Install]
