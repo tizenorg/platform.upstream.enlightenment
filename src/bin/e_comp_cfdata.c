@@ -33,6 +33,7 @@ e_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd)
    E_CONFIG_VAL(D, T, version, INT);
    E_CONFIG_VAL(D, T, shadow_style, STR);
    E_CONFIG_VAL(D, T, engine, INT);
+   E_CONFIG_VAL(D, T, effect_file, STR);
    //E_CONFIG_VAL(D, T, max_unmapped_pixels, INT);
    E_CONFIG_VAL(D, T, max_unmapped_time, INT);
    E_CONFIG_VAL(D, T, min_unmapped_time, INT);
@@ -79,6 +80,7 @@ e_comp_cfdata_config_new(void)
    cfg = E_NEW(E_Comp_Config, 1);
    cfg->version = E_COMP_VERSION;
    cfg->shadow_style = eina_stringshare_add("default");
+   cfg->effect_file = NULL;
    cfg->engine = E_COMP_ENGINE_SW;
    cfg->max_unmapped_pixels = 32 * 1024;  // implement
    cfg->max_unmapped_time = 10 * 3600; // implement
@@ -211,6 +213,7 @@ EAPI void
 e_comp_cfdata_config_free(E_Comp_Config *cfg)
 {
    if (!cfg) return;
+   eina_stringshare_del(cfg->effect_file);
    eina_stringshare_del(cfg->shadow_style);
 
    E_FREE_LIST(cfg->match.popups, e_comp_cfdata_match_free);

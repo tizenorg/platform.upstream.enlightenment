@@ -3458,19 +3458,32 @@ e_comp_object_effect_set(Evas_Object *obj, const char *effect)
 {
    char buf[4096];
    Eina_Stringshare *grp;
+   E_Comp_Config *config;
+   Eina_Bool loaded = EINA_FALSE;
 
    API_ENTRY;
    if (!cw->shobj) return; //input window
 
    if (!effect) effect = "none";
    snprintf(buf, sizeof(buf), "e/comp/effects/%s", effect);
-   edje_object_file_get(cw->effect_obj, NULL, &grp);
-   if (!e_util_strcmp(buf, grp)) return;
-   if (!e_theme_edje_object_set(cw->effect_obj, "base/theme/comp", buf))
+
+   config = e_comp_config_get();
+   if ((config) && (config->effect_file))
      {
-        snprintf(buf, sizeof(buf), "e/comp/effects/auto/%s", effect);
+        if (edje_object_file_set(cw->effect_obj, config->effect_file, buf))
+          loaded = EINA_TRUE;
+     }
+
+   if (!loaded)
+     {
+        edje_object_file_get(cw->effect_obj, NULL, &grp);
+        if (!e_util_strcmp(buf, grp)) return;
         if (!e_theme_edje_object_set(cw->effect_obj, "base/theme/comp", buf))
-          if (!e_theme_edje_object_set(cw->effect_obj, "base/theme/comp", "e/comp/effects/none")) return;
+          {
+             snprintf(buf, sizeof(buf), "e/comp/effects/auto/%s", effect);
+             if (!e_theme_edje_object_set(cw->effect_obj, "base/theme/comp", buf))
+               if (!e_theme_edje_object_set(cw->effect_obj, "base/theme/comp", "e/comp/effects/none")) return;
+          }
      }
    edje_object_part_swallow(cw->effect_obj, "e.swallow.content", cw->shobj);
    if (cw->effect_clip)
