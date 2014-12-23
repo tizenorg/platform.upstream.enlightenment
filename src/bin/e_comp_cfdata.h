@@ -11,6 +11,7 @@ struct _E_Comp_Config
    int           version;
    const char   *shadow_style;
    const char   *effect_file;
+   const char   *effect_style;
    int           engine;
    int           max_unmapped_pixels;
    int           max_unmapped_time;
