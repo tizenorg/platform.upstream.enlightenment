@@ -765,6 +765,9 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, exe_always_single_instance, UCHAR);
 
    E_CONFIG_VAL(D, T, use_desktop_window_profile, INT);
+#ifdef _F_ZONE_WINDOW_ROTATION_
+   E_CONFIG_VAL(D, T, wm_win_rotation, UCHAR);
+#endif
 }
 
 /* externally accessible functions */

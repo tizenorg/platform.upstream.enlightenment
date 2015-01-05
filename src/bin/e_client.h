@@ -131,6 +131,14 @@ typedef enum E_Client_Property
    E_CLIENT_PROPERTY_STICKY = (1 << 7),
 } E_Client_Property;
 
+#ifdef _F_ZONE_WINDOW_ROTATION_
+typedef enum _E_Client_Rotation_Type
+{
+   E_CLIENT_ROTATION_TYPE_NORMAL = 0,
+   E_CLIENT_ROTATION_TYPE_DEPENDENT = 1
+} E_Client_Rotation_Type;
+#endif
+
 typedef struct E_Client E_Client;
 
 typedef struct E_Event_Client E_Event_Client;
@@ -139,6 +147,11 @@ typedef struct _E_Client_Pending_Resize E_Client_Pending_Resize;
 typedef struct E_Event_Client_Zone_Set E_Event_Client_Zone_Set;
 typedef struct E_Event_Client_Desk_Set E_Event_Client_Desk_Set;
 typedef struct _E_Client_Hook E_Client_Hook;
+#ifdef _F_ZONE_WINDOW_ROTATION_
+typedef struct E_Event_Client E_Event_Client_Rotation_Change_Begin;
+typedef struct E_Event_Client E_Event_Client_Rotation_Change_Cancel;
+typedef struct E_Event_Client E_Event_Client_Rotation_Change_End;
+#endif
 
 typedef enum _E_Client_Hook_Point
 {
@@ -514,10 +527,46 @@ struct E_Client
          } profile;
          unsigned char  centered : 1;
          unsigned char  video : 1;
+#ifdef _F_ZONE_WINDOW_ROTATION_
+         struct
+         {
+            E_Client_Rotation_Type type;
+            struct
+              {
+                 int prev, curr, next, reserve;
+              } ang;
+            struct
+              {
+                 int x, y, w, h;
+              } geom[4];
+            unsigned char support : 1;
+            unsigned char geom_hint: 1;
+            unsigned char pending_change_request : 1;
+            unsigned char pending_show : 1;  // newly created window that has to be rotated will be show after rotating done.
+                                             // so, it will be used pending e_border_show called at main eval time.
+            unsigned char wait_for_done: 1;
+            unsigned char app_set : 1;    // app wants to communicate with the window manager
+            int           rot;            // decided rotation by the window manager
+            int           preferred_rot;  // app specified rotation
+            int          *available_rots; // app specified available rotations
+            unsigned int  count;          // number of elements of available rotations
+         } rot;
+#endif
       } state;
 
       struct
       {
+#ifdef _F_ZONE_WINDOW_ROTATION_
+         struct
+         {
+            unsigned char support : 1;
+            unsigned char geom_hint : 1;
+            unsigned char app_set : 1;        // app wants to communicate with the window manager
+            unsigned char preferred_rot : 1;  // app specified rotation
+            unsigned char available_rots : 1; // app specified available rotations
+            unsigned char need_rotation : 1;
+         } rot;
+#endif
          unsigned char state : 1;
          unsigned char video_parent : 1;
          unsigned char video_position : 1;
@@ -568,6 +617,9 @@ struct E_Client
       Eina_Bool internal_state : 1;
       Eina_Bool need_maximize : 1;
       Eina_Bool need_unmaximize : 1;
+#ifdef _F_ZONE_WINDOW_ROTATION_
+      Eina_Bool rotation : 1;
+#endif
    } changes;
 
    unsigned int       visible : 1; // client is set to be visible by display server (never use this)
@@ -736,7 +788,11 @@ EAPI extern int E_EVENT_CLIENT_FOCUS_OUT;
 EAPI extern int E_EVENT_CLIENT_PROPERTY;
 EAPI extern int E_EVENT_CLIENT_FULLSCREEN;
 EAPI extern int E_EVENT_CLIENT_UNFULLSCREEN;
-
+#ifdef _F_ZONE_WINDOW_ROTATION_
+EAPI extern int E_EVENT_CLIENT_ROTATION_CHANGE_BEGIN;
+EAPI extern int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL;
+EAPI extern int E_EVENT_CLIENT_ROTATION_CHANGE_END;
+#endif
 
 EINTERN void e_client_idler_before(void);
 EINTERN Eina_Bool e_client_init(void);

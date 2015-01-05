@@ -603,8 +603,8 @@ PKG_CHECK_MODULES(E_OPEN, [
 ])
 
 e_libs="$E_LIBS $LIBINTL $fnmatch_libs $execinfo_libs"
-e_cflags="-DUSE_E_CONFIG_H $E_CFLAGS"
-e_configflags="-DUSE_E_CONFIG_H"
+e_cflags="-DUSE_E_CONFIG_H $E_CFLAGS -D_F_ZONE_WINDOW_ROTATION_"
+e_configflags="-DUSE_E_CONFIG_H -D_F_ZONE_WINDOW_ROTATION_"
 
 AC_SUBST([e_libs])
 AC_SUBST([e_cflags])

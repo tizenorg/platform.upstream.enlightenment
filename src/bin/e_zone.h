@@ -24,6 +24,11 @@ typedef struct _E_Event_Pointer_Warp        E_Event_Pointer_Warp;
 typedef struct _E_Event_Zone_Edge           E_Event_Zone_Edge;
 typedef struct _E_Event_Zone_Generic        E_Event_Zone_Stow;
 typedef struct _E_Event_Zone_Generic        E_Event_Zone_Unstow;
+#ifdef _F_ZONE_WINDOW_ROTATION_
+typedef struct _E_Event_Zone_Rotation_Change_Begin  E_Event_Zone_Rotation_Change_Begin;
+typedef struct _E_Event_Zone_Rotation_Change_Cancel E_Event_Zone_Rotation_Change_Cancel;
+typedef struct _E_Event_Zone_Rotation_Change_End    E_Event_Zone_Rotation_Change_End;
+#endif
 
 #else
 #ifndef E_ZONE_H
@@ -90,6 +95,17 @@ struct _E_Zone
       Eina_Bool dirty : 1;
    } useful_geometry;
    Eina_Bool      stowed : 1;
+#ifdef _F_ZONE_WINDOW_ROTATION_
+   struct
+   {
+      int       prev, curr, next, sub;
+      int       block_count;
+
+      Eina_Bool wait_for_done : 1;
+      Eina_Bool pending : 1;
+      Eina_Bool unknown_state : 1;
+   } rot;
+#endif
 };
 
 struct _E_Event_Zone_Generic
@@ -118,6 +134,23 @@ struct _E_Event_Zone_Edge
    int         button;
    Eina_Bool  drag : 1;
 };
+
+#ifdef _F_ZONE_WINDOW_ROTATION_
+struct _E_Event_Zone_Rotation_Change_Begin
+{
+   E_Zone     *zone;
+};
+
+struct _E_Event_Zone_Rotation_Change_Cancel
+{
+   E_Zone     *zone;
+};
+
+struct _E_Event_Zone_Rotation_Change_End
+{
+   E_Zone     *zone;
+};
+#endif
 
 EINTERN int    e_zone_init(void);
 EINTERN int    e_zone_shutdown(void);
@@ -162,6 +195,12 @@ extern EAPI int E_EVENT_ZONE_EDGE_OUT;
 extern EAPI int E_EVENT_ZONE_EDGE_MOVE;
 extern EAPI int E_EVENT_ZONE_STOW;
 extern EAPI int E_EVENT_ZONE_UNSTOW;
+
+#ifdef _F_ZONE_WINDOW_ROTATION_
+extern EAPI int E_EVENT_ZONE_ROTATION_CHANGE_BEGIN;
+extern EAPI int E_EVENT_ZONE_ROTATION_CHANGE_CANCEL;
+extern EAPI int E_EVENT_ZONE_ROTATION_CHANGE_END;
+#endif
 
 #endif
 #endif

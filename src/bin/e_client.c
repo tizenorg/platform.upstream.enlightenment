@@ -19,6 +19,11 @@ EAPI int E_EVENT_CLIENT_FOCUS_OUT = -1;
 EAPI int E_EVENT_CLIENT_PROPERTY = -1;
 EAPI int E_EVENT_CLIENT_FULLSCREEN = -1;
 EAPI int E_EVENT_CLIENT_UNFULLSCREEN = -1;
+#ifdef _F_ZONE_WINDOW_ROTATION_
+EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_BEGIN = -1;
+EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL = -1;
+EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_END = -1;
+#endif
 
 static Eina_Hash *clients_hash = NULL; // pixmap->client
 
@@ -521,7 +526,7 @@ _e_client_free(E_Client *ec)
    eina_stringshare_replace(&ec->netwm.icon_name, NULL);
    eina_stringshare_replace(&ec->internal_icon, NULL);
    eina_stringshare_replace(&ec->internal_icon_key, NULL);
-   
+
    focus_stack = eina_list_remove(focus_stack, ec);
    raise_stack = eina_list_remove(raise_stack, ec);
 
@@ -2382,6 +2387,11 @@ e_client_init(void)
    E_EVENT_CLIENT_PROPERTY = ecore_event_type_new();
    E_EVENT_CLIENT_FULLSCREEN = ecore_event_type_new();
    E_EVENT_CLIENT_UNFULLSCREEN = ecore_event_type_new();
+#ifdef _F_ZONE_WINDOW_ROTATION_
+   E_EVENT_CLIENT_ROTATION_CHANGE_BEGIN = ecore_event_type_new();
+   E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL = ecore_event_type_new();
+   E_EVENT_CLIENT_ROTATION_CHANGE_END = ecore_event_type_new();
+#endif
 
    return (!!clients_hash);
 }

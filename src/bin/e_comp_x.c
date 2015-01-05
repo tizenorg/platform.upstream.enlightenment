@@ -5218,6 +5218,13 @@ _e_comp_x_screens_setup(void)
         c->comp_type = E_PIXMAP_TYPE_X;
         success = _e_comp_x_setup(c, root, rw, rh);
         if (!success) break;
+#ifdef _F_ZONE_WINDOW_ROTATION_
+        if (e_config->wm_win_rotation)
+          {
+             ecore_x_e_window_rotation_supported_set(roots[i],
+                                                     e_config->wm_win_rotation);
+          }
+#endif
      }
    free(roots);
    return success;

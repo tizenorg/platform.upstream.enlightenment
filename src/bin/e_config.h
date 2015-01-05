@@ -437,6 +437,9 @@ struct _E_Config
    Eina_List  *menu_applications;
    unsigned char exe_always_single_instance; // GUI
    int           use_desktop_window_profile; // GUI
+#ifdef _F_ZONE_WINDOW_ROTATION_
+   unsigned char wm_win_rotation;
+#endif
 };
 
 struct E_Config_Bindings
