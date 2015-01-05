@@ -2190,7 +2190,7 @@ static void
 _e_menu_item_activate_nth(int n)
 {
    E_Menu *m;
-   E_Menu_Item *mi;
+   E_Menu_Item *mi, *last_mi;
    Eina_List *ll;
    int i = -1;
 
@@ -2202,10 +2202,12 @@ _e_menu_item_activate_nth(int n)
         if (!mi) return;
      }
    m = mi->menu;
+   last_mi = eina_list_data_get(eina_list_last(m->items));
    EINA_LIST_FOREACH(m->items, ll, mi)
      {
         if (!mi->separator) i++;
         if (i == n) break;
+        if (mi == last_mi) return;
      }
    if (!mi) return;
    e_menu_item_active_set(mi, 1);
