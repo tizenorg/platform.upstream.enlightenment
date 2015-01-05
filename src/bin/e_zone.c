@@ -34,6 +34,11 @@ EAPI int E_EVENT_ZONE_DEL = 0;
 EAPI int E_EVENT_ZONE_EDGE_IN = 0;
 EAPI int E_EVENT_ZONE_EDGE_OUT = 0;
 EAPI int E_EVENT_ZONE_EDGE_MOVE = 0;
+#ifdef _F_ZONE_WINDOW_ROTATION_
+EAPI int E_EVENT_ZONE_ROTATION_CHANGE_BEGIN = 0;
+EAPI int E_EVENT_ZONE_ROTATION_CHANGE_CANCEL = 0;
+EAPI int E_EVENT_ZONE_ROTATION_CHANGE_END = 0;
+#endif
 
 #define E_ZONE_FLIP_LEFT(zone)  (((e_config->desk_flip_wrap && ((zone)->desk_x_count > 1)) || ((zone)->desk_x_current > 0)) && (zone)->edge.left)
 #define E_ZONE_FLIP_RIGHT(zone) (((e_config->desk_flip_wrap && ((zone)->desk_x_count > 1)) || (((zone)->desk_x_current + 1) < (zone)->desk_x_count)) && (zone)->edge.right)
@@ -53,6 +58,11 @@ e_zone_init(void)
    E_EVENT_ZONE_EDGE_IN = ecore_event_type_new();
    E_EVENT_ZONE_EDGE_OUT = ecore_event_type_new();
    E_EVENT_ZONE_EDGE_MOVE = ecore_event_type_new();
+#ifdef _F_ZONE_WINDOW_ROTATION_
+   E_EVENT_ZONE_ROTATION_CHANGE_BEGIN = ecore_event_type_new();
+   E_EVENT_ZONE_ROTATION_CHANGE_CANCEL = ecore_event_type_new();
+   E_EVENT_ZONE_ROTATION_CHANGE_END = ecore_event_type_new();
+#endif
    return 1;
 }
 
