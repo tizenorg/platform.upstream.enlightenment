@@ -131,6 +131,17 @@ typedef enum E_Client_Property
    E_CLIENT_PROPERTY_STICKY = (1 << 7),
 } E_Client_Property;
 
+#ifdef _F_E_VIRTUAL_KEYBOARD_TYPE_
+typedef enum _E_Virtual_Keyboard_Window_Type
+{
+   E_VIRTUAL_KEYBOARD_WINDOW_TYPE_NONE = 0,
+   E_VIRTUAL_KEYBOARD_WINDOW_TYPE_KEYPAD = 1,
+   E_VIRTUAL_KEYBOARD_WINDOW_TYPE_PREDICTION = 2,
+   E_VIRTUAL_KEYBOARD_WINDOW_TYPE_MAGNIFIER = 3,
+   E_VIRTUAL_KEYBOARD_WINDOW_TYPE_POPUP = 4,
+} E_Virtual_Keyboard_Window_Type;
+#endif
+
 #ifdef _F_ZONE_WINDOW_ROTATION_
 typedef enum _E_Client_Rotation_Type
 {
@@ -598,6 +609,9 @@ struct E_Client
 #endif
       unsigned char                  have_property : 1;
       unsigned char                  vkbd : 1;
+#ifdef _F_E_VIRTUAL_KEYBOARD_TYPE_
+      E_Virtual_Keyboard_Window_Type win_type;
+#endif
    } vkbd;
 
    struct
