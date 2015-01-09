@@ -84,6 +84,9 @@ static Eina_Inlist *_e_client_hooks[] =
    [E_CLIENT_HOOK_DEL] = NULL,
    [E_CLIENT_HOOK_UNREDIRECT] = NULL,
    [E_CLIENT_HOOK_REDIRECT] = NULL,
+#ifdef _F_E_CLIENT_NEW_CLIENT_POST_HOOK_
+   [E_CLIENT_HOOK_NEW_CLIENT_POST] = NULL,
+#endif
 };
 
 ///////////////////////////////////////////
@@ -2501,6 +2504,10 @@ e_client_new(E_Comp *c, E_Pixmap *cp, int first_map, int internal)
         else
           focus_stack = eina_list_append(focus_stack, ec);
      }
+
+#ifdef _F_E_CLIENT_NEW_CLIENT_POST_HOOK_
+   _e_client_hook_call(E_CLIENT_HOOK_NEW_CLIENT_POST, ec);
+#endif
 
    return ec;
 }
