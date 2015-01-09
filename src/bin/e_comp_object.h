@@ -32,6 +32,27 @@ struct E_Comp_Object_Frame
    Eina_Bool calc : 1; // inset has been calculated
 };
 
+#ifdef _F_E_COMP_OBJECT_INTERCEPT_HOOK_
+typedef struct _E_Comp_Object_Intercept_Hook E_Comp_Object_Intercept_Hook;
+
+typedef enum _E_Comp_Object_Intercept_Hook_Point
+{
+   E_COMP_OBJECT_INTERCEPT_HOOK_SHOW_HELPER,
+   E_COMP_OBJECT_INTERCEPT_HOOK_HIDE,
+   E_COMP_OBJECT_INTERCEPT_HOOK_LAST,
+} E_Comp_Object_Intercept_Hook_Point;
+
+typedef Eina_Bool (*E_Comp_Object_Intercept_Hook_Cb)(void *data, E_Client *ec);
+
+struct _E_Comp_Object_Intercept_Hook
+{
+   EINA_INLIST;
+   E_Comp_Object_Intercept_Hook_Point hookpoint;
+   E_Comp_Object_Intercept_Hook_Cb func;
+   void               *data;
+   unsigned char       delete_me : 1;
+};
+#endif
 
 extern EAPI int E_EVENT_COMP_OBJECT_ADD;
 
@@ -81,6 +102,11 @@ EAPI void e_comp_object_effect_start(Evas_Object *obj, Edje_Signal_Cb end_cb, co
 EAPI void e_comp_object_effect_stop(Evas_Object *obj, Edje_Signal_Cb end_cb);
 EAPI E_Comp_Object_Mover *e_comp_object_effect_mover_add(int pri, const char *sig, E_Comp_Object_Mover_Cb provider, const void *data);
 EAPI void e_comp_object_effect_mover_del(E_Comp_Object_Mover *prov);
+
+#ifdef _F_E_COMP_OBJECT_INTERCEPT_HOOK_
+EAPI E_Comp_Object_Intercept_Hook *e_comp_object_intercept_hook_add(E_Comp_Object_Intercept_Hook_Point hookpoint, E_Comp_Object_Intercept_Hook_Cb func, const void *data);
+EAPI void e_comp_object_intercept_hook_del(E_Comp_Object_Intercept_Hook *ch);
+#endif
 
 #endif
 #endif

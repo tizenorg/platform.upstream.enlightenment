@@ -134,11 +134,66 @@ struct E_Comp_Object_Mover
 static Eina_Inlist *_e_comp_object_movers = NULL;
 static Evas_Smart *_e_comp_smart = NULL;
 
+#ifdef _F_E_COMP_OBJECT_INTERCEPT_HOOK_
+static int _e_comp_object_intercept_hooks_delete = 0;
+static int _e_comp_object_intercept_hooks_walking = 0;
+
+static Eina_Inlist *_e_comp_object_intercept_hooks[] =
+{
+   [E_COMP_OBJECT_INTERCEPT_HOOK_SHOW_HELPER] = NULL,
+   [E_COMP_OBJECT_INTERCEPT_HOOK_HIDE] = NULL,
+};
+#endif
+
 /* sekrit functionzzz */
 EINTERN void e_client_focused_set(E_Client *ec);
 
 /* emitted every time a new noteworthy comp object is added */
 EAPI int E_EVENT_COMP_OBJECT_ADD = -1;
+
+#ifdef _F_E_COMP_OBJECT_INTERCEPT_HOOK_
+static void
+_e_comp_object_intercept_hooks_clean(void)
+{
+   Eina_Inlist *l;
+   E_Comp_Object_Intercept_Hook *ch;
+   unsigned int x;
+
+   for (x = 0; x < E_COMP_OBJECT_INTERCEPT_HOOK_LAST; x++)
+     EINA_INLIST_FOREACH_SAFE(_e_comp_object_intercept_hooks[x], l, ch)
+       {
+          if (!ch->delete_me) continue;
+          _e_comp_object_intercept_hooks[x] = eina_inlist_remove(_e_comp_object_intercept_hooks[x], EINA_INLIST_GET(ch));
+          free(ch);
+       }
+}
+
+static Eina_Bool
+_e_comp_object_intercept_hook_call(E_Comp_Object_Intercept_Hook_Point hookpoint, E_Client *ec)
+{
+   E_Comp_Object_Intercept_Hook *ch;
+   Eina_Bool ret = EINA_TRUE;
+
+   e_object_ref(E_OBJECT(ec));
+   _e_comp_object_intercept_hooks_walking++;
+   EINA_INLIST_FOREACH(_e_comp_object_intercept_hooks[hookpoint], ch)
+     {
+        if (ch->delete_me) continue;
+        if (!(ch->func(ch->data, ec)))
+          {
+             ret = EINA_FALSE;
+             break;
+          }
+     }
+   _e_comp_object_intercept_hooks_walking--;
+   if ((_e_comp_object_intercept_hooks_walking == 0) && (_e_comp_object_intercept_hooks_delete > 0))
+     _e_comp_object_intercept_hooks_clean();
+
+   e_object_unref(E_OBJECT(ec));
+
+   return ret;
+}
+#endif
 
 static void
 _e_comp_object_event_free(void *d EINA_UNUSED, void *event)
@@ -1239,6 +1294,10 @@ _e_comp_intercept_hide(void *data, Evas_Object *obj)
 {
    E_Comp_Object *cw = data;
 
+#ifdef _F_E_COMP_OBJECT_INTERCEPT_HOOK_
+   if( !_e_comp_object_intercept_hook_call(E_COMP_OBJECT_INTERCEPT_HOOK_HIDE, cw->ec)) return;
+#endif
+
    if (cw->ec->hidden)
      {
         /* hidden flag = just do it */
@@ -1310,6 +1369,10 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
         cw->ec->changes.visible = !cw->ec->hidden;
         cw->ec->visible = 1;
         EC_CHANGED(cw->ec);
+
+#ifdef _F_E_COMP_OBJECT_INTERCEPT_HOOK_
+        if (!_e_comp_object_intercept_hook_call(E_COMP_OBJECT_INTERCEPT_HOOK_SHOW_HELPER, cw->ec)) return;
+#endif
         return;
      }
    if (cw->ec->input_only)
@@ -2288,6 +2351,36 @@ _e_comp_object_util_moveresize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj
    if (evas_object_visible_get(obj))
      e_comp_shape_queue(e_comp);
 }
+
+#ifdef _F_E_COMP_OBJECT_INTERCEPT_HOOK_
+EAPI E_Comp_Object_Intercept_Hook *
+e_comp_object_intercept_hook_add(E_Comp_Object_Intercept_Hook_Point hookpoint, E_Comp_Object_Intercept_Hook_Cb func, const void *data)
+{
+   E_Comp_Object_Intercept_Hook *ch;
+
+   EINA_SAFETY_ON_TRUE_RETURN_VAL(hookpoint >= E_COMP_OBJECT_INTERCEPT_HOOK_LAST, NULL);
+   ch = E_NEW(E_Comp_Object_Intercept_Hook, 1);
+   if (!ch) return NULL;
+   ch->hookpoint = hookpoint;
+   ch->func = func;
+   ch->data = (void*)data;
+   _e_comp_object_intercept_hooks[hookpoint] = eina_inlist_append(_e_comp_object_intercept_hooks[hookpoint], EINA_INLIST_GET(ch));
+   return ch;
+}
+
+EAPI void
+e_comp_object_intercept_hook_del(E_Comp_Object_Intercept_Hook *ch)
+{
+   ch->delete_me = 1;
+   if (_e_comp_object_intercept_hooks_walking == 0)
+     {
+        _e_comp_object_intercept_hooks[ch->hookpoint] = eina_inlist_remove(_e_comp_object_intercept_hooks[ch->hookpoint], EINA_INLIST_GET(ch));
+        free(ch);
+     }
+   else
+     _e_comp_object_intercept_hooks_delete++;
+}
+#endif
 
 EAPI Evas_Object *
 e_comp_object_util_add(Evas_Object *obj, E_Comp_Object_Type type)
