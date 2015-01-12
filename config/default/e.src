@@ -224,4 +224,5 @@ group "E_Config" struct {
   value "powersave.extreme" double: 1200.0;
   value "powersave.min" int: 0;
   value "powersave.max" int: 5;
+  value "wm_win_rotation" uchar: 0;
 }

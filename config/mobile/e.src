@@ -867,4 +867,5 @@ group "E_Config" struct {
     value "xkb.default_model" string: "default";
     value "exe_always_single_instance" uchar: 1;
     value "use_desktop_window_profile" int: 0;
+    value "wm_win_rotation" uchar: 0;
 }
