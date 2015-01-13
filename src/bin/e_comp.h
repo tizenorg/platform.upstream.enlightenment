@@ -133,6 +133,14 @@ struct _E_Comp
    Eina_Bool       nocomp_want : 1;
    Eina_Bool       saver : 1;
    Eina_Bool       shape_queue_blocked : 1;
+
+#ifdef _F_E_COMP_SCREEN_LOCK_
+   struct
+   {
+      Eina_Bool locked : 1;
+      Ecore_Timer *timeout;
+   } lock;
+#endif
 };
 
 
@@ -190,6 +198,11 @@ EAPI Eina_Bool e_comp_util_object_is_above_nocomp(Evas_Object *obj);
 EINTERN Evas_Object *e_comp_style_selector_create(Evas *evas, const char **source);
 EAPI E_Config_Dialog *e_int_config_comp(E_Comp *comp, const char *params);
 EAPI E_Config_Dialog *e_int_config_comp_match(E_Comp *comp, const char *params);
+
+#ifdef _F_E_COMP_SCREEN_LOCK_
+EAPI void e_comp_screen_lock(E_Comp *c);
+EAPI void e_comp_screen_unlock(E_Comp *c);
+#endif
 
 static inline E_Comp *
 e_comp_util_evas_object_comp_get(Evas_Object *obj)

@@ -889,7 +889,11 @@ _e_comp_screensaver_off(void *data EINA_UNUSED, int type EINA_UNUSED, void *even
         if (!c->saver) continue;
         e_comp_override_del(c);
         c->saver = EINA_FALSE;
+#ifdef _F_E_COMP_SCREEN_LOCK_
+        if (!c->nocomp && !c->lock.locked)
+#else
         if (!c->nocomp)
+#endif
           ecore_evas_manual_render_set(c->ee, EINA_FALSE);
         EINA_LIST_FOREACH(c->zones, ll, zone)
           {
@@ -1174,6 +1178,20 @@ _style_selector_del(void *data       __UNUSED__,
 
    evas_object_data_set(orec0, "list", style_list);
 }
+
+#ifdef _F_E_COMP_SCREEN_LOCK_
+static Eina_Bool
+_screen_lock_timeout(void *data)
+{
+   E_Comp *c = (E_Comp*)data;
+
+   E_OBJECT_CHECK_RETURN(c, EINA_FALSE);
+   E_OBJECT_TYPE_CHECK_RETURN(c, E_COMP_TYPE, EINA_FALSE);
+
+   e_comp_screen_unlock(c);
+   return EINA_TRUE;
+}
+#endif
 
 EINTERN Evas_Object *
 e_comp_style_selector_create(Evas *evas, const char **source)
@@ -1804,3 +1822,50 @@ e_comp_util_object_is_above_nocomp(Evas_Object *obj)
      return EINA_TRUE;
    return EINA_FALSE;
 }
+
+#ifdef _F_E_COMP_SCREEN_LOCK_
+EAPI void
+e_comp_screen_lock(E_Comp *c)
+{
+   E_OBJECT_CHECK(c);
+   E_OBJECT_TYPE_CHECK(c, E_COMP_TYPE);
+   if (c->lock.locked) return;
+   if (c->lock.timeout) return;
+
+   c->lock.locked = EINA_TRUE;
+   if (c->render_animator)
+     ecore_animator_freeze(c->render_animator);
+
+   if (!c->nocomp && !c->saver)
+     ecore_evas_manual_render_set(c->ee, EINA_TRUE);
+
+   c->lock.timeout = ecore_timer_add(3.0, _screen_lock_timeout, c); // 3.0 : max_lock_screen_time
+}
+
+EAPI void
+e_comp_screen_unlock(E_Comp *c)
+{
+   E_Client *ec;
+
+   E_OBJECT_CHECK(c);
+   E_OBJECT_TYPE_CHECK(c, E_COMP_TYPE);
+   if (!c->lock.locked) return;
+
+   if (c->lock.timeout)
+     {
+        ecore_timer_del(c->lock.timeout);
+        c->lock.timeout = NULL;
+     }
+
+   if (!c->nocomp && !c->saver)
+     {
+        ecore_evas_manual_render_set(c->ee, EINA_FALSE);
+     }
+
+   E_CLIENT_FOREACH(c, ec)
+     if (e_comp_object_damage_exists(ec->frame))
+       e_comp_object_render_update_add(ec->frame);
+
+   c->lock.locked = EINA_FALSE;
+}
+#endif
