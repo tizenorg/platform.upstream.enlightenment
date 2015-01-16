@@ -174,6 +174,7 @@ _e_comp_object_intercept_hook_call(E_Comp_Object_Intercept_Hook_Point hookpoint,
    E_Comp_Object_Intercept_Hook *ch;
    Eina_Bool ret = EINA_TRUE;
 
+   if (e_object_is_del(E_OBJECT(ec))) return ret;
    e_object_ref(E_OBJECT(ec));
    _e_comp_object_intercept_hooks_walking++;
    EINA_INLIST_FOREACH(_e_comp_object_intercept_hooks[hookpoint], ch)
