@@ -1,5 +1,6 @@
 backgroundfilesdir = $(datadir)/enlightenment/data/backgrounds
 backgroundfiles_DATA = \
+data/backgrounds/Black_Screen.edj \
 data/backgrounds/Brown_Rock_Hi.edj \
 data/backgrounds/Colorful_Roses.edj \
 data/backgrounds/Darkconcrete.edj \
