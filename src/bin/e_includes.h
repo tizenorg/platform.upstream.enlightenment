@@ -42,6 +42,7 @@
 #include "e_gadcon_popup.h"
 #include "e_ipc_codec.h"
 #include "e_test.h"
+#include "e_test_helper.h"
 #include "e_prefix.h"
 #include "e_datastore.h"
 #include "e_msg.h"
