@@ -584,6 +584,7 @@ struct E_Client
          } rot;
 #endif
          unsigned char state : 1;
+         unsigned char opaque : 1;
          unsigned char video_parent : 1;
          unsigned char video_position : 1;
          unsigned char profile : 1;
@@ -641,6 +642,12 @@ struct E_Client
       Eina_Bool rotation : 1;
 #endif
    } changes;
+
+   struct
+  {
+     int opaque;
+     int obscured;
+  } visibility;
 
    unsigned int       visible : 1; // client is set to be visible by display server (never use this)
    unsigned int       hidden : 1; // set when window has been hidden by api and should not be shown
@@ -816,6 +823,7 @@ EAPI extern int E_EVENT_CLIENT_ROTATION_CHANGE_BEGIN;
 EAPI extern int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL;
 EAPI extern int E_EVENT_CLIENT_ROTATION_CHANGE_END;
 #endif
+EAPI extern int E_EVENT_CLIENT_VISIBILITY_CHANGE;
 
 EINTERN void e_client_idler_before(void);
 EINTERN Eina_Bool e_client_init(void);
@@ -898,6 +906,7 @@ EAPI Eina_Bool e_client_is_stacking(const E_Client *ec);
 EAPI Eina_Bool e_client_desk_window_profile_available_check(E_Client *ec, const char *profile);
 EAPI void      e_client_desk_window_profile_wait_desk_set(E_Client *ec, E_Desk *desk);
 EAPI void      e_client_layout_cb_set(E_Client_Layout_Cb cb);
+EAPI void      e_client_visibility_calculate(E_Client *ec);
 
 #include "e_client.x"
 #endif

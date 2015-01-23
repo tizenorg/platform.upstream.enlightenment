@@ -1549,6 +1549,27 @@ e_hints_window_e_state_set(E_Client *ec __UNUSED__)
 }
 
 EAPI void
+e_hints_window_e_opaque_get(E_Client *ec)
+{
+#ifdef HAVE_WAYLAND_ONLY
+#else
+   unsigned int opaque;
+   int ret = -1;
+
+   if (!e_pixmap_is_x(ec->pixmap)) return;
+
+   ret =
+     ecore_x_window_prop_card32_get(e_client_util_win_get(ec), E_ATOM_WINDOW_OPAQUE,
+                                    &opaque, 1);
+   if (ret == -1)
+     ec->visibility.opaque = -1;
+   else
+     ec->visibility.opaque = (int)opaque;
+
+#endif
+}
+
+EAPI void
 e_hints_window_qtopia_soft_menu_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
