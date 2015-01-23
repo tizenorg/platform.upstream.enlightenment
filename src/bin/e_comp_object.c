@@ -3584,7 +3584,6 @@ _e_comp_object_effect_end_cb(void *data, Evas_Object *obj, const char *emission,
    if (!end_cb) return;
    end_data = evas_object_data_get(obj, "_e_comp.end_data");
    end_cb(end_data, cw->smart_obj, emission, source);
-
 }
 
 /* clip effect to client's zone */
@@ -3799,3 +3798,20 @@ e_comp_object_util_autoclose(Evas_Object *obj, E_Comp_Object_Autoclose_Cb del_cb
      evas_object_event_callback_add(obj, EVAS_CALLBACK_SHOW, _e_comp_object_autoclose_show, c);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_DEL, _e_comp_object_autoclose_del, c);
 }
+
+EAPI unsigned int
+e_comp_object_is_animating(Evas_Object *obj)
+{
+   SOFT_ENTRY(0);
+
+   return cw->animating;
+}
+
+EAPI Eina_Bool
+e_comp_object_is_hidden(Evas_Object *obj)
+{
+   SOFT_ENTRY(0);
+
+   return cw->defer_hide;
+}
+

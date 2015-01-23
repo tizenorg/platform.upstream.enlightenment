@@ -24,6 +24,7 @@ EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_BEGIN = -1;
 EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL = -1;
 EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_END = -1;
 #endif
+EAPI int E_EVENT_CLIENT_VISIBILITY_CHANGE = -1;
 
 static Eina_Hash *clients_hash = NULL; // pixmap->client
 
@@ -2236,6 +2237,137 @@ _e_client_frame_update(E_Client *ec)
    e_client_border_set(ec, bordername);
 }
 
+static void
+_e_client_visibility_zone_calculate(E_Zone *zone)
+{
+   E_Client *ec;
+   Evas_Object *o;
+   Eina_Tiler *t;
+   Eina_Rectangle r, *_r;
+   Eina_Iterator *itr;
+   Eina_Bool is_intersected = EINA_FALSE;
+   const int edge = 1;
+
+   if (!zone) return;
+
+   t = eina_tiler_new(zone->w + edge, zone->h + edge);
+   eina_tiler_tile_size_set(t, 1, 1);
+
+   EINA_RECTANGLE_SET(&r, zone->x, zone->y, zone->w, zone->h);
+   eina_tiler_rect_add(t, &r);
+
+   for (o = evas_object_top_get(zone->comp->evas); o; o = evas_object_below_get(o))
+     {
+        ec = evas_object_data_get(o, "E_Client");
+
+        /* check e_client and skip e_clients not intersects with zone */
+        if (!ec) continue;
+        if (e_client_util_ignored_get(ec)) continue;
+        if (ec->zone != zone) continue;
+        if (!E_INTERSECTS(ec->x, ec->y, ec->w, ec->h,
+                          zone->x, zone->y, zone->w, zone->h))
+          continue;
+
+        /* check if external animation is running */
+        if (evas_object_data_get(ec->frame, "effect_running")) continue;
+
+        /* check intersects */
+        if (eina_tiler_empty(t)) is_intersected = EINA_FALSE;
+
+        itr = eina_tiler_iterator_new(t);
+        EINA_ITERATOR_FOREACH(itr, _r)
+          {
+             if (E_INTERSECTS(ec->x, ec->y, ec->w, ec->h,
+                              _r->x, _r->y, _r->w, _r->h))
+               {
+                  is_intersected = EINA_TRUE;
+                  break;
+               }
+          }
+        eina_iterator_free(itr);
+
+        /* check some visible state */
+        if ((!ec->visible) || (ec->iconic) ||
+            (!evas_object_visible_get(ec->frame)) ||
+            (e_object_is_del(E_OBJECT(ec))))
+          is_intersected = EINA_FALSE;
+
+#ifndef HAVE_WAYLAND_ONLY_
+        /* check if it entered to hide process
+         * using icccm state instead of cw->defer_hide
+         */
+        if (ec->icccm.state ==  ECORE_X_WINDOW_STATE_HINT_WITHDRAWN)
+          is_intersected = EINA_FALSE;
+
+#endif
+        if (is_intersected)
+          {
+             Eina_Bool opaque = EINA_FALSE;
+             /* unobscured case */
+             if (ec->visibility.obscured == 0)
+               {
+                  /* previous state is unobscured */
+                  /* do nothing */
+               }
+             else
+               {
+                  /* previous state is obscured */
+                  ec->visibility.obscured = 0;
+                  _e_client_event_simple(ec, E_EVENT_CLIENT_VISIBILITY_CHANGE);
+               }
+
+             /* check alpha window is opaque or not. */
+             if ((ec->visibility.opaque > 0) && (ec->argb)) opaque = EINA_TRUE;
+
+             /* if e_client is not alpha or opaque then delete intersect rect */
+             if ((!ec->argb) || (opaque))
+               {
+                  EINA_RECTANGLE_SET(&r,
+                                     ec->x, ec->y,
+                                     ec->w + edge, ec->h + edge);
+                  eina_tiler_rect_del(t, &r);
+               }
+          }
+        else
+          {
+             /* obscured case */
+             if (ec->visibility.obscured != 1)
+               {
+                  /* previous state is unobscured */
+                  ec->visibility.obscured = 1;
+                  _e_client_event_simple(ec, E_EVENT_CLIENT_VISIBILITY_CHANGE);
+               }
+             else
+               {
+                  /* previous state is obscured */
+                  /* do nothing */
+               }
+          }
+     }
+
+   eina_tiler_free(t);
+}
+
+EAPI void
+e_client_visibility_calculate(E_Client *ec)
+{
+   const Eina_List *cl;
+   E_Comp *c;
+
+   if (e_object_is_del(E_OBJECT(ec))) return;
+
+   EINA_LIST_FOREACH(e_comp_list(), cl, c)
+     {
+        E_Zone *zone;
+        Eina_List *zl;
+
+        EINA_LIST_FOREACH(c->zones, zl, zone)
+          {
+             _e_client_visibility_zone_calculate(zone);
+          }
+     }
+}
+
 ////////////////////////////////////////////////
 EINTERN void
 e_client_idler_before(void)
@@ -2263,6 +2395,8 @@ e_client_idler_before(void)
              if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_FETCH, ec)) continue;
              if (title != e_client_util_name_get(ec))
                _e_client_event_property(ec, E_CLIENT_PROPERTY_TITLE);
+             /* calculate visibility of the client" */
+             e_client_visibility_calculate(ec);
              /* PRE_POST_FETCH calls e_remember apply for new client */
              if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_PRE_POST_FETCH, ec)) continue;
              if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_POST_FETCH, ec)) continue;
@@ -2363,6 +2497,7 @@ e_client_init(void)
    E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL = ecore_event_type_new();
    E_EVENT_CLIENT_ROTATION_CHANGE_END = ecore_event_type_new();
 #endif
+   E_EVENT_CLIENT_VISIBILITY_CHANGE = ecore_event_type_new();
 
    return (!!clients_hash);
 }
@@ -2476,6 +2611,9 @@ e_client_new(E_Comp *c, E_Pixmap *cp, int first_map, int internal)
    ec->netwm.action.change_desktop = 0;
    ec->netwm.action.close = 0;
    ec->netwm.opacity = 255;
+
+   ec->visibility.obscured = -1;
+   ec->visibility.opaque = -1;
 
    EC_CHANGED(ec);
 
