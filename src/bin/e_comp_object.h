@@ -107,6 +107,8 @@ EAPI void e_comp_object_effect_mover_del(E_Comp_Object_Mover *prov);
 EAPI E_Comp_Object_Intercept_Hook *e_comp_object_intercept_hook_add(E_Comp_Object_Intercept_Hook_Point hookpoint, E_Comp_Object_Intercept_Hook_Cb func, const void *data);
 EAPI void e_comp_object_intercept_hook_del(E_Comp_Object_Intercept_Hook *ch);
 #endif
+EAPI Eina_Bool e_comp_object_is_hidden(Evas_Object *obj);
+EAPI unsigned int e_comp_object_is_animating(Evas_Object *obj);
 
 #endif
 #endif

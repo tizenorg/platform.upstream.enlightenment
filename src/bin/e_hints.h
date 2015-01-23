@@ -37,6 +37,8 @@ EAPI void e_hints_window_desktop_set(E_Client *ec);
 EAPI void e_hints_window_e_state_set(E_Client *ec);
 EAPI void e_hints_window_e_state_get(E_Client *ec);
 
+EAPI void e_hints_window_e_opaque_get(E_Client *ec);
+
 EAPI void e_hints_window_qtopia_soft_menu_get(E_Client *ec);
 EAPI void e_hints_window_qtopia_soft_menus_get(E_Client *ec);
 

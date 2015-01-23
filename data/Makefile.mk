@@ -9,3 +9,4 @@ include data/flags/Makefile.mk
 include data/favorites/Makefile.mk
 include data/desktop/Makefile.mk
 include data/units/Makefile.mk
+include data/dbus/Makefile.mk

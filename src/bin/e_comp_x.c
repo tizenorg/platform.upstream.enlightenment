@@ -311,6 +311,10 @@ _e_comp_x_client_new_helper(E_Client *ec)
                {
                   ec->e.fetch.state = 1;
                }
+             if (atoms[i] == E_ATOM_WINDOW_OPAQUE)
+               {
+                  ec->e.fetch.opaque = 1;
+               }
              /* loop to check for qtopia atoms */
              if (atoms[i] == ATM__QTOPIA_SOFT_MENU)
                ec->qtopia.fetch.soft_menu = 1;
@@ -1820,6 +1824,11 @@ _e_comp_x_property(void *data EINA_UNUSED, int type EINA_UNUSED, Ecore_X_Event_W
      {
         //printf("ECORE_X_ATOM_NET_WM_SYNC_REQUEST_COUNTER\n");
      }
+  else if (ev->atom == E_ATOM_WINDOW_OPAQUE)
+     {
+        ec->e.fetch.opaque = 1;
+        EC_CHANGED(ec);
+     }
    else if (ev->atom == ECORE_X_ATOM_E_VIDEO_POSITION)
      {
         ec->e.fetch.video_position = 1;
@@ -2922,6 +2931,12 @@ _e_comp_x_hook_client_fetch(void *d EINA_UNUSED, E_Client *ec)
      {
         e_hints_window_e_state_get(ec);
         ec->e.fetch.state = 0;
+        rem_change = 1;
+     }
+   if (ec->changes.prop || ec->e.fetch.opaque)
+     {
+        e_hints_window_e_opaque_get(ec);
+        ec->e.fetch.opaque = 0;
         rem_change = 1;
      }
    if (ec->e.fetch.profile)

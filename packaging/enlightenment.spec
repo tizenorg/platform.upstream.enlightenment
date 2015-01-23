@@ -76,6 +76,7 @@ make %{?_smp_mflags}
 
 mkdir -p %{buildroot}%{_prefix}/lib/systemd/system/
 mkdir -p %{buildroot}%{_prefix}/lib/systemd/system/graphical.target.wants
+mkdir -p %{buildroot}%{_sysconfdir}/dbus-1/system.d
 install -m 0644 %{SOURCE1002} %{buildroot}%{_prefix}/lib/systemd/system/
 ln -sf ../enlightenment.service %{buildroot}%{_prefix}/lib/systemd/system/graphical.target.wants
 rm -f %{buildroot}%{_prefix}/lib/systemd/user/enlightenment.service
@@ -99,6 +100,7 @@ rm -f %{buildroot}%{_prefix}/lib/systemd/user/enlightenment.service
 %{_datadir}/applications/enlightenment_filemanager.desktop
 %{_prefix}/lib/systemd/system/enlightenment.service
 %{_prefix}/lib/systemd/system/graphical.target.wants/enlightenment.service
+%{_sysconfdir}/dbus-1/system.d/org.enlightenment.wm.conf
 %exclude /usr/share/enlightenment/data/config/profile.cfg
 
 %files devel

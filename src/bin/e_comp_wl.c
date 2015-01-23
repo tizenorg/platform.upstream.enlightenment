@@ -2660,6 +2660,12 @@ _e_comp_wl_cb_hook_client_eval_fetch(void *data EINA_UNUSED, E_Client *ec)
         ec->e.fetch.state = EINA_FALSE;
      }
 
+   if ((ec->changes.prop) && (ec->e.fetch.opaque))
+     {
+        e_hints_window_e_opaque_get(ec);
+        ec->e.fetch.opaque = EINA_FALSE;
+     }
+
    if ((ec->changes.prop) && (ec->netwm.fetch.type))
      {
         e_hints_window_type_get(ec);
