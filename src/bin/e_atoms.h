@@ -23,6 +23,8 @@ extern EAPI Ecore_X_Atom E_ATOM_DESKTOP_FILE;
 extern EAPI Ecore_X_Atom E_ATOM_WINDOW_STATE;
 extern EAPI Ecore_X_Atom E_ATOM_WINDOW_STATE_CENTERED;
 
+extern EAPI Ecore_X_Atom E_ATOM_WINDOW_OPAQUE;
+
 extern EAPI Ecore_X_Atom E_ATOM_ZONE_GEOMETRY;
 
 EINTERN int    e_atoms_init(void);
