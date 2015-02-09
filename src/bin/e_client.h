@@ -129,6 +129,7 @@ typedef enum E_Client_Property
    E_CLIENT_PROPERTY_GRAVITY = (1 << 5),
    E_CLIENT_PROPERTY_NETWM_STATE = (1 << 6),
    E_CLIENT_PROPERTY_STICKY = (1 << 7),
+   E_CLIENT_PROPERTY_CLIENT_TYPE = (1 << 8),
 } E_Client_Property;
 
 #ifdef _F_E_VIRTUAL_KEYBOARD_TYPE_
@@ -767,6 +768,8 @@ struct E_Client
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
    uuid_t uuid;
 #endif
+
+   int client_type; //e_client_type
 };
 
 #define e_client_focus_policy_click(ec) \
