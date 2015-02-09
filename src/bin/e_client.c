@@ -2272,6 +2272,50 @@ _e_client_frame_update(E_Client *ec)
    e_client_border_set(ec, bordername);
 }
 
+static Eina_Bool
+_e_client_type_match(E_Client *ec, E_Config_Client_Type *m)
+{
+   if (!ec || !m) return EINA_FALSE;
+   if (e_object_is_del(E_OBJECT(ec))) return EINA_FALSE;
+
+   if ((int)ec->netwm.type != m->window_type)
+     return EINA_FALSE;
+
+   if (((m->clas) && (!ec->icccm.class)) ||
+       ((ec->icccm.class) && (m->clas) && (!e_util_glob_match(ec->icccm.class, m->clas))))
+     return EINA_FALSE;
+
+   if (((m->name) && (!ec->icccm.name)) ||
+       ((ec->icccm.name) && (m->name) && (!e_util_glob_match(ec->icccm.name, m->name))))
+     return EINA_FALSE;
+
+   return EINA_TRUE;
+}
+
+static int
+_e_client_type_get(E_Client *ec)
+{
+   E_Config_Client_Type *m;
+   Eina_List *l;
+   int type = 0;
+
+   if (!e_config->client_types) return 0;
+
+   EINA_LIST_FOREACH(e_config->client_types, l, m)
+     {
+        if (!_e_client_type_match(ec, m)) continue;
+        else
+          {
+             type = m->client_type;
+             break;
+          }
+     }
+
+   ec->client_type = type;
+
+   return ec->client_type;
+}
+
 ////////////////////////////////////////////////
 EINTERN void
 e_client_idler_before(void)
@@ -2286,6 +2330,8 @@ e_client_idler_before(void)
    EINA_LIST_FOREACH(e_comp->clients, l, ec)
      {
         Eina_Stringshare *title;
+        int client_type;
+
         // pass 1 - eval0. fetch properties on new or on change and
         // call hooks to decide what to do - maybe move/resize
         if (!ec->changed) continue;
@@ -2296,6 +2342,11 @@ e_client_idler_before(void)
         if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_FETCH, ec)) continue;
         if (title != e_client_util_name_get(ec))
           _e_client_event_property(ec, E_CLIENT_PROPERTY_TITLE);
+
+        client_type = ec->client_type;
+        if (client_type != _e_client_type_get(ec))
+           _e_client_event_property(ec, E_CLIENT_PROPERTY_CLIENT_TYPE);
+
         /* PRE_POST_FETCH calls e_remember apply for new client */
         if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_PRE_POST_FETCH, ec)) continue;
         if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_POST_FETCH, ec)) continue;

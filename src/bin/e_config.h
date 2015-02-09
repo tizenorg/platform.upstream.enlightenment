@@ -23,6 +23,7 @@ typedef struct _E_Config_Syscon_Action      E_Config_Syscon_Action;
 typedef struct _E_Config_Env_Var            E_Config_Env_Var;
 typedef struct _E_Config_XKB_Layout         E_Config_XKB_Layout;
 typedef struct _E_Config_XKB_Option         E_Config_XKB_Option;
+typedef struct _E_Config_Client_Type        E_Config_Client_Type;
 
 typedef struct _E_Event_Config_Icon_Theme   E_Event_Config_Icon_Theme;
 
@@ -440,6 +441,7 @@ struct _E_Config
 #ifdef _F_ZONE_WINDOW_ROTATION_
    unsigned char wm_win_rotation;
 #endif
+   Eina_List *client_types;
 };
 
 struct E_Config_Bindings
@@ -645,6 +647,14 @@ struct _E_Config_XKB_Layout
 struct _E_Config_XKB_Option
 {
    const char *name;
+};
+
+struct _E_Config_Client_Type
+{
+   const char     *name; /* icccm.class_name */
+   const char     *clas; /* icccm.class */
+   E_Window_Type   window_type; /* Ecore_X_Window_Type / E_Window_Type */
+   int             client_type; /* E_Client_Type */
 };
 
 EINTERN int                   e_config_init(void);

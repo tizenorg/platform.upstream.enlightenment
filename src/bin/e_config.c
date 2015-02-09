@@ -50,6 +50,7 @@ static E_Config_DD *_e_config_syscon_action_edd = NULL;
 static E_Config_DD *_e_config_env_var_edd = NULL;
 static E_Config_DD *_e_config_xkb_layout_edd = NULL;
 static E_Config_DD *_e_config_xkb_option_edd = NULL;
+static E_Config_DD *_e_config_client_type_edd = NULL;
 
 EAPI int E_EVENT_CONFIG_ICON_THEME = 0;
 EAPI int E_EVENT_CONFIG_MODE_CHANGED = 0;
@@ -127,6 +128,7 @@ _e_config_edd_shutdown(void)
    E_CONFIG_DD_FREE(_e_config_env_var_edd);
    E_CONFIG_DD_FREE(_e_config_xkb_layout_edd);
    E_CONFIG_DD_FREE(_e_config_xkb_option_edd);
+   E_CONFIG_DD_FREE(_e_config_client_type_edd);
 }
 
 static void
@@ -421,6 +423,17 @@ _e_config_edd_init(Eina_Bool old)
 #define T E_Config_XKB_Option
 #define D _e_config_xkb_option_edd
    E_CONFIG_VAL(D, T, name, STR);
+
+   _e_config_client_type_edd = E_CONFIG_DD_NEW("E_Config_Client_Type",
+                                               E_Config_Client_Type);
+#undef T
+#undef D
+#define T E_Config_Client_Type
+#define D _e_config_client_type_edd
+   E_CONFIG_VAL(D, T, name, STR);
+   E_CONFIG_VAL(D, T, clas, STR);
+   E_CONFIG_VAL(D, T, window_type, INT);
+   E_CONFIG_VAL(D, T, client_type, INT);
 
    _e_config_edd = E_CONFIG_DD_NEW("E_Config", E_Config);
 #undef T
@@ -768,6 +781,7 @@ _e_config_edd_init(Eina_Bool old)
 #ifdef _F_ZONE_WINDOW_ROTATION_
    E_CONFIG_VAL(D, T, wm_win_rotation, UCHAR);
 #endif
+   E_CONFIG_LIST(D, T, client_types, _e_config_client_type_edd);
 }
 
 /* externally accessible functions */
