@@ -417,6 +417,35 @@ e_hints_window_init(E_Client *ec)
           ec->icccm.state = ECORE_X_WINDOW_STATE_HINT_NORMAL;
      }
 
+#ifdef _F_TRANSIENT_FOR_PATCH
+   if ((!ec->parent) ||
+       (!e_config->transient.layer))
+     {
+        if ((rem) && (rem->apply & E_REMEMBER_APPLY_LAYER))
+          {
+             ec->layer = rem->prop.layer;
+             evas_object_layer_set(ec->frame, ec->layer);
+          }
+        else
+          {
+             if (!ec->lock_client_stacking)
+               {
+                  if (ec->netwm.type == E_WINDOW_TYPE_DESKTOP)
+                    evas_object_layer_set(ec->frame, E_LAYER_CLIENT_DESKTOP);
+                  else if (ec->netwm.state.stacking == E_STACKING_BELOW)
+                    evas_object_layer_set(ec->frame, E_LAYER_CLIENT_BELOW);
+                  else if (ec->netwm.state.stacking == E_STACKING_ABOVE)
+                    evas_object_layer_set(ec->frame, E_LAYER_CLIENT_ABOVE);
+                  else if (ec->netwm.type == E_WINDOW_TYPE_DOCK)
+                    evas_object_layer_set(ec->frame, E_LAYER_CLIENT_ABOVE);
+                  else if (!evas_object_layer_get(ec->frame)) //impossible?
+                    evas_object_layer_set(ec->frame, E_LAYER_CLIENT_NORMAL);
+               }
+             else
+               evas_object_raise(ec->frame);
+          }
+     }
+#else
    if ((rem) && (rem->apply & E_REMEMBER_APPLY_LAYER))
      {
         ec->layer = rem->prop.layer;
@@ -443,6 +472,7 @@ e_hints_window_init(E_Client *ec)
 
    if ((ec->parent) && (e_config->transient.layer))
      evas_object_layer_set(ec->frame, ec->parent->layer);
+#endif
 
 #if 0
    /* Ignore this, E has incompatible desktop setup */
