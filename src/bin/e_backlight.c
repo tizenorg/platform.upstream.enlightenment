@@ -200,6 +200,15 @@ e_backlight_devices_get(void)
 static void
 _e_backlight_update(E_Zone *zone)
 {
+#ifdef _F_DISABLE_BACKLIGHT_MOD_SUPPORT
+   /* MODE_SYS makes e possible to change nodes in /sys/class/leds.
+    * Thus, it can turn on the backlight of the camera.
+    * In order to avoid this case, we always fix sysmode to MODE_NONE.
+    */
+   sysmode = MODE_NONE;
+   return;
+#endif /* end of _F_DISABLE_BACKLIGHT_MOD_SUPPORT */
+
 #ifndef HAVE_WAYLAND_ONLY
    double x_bl = -1.0;
    Ecore_X_Window root;
