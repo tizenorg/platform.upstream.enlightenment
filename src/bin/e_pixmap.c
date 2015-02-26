@@ -832,6 +832,36 @@ e_pixmap_image_draw(E_Pixmap *cp, const Eina_Rectangle *r)
    return EINA_FALSE;
 }
 
+EAPI Eina_Bool
+e_pixmap_validate_check(const E_Pixmap *cp)
+{
+   Eina_Bool success = EINA_FALSE;
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cp, EINA_FALSE);
+
+   switch (cp->type)
+      {
+       case E_PIXMAP_TYPE_X:
+#ifndef HAVE_WAYLAND_ONLY
+         {
+            int pw, ph;
+            if (!cp->pixmap) break;
+            ecore_x_pixmap_geometry_get(cp->pixmap, NULL, NULL, &pw, &ph);
+            success = (pw > 0) && (ph > 0);
+         }
+#endif
+         break;
+       case E_PIXMAP_TYPE_WL:
+#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+         _e_pixmap_update_wl(cp);
+         success = (cp->w > 0) && (cp->h > 0);
+#endif
+         break;
+       default:
+         break;
+      }
+   return success;
+}
+
 EAPI void 
 e_pixmap_image_draw_done(E_Pixmap *cp)
 {

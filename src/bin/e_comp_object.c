@@ -1416,6 +1416,10 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
      {
         if (cw->ec->internal) //internal clients render when they feel like it
           e_comp_object_damage(cw->smart_obj, 0, 0, cw->w, cw->h);
+
+        if (!cw->update_count || !(e_pixmap_validate_check(cw->ec->pixmap)))
+          return;
+
         evas_object_show(cw->smart_obj);
      }
 }
@@ -1427,6 +1431,7 @@ _e_comp_intercept_show(void *data, Evas_Object *obj EINA_UNUSED)
    E_Client *ec = cw->ec;
 
    if (ec->ignored) return;
+
    if (cw->effect_obj)
      {
         //INF("SHOW2 %p", ec);
@@ -3032,6 +3037,10 @@ e_comp_object_damage(Evas_Object *obj, int x, int y, int w, int h)
      {
         RENDER_DEBUG("IGNORED %p: %d,%d %dx%d", cw->ec, x, y, w, h);
         e_comp_object_render_update_add(obj);
+
+        if ((cw->ec->visible) && (!evas_object_visible_get(cw->smart_obj)))
+          evas_object_show(cw->smart_obj);
+
         return;
      }
    /* clip rect to client surface */
@@ -3072,6 +3081,9 @@ e_comp_object_damage(Evas_Object *obj, int x, int y, int w, int h)
      }
    cw->updates_exist = 1;
    e_comp_object_render_update_add(obj);
+
+   if ((cw->ec->visible) && (!evas_object_visible_get(cw->smart_obj)))
+     evas_object_show(cw->smart_obj);
 }
 
 EAPI Eina_Bool
