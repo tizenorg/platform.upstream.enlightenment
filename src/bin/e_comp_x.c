@@ -1418,8 +1418,25 @@ _e_comp_x_configure_request(void *data  EINA_UNUSED, int type EINA_UNUSED, Ecore
    if (e_comp_find_by_window(ev->win)) return ECORE_CALLBACK_RENEW;
    ec = _e_comp_x_client_find_by_window(ev->win);
 
+   /* ignore requests for windows that don't have E_Client yet */
+   if (!ec)
+    {
+       Ecore_X_Window_Attributes att;
+
+       memset(&att, 0, sizeof(Ecore_X_Window_Attributes));
+       ecore_x_window_attributes_get(ev->win, &att);
+
+       if (att.override)
+         {
+            ecore_x_window_configure(ev->win, ev->value_mask,
+                                     ev->x, ev->y, ev->w, ev->h, ev->border,
+                                     ev->abovewin, ev->detail);
+         }
+
+       return ECORE_CALLBACK_PASS_ON;
+    }
    /* pass through requests for windows we haven't/won't reparent yet */
-   if (ec && (!ec->comp_data->need_reparent) && (!ec->comp_data->reparented))
+   if ((ec) && (!ec->comp_data->need_reparent) && (!ec->comp_data->reparented))
      {
         ec->comp_data->initial_attributes.x = ev->x;
         ec->comp_data->initial_attributes.y = ev->y;
@@ -1428,9 +1445,7 @@ _e_comp_x_configure_request(void *data  EINA_UNUSED, int type EINA_UNUSED, Ecore
         ec->border_size = ev->border;
         ec->changes.size = 1;
         ec = NULL;
-     }
-   if (!ec)
-     {
+
         ecore_x_window_configure(ev->win, ev->value_mask,
                                  ev->x, ev->y, ev->w, ev->h, ev->border,
                                  ev->abovewin, ev->detail);
