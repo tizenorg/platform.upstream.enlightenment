@@ -20,8 +20,8 @@ typedef struct _E_Comp_Demo_Style_Item E_Comp_Demo_Style_Item;
 
 # define E_COMP_TYPE (int) 0xE0b01003
 
-# define E_LAYER_COUNT 19
-# define E_CLIENT_LAYER_COUNT 11
+# define E_LAYER_COUNT 22
+# define E_CLIENT_LAYER_COUNT 14
 
 typedef enum _E_Layer
 {
@@ -40,6 +40,9 @@ typedef enum _E_Layer
    E_LAYER_CLIENT_TOP = 500,
    E_LAYER_CLIENT_DRAG = 550,
    E_LAYER_CLIENT_PRIO = 600,
+   E_LAYER_CLIENT_NOTIFICATION_LOW = 700,
+   E_LAYER_CLIENT_NOTIFICATION_NORMAL = 750,
+   E_LAYER_CLIENT_NOTIFICATION_HIGH = 800,
    E_LAYER_POPUP = 999, // popups
    E_LAYER_MENU = 5000, // menus
    E_LAYER_DESKLOCK = 9999, // desklock
