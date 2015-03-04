@@ -3592,11 +3592,16 @@ _e_comp_object_effect_end_cb(void *data, Evas_Object *obj, const char *emission,
         e_object_unref(E_OBJECT(cw->ec));
      }
 
+   if (evas_object_data_get(cw->smart_obj, "effect_running"))
+     {
+        evas_object_data_del(cw->smart_obj, "effect_running");
+        e_client_visibility_calculate(cw->ec);
+     }
+
    end_cb = evas_object_data_get(obj, "_e_comp.end_cb");
    if (!end_cb) return;
    end_data = evas_object_data_get(obj, "_e_comp.end_data");
    end_cb(end_data, cw->smart_obj, emission, source);
-
 }
 
 /* clip effect to client's zone */
@@ -3633,6 +3638,7 @@ e_comp_object_effect_start(Evas_Object *obj, Edje_Signal_Cb end_cb, const void *
    edje_object_signal_callback_add(cw->effect_obj, "e,action,done", "e", _e_comp_object_effect_end_cb, cw);
    evas_object_data_set(cw->effect_obj, "_e_comp.end_cb", end_cb);
    evas_object_data_set(cw->effect_obj, "_e_comp.end_data", end_data);
+   evas_object_data_set(cw->smart_obj, "effect_running", (void*)1);
 
    edje_object_signal_emit(cw->effect_obj, "e,action,go", "e");
    if (cw->animating) return;
@@ -3660,6 +3666,12 @@ e_comp_object_effect_stop(Evas_Object *obj, Edje_Signal_Cb end_cb)
         cw->animating--;
         cw->comp->animating--;
         e_object_unref(E_OBJECT(cw->ec));
+     }
+
+   if (evas_object_data_get(cw->smart_obj, "effect_running"))
+     {
+        evas_object_data_del(cw->smart_obj, "effect_running");
+        e_client_visibility_calculate(cw->ec);
      }
 }
 
@@ -3810,4 +3822,12 @@ e_comp_object_util_autoclose(Evas_Object *obj, E_Comp_Object_Autoclose_Cb del_cb
    else
      evas_object_event_callback_add(obj, EVAS_CALLBACK_SHOW, _e_comp_object_autoclose_show, c);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_DEL, _e_comp_object_autoclose_del, c);
+}
+
+EAPI unsigned int
+e_comp_object_is_animating(Evas_Object *obj)
+{
+   SOFT_ENTRY(0);
+
+   return cw->animating;
 }
