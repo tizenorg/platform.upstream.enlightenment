@@ -1414,10 +1414,23 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
    /* only do the show if show is allowed */
    if (!cw->real_hid)
      {
+#ifndef HAVE_WAYLAND_ONLY
+        E_Comp_X_Client_Data *cd = NULL;
+        cd = (E_Comp_X_Client_Data*)cw->ec->comp_data;
+#endif
         if (cw->ec->internal) //internal clients render when they feel like it
           e_comp_object_damage(cw->smart_obj, 0, 0, cw->w, cw->h);
+#ifndef HAVE_WAYLAND_ONLY
+        if (ecore_x_icccm_state_get(e_client_util_win_get(cw->ec)) != ECORE_X_WINDOW_STATE_HINT_NORMAL)
+          e_hints_window_visible_set(cw->ec);
+#endif
 
-        if (!cw->update_count || !(e_pixmap_validate_check(cw->ec->pixmap)))
+        if (!cw->update_count || !(e_pixmap_validate_check(cw->ec->pixmap))
+#ifndef HAVE_WAYLAND_ONLY
+            || !(cd->damage_count>1))
+#else
+            )
+#endif
           return;
 
         evas_object_show(cw->smart_obj);
