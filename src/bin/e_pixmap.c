@@ -287,8 +287,22 @@ e_pixmap_parent_window_set(E_Pixmap *cp, Ecore_Window win)
    EINA_SAFETY_ON_NULL_RETURN(cp);
    if (cp->parent == win) return;
 
-   e_pixmap_usable_set(cp, 0);
-   e_pixmap_clear(cp);
+   switch (cp->type)
+     {
+      case E_PIXMAP_TYPE_X:
+#ifndef HAVE_WAYLAND_ONLY
+         e_pixmap_usable_set(cp, 0);
+         if (win) e_pixmap_clear(cp);
+         else ecore_x_e_comp_pixmap_set(cp->parent, 0);
+#endif
+         break;
+      case E_PIXMAP_TYPE_WL:
+#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+         e_pixmap_usable_set(cp, 0);
+         e_pixmap_clear(cp);
+#endif
+         break;
+     }
 
    if (cp->parent)
      eina_hash_set(pixmaps[cp->type], &cp->parent, NULL);
