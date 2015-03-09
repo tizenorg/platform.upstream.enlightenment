@@ -54,6 +54,7 @@ end:
    return ECORE_CALLBACK_PASS_ON;
 }
 
+#if 0 //TODO_GL77
 static Eina_Bool
 _e_mod_drm_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
@@ -72,6 +73,7 @@ _e_mod_drm_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 end:
    return ECORE_CALLBACK_PASS_ON;
 }
+#endif
 
 EAPI void *
 e_modapi_init(E_Module *m)
@@ -164,9 +166,11 @@ e_modapi_init(E_Module *m)
       ecore_event_handler_add(ECORE_DRM_EVENT_ACTIVATE,
                               _e_mod_drm_cb_activate, comp);
 
+#if 0 //TODO_GL77
    output_handler =
       ecore_event_handler_add(ECORE_DRM_EVENT_OUTPUT,
                               _e_mod_drm_cb_output, comp);
+#endif
 
    return m;
 }

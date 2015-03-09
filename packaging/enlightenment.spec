@@ -1,4 +1,5 @@
 %bcond_with x
+%bcond_with wayland
 
 Name:           enlightenment
 Version:        0.19.0
@@ -42,7 +43,7 @@ BuildRequires:  pkgconfig(xext)
 BuildRequires:  pkgconfig(xcb-keysyms)
 BuildRequires:  pkgconfig(ecore-x)
 %else
-ExclusiveArch:
+BuildRequires:  pkgconfig(wayland-server)
 %endif
 Requires:       monotype-fonts
 
@@ -66,9 +67,16 @@ cp %{SOURCE1002} .
 
 %build
 %autogen \
-      --enable-device-udev \
-      --enable-mount-eeze  \
-      --enable-comp
+%if %{with wayland}
+      --enable-wayland-only \
+      --enable-wl-drm \
+      --disable-shot \
+      --disable-xkbswitch \
+      --disable-conf-randr \
+      --disable-wl-x11 \
+%endif
+      --enable-mount-eeze
+
 make %{?_smp_mflags}
 
 %install

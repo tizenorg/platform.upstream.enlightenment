@@ -866,7 +866,9 @@ e_pixmap_validate_check(const E_Pixmap *cp)
          break;
        case E_PIXMAP_TYPE_WL:
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#if 0 //TODO_GL77
          _e_pixmap_update_wl(cp);
+#endif
          success = (cp->w > 0) && (cp->h > 0);
 #endif
          break;
