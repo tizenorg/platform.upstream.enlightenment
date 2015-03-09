@@ -1416,7 +1416,7 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
      {
 #ifndef HAVE_WAYLAND_ONLY
         E_Comp_X_Client_Data *cd = NULL;
-        cd = (E_Comp_X_Client_Data*)cw->ec->comp_data;
+        cd = (E_Comp_X_Client_Data *)cw->ec->comp_data;
 #endif
         if (cw->ec->internal) //internal clients render when they feel like it
           e_comp_object_damage(cw->smart_obj, 0, 0, cw->w, cw->h);
@@ -1427,7 +1427,7 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
 
         if (!cw->update_count || !(e_pixmap_validate_check(cw->ec->pixmap))
 #ifndef HAVE_WAYLAND_ONLY
-            || !(cd->damage_count>1))
+            || (cd->damage_count < 2))
 #else
             )
 #endif
