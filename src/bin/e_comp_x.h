@@ -38,6 +38,7 @@ struct _E_Comp_X_Client_Data
 
    Ecore_Timer *first_draw_delay; //configurable placebo
    Eina_Bool first_damage : 1; //ignore first damage on non-re_manage clients
+   unsigned int damage_count;
 
    struct
    {
