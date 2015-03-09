@@ -9,7 +9,6 @@ Url:            http://www.enlightenment.org/
 Group:          Graphics/EFL
 Source0:        enlightenment-%{version}.tar.bz2
 Source1001:     enlightenment.manifest
-Source1002:     enlightenment.service
 BuildRequires:  doxygen
 BuildRequires:  eet-tools
 BuildRequires:  fdupes
@@ -61,7 +60,6 @@ Development files for enlightenment
 %prep
 %setup -q -n %{name}-%{version}
 cp %{SOURCE1001} .
-cp %{SOURCE1002} .
 
 
 %build
@@ -74,11 +72,7 @@ make %{?_smp_mflags}
 %install
 %make_install
 
-mkdir -p %{buildroot}%{_prefix}/lib/systemd/system/
-mkdir -p %{buildroot}%{_prefix}/lib/systemd/system/graphical.target.wants
 mkdir -p %{buildroot}%{_sysconfdir}/dbus-1/system.d
-install -m 0644 %{SOURCE1002} %{buildroot}%{_prefix}/lib/systemd/system/
-ln -sf ../enlightenment.service %{buildroot}%{_prefix}/lib/systemd/system/graphical.target.wants
 rm -f %{buildroot}%{_prefix}/lib/systemd/user/enlightenment.service
 
 %find_lang enlightenment
@@ -98,8 +92,6 @@ rm -f %{buildroot}%{_prefix}/lib/systemd/user/enlightenment.service
 %{_datadir}/xsessions/enlightenment.desktop
 %{_sysconfdir}/xdg/menus/e-applications.menu
 %{_datadir}/applications/enlightenment_filemanager.desktop
-%{_prefix}/lib/systemd/system/enlightenment.service
-%{_prefix}/lib/systemd/system/graphical.target.wants/enlightenment.service
 %{_sysconfdir}/dbus-1/system.d/org.enlightenment.wm.conf
 %exclude /usr/share/enlightenment/data/config/profile.cfg
 
