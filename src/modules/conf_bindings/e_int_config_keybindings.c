@@ -1,9 +1,6 @@
 #include "e.h"
 
 #define TEXT_NONE_ACTION_KEY    _("<None>")
-#define TEXT_PRESS_KEY_SEQUENCE _("Please press key sequence,<br><br>" \
-                                  "or <hilight>Escape</hilight> to abort.")
-
 #define TEXT_NO_PARAMS          _("<None>")
 #define TEXT_NO_MODIFIER_HEADER _("Single key")
 
@@ -88,7 +85,7 @@ struct _E_Config_Dialog_Data
 };
 
 E_Config_Dialog *
-e_int_config_keybindings(E_Comp *comp,
+e_int_config_keybindings(Evas_Object *parent EINA_UNUSED,
                          const char *params)
 {
    E_Config_Dialog *cfd;
@@ -103,7 +100,7 @@ e_int_config_keybindings(E_Comp *comp,
    v->basic.create_widgets = _basic_create_widgets;
    v->override_auto_apply = 1;
 
-   cfd = e_config_dialog_new(comp, _("Key Bindings Settings"), "E",
+   cfd = e_config_dialog_new(NULL, _("Key Bindings Settings"), "E",
                              "keyboard_and_mouse/key_bindings",
                              "preferences-desktop-keyboard-shortcuts", 0, v, NULL);
    if ((params) && (params[0]))
@@ -202,8 +199,6 @@ _basic_apply_data(E_Config_Dialog *cfd  __UNUSED__,
 
    EINA_LIST_FOREACH(cfdata->binding.key, l, bi2)
      {
-        bi2 = l->data;
-
         if (!bi2->key || !bi2->key[0]) continue;
 
         bi = E_NEW(E_Config_Binding_Key, 1);
@@ -227,7 +222,7 @@ _basic_apply_data(E_Config_Dialog *cfd  __UNUSED__,
 }
 
 static Evas_Object *
-_basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *o, *ot, *of, *ob;
 
@@ -258,7 +253,7 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    e_widget_frametable_object_append(of, ob, 0, 3, 2, 1, 1, 0, 1, 0);
    e_widget_list_object_append(o, of, 1, 1, 0.5);
 
-   ot = e_widget_table_add(evas, 0);
+   ot = e_widget_table_add(e_win_evas_win_get(evas), 0);
    of = e_widget_framelist_add(evas, _("Action"), 0);
    ob = e_widget_ilist_add(evas, 24, 24, &(cfdata->locals.action));
    cfdata->gui.o_action_list = ob;
@@ -267,7 +262,7 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    e_widget_table_object_append(ot, of, 0, 0, 1, 1, 1, 1, 1, 1);
 
    of = e_widget_framelist_add(evas, _("Action Params"), 0);
-   ob = e_widget_entry_add(evas, &(cfdata->locals.params), NULL, NULL, NULL);
+   ob = e_widget_entry_add(cfd->dia->win, &(cfdata->locals.params), NULL, NULL, NULL);
    cfdata->gui.o_params = ob;
    e_widget_disabled_set(ob, 1);
    e_widget_framelist_object_append(of, ob);
@@ -277,6 +272,7 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    _update_key_binding_list(cfdata, NULL);
    _fill_actions_list(cfdata);
 
+   e_dialog_resizable_set(cfd->dia, 1);
    return o;
 }
 
@@ -977,10 +973,10 @@ _grab_key_down_cb(void *data,
              if (actd) label = _(actd->act_name);
 
              e_util_dialog_show(_("Binding Key Error"),
-                                _("The binding key sequence, that you choose,"
+                                _("The binding key combination that you chose"
                                   " is already used by <br>"
                                   "<hilight>%s</hilight> action.<br>"
-                                  "Please choose another binding key sequence."),
+                                  "Please choose another binding key combination."),
                                 label ? label : _("Unknown"));
 #endif
              EINA_LIST_FOREACH(e_widget_ilist_items_get(cfdata->gui.o_binding_list), l, it)

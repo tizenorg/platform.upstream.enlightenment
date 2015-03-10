@@ -106,7 +106,7 @@ e_int_client_remember(E_Client *ec)
         v->override_auto_apply = 1;
 
         /* create config dialog for ec object/data */
-        cfd = e_config_dialog_new(ec->zone->comp,
+        cfd = e_config_dialog_new(NULL,
                                   _("Window Remember"),
                                   "E", "_border_remember_dialog",
                                   NULL, 0, v, ec);
@@ -328,11 +328,11 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static void
-_warning_dialog_show(E_Comp *c)
+_warning_dialog_show(void)
 {
    E_Dialog *dia;
 
-   dia = e_dialog_new(c, "E", "_border_remember_error_multi_dialog");
+   dia = e_dialog_new(NULL, "E", "_border_remember_error_multi_dialog");
    e_dialog_title_set(dia, _("Window properties are not a unique match"));
    e_dialog_text_set
      (dia,
@@ -351,66 +351,64 @@ _warning_dialog_show(E_Comp *c)
        "are not sure and nothing will be affected.")
      );
    e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
 }
 
 static int
 _check_matches(E_Remember *rem, int update)
 {
-   const Eina_List *l, *ll;
+   const Eina_List *l;
    E_Client *ec;
-   E_Comp *c;
    const char *title;
    int n = 0;
 
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
-     EINA_LIST_FOREACH(c->clients, ll, ec)
-       {
-          int match = rem->match;
-          title = e_client_util_name_get(ec);
+   EINA_LIST_FOREACH(e_comp->clients, l, ec)
+     {
+        int match = rem->match;
+        title = e_client_util_name_get(ec);
 
-          if ((match & E_REMEMBER_MATCH_NAME) &&
-              (e_util_glob_match(ec->icccm.name, rem->name)))
-            match &= ~E_REMEMBER_MATCH_NAME;
+        if ((match & E_REMEMBER_MATCH_NAME) &&
+            (e_util_glob_match(ec->icccm.name, rem->name)))
+          match &= ~E_REMEMBER_MATCH_NAME;
 
-          if ((match & E_REMEMBER_MATCH_CLASS) &&
-              (e_util_glob_match(ec->icccm.class, rem->class)))
-            match &= ~E_REMEMBER_MATCH_CLASS;
+        if ((match & E_REMEMBER_MATCH_CLASS) &&
+            (e_util_glob_match(ec->icccm.class, rem->class)))
+          match &= ~E_REMEMBER_MATCH_CLASS;
 
-          if ((match & E_REMEMBER_MATCH_TITLE) &&
-              (e_util_glob_match(title, rem->title)))
-            match &= ~E_REMEMBER_MATCH_TITLE;
+        if ((match & E_REMEMBER_MATCH_TITLE) &&
+            (e_util_glob_match(title, rem->title)))
+          match &= ~E_REMEMBER_MATCH_TITLE;
 
-          if ((match & E_REMEMBER_MATCH_ROLE) &&
-              ((!e_util_strcmp(rem->role, ec->icccm.window_role)) ||
-               (e_util_both_str_empty(rem->role, ec->icccm.window_role))))
-            match &= ~E_REMEMBER_MATCH_ROLE;
+        if ((match & E_REMEMBER_MATCH_ROLE) &&
+            ((!e_util_strcmp(rem->role, ec->icccm.window_role)) ||
+             (e_util_both_str_empty(rem->role, ec->icccm.window_role))))
+          match &= ~E_REMEMBER_MATCH_ROLE;
 
-          if ((match & E_REMEMBER_MATCH_TYPE) &&
-              (rem->type == (int)ec->netwm.type))
-            match &= ~E_REMEMBER_MATCH_TYPE;
+        if ((match & E_REMEMBER_MATCH_TYPE) &&
+            (rem->type == (int)ec->netwm.type))
+          match &= ~E_REMEMBER_MATCH_TYPE;
 
-          if ((match & E_REMEMBER_MATCH_TRANSIENT) &&
-              ((rem->transient && ec->icccm.transient_for != 0) ||
-               (!rem->transient && (ec->icccm.transient_for == 0))))
-            match &= ~E_REMEMBER_MATCH_TRANSIENT;
+        if ((match & E_REMEMBER_MATCH_TRANSIENT) &&
+            ((rem->transient && ec->icccm.transient_for != 0) ||
+             (!rem->transient && (ec->icccm.transient_for == 0))))
+          match &= ~E_REMEMBER_MATCH_TRANSIENT;
 
-          if (match == 0) n++;
+        if (match == 0) n++;
 
-          if (update)
-            {
-               ec->changed = 1;
-               ec->changes.icon = 1;
-            }
-          else if (n > 1)
-            break;
-       }
+        if (update)
+          {
+             ec->changed = 1;
+             ec->changes.icon = 1;
+          }
+        else if (n > 1)
+          break;
+     }
    return n;
 }
 
 static int
-_basic_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
+_basic_apply_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    /* Actually take our cfdata settings and apply them in real life */
    E_Client *ec = cfdata->client;
@@ -443,7 +441,7 @@ _basic_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
 
    if ((!cfdata->warned) && (_check_matches(rem, 0) > 1))
      {
-        _warning_dialog_show(cfd->comp);
+        _warning_dialog_show();
         cfdata->warned = 1;
         return 0;
      }
@@ -459,7 +457,7 @@ _basic_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
 }
 
 static int
-_advanced_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
+_advanced_apply_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    E_Client *ec = cfdata->client;
    E_Remember *rem;
@@ -537,7 +535,7 @@ _advanced_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
      {
         E_Dialog *dia;
 
-        dia = e_dialog_new(cfd->comp, "E", "_border_remember_error_noprop_dialog");
+        dia = e_dialog_new(NULL, "E", "_border_remember_error_noprop_dialog");
         e_dialog_title_set(dia, _("No match properties set"));
         e_dialog_text_set
           (dia,
@@ -548,7 +546,7 @@ _advanced_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
             "You must specify at least 1 way of remembering this window.")
           );
         e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
-        e_win_centered_set(dia->win, 1);
+        elm_win_center(dia->win, 1, 1);
         e_dialog_show(dia);
         if (ec)
           cfdata->client->remember = rem;
@@ -563,7 +561,7 @@ _advanced_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
         if ((!cfdata->remember.apply_first_only) &&
             (_check_matches(rem, 0) > 1))
           {
-             _warning_dialog_show(cfd->comp);
+             _warning_dialog_show();
              cfdata->warned = 1;
              return 0;
           }
@@ -661,7 +659,7 @@ _basic_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dial
 }
 
 static Evas_Object *
-_advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata)
+_advanced_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    /* generate the core widget layout for an advanced dialog */
    Evas_Object *o, *ob, *of, *oc;
@@ -676,7 +674,7 @@ _advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_D
         ob = e_widget_check_add(evas, _("Window name"),
                                 &(cfdata->remember.match_name));
         e_widget_list_object_append(of, ob, 1, 0, 0.5);
-        ob = e_widget_entry_add(evas, &cfdata->name, NULL, NULL, NULL);
+        ob = e_widget_entry_add(cfd->dia->win, &cfdata->name, NULL, NULL, NULL);
         e_widget_list_object_append(of, ob, 1, 0, 0.5);
      }
    else
@@ -688,7 +686,7 @@ _advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_D
         ob = e_widget_check_add(evas, _("Window class"),
                                 &(cfdata->remember.match_class));
         e_widget_list_object_append(of, ob, 1, 0, 0.5);
-        ob = e_widget_entry_add(evas, &cfdata->class, NULL, NULL, NULL);
+        ob = e_widget_entry_add(cfd->dia->win, &cfdata->class, NULL, NULL, NULL);
         e_widget_list_object_append(of, ob, 1, 0, 0.5);
      }
    else
@@ -700,7 +698,7 @@ _advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_D
         ob = e_widget_check_add(evas, _("Title"),
                                 &(cfdata->remember.match_title));
         e_widget_list_object_append(of, ob, 1, 0, 0.5);
-        ob = e_widget_entry_add(evas, &cfdata->title, NULL, NULL, NULL);
+        ob = e_widget_entry_add(cfd->dia->win, &cfdata->title, NULL, NULL, NULL);
         e_widget_list_object_append(of, ob, 1, 0, 0.5);
      }
    else
@@ -712,7 +710,7 @@ _advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_D
         ob = e_widget_check_add(evas, _("Window Role"),
                                 &(cfdata->remember.match_role));
         e_widget_list_object_append(of, ob, 1, 0, 0.5);
-        ob = e_widget_entry_add(evas, &cfdata->role, NULL, NULL, NULL);
+        ob = e_widget_entry_add(cfd->dia->win, &cfdata->role, NULL, NULL, NULL);
         e_widget_list_object_append(of, ob, 1, 0, 0.5);
      }
    else
@@ -739,8 +737,7 @@ _advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_D
      }
    e_widget_toolbook_page_append(o, NULL, _("Identifiers"), of, 1, 1, 1, 1, 0.5, 0.0);
 
-   of = e_widget_table_add(evas, 0);
-   e_widget_table_freeze(of);
+   of = e_widget_table_add(e_win_evas_win_get(evas), 0);
    ob = e_widget_check_add(evas, _("Position"),
                            &(cfdata->remember.apply_pos));
    e_widget_table_object_append(of, ob, 0, 0, 1, 1, 1, 0, 1, 0);
@@ -792,12 +789,12 @@ _advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_D
    oc = e_widget_check_add(evas, _("Application file or name (.desktop)"),
                            &(cfdata->remember.apply_desktop_file));
    e_widget_table_object_append(of, oc, 0, 8, 1, 1, 1, 0, 1, 0);
-   ob = e_widget_entry_add(evas, &cfdata->desktop, NULL, NULL, NULL);
+   ob = e_widget_entry_add(cfd->dia->win, &cfdata->desktop, NULL, NULL, NULL);
    e_widget_check_widget_disable_on_unchecked_add(oc, ob);
    e_widget_table_object_append(of, ob, 0, 9, 2, 1, 1, 0, 1, 0);
    e_widget_toolbook_page_append(o, NULL, _("Properties"), of, 1, 1, 1, 1, 0.5, 0.0);
 
-   of = e_widget_table_add(evas, 0);
+   of = e_widget_table_add(e_win_evas_win_get(evas), 0);
    ob = e_widget_check_add(evas, _("Match only one window"),
                            &(cfdata->remember.apply_first_only));
    e_widget_table_object_append(of, ob, 0, 0, 1, 1, 1, 0, 1, 0);
@@ -816,7 +813,6 @@ _advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_D
                                 &(cfdata->remember.apply_run));
         e_widget_table_object_append(of, ob, 0, 3, 1, 1, 1, 0, 1, 0);
      }
-   e_widget_table_thaw(of);
    e_widget_toolbook_page_append(o, NULL, _("Options"), of, 1, 1, 1, 1, 0.5, 0.0);
    e_widget_toolbook_page_show(o, 0);
 

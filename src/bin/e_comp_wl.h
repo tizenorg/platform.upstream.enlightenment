@@ -13,10 +13,10 @@
 
 #  include <xkbcommon/xkbcommon.h>
 
-#  ifdef HAVE_WAYLAND_EGL
-#   include <EGL/egl.h>
-#   define GL_GLEXT_PROTOTYPES
-#  endif
+/* #  ifdef HAVE_WAYLAND_EGL */
+/* #   include <EGL/egl.h> */
+/* #   define GL_GLEXT_PROTOTYPES */
+/* #  endif */
 
 #  ifdef __linux__
 #   include <linux/input.h>
@@ -38,11 +38,13 @@
 
 typedef struct _E_Comp_Wl_Buffer E_Comp_Wl_Buffer;
 typedef struct _E_Comp_Wl_Buffer_Ref E_Comp_Wl_Buffer_Ref;
-typedef struct _E_Comp_Wl_Subsurf E_Comp_Wl_Subsurf;
+typedef struct _E_Comp_Wl_Subsurf_Data E_Comp_Wl_Subsurf_Data;
+typedef struct _E_Comp_Wl_Surface_State E_Comp_Wl_Surface_State;
 typedef struct _E_Comp_Wl_Client_Data E_Comp_Wl_Client_Data;
 typedef struct _E_Comp_Wl_Data E_Comp_Wl_Data;
+typedef struct _E_Comp_Wl_Output E_Comp_Wl_Output;
 
-struct _E_Comp_Wl_Buffer 
+struct _E_Comp_Wl_Buffer
 {
    struct wl_resource *resource;
    struct wl_signal destroy_signal;
@@ -62,7 +64,19 @@ struct _E_Comp_Wl_Buffer_Ref
    struct wl_listener destroy_listener;
 };
 
-struct _E_Comp_Wl_Subsurf
+struct _E_Comp_Wl_Surface_State
+{
+   int sx, sy;
+   int bw, bh;
+   E_Comp_Wl_Buffer *buffer;
+   struct wl_listener buffer_destroy_listener;
+   Eina_List *damages, *frames;
+   Eina_Tiler *input, *opaque;
+   Eina_Bool new_attach : 1;
+   Eina_Bool has_data : 1;
+};
+
+struct _E_Comp_Wl_Subsurf_Data
 {
    struct wl_resource *resource;
 
@@ -74,56 +88,51 @@ struct _E_Comp_Wl_Subsurf
         Eina_Bool set;
      } position;
 
-   struct
-     {
-        int x, y;
-
-        Eina_Bool has_data;
-        Eina_Bool new_attach;
-
-        E_Comp_Wl_Buffer_Ref buffer_ref;
-
-        Eina_Tiler *damage;
-        Eina_Tiler *opaque;
-        Eina_Tiler *input;
-     } cached;
+   E_Comp_Wl_Surface_State cached;
+   E_Comp_Wl_Buffer_Ref cached_buffer_ref;
 
    Eina_Bool synchronized;
 };
 
 struct _E_Comp_Wl_Data
 {
-   struct 
+   struct
      {
         struct wl_display *disp;
         struct wl_event_loop *loop;
      } wl;
 
-   /* NB: At the moment, we don't need these */
-   /* struct  */
-   /*   { */
-   /*      struct wl_signal destroy; */
-   /*      struct wl_signal activate; */
-   /*      struct wl_signal transform; */
-   /*      struct wl_signal kill; */
-   /*      struct wl_signal idle; */
-   /*      struct wl_signal wake; */
-   /*      struct wl_signal session; */
-   /*      struct  */
-   /*        { */
-   /*           struct wl_signal created; */
-   /*           struct wl_signal destroyed; */
-   /*           struct wl_signal moved; */
-   /*        } seat, output; */
-   /*   } signals; */
+   struct
+     {
+        struct
+          {
+             struct wl_signal create;
+             struct wl_signal activate;
+             struct wl_signal kill;
+          } surface;
+        /* NB: At the moment, we don't need these */
+        /*      struct wl_signal destroy; */
+        /*      struct wl_signal activate; */
+        /*      struct wl_signal transform; */
+        /*      struct wl_signal kill; */
+        /*      struct wl_signal idle; */
+        /*      struct wl_signal wake; */
+        /*      struct wl_signal session; */
+        /*      struct  */
+        /*        { */
+        /*           struct wl_signal created; */
+        /*           struct wl_signal destroyed; */
+        /*           struct wl_signal moved; */
+        /*        } seat, output; */
+     } signals;
 
-   struct 
+   struct
      {
         struct wl_resource *shell;
         struct wl_resource *xdg_shell;
      } shell_interface;
 
-   struct 
+   struct
      {
         Eina_List *resources;
         Eina_Bool enabled : 1;
@@ -134,9 +143,10 @@ struct _E_Comp_Wl_Data
         xkb_layout_index_t mod_group;
         struct wl_array keys;
         struct wl_resource *focus;
+        int mod_changed;
      } kbd;
 
-   struct 
+   struct
      {
         Eina_List *resources;
         Eina_Bool enabled : 1;
@@ -145,13 +155,13 @@ struct _E_Comp_Wl_Data
         uint32_t button;
      } ptr;
 
-   struct 
+   struct
      {
         Eina_List *resources;
         Eina_Bool enabled : 1;
      } touch;
 
-   struct 
+   struct
      {
         struct wl_global *global;
         Eina_List *resources;
@@ -159,7 +169,7 @@ struct _E_Comp_Wl_Data
         char *name;
      } seat;
 
-   struct 
+   struct
      {
         struct wl_global *global;
         Eina_List *data_resources;
@@ -182,11 +192,10 @@ struct _E_Comp_Wl_Data
    struct
      {
         struct wl_resource *resource;
-        int32_t width, height;
         uint32_t edges;
      } resize;
 
-   struct 
+   struct
      {
         struct xkb_keymap *keymap;
         struct xkb_context *context;
@@ -195,6 +204,8 @@ struct _E_Comp_Wl_Data
         size_t size;
         char *area;
      } xkb;
+
+   Eina_List *outputs;
 
    Ecore_Fd_Handler *fd_hdlr;
    Ecore_Idler *idler;
@@ -210,15 +221,16 @@ struct _E_Comp_Wl_Client_Data
 
    struct
      {
-        E_Comp_Wl_Subsurf *cdata;
+        E_Comp_Wl_Subsurf_Data *data;
         E_Client *restack_target;
         Eina_List *list;
      } sub;
 
    /* regular surface resource (wl_compositor_create_surface) */
    struct wl_resource *surface;
+   struct wl_signal destroy_signal;
 
-   struct 
+   struct
      {
         /* shell surface resource */
         struct wl_resource *surface;
@@ -226,32 +238,23 @@ struct _E_Comp_Wl_Client_Data
         void (*configure_send)(struct wl_resource *resource, uint32_t edges, int32_t width, int32_t height);
         void (*configure)(struct wl_resource *resource, Evas_Coord x, Evas_Coord y, Evas_Coord w, Evas_Coord h);
         void (*ping)(struct wl_resource *resource);
-        void (*activate)(struct wl_resource *resource);
-        void (*deactivate)(struct wl_resource *resource);
         void (*map)(struct wl_resource *resource);
         void (*unmap)(struct wl_resource *resource);
+        Eina_Rectangle window;
      } shell;
 
    E_Comp_Wl_Buffer_Ref buffer_ref;
+   E_Comp_Wl_Surface_State pending;
 
-   struct 
-     {
-        int32_t x, y, w, h;
-        E_Comp_Wl_Buffer *buffer;
-        struct wl_listener buffer_destroy;
-        Eina_Bool new_attach : 1;
-        Eina_Tiler *damage;
-        Eina_Tiler *input;
-        Eina_Tiler *opaque;
-     } pending;
+   Eina_List *frames;
 
-   struct 
+   struct
      {
         int32_t x, y;
      } popup;
 
-   Eina_List *frames;
-
+   Eina_Bool delete_me : 1;
+   Eina_Bool keep_buffer : 1;
    Eina_Bool mapped : 1;
    Eina_Bool change_icon : 1;
    Eina_Bool need_reparent : 1;
@@ -260,6 +263,20 @@ struct _E_Comp_Wl_Client_Data
    Eina_Bool first_damage : 1;
    Eina_Bool set_win_type : 1;
    Eina_Bool frame_update : 1;
+   Eina_Bool focus_update : 1;
+};
+
+struct _E_Comp_Wl_Output
+{
+   struct wl_global *global;
+   Eina_List *resources;
+   const char *id, *make, *model;
+   int x, y, w, h;
+   int phys_width, phys_height;
+   unsigned int refresh;
+   unsigned int subpixel;
+   unsigned int transform;
+   double scale;
 };
 
 EAPI Eina_Bool e_comp_wl_init(void);
@@ -267,12 +284,20 @@ EINTERN void e_comp_wl_shutdown(void);
 
 EINTERN struct wl_resource *e_comp_wl_surface_create(struct wl_client *client, int version, uint32_t id);
 EINTERN void e_comp_wl_surface_destroy(struct wl_resource *resource);
+EINTERN void e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer);
+EINTERN Eina_Bool e_comp_wl_surface_commit(E_Client *ec);
+EINTERN Eina_Bool e_comp_wl_subsurface_commit(E_Client *ec);
 EINTERN void e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer);
+EAPI E_Comp_Wl_Buffer *e_comp_wl_buffer_get(struct wl_resource *resource);
+
+EAPI struct wl_signal e_comp_wl_surface_create_signal_get(E_Comp *comp);
+EAPI double e_comp_wl_idle_time_get(void);
+EAPI void e_comp_wl_output_init(const char *id, const char *make, const char *model, int x, int y, int w, int h, int pw, int ph, unsigned int refresh, unsigned int subpixel, unsigned int transform);
 
 static inline uint64_t
-e_comp_wl_id_get(uint32_t client, uint32_t surface)
+e_comp_wl_id_get(uint32_t id, pid_t pid)
 {
-   return ((uint64_t)surface << 32) + (uint64_t)client;
+   return ((uint64_t)id << 32) + pid;
 }
 
 # endif

@@ -160,11 +160,11 @@ _gc_id_new(const E_Gadcon_Client_Class *client_class __UNUSED__)
 }
 
 static void
-_cpufreq_cb_menu_configure(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
+_cpufreq_cb_menu_configure(void *data __UNUSED__, E_Menu *m EINA_UNUSED, E_Menu_Item *mi __UNUSED__)
 {
    if (!cpufreq_config) return;
    if (cpufreq_config->config_dialog) return;
-   e_int_config_cpufreq_module(m->zone->comp, NULL);
+   e_int_config_cpufreq_module(NULL, NULL);
 }
 
 static void
@@ -301,7 +301,8 @@ _button_cb_mouse_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED_
           }
 
         if ((cpufreq_config->status->frequencies) &&
-            (cpufreq_config->status->can_set_frequency))
+            (cpufreq_config->status->can_set_frequency) &&
+            (!cpufreq_config->status->pstate))
           {
              mo = e_menu_new();
              cpufreq_config->menu_frequency = mo;
@@ -507,7 +508,7 @@ _cpufreq_set_governor(const char *governor)
                                  "cpu frequency governor via the module's<br>"
                                  "setfreq utility."));
         e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
-        e_win_centered_set(dia->win, 1);
+        elm_win_center(dia->win, 1, 1);
         e_dialog_show(dia);
      }
 }
@@ -534,7 +535,7 @@ _cpufreq_set_frequency(int frequency)
                                  "Kernel modules or features, or your CPU<br>"
                                  "simply does not support this feature."));
         e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
-        e_win_centered_set(dia->win, 1);
+        elm_win_center(dia->win, 1, 1);
         e_dialog_show(dia);
         return;
      }
@@ -559,7 +560,7 @@ _cpufreq_set_frequency(int frequency)
                                  "cpu frequency setting via the module's<br>"
                                  "setfreq utility."));
         e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
-        e_win_centered_set(dia->win, 1);
+        elm_win_center(dia->win, 1, 1);
         e_dialog_show(dia);
      }
 }
@@ -585,7 +586,7 @@ _cpufreq_set_pstate(int min, int max, int turbo)
                                  "cpu power state setting via the module's<br>"
                                  "setfreq utility."));
         e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
-        e_win_centered_set(dia->win, 1);
+        elm_win_center(dia->win, 1, 1);
         e_dialog_show(dia);
      }
 }
@@ -766,6 +767,42 @@ _cpufreq_status_check_available(Cpu_Status *s)
                                         eina_list_count(s->frequencies),
                                         _cpufreq_cb_sort);
      }
+   else
+     do
+       {
+#define CPUFREQ_SYSFSDIR "/sys/devices/system/cpu/cpu0/cpufreq"
+          f = fopen(CPUFREQ_SYSFSDIR "/scaling_cur_freq", "r");
+          if (!f) break;
+          fclose(f);
+
+          f = fopen(CPUFREQ_SYSFSDIR "/scaling_driver", "r");
+          if (!f) break;
+          if (fgets(buf, sizeof(buf), f) == NULL)
+            {
+               fclose(f);
+               break;
+            }
+          fclose(f);
+          if (strcmp(buf, "intel_pstate\n")) break;
+
+          if (s->frequencies)
+            {
+               eina_list_free(s->frequencies);
+               s->frequencies = NULL;
+            }
+#define CPUFREQ_ADDF(filename) \
+          f = fopen(CPUFREQ_SYSFSDIR filename, "r"); \
+          if (f) \
+            { \
+               if (fgets(buf, sizeof(buf), f) != NULL) \
+                 s->frequencies = eina_list_append(s->frequencies, \
+                                                   (void *)(long)(atoi(buf))); \
+               fclose(f); \
+            }
+          CPUFREQ_ADDF("/cpuinfo_min_freq");
+          CPUFREQ_ADDF("/cpuinfo_max_freq");
+       }
+     while (0);
 
    f = fopen("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors", "r");
    if (f)

@@ -209,7 +209,6 @@ EAPI int
 e_desklock_show(Eina_Bool suspend)
 {
    const Eina_List *l;
-   E_Comp *comp;
    E_Event_Desklock *ev;
    E_Desklock_Show_Cb show_cb;
    E_Desklock_Hide_Cb hide_cb;
@@ -252,7 +251,7 @@ e_desklock_show(Eina_Bool suspend)
 
              zone = e_util_zone_current_get(e_manager_current_get());
              if (zone)
-               e_configure_registry_call("screen/screen_lock", zone->comp, NULL);
+               e_configure_registry_call("screen/screen_lock", NULL, NULL);
              return 0;
           }
      }
@@ -263,17 +262,16 @@ e_desklock_show(Eina_Bool suspend)
         if (!show_cb()) goto fail;
      }
 
-   EINA_LIST_FOREACH(e_comp_list(), l, comp)
-     {
-        Evas_Object *o;
+   {
+      Evas_Object *o;
 
-        o = evas_object_rectangle_add(comp->evas);
-        block_rects = eina_list_append(block_rects, o);
-        evas_object_color_set(o, 0, 0, 0, 255);
-        evas_object_resize(o, comp->man->w, comp->man->h);
-        evas_object_layer_set(o, E_LAYER_DESKLOCK);
-        evas_object_show(o);
-     }
+      o = evas_object_rectangle_add(e_comp->evas);
+      block_rects = eina_list_append(block_rects, o);
+      evas_object_color_set(o, 0, 0, 0, 255);
+      evas_object_resize(o, e_comp->man->w, e_comp->man->h);
+      evas_object_layer_set(o, E_LAYER_DESKLOCK);
+      evas_object_show(o);
+   }
    if (e_config->desklock_language)
      e_intl_language_set(e_config->desklock_language);
 
@@ -335,8 +333,8 @@ e_desklock_hide(void)
 
    if ((!_e_desklock_state) && (!_e_custom_desklock_exe)) return;
 
-   E_LIST_FOREACH(e_comp_list(), e_comp_override_del);
-   E_LIST_FOREACH(e_comp_list(), e_comp_shape_queue);
+   e_comp_override_del(e_comp);
+   e_comp_shape_queue(e_comp);
    E_FREE_LIST(block_rects, evas_object_del);
    //e_comp_block_window_del();
    if (e_config->desklock_language)
@@ -427,7 +425,10 @@ _e_desklock_cb_idle_poller(void *data __UNUSED__)
 
 #ifndef HAVE_WAYLAND_ONLY
         idle = ecore_x_screensaver_idle_time_get();
+#else
+        idle = e_comp_wl_idle_time_get();
 #endif
+
         max = e_config->desklock_autolock_idle_timeout;
         if (_e_desklock_ask_presentation_count > 0)
           max *= (1 + _e_desklock_ask_presentation_count);
@@ -485,6 +486,7 @@ _e_desklock_ask_presentation_no(void *data __UNUSED__, E_Dialog *dia)
 static void
 _e_desklock_ask_presentation_no_increase(void *data __UNUSED__, E_Dialog *dia)
 {
+#ifndef HAVE_WAYLAND_ONLY
    int timeout, interval, blanking, expose;
 
    _e_desklock_ask_presentation_count++;
@@ -493,7 +495,6 @@ _e_desklock_ask_presentation_no_increase(void *data __UNUSED__, E_Dialog *dia)
    blanking = e_config->screensaver_blanking;
    expose = e_config->screensaver_expose;
 
-#ifndef HAVE_WAYLAND_ONLY
    ecore_x_screensaver_set(timeout, interval, blanking, expose);
 #endif
    e_object_del(E_OBJECT(dia));
@@ -549,7 +550,7 @@ _e_desklock_ask_presentation_mode(void)
 
    e_dialog_button_focus_num(dia, 0);
    e_widget_list_homogeneous_set(dia->box_object, 0);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
 
    evas_object_event_callback_add(dia->bg_object, EVAS_CALLBACK_KEY_DOWN,

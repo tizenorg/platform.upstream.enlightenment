@@ -42,19 +42,6 @@ lokker_is_pin(void)
    return e_config->desklock_auth_method == E_DESKLOCK_AUTH_METHOD_PIN;
 }
 
-static int
-_zone_count_get(void)
-{
-   int num = 0;
-   const Eina_List *l;
-   E_Comp *comp;
-
-   EINA_LIST_FOREACH(e_comp_list(), l, comp)
-     num += eina_list_count(comp->zones);
-
-   return num;
-}
-
 static void
 _lokker_state_set(int state)
 {
@@ -224,7 +211,6 @@ _pin_click(void *data EINA_UNUSED, Evas_Object *obj, const char *sig EINA_UNUSED
 static void
 _pin_box_add(Lokker_Popup *lp)
 {
-   int mw, mh;
    Evas *evas;
    Evas_Object *table, *o, *o2;
    int x, a = 0, b = 0;
@@ -237,10 +223,9 @@ _pin_box_add(Lokker_Popup *lp)
                            "e/desklock/pin_box");
    edje_object_part_text_set(lp->login_box, "e.text.title",
                              _("Please enter your PIN"));
-   table = e_table_add(evas);
+   table = elm_table_add(e_win_evas_win_get(evas));
    e_comp_object_util_del_list_append(lp->login_box, table);
-   e_table_homogenous_set(table, 1);
-   e_table_freeze(table);
+   elm_table_homogeneous_set(table, 1);
    for (x = 1; x < 11; x++)
      {
         char buf[8];
@@ -253,9 +238,10 @@ _pin_box_add(Lokker_Popup *lp)
         evas_object_show(o);
         edje_object_signal_callback_add(o, "e,action,click", "*", _pin_click, lp);
         if (x == 10) a = 1;
-        e_table_pack(table, o, a, b, 1, 1);
-        e_table_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5,
-          48 * e_scale, 48 * e_scale, 48 * e_scale, 48 * e_scale);
+        evas_object_size_hint_min_set(o, 48 * e_scale, 48 * e_scale);
+        evas_object_size_hint_max_set(o, 48 * e_scale, 48 * e_scale);
+        E_FILL(o);
+        elm_table_pack(table, o, a, b, 1, 1);
         if (++a >= 3)
           {
              a = 0;
@@ -275,9 +261,10 @@ _pin_box_add(Lokker_Popup *lp)
    evas_object_show(o2);
    evas_object_show(o);
    edje_object_signal_callback_add(o, "e,action,click", "*", _pin_click, lp);
-   e_table_pack(table, o, 0, 3, 1, 1);
-   e_table_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5,
-     48 * e_scale, 48 * e_scale, 48 * e_scale, 48 * e_scale);
+   evas_object_size_hint_min_set(o, 48 * e_scale, 48 * e_scale);
+   evas_object_size_hint_max_set(o, 48 * e_scale, 48 * e_scale);
+   E_FILL(o);
+   elm_table_pack(table, o, 0, 3, 1, 1);
 
    /* login */
    o = edje_object_add(evas);
@@ -291,19 +278,13 @@ _pin_box_add(Lokker_Popup *lp)
    evas_object_show(o2);
    evas_object_show(o);
    edje_object_signal_callback_add(o, "e,action,click", "*", _pin_click, lp);
-   e_table_pack(table, o, 2, 3, 1, 1);
-   e_table_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5,
-     48 * e_scale, 48 * e_scale, 48 * e_scale, 48 * e_scale);
+   evas_object_size_hint_min_set(o, 48 * e_scale, 48 * e_scale);
+   evas_object_size_hint_max_set(o, 48 * e_scale, 48 * e_scale);
+   E_FILL(o);
+   elm_table_pack(table, o, 2, 3, 1, 1);
 
-   e_table_thaw(table);
    evas_object_show(table);
-   e_table_size_min_get(table, &mw, &mh);
-   evas_object_size_hint_min_set(table, mw, mh);
-   evas_object_size_hint_max_set(table, mw, mh);
    edje_object_part_swallow(lp->login_box, "e.swallow.buttons", table);
-   edje_object_size_min_calc(lp->login_box, &mw, &mh);
-   evas_object_size_hint_min_set(lp->login_box, mw, mh);
-   evas_object_size_hint_max_set(lp->login_box, mw, mh);
 }
 
 static void
@@ -316,7 +297,7 @@ _text_login_box_add(Lokker_Popup *lp)
 
    zone = lp->zone;
    last_active_zone = current_zone = e_util_zone_current_get(e_manager_current_get());
-   total_zone_num = _zone_count_get();
+   total_zone_num = eina_list_count(e_comp->zones);
    if (total_zone_num > 1)
      {
         if ((e_config->desklock_login_box_zone == -2) && (zone != current_zone))
@@ -333,6 +314,12 @@ _text_login_box_add(Lokker_Popup *lp)
                            "e/desklock/login_box");
    edje_object_part_text_set(lp->login_box, "e.text.title",
                              _("Please enter your unlock password"));
+   if (evas_key_lock_is_set(evas_key_lock_get(evas), "Caps_Lock"))
+        edje_object_part_text_set(lp->login_box, "e.text.hint",
+                             _("Caps Lock is On"));
+   else
+        edje_object_part_text_set(lp->login_box, "e.text.hint",
+                             "");
    edje_object_size_min_calc(lp->login_box, &mw, &mh);
    if (edje_object_part_exists(lp->bg_object, "e.swallow.login_box"))
      {
@@ -367,7 +354,7 @@ _lokker_popup_add(E_Zone *zone)
    bg = cbg ? cbg->file : NULL;
 
    lp->zone = zone;
-   evas = e_comp_get(zone)->evas;
+   evas = e_comp->evas;
    evas_event_freeze(evas);
    lp->bg_object = edje_object_add(evas);
    evas_object_name_set(lp->bg_object, "desklock->bg_object");
@@ -418,7 +405,7 @@ _lokker_popup_add(E_Zone *zone)
    evas_object_clip_set(lp->comp_object, lp->zone->bg_clip_object);
 
    last_active_zone = current_zone = e_util_zone_current_get(e_manager_current_get());
-   total_zone_num = _zone_count_get();
+   total_zone_num = eina_list_count(e_comp->zones);
    if (total_zone_num > 1)
      {
         if ((e_config->desklock_login_box_zone == -2) && (zone != current_zone))
@@ -626,6 +613,17 @@ _desklock_auth(char *passwd)
    return (_auth_child_pid > 0);
 }
 
+static void
+_lokker_caps_hint_update(const char *msg)
+{
+   Eina_List *l;
+   Lokker_Popup *lp;
+   EINA_LIST_FOREACH(edd->elock_wnd_list, l, lp)
+     {
+        edje_object_part_text_set(lp->login_box, "e.text.hint", msg);
+     }
+}
+
 static int
 _lokker_check_auth(void)
 {
@@ -641,8 +639,8 @@ _lokker_check_auth(void)
      }
    else if (e_desklock_is_personal())
      {
-        if ((e_config->desklock_passwd) && (edd->passwd && edd->passwd[0]) &&
-            (e_config->desklock_passwd == eina_hash_djb2(edd->passwd, strlen(edd->passwd))))
+        if ((e_config->desklock_passwd) && edd->passwd[0] &&
+            (e_config->desklock_passwd == e_auth_hash_djb2(edd->passwd, strlen(edd->passwd))))
           {
              /* password ok */
              /* security - null out passwd string once we are done with it */
@@ -655,7 +653,7 @@ _lokker_check_auth(void)
      {
         if (edd->passwd[0])
           {
-             if (eina_hash_djb2(edd->passwd, strlen(edd->passwd)) ==
+             if (e_auth_hash_djb2(edd->passwd, strlen(edd->passwd)) ==
                  e_config->desklock_pin)
                {
                   _lokker_null();
@@ -710,6 +708,13 @@ _lokker_cb_key_down(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
           }
         _lokker_delete();
      }
+   else if (!strcmp(ev->key, "Caps_Lock"))
+     {
+        if(ev->modifiers & ECORE_EVENT_LOCK_CAPS)
+          _lokker_caps_hint_update("");
+        else
+          _lokker_caps_hint_update(_("Caps Lock is On"));
+     }
    else if ((!strcmp(ev->key, "u") &&
              (ev->modifiers & ECORE_EVENT_MODIFIER_CTRL)))
      _lokker_null();
@@ -751,8 +756,6 @@ EINTERN Eina_Bool
 lokker_lock(void)
 {
    int total_zone_num = 0;
-   const Eina_List *l;
-   E_Comp *comp;
 
    if (edd) return EINA_TRUE;
 
@@ -767,11 +770,8 @@ lokker_lock(void)
    edd = E_NEW(Lokker_Data, 1);
    if (!edd) return EINA_FALSE;
 
-   EINA_LIST_FOREACH(e_comp_list(), l, comp)
-     {
-        E_LIST_FOREACH(comp->zones, _lokker_popup_add);
-        total_zone_num += eina_list_count(comp->zones);
-     }
+   E_LIST_FOREACH(e_comp->zones, _lokker_popup_add);
+   total_zone_num = eina_list_count(e_comp->zones);
 
    /* handlers */
    E_LIST_HANDLER_APPEND(edd->handlers, ECORE_EVENT_KEY_DOWN, _lokker_cb_key_down, NULL);

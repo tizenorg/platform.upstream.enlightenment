@@ -219,7 +219,7 @@ _clock_month_update(Instance *inst)
    Evas_Object *od, *oi;
    int x, y;
 
-   oi = inst->o_cal;
+   oi = elm_layout_edje_get(inst->o_cal);
    edje_object_part_text_set(oi, "e.text.month", inst->month);
    edje_object_part_text_set(oi, "e.text.year", inst->year);
    for (x = 0; x < 7; x++)
@@ -282,7 +282,7 @@ static void
 _clock_settings_cb(void *d1, void *d2 __UNUSED__)
 {
    Instance *inst = d1;
-   e_int_config_clock_module(e_comp_get(inst->popup), inst->cfg);
+   e_int_config_clock_module(NULL, inst->cfg);
    e_object_del(E_OBJECT(inst->popup));
    inst->popup = NULL;
    inst->o_popclock = NULL;
@@ -303,7 +303,6 @@ _clock_popup_new(Instance *inst)
 {
    Evas *evas;
    Evas_Object *o, *oi;
-   Evas_Coord mw = 128, mh = 128;
    char todaystr[128];
 
    if (inst->popup) return;
@@ -317,12 +316,14 @@ _clock_popup_new(Instance *inst)
    inst->popup = e_gadcon_popup_new(inst->gcc, 0);
    evas = e_comp_get(inst->popup)->evas;
 
-   inst->o_table = e_widget_table_add(evas, 0);
+   inst->o_table = elm_table_add(inst->popup->comp_object);
 
-   oi = edje_object_add(evas);
+   oi = elm_layout_add(inst->popup->comp_object);
    inst->o_popclock = oi;
+   evas_object_size_hint_weight_set(oi, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(oi, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_event_callback_add(oi, EVAS_CALLBACK_DEL, _popclock_del_cb, inst);
-   
+
    if (inst->cfg->digital_clock)
      e_theme_edje_object_set(oi, "base/theme/modules/clock",
                              "e/modules/clock/digital");
@@ -330,49 +331,49 @@ _clock_popup_new(Instance *inst)
      e_theme_edje_object_set(oi, "base/theme/modules/clock",
                              "e/modules/clock/main");
    if (inst->cfg->show_date)
-     edje_object_signal_emit(oi, "e,state,date,on", "e");
+     elm_object_signal_emit(oi, "e,state,date,on", "e");
    else
-     edje_object_signal_emit(oi, "e,state,date,off", "e");
+     elm_object_signal_emit(oi, "e,state,date,off", "e");
    if (inst->cfg->digital_24h)
-     edje_object_signal_emit(oi, "e,state,24h,on", "e");
+     elm_object_signal_emit(oi, "e,state,24h,on", "e");
    else
-     edje_object_signal_emit(oi, "e,state,24h,off", "e");
+     elm_object_signal_emit(oi, "e,state,24h,off", "e");
    if (inst->cfg->show_seconds)
-     edje_object_signal_emit(oi, "e,state,seconds,on", "e");
+     elm_object_signal_emit(oi, "e,state,seconds,on", "e");
    else
-     edje_object_signal_emit(oi, "e,state,seconds,off", "e");
+     elm_object_signal_emit(oi, "e,state,seconds,off", "e");
 
-   edje_object_part_text_set(oi, "e.text.today", todaystr);
+   elm_object_part_text_set(oi, "e.text.today", todaystr);
 
-   o = e_widget_image_add_from_object(evas, oi, 128, 128);
+   elm_layout_sizing_eval(oi);
+   elm_table_pack(inst->o_table, oi, 0, 0, 1, 1);
    evas_object_show(oi);
-   e_widget_table_object_align_append(inst->o_table, o,
-                                      0, 0, 1, 1, 0, 0, 0, 0, 0.5, 0.5);
+
+   o = evas_object_rectangle_add(evas);
+   evas_object_size_hint_min_set(o, 80 * e_scale, 80 * e_scale);
+   elm_table_pack(inst->o_table, o, 0, 0, 1, 1);
 
    o = e_widget_button_add(evas, _("Settings"), "preferences-system",
                            _clock_settings_cb, inst, NULL);
-   e_widget_table_object_align_append(inst->o_table, o,
-                                      0, 1, 1, 1, 0, 0, 0, 0, 0.5, 1.0);
+   elm_table_pack(inst->o_table, o, 0, 2, 1, 1);
+   evas_object_show(o);
 
-   oi = edje_object_add(evas);
+   oi = elm_layout_add(inst->popup->comp_object);
    inst->o_cal = oi;
    e_theme_edje_object_set(oi, "base/theme/modules/clock",
                            "e/modules/clock/calendar");
    _clock_month_update(inst);
 
-   edje_object_signal_callback_add(oi, "e,action,prev", "*",
+   elm_object_signal_callback_add(oi, "e,action,prev", "*",
                                    _clock_month_prev_cb, inst);
-   edje_object_signal_callback_add(oi, "e,action,next", "*",
+   elm_object_signal_callback_add(oi, "e,action,next", "*",
                                    _clock_month_next_cb, inst);
-   edje_object_message_signal_process(oi);
-   evas_object_resize(oi, 500, 500);
-   edje_object_size_min_restricted_calc(oi, &mw, &mh, 128, 128);
-
-   o = e_widget_image_add_from_object(evas, oi, mw, mh);
+   edje_object_message_signal_process(elm_layout_edje_get(oi));
+   elm_layout_sizing_eval(oi);
+   elm_table_pack(inst->o_table, oi, 0, 1, 1, 1);
    evas_object_show(oi);
-   e_widget_table_object_align_append(inst->o_table, o,
-                                      1, 0, 1, 2, 0, 0, 0, 0, 0.5, 0.5);
 
+   evas_smart_objects_calculate(evas);
    e_gadcon_popup_content_set(inst->popup, inst->o_table);
    e_gadcon_popup_show(inst->popup);
 }

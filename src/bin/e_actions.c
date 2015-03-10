@@ -327,12 +327,9 @@ _e_actions_cb_kill_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSED__
 }
 
 static void
-_e_actions_cb_kill_dialog_delete(E_Win *win)
+_e_actions_cb_kill_dialog_delete(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   E_Dialog *dia;
-
-   dia = win->data;
-   _e_actions_cb_kill_dialog_cancel(NULL, dia);
+   _e_actions_cb_kill_dialog_cancel(NULL, data);
 }
 
 ACT_FN_GO(window_kill, __UNUSED__)
@@ -364,8 +361,8 @@ ACT_FN_GO(window_kill, __UNUSED__)
    kill_dialog = e_dialog_new(NULL,
                               "E", "_kill_dialog");
    if (!kill_dialog) return;
-   e_win_delete_callback_set(kill_dialog->win,
-                             _e_actions_cb_kill_dialog_delete);
+   evas_object_event_callback_add(kill_dialog->win, EVAS_CALLBACK_DEL,
+                             _e_actions_cb_kill_dialog_delete, kill_dialog);
    e_dialog_title_set(kill_dialog,
                       _("Are you sure you want to kill this window?"));
    e_dialog_text_set(kill_dialog, _(dialog_text));
@@ -375,7 +372,7 @@ ACT_FN_GO(window_kill, __UNUSED__)
    e_dialog_button_add(kill_dialog, _("No"), NULL,
                        _e_actions_cb_kill_dialog_cancel, NULL);
    e_dialog_button_focus_num(kill_dialog, 1);
-   e_win_centered_set(kill_dialog->win, 1);
+   elm_win_center(kill_dialog->win, 1, 1);
    e_dialog_show(kill_dialog);
 }
 
@@ -1364,8 +1361,8 @@ _e_actions_zone_get(E_Object *obj)
           return ((E_Client *)obj)->zone;
         else if (obj->type == (int)E_SHELF_TYPE)
           return ((E_Shelf *)obj)->zone;
-        else if (obj->type == (int)E_WIN_TYPE)
-          return ((E_Win *)obj)->client->zone;
+        else if (e_obj_is_win(obj))
+          return e_win_client_get((void*)obj)->zone;
      }
    return e_util_zone_current_get(e_manager_current_get());
 }
@@ -1576,14 +1573,11 @@ ACT_FN_GO(desk_linear_flip_to, )
 
 #define DESK_ACTION_ALL(zone, act)                     \
   E_Zone * zone;                                       \
-  const Eina_List *lc, *lz;                             \
-  E_Comp *c;                                    \
+  const Eina_List *lz;                             \
                                                        \
-  EINA_LIST_FOREACH(e_comp_list(), lc, c) {      \
-    EINA_LIST_FOREACH(c->zones, lz, zone) { \
+    EINA_LIST_FOREACH(e_comp->zones, lz, zone) { \
          act;                                  \
               }                                        \
-         }
 
 /***************************************************************************/
 ACT_FN_GO(desk_flip_by_all, )
@@ -1720,24 +1714,20 @@ ACT_FN_GO(screen_send_by, )
 #define ZONE_DESK_ACTION(con_num, zone_num, zone, act)                    \
   E_Zone * zone;                                                          \
   if ((con_num < 0) || (zone_num < 0)) {                                  \
-       Eina_List *l, *ll;                                           \
-       E_Comp *c;                                                  \
+       Eina_List *l;                                           \
        if ((con_num >= 0) && (zone_num < 0)) /* con=1 zone=all */ {       \
-            c = e_util_comp_number_get(con_num);                   \
-            EINA_LIST_FOREACH(c->zones, l, zone) {                     \
+            EINA_LIST_FOREACH(e_comp->zones, l, zone) {                     \
                  act;                                                     \
               } }                                                         \
        else if ((con_num < 0) && (zone_num >= 0)) /* c=all zone=1 */ {  \
-            EINA_LIST_FOREACH(e_comp_list(), l, c) {                \
               zone = e_comp_zone_number_get(c, zone_num);  \
               if (zone)                                           \
                 act;                                              \
-                    } }                                                  \
+                    }                                                  \
        else if ((con_num < 0) && (zone_num < 0)) /* c=all zone=all */ { \
-            EINA_LIST_FOREACH(e_comp_list(), l, c) {                \
-              EINA_LIST_FOREACH(c->zones, lll, zone) {         \
+              EINA_LIST_FOREACH(e_comp->zones, lll, zone) {         \
                    act;                                           \
-                } } } } }                                         \
+                } } }                                         \
   else {                                                                  \
        zone = e_util_comp_zone_number_get(con_num, zone_num);        \
        if (zone) act;                                                     \
@@ -1962,20 +1952,44 @@ ACT_FN_GO(app, )
              Efreet_Desktop *desktop = NULL;
              char *p, *p2;
 
-             p2 = alloca(strlen(params) + 1);
-             strcpy(p2, params);
-             p = strchr(p2, ' ');
+             p2 = strdupa(params);
+             p = strchr(p2, ':');
              if (p)
                {
-                  *p = 0;
-                  if (!strcmp(p2, "file:"))
-                    desktop = efreet_util_desktop_file_id_find(p + 1);
-                  else if (!strcmp(p2, "name:"))
-                    desktop = efreet_util_desktop_name_find(p + 1);
-                  else if (!strcmp(p2, "generic:"))
-                    desktop = efreet_util_desktop_generic_name_find(p + 1);
-                  else if (!strcmp(p2, "exe:"))
-                    desktop = efreet_util_desktop_exec_find(p + 1);
+                  *p++ = 0;
+                  if (*p == ' ')
+                    {
+                       E_Dialog *dia;
+                       char dialog_text[1024];
+
+                       dia = e_dialog_new(NULL, "E", "_e_action_act_app_go_syntax_error");
+                       if (!dia) return;
+
+                       snprintf(dialog_text, sizeof(dialog_text),
+                                "%s<br><br>"
+                                "Check syntax. You should not put a whitespace right after colon in action params.<br>"
+                                "syntax: [file:file.desktop|name:App Name|generic:Generic Name|exe:exename]<br><br>"
+                                "exe:terminology (O)<br>"
+                                "exe: terminology (X)", params);
+
+                       e_dialog_title_set(dia, _("Action Params Syntax Error"));
+                       e_dialog_text_set(dia, _(dialog_text));
+                       e_dialog_icon_set(dia, "dialog-error", 64);
+                       e_dialog_button_add(dia, _("Close"), NULL, NULL, NULL);
+                       e_dialog_button_focus_num(dia, 0);
+                       elm_win_center(dia->win, 1, 1);
+                       e_dialog_show(dia);
+
+                       return;
+                    }
+                  if (!strcmp(p2, "file"))
+                    desktop = efreet_util_desktop_file_id_find(p);
+                  else if (!strcmp(p2, "name"))
+                    desktop = efreet_util_desktop_name_find(p);
+                  else if (!strcmp(p2, "generic"))
+                    desktop = efreet_util_desktop_generic_name_find(p);
+                  else if (!strcmp(p2, "exe"))
+                    desktop = efreet_util_desktop_exec_find(p);
                   if (desktop)
                     {
                        e_exec(zone, desktop, NULL, NULL, "action/app");
@@ -2050,12 +2064,9 @@ _e_actions_cb_exit_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSED__
 }
 
 static void
-_e_actions_cb_exit_dialog_delete(E_Win *win)
+_e_actions_cb_exit_dialog_delete(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   E_Dialog *dia;
-
-   dia = win->data;
-   _e_actions_cb_exit_dialog_cancel(NULL, dia);
+   _e_actions_cb_exit_dialog_cancel(NULL, data);
 }
 
 ACT_FN_GO(exit, )
@@ -2075,7 +2086,7 @@ ACT_FN_GO(exit, )
 
    exit_dialog = e_dialog_new(NULL, "E", "_exit_dialog");
    if (!exit_dialog) return;
-   e_win_delete_callback_set(exit_dialog->win, _e_actions_cb_exit_dialog_delete);
+   evas_object_event_callback_add(exit_dialog->win, EVAS_CALLBACK_DEL, _e_actions_cb_exit_dialog_delete, exit_dialog);
    e_dialog_title_set(exit_dialog, _("Exit"));
    e_dialog_text_set(exit_dialog, _("Are you sure you want to exit Enlightenment?"));
    e_dialog_icon_set(exit_dialog, "application-exit", 64);
@@ -2084,7 +2095,7 @@ ACT_FN_GO(exit, )
    e_dialog_button_add(exit_dialog, _("No"), NULL,
                        _e_actions_cb_exit_dialog_cancel, NULL);
    e_dialog_button_focus_num(exit_dialog, 1);
-   e_win_centered_set(exit_dialog->win, 1);
+   elm_win_center(exit_dialog->win, 1, 1);
    e_dialog_show(exit_dialog);
 }
 
@@ -2144,12 +2155,9 @@ _e_actions_cb_logout_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSED
 }
 
 static void
-_e_actions_cb_logout_dialog_delete(E_Win *win)
+_e_actions_cb_logout_dialog_delete(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   E_Dialog *dia;
-
-   dia = win->data;
-   _e_actions_cb_logout_dialog_cancel(NULL, dia);
+   _e_actions_cb_logout_dialog_cancel(NULL, data);
 }
 
 ACT_FN_GO(logout, )
@@ -2169,7 +2177,7 @@ ACT_FN_GO(logout, )
 
    logout_dialog = e_dialog_new(NULL, "E", "_logout_dialog");
    if (!logout_dialog) return;
-   e_win_delete_callback_set(logout_dialog->win, _e_actions_cb_logout_dialog_delete);
+   evas_object_event_callback_add(logout_dialog->win, EVAS_CALLBACK_DEL, _e_actions_cb_logout_dialog_delete, logout_dialog);
    e_dialog_title_set(logout_dialog, _("Logout"));
    e_dialog_text_set(logout_dialog, _("Are you sure you want to logout?"));
    e_dialog_icon_set(logout_dialog, "system-log-out", 64);
@@ -2178,7 +2186,7 @@ ACT_FN_GO(logout, )
    e_dialog_button_add(logout_dialog, _("No"), NULL,
                        _e_actions_cb_logout_dialog_cancel, NULL);
    e_dialog_button_focus_num(logout_dialog, 1);
-   e_win_centered_set(logout_dialog->win, 1);
+   elm_win_center(logout_dialog->win, 1, 1);
    e_dialog_show(logout_dialog);
 }
 
@@ -2204,7 +2212,7 @@ _e_actions_cb_halt_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSED__
 }
 
 static void
-_e_actions_cb_halt_dialog_delete(E_Win *win __UNUSED__)
+_e_actions_cb_halt_dialog_delete(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    if (!halt_dialog) return;
    e_object_del(E_OBJECT(halt_dialog));
@@ -2228,7 +2236,7 @@ ACT_FN_GO(halt, )
 
    halt_dialog = e_dialog_new(NULL, "E", "_halt_dialog");
    if (!halt_dialog) return;
-   e_win_delete_callback_set(halt_dialog->win, _e_actions_cb_halt_dialog_delete);
+   evas_object_event_callback_add(halt_dialog->win, EVAS_CALLBACK_DEL, _e_actions_cb_halt_dialog_delete, halt_dialog);
    e_dialog_title_set(halt_dialog, _("Power off"));
    e_dialog_text_set(halt_dialog,
                      _("Are you sure you want to power off your computer?"));
@@ -2238,7 +2246,7 @@ ACT_FN_GO(halt, )
    e_dialog_button_add(halt_dialog, _("No"), NULL,
                        _e_actions_cb_halt_dialog_cancel, NULL);
    e_dialog_button_focus_num(halt_dialog, 1);
-   e_win_centered_set(halt_dialog->win, 1);
+   elm_win_center(halt_dialog->win, 1, 1);
    e_dialog_show(halt_dialog);
 }
 
@@ -2264,12 +2272,9 @@ _e_actions_cb_reboot_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSED
 }
 
 static void
-_e_actions_cb_reboot_dialog_delete(E_Win *win)
+_e_actions_cb_reboot_dialog_delete(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   E_Dialog *dia;
-
-   dia = win->data;
-   _e_actions_cb_reboot_dialog_cancel(NULL, dia);
+   _e_actions_cb_reboot_dialog_cancel(NULL, data);
 }
 
 ACT_FN_GO(reboot, )
@@ -2289,7 +2294,7 @@ ACT_FN_GO(reboot, )
 
    reboot_dialog = e_dialog_new(NULL, "E", "_reboot_dialog");
    if (!reboot_dialog) return;
-   e_win_delete_callback_set(reboot_dialog->win, _e_actions_cb_reboot_dialog_delete);
+   evas_object_event_callback_add(reboot_dialog->win, EVAS_CALLBACK_DEL, _e_actions_cb_reboot_dialog_delete, reboot_dialog);
    e_dialog_title_set(reboot_dialog, _("Reboot"));
    e_dialog_text_set(reboot_dialog, _("Are you sure you want to reboot your computer?"));
    e_dialog_icon_set(reboot_dialog, "system-restart", 64);
@@ -2298,7 +2303,7 @@ ACT_FN_GO(reboot, )
    e_dialog_button_add(reboot_dialog, _("No"), NULL,
                        _e_actions_cb_reboot_dialog_cancel, NULL);
    e_dialog_button_focus_num(reboot_dialog, 1);
-   e_win_centered_set(reboot_dialog->win, 1);
+   elm_win_center(reboot_dialog->win, 1, 1);
    e_dialog_show(reboot_dialog);
 }
 
@@ -2324,12 +2329,9 @@ _e_actions_cb_suspend_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSE
 }
 
 static void
-_e_actions_cb_suspend_dialog_delete(E_Win *win)
+_e_actions_cb_suspend_dialog_delete(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   E_Dialog *dia;
-
-   dia = win->data;
-   _e_actions_cb_suspend_dialog_cancel(NULL, dia);
+   _e_actions_cb_suspend_dialog_cancel(NULL, data);
 }
 
 ACT_FN_GO(suspend_now, __UNUSED__)
@@ -2354,7 +2356,7 @@ ACT_FN_GO(suspend, )
 
    suspend_dialog = e_dialog_new(NULL, "E", "_suspend_dialog");
    if (!suspend_dialog) return;
-   e_win_delete_callback_set(suspend_dialog->win, _e_actions_cb_suspend_dialog_delete);
+   evas_object_event_callback_add(suspend_dialog->win, EVAS_CALLBACK_DEL, _e_actions_cb_suspend_dialog_delete, suspend_dialog);
    e_dialog_title_set(suspend_dialog, _("Suspend"));
    e_dialog_text_set(suspend_dialog, _("Are you sure you want to suspend your computer?"));
    e_dialog_icon_set(suspend_dialog, "system-suspend", 64);
@@ -2363,8 +2365,37 @@ ACT_FN_GO(suspend, )
    e_dialog_button_add(suspend_dialog, _("No"), NULL,
                        _e_actions_cb_suspend_dialog_cancel, NULL);
    e_dialog_button_focus_num(suspend_dialog, 1);
-   e_win_centered_set(suspend_dialog->win, 1);
+   elm_win_center(suspend_dialog->win, 1, 1);
    e_dialog_show(suspend_dialog);
+}
+
+static Eina_Bool
+_have_lid_and_external_screens_on(void)
+{
+#ifndef HAVE_WAYLAND_ONLY
+   Eina_List *l;
+   E_Randr2_Screen *s;
+   int lids = 0;
+   int ext_screens = 0;
+
+   EINA_LIST_FOREACH(e_randr2->screens, l, s)
+     {
+        if (s->info.is_lid) lids++;
+        else if ((s->config.enabled) &&
+                 (s->config.geom.w > 0) &&
+                 (s->config.geom.h > 0))
+          ext_screens++;
+     }
+   if ((lids > 0) && (ext_screens > 0)) return EINA_TRUE;
+#endif
+   return EINA_FALSE;
+}
+
+ACT_FN_GO(suspend_smart, __UNUSED__)
+{
+   if ((!_have_lid_and_external_screens_on()) &&
+       (ecore_power_state_get() != ECORE_POWER_STATE_MAINS))
+     e_sys_action_do(E_SYS_SUSPEND, NULL);
 }
 
 /***************************************************************************/
@@ -2389,12 +2420,9 @@ _e_actions_cb_hibernate_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNU
 }
 
 static void
-_e_actions_cb_hibernate_dialog_delete(E_Win *win)
+_e_actions_cb_hibernate_dialog_delete(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   E_Dialog *dia;
-
-   dia = win->data;
-   _e_actions_cb_hibernate_dialog_cancel(NULL, dia);
+   _e_actions_cb_hibernate_dialog_cancel(NULL, data);
 }
 
 ACT_FN_GO(hibernate_now, __UNUSED__)
@@ -2419,7 +2447,7 @@ ACT_FN_GO(hibernate, )
 
    hibernate_dialog = e_dialog_new(NULL, "E", "_hibernate_dialog");
    if (!hibernate_dialog) return;
-   e_win_delete_callback_set(hibernate_dialog->win, _e_actions_cb_hibernate_dialog_delete);
+   evas_object_event_callback_add(hibernate_dialog->win, EVAS_CALLBACK_DEL, _e_actions_cb_hibernate_dialog_delete, hibernate_dialog);
    e_dialog_title_set(hibernate_dialog, _("Hibernate"));
    e_dialog_text_set(hibernate_dialog, _("Are you sure you want to hibernate your computer?"));
    e_dialog_icon_set(hibernate_dialog, "system-suspend-hibernate", 64);
@@ -2428,8 +2456,15 @@ ACT_FN_GO(hibernate, )
    e_dialog_button_add(hibernate_dialog, _("No"), NULL,
                        _e_actions_cb_hibernate_dialog_cancel, NULL);
    e_dialog_button_focus_num(hibernate_dialog, 1);
-   e_win_centered_set(hibernate_dialog->win, 1);
+   elm_win_center(hibernate_dialog->win, 1, 1);
    e_dialog_show(hibernate_dialog);
+}
+
+ACT_FN_GO(hibernate_smart, __UNUSED__)
+{
+   if ((!_have_lid_and_external_screens_on()) &&
+       (ecore_power_state_get() != ECORE_POWER_STATE_MAINS))
+     e_sys_action_do(E_SYS_HIBERNATE, NULL);
 }
 
 /***************************************************************************/
@@ -2444,7 +2479,7 @@ ACT_FN_GO(pointer_resize_push, )
         if ((ec->lock_user_size) || (ec->shaded) || (ec->shading) ||
             (ec->fullscreen) || ((ec->maximized) && (!e_config->allow_manip)))
           return;
-        e_pointer_type_push(e_comp_get(ec)->pointer, ec, params);
+        e_pointer_type_push(e_comp->pointer, ec, params);
      }
 }
 
@@ -2460,7 +2495,7 @@ ACT_FN_GO(pointer_resize_pop, )
         if ((ec->lock_user_size) || (ec->shaded) || (ec->shading) ||
             (ec->fullscreen) || ((ec->maximized) && (!e_config->allow_manip)))
           return;
-        e_pointer_type_pop(e_comp_get(ec)->pointer, ec, params);
+        e_pointer_type_pop(e_comp->pointer, ec, params);
      }
 }
 
@@ -2900,6 +2935,15 @@ ACT_FN_GO(module_toggle, )
    else e_module_enable(m);
 }
 
+ACT_FN_GO(screen_redo, __UNUSED__)
+{
+   printf("REDOOOOOOOOOOOOOOOOOOOOOOOOOOO\n");
+#ifndef HAVE_WAYLAND_ONLY
+   e_randr2_screeninfo_update();
+   e_randr2_config_apply();
+#endif
+}
+
 /* local subsystem globals */
 static Eina_Hash *actions = NULL;
 static Eina_List *action_list = NULL;
@@ -3241,6 +3285,12 @@ e_actions_init(void)
    e_action_predef_name_set(N_("Screen"), N_("Backlight Down"), "backlight_adjust",
                             "-10", NULL, 0);
 
+   /* screen setup */
+   ACT_GO(screen_redo);
+   e_action_predef_name_set(N_("Screen"),
+                            N_("Update and re-apply screen setup"),
+                            "screen_redo", NULL, NULL, 0);
+
    /* window_move_to_center */
    ACT_GO(window_move_to_center);
    e_action_predef_name_set(N_("Window : Actions"), N_("Move To Center"),
@@ -3385,12 +3435,20 @@ e_actions_init(void)
    e_action_predef_name_set(N_("System"), N_("Suspend"), "suspend",
                             NULL, NULL, 0);
 
+   ACT_GO(suspend_smart);
+   e_action_predef_name_set(N_("System"), N_("Suspend Intelligently"), "suspend_smart",
+                            NULL, NULL, 0);
+
    ACT_GO(hibernate);
    e_action_predef_name_set(N_("System"), N_("Hibernate"), "hibernate",
                             NULL, NULL, 0);
 
    ACT_GO(hibernate_now);
    e_action_predef_name_set(N_("System"), N_("Hibernate Now"), "hibernate_now",
+                            NULL, NULL, 0);
+
+   ACT_GO(hibernate_smart);
+   e_action_predef_name_set(N_("System"), N_("Hibernate Intelligently"), "hibernate_smart",
                             NULL, NULL, 0);
 
    ACT_GO(pointer_resize_push);
@@ -3427,6 +3485,7 @@ e_actions_init(void)
    e_action_predef_name_set(N_("Keyboard Layouts"),
                             N_("Previous keyboard layout"), "kbd_layout_prev",
                             NULL, NULL, 0);
+
    return 1;
 }
 

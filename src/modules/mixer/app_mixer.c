@@ -366,20 +366,20 @@ _create_channels(E_Dialog *dialog __UNUSED__, Evas *evas, E_Mixer_App_Dialog_Dat
 }
 
 static void
-_create_channel_editor(E_Dialog *dialog __UNUSED__, Evas *evas, E_Mixer_App_Dialog_Data *app)
+_create_channel_editor(E_Dialog *dialog, Evas *evas, E_Mixer_App_Dialog_Data *app)
 {
    struct e_mixer_app_ui_channel_editor *ui = &app->ui.channel_editor;
 
    ui->label_card = e_widget_label_add(evas, _("Card:"));
-   ui->card = e_widget_entry_add(evas, NULL, NULL, NULL, NULL);
+   ui->card = e_widget_entry_add(dialog->win, NULL, NULL, NULL, NULL);
    e_widget_entry_readonly_set(ui->card, 1);
 
    ui->label_channel = e_widget_label_add(evas, _("Channel:"));
-   ui->channel = e_widget_entry_add(evas, NULL, NULL, NULL, NULL);
+   ui->channel = e_widget_entry_add(dialog->win, NULL, NULL, NULL, NULL);
    e_widget_entry_readonly_set(ui->channel, 1);
 
    ui->label_type = e_widget_label_add(evas, _("Type:"));
-   ui->type = e_widget_entry_add(evas, NULL, NULL, NULL, NULL);
+   ui->type = e_widget_entry_add(dialog->win, NULL, NULL, NULL, NULL);
    e_widget_entry_readonly_set(ui->type, 1);
 
    ui->label_left = e_widget_label_add(evas, _("Left:"));
@@ -423,7 +423,7 @@ _create_ui(E_Dialog *dialog, E_Mixer_App_Dialog_Data *app)
    Evas *evas;
    int mw, mh;
 
-   evas = e_win_evas_get(dialog->win);
+   evas = evas_object_evas_get(dialog->win);
 
    ui->hlayout = e_widget_list_add(evas, 0, 1);
    _create_cards(dialog, evas, app);
@@ -462,9 +462,9 @@ _mixer_app_dialog_del(E_Dialog *dialog, E_Mixer_App_Dialog_Data *app)
 }
 
 static void
-_cb_win_del(E_Win *win)
+_cb_win_del(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   E_Dialog *dialog = win->data;
+   E_Dialog *dialog = data;
    E_Mixer_App_Dialog_Data *app = dialog->data;
    _mixer_app_dialog_del(dialog, app);
 }
@@ -476,12 +476,12 @@ _cb_dialog_dismiss(void *data, E_Dialog *dialog)
 }
 
 E_Dialog *
-e_mixer_app_dialog_new(E_Comp *comp, void (*func)(E_Dialog *dialog, void *data), void *data)
+e_mixer_app_dialog_new(Evas_Object *parent EINA_UNUSED, void (*func)(E_Dialog *dialog, void *data), void *data)
 {
    E_Mixer_App_Dialog_Data *app;
    E_Dialog *dialog;
 
-   dialog = e_dialog_new(comp, _e_mixer_Name, "e_mixer_app_dialog");
+   dialog = e_dialog_new(NULL, _e_mixer_Name, "e_mixer_app_dialog");
    if (!dialog)
      return NULL;
 
@@ -498,13 +498,13 @@ e_mixer_app_dialog_new(E_Comp *comp, void (*func)(E_Dialog *dialog, void *data),
 
    e_dialog_title_set(dialog, _(_e_mixer_Name));
 
-   e_win_delete_callback_set(dialog->win, _cb_win_del);
+   evas_object_event_callback_add(dialog->win, EVAS_CALLBACK_DEL, _cb_win_del, dialog);
 
    _create_ui(dialog, app);
 
    e_dialog_button_add(dialog, _("Close"), NULL, _cb_dialog_dismiss, app);
    e_dialog_button_focus_num(dialog, 1);
-   e_win_centered_set(dialog->win, 1);
+   elm_win_center(dialog->win, 1, 1);
    e_dialog_show(dialog);
    e_dialog_border_icon_set(dialog, "preferences-desktop-mixer");
 

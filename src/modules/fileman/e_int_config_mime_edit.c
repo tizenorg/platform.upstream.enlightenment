@@ -134,7 +134,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
    of = e_widget_frametable_add(evas, _("Basic Info"), 0);
    ob = e_widget_label_add(evas, _("Mime:"));
    e_widget_frametable_object_append(of, ob, 0, 0, 1, 1, 1, 1, 0, 1);
-   ob = e_widget_entry_add(evas, &(cfdata->mime), NULL, NULL, NULL);
+   ob = e_widget_entry_add(cfd->dia->win, &(cfdata->mime), NULL, NULL, NULL);
    e_widget_entry_readonly_set(ob, 1);
    e_widget_size_min_set(ob, 100, 1);
    e_widget_frametable_object_append(of, ob, 1, 0, 1, 1, 1, 1, 1, 1);
@@ -291,17 +291,18 @@ _cb_icon_sel(void *data, void *data2)
    cfd = data2;
    if (!cfd) return;
    
-   dia = e_dialog_new(cfd->comp, "E", "_mime_icon_select_dialog");
+   dia = e_dialog_new(NULL, "E", "_mime_icon_select_dialog");
    if (!dia) return;
    if (cfdata->type == EDJ)
      e_dialog_title_set(dia, _("Select an Edje file"));
    else if (cfdata->type == IMG)
      e_dialog_title_set(dia, _("Select an image"));
 
+   e_dialog_resizable_set(dia, 1);
      
    dia->data = cfdata;
    e_object_del_attach_func_set(E_OBJECT(dia), _dia_del);
-   o = e_widget_fsel_add(dia->win->evas, "~/", "/", NULL, NULL,
+   o = e_widget_fsel_add(evas_object_evas_get(dia->win), "~/", "/", NULL, NULL,
 			 _cb_fsel_sel, cfdata, NULL, cfdata, 1);
 
    cfdata->gui.fsel_wid = o;
@@ -311,7 +312,7 @@ _cb_icon_sel(void *data, void *data2)
    
    e_dialog_button_add(dia, _("OK"), NULL, _cb_fsel_ok, cfdata);
    e_dialog_button_add(dia, _("Cancel"), NULL, _cb_fsel_cancel, cfdata);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
    e_dialog_border_icon_set(dia, "enlightenment/file_icons");
    

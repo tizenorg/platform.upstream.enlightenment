@@ -31,10 +31,10 @@ e_widget_list_add(Evas *evas, int homogenous, int horiz)
    wd = calloc(1, sizeof(E_Widget_Data));
    e_widget_data_set(obj, wd);
 
-   o = e_box_add(evas);
+   o = elm_box_add(e_win_evas_win_get(evas));
    wd->o_box = o;
-   e_box_orientation_set(o, horiz);
-   e_box_homogenous_set(o, homogenous);
+   elm_box_horizontal_set(o, horiz);
+   elm_box_homogeneous_set(o, homogenous);
    evas_object_show(o);
    e_widget_sub_object_add(obj, o);
    e_widget_resize_object_set(obj, o);
@@ -60,26 +60,21 @@ e_widget_list_object_prepend(Evas_Object *obj, Evas_Object *sobj, int fill, int 
 
    wd = e_widget_data_get(obj);
 
-   e_box_pack_start(wd->o_box, sobj);
    mw = mh = 0;
-   e_widget_size_min_get(sobj, &mw, &mh);
-   if (e_box_orientation_get(wd->o_box) == 1)
-     e_box_pack_options_set(sobj,
-                            1, fill, /* fill */
-                            expand, expand, /* expand */
-                            0.5, align, /* align */
-                            mw, mh, /* min */
-                            99999, 99999 /* max */
-                            );
+   if (fill) align = -1;
+   if (elm_box_horizontal_get(wd->o_box) == 1)
+     {
+        E_ALIGN(sobj, -1, align);
+        E_WEIGHT(sobj, expand, 1);
+     }
    else
-     e_box_pack_options_set(sobj,
-                            fill, 1, /* fill */
-                            expand, expand, /* expand */
-                            align, 0.5, /* align */
-                            mw, mh, /* min */
-                            99999, 99999 /* max */
-                            );
-   e_box_size_min_get(wd->o_box, &mw, &mh);
+     {
+        E_ALIGN(sobj, align, -1);
+        E_WEIGHT(sobj, 1, expand);
+     }
+   elm_box_pack_start(wd->o_box, sobj);
+   elm_box_recalculate(wd->o_box);
+   evas_object_size_hint_min_get(wd->o_box, &mw, &mh);
    e_widget_size_min_set(obj, mw, mh);
    e_widget_sub_object_add(obj, sobj);
    evas_object_show(sobj);
@@ -103,26 +98,21 @@ e_widget_list_object_append(Evas_Object *obj, Evas_Object *sobj, int fill, int e
 
    wd = e_widget_data_get(obj);
 
-   e_box_pack_end(wd->o_box, sobj);
    mw = mh = 0;
-   e_widget_size_min_get(sobj, &mw, &mh);
-   if (e_box_orientation_get(wd->o_box) == 1)
-     e_box_pack_options_set(sobj,
-                            1, fill, /* fill */
-                            expand, expand, /* expand */
-                            0.5, align, /* align */
-                            mw, mh, /* min */
-                            99999, 99999 /* max */
-                            );
+   if (fill) align = -1;
+   if (elm_box_horizontal_get(wd->o_box) == 1)
+     {
+        E_ALIGN(sobj, -1, align);
+        E_WEIGHT(sobj, expand, 1);
+     }
    else
-     e_box_pack_options_set(sobj,
-                            fill, 1, /* fill */
-                            expand, expand, /* expand */
-                            align, 0.5, /* align */
-                            mw, mh, /* min */
-                            99999, 99999 /* max */
-                            );
-   e_box_size_min_get(wd->o_box, &mw, &mh);
+     {
+        E_ALIGN(sobj, align, -1);
+        E_WEIGHT(sobj, 1, expand);
+     }
+   elm_box_pack_end(wd->o_box, sobj);
+   elm_box_recalculate(wd->o_box);
+   evas_object_size_hint_min_get(wd->o_box, &mw, &mh);
    e_widget_size_min_set(obj, mw, mh);
    e_widget_sub_object_add(obj, sobj);
    evas_object_show(sobj);
@@ -137,24 +127,19 @@ e_widget_list_object_repack(Evas_Object *obj, Evas_Object *sobj, int fill, int e
    wd = e_widget_data_get(obj);
 
    mw = mh = 0;
-   e_widget_size_min_get(sobj, &mw, &mh);
-   if (e_box_orientation_get(wd->o_box) == 1)
-     e_box_pack_options_set(sobj,
-                            1, fill, /* fill */
-                            expand, expand, /* expand */
-                            0.5, align, /* align */
-                            mw, mh, /* min */
-                            99999, 99999 /* max */
-                            );
+   if (fill) align = -1;
+   if (elm_box_horizontal_get(wd->o_box) == 1)
+     {
+        E_ALIGN(sobj, -1, align);
+        E_WEIGHT(sobj, expand, 1);
+     }
    else
-     e_box_pack_options_set(sobj,
-                            fill, 1, /* fill */
-                            expand, expand, /* expand */
-                            align, 0.5, /* align */
-                            mw, mh, /* min */
-                            99999, 99999 /* max */
-                            );
-   e_box_size_min_get(wd->o_box, &mw, &mh);
+     {
+        E_ALIGN(sobj, align, -1);
+        E_WEIGHT(sobj, 1, expand);
+     }
+   elm_box_recalculate(wd->o_box);
+   evas_object_size_hint_min_get(wd->o_box, &mw, &mh);
    e_widget_size_min_set(obj, mw, mh);
 }
 
@@ -162,7 +147,7 @@ EAPI void
 e_widget_list_homogeneous_set(Evas_Object *obj, int homogenous)
 {
    E_Widget_Data *wd = e_widget_data_get(obj);
-   e_box_homogenous_set(wd->o_box, homogenous);
+   elm_box_homogeneous_set(wd->o_box, homogenous);
 }
 
 static void

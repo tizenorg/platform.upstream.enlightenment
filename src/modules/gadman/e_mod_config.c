@@ -57,7 +57,7 @@ _basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfda
 }
 
 E_Config_Dialog *
-_config_gadman_module(E_Comp *comp, const char *params __UNUSED__)
+_config_gadman_module(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -76,7 +76,7 @@ _config_gadman_module(E_Comp *comp, const char *params __UNUSED__)
    v->basic.check_changed = _basic_check_changed;
 
    snprintf(buf, sizeof(buf), "%s/e-module-gadman.edj", Man->module->dir);
-   cfd = e_config_dialog_new(comp, _("Desktop Gadgets"),
+   cfd = e_config_dialog_new(NULL, _("Desktop Gadgets"),
                              "E", "extensions/gadman",
                              buf, 0, v, Man);
 
@@ -151,7 +151,7 @@ _cb_config(void *data, void *data2 __UNUSED__)
 
    EINA_LIST_FOREACH(Man->gadcons[x], l, gc)
      {
-        if (gc->zone != cfdata->cfd->dia->win->client->zone) continue;
+        if (gc->zone != e_win_client_get(cfdata->cfd->dia->win)->zone) continue;
         if (gc->config_dialog) return;
         e_int_gadcon_config_hook(gc, _("Desktop Gadgets"), E_GADCON_SITE_DESKTOP);
         if (!Man->add)
@@ -189,7 +189,7 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    ob = e_widget_button_add(evas, _("Configure Layer"), NULL, _cb_config, cfdata, NULL);
    e_widget_disabled_set(ob, 1);
    cfdata->o_config = ob;
-   e_widget_size_min_get(ob, &mw, &mh);
+   evas_object_size_hint_min_get(ob, &mw, &mh);
    e_widget_framelist_object_append_full(of, ob,
                                          1, 1, /* fill */
                                          1, 0, /* expand */
@@ -202,7 +202,7 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
 
    e_widget_toolbook_page_append(otb, NULL, _("Layers"), o, 1, 1, 1, 1, 0.5, 0.0);
    /////////////////////////////////////////////////////////////////////
-   ft = e_widget_table_add(evas, 0);
+   ft = e_widget_table_add(e_win_evas_win_get(evas), 0);
 
    //Background mode
    of = e_widget_frametable_add(evas, _("Mode"), 0);

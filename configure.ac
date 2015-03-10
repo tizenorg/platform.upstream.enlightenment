@@ -2,13 +2,13 @@
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 m4_define([v_maj], [0])
 m4_define([v_min], [19])
-m4_define([v_mic], [0])
+m4_define([v_mic], [99])
 m4_define([v_rev], m4_esyscmd([(git rev-list --count HEAD 2>/dev/null || echo 0) | tr -d '\n']))dnl
 ##--   When released, remove the dnl on the below line
 dnl m4_undefine([v_rev])
-m4_define([relname], [0.19.0])
+m4_define([relname], [0.20.0])
 ##--   When doing snapshots - change soname. remove dnl on below line
-m4_define([relname], [ver-serious-0.19])
+m4_define([relname], [ver-autocannoli-0.20])
 dnl m4_define([v_rel], [-release relname])
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 m4_ifdef([v_rev], [m4_define([v_ver], [v_maj.v_min.v_mic.v_rev])], [m4_define([v_ver], [v_maj.v_min.v_mic])])
@@ -55,7 +55,7 @@ AC_DEFINE_UNQUOTED(VMAJ, [v_maj], [Major version])
 AC_DEFINE_UNQUOTED(VMIN, [v_min], [Minor version])
 AC_DEFINE_UNQUOTED(VMIC, [v_mic], [Micro version])
 AC_DEFINE_UNQUOTED(VREV, [v_rev], [Revison])
-##AC_DEFINE_UNQUOTED(E19_RELEASE_BUILD, [1], [doin it])
+##AC_DEFINE_UNQUOTED(E_RELEASE_BUILD, [1], [doin it])
 version_info="lt_cur:lt_rev:lt_age"
 release_info="v_rel"
 AC_SUBST([version_info])
@@ -92,7 +92,7 @@ extern char **environ;
 AC_DEFINE(HAVE_ENVIRON, 1, [Have environ var])
     ])
 
-efl_version="1.9.3"
+efl_version="1.13.0"
 AC_SUBST(efl_version)
 
 AC_CHECK_HEADERS([sys/timerfd.h sys/ptrace.h arpa/inet.h netinet/in.h])
@@ -306,7 +306,7 @@ ALL_LINGUAS="bg ca cs da de el eo es fi fr fr_CH he hu it ja ko nb nl pl pt_BR r
 AC_SUBST([ALL_LINGUAS])
 
 m4_ifdef([AM_GNU_GETTEXT_VERSION], [
-AM_GNU_GETTEXT_VERSION([0.17])
+AM_GNU_GETTEXT_VERSION([0.18])
 ])
 
 m4_ifdef([AC_GNU_GETTEXT], [
@@ -362,14 +362,6 @@ if test "[${e_cv_enable_files}]" = yes; then
 fi
 AC_MSG_RESULT([$e_cv_enable_files])
 
-AC_ARG_ENABLE([device-hal],
-  AS_HELP_STRING([--enable-device-hal],[enable hal device backend @<:@default=disabled@:>@]),
-  [e_cv_want_device_hal=$enableval],
-  [e_cv_want_device_hal=no])
-
-AC_MSG_CHECKING([whether the HAL device backend is enabled])
-AC_MSG_RESULT([${e_cv_want_device_hal}])
-
 AC_ARG_ENABLE([device-udev],
   AS_HELP_STRING([--enable-device-udev],[enable udev device backend @<:@default=enabled@:>@]),
   [e_cv_want_device_udev=$enableval],
@@ -394,13 +386,6 @@ AC_MSG_CHECKING([which device backend to use])
 AC_MSG_RESULT($device_backend)
 
 AM_CONDITIONAL([HAVE_EEZE], [test "x${device_backend}" = "xeeze"])
-
-if test "x${device_backend}" != "xeeze"; then
-  device_backend=hal
-  device_libs=edbus
-  AC_DEFINE_UNQUOTED([HAVE_HAL],[1],[enable HAL support])
-fi
-
 
 DBUS_MOUNT_CONFIG=1
 dbus_mount="dbus-1"
@@ -458,6 +443,16 @@ AM_CONDITIONAL([HAVE_EEZE_MOUNT], [false])
 test -n "$dbus_mount" && AC_DEFINE_UNQUOTED([HAVE_UDISKS_MOUNT], [1], [enable Udisks mounting])
 AM_CONDITIONAL([HAVE_UDISKS_MOUNT], [test -n "$dbus_mount"])
 AM_CONDITIONAL([HAVE_EEZE_MOUNT], [test -n "$eeze_mount"])
+
+# verify "wayland-only" early to adapt dependencies
+
+have_wayland_only=no
+AC_ARG_ENABLE([wayland-only],
+  AS_HELP_STRING([--enable-wayland-only],[enable wayland-only version of enlightenment @<:@default=disabled@:>@]),
+  [e_cv_want_wayland_only=$enableval],
+  [e_cv_want_wayland_only=no])
+AC_MSG_CHECKING([whether wayland-only version is enabled])
+AC_MSG_RESULT([${e_cv_want_wayland_only}])
 
 # doxygen program for documentation building
 
@@ -538,40 +533,45 @@ PKG_CHECK_MODULES(E_SYS, [
   ecore >= ${efl_version}
 ])
 
-PKG_CHECK_MODULES(E_ALERT, [
-  xcb
-  xcb-shape
-  xcb-keysyms
-  eina >= ${efl_version}
-  ecore >= ${efl_version}
-  ecore-ipc >= ${efl_version}
-])
+if test "x${e_cv_want_wayland_only}" != "xyes"; then
+  PKG_CHECK_MODULES(E_ALERT, [
+    xcb
+    xcb-shape
+    xcb-keysyms
+    eina >= ${efl_version}
+    ecore >= ${efl_version}
+    ecore-ipc >= ${efl_version}
+  ])
+fi
 
-PKG_CHECK_MODULES(E, [
-  evas >= ${efl_version}
-  ecore >= ${efl_version}
-  ecore-x >= ${efl_version}
-  ecore-evas >= ${efl_version}
-  ecore-input >= ${efl_version}
-  ecore-input-evas >= ${efl_version}
-  ecore-con >= ${efl_version}
-  ecore-ipc >= ${efl_version}
-  ecore-file >= ${efl_version}
-  eet >= ${efl_version}
-  edje >= ${efl_version}
-  efreet >= ${efl_version}
-  efreet-mime >= ${efl_version}
-  efreet-trash >= ${efl_version}
-  eina >= ${efl_version}
-  eldbus >= ${efl_version}
-  eio >= ${efl_version}
-  eo >= ${efl_version}
-  elementary >= ${efl_version}
-  emotion >= ${efl_version}
-  $eeze_mount
-  $udisks_mount
-  $device_libs
-])
+e_requires="\
+  evas >= $efl_version \
+  ecore >= $efl_version \
+  ecore-evas >= $efl_version \
+  ecore-input >= $efl_version \
+  ecore-input-evas >= $efl_version \
+  ecore-con >= $efl_version \
+  ecore-ipc >= $efl_version \
+  ecore-file >= $efl_version \
+  eet >= $efl_version \
+  edje >= $efl_version \
+  efreet >= $efl_version \
+  efreet-mime >= $efl_version \
+  efreet-trash >= $efl_version \
+  eina >= $efl_version \
+  eldbus >= $efl_version \
+  eio >= $efl_version \
+  eo >= $efl_version \
+  elementary >= $efl_version \
+  emotion >= $efl_version \
+  $eeze_mount \
+  $udisks_mount \
+  $device_libs"
+if test "x${e_cv_want_wayland_only}" != "xyes"; then
+  e_requires="$e_requires ecore-x >= $efl_version"
+fi
+
+PKG_CHECK_MODULES(E, [$e_requires])
 requirements_e="\
 evas >= ${efl_version} \
 ecore >= ${efl_version} \
@@ -624,7 +624,7 @@ AC_ARG_WITH(profile,
   [profile=$withval])
 AC_MSG_NOTICE([Enlightenment build profile set to $profile])
 EDJE_DEF="-DLOWRES_PDA=1 -DMEDIUMRES_PDA=2 -DHIRES_PDA=3 -DSLOW_PC=4 -DMEDIUM_PC=5 -DFAST_PC=6"
-EDJE_DEF=$EDJE_DEF" -DE18_PROFILE"=$profile
+EDJE_DEF=$EDJE_DEF" -DE_PROFILE"=$profile
 AC_SUBST([EDJE_DEF])
 
 AC_ARG_WITH(edje-cc,
@@ -812,14 +812,6 @@ define([CHECK_MODULE_BLUEZ4],
 AC_SUBST([EBLUEZ4_CFLAGS])
 AC_SUBST([EBLUEZ4_LIBS])
 
-have_wayland_only=no
-AC_ARG_ENABLE([wayland-only],
-  AS_HELP_STRING([--enable-wayland-only],[enable wayland-only version of enlightenment @<:@default=disabled@:>@]),
-  [e_cv_want_wayland_only=$enableval],
-  [e_cv_want_wayland_only=no])
-AC_MSG_CHECKING([whether wayland-only version is enabled])
-AC_MSG_RESULT([${e_cv_want_wayland_only}])
-
 have_wayland_clients=no
 AC_ARG_ENABLE([wayland-clients],
   AS_HELP_STRING([--enable-wayland-clients],[enable wayland clients in composite module @<:@default=disabled@:>@]),
@@ -837,7 +829,7 @@ AC_MSG_CHECKING([whether wayland EGL support is enabled])
 AC_MSG_RESULT([${e_cv_want_wayland_egl}])
 
 if test "x${e_cv_want_wayland_only}" != "xno" || test "x${e_cv_want_wayland_clients}" != "xno";then
-  PKG_CHECK_MODULES([WAYLAND], [ecore-wayland wayland-server xkbcommon uuid],
+  PKG_CHECK_MODULES([WAYLAND], [ecore-wayland wayland-server >= 1.7.0 xkbcommon uuid],
     [
       have_wayland=yes
       AC_DEFINE_UNQUOTED([HAVE_WAYLAND],[1],[enable wayland support])
@@ -872,11 +864,15 @@ AM_CONDITIONAL([HAVE_WAYLAND_ONLY], [test "x${have_wayland_only}" = "xyes"])
 AM_CONDITIONAL([HAVE_WAYLAND_CLIENTS], [test "x${have_wayland_clients}" = "xyes"])
 AM_CONDITIONAL([HAVE_WAYLAND_EGL], [test "x${have_wayland_egl}" = "xyes"])
 
-PKG_CHECK_MODULES([ECORE_X], [ecore-x >= ${efl_version}])
-if test -n "$ECORE_X_CFLAGS" ; then
-   ecore_x=true
+if test "x${have_wayland_only}" != "xyes"; then
+  PKG_CHECK_MODULES([ECORE_X], [ecore-x >= ${efl_version}])
+  if test -n "$ECORE_X_CFLAGS" ; then
+     ecore_x=true
+  else
+     ecore_x=false
+  fi
 else
-   ecore_x=false
+  ecore_x=false
 fi
 
 if test "x${ecore_x}" = "xtrue" && test -n "$WAYLAND_CFLAGS" ; then
@@ -962,7 +958,7 @@ AC_E_OPTIONAL_MODULE([tasks], true)
 AC_E_OPTIONAL_MODULE([conf_randr], true, $ecore_x)
 AC_E_OPTIONAL_MODULE([xkbswitch], true, $ecore_x)
 AC_E_OPTIONAL_MODULE([tiling], true)
-AC_E_OPTIONAL_MODULE([access], false, $ecore_x)
+#AC_E_OPTIONAL_MODULE([access], false, $ecore_x)
 AC_E_OPTIONAL_MODULE([music_control], true, [CHECK_MODULE_MUSIC_CONTROL])
 AC_E_OPTIONAL_MODULE([packagekit], true)
 AC_E_OPTIONAL_MODULE([contact], false)
@@ -977,12 +973,20 @@ HALT="/sbin/shutdown -h now"
 REBOOT="/sbin/shutdown -r now"
 SUSPEND=""
 HIBERNATE=""
+MOUNT="/bin/mount"
+UMOUNT="/bin/umount"
+EJECT="/usr/bin/eject"
 case "$host_os" in
    freebsd*|pcbsd*)
-      SUSPEND="acpiconf -s3"
+      #SUSPEND="acpiconf -s3"
+      SUSPEND="/usr/sbin/zzz"
       AC_MSG_NOTICE([use suspend method: $SUSPEND])
       HIBERNATE="acpiconf -s4"
       AC_MSG_NOTICE([use hibernate method: $HIBERNATE])
+      HALT="/sbin/shutdown -p now"
+      MOUNT="/sbin/mount"
+      UMOUNT="/sbin/umount"
+      EJECT="/usr/sbin/cdcontrol eject"
       ;;
    *)
       if test "x${have_systemd_user_session}" = "xyes"; then
@@ -1010,19 +1014,32 @@ AC_SUBST([HALT])
 AC_SUBST([REBOOT])
 AC_SUBST([SUSPEND])
 AC_SUBST([HIBERNATE])
+AC_SUBST([MOUNT])
+AC_SUBST([UMOUNT])
+AC_SUBST([EJECT])
 
-m4_ifdef([v_mic],
+m4_ifndef([v_rel],
    [
     EFL_COMPILER_FLAG([-Wshadow])
     EFL_COMPILER_FLAG([-Wall])
     EFL_COMPILER_FLAG([-Wpointer-arith])
     EFL_COMPILER_FLAG([-W])
     EFL_COMPILER_FLAG([-Wno-missing-field-initializers])
-    EFL_COMPILER_FLAG([-Wmaybe-uninitialized])
+    EFL_COMPILER_FLAG([-Wfloat-equal])
+    EFL_COMPILER_FLAG([-Wuninitialized])
+    EFL_COMPILER_FLAG([-Wundef])
+    EFL_COMPILER_FLAG([-Wcast-align])
+    EFL_COMPILER_FLAG([-Wformat=2])
    ])
 
 SUID_CFLAGS=-fPIE
 SUID_LDFLAGS=-pie
+case "$host_os" in
+   freebsd*|pcbsd*)
+      SUID_CFLAGS=
+      SUID_LDFLAGS=
+      ;;
+esac
 AC_SUBST([SUID_CFLAGS])
 AC_SUBST([SUID_LDFLAGS])
 
@@ -1076,7 +1093,6 @@ src/modules/backlight/module.desktop
 src/modules/tasks/module.desktop
 src/modules/xkbswitch/module.desktop
 src/modules/tiling/module.desktop
-src/modules/access/module.desktop
 src/modules/music-control/module.desktop
 src/modules/packagekit/module.desktop
 src/modules/contact/module.desktop
@@ -1089,7 +1105,7 @@ doc/Doxyfile
 doc/e.dox
 $po_makefile_in
 ])
-
+#src/modules/access/module.desktop
 #src/modules/illume2/doc/illume.dox
 #src/modules/illume2/module.desktop
 #src/modules/illume-home/module.desktop

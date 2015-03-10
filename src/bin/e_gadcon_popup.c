@@ -2,6 +2,9 @@
 
 /* local subsystem functions */
 
+static void _e_gadcon_popup_changed_size_hints_cb(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *event_info __UNUSED__);
+static void _e_gadcon_popup_del_cb(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *event_info __UNUSED__);
+
 static Eina_Bool
 _e_popup_autoclose_deskafter_show_cb(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
@@ -51,6 +54,14 @@ _e_gadcon_popup_delay_del(void *obj)
 static void
 _e_gadcon_popup_free(E_Gadcon_Popup *pop)
 {
+   if (pop->content)
+     {
+        evas_object_event_callback_del_full(pop->content, EVAS_CALLBACK_DEL,
+                                            _e_gadcon_popup_del_cb, pop);
+        evas_object_event_callback_del_full(pop->content, EVAS_CALLBACK_CHANGED_SIZE_HINTS,
+                                            _e_gadcon_popup_changed_size_hints_cb, pop);
+        pop->content = NULL;
+     }
    E_FREE_FUNC(pop->autoclose_handlers[0], ecore_event_handler_del);
    E_FREE_FUNC(pop->autoclose_handlers[1], ecore_event_handler_del);
 
@@ -150,27 +161,45 @@ _e_gadcon_popup_position(E_Gadcon_Popup *pop)
 static void
 _e_gadcon_popup_size_recalc(E_Gadcon_Popup *pop, Evas_Object *obj)
 {
-   Evas_Coord w = 0, h = 0;
+   Evas_Coord pw, ph, w = 0, h = 0;
 
-   e_widget_size_min_get(obj, &w, &h);
-   if ((!w) || (!h)) evas_object_size_hint_min_get(obj, &w, &h);
-   if ((!w) || (!h))
+   if (!isedje(obj))
+     evas_object_size_hint_min_get(obj, &w, &h);
+   else
      {
         edje_object_size_min_get(obj, &w, &h);
         edje_object_size_min_restricted_calc(obj, &w, &h, w, h);
+        evas_object_size_hint_min_set(obj, w, h);
      }
-   evas_object_size_hint_min_set(obj, w, h);
-   edje_object_size_min_calc(pop->o_bg, &pop->w, &pop->h);
+   edje_object_size_min_calc(pop->o_bg, &pw, &ph);
+   pop->w = MAX(pw, pop->w);
+   pop->h = MAX(ph, pop->h);
    evas_object_resize(pop->comp_object, pop->w, pop->h);
 
-   if (pop->visible)
-     _e_gadcon_popup_position(pop);
+   _e_gadcon_popup_position(pop);
 }
 
 static void
 _e_gadcon_popup_changed_size_hints_cb(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *event_info __UNUSED__)
 {
+   E_Gadcon_Popup *pop = data;
+
+   /* edje calc bug: hint updates on child are not updated for min_calc unless this happens first */
+   edje_object_part_unswallow(pop->o_bg, obj);
+   edje_object_part_swallow(pop->o_bg, "e.swallow.content", obj);
    _e_gadcon_popup_size_recalc(data, obj);
+}
+
+static void
+_e_gadcon_popup_del_cb(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *event_info __UNUSED__)
+{
+   E_Gadcon_Popup *pop = data;
+
+   evas_object_event_callback_del_full(obj, EVAS_CALLBACK_DEL,
+                                       _e_gadcon_popup_del_cb, pop);
+   evas_object_event_callback_del_full(obj, EVAS_CALLBACK_CHANGED_SIZE_HINTS,
+                                       _e_gadcon_popup_changed_size_hints_cb, pop);
+   pop->content = NULL;
 }
 
 /* externally accessible functions */
@@ -185,12 +214,12 @@ e_gadcon_popup_new(E_Gadcon_Client *gcc, Eina_Bool noshadow)
    if (!pop) return NULL;
    e_object_delay_del_set(E_OBJECT(pop), _e_gadcon_popup_delay_del);
 
-   o = edje_object_add(e_comp_get(gcc)->evas);
+   o = edje_object_add(e_comp->evas);
    e_theme_edje_object_set(o, "base/theme/gadman", "e/gadman/popup");
    pop->o_bg = o;
 
    pop->comp_object = e_comp_object_util_add(o, noshadow ? E_COMP_OBJECT_TYPE_NONE : E_COMP_OBJECT_TYPE_POPUP);
-   if (e_comp_get(gcc)->nocomp)
+   if (e_comp->nocomp)
      evas_object_layer_set(pop->comp_object, E_LAYER_CLIENT_NORMAL);
    else
      evas_object_layer_set(pop->comp_object, E_LAYER_POPUP);
@@ -220,6 +249,8 @@ e_gadcon_popup_content_set(E_Gadcon_Popup *pop, Evas_Object *o)
              evas_object_del(old_o);
           }
         edje_object_part_swallow(pop->o_bg, "e.swallow.content", o);
+        evas_object_event_callback_add(o, EVAS_CALLBACK_DEL,
+                                       _e_gadcon_popup_del_cb, pop);
         evas_object_event_callback_add(o, EVAS_CALLBACK_CHANGED_SIZE_HINTS,
                                        _e_gadcon_popup_changed_size_hints_cb, pop);
      }

@@ -44,7 +44,7 @@ static const char *_icon_previews[4] =
 #define PREVIEW_SIZE (48)
 
 E_Config_Dialog *
-e_int_config_xsettings(E_Comp *comp, const char *params __UNUSED__)
+e_int_config_xsettings(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -58,7 +58,7 @@ e_int_config_xsettings(E_Comp *comp, const char *params __UNUSED__)
    v->basic.apply_cfdata = _basic_apply;
    v->basic.check_changed = _basic_check_changed;
 
-   cfd = e_config_dialog_new(comp, _("Application Theme Settings"),
+   cfd = e_config_dialog_new(NULL, _("Application Theme Settings"),
                              "E", "appearance/xsettings",
                              "preferences-desktop-theme", 0, v, NULL);
    return cfd;
@@ -531,6 +531,7 @@ _basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data
                                  1, 1, 1, 1, 0.5, 0.0);
 
    e_widget_toolbook_page_show(otb, 0);
+   e_dialog_resizable_set(cfd->dia, 1);
 
    _fill_files_ilist(cfdata);
 

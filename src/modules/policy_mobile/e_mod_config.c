@@ -84,7 +84,6 @@ _pol_cfd_data_free(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdat
 static int
 _pol_cfd_data_basic_apply(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
-   E_Comp *comp;
    E_Zone *zone;
    E_Desk *desk;
    Pol_Softkey *softkey;
@@ -133,8 +132,7 @@ _pol_cfd_data_basic_apply(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data
 
    EINA_LIST_FOREACH(cfdata->conf->desks, l, d)
      {
-        comp = e_comp_number_get(d->comp_num);
-        zone = e_comp_zone_number_get(comp, d->zone_num);
+        zone = e_comp_zone_number_get(e_comp, d->zone_num);
         desk = e_desk_at_xy_get(zone, d->x, d->y);
         if (!desk) continue;
 
@@ -363,7 +361,7 @@ e_mod_pol_conf_desk_get_by_nums(Config *conf, unsigned int comp_num, unsigned in
 }
 
 E_Config_Dialog *
-e_int_config_pol_mobile(E_Comp *comp, const char *params EINA_UNUSED)
+e_int_config_pol_mobile(Evas_Object *parent EINA_UNUSED, const char *params EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -381,7 +379,7 @@ e_int_config_pol_mobile(E_Comp *comp, const char *params EINA_UNUSED)
    snprintf(buf, sizeof(buf), "%s/e-module-policy-mobile.edj",
             e_module_dir_get(_pol_mod->module));
 
-   cfd = e_config_dialog_new(comp, _("Mobile Policy Configuration"), "E",
+   cfd = e_config_dialog_new(NULL, _("Mobile Policy Configuration"), "E",
                              "windows/policy-mobile", buf, 0, v, NULL);
    return cfd;
 }

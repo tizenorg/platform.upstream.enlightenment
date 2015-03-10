@@ -4,8 +4,6 @@ src/bin/e_alert.c
 src/bin/e_atoms.c
 src/bin/e_bg.c
 src/bin/e_bindings.c
-src/bin/e_box.c
-src/bin/e_canvas.c
 src/bin/e_client.c
 src/bin/e_color.c
 src/bin/e_color_class.c
@@ -23,7 +21,6 @@ src/bin/e_desktop_editor.c
 src/bin/e_dialog.c
 src/bin/e_dnd.c
 src/bin/e_dpms.c
-src/bin/e_entry.c
 src/bin/e_entry_dialog.c
 src/bin/e_error.c
 src/bin/e_exec.c
@@ -79,7 +76,6 @@ src/bin/e_path.c
 src/bin/e_place.c
 src/bin/e_pointer.c
 src/bin/e_prefix.c
-src/bin/e_randr.c
 src/bin/e_remember.c
 src/bin/e_resist.c
 src/bin/e_screensaver.c
@@ -93,7 +89,6 @@ src/bin/e_start_main.c
 src/bin/e_startup.c
 src/bin/e_sys.c
 src/bin/e_sys_main.c
-src/bin/e_table.c
 src/bin/e_test.c
 src/bin/e_theme.c
 src/bin/e_theme_about.c
@@ -133,7 +128,6 @@ src/bin/e_win.c
 src/bin/e_xinerama.c
 src/bin/e_xkb.c
 src/bin/e_zone.c
-src/modules/access/e_mod_config.c
 src/modules/appmenu/e_mod_main.c
 src/modules/backlight/e_mod_main.c
 src/modules/battery/e_mod_config.c
@@ -164,7 +158,6 @@ src/modules/conf_display/e_int_config_desk.c
 src/modules/conf_display/e_int_config_desklock.c
 src/modules/conf_display/e_int_config_desklock_fsel.c
 src/modules/conf_display/e_int_config_desks.c
-src/modules/conf_display/e_int_config_display.c
 src/modules/conf_display/e_int_config_dpms.c
 src/modules/conf_display/e_int_config_screensaver.c
 src/modules/conf_display/e_mod_main.c
@@ -183,7 +176,7 @@ src/modules/conf_paths/e_mod_main.c
 src/modules/conf_performance/e_int_config_performance.c
 src/modules/conf_performance/e_int_config_powermanagement.c
 src/modules/conf_performance/e_mod_main.c
-src/modules/conf_randr/e_int_config_randr.c
+src/modules/conf_randr/e_int_config_randr2.c
 src/modules/conf_randr/e_mod_main.c
 src/modules/conf_shelves/e_int_config_shelf.c
 src/modules/conf_shelves/e_mod_main.c
@@ -262,6 +255,8 @@ src/modules/packagekit/e_mod_main.c
 src/modules/packagekit/e_mod_packagekit.c
 src/modules/pager/e_mod_config.c
 src/modules/pager/e_mod_main.c
+src/modules/pager_plain/e_mod_config.c
+src/modules/pager_plain/e_mod_main.c
 src/modules/quickaccess/e_mod_config.c
 src/modules/quickaccess/e_mod_main.c
 src/modules/quickaccess/e_mod_quickaccess.c
@@ -272,7 +267,6 @@ src/modules/syscon/e_mod_main.c
 src/modules/syscon/e_syscon.c
 src/modules/syscon/e_syscon_gadget.c
 src/modules/systray/e_mod_main.c
-src/modules/systray/e_mod_xembed.c
 src/modules/tasks/e_mod_config.c
 src/modules/tasks/e_mod_main.c
 src/modules/teamwork/e_mod_config.c

@@ -129,14 +129,7 @@ _e_wid_cb_color_changed(void *data, Evas_Object *o)
 
    /* update the spectrum */
    if (o != wd->spectrum /* && changed != -1*/)
-     {
-        if (wd->mode == changed ||
-            (wd->mode >= E_COLOR_COMPONENT_H && changed <= E_COLOR_COMPONENT_B) ||
-            (wd->mode <= E_COLOR_COMPONENT_B && changed >= E_COLOR_COMPONENT_H))
-          e_widget_spectrum_update(wd->spectrum, 1);
-        else
-          e_widget_spectrum_update(wd->spectrum, 1);
-     }
+     e_widget_spectrum_update(wd->spectrum, 1);
 
    e_widget_color_well_update(wd->well);
 
@@ -211,11 +204,11 @@ e_widget_csel_add(Evas *evas, E_Color *color, Eina_Bool alpha_enabled)
    wd->obj = obj;
    e_widget_data_set(obj, wd);
 
-   table = e_widget_table_add(evas, 0);
+   table = e_widget_table_add(e_win_evas_win_get(evas), 0);
    e_widget_sub_object_add(obj, table);
    e_widget_resize_object_set(obj, table);
 
-   frame = e_widget_table_add(evas, 0);
+   frame = e_widget_table_add(e_win_evas_win_get(evas), 0);
    e_widget_sub_object_add(obj, frame);
    grp = e_widget_radio_group_new(&wd->mode);
 
@@ -267,11 +260,11 @@ e_widget_csel_add(Evas *evas, E_Color *color, Eina_Bool alpha_enabled)
         e_widget_size_min_set(o, 32, 16);
         e_widget_table_object_append(frame, o, 1, i, 6, 1, 1, 1, 1, 0);
 
-        o = e_widget_entry_add(evas, &(wd->values[i]), NULL, NULL, NULL);
+        o = e_widget_entry_add(e_win_evas_win_get(evas), &(wd->values[i]), NULL, NULL, NULL);
         e_widget_sub_object_add(obj, o);
         evas_object_show(o);
         wd->entries = eina_list_append(wd->entries, o);
-        e_widget_table_object_append(frame, o, 7, i, 1, 1, 1, 1, 1, 0);
+        e_widget_table_object_append(frame, o, 7, i, 3, 1, 1, 1, 1, 0);
         e_widget_on_change_hook_set(o, _e_wid_cb_color_changed, wd);
      }
 

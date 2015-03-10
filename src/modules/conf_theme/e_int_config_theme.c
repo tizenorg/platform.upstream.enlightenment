@@ -27,7 +27,7 @@ struct _E_Config_Dialog_Data
    Eina_Bool        free : 1;
 
    /* Dialog */
-   E_Win           *win_import;
+   Evas_Object      *win_import;
 };
 
 static void
@@ -54,12 +54,14 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
    Evas *e;
    Evas_Coord w = 320, h = 240, mw = 0, mh = 0;
    Eina_List *objs = NULL;
-   Evas_Object *o, *po, *po2, *po3;
+   Evas_Object *o, *po, *po2, *po3, *r;
    
    _e_int_theme_preview_clear(preview);
    e = e_widget_preview_evas_get(preview);
    evas_object_size_hint_min_get(preview, &w, &h);
    w *= 2; h *= 2;
+#warning REMOVE STUPID ELM HACK BEFORE RELEASE
+   r = evas_object_rectangle_add(e);
    
    o = edje_object_add(e);
    _e_int_theme_edje_file_set(o, file, "e/desktop/background");
@@ -87,8 +89,8 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
    po = o;
    po2 = po;
    
-   o = e_box_add(e);
-   e_box_orientation_set(o, 1);
+   o = elm_box_add(r);
+   elm_box_horizontal_set(o, 1);
    evas_object_show(o);
    edje_object_part_swallow(po, "e.swallow.content", o);
    objs = eina_list_append(objs, o);
@@ -99,20 +101,22 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
    o = edje_object_add(e);
    _e_int_theme_edje_file_set(o, file, "e/modules/start/main");
    evas_object_show(o);
-   e_box_pack_end(po, o);
-   e_box_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5, mh, 0, 9999, 9999);
+   E_FILL(o);
+   elm_box_pack_end(po, o);
+   evas_object_size_hint_min_set(o, mh, 0);
    objs = eina_list_append(objs, o);
 
    o = edje_object_add(e);
    _e_int_theme_edje_file_set(o, file, "e/shelf/default/inset");
    evas_object_show(o);
-   e_box_pack_end(po, o);
-   e_box_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5, 4 * mh, 0, 9999, 9999);
+   E_FILL(o);
+   elm_box_pack_end(po, o);
+   evas_object_size_hint_min_set(o, 4 * mh, 0);
    objs = eina_list_append(objs, o);
    po2 = o;
 
-   o = e_box_add(e);
-   e_box_orientation_set(o, 1);
+   o = elm_box_add(r);
+   elm_box_horizontal_set(o, 1);
    evas_object_show(o);
    edje_object_part_swallow(po2, "e.swallow.content", o);
    objs = eina_list_append(objs, o);
@@ -122,57 +126,61 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
    _e_int_theme_edje_file_set(o, file, "e/modules/pager/desk");
    evas_object_show(o);
    edje_object_signal_emit(o, "e,state,selected", "e");
-   e_box_pack_end(po3, o);
-   e_box_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5, mh, 0, 9999, 9999);
+   elm_box_pack_end(po3, o);
+   evas_object_size_hint_min_set(o, mh, 0);
    objs = eina_list_append(objs, o);
 
    o = edje_object_add(e);
    _e_int_theme_edje_file_set(o, file, "e/modules/pager/desk");
    evas_object_show(o);
-   e_box_pack_end(po3, o);
-   e_box_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5, mh, 0, 9999, 9999);
+   elm_box_pack_end(po3, o);
+   evas_object_size_hint_min_set(o, mh, 0);
    objs = eina_list_append(objs, o);
 
    o = edje_object_add(e);
    _e_int_theme_edje_file_set(o, file, "e/modules/pager/desk");
    evas_object_show(o);
-   e_box_pack_end(po3, o);
-   e_box_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5, mh, 0, 9999, 9999);
+   elm_box_pack_end(po3, o);
+   evas_object_size_hint_min_set(o, mh, 0);
    objs = eina_list_append(objs, o);
 
    o = edje_object_add(e);
    _e_int_theme_edje_file_set(o, file, "e/modules/pager/desk");
    evas_object_show(o);
-   e_box_pack_end(po3, o);
-   e_box_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5, mh, 0, 9999, 9999);
+   elm_box_pack_end(po3, o);
+   evas_object_size_hint_min_set(o, mh, 0);
    objs = eina_list_append(objs, o);
 
    o = edje_object_add(e);
    _e_int_theme_edje_file_set(o, file, "e/modules/backlight/main");
    evas_object_show(o);
-   e_box_pack_end(po, o);
-   e_box_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5, mh, 0, 9999, 9999);
+   E_FILL(o);
+   elm_box_pack_end(po, o);
+   evas_object_size_hint_min_set(o, mh, 0);
    objs = eina_list_append(objs, o);
 
    o = edje_object_add(e);
    _e_int_theme_edje_file_set(o, file, "e/modules/mixer/main");
    evas_object_show(o);
-   e_box_pack_end(po, o);
-   e_box_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5, mh, 0, 9999, 9999);
+   E_FILL(o);
+   elm_box_pack_end(po, o);
+   evas_object_size_hint_min_set(o, mh, 0);
    objs = eina_list_append(objs, o);
 
    o = edje_object_add(e);
    _e_int_theme_edje_file_set(o, file, "e/modules/battery/main");
    evas_object_show(o);
-   e_box_pack_end(po, o);
-   e_box_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5, mh, 0, 9999, 9999);
+   E_FILL(o);
+   elm_box_pack_end(po, o);
+   evas_object_size_hint_min_set(o, mh, 0);
    objs = eina_list_append(objs, o);
    
    o = edje_object_add(e);
    _e_int_theme_edje_file_set(o, file, "e/modules/clock/main");
    evas_object_show(o);
-   e_box_pack_end(po, o);
-   e_box_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5, mh, 0, 9999, 9999);
+   E_FILL(o);
+   elm_box_pack_end(po, o);
+   evas_object_size_hint_min_set(o, mh, 0);
    objs = eina_list_append(objs, o);
    
    
@@ -257,9 +265,9 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
    edje_object_part_swallow(po, "e.swallow.icon", o);
    objs = eina_list_append(objs, o);
 
-   o = e_box_add(e);
-   e_box_orientation_set(o, 1);
-   e_box_homogenous_set(o, 1);
+   o = elm_box_add(r);
+   elm_box_horizontal_set(o, 1);
+   elm_box_homogeneous_set(o, 1);
    evas_object_show(o);
    edje_object_part_swallow(po, "e.swallow.buttons", o);
    objs = eina_list_append(objs, o);
@@ -270,8 +278,9 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
    evas_object_show(o);
    edje_object_signal_emit(o, "e,state,text", "e");
    edje_object_part_text_set(o, "e.text.label", "OK");
-   e_box_pack_end(po, o);
-   e_box_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5, 50, 20, 9999, 9999);
+   E_FILL(o);
+   elm_box_pack_end(po, o);
+   evas_object_size_hint_min_set(o, 50, 20);
    objs = eina_list_append(objs, o);
    
    o = edje_object_add(e);
@@ -279,11 +288,13 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
    evas_object_show(o);
    edje_object_signal_emit(o, "e,state,text", "e");
    edje_object_part_text_set(o, "e.text.label", "Cancel");
-   e_box_pack_end(po, o);
-   e_box_pack_options_set(o, 1, 1, 0, 0, 0.5, 0.5, 50, 20, 9999, 9999);
+   E_FILL(o);
+   elm_box_pack_end(po, o);
+   evas_object_size_hint_min_set(o, 50, 20);
    objs = eina_list_append(objs, o);
 
-   e_box_size_min_get(po, &mw, &mh);
+   elm_box_recalculate(po);
+   evas_object_size_hint_min_get(po, &mw, &mh);
    evas_object_size_hint_min_set(po, mw, mh);
    edje_object_part_swallow(po2, "e.swallow.buttons", po);
 
@@ -294,7 +305,7 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
 }
 
 E_Config_Dialog *
-e_int_config_theme(E_Comp *comp, const char *params __UNUSED__)
+e_int_config_theme(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -307,7 +318,7 @@ e_int_config_theme(E_Comp *comp, const char *params __UNUSED__)
    v->basic.apply_cfdata = _basic_apply_data;
    v->basic.create_widgets = _basic_create_widgets;
    v->override_auto_apply = 1;
-   cfd = e_config_dialog_new(comp,
+   cfd = e_config_dialog_new(NULL,
                              _("Theme Selector"),
                              "E", "appearance/theme",
                              "preferences-desktop-theme", 0, v, NULL);
@@ -509,7 +520,7 @@ _cb_import(void *data1, void *data2 __UNUSED__)
 
    cfdata = data1;
    if (cfdata->win_import)
-     e_win_raise(cfdata->win_import);
+     elm_win_raise(cfdata->win_import);
    else
      cfdata->win_import = e_int_config_theme_import(cfdata->cfd);
 }
@@ -559,7 +570,7 @@ _open_test_cb(void *file)
 {
    if (!edje_file_group_exists(eet_file_get(file), "e/desktop/background"))
      e_util_dialog_show(_("Theme File Error"),
-                        _("%s is probably not an E17 theme!"),
+                        _("%s is probably not an E theme!"),
                         eet_file_get(file));
 }
 
@@ -633,7 +644,7 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
    Eio_File *ls;
    Eet_File *ef;
 
-   E_FREE_FUNC(cfdata->win_import, e_object_del);
+   E_FREE_FUNC(cfdata->win_import, evas_object_del);
    if (cfdata->eio[0]) eio_file_cancel(cfdata->eio[0]);
    if (cfdata->eio[1]) eio_file_cancel(cfdata->eio[1]);
    EINA_LIST_FOREACH(cfdata->theme_init, l, ls)
@@ -647,18 +658,19 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static Evas_Object *
-_basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *o, *ot, *of, *il, *ol;
    E_Zone *z;
    E_Radio_Group *rg;
    char path[PATH_MAX];
 
-   z = e_zone_current_get(cfd->comp);
+   z = e_zone_current_get(e_comp_get(NULL));
+   e_dialog_resizable_set(cfd->dia, 1);
 
-   ot = e_widget_table_add(evas, 0);
-   ol = e_widget_table_add(evas, 0);
-   il = e_widget_table_add(evas, 1);
+   ot = e_widget_table_add(e_win_evas_win_get(evas), 0);
+   ol = e_widget_table_add(e_win_evas_win_get(evas), 0);
+   il = e_widget_table_add(e_win_evas_win_get(evas), 1);
 
    rg = e_widget_radio_group_new(&(cfdata->fmdir));
    o = e_widget_radio_add(evas, _("Personal"), 0, rg);

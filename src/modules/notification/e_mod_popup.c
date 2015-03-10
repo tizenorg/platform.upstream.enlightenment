@@ -12,6 +12,45 @@ static void        _notification_popup_del(unsigned int                 id,
 static void        _notification_popdown(Popup_Data                  *popup,
                                          E_Notification_Notify_Closed_Reason reason);
 
+/* this function should be external in edje for use in cases such as this module.
+ *
+ * happily, it was decided that the function would not be external so that it could
+ * be duplicated into the module in full.
+ */
+char *
+_nedje_text_escape(const char *text)
+{
+   Eina_Strbuf *txt;
+   char *ret;
+   const char *text_end;
+   size_t text_len;
+
+   if (!text) return NULL;
+
+   txt = eina_strbuf_new();
+   text_len = strlen(text);
+
+   text_end = text + text_len;
+   while (text < text_end)
+     {
+        int advance;
+        const char *escaped = evas_textblock_string_escape_get(text, &advance);
+        if (!escaped)
+          {
+             eina_strbuf_append_char(txt, text[0]);
+             advance = 1;
+          }
+        else
+          eina_strbuf_append(txt, escaped);
+
+        text += advance;
+     }
+
+   ret = eina_strbuf_string_steal(txt);
+   eina_strbuf_free(txt);
+   return ret;
+}
+
 #define POPUP_GAP 10
 #define POPUP_TO_EDGE 15
 static int popups_displayed = 0;
@@ -28,11 +67,63 @@ _notification_timer_cb(Popup_Data *popup)
    return EINA_FALSE;
 }
 
+static Popup_Data *
+_notification_popup_merge(E_Notification_Notify *n)
+{
+   Eina_List *l;
+   Popup_Data *popup;
+   char *body_final;
+   size_t len;
+
+   if (!n->app_name) return NULL;
+
+   EINA_LIST_FOREACH(notification_cfg->popups, l, popup)
+     {
+        if (!popup->notif) continue;
+        if (popup->notif->app_name == n->app_name) break;
+     }
+
+   if (!popup)
+     {
+        /* printf("- no poup to merge\n"); */
+        return NULL;
+     }
+
+   if (n->summary && (n->summary != popup->notif->summary))
+     {
+        /* printf("- summary doesn match, %s, %s\n", str1, str2); */
+        return NULL;
+     }
+
+   /* TODO  p->n is not fallback alert..*/
+   /* TODO  both allow merging */
+
+   len = strlen(popup->notif->body);
+   len += strlen(n->body);
+   len += 5; /* \xE2\x80\xA9 or <PS/> */
+   if (len < 8192) body_final = alloca(len + 1);
+   else body_final = malloc(len + 1);
+   /* Hack to allow e to include markup */
+   snprintf(body_final, len + 1, "%s<ps/>%s", popup->notif->body, n->body);
+
+   /* printf("set body %s\n", body_final); */
+
+   eina_stringshare_replace(&n->body, body_final);
+
+   e_object_del(E_OBJECT(popup->notif));
+   popup->notif = n;
+   if (len >= 8192) free(body_final);
+
+   return popup;
+}
+
+
 void
 notification_popup_notify(E_Notification_Notify *n,
                           unsigned int id)
 {
    Popup_Data *popup = NULL;
+   char *esc;
 
    switch (n->urgency)
      {
@@ -51,6 +142,10 @@ notification_popup_notify(E_Notification_Notify *n,
    if (notification_cfg->ignore_replacement)
      n->replaces_id = 0;
 
+   esc = _nedje_text_escape(n->body);
+   eina_stringshare_replace(&n->body, esc);
+   free(esc);
+
    if (n->replaces_id && (popup = _notification_popup_find(n->replaces_id)))
      {
         if (popup->notif)
@@ -59,6 +154,11 @@ notification_popup_notify(E_Notification_Notify *n,
         popup->notif = n;
         popup->id = id;
         _notification_popup_refresh(popup);
+     }
+   else if (!n->replaces_id)
+     {
+        if ((popup = _notification_popup_merge(n)))
+          _notification_popup_refresh(popup);
      }
 
    if (!popup)
@@ -125,37 +225,35 @@ _notification_theme_cb_find(Popup_Data *popup,
                             const char  *emission __UNUSED__,
                             const char  *source __UNUSED__)
 {
-   const Eina_List *l, *ll;
+   const Eina_List *l;
    E_Client *ec;
-   E_Comp *comp;
 
    if (!popup->app_name) return;
 
-   EINA_LIST_FOREACH(e_comp_list(), l, comp)
-     EINA_LIST_FOREACH(comp->clients, ll, ec)
-       {
-          size_t len, test;
-          const char *name;
+   EINA_LIST_FOREACH(e_comp->clients, l, ec)
+     {
+        size_t len, test;
+        const char *name;
 
-          if (e_client_util_ignored_get(ec)) continue;
-          len = strlen(popup->app_name);
-          name = e_client_util_name_get(ec);
-          if (!name) continue;
-          test = eina_strlen_bounded(name, len + 1);
+        if (e_client_util_ignored_get(ec)) continue;
+        len = strlen(popup->app_name);
+        name = e_client_util_name_get(ec);
+        if (!name) continue;
+        test = eina_strlen_bounded(name, len + 1);
 
-          /* We can't be sure that the app_name really match the application name.
-           * Some plugin put their name instead. But this search gives some good
-           * results.
-           */
-          if (strncasecmp(name, popup->app_name, (test < len) ? test : len))
-            continue;
+        /* We can't be sure that the app_name really match the application name.
+         * Some plugin put their name instead. But this search gives some good
+         * results.
+         */
+        if (strncasecmp(name, popup->app_name, (test < len) ? test : len))
+          continue;
 
-          e_desk_show(ec->desk);
-          evas_object_show(ec->frame);
-          evas_object_raise(ec->frame);
-          e_client_focus_set_with_pointer(ec);
-          break;
-       }
+        e_desk_show(ec->desk);
+        evas_object_show(ec->frame);
+        evas_object_raise(ec->frame);
+        e_client_focus_set_with_pointer(ec);
+        break;
+     }
 }
 
 static void
@@ -291,6 +389,7 @@ _notification_popup_place(Popup_Data *popup, int pos)
    if (!popup->win) return pos;
    evas_object_geometry_get(popup->win, NULL, NULL, &w, &h);
    zone = e_comp_object_util_zone_get(popup->win);
+   if (!zone) return pos;
    _notification_popup_place_coords_get(zone->w, zone->h, w, h, pos, &x, &y);
    evas_object_move(popup->win, x, y);
    EINA_LIST_FOREACH(popup->mirrors, l, o)
@@ -443,9 +542,11 @@ _notification_popup_refresh(Popup_Data *popup)
    /* Compute the new size of the popup */
    edje_object_calc_force(popup->theme);
    edje_object_size_min_calc(popup->theme, &w, &h);
-   zone = e_comp_object_util_zone_get(popup->win);
-   w = MIN(w, zone->w / 2);
-   h = MIN(h, zone->h / 2);
+   if ((zone = e_comp_object_util_zone_get(popup->win)))
+     {
+        w = MIN(w, zone->w / 2);
+        h = MIN(h, zone->h / 2);
+     }
    evas_object_resize(popup->win, w, h);
 }
 
@@ -522,6 +623,7 @@ _notification_popdown(Popup_Data                  *popup,
    if (popup->pending) return;
    popups_displayed--;
    free(popup);
+   e_comp_shape_queue(e_comp_get(NULL));
 }
 
 static void
@@ -529,7 +631,7 @@ _notification_format_message(Popup_Data *popup)
 {
    Evas_Object *o = popup->theme;
    Eina_Strbuf *buf = eina_strbuf_new();
-   edje_object_part_text_set(o, "notification.text.title",
+   edje_object_part_text_unescaped_set(o, "notification.text.title",
                              popup->notif->summary);
    /* FIXME: Filter to only include allowed markup? */
    /* We need to replace \n with <br>. FIXME: We need to handle all the

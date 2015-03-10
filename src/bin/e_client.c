@@ -95,45 +95,40 @@ static Eina_Inlist *_e_client_hooks[] =
 static Eina_Bool
 _e_client_cb_efreet_cache_update(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_UNUSED)
 {
-   E_Comp *c;
-   const Eina_List *l, *ll;
+   const Eina_List *l;
    E_Client *ec;
 
    /* mark all clients for desktop/icon updates */
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
-      EINA_LIST_FOREACH(c->clients, ll, ec)
-        {
-           E_FREE_FUNC(ec->desktop, efreet_desktop_free);
-           if (e_object_is_del(E_OBJECT(ec))) continue;
-           ec->changes.icon = 1;
-           EC_CHANGED(ec);
-        }
+   EINA_LIST_FOREACH(e_comp->clients, l, ec)
+     {
+        E_FREE_FUNC(ec->desktop, efreet_desktop_free);
+        if (e_object_is_del(E_OBJECT(ec))) continue;
+        ec->changes.icon = 1;
+        EC_CHANGED(ec);
+     }
    return ECORE_CALLBACK_RENEW;
 }
 
 static Eina_Bool
 _e_client_cb_config_icon_theme(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_UNUSED)
 {
-   E_Comp *c;
-   const Eina_List *l, *ll;
+   const Eina_List *l;
    E_Client *ec;
 
    /* mark all clients for desktop/icon updates */
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
-      EINA_LIST_FOREACH(c->clients, ll, ec)
-        {
-           if (e_object_is_del(E_OBJECT(ec))) continue;
-           ec->changes.icon = 1;
-           EC_CHANGED(ec);
-        }
+   EINA_LIST_FOREACH(e_comp->clients, l, ec)
+     {
+        if (e_object_is_del(E_OBJECT(ec))) continue;
+        ec->changes.icon = 1;
+        EC_CHANGED(ec);
+     }
    return ECORE_CALLBACK_RENEW;
 }
 
 static Eina_Bool
 _e_client_cb_config_mode(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_UNUSED)
 {
-   E_Comp *c;
-   const Eina_List *l, *ll;
+   const Eina_List *l;
    E_Client *ec;
    E_Layer layer;
 
@@ -146,17 +141,16 @@ _e_client_cb_config_mode(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev 
    else
      return ECORE_CALLBACK_RENEW;
 
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
-      EINA_LIST_FOREACH(c->clients, ll, ec)
-        {
-           if (e_object_is_del(E_OBJECT(ec))) continue;
-           if ((ec->fullscreen) || (ec->need_fullscreen))
-             {
-                ec->fullscreen = 0;
-                evas_object_layer_set(ec->frame, layer);
-                ec->fullscreen = 1;
-             }
-        }
+   EINA_LIST_FOREACH(e_comp->clients, l, ec)
+     {
+        if (e_object_is_del(E_OBJECT(ec))) continue;
+        if ((ec->fullscreen) || (ec->need_fullscreen))
+          {
+             ec->fullscreen = 0;
+             evas_object_layer_set(ec->frame, layer);
+             ec->fullscreen = 1;
+          }
+     }
    return ECORE_CALLBACK_PASS_ON;
 }
 
@@ -172,17 +166,15 @@ _e_client_cb_pointer_warp(void *data EINA_UNUSED, int type EINA_UNUSED, E_Event_
 static Eina_Bool
 _e_client_cb_desk_window_profile_change(void *data EINA_UNUSED, int type EINA_UNUSED, E_Event_Desk_Window_Profile_Change *ev EINA_UNUSED)
 {
-   E_Comp *c;
-   const Eina_List *l, *ll;
+   const Eina_List *l;
    E_Client *ec;
 
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
-      EINA_LIST_FOREACH(c->clients, ll, ec)
-        {
-           if (e_object_is_del(E_OBJECT(ec))) continue;
-           ec->e.fetch.profile = 1;
-           EC_CHANGED(ec);
-        }
+   EINA_LIST_FOREACH(e_comp->clients, l, ec)
+     {
+        if (e_object_is_del(E_OBJECT(ec))) continue;
+        ec->e.fetch.profile = 1;
+        EC_CHANGED(ec);
+     }
    return ECORE_CALLBACK_RENEW;
 }
 
@@ -328,6 +320,9 @@ _e_client_hook_call(E_Client_Hook_Point hookpoint, E_Client *ec)
      {
         if (ch->delete_me) continue;
         ch->func(ch->data, ec);
+        if ((hookpoint != E_CLIENT_HOOK_DEL) &&
+          e_object_is_del(E_OBJECT(ec)))
+          break;
      }
    _e_client_hooks_walking--;
    if ((_e_client_hooks_walking == 0) && (_e_client_hooks_delete > 0))
@@ -399,7 +394,7 @@ static void
 _e_client_action_finish(void)
 {
    if (comp_grabbed)
-     _e_client_action_input_win_del(action_client ? action_client->comp : e_comp_get(NULL));
+     _e_client_action_input_win_del(e_comp);
 
    E_FREE_FUNC(action_timer, ecore_timer_del);
    E_FREE_FUNC(action_handler_key,  ecore_event_handler_del);
@@ -489,11 +484,7 @@ _e_client_free(E_Client *ec)
         EINA_LIST_FREE(ec->e.state.video_child, tmp)
           tmp->e.state.video_parent_client = NULL;
      }
-   if (ec->internal_ecore_evas)
-     {
-        e_canvas_del(ec->internal_ecore_evas);
-        E_FREE_FUNC(ec->internal_ecore_evas, ecore_evas_free);
-     }
+   E_FREE_FUNC(ec->internal_elm_win, evas_object_del);
    E_FREE_FUNC(ec->desktop, efreet_desktop_free);
    E_FREE_FUNC(ec->post_job, ecore_idle_enterer_del);
 
@@ -602,8 +593,8 @@ _e_client_del(E_Client *ec)
    e_int_client_menu_del(ec);
    E_FREE_FUNC(ec->raise_timer, ecore_timer_del);
 
-   if (ec->internal_ecore_evas)
-     ecore_evas_hide(ec->internal_ecore_evas);
+   if (ec->internal_elm_win)
+     evas_object_hide(ec->internal_elm_win);
 
    if (ec->focused)
      _e_client_revert_focus(ec);
@@ -979,6 +970,11 @@ _e_client_resize_handle(E_Client *ec)
 
    w = new_w;
    h = new_h;
+   if (e_config->screen_limits == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
+     {
+        w = MIN(w, ec->zone->w);
+        h = MIN(h, ec->zone->h);
+     }
    e_client_resize_limit(ec, &new_w, &new_h);
    if ((ec->resize_mode == E_POINTER_RESIZE_TL) ||
        (ec->resize_mode == E_POINTER_RESIZE_L) ||
@@ -1077,7 +1073,11 @@ _e_client_resize_key_down(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev
    else if ((strncmp(ev->key, "Control", sizeof("Control") - 1) != 0) &&
             (strncmp(ev->key, "Alt", sizeof("Alt") - 1) != 0))
      goto stop;
-
+   if (e_config->screen_limits == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
+     {
+        w = MIN(w, action_client->zone->w);
+        h = MIN(h, action_client->zone->h);
+     }
    e_client_resize_limit(action_client, &w, &h);
    evas_object_resize(action_client->frame, w, h);
    _e_client_action_resize_timeout_add();
@@ -1389,7 +1389,7 @@ _e_client_cb_evas_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UN
    Evas_Coord x, y;
 
    ec->pre_res_change.valid = 0;
-   if (ec->internal_ecore_evas)
+   if (ec->internal_elm_win)
      {
         EC_CHANGED(ec);
         ec->changes.pos = 1;
@@ -1424,11 +1424,6 @@ _e_client_cb_evas_resize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_
    Evas_Coord x, y, w, h;
 
    ec->pre_res_change.valid = 0;
-   if (ec->internal_ecore_evas || (!ec->netwm.sync.request))
-     {
-        EC_CHANGED(ec);
-        ec->changes.size = 1;
-     }
 
    _e_client_event_simple(ec, E_EVENT_CLIENT_RESIZE);
 
@@ -1706,6 +1701,11 @@ _e_client_eval(E_Client *ec)
 
         e_zone_useful_geometry_get(ec->zone, &zx, &zy, &zw, &zh);
         /* enforce wm size hints for initial sizing */
+        if (e_config->screen_limits == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
+          {
+             ec->w = MIN(ec->w, ec->zone->w);
+             ec->h = MIN(ec->h, ec->zone->h);
+          }
         e_client_resize_limit(ec, &ec->w, &ec->h);
 
         if (ec->re_manage)
@@ -1861,9 +1861,49 @@ _e_client_eval(E_Client *ec)
         /* if the explicit geometry request asks for the app to be
          * in another zone - well move it there */
         {
-           E_Zone *zone;
+           E_Zone *zone = NULL;
+           int x, y;
 
-           zone = e_comp_zone_xy_get(ec->comp, ec->x + (ec->w / 2), ec->y + (ec->h / 2));
+           x = MAX(ec->x, 0);
+           y = MAX(ec->y, 0);
+           if ((!ec->re_manage) && ((ec->x != x) || (ec->y != y)))
+             zone = e_comp_zone_xy_get(ec->comp, x, y);
+
+           if (!zone)
+             {
+                zone = e_comp_zone_xy_get(ec->comp, ec->x + (ec->w / 2), ec->y + (ec->h / 2));
+                if (zone)
+                  {
+                     E_Zone *z2 = e_comp_zone_xy_get(ec->comp, ec->x, ec->y);
+
+                     if (z2 && (z2 != zone))
+                       {
+                          size_t psz = 0;
+                          E_Zone *zf = z2;
+                          Eina_List *l;
+
+                          EINA_LIST_FOREACH(ec->comp->zones, l, z2)
+                            {
+                                int w, h;
+
+                                x = ec->x, y = ec->y, w = ec->w, h = ec->h;
+                                E_RECTS_CLIP_TO_RECT(x, y, w, h, z2->x, z2->y, z2->w, z2->h);
+                                if (w * h == z2->w * z2->h)
+                                  {
+                                     /* client fully covering zone */
+                                     zf = z2;
+                                     break;
+                                  }
+                                if ((unsigned)(w * h) > psz)
+                                  {
+                                     psz = w * h;
+                                     zf = z2;
+                                  }
+                            }
+                          zone = zf;
+                       }
+                  }
+             }
            if (!zone)
              zone = e_comp_zone_xy_get(ec->comp, ec->x, ec->y);
            if (!zone)
@@ -1932,11 +1972,7 @@ _e_client_eval(E_Client *ec)
      {
         ec->changes.size = 0;
         if ((!ec->shaded) && (!ec->shading))
-          {
-             evas_object_resize(ec->frame, ec->w, ec->h);
-             if (ec->internal_ecore_evas && (!ec->override))
-               ecore_evas_move_resize(ec->internal_ecore_evas, 0, 0, ec->client.w, ec->client.h);
-          }
+          evas_object_resize(ec->frame, ec->w, ec->h);
 
         rem_change = 1;
         prop |= E_CLIENT_PROPERTY_SIZE;
@@ -2120,7 +2156,7 @@ _e_client_eval(E_Client *ec)
                  ec->changes.stack || ec->changes.prop || ec->changes.border ||
                  ec->changes.reset_gravity || ec->changes.shading || ec->changes.shaded ||
                  ec->changes.shape || ec->changes.shape_input || ec->changes.icon ||
-                 ec->changes.internal_props || ec->changes.internal_state ||
+                 ec->changes.internal_state ||
                  ec->changes.need_maximize || ec->changes.need_unmaximize;
    ec->changes.stack = 0;
 
@@ -2397,20 +2433,14 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
 EAPI void
 e_client_visibility_calculate(E_Client *ec)
 {
-   const Eina_List *cl;
-   E_Comp *c;
+   E_Zone *zone;
+   Eina_List *zl;
 
    if (e_object_is_del(E_OBJECT(ec))) return;
 
-   EINA_LIST_FOREACH(e_comp_list(), cl, c)
+   EINA_LIST_FOREACH(e_comp->zones, zl, zone)
      {
-        E_Zone *zone;
-        Eina_List *zl;
-
-        EINA_LIST_FOREACH(c->zones, zl, zone)
-          {
-             _e_client_visibility_zone_calculate(zone);
-          }
+        _e_client_visibility_zone_calculate(zone);
      }
 }
 
@@ -2419,90 +2449,90 @@ EINTERN void
 e_client_idler_before(void)
 {
    const Eina_List *l;
-   E_Comp *c;
+   E_Client *ec;
 
    if (!eina_hash_population(clients_hash)) return;
 
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
+
+
+   EINA_LIST_FOREACH(e_comp->clients, l, ec)
      {
-        Eina_List *ll;
-        E_Client *ec;
+        Eina_Stringshare *title;
+        int client_type;
 
-        EINA_LIST_FOREACH(c->clients, ll, ec)
+        // pass 1 - eval0. fetch properties on new or on change and
+        // call hooks to decide what to do - maybe move/resize
+        if (!ec->changed) continue;
+
+        if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_PRE_FETCH, ec)) continue;
+        /* FETCH is hooked by the compositor to get client hints */
+        title = e_client_util_name_get(ec);
+        if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_FETCH, ec)) continue;
+        if (title != e_client_util_name_get(ec))
+          _e_client_event_property(ec, E_CLIENT_PROPERTY_TITLE);
+
+        client_type = ec->client_type;
+        if (client_type != _e_client_type_get(ec))
+           _e_client_event_property(ec, E_CLIENT_PROPERTY_CLIENT_TYPE);
+
+        /* calculate visibility of the client" */
+        e_client_visibility_calculate(ec);
+
+        /* PRE_POST_FETCH calls e_remember apply for new client */
+        if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_PRE_POST_FETCH, ec)) continue;
+        if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_POST_FETCH, ec)) continue;
+        if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_PRE_FRAME_ASSIGN, ec)) continue;
+
+        if ((ec->border.changed) && (!ec->shaded) && ((!ec->override) || ec->internal) &&
+            (!(((ec->maximized & E_MAXIMIZE_TYPE) == E_MAXIMIZE_FULLSCREEN))))
+          _e_client_frame_update(ec);
+        ec->border.changed = 0;
+        _e_client_hook_call(E_CLIENT_HOOK_EVAL_POST_FRAME_ASSIGN, ec);
+     }
+
+   E_CLIENT_FOREACH(e_comp, ec)
+     {
+        // pass 2 - show windows needing show
+        if ((ec->changes.visible) && (ec->visible) &&
+            (!ec->new_client) && (!ec->changes.pos) &&
+            (!ec->changes.size))
           {
-             Eina_Stringshare *title;
-             int client_type;
-             // pass 1 - eval0. fetch properties on new or on change and
-             // call hooks to decide what to do - maybe move/resize
-             if (!ec->changed) continue;
-
-             if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_PRE_FETCH, ec)) continue;
-             /* FETCH is hooked by the compositor to get client hints */
-             title = e_client_util_name_get(ec);
-             if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_FETCH, ec)) continue;
-             if (title != e_client_util_name_get(ec))
-               _e_client_event_property(ec, E_CLIENT_PROPERTY_TITLE);
-             client_type = ec->client_type;
-             if (client_type != _e_client_type_get(ec))
-               _e_client_event_property(ec, E_CLIENT_PROPERTY_CLIENT_TYPE);
-             /* calculate visibility of the client" */
-             e_client_visibility_calculate(ec);
-             /* PRE_POST_FETCH calls e_remember apply for new client */
-             if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_PRE_POST_FETCH, ec)) continue;
-             if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_POST_FETCH, ec)) continue;
-             if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_PRE_FRAME_ASSIGN, ec)) continue;
-
-             if ((ec->border.changed) && (!ec->shaded) && (!ec->override) &&
-                 (!(((ec->maximized & E_MAXIMIZE_TYPE) == E_MAXIMIZE_FULLSCREEN))))
-               _e_client_frame_update(ec);
-             ec->border.changed = 0;
-             _e_client_hook_call(E_CLIENT_HOOK_EVAL_POST_FRAME_ASSIGN, ec);
+             evas_object_show(ec->frame);
+             ec->changes.visible = !evas_object_visible_get(ec->frame);
           }
 
-        E_CLIENT_FOREACH(c, ec)
+        if ((!ec->new_client) && (!e_client_util_ignored_get(ec)) &&
+            (!E_INSIDE(ec->x, ec->y, 0, 0, ec->comp->man->w - 5, ec->comp->man->h - 5)) &&
+            (!E_INSIDE(ec->x, ec->y, 0 - ec->w + 5, 0 - ec->h + 5, ec->comp->man->w - 5, ec->comp->man->h - 5))
+            )
           {
-             // pass 2 - show windows needing show
-             if ((ec->changes.visible) && (ec->visible) &&
-                 (!ec->new_client) && (!ec->changes.pos) &&
-                 (!ec->changes.size))
-               {
-                  evas_object_show(ec->frame);
-                  ec->changes.visible = !evas_object_visible_get(ec->frame);
-               }
+             if (e_config->screen_limits != E_CLIENT_OFFSCREEN_LIMIT_ALLOW_FULL)
+               _e_client_move_lost_window_to_center(ec);
+          }
+     }
 
-             if ((!ec->new_client) && (!e_client_util_ignored_get(ec)) &&
-                 (!E_INSIDE(ec->x, ec->y, 0, 0, ec->comp->man->w - 5, ec->comp->man->h - 5)) &&
-                 (!E_INSIDE(ec->x, ec->y, 0 - ec->w + 5, 0 - ec->h + 5, ec->comp->man->w - 5, ec->comp->man->h - 5))
-                 )
-               {
-                  if (e_config->screen_limits != E_SCREEN_LIMITS_COMPLETELY)
-                    _e_client_move_lost_window_to_center(ec);
-               }
+   if (_e_client_layout_cb)
+     _e_client_layout_cb(e_comp);
+
+   // pass 3 - hide windows needing hide and eval (main eval)
+   E_CLIENT_FOREACH(e_comp, ec)
+     {
+        if (e_object_is_del(E_OBJECT(ec))) continue;
+
+        if ((ec->changes.visible) && (!ec->visible))
+          {
+             evas_object_hide(ec->frame);
+             ec->changes.visible = 0;
           }
 
-        if (_e_client_layout_cb)
-          _e_client_layout_cb(c);
+        if (ec->changed)
+          _e_client_eval(ec);
 
-        // pass 3 - hide windows needing hide and eval (main eval)
-        E_CLIENT_FOREACH(c, ec)
+        if ((ec->changes.visible) && (ec->visible) && (!ec->changed))
           {
-             if (e_object_is_del(E_OBJECT(ec))) continue;
-
-             if ((ec->changes.visible) && (!ec->visible))
-               {
-                  evas_object_hide(ec->frame);
-                  ec->changes.visible = 0;
-               }
-
-             if (ec->changed)
-               _e_client_eval(ec);
-
-             if ((ec->changes.visible) && (ec->visible) && (!ec->changed))
-               {
-                  evas_object_show(ec->frame);
-                  ec->changes.visible = !evas_object_visible_get(ec->frame);
-                  ec->changed = ec->changes.visible;
-               }
+             evas_object_show(ec->frame);
+             ec->changes.visible = !evas_object_visible_get(ec->frame);
+             ec->changed = ec->changes.visible;
           }
      }
 }
@@ -2565,7 +2595,7 @@ e_client_shutdown(void)
 }
 
 EAPI E_Client *
-e_client_new(E_Comp *c, E_Pixmap *cp, int first_map, int internal)
+e_client_new(E_Comp *c EINA_UNUSED, E_Pixmap *cp, int first_map, int internal)
 {
    E_Client *ec;
 
@@ -2583,7 +2613,7 @@ e_client_new(E_Comp *c, E_Pixmap *cp, int first_map, int internal)
    ec->w = 1;
    ec->h = 1;
    ec->internal = internal;
-   ec->comp = c;
+   ec->comp = e_comp;
 
    ec->pixmap = cp;
    e_pixmap_client_set(cp, ec);
@@ -2618,7 +2648,7 @@ e_client_new(E_Comp *c, E_Pixmap *cp, int first_map, int internal)
    if (ec->override)
      _e_client_zone_update(ec);
    else
-     e_client_desk_set(ec, e_desk_current_get(e_zone_current_get(c)));
+     e_client_desk_set(ec, e_desk_current_get(e_zone_current_get(e_comp)));
 
    ec->icccm.title = NULL;
    ec->icccm.name = NULL;
@@ -2667,7 +2697,7 @@ e_client_new(E_Comp *c, E_Pixmap *cp, int first_map, int internal)
 
    EC_CHANGED(ec);
 
-   c->clients = eina_list_append(c->clients, ec);
+   e_comp->clients = eina_list_append(e_comp->clients, ec);
    eina_hash_add(clients_hash, &ec->pixmap, ec);
 
    _e_client_event_simple(ec, E_EVENT_CLIENT_ADD);
@@ -2692,6 +2722,8 @@ e_client_new(E_Comp *c, E_Pixmap *cp, int first_map, int internal)
         else
           focus_stack = eina_list_append(focus_stack, ec);
      }
+
+   e_hints_client_list_set();
 
 #ifdef _F_E_CLIENT_NEW_CLIENT_POST_HOOK_
    _e_client_hook_call(E_CLIENT_HOOK_NEW_CLIENT_POST, ec);
@@ -2852,28 +2884,16 @@ e_client_warping_get(void)
 
 
 EAPI Eina_List *
-e_clients_immortal_list(const E_Comp *c)
+e_clients_immortal_list(void)
 {
-   const Eina_List *l, *ll;
+   const Eina_List *l;
    Eina_List *list = NULL;
    E_Client *ec;
 
-   if (c)
+   EINA_LIST_FOREACH(e_comp->clients, l, ec)
      {
-        EINA_LIST_FOREACH(c->clients, ll, ec)
-          {
-             if (ec->lock_life)
-               list = eina_list_append(list, ec);
-          }
-     }
-   else
-     {
-        EINA_LIST_FOREACH(e_comp_list(), l, c)
-          EINA_LIST_FOREACH(c->clients, ll, ec)
-            {
-               if (ec->lock_life)
-                 list = eina_list_append(list, ec);
-            }
+        if (ec->lock_life)
+          list = eina_list_append(list, ec);
      }
    return list;
 }
@@ -2889,7 +2909,8 @@ e_client_mouse_in(E_Client *ec, int x, int y)
    if (ec->desk && ec->desk->animate_count) return;
    ec->mouse.current.mx = x;
    ec->mouse.current.my = y;
-   if (!ec->iconic)
+   ec->mouse.in = 1;
+   if ((!ec->iconic) && (!e_client_util_ignored_get(ec)))
      e_focus_event_mouse_in(ec);
 }
 
@@ -2900,11 +2921,12 @@ e_client_mouse_out(E_Client *ec, int x, int y)
    if (ec->fullscreen) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (ec->desk && ec->desk->animate_count) return;
-   if ((!ec->input_object) && E_INSIDE(x, y, ec->x, ec->y, ec->w, ec->h)) return;
+   if (e_pixmap_is_x(ec->pixmap) && E_INSIDE(x, y, ec->x, ec->y, ec->w, ec->h)) return;
 
    ec->mouse.current.mx = x;
    ec->mouse.current.my = y;
-   if (!ec->iconic)
+   ec->mouse.in = 0;
+   if ((!ec->iconic) && (!e_client_util_ignored_get(ec)))
      e_focus_event_mouse_out(ec);
 }
 
@@ -2915,7 +2937,7 @@ e_client_mouse_wheel(E_Client *ec, Evas_Point *output, E_Binding_Event_Wheel *ev
    if (action_client) return;
    ec->mouse.current.mx = output->x;
    ec->mouse.current.my = output->y;
-   if (!ec->cur_mouse_action)
+   if ((!ec->cur_mouse_action) && (!e_client_util_ignored_get(ec)))
      e_bindings_wheel_event_handle(E_BINDING_CONTEXT_WINDOW, E_OBJECT(ec), ev);
 }
 
@@ -2923,7 +2945,7 @@ EAPI void
 e_client_mouse_down(E_Client *ec, int button, Evas_Point *output, E_Binding_Event_Mouse_Button *ev)
 {
    EINA_SAFETY_ON_NULL_RETURN(ec);
-   if (action_client || ec->iconic) return;
+   if (action_client || ec->iconic || e_client_util_ignored_get(ec)) return;
    if ((button >= 1) && (button <= 3))
      {
         ec->mouse.last_down[button - 1].mx = output->x;
@@ -2981,7 +3003,7 @@ EAPI void
 e_client_mouse_up(E_Client *ec, int button, Evas_Point *output, E_Binding_Event_Mouse_Button* ev)
 {
    EINA_SAFETY_ON_NULL_RETURN(ec);
-   if (ec->iconic) return;
+   if (ec->iconic || e_client_util_ignored_get(ec)) return;
    if ((button >= 1) && (button <= 3))
      {
         ec->mouse.last_up[button - 1].mx = output->x;
@@ -3022,7 +3044,7 @@ EAPI void
 e_client_mouse_move(E_Client *ec, Evas_Point *output)
 {
    EINA_SAFETY_ON_NULL_RETURN(ec);
-   if (ec->iconic) return;
+   if (ec->iconic || e_client_util_ignored_get(ec)) return;
    ec->mouse.current.mx = output->x;
    ec->mouse.current.my = output->y;
    if (ec->moving)
@@ -3055,7 +3077,7 @@ e_client_mouse_move(E_Client *ec, Evas_Point *output)
                                  &new_x, &new_y, &new_w, &new_h);
         eina_list_free(skiplist);
 
-        if (e_config->screen_limits == E_SCREEN_LIMITS_WITHIN)
+        if (e_config->screen_limits == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
           _e_client_stay_within_canvas(ec, x, y, &new_x, &new_y);
 
         ec->shelf_fix.x = 0;
@@ -3094,14 +3116,14 @@ e_client_mouse_move(E_Client *ec, Evas_Point *output)
 
                        e_object_ref(E_OBJECT(ec));
                        e_comp_object_frame_icon_geometry_get(ec->frame, &x, &y, &w, &h);
-#ifndef HAVE_WAYLAND_ONLY
+
                        client_drag = e_drag_new(ec->zone->comp,
                                                 output->x, output->y,
                                                 drag_types, 1, ec, -1,
                                                 NULL,
                                                 _e_client_cb_drag_finished);
                        e_drag_resize(client_drag, w, h);
-#endif
+
                        o = e_client_icon_add(ec, client_drag->evas);
                        if (!o)
                          {
@@ -3109,12 +3131,11 @@ e_client_mouse_move(E_Client *ec, Evas_Point *output)
                             o = evas_object_rectangle_add(client_drag->evas);
                             evas_object_color_set(o, 255, 255, 255, 255);
                          }
-#ifndef HAVE_WAYLAND_ONLY
+
                        e_drag_object_set(client_drag, o);
                        e_drag_start(client_drag,
                                     output->x + (ec->drag.x - x),
                                     output->y + (ec->drag.y - y));
-#endif
                     }
                   ec->drag.start = 0;
                }
@@ -3594,8 +3615,6 @@ e_client_focused_set(E_Client *ec)
 
         E_FREE_FUNC(ec_unfocus->raise_timer, ecore_timer_del);
 
-        e_comp_object_signal_emit(ec_unfocus->frame, "e,state,unfocused", "e");
-
         /* if there unfocus client is fullscreen and visible */
         if ((!e_config->allow_above_fullscreen) &&
             (ec_unfocus->fullscreen) && (!ec_unfocus->iconic) && (!ec_unfocus->hidden) &&
@@ -3693,6 +3712,12 @@ e_client_focus_stack_get(void)
    return focus_stack;
 }
 
+YOLO EAPI void
+e_client_focus_stack_set(Eina_List *l)
+{
+   focus_stack = l;
+}
+
 EAPI Eina_List *
 e_client_raise_stack_get(void)
 {
@@ -3703,28 +3728,23 @@ EAPI Eina_List *
 e_client_lost_windows_get(E_Zone *zone)
 {
    Eina_List *list = NULL;
-   const Eina_List *l, *ll;
+   const Eina_List *l;
    E_Client *ec;
-   E_Comp *c;
    int loss_overlap = 5;
 
    E_OBJECT_CHECK_RETURN(zone, NULL);
    E_OBJECT_TYPE_CHECK_RETURN(zone, E_ZONE_TYPE, NULL);
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
+   EINA_LIST_FOREACH(e_comp->clients, l, ec)
      {
-        if (zone->comp != c) continue;
-        EINA_LIST_FOREACH(c->clients, ll, ec)
-          {
-             if (ec->zone != zone) continue;
+        if (ec->zone != zone) continue;
 
-             if (!E_INTERSECTS(ec->zone->x + loss_overlap,
-                               ec->zone->y + loss_overlap,
-                               ec->zone->w - (2 * loss_overlap),
-                               ec->zone->h - (2 * loss_overlap),
-                               ec->x, ec->y, ec->w, ec->h))
-               {
-                  list = eina_list_append(list, ec);
-               }
+        if (!E_INTERSECTS(ec->zone->x + loss_overlap,
+                          ec->zone->y + loss_overlap,
+                          ec->zone->w - (2 * loss_overlap),
+                          ec->zone->h - (2 * loss_overlap),
+                          ec->x, ec->y, ec->w, ec->h))
+          {
+             list = eina_list_append(list, ec);
           }
      }
    return list;
@@ -4163,8 +4183,8 @@ e_client_urgent_set(E_Client *ec, Eina_Bool urgent)
    if (urgent && e_screensaver_on_get() && e_config->screensaver_wake_on_urgent)
      {
         int x, y;
-        ecore_evas_pointer_xy_get(e_comp_get(NULL)->ee, &x, &y);
-        ecore_evas_pointer_warp(e_comp_get(NULL)->ee, x, y);
+        ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
+        ecore_evas_pointer_warp(e_comp->ee, x, y);
      }
 }
 
@@ -4269,6 +4289,11 @@ e_client_border_set(E_Client *ec, const char *name)
      CRI("CALLING WHEN border.changed SET!");
 
    if (!e_util_strcmp(ec->border.name, name)) return EINA_TRUE;
+   if (ec->mwm.borderless && name && strcmp(name, "borderless"))
+     {
+        e_util_dialog_show(_("Client Error!"), _("Something has attempted to set a border when it shouldn't! Report this!"));
+        CRI("border change attempted for MWM borderless client!");
+     }
    pborder = ec->border.name;
    ec->border.name = eina_stringshare_add(name);
    if (e_comp_object_frame_theme_set(ec->frame, name))
@@ -4884,9 +4909,9 @@ e_client_under_pointer_get(E_Desk *desk, E_Client *exclude)
     * zone of either the given desk or the desk of the excluded
     * window, so return if neither is given */
    if (desk)
-     ecore_evas_pointer_xy_get(e_comp_get(desk)->ee, &x, &y);
+     ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
    else if (exclude)
-     ecore_evas_pointer_xy_get(exclude->comp->ee, &x, &y);
+     ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
    else
      return NULL;
 
@@ -4915,6 +4940,7 @@ e_client_pointer_warp_to_center_now(E_Client *ec)
      {
         ecore_evas_pointer_warp(ec->comp->ee, warp_to_x, warp_to_y);
         warp_to = 0;
+        _e_client_pointer_warp_to_center_timer(NULL);
      }
    else
      {

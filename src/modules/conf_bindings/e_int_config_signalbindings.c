@@ -616,25 +616,26 @@ _signal_add_show(E_Config_Dialog_Data *cfdata)
 
    if (cfdata->locals.dia) return;
 
-   cfdata->locals.dia = e_dialog_new(NULL, "E", "_signalbind_new_dialog");
+   cfdata->locals.dia = e_dialog_new(cfdata->cfd->dia->win, "E", "_signalbind_new_dialog");
+   e_dialog_resizable_set(cfdata->locals.dia, 1);
    e_dialog_title_set(cfdata->locals.dia, _("Add Signal Binding"));
    e_dialog_icon_set(cfdata->locals.dia, "enlightenment/signals", 48);
    e_dialog_button_add(cfdata->locals.dia, _("OK"), NULL, _signal_add_cb_ok, cfdata);
    e_dialog_button_add(cfdata->locals.dia, _("Cancel"), NULL, _signal_add_cb_cancel, cfdata);
    e_object_del_attach_func_set(E_OBJECT(cfdata->locals.dia), _signal_add_del);
    cfdata->locals.dia->data = cfdata;
-   e_win_centered_set(cfdata->locals.dia->win, 1);
+   elm_win_center(cfdata->locals.dia->win, 1, 1);
 
-   evas = e_win_evas_get(cfdata->locals.dia->win);
+   evas = evas_object_evas_get(cfdata->locals.dia->win);
    obg = e_widget_list_add(evas, 1, 0);
 
    ol = e_widget_framelist_add(evas, _("Source:"), 0);
-   entry = o = e_widget_entry_add(evas, &cfdata->locals.dia_source, NULL, NULL, NULL);
+   entry = o = e_widget_entry_add(cfdata->locals.dia->win, &cfdata->locals.dia_source, NULL, NULL, NULL);
    e_widget_framelist_object_append(ol, o);
    e_widget_list_object_append(obg, ol, 1, 0, 0.5);
    
    ol = e_widget_framelist_add(evas, _("Signal:"), 0);
-   o = e_widget_entry_add(evas, &cfdata->locals.dia_signal, NULL, NULL, NULL);
+   o = e_widget_entry_add(cfdata->locals.dia->win, &cfdata->locals.dia_signal, NULL, NULL, NULL);
    e_widget_framelist_object_append(ol, o);
    e_widget_list_object_append(obg, ol, 1, 0, 0.5);
 
@@ -643,7 +644,6 @@ _signal_add_show(E_Config_Dialog_Data *cfdata)
 
    e_dialog_show(cfdata->locals.dia);
    e_widget_focus_set(entry, 1);
-   e_dialog_parent_set(cfdata->locals.dia, cfdata->cfd->dia->win);
 }
 
 static void
@@ -770,7 +770,7 @@ _restore_signal_binding_defaults_cb(void *data, void *data2 __UNUSED__)
 }
 
 static Evas_Object *
-_basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *o, *ol, *ot, *of, *ob;
 
@@ -798,7 +798,7 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    e_widget_frametable_object_append(of, ob, 0, 3, 2, 1, 1, 0, 1, 0);
    e_widget_list_object_append(ol, of, 1, 1, 0.5);
 
-   ot = e_widget_table_add(evas, 0);
+   ot = e_widget_table_add(e_win_evas_win_get(evas), 0);
    of = e_widget_framelist_add(evas, _("Action"), 0);
    ob = e_widget_ilist_add(evas, 24, 24, &(cfdata->locals.action));
    cfdata->gui.o_action_list = ob;
@@ -807,7 +807,7 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    e_widget_table_object_append(ot, of, 0, 0, 1, 1, 1, 1, 1, 1);
 
    of = e_widget_framelist_add(evas, _("Action Params"), 0);
-   ob = e_widget_entry_add(evas, &(cfdata->locals.params), NULL, NULL, NULL);
+   ob = e_widget_entry_add(cfd->dia->win, &(cfdata->locals.params), NULL, NULL, NULL);
    cfdata->gui.o_params = ob;
    e_widget_disabled_set(ob, 1);
    e_widget_framelist_object_append(of, ob);
@@ -819,12 +819,13 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    _update_signal_binding_list(cfdata);
    _fill_actions_list(cfdata);
 
+   e_dialog_resizable_set(cfd->dia, 1);
    return o;
 }
 
 
 E_Config_Dialog *
-e_int_config_signalbindings(E_Comp *comp, const char *params)
+e_int_config_signalbindings(Evas_Object *parent EINA_UNUSED, const char *params)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -838,7 +839,7 @@ e_int_config_signalbindings(E_Comp *comp, const char *params)
    v->basic.create_widgets = _basic_create_widgets;
    v->override_auto_apply = 1;
 
-   cfd = e_config_dialog_new(comp, _("Signal Bindings Settings"), "E",
+   cfd = e_config_dialog_new(NULL, _("Signal Bindings Settings"), "E",
                              "keyboard_and_mouse/signal_bindings",
                              "enlightenment/signals", 0, v, NULL);
    if ((params) && (params[0]))

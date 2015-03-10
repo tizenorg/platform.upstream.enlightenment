@@ -28,6 +28,9 @@ e_alert_composite_win(Ecore_X_Window root, Ecore_X_Window comp)
      ecore_x_window_prop_property_del(root, composite_win);
    else
      ecore_x_window_prop_card32_set(root, composite_win, &comp, 1);
+#else
+   (void)root;
+   (void)comp;
 #endif
 }
 
@@ -39,6 +42,5 @@ e_alert_show(void)
         fprintf(stderr, "PAUSE !\n");
         pause();
      }
-   return;
 }
 

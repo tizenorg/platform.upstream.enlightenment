@@ -122,8 +122,8 @@ e_bindings_ecore_event_mouse_wheel_convert(const Ecore_Event_Mouse_Wheel *ev, E_
    memset(event, 0, sizeof(E_Binding_Event_Wheel));
    event->direction = ev->direction;
    event->z = ev->z;
-   event->canvas.x = e_comp_canvas_x_root_adjust(e_comp_get(NULL), ev->root.x);
-   event->canvas.y = e_comp_canvas_x_root_adjust(e_comp_get(NULL), ev->root.y);
+   event->canvas.x = e_comp_canvas_x_root_adjust(e_comp, ev->root.x);
+   event->canvas.y = e_comp_canvas_x_root_adjust(e_comp, ev->root.y);
    event->timestamp = ev->timestamp;
    event->modifiers = _e_bindings_modifiers(ev->modifiers);
 }
@@ -133,8 +133,8 @@ e_bindings_ecore_event_mouse_button_convert(const Ecore_Event_Mouse_Button *ev, 
 {
    memset(event, 0, sizeof(E_Binding_Event_Mouse_Button));
    event->button = ev->buttons;
-   event->canvas.x = e_comp_canvas_x_root_adjust(e_comp_get(NULL), ev->root.x);
-   event->canvas.y = e_comp_canvas_x_root_adjust(e_comp_get(NULL), ev->root.y);
+   event->canvas.x = e_comp_canvas_x_root_adjust(e_comp, ev->root.x);
+   event->canvas.y = e_comp_canvas_x_root_adjust(e_comp, ev->root.y);
    event->timestamp = ev->timestamp;
    event->modifiers = _e_bindings_modifiers(ev->modifiers);
 
@@ -391,6 +391,9 @@ e_bindings_mouse_grab(E_Binding_Context ctxt, Ecore_X_Window win)
 #endif
           }
      }
+#ifdef HAVE_WAYLAND_ONLY
+   (void)win;
+#endif
 }
 
 EAPI void
@@ -409,6 +412,9 @@ e_bindings_mouse_ungrab(E_Binding_Context ctxt, Ecore_X_Window win)
 #endif
           }
      }
+#ifdef HAVE_WAYLAND_ONLY
+   (void)win;
+#endif
 }
 
 EAPI E_Action *
@@ -601,6 +607,9 @@ e_bindings_key_grab(E_Binding_Context ctxt, Ecore_X_Window win)
                }
           }
      }
+#ifdef HAVE_WAYLAND_ONLY
+   (void)win;
+#endif
 }
 
 EAPI void
@@ -622,6 +631,9 @@ e_bindings_key_ungrab(E_Binding_Context ctxt, Ecore_X_Window win)
                }
           }
      }
+#ifdef HAVE_WAYLAND_ONLY
+   (void)win;
+#endif
 }
 
 EAPI E_Action *
@@ -1189,14 +1201,19 @@ e_bindings_wheel_grab(E_Binding_Context ctxt, Ecore_X_Window win)
                   else if (binding->z > 0)
                     button = 7;
                }
-#ifndef HAVE_WAYLAND_ONLY
              if (button != 0)
-               ecore_x_window_button_grab(win, button,
-                                          ECORE_X_EVENT_MASK_MOUSE_DOWN,
-                                          e_bindings_modifiers_to_ecore_convert(binding->mod), binding->any_mod);
+               {
+#ifndef HAVE_WAYLAND_ONLY
+                  ecore_x_window_button_grab(win, button,
+                                             ECORE_X_EVENT_MASK_MOUSE_DOWN,
+                                             e_bindings_modifiers_to_ecore_convert(binding->mod), binding->any_mod);
 #endif
+               }
           }
      }
+#ifdef HAVE_WAYLAND_ONLY
+   (void)win;
+#endif
 }
 
 EAPI void
@@ -1223,13 +1240,18 @@ e_bindings_wheel_ungrab(E_Binding_Context ctxt, Ecore_X_Window win)
                   else if (binding->z > 0)
                     button = 7;
                }
-#ifndef HAVE_WAYLAND_ONLY
              if (button != 0)
-               ecore_x_window_button_ungrab(win, button,
-                                            e_bindings_modifiers_to_ecore_convert(binding->mod), binding->any_mod);
+               {
+#ifndef HAVE_WAYLAND_ONLY
+                  ecore_x_window_button_ungrab(win, button,
+                                               e_bindings_modifiers_to_ecore_convert(binding->mod), binding->any_mod);
 #endif
+               }
           }
      }
+#ifdef HAVE_WAYLAND_ONLY
+   (void)win;
+#endif
 }
 
 EAPI E_Action *

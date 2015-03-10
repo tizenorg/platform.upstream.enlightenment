@@ -91,7 +91,7 @@ struct _E_Config_Dialog_Data
 };
 
 E_Config_Dialog *
-e_int_config_mousebindings(E_Comp *comp, const char *params __UNUSED__)
+e_int_config_mousebindings(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -105,7 +105,7 @@ e_int_config_mousebindings(E_Comp *comp, const char *params __UNUSED__)
    v->basic.create_widgets = _basic_create_widgets;
    v->override_auto_apply = 0;
 
-   cfd = e_config_dialog_new(comp,
+   cfd = e_config_dialog_new(NULL,
                              _("Mouse Bindings Settings"),
                              "E", "keyboard_and_mouse/mouse_bindings",
                              "preferences-desktop-mouse", 0, v, NULL);
@@ -276,7 +276,7 @@ _basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static Evas_Object *
-_basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *o, *of, *ot, *ob;
    E_Radio_Group *rg;
@@ -308,7 +308,7 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    e_widget_frametable_object_append(ot, ob, 0, 3, 2, 1, 1, 0, 1, 0);
    e_widget_list_object_append(o, ot, 1, 1, 0.5);
 
-   ot = e_widget_table_add(evas, 0);
+   ot = e_widget_table_add(e_win_evas_win_get(evas), 0);
    of = e_widget_framelist_add(evas, _("Action"), 0);
    ob = e_widget_ilist_add(evas, 24, 24, &(cfdata->locals.action));
    cfdata->gui.o_action_list = ob;
@@ -317,7 +317,7 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    e_widget_table_object_append(ot, of, 0, 0, 3, 1, 1, 1, 1, 1);
 
    of = e_widget_framelist_add(evas, _("Action Params"), 0);
-   ob = e_widget_entry_add(evas, &(cfdata->locals.params), NULL, NULL, NULL);
+   ob = e_widget_entry_add(cfd->dia->win, &(cfdata->locals.params), NULL, NULL, NULL);
    e_widget_disabled_set(ob, 1);
    cfdata->gui.o_params = ob;
    e_widget_framelist_object_append(of, ob);
@@ -367,6 +367,7 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    _update_mouse_binding_list(cfdata);
    _fill_actions_list(cfdata);
 
+   e_dialog_resizable_set(cfd->dia, 1);
    return o;
 }
 

@@ -58,7 +58,7 @@ static Eina_Bool    _cb_fill_delay(void *data);
 /* Externals */
 
 E_Config_Dialog *
-_xkb_cfg_dialog(E_Comp *comp, const char *params __UNUSED__)
+_xkb_cfg_dialog(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -73,7 +73,7 @@ _xkb_cfg_dialog(E_Comp *comp, const char *params __UNUSED__)
    v->basic.apply_cfdata = _basic_apply;
    v->basic.check_changed = _basic_check_changed;
 
-   cfd = e_config_dialog_new(comp, _("Keyboard Settings"), "E",
+   cfd = e_config_dialog_new(NULL, _("Keyboard Settings"), "E",
                              "keyboard_and_mouse/xkbswitch",
                              "preferences-desktop-keyboard",
                              0, v, NULL);
@@ -281,6 +281,7 @@ _basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data
    Eina_List *l, *ll, *lll;
    Evas_Coord mw, mh;
    /* Holds the dialog contents, displays a toolbar on the top */
+   e_dialog_resizable_set(cfd->dia, 1);
    mainn = e_widget_toolbook_add(evas, 24, 24);
 
    /* Holds the used layouts ilist and the button table */
@@ -296,7 +297,7 @@ _basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data
    cfdata->used_list = configs;
 
    /* Holds the buttons */
-   buttons = e_widget_table_add(evas, 1);
+   buttons = e_widget_table_add(e_win_evas_win_get(evas), 1);
    cfdata->btn_up = e_widget_button_add(evas, _("Up"), "go-up", _cb_up, cfdata, NULL);
    e_widget_disabled_set(cfdata->btn_up, EINA_TRUE);
    e_widget_table_object_append(buttons, cfdata->btn_up, 0, 0, 1, 1, 1, 1, 1, 0);
@@ -361,10 +362,15 @@ _basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data
    if (mw < 220) mw = 220;
    if (mh < 160) mh = 160;
 
-   evas_object_resize(options, mw, mh);
+   evas_object_size_hint_min_set(options, mw, mh);
+   E_EXPAND(options);
+   E_FILL(options);
 
-   scroller = e_widget_scrollframe_simple_add(evas, options);
-   e_widget_size_min_set(scroller, 220, 160);
+   scroller = elm_scroller_add(e_win_evas_win_get(evas));
+   E_EXPAND(scroller);
+   E_FILL(scroller);
+   elm_scroller_bounce_set(scroller, 0, 0);
+   elm_object_content_set(scroller, options);
 
    e_widget_toolbook_page_append(mainn, NULL, _("Options"), scroller, 1, 1, 1, 1, 0.5, 0.0);
 
@@ -390,7 +396,7 @@ _cb_add(void *data, void *data2 __UNUSED__)
    E_Config_Dialog_Data *cfdata;
    if (!(cfdata = data)) return;
 
-   if (cfdata->dlg_add_new) e_win_raise(cfdata->dlg_add_new->win);
+   if (cfdata->dlg_add_new) elm_win_raise(cfdata->dlg_add_new->win);
    else cfdata->dlg_add_new = _dlg_add_new(cfdata);
 }
 
@@ -504,14 +510,15 @@ _dlg_add_new(E_Config_Dialog_Data *cfdata)
    Evas_Coord mw, mh;
    Evas_Object *mainn, *available, *modelss, *variants;
 
-   if (!(dlg = e_dialog_new(_xkb.cfd->comp, "E", "xkbswitch_config_add_dialog"))) return NULL;
+   if (!(dlg = e_dialog_new(NULL, "E", "xkbswitch_config_add_dialog"))) return NULL;
 
+   e_dialog_resizable_set(dlg, 1);
    dlg->data = cfdata;
    
    e_object_del_attach_func_set(E_OBJECT(dlg), _dlg_add_cb_del);
-   e_win_centered_set(dlg->win, 1);
+   elm_win_center(dlg->win, 1, 1);
 
-   evas = e_win_evas_get(dlg->win);
+   evas = evas_object_evas_get(dlg->win);
    e_dialog_title_set(dlg, _("Add New Configuration"));
 
    /* The main toolbook, holds the lists and tabs */

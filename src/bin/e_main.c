@@ -116,6 +116,20 @@ EAPI Eina_Bool e_nopause = EINA_FALSE;
 EINTERN const char *e_first_frame = NULL;
 EINTERN double e_first_frame_start_time = -1;
 
+static Eina_Bool
+_xdg_check_str(const char *env, const char *str)
+{
+   const char *p;
+   size_t len;
+
+   len = strlen(str);
+   for (p = strstr(env, str); p; p++, p = strstr(p, str))
+     {
+        if ((!p[len]) || (p[len] == ':')) return EINA_TRUE;
+     }
+   return EINA_FALSE;
+}
+
 static void
 _xdg_data_dirs_augment(void)
 {
@@ -126,18 +140,27 @@ _xdg_data_dirs_augment(void)
    if (!p) return;
 
    s = getenv("XDG_DATA_DIRS");
-   snprintf(newpath, sizeof(newpath), "%s:%s/share", e_prefix_data_get(), p);
    if (s)
      {
-        if (strncmp(s, newpath, strlen(newpath)))
+        Eina_Bool pfxdata, pfx;
+
+        pfxdata = !_xdg_check_str(s, e_prefix_data_get());
+        snprintf(newpath, sizeof(newpath), "%s/share", p);
+        pfx = !_xdg_check_str(s, newpath);
+        if (pfxdata || pfx)
           {
-             snprintf(buf, sizeof(buf), "%s:%s", newpath, s);
+             snprintf(buf, sizeof(buf), "%s%s%s%s%s",
+               pfxdata ? e_prefix_data_get() : "",
+               pfxdata ? ":" : "",
+               pfx ? newpath : "",
+               pfx ? ":" : "",
+               s);
              e_util_env_set("XDG_DATA_DIRS", buf);
           }
      }
    else
      {
-        snprintf(buf, sizeof(buf), "%s:/usr/local/share:/usr/share", newpath);
+        snprintf(buf, sizeof(buf), "%s:%s/share:/usr/local/share:/usr/share", e_prefix_data_get(), p);
         e_util_env_set("XDG_DATA_DIRS", buf);
      }
 
@@ -145,7 +168,7 @@ _xdg_data_dirs_augment(void)
    snprintf(newpath, sizeof(newpath), "%s/etc/xdg", p);
    if (s)
      {
-        if (strncmp(s, newpath, strlen(newpath)))
+        if (!_xdg_check_str(s, newpath))
           {
              snprintf(buf, sizeof(buf), "%s:%s", newpath, s);
              e_util_env_set("XDG_CONFIG_DIRS", buf);
@@ -232,10 +255,12 @@ main(int argc, char **argv)
 	sigemptyset(&action.sa_mask);
 	sigaction(SIGFPE, &action, NULL);
 
+#ifndef HAVE_WAYLAND_ONLY
 	action.sa_sigaction = e_sigbus_act;
 	action.sa_flags = SA_NODEFER | SA_RESETHAND | SA_SIGINFO;
 	sigemptyset(&action.sa_mask);
 	sigaction(SIGBUS, &action, NULL);
+#endif
 
 	action.sa_sigaction = e_sigabrt_act;
 	action.sa_flags = SA_NODEFER | SA_RESETHAND | SA_SIGINFO;
@@ -416,7 +441,7 @@ main(int argc, char **argv)
         _e_main_shutdown(-1);
      }
    TS("Elementary Init Done");
-   _e_main_shutdown_push(elm_shutdown);
+   //_e_main_shutdown_push(elm_shutdown);
 
    TS("Emotion Init");
    if (!emotion_init())
@@ -431,6 +456,15 @@ main(int argc, char **argv)
    ecore_evas_app_comp_sync_set(0);
 
    TS("Ecore_Evas Engine Check");
+#ifdef HAVE_WAYLAND_ONLY
+   if (!ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_WAYLAND_SHM))
+     {
+        e_error_message_show(_("Enlightenment found ecore_evas doesn't support the Wayland SHM\n"
+                               "rendering in Evas. Please check your installation of Evas and\n"
+                                "Ecore and check they support the Wayland SHM rendering engine."));
+        _e_main_shutdown(-1);
+     }
+#else
    if (!ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_SOFTWARE_XCB))
      {
         if (!ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_SOFTWARE_XLIB))
@@ -441,6 +475,7 @@ main(int argc, char **argv)
              _e_main_shutdown(-1);
           }
      }
+#endif
    if (!ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_SOFTWARE_BUFFER))
      {
         e_error_message_show(_("Enlightenment found ecore_evas doesn't support the Software Buffer\n"
@@ -471,6 +506,7 @@ main(int argc, char **argv)
    TS("E Intl Init Done");
    _e_main_shutdown_push(e_intl_shutdown);
 
+#ifndef HAVE_WAYLAND_ONLY
    /* init white box of death alert */
    TS("E_Alert Init");
    if (!e_alert_init())
@@ -481,6 +517,7 @@ main(int argc, char **argv)
      }
    TS("E_Alert Init Done");
    _e_main_shutdown_push(e_alert_shutdown);
+#endif
 
    TS("E_Configure Init");
    e_configure_init();
@@ -524,6 +561,7 @@ main(int argc, char **argv)
    TS("E_Env Init Done");
    _e_main_shutdown_push(e_env_shutdown);
 
+   efreet_desktop_environment_set(e_config->desktop_environment);
    e_util_env_set("E_ICON_THEME", e_config->icon_theme);
    ecore_exe_run_priority_set(e_config->priority);
    locked |= e_config->desklock_start_locked;
@@ -560,10 +598,6 @@ main(int argc, char **argv)
    TS("E_Font Apply");
    e_font_apply();
    TS("E_Font Apply Done");
-
-   TS("E_Canvas Recache");
-   e_canvas_recache();
-   TS("E_Canvas Recache Done");
 
    TS("E_Theme Init");
    if (!e_theme_init())
@@ -628,6 +662,16 @@ main(int argc, char **argv)
    e_desk_init();
    e_exehist_init();
 
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup Powersave Modes"));
+   TS("E_Powersave Init");
+   if (!e_powersave_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its powersave modes.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Powersave Init Done");
+   _e_main_shutdown_push(e_powersave_shutdown);
 
    if (e_config->show_splash)
      e_init_status_set(_("Setup Screensaver"));
@@ -727,17 +771,6 @@ main(int argc, char **argv)
      }
    TS("E_Dpms Init Done");
    _e_main_shutdown_push(e_dpms_shutdown);
-
-   if (e_config->show_splash)
-     e_init_status_set(_("Setup Powersave Modes"));
-   TS("E_Powersave Init");
-   if (!e_powersave_init())
-     {
-        e_error_message_show(_("Enlightenment cannot set up its powersave modes.\n"));
-        _e_main_shutdown(-1);
-     }
-   TS("E_Powersave Init Done");
-   _e_main_shutdown_push(e_powersave_shutdown);
 
    if (e_config->show_splash)
      e_init_status_set(_("Setup Desklock"));
@@ -1026,7 +1059,7 @@ main(int argc, char **argv)
    inloop = EINA_FALSE;
    stopping = EINA_TRUE;
 
-   if (!x_fatal) e_canvas_idle_flush();
+   //if (!x_fatal) e_canvas_idle_flush();
 
    e_config_save_flush();
    _e_main_desk_save();
@@ -1067,7 +1100,7 @@ _e_main_shutdown(int errcode)
    char buf[PATH_MAX];
    const char *dir;
 
-   printf("E19: Begin Shutdown Procedure!\n");
+   printf("E: Begin Shutdown Procedure!\n");
 
    if (_idle_before) ecore_idle_enterer_del(_idle_before);
    _idle_before = NULL;
@@ -1473,7 +1506,6 @@ _e_main_test_formats(void)
                                "Evas has Software Buffer engine support.\n"));
         _e_main_shutdown(-1);
      }
-   e_canvas_add(ee);
    evas = ecore_evas_get(ee);
    im = evas_object_image_add(evas);
 
@@ -1530,7 +1562,6 @@ _e_main_test_formats(void)
         _e_main_shutdown(-1);
      }
    evas_object_del(txt);
-   e_canvas_del(ee);
    ecore_evas_free(ee);
 }
 
@@ -1590,60 +1621,49 @@ _e_main_screens_shutdown(void)
    e_exehist_shutdown();
    e_backlight_shutdown();
    e_exec_shutdown();
-// ecore_evas closes evas - deletes objs - deletes fm widgets which tries to
-// ipc to slave to stop monitoring - but ipc has been shut down. dont shut
-// down.
-//   e_desk_shutdown();
-//   e_zone_shutdown();
-//   e_container_shutdown();
-//   e_manager_shutdown();
+
+   e_desk_shutdown();
+   e_zone_shutdown();
+   e_manager_shutdown();
    return 1;
 }
 
 static void
 _e_main_desk_save(void)
 {
-   E_Comp *c;
    const Eina_List *l;
    char env[1024], name[1024];
+   E_Zone *zone;
 
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
+   EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        Eina_List *zl;
-        E_Zone *zone;
-
-        EINA_LIST_FOREACH(c->zones, zl, zone)
-          {
-             snprintf(name, sizeof(name), "DESK_%d_%d", c->num, zone->num);
-             snprintf(env, sizeof(env), "%d,%d", zone->desk_x_current, zone->desk_y_current);
-             e_util_env_set(name, env);
-          }
+        snprintf(name, sizeof(name), "DESK_%d_%d", e_comp->num, zone->num);
+        snprintf(env, sizeof(env), "%d,%d", zone->desk_x_current, zone->desk_y_current);
+        e_util_env_set(name, env);
      }
 }
 
 static void
 _e_main_desk_restore(void)
 {
-   E_Comp *c;
-   const Eina_List *l, *ll;
+   const Eina_List *l;
    E_Zone *zone;
    char *env;
    char name[1024];
 
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
-      EINA_LIST_FOREACH(c->zones, ll, zone)
-        {
-           E_Desk *desk;
-           int desk_x, desk_y;
+   EINA_LIST_FOREACH(e_comp->zones, l, zone)
+     {
+        E_Desk *desk;
+        int desk_x, desk_y;
 
-           snprintf(name, sizeof(name), "DESK_%d_%d", c->num, zone->num);
-           env = getenv(name);
-           if (!env) continue;
-           if (!sscanf(env, "%d,%d", &desk_x, &desk_y)) continue;
-           desk = e_desk_at_xy_get(zone, desk_x, desk_y);
-           if (!desk) continue;
-           e_desk_show(desk);
-        }
+        snprintf(name, sizeof(name), "DESK_%d_%d", e_comp->num, zone->num);
+        env = getenv(name);
+        if (!env) continue;
+        if (!sscanf(env, "%d,%d", &desk_x, &desk_y)) continue;
+        desk = e_desk_at_xy_get(zone, desk_x, desk_y);
+        if (!desk) continue;
+        e_desk_show(desk);
+     }
 }
 
 static void
@@ -1738,7 +1758,7 @@ _e_main_cb_idle_after(void *data __UNUSED__)
 
    edje_freeze();
 
-#ifdef E19_RELEASE_BUILD
+#ifdef E_RELEASE_BUILD
    if (first_idle)
      {
         TS("SLEEP");
@@ -1762,7 +1782,7 @@ _e_main_cb_x_flusher(void *data __UNUSED__)
 {
    eet_clearcache();
 #ifndef HAVE_WAYLAND_ONLY
-   if (e_comp_get(NULL)->comp_type == E_PIXMAP_TYPE_X)
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
      ecore_x_flush();
 #endif
    return ECORE_CALLBACK_RENEW;

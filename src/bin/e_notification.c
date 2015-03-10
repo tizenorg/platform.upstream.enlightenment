@@ -93,8 +93,8 @@ notify_cb(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Messag
    if (e_screensaver_on_get() && e_config->screensaver_wake_on_notify)
      {
         int x, y;
-        ecore_evas_pointer_xy_get(e_comp_get(NULL)->ee, &x, &y);
-        ecore_evas_pointer_warp(e_comp_get(NULL)->ee, x, y);
+        ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
+        ecore_evas_pointer_warp(e_comp->ee, x, y);
      }
    eldbus_message_iter_dict_iterate(hints_iter, "sv", hints_dict_iter, n);
    n->app_name = eina_stringshare_add(n->app_name);
@@ -152,14 +152,14 @@ server_info_cb(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_M
 static const Eldbus_Method methods[] = {
    { "Notify",
      ELDBUS_ARGS({"s", "app_name"}, {"u", "replaces_id"}, {"s", "app_icon"}, {"s", "summary"}, {"s", "body"}, {"as", "actions"}, {"a{sv}", "hints"}, {"i", "expire_timeout"}),
-     ELDBUS_ARGS({"u", "id"}), notify_cb },
-   { "CloseNotification", ELDBUS_ARGS({"u", "id"}), NULL, close_notification_cb },
+     ELDBUS_ARGS({"u", "id"}), notify_cb, 0 },
+   { "CloseNotification", ELDBUS_ARGS({"u", "id"}), NULL, close_notification_cb, 0 },
    { "GetCapabilities", NULL, ELDBUS_ARGS({"as", "capabilities"}),
-     capabilities_cb },
+     capabilities_cb, 0 },
    { "GetServerInformation", NULL,
      ELDBUS_ARGS({"s", "name"}, {"s", "vendor"}, {"s", "version"}, {"s", "spec_version"}),
-     server_info_cb },
-   { }
+     server_info_cb, 0 },
+   { NULL, NULL, NULL, NULL, 0 }
 };
 
 enum
@@ -170,10 +170,10 @@ enum
 
 static const Eldbus_Signal signals[] = {
    [SIGNAL_NOTIFICATION_CLOSED] =
-   { "NotificationClosed", ELDBUS_ARGS({"u", "id"}, {"u", "reason"}) },
+   { "NotificationClosed", ELDBUS_ARGS({"u", "id"}, {"u", "reason"}), 0 },
    [SIGNAL_ACTION_INVOKED] =
-   { "ActionInvoked", ELDBUS_ARGS({"u", "id"}, {"s", "action_key"}) },
-   { }
+   { "ActionInvoked", ELDBUS_ARGS({"u", "id"}, {"s", "action_key"}), 0 },
+   { NULL, NULL, 0}
 };
 
 #define PATH      "/org/freedesktop/Notifications"

@@ -103,17 +103,12 @@ _e_drop_handler_active_check(E_Drop_Handler *h, const E_Drag *drag, Eina_Strings
 EINTERN int
 e_dnd_init(void)
 {
-#ifndef HAVE_WAYLAND_ONLY
-   E_Comp *c;
-   const Eina_List *l;
-#endif
-
    _type_text_uri_list = eina_stringshare_add("text/uri-list");
    _type_xds = eina_stringshare_add("XdndDirectSave0");
    _type_text_x_moz_url = eina_stringshare_add("text/x-moz-url");
    _type_enlightenment_x_file = eina_stringshare_add("enlightenment/x-file");
 #ifndef HAVE_WAYLAND_ONLY
-   if (e_comp_get(NULL)->comp_type == E_PIXMAP_TYPE_X)
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
      _text_atom = ecore_x_atom_get("text/plain");
 #endif
 
@@ -124,7 +119,7 @@ e_dnd_init(void)
    E_LIST_HANDLER_APPEND(_event_handlers, ECORE_EVENT_MOUSE_MOVE, _e_dnd_cb_mouse_move, NULL);
    E_LIST_HANDLER_APPEND(_event_handlers, ECORE_EVENT_KEY_DOWN, _e_dnd_cb_key_down, NULL);
    E_LIST_HANDLER_APPEND(_event_handlers, ECORE_EVENT_KEY_UP, _e_dnd_cb_key_up, NULL);
-   if (e_comp_get(NULL)->comp_type != E_PIXMAP_TYPE_X) return 1;
+   if (e_comp->comp_type != E_PIXMAP_TYPE_X) return 1;
 #ifndef HAVE_WAYLAND_ONLY
    E_LIST_HANDLER_APPEND(_event_handlers, ECORE_X_EVENT_XDND_ENTER, _e_dnd_cb_event_dnd_enter, NULL);
    E_LIST_HANDLER_APPEND(_event_handlers, ECORE_X_EVENT_XDND_LEAVE, _e_dnd_cb_event_dnd_leave, NULL);
@@ -135,8 +130,7 @@ e_dnd_init(void)
    E_LIST_HANDLER_APPEND(_event_handlers, ECORE_X_EVENT_SELECTION_NOTIFY, _e_dnd_cb_event_dnd_selection, NULL);
    E_LIST_HANDLER_APPEND(_event_handlers, ECORE_X_EVENT_WINDOW_HIDE, _e_dnd_cb_event_hide, NULL);
 
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
-     e_drop_xdnd_register_set(c->ee_win, 1);
+   e_drop_xdnd_register_set(e_comp->ee_win, 1);
 
    _action = ECORE_X_ATOM_XDND_ACTION_PRIVATE;
 #endif
@@ -285,6 +279,8 @@ e_drag_start(E_Drag *drag, int x, int y)
    _drag_win = ecore_x_window_input_new(drag->comp->win,
                                         drag->comp->man->x, drag->comp->man->y,
                                         drag->comp->man->w, drag->comp->man->h);
+   ecore_event_window_register(_drag_win, drag->comp->ee, drag->comp->evas,
+                                 NULL, NULL, NULL, NULL);
    ecore_x_window_show(_drag_win);
 #endif
    _drag_win_root = drag->comp->man->root;
@@ -345,7 +341,7 @@ e_drag_xdnd_start(E_Drag *drag, int x, int y)
 
    if (_drag_win) return 0;
 #ifndef HAVE_WAYLAND_ONLY
-   if (e_comp_get(drag)->comp_type != E_PIXMAP_TYPE_X) return 0;
+   if (e_comp->comp_type != E_PIXMAP_TYPE_X) return 0;
    _drag_win = ecore_x_window_input_new(drag->comp->win,
                                         drag->comp->man->x, drag->comp->man->y,
                                         drag->comp->man->w, drag->comp->man->h);
@@ -417,7 +413,7 @@ e_drop_xds_update(Eina_Bool enable, const char *value)
    int size;
    size_t len;
 
-   if (e_comp_get(NULL)->comp_type != E_PIXMAP_TYPE_X) return;
+   if (e_comp->comp_type != E_PIXMAP_TYPE_X) return;
    enable = !!enable;
 
    xwin = ecore_x_selection_owner_get(ECORE_X_ATOM_SELECTION_XDND);
@@ -438,6 +434,9 @@ e_drop_xds_update(Eina_Bool enable, const char *value)
      }
    else
      ecore_x_window_prop_property_del(xwin, ECORE_X_ATOM_XDND_DIRECTSAVE0);
+#else
+   (void)enable;
+   (void)value;
 #endif
 }
 
@@ -526,7 +525,7 @@ e_drop_handler_del(E_Drop_Handler *handler)
 EAPI int
 e_drop_xdnd_register_set(Ecore_Window win, int reg)
 {
-   if (e_comp_get(NULL)->comp_type != E_PIXMAP_TYPE_X) return 0;
+   if (e_comp->comp_type != E_PIXMAP_TYPE_X) return 0;
    if (reg)
      {
         if (!eina_hash_find(_drop_win_hash, &win))
@@ -670,7 +669,15 @@ _e_drag_coords_update(const E_Drop_Handler *h, int *dx, int *dy)
 
    *dx = 0;
    *dy = 0;
-   if (h->obj)
+   if (e_obj_is_win(h->obj))
+     {
+        E_Client *ec;
+
+        ec = e_win_client_get((void*)h->obj);
+        px = ec->x;
+        py = ec->y;
+     }
+   else if (h->obj)
      {
         switch (h->obj->type)
           {
@@ -679,21 +686,19 @@ _e_drag_coords_update(const E_Drop_Handler *h, int *dx, int *dy)
            case E_GADCON_TYPE:
              gc = (E_Gadcon *)h->obj;
              if (!gc->toolbar) return;
-             px = gc->toolbar->fwin->x;
-             py = gc->toolbar->fwin->y;
+             evas_object_geometry_get(gc->toolbar->fwin, &px, &py, NULL, NULL);
              break;
 
            case E_GADCON_CLIENT_TYPE:
              gc = ((E_Gadcon_Client *)(h->obj))->gadcon;
              e_gadcon_canvas_zone_geometry_get(gc, &px, &py, NULL, NULL);
              if (!gc->toolbar) break;
-             px += gc->toolbar->fwin->x;
-             py += gc->toolbar->fwin->y;
-             break;
+             {
+                int x, y;
 
-           case E_WIN_TYPE:
-             px = ((E_Win *)(h->obj))->client->x;
-             py = ((E_Win *)(h->obj))->client->y;
+                evas_object_geometry_get(gc->toolbar->fwin, &x, &y, NULL, NULL);
+                px += x, py += y;
+             }
              break;
 
            case E_ZONE_TYPE:
@@ -722,6 +727,8 @@ _e_drag_win_get(const E_Drop_Handler *h, int xdnd)
 {
    Ecore_X_Window hwin = 0;
 
+   if (e_obj_is_win(h->obj))
+     return elm_win_window_id_get((Evas_Object*)h->obj);
    if (h->obj)
      {
         E_Gadcon *gc = NULL;
@@ -735,7 +742,7 @@ _e_drag_win_get(const E_Drop_Handler *h, int xdnd)
            case E_GADCON_TYPE:
              if (!gc) gc = (E_Gadcon *)h->obj;
 
-             if (gc->toolbar) hwin = e_client_util_pwin_get(gc->toolbar->fwin->client); //double check for xdnd...
+             if (gc->toolbar) hwin = e_client_util_pwin_get(e_win_client_get(gc->toolbar->fwin)); //double check for xdnd...
              else
                {
                   if (xdnd) hwin = e_gadcon_xdnd_window_get(gc);
@@ -743,13 +750,9 @@ _e_drag_win_get(const E_Drop_Handler *h, int xdnd)
                }
              break;
 
-           case E_WIN_TYPE:
-             hwin = ((E_Win *)(h->obj))->evas_win;
-             break;
-
            case E_CLIENT_TYPE:
            case E_ZONE_TYPE:
-             hwin = e_comp_get(h->obj)->ee_win;
+             hwin = e_comp->ee_win;
              break;
 
            /* FIXME: add more types as needed */
@@ -777,6 +780,7 @@ _e_drag_win_show(E_Drop_Handler *h)
 
    if (h->obj)
      {
+        if (e_obj_is_win(h->obj)) return;
         switch (h->obj->type)
           {
            case E_GADCON_TYPE:
@@ -803,6 +807,7 @@ _e_drag_win_hide(E_Drop_Handler *h)
 
    if (h->obj)
      {
+        if (e_obj_is_win(h->obj)) return;
         switch (h->obj->type)
           {
            case E_GADCON_TYPE:
@@ -830,6 +835,8 @@ _e_dnd_object_layer_get(E_Drop_Handler *h)
 
    if (h->base) return evas_object_layer_get(h->base);
    if (!obj) return 0;
+   if (e_obj_is_win(obj))
+     obj = (E_Object*)e_win_client_get((Evas_Object*)obj);
    switch (obj->type)
      {
       case E_GADCON_CLIENT_TYPE:
@@ -858,7 +865,7 @@ _e_drag_update(Ecore_X_Window root, int x, int y, Ecore_X_Atom action)
 
 //   double t1 = ecore_time_get(); ////
    if (_drag_current && !_xdnd)
-     win = e_comp_top_window_at_xy_get(e_comp_get(_drag_current), x, y);
+     win = e_comp_top_window_at_xy_get(e_comp, x, y);
    else
      win = root;
 
@@ -979,11 +986,11 @@ _e_drag_end(int x, int y)
    int dx, dy;
    Ecore_X_Window win;
    E_Drop_Handler *h;
-   int dropped;
+   int dropped = 0;
 
    if (!_drag_current) return;
-   win = e_comp_top_window_at_xy_get(e_comp_get(_drag_current), x, y);
-   zone = e_comp_zone_xy_get(_drag_current->comp, x, y);
+   win = e_comp_top_window_at_xy_get(e_comp, x, y);
+   zone = e_comp_zone_xy_get(e_comp, x, y);
    /* Pass -1, -1, so that it is possible to drop at the edge. */
    if (zone) e_zone_flip_coords_handle(zone, -1, -1);
 
@@ -995,7 +1002,7 @@ _e_drag_end(int x, int y)
 #ifndef HAVE_WAYLAND_ONLY
         if (!(dropped = ecore_x_dnd_drop()))
           {
-             if (win == e_comp_get(NULL)->ee_win) break;
+             if (win == e_comp->ee_win) break;
           }
 #endif
         if (_drag_current->cb.finished)
@@ -1153,6 +1160,7 @@ _e_drag_free(E_Drag *drag)
      eina_stringshare_del(drag->types[i]);
    free(drag);
 #ifndef HAVE_WAYLAND_ONLY
+   ecore_event_window_unregister(_drag_win);
    ecore_x_window_free(_drag_win);
    ecore_x_window_shadow_tree_flush();
 #endif
@@ -1448,14 +1456,14 @@ _e_dnd_cb_event_dnd_selection(void *data __UNUSED__, int type __UNUSED__, void *
         for (i = 0; i < files->num_files; i++)
           {
              /* TODO: Check if hostname is in file:// uri */
-             if (!strncmp(files->files[i], "file://", 7))
-               l = eina_list_append(l, files->files[i]);
+             /* if (!strncmp(files->files[i], "file://", 7)) */
+             /*   l = eina_list_append(l, files->files[i]); */
              /* TODO: download files
                 else if (!strncmp(files->files[i], "http://", 7))
                 else if (!strncmp(files->files[i], "ftp://", 6))
               */
-             else
-               l = eina_list_append(l, files->files[i]);
+             /* else */
+             l = eina_list_append(l, files->files[i]);
           }
         _xdnd->data = l;
         _e_drag_xdnd_end(ev->win, _xdnd->x, _xdnd->y);

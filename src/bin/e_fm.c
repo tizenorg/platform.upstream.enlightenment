@@ -1077,7 +1077,7 @@ e_fm2_path_set(Evas_Object *obj, const char *dev, const char *path)
         snprintf(text, sizeof(text), _("%s doesn't exist."), real_path);
 
         e_dialog_text_set(dialog, text);
-        e_win_centered_set(dialog->win, 1);
+        elm_win_center(dialog->win, 1, 1);
         e_dialog_show(dialog);
         return;
      }
@@ -4584,6 +4584,15 @@ _e_fm2_icon_geom_adjust(E_Fm2_Icon *ic, int saved_x, int saved_y, int saved_w __
    ic->y = y;
 }
 
+static const char *
+_mime_get(const char *path)
+{
+   const char *mime = efreet_mime_special_type_get(path);
+   if (!mime) mime = efreet_mime_globs_type_get(path);
+   if (!mime) mime = efreet_mime_fallback_type_get(path);
+   return mime;
+}
+
 static int
 _e_fm2_icon_fill(E_Fm2_Icon *ic, E_Fm2_Finfo *finf)
 {
@@ -4614,7 +4623,7 @@ _e_fm2_icon_fill(E_Fm2_Icon *ic, E_Fm2_Finfo *finf)
      }
    else if (ic->info.real_link)
      {
-        mime = efreet_mime_type_get(ic->info.real_link);
+        mime = _mime_get(ic->info.real_link);
         if (!mime)
           /* XXX REMOVE/DEPRECATE ME LATER */
           mime = e_fm_mime_filename_get(ic->info.file);
@@ -4623,7 +4632,7 @@ _e_fm2_icon_fill(E_Fm2_Icon *ic, E_Fm2_Finfo *finf)
 
    if (!ic->info.mime)
      {
-        mime = efreet_mime_type_get(buf);
+        mime = _mime_get(buf);
         if (!mime)
           /* XXX REMOVE/DEPRECATE ME LATER */
           mime = e_fm_mime_filename_get(ic->info.file);
@@ -7559,12 +7568,10 @@ _e_fm2_cb_icon_mouse_move(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNU
              Evas_Object *o = NULL, *o2 = NULL, *layout = NULL;
              const char *drag_types[] = { "text/uri-list" }, *real_path;
              char buf[PATH_MAX + 8], *p, *sel = NULL;
-             E_Comp *c = NULL;
              Eina_Binbuf *sbuf;
              Eina_List *sl, *icons = NULL;
              size_t sel_length = 0, p_offset, p_length;
 
-             c = e_comp_get(ic->sd->eobj);
              ic->sd->drag = EINA_TRUE;
              ic->drag.start = EINA_FALSE;
              real_path = e_fm2_real_path_get(ic->sd->obj);
@@ -7664,7 +7671,7 @@ _e_fm2_cb_icon_mouse_move(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNU
              sel = (char*)eina_binbuf_string_steal(sbuf);
              eina_binbuf_free(sbuf);
 
-             d = e_drag_new(c, 0, 0, drag_types, 1,
+             d = e_drag_new(e_comp, 0, 0, drag_types, 1,
                             sel, sel_length, NULL, _e_fm2_cb_drag_finished);
              if (layout)
                d->x = ic->sd->x, d->y = ic->sd->y;
@@ -10085,7 +10092,7 @@ _e_fm2_view_image_sel(E_Fm2_Smart_Data *sd, const char *title,
    e_dialog_resizable_set(dia, 1);
    e_dialog_title_set(dia, title);
 
-   o = e_widget_fsel_add(dia->win->evas, "/", sd->realpath, NULL, NULL, NULL, sd, NULL, sd, 1);
+   o = e_widget_fsel_add(evas_object_evas_get(dia->win), "/", sd->realpath, NULL, NULL, NULL, sd, NULL, sd, 1);
    evas_object_show(o);
    e_widget_size_min_get(o, &w, &h);
    e_dialog_content_set(dia, o, w, h);
@@ -10093,7 +10100,7 @@ _e_fm2_view_image_sel(E_Fm2_Smart_Data *sd, const char *title,
 
    e_dialog_button_add(dia, _("OK"), NULL, ok_cb, sd);
    e_dialog_button_add(dia, _("Cancel"), NULL, _e_fm2_view_image_sel_close, sd);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_object_data_set(E_OBJECT(dia), sd);
    e_object_del_attach_func_set(E_OBJECT(dia), _image_sel_del);
    e_dialog_show(dia);
@@ -10339,7 +10346,6 @@ static Evas_Object *
 _e_fm2_icon_entry_widget_add(E_Fm2_Icon *ic)
 {
    Evas *e;
-   E_Comp *c;
 
    if (ic->sd->iop_icon)
      _e_fm2_icon_entry_widget_accept(ic->sd->iop_icon);
@@ -10348,16 +10354,15 @@ _e_fm2_icon_entry_widget_add(E_Fm2_Icon *ic)
      return NULL;
 
    e = evas_object_evas_get(ic->obj);
-   c = e_comp_evas_find(e);
-   ic->entry_widget = e_widget_entry_add(e, NULL, NULL, NULL, NULL);
+   ic->entry_widget = e_widget_entry_add(e_win_evas_win_get(e), NULL, NULL, NULL, NULL);
    evas_object_event_callback_add(ic->entry_widget, EVAS_CALLBACK_KEY_DOWN,
                                   _e_fm2_icon_entry_widget_cb_key_down, ic);
 #ifndef HAVE_WAYLAND_ONLY
    evas_event_feed_mouse_out(evas_object_evas_get(ic->obj), ecore_x_current_time_get(), NULL);
 #endif
-   if (c)
-     e_comp_grab_input(c, 0, 1);
-   ic->keygrab = !!c;
+   if (e_comp->evas == e)
+     e_comp_grab_input(e_comp, 0, 1);
+   ic->keygrab = (e_comp->evas == e);
    edje_object_part_swallow(ic->obj, "e.swallow.entry", ic->entry_widget);
    evas_object_show(ic->entry_widget);
    edje_object_signal_emit(ic->obj, "e,state,rename,on", "e");
@@ -10384,11 +10389,8 @@ _e_fm2_icon_entry_widget_del(E_Fm2_Icon *ic)
    ic->sd->typebuf.disabled = EINA_FALSE;
    if (ic->keygrab)
      {
-        E_Comp *c;
-
-        c = e_comp_evas_find(evas_object_evas_get(ic->obj));
-        if (c)
-          e_comp_ungrab_input(c, 0, 1);
+        if (e_comp_evas_find(evas_object_evas_get(ic->obj)))
+          e_comp_ungrab_input(e_comp, 0, 1);
      }
    ic->keygrab = 0;
    _e_fm2_icon_select(ic);
@@ -10530,7 +10532,7 @@ _e_fm_retry_abort_dialog(int pid, const char *str)
             str);
 
    e_dialog_text_set(dialog, text);
-   e_win_centered_set(dialog->win, 1);
+   elm_win_center(dialog->win, 1, 1);
    e_dialog_show(dialog);
    return dialog;
 }
@@ -10592,7 +10594,7 @@ _e_fm_overwrite_dialog(int pid, const char *str)
             _("File already exists, overwrite?<br><hilight>%s</hilight>"), str);
 
    e_dialog_text_set(dialog, text);
-   e_win_centered_set(dialog->win, 1);
+   elm_win_center(dialog->win, 1, 1);
    e_dialog_show(dialog);
    return dialog;
 }
@@ -10760,7 +10762,7 @@ _e_fm_error_dialog(int pid, const char *str)
             str);
 
    e_dialog_text_set(dialog, text);
-   e_win_centered_set(dialog->win, 1);
+   elm_win_center(dialog->win, 1, 1);
    e_dialog_show(dialog);
    return dialog;
 }
@@ -10864,7 +10866,7 @@ _e_fm_device_error_dialog(const char *title, const char *msg, const char *pstr)
    snprintf(text, sizeof(text), "%s<br>%s<br>%s<br>%s<br>%s", msg, u, d, n, m);
    e_dialog_text_set(dialog, text);
 
-   e_win_centered_set(dialog->win, 1);
+   elm_win_center(dialog->win, 1, 1);
    e_dialog_button_focus_num(dialog, 0);
    e_dialog_show(dialog);
 }
@@ -10969,7 +10971,7 @@ _e_fm2_file_delete(Evas_Object *obj)
      }
    if (sel) eina_list_free(sel);
    e_dialog_text_set(dialog, text);
-   e_win_centered_set(dialog->win, 1);
+   elm_win_center(dialog->win, 1, 1);
    e_dialog_show(dialog);
 }
 

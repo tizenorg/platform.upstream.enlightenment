@@ -46,6 +46,9 @@ EAPI Eina_Bool e_pixmap_image_data_argb_convert(E_Pixmap *cp, void *pix, void *i
 EAPI Eina_Bool e_pixmap_image_draw(E_Pixmap *cp, const Eina_Rectangle *r);
 EAPI Eina_Bool e_pixmap_validate_check(const E_Pixmap *cp);
 
+EAPI void e_pixmap_image_opaque_set(E_Pixmap *cp, int x, int y, int w, int h);
+EAPI void e_pixmap_image_opaque_get(E_Pixmap *cp, int *x, int *y, int *w, int *h);
+
 static inline Eina_Bool
 e_pixmap_is_x(const E_Pixmap *cp)
 {

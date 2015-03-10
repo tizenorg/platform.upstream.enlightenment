@@ -43,10 +43,10 @@ e_int_shelf_config(E_Shelf *es)
    v->basic.check_changed = _basic_check_changed;
 
    es->config_dialog =
-     e_config_dialog_new(es->zone->comp, _("Shelf Settings"),
+     e_config_dialog_new(NULL, _("Shelf Settings"),
                          "E", "_shelf_config_dialog",
                          "preferences-desktop-shelf", 0, v, es);
-   e_win_centered_set(es->config_dialog->dia->win, EINA_TRUE);
+   elm_win_center(es->config_dialog->dia->win, 1, 1);
 }
 
 /* local functions */
@@ -164,7 +164,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
                                  1, 0, 1, 0, 0.5, 0.0);
 
    /* position */
-   ol = e_widget_table_add(evas, 1);
+   ol = e_widget_table_add(e_win_evas_win_get(evas), 1);
    rg = e_widget_radio_group_new(&(cfdata->orient));
    ow = e_widget_radio_icon_add(evas, NULL, "preferences-position-left",
                                 24, 24, E_GADCON_ORIENT_LEFT, rg);

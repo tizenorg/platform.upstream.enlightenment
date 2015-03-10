@@ -53,7 +53,7 @@ static Ecore_Window grab_win = 0;
 static Eina_List *grab_hdls = NULL;
 
 E_Config_Dialog *
-e_int_config_acpibindings(E_Comp *comp,
+e_int_config_acpibindings(Evas_Object *parent EINA_UNUSED,
                           const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
@@ -68,7 +68,7 @@ e_int_config_acpibindings(E_Comp *comp,
    v->basic.apply_cfdata = _basic_apply;
    v->basic.create_widgets = _basic_create;
 
-   cfd = e_config_dialog_new(comp, _("ACPI Bindings"), "E",
+   cfd = e_config_dialog_new(NULL, _("ACPI Bindings Settings"), "E",
                              "advanced/acpi_bindings",
                              "preferences-system-power-management",
                              0, v, NULL);
@@ -181,7 +181,7 @@ _basic_apply(E_Config_Dialog *cfd  __UNUSED__,
 }
 
 static Evas_Object *
-_basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *ol, *of, *ow, *ot;
 
@@ -205,7 +205,7 @@ _basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data
    e_widget_frametable_object_append(of, ow, 1, 1, 1, 1, 1, 0, 1, 0);
    e_widget_list_object_append(ol, of, 1, 1, 0.5);
 
-   ot = e_widget_table_add(evas, 0);
+   ot = e_widget_table_add(e_win_evas_win_get(evas), 0);
    of = e_widget_framelist_add(evas, _("Action"), 0);
    ow = e_widget_ilist_add(evas, (24 * e_scale), (24 * e_scale), NULL);
    cfdata->o_actions = ow;
@@ -215,12 +215,13 @@ _basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data
 
    ow = e_widget_framelist_add(evas, _("Action Params"), 0);
    cfdata->o_params =
-     e_widget_entry_add(evas, NULL, _cb_entry_changed, cfdata, NULL);
+     e_widget_entry_add(cfd->dia->win, NULL, _cb_entry_changed, cfdata, NULL);
    e_widget_disabled_set(cfdata->o_params, EINA_TRUE);
    e_widget_framelist_object_append(ow, cfdata->o_params);
    e_widget_table_object_append(ot, ow, 0, 1, 1, 1, 1, 0, 1, 0);
    e_widget_list_object_append(ol, ot, 1, 1, 0.5);
 
+   e_dialog_resizable_set(cfd->dia, 1);
    return ol;
 }
 
@@ -514,7 +515,7 @@ _cb_add_binding(void *data,
 
    if (grab_win != 0) return;
    if (!(cfdata = data)) return;
-   grab_dlg = e_dialog_new(NULL, "E",
+   grab_dlg = e_dialog_new(cfdata->cfd->dia->win, "E",
                            "_acpibind_getbind_dialog");
    if (!grab_dlg) return;
    e_dialog_title_set(grab_dlg, _("ACPI Binding"));
@@ -522,8 +523,8 @@ _cb_add_binding(void *data,
    e_dialog_text_set(grab_dlg,
                      _("Please trigger the ACPI event you wish to bind to, "
                        "<br><br>or <hilight>Escape</hilight> to abort."));
-   e_win_centered_set(grab_dlg->win, EINA_TRUE);
-   e_win_borderless_set(grab_dlg->win, EINA_TRUE);
+   elm_win_center(grab_dlg->win, 1, 1);
+   elm_win_borderless_set(grab_dlg->win, EINA_TRUE);
 
 #ifndef HAVE_WAYLAND_ONLY
    E_Manager *man;
@@ -547,10 +548,6 @@ _cb_add_binding(void *data,
    e_acpi_events_freeze();
 
    e_dialog_show(grab_dlg);
-#ifndef HAVE_WAYLAND_ONLY
-   ecore_x_icccm_transient_for_set(grab_dlg->win->evas_win,
-                                   cfdata->cfd->dia->win->evas_win);
-#endif
 }
 
 static void

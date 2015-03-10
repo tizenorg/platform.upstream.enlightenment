@@ -160,22 +160,20 @@ e_exec(E_Zone *zone, Efreet_Desktop *desktop, const char *exec,
 
              if (dosingle)
                {
-                  const Eina_List *l, *ll;
+                  const Eina_List *l;
                   E_Client *ec;
-                  E_Comp *c;
 
-                  EINA_LIST_FOREACH(e_comp_list(), l, c)
-                    EINA_LIST_FOREACH(c->clients, ll, ec)
-                      {
-                         if (ec && (ec->desktop == desktop))
-                           {
-                              if (!ec->focused)
-                                e_client_activate(ec, EINA_TRUE);
-                              else
-                                evas_object_raise(ec->frame);
-                              return NULL;
-                           }
-                      }
+                  EINA_LIST_FOREACH(e_comp->clients, l, ec)
+                    {
+                       if (ec && (ec->desktop == desktop))
+                         {
+                            if (!ec->focused)
+                              e_client_activate(ec, EINA_TRUE);
+                            else
+                              evas_object_raise(ec->frame);
+                            return NULL;
+                         }
+                    }
                }
           }
      }
@@ -766,7 +764,7 @@ _e_exec_cb_exit(void *data __UNUSED__, int type __UNUSED__, void *event)
                   e_dialog_text_set(dia, buf);
                   e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
                   e_dialog_button_focus_num(dia, 1);
-                  e_win_centered_set(dia->win, 1);
+                  elm_win_center(dia->win, 1, 1);
                   e_dialog_show(dia);
                }
           }
@@ -1078,7 +1076,7 @@ _advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_D
    _fill_data(cfdata);
 
    o = e_widget_list_add(evas, 0, 0);
-   ot = e_widget_table_add(evas, 0);
+   ot = e_widget_table_add(e_win_evas_win_get(evas), 0);
 
    ob = e_widget_label_add(evas, cfdata->label);
    e_widget_list_object_append(o, ob, 1, 1, 0.5);

@@ -37,7 +37,7 @@ struct _Del_Profile_Confirm_Data
 };
 
 E_Config_Dialog *
-e_int_config_profiles(E_Comp *comp, const char *params __UNUSED__)
+e_int_config_profiles(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -50,7 +50,7 @@ e_int_config_profiles(E_Comp *comp, const char *params __UNUSED__)
    v->basic.apply_cfdata = _apply_cfdata;
    v->basic.create_widgets = _create_widgets;
 
-   cfd = e_config_dialog_new(comp, _("Profile Selector"),
+   cfd = e_config_dialog_new(NULL, _("Profile Selector"),
                              "E", "settings/profiles",
                              "preferences-profiles", 0, v, NULL);
    e_config_dialog_changed_auto_set(cfd, 0);
@@ -100,6 +100,7 @@ _create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Da
    Evas_Coord mw, mh;
    char buf[PATH_MAX];
 
+   e_dialog_resizable_set(cfd->dia, 1);
    o = e_widget_list_add(evas, 0, 0);
 
    of = e_widget_framelist_add(evas, _("Available Profiles"), 0);
@@ -128,7 +129,7 @@ _create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Da
                                          99999, 99999 /* max */
                                          );
 
-   ot = e_widget_table_add(evas, 0);
+   ot = e_widget_table_add(e_win_evas_win_get(evas), 0);
    ob = e_widget_button_add(evas, _("Add"), "list-add", _cb_add, cfdata, NULL);
    e_widget_table_object_append(ot, ob, 0, 0, 1, 1, 1, 1, 0, 0);
    cfdata->o_delete = e_widget_button_add(evas, _("Delete"), "list-remove",
@@ -308,7 +309,7 @@ _cb_add(void *data, void *data2 __UNUSED__)
    if (!cfdata) return;
 
    if (cfdata->dia_new_profile)
-     e_win_raise(cfdata->dia_new_profile->dia->win);
+     elm_win_raise(cfdata->dia_new_profile->dia->win);
    else
      {
         cfdata->dia_new_profile = e_entry_dialog_show(_("Add New Profile"), NULL,

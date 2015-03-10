@@ -141,14 +141,14 @@ wizard_page_init(E_Wizard_Page *pg __UNUSED__, Eina_Bool *need_xdg_desktops __UN
      }
    return 1;
 }
-/*
+
 EAPI int
 wizard_page_shutdown(E_Wizard_Page *pg __UNUSED__)
 {
-   // FIXME: free blang_list
+   eina_list_free(blang_list);
    return 1;
 }
-*/
+
 EAPI int
 wizard_page_show(E_Wizard_Page *pg)
 {

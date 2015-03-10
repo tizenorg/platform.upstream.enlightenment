@@ -85,7 +85,7 @@ static const Eldbus_Signal tw_signals[] =
    [TEAMWORK_SIGNAL_LINK_PROGRESS] = {"LinkProgress", ELDBUS_ARGS({"s", "URI"}, {"u", "Timestamp"}, {"d", "Percent Completion"}), 0},
    [TEAMWORK_SIGNAL_LINK_COMPLETE] = {"LinkComplete", ELDBUS_ARGS({"s", "URI"}, {"u", "Timestamp"}), 0},
    [TEAMWORK_SIGNAL_LINK_INVALID] = {"LinkInvalid", ELDBUS_ARGS({"s", "URI"}, {"u", "Timestamp"}), 0},
-   {}
+   {NULL, NULL, 0}
 };
 
 static void tw_show(Media *i);
@@ -505,18 +505,18 @@ dbus_link_open_cb(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbu
 
 
 static const Eldbus_Method tw_methods[] = {
-   { "LinkDetect", ELDBUS_ARGS({"s", "URI"}, {"u", "Timestamp"}), NULL, dbus_link_detect_cb },
-   { "LinkMouseIn", ELDBUS_ARGS({"s", "URI"}, {"u", "Timestamp"}, {"t", "Window ID"}, {"i", "X Coordinate"}, {"i", "Y Coordinate"}), NULL, dbus_link_mouse_in_cb },
-   { "LinkMouseOut", ELDBUS_ARGS({"s", "URI"}, {"u", "Timestamp"}, {"t", "Window ID"}, {"i", "X Coordinate"}, {"i", "Y Coordinate"}), NULL, dbus_link_mouse_out_cb },
-   { "LinkShow", ELDBUS_ARGS({"s", "URI"}), NULL, dbus_link_show_cb },
-   { "LinkHide", ELDBUS_ARGS({"s", "URI"}), NULL, dbus_link_hide_cb },
-   { "LinkOpen", ELDBUS_ARGS({"s", "URI"}), NULL, dbus_link_open_cb },
-   { }
+   { "LinkDetect", ELDBUS_ARGS({"s", "URI"}, {"u", "Timestamp"}), NULL, dbus_link_detect_cb, 0 },
+   { "LinkMouseIn", ELDBUS_ARGS({"s", "URI"}, {"u", "Timestamp"}, {"t", "Window ID"}, {"i", "X Coordinate"}, {"i", "Y Coordinate"}), NULL, dbus_link_mouse_in_cb, 0 },
+   { "LinkMouseOut", ELDBUS_ARGS({"s", "URI"}, {"u", "Timestamp"}, {"t", "Window ID"}, {"i", "X Coordinate"}, {"i", "Y Coordinate"}), NULL, dbus_link_mouse_out_cb, 0 },
+   { "LinkShow", ELDBUS_ARGS({"s", "URI"}), NULL, dbus_link_show_cb, 0 },
+   { "LinkHide", ELDBUS_ARGS({"s", "URI"}), NULL, dbus_link_hide_cb, 0 },
+   { "LinkOpen", ELDBUS_ARGS({"s", "URI"}), NULL, dbus_link_open_cb, 0 },
+   { NULL, NULL, NULL, NULL, 0 }
 };
 
 static const Eldbus_Service_Interface_Desc tw_desc =
 {
-   "org.enlightenment.wm.Teamwork", tw_methods, tw_signals
+   "org.enlightenment.wm.Teamwork", tw_methods, tw_signals, NULL, NULL, NULL
 };
 
 static Eet_Data_Descriptor *
@@ -840,7 +840,7 @@ tw_show_helper(Evas_Object *o, int w, int h)
      }
    else
      {
-        e_comp_object_util_center(tw_mod->pop);
+        e_comp_object_util_center_on(tw_mod->pop, zone->bg_clip_object);
      }
    evas_object_show(tw_mod->pop);
    tw_popup_opacity_set();
@@ -890,7 +890,6 @@ tw_video_opened_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED)
    ratio = emotion_object_ratio_get(obj);
    if (ratio > 0.0) iw = (ih * ratio) + 0.5;
    if (iw < 1) iw = 1;
-   if (ih < 1) ih = 1;
 
    h = (w * ih) / iw;
    e_livethumb_thumb_set(data, obj);
@@ -1006,7 +1005,7 @@ tw_show(Media *i)
    if (i->video)
      {
         char buf[PATH_MAX];
-        const char *tmp;
+        Eina_Tmpstr *tmpfile;
 
         if (tw_config->disable_video) return;
         while (i->tmpfile)
@@ -1033,9 +1032,7 @@ tw_show(Media *i)
              tw_show_video(prev, tw_tmpfile);
              return;
           }
-        tmp = getenv("XDG_RUNTIME_DIR");
-        if (!tmp) tmp = "/tmp";
-        snprintf(buf, sizeof(buf), "%s/teamwork-%s-XXXXXX", tmp, ecore_file_file_get(i->addr));
+        snprintf(buf, sizeof(buf), "teamwork-%s-XXXXXX", ecore_file_file_get(i->addr));
         if (tw_tmpfile)
           {
              if (tw_tmpthread)
@@ -1046,14 +1043,15 @@ tw_show(Media *i)
                }
              close(tw_tmpfd);
           }
-        tw_tmpfd = mkstemp(buf);
-        eina_stringshare_replace(&tw_tmpfile, buf);
+        tw_tmpfd = eina_file_mkstemp(buf, &tmpfile);
+        eina_stringshare_replace(&tw_tmpfile, tmpfile);
         if (tw_tmpfd < 0)
           {
              ERR("ERROR: %s", strerror(errno));
              download_media_cleanup();
              eina_stringshare_replace(&tw_tmpfile, NULL);
              tw_tmpthread_media = NULL;
+             eina_tmpstr_del(tmpfile);
              return;
           }
         tw_tmpthread_media = i;

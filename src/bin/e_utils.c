@@ -103,21 +103,13 @@ e_util_glob_case_match(const char *str, const char *pattern)
 EAPI E_Zone *
 e_util_comp_zone_number_get(int c_num, int zone_num)
 {
-   E_Comp *c;
-
-   c = e_comp_number_get(c_num);
-   if (!c) return NULL;
-   return e_comp_zone_number_get(c, zone_num);
+   return e_comp_zone_number_get(e_comp, zone_num);
 }
 
 EAPI E_Zone *
 e_util_comp_zone_id_get(int c_num, int id)
 {
-   E_Comp *c;
-
-   c = e_comp_number_get(c_num);
-   if (!c) return NULL;
-   return e_comp_zone_id_get(c, id);
+   return e_comp_zone_id_get(e_comp, id);
 }
 
 EAPI int
@@ -202,7 +194,7 @@ e_util_immortal_check(void)
 {
    Eina_List *wins;
 
-   wins = e_clients_immortal_list(NULL);
+   wins = e_clients_immortal_list();
    if (wins)
      {
         e_util_dialog_show(_("Cannot exit - immortal windows."),
@@ -296,6 +288,10 @@ _e_util_icon_fdo_set(Evas_Object *obj, const char *icon)
 EAPI int
 e_util_icon_theme_set(Evas_Object *obj, const char *icon)
 {
+   if (icon && (icon[0] == '/'))
+     {
+        if (e_icon_file_set(obj, icon)) return 1;
+     }
    if (e_config->icon_theme_overrides)
      {
         if (_e_util_icon_fdo_set(obj, icon))
@@ -469,7 +465,7 @@ e_util_dialog_internal(const char *title, const char *txt)
    e_dialog_icon_set(dia, "dialog-error", 64);
    e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
    e_dialog_button_focus_num(dia, 0);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
    return dia;
 }
@@ -834,24 +830,27 @@ _win_auto_size_calc(int max, int min)
 }
 
 EAPI void
-e_util_win_auto_resize_fill(E_Win *win)
+e_util_win_auto_resize_fill(Evas_Object *win)
 {
    E_Zone *zone = NULL;
+   E_Client *ec;
 
-   if (win->client)
-     zone = win->client->zone;
-   if ((!zone) && (win->comp))
-     zone = e_zone_current_get(win->comp);
+   ec = e_win_client_get(win);
+   if (ec)
+     zone = ec->zone;
+   if (!zone)
+     zone = e_zone_current_get(e_comp);
 
    if (zone)
      {
-        int w, h;
+        int w, h, mw, mh;
 
         e_zone_useful_geometry_get(zone, NULL, NULL, &w, &h);
 
-        w = _win_auto_size_calc(w, win->min_w);
-        h = _win_auto_size_calc(h, win->min_h);
-        e_win_resize(win, w, h);
+        evas_object_size_hint_min_get(win, &mw, &mh);
+        w = _win_auto_size_calc(w, mw);
+        h = _win_auto_size_calc(h, mh);
+        evas_object_resize(win, w, h);
      }
 }
 
@@ -1016,25 +1015,21 @@ EAPI Eina_Bool
 e_util_fullscreen_any(void)
 {
    E_Zone *zone;
-   const Eina_List *lc, *lz;
-   E_Comp *c;
+   const Eina_List *lz;
    E_Desk *desk;
    int x, y;
 
-   EINA_LIST_FOREACH(e_comp_list(), lc, c)
+   EINA_LIST_FOREACH(e_comp->zones, lz, zone)
      {
-        EINA_LIST_FOREACH(c->zones, lz, zone)
-          {
-             if (zone->fullscreen > 0) return EINA_TRUE;
+        if (zone->fullscreen > 0) return EINA_TRUE;
 
-             for (x = 0; x < zone->desk_x_count; x++)
-               for (y = 0; y < zone->desk_y_count; y++)
-                 {
-                    desk = e_desk_at_xy_get(zone, x, y);
-                    if ((desk) && (desk->fullscreen_clients))
-                      return EINA_TRUE;
-                 }
-          }
+        for (x = 0; x < zone->desk_x_count; x++)
+          for (y = 0; y < zone->desk_y_count; y++)
+            {
+               desk = e_desk_at_xy_get(zone, x, y);
+               if ((desk) && (desk->fullscreen_clients))
+                 return EINA_TRUE;
+            }
      }
    return EINA_FALSE;
 }

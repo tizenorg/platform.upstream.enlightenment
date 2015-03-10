@@ -335,10 +335,17 @@ _e_comp_wl_data_device_cb_selection_set(struct wl_client *client EINA_UNUSED, st
    _e_comp_wl_data_device_selection_set(cdata, source, serial);
 }
 
+static void 
+_e_comp_wl_data_device_cb_release(struct wl_client *client EINA_UNUSED, struct wl_resource *resource)
+{
+   wl_resource_destroy(resource);
+}
+
 static const struct wl_data_device_interface _e_data_device_interface =
 {
    _e_comp_wl_data_device_cb_drag_start,
    _e_comp_wl_data_device_cb_selection_set,
+   _e_comp_wl_data_device_cb_release
 };
 
 static void
@@ -393,7 +400,7 @@ _e_comp_wl_data_manager_cb_device_get(struct wl_client *client, struct wl_resour
    E_Comp_Data *cdata;
    struct wl_resource *res;
 
-   DBG("Data Manager Device Get");
+   /* DBG("Data Manager Device Get"); */
 
    /* try to get the compositor data */
    if (!(cdata = wl_resource_get_user_data(seat_resource))) return;
@@ -661,10 +668,7 @@ _e_comp_wl_clipboard_selection_set(struct wl_listener *listener EINA_UNUSED, voi
                                          cdata->selection.serial, p[0]);
 
    if (!cdata->clipboard.source)
-     {
-        close(p[0]);
-        return;
-     }
+     close(p[0]);
 }
 
 static void

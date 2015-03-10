@@ -39,13 +39,9 @@ static Eina_Bool
 _module_filter_cb(void *d EINA_UNUSED, Eio_File *ls EINA_UNUSED, const Eina_File_Direct_Info *info)
 {
    struct stat st;
-   char buf[PATH_MAX];
 
    if (lstat(info->path, &st)) return EINA_FALSE;
    return (info->path[info->name_start] != '.');
-
-   snprintf(buf, sizeof(buf), "%s/%s/module.so", info->path, MODULE_ARCH);
-   return ecore_file_exists(buf);
 }
 
 static void
@@ -245,7 +241,7 @@ e_module_all_load(void)
         if (!em) continue;
 
         if ((!e_util_strcmp(em->name, "comp")) || (!e_util_strcmp(em->name, "conf_comp")) ||
-            (e_comp_get(NULL) && (!strcmp(em->name, "wl_x11"))) //block wl_x11 if we've already created a compositor
+            (e_comp && (!strcmp(em->name, "wl_x11"))) //block wl_x11 if we've already created a compositor
            )
           {
              eina_stringshare_del(em->name);
@@ -607,10 +603,10 @@ e_module_dialog_show(E_Module *m, const char *title, const char *body)
                {
                   snprintf(buf, sizeof(buf), "%s/%s.edj",
                            e_module_dir_get(m), desktop->icon);
-                  dia->icon_object = e_util_icon_add(buf, e_win_evas_get(dia->win));
+                  dia->icon_object = e_util_icon_add(buf, evas_object_evas_get(dia->win));
                }
              else
-               dia->icon_object = e_util_icon_add(icon, e_win_evas_get(dia->win));
+               dia->icon_object = e_util_icon_add(icon, evas_object_evas_get(dia->win));
              evas_object_size_hint_min_set(dia->icon_object, 64, 64);
              edje_object_part_swallow(dia->bg_object, "e.swallow.icon", dia->icon_object);
              evas_object_show(dia->icon_object);
@@ -623,11 +619,10 @@ e_module_dialog_show(E_Module *m, const char *title, const char *body)
    e_dialog_text_set(dia, body);
    e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
    e_dialog_button_focus_num(dia, 0);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
    if (!m) return;
-   if (dia->win->client)
-     dia->win->client->internal_icon = eina_stringshare_add(icon);
+   e_win_client_icon_set(dia->win, icon);
 }
 
 EAPI void
@@ -751,7 +746,14 @@ _e_module_dialog_disable_show(const char *title, const char *body, E_Module *m)
    char buf[4096];
 
    printf("MODULE ERR:\n%s\n", body);
-   dia = e_dialog_new(NULL, "E", "_module_unload_dialog");
+
+   /* FIXME: Stupid hack for ELM_WIN_DIALOG_BASIC not working in wayland */
+#warning REMOVE STUPID ELM HACK FOR WAYLAND BEFORE RELEASE
+   if (e_comp && e_comp->comp_type != E_PIXMAP_TYPE_WL)
+     dia = e_dialog_new(NULL, "E", "_module_unload_dialog");
+   else
+     dia = e_dialog_normal_win_new(NULL, "E", "_module_unload_dialog");
+
    EINA_SAFETY_ON_NULL_RETURN(dia);
 
    snprintf(buf, sizeof(buf), "%s<br>%s", body,
@@ -762,8 +764,8 @@ _e_module_dialog_disable_show(const char *title, const char *body, E_Module *m)
    e_dialog_text_set(dia, buf);
    e_dialog_button_add(dia, _("Unload"), NULL, _e_module_cb_dialog_disable, m);
    e_dialog_button_add(dia, _("Keep"), NULL, NULL, NULL);
-   e_win_centered_set(dia->win, 1);
-   dia->win->state.no_remember = 1;
+   elm_win_center(dia->win, 1, 1);
+   e_win_no_remember_set(dia->win, 1);
    e_dialog_show(dia);
 }
 
@@ -799,7 +801,7 @@ _e_module_cb_idler(void *data __UNUSED__)
         if (name) m = e_module_new(name);
         if (m)
           {
-#ifndef E19_RELEASE_BUILD
+#ifndef E_RELEASE_BUILD
              char buf[1024];
              snprintf(buf, sizeof(buf), "DELAYED MODULE LOAD: %s", name);
              e_main_ts(buf);
@@ -984,7 +986,7 @@ _e_module_whitelist_check(void)
 
       state = badl ? "YES" : "NO";
 
-      if (e_comp_get(NULL)->comp_type == E_PIXMAP_TYPE_X)
+      if (e_comp->comp_type == E_PIXMAP_TYPE_X)
         {
            Ecore_X_Atom _x_tainted;
            unsigned int _e_tainted = badl ? 1 : 0;
@@ -994,7 +996,7 @@ _e_module_whitelist_check(void)
                                           _x_tainted, &_e_tainted, 1);
         }
 
-      e_env_set("E19_TAINTED", state);
+      e_env_set("E_TAINTED", state);
    }
 #endif
 
@@ -1036,7 +1038,7 @@ _e_module_whitelist_check(void)
         e_dialog_text_set(dia, eina_strbuf_string_get(sbuf));
         e_dialog_button_add(dia, _("OK"), NULL, _cleanup_cb, badl);
         e_dialog_button_add(dia, _("I know"), NULL, _ignore_cb, badl);
-        e_win_centered_set(dia->win, 1);
+        elm_win_center(dia->win, 1, 1);
         e_dialog_show(dia);
         eina_strbuf_free(sbuf);
      }

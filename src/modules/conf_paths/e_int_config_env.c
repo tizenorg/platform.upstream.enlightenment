@@ -20,7 +20,7 @@ struct _E_Config_Dialog_Data
 };
 
 E_Config_Dialog *
-e_int_config_env(E_Comp *comp, const char *params __UNUSED__)
+e_int_config_env(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -33,7 +33,7 @@ e_int_config_env(E_Comp *comp, const char *params __UNUSED__)
    v->basic.create_widgets    = _basic_create_widgets;
    v->basic.apply_cfdata      = _basic_apply_data;
    
-   cfd = e_config_dialog_new(comp, _("Environment Variables"),
+   cfd = e_config_dialog_new(NULL, _("Environment Variables"),
 			     "E", "advanced/environment_variables",
 			     "preferences-system", 0, v, NULL);
    return cfd;
@@ -273,14 +273,15 @@ _unset_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
 
 
 static Evas_Object *
-_basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *o, *ol, *oe, *ob, *oc;
    Eina_List *l;
    E_Config_Env_Var *evr;
    
+   e_dialog_resizable_set(cfd->dia, 1);
    
-   o = e_widget_table_add(evas, 0);
+   o = e_widget_table_add(e_win_evas_win_get(evas), 0);
    
    ol = e_widget_ilist_add(evas, 0, 0, NULL);
    cfdata->gui.list = ol;
@@ -294,11 +295,11 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    e_widget_size_min_set(ol, 200, 160);
    e_widget_table_object_append(o, ol, 0, 0, 3, 1, 1, 1, 1, 1);
    
-   oe = e_widget_entry_add(evas, &(cfdata->var_str), NULL, NULL, NULL);
+   oe = e_widget_entry_add(cfd->dia->win, &(cfdata->var_str), NULL, NULL, NULL);
    cfdata->gui.var_en = oe;
    e_widget_table_object_append(o, oe, 0, 1, 1, 1, 1, 1, 1, 0);
    
-   oe = e_widget_entry_add(evas, &(cfdata->val_str), NULL, NULL, NULL);
+   oe = e_widget_entry_add(cfd->dia->win, &(cfdata->val_str), NULL, NULL, NULL);
    cfdata->gui.val_en = oe;
    e_widget_table_object_append(o, oe, 1, 1, 1, 1, 1, 1, 1, 0);
    

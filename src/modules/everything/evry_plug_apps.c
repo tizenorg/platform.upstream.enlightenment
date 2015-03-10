@@ -1285,7 +1285,7 @@ static Evas_Object *_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dia
 static int          _basic_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
 
 static E_Config_Dialog *
-_conf_dialog(E_Comp *comp, const char *params __UNUSED__)
+_conf_dialog(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd = NULL;
    E_Config_Dialog_View *v = NULL;
@@ -1300,7 +1300,7 @@ _conf_dialog(E_Comp *comp, const char *params __UNUSED__)
    v->basic.create_widgets = _basic_create;
    v->basic.apply_cfdata = _basic_apply;
 
-   cfd = e_config_dialog_new(comp, _("Everything Applications"), "everything-apps",
+   cfd = e_config_dialog_new(NULL, _("Everything Applications"), "everything-apps",
                              "launcher/everything-apps", _module_icon, 0, v, NULL);
 
    _conf->cfd = cfd;
@@ -1325,7 +1325,7 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static Evas_Object *
-_basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *e, E_Config_Dialog_Data *cfdata)
+_basic_create(E_Config_Dialog *cfd, Evas *e, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *o = NULL, *of = NULL, *ow = NULL;
 
@@ -1334,12 +1334,12 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *e, E_Config_Dialog_Data *cf
    of = e_widget_framelist_add(e, _("Commands"), 0);
    ow = e_widget_label_add(e, _("Terminal Command"));
    e_widget_framelist_object_append(of, ow);
-   ow = e_widget_entry_add(e, &(cfdata->cmd_terminal), NULL, NULL, NULL);
+   ow = e_widget_entry_add(cfd->dia->win, &(cfdata->cmd_terminal), NULL, NULL, NULL);
    e_widget_framelist_object_append(of, ow);
 
    ow = e_widget_label_add(e, _("Sudo GUI"));
    e_widget_framelist_object_append(of, ow);
-   ow = e_widget_entry_add(e, &(cfdata->cmd_sudo), NULL, NULL, NULL);
+   ow = e_widget_entry_add(cfd->dia->win, &(cfdata->cmd_sudo), NULL, NULL, NULL);
    e_widget_framelist_object_append(of, ow);
 
    e_widget_list_object_append(o, of, 1, 1, 0.5);

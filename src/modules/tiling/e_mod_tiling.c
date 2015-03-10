@@ -220,6 +220,9 @@ is_tilable(const E_Client *ec)
 static void
 change_window_border(E_Client *ec, const char *bordername)
 {
+   if (ec->mwm.borderless)
+      return;
+
    ec->border.changed = 0;
    if (e_client_border_set(ec, bordername))
      eina_stringshare_refplace(&ec->bordername, ec->border.name);
@@ -786,7 +789,7 @@ _e_mod_menu_border_cb(void *data, E_Menu *m EINA_UNUSED,
 /* {{{ Move windows */
 
 static void
-_action_swap(int cross_edge)
+_action_move(int cross_edge)
 {
    E_Desk *desk;
    E_Client *focused_ec;
@@ -807,7 +810,7 @@ _action_swap(int cross_edge)
 
    if (item)
      {
-        tiling_window_tree_node_move(item, cross_edge);
+        tiling_window_tree_node_change_pos(item, cross_edge);
 
         _reapply_tree();
      }
@@ -817,28 +820,28 @@ static void
 _e_mod_action_move_left_cb(E_Object *obj EINA_UNUSED,
                            const char *params EINA_UNUSED)
 {
-   _action_swap(TILING_WINDOW_TREE_EDGE_LEFT);
+   _action_move(TILING_WINDOW_TREE_EDGE_LEFT);
 }
 
 static void
 _e_mod_action_move_right_cb(E_Object *obj EINA_UNUSED,
                             const char *params EINA_UNUSED)
 {
-   _action_swap(TILING_WINDOW_TREE_EDGE_RIGHT);
+   _action_move(TILING_WINDOW_TREE_EDGE_RIGHT);
 }
 
 static void
 _e_mod_action_move_up_cb(E_Object *obj EINA_UNUSED,
                          const char *params EINA_UNUSED)
 {
-   _action_swap(TILING_WINDOW_TREE_EDGE_TOP);
+   _action_move(TILING_WINDOW_TREE_EDGE_TOP);
 }
 
 static void
 _e_mod_action_move_down_cb(E_Object *obj EINA_UNUSED,
                            const char *params EINA_UNUSED)
 {
-   _action_swap(TILING_WINDOW_TREE_EDGE_BOTTOM);
+   _action_move(TILING_WINDOW_TREE_EDGE_BOTTOM);
 }
 
 /* }}} */
@@ -1259,7 +1262,7 @@ _iconify_hook(void *data EINA_UNUSED, int type EINA_UNUSED,
    if (ec->deskshow)
      return true;
 
-   _toggle_tiling_based_on_state(ec, EINA_FALSE);
+   _toggle_tiling_based_on_state(ec, EINA_TRUE);
 
    return true;
 }
@@ -1532,24 +1535,20 @@ _disable_all_tiling(void)
 static void
 _foreach_desk(void (*func)(E_Desk *desk))
 {
-   const Eina_List *l, *ll;
-   E_Comp *comp;
+   const Eina_List *l;
    E_Zone *zone;
    E_Desk *desk;
    int x, y;
 
-   EINA_LIST_FOREACH(e_comp_list(), l, comp)
+   EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        EINA_LIST_FOREACH(comp->zones, ll, zone)
+        for (x = 0; x < zone->desk_x_count; x++)
           {
-             for (x = 0; x < zone->desk_x_count; x++)
+             for (y = 0; y < zone->desk_y_count; y++)
                {
-                  for (y = 0; y < zone->desk_y_count; y++)
-                    {
-                       desk = zone->desks[x + (y * zone->desk_x_count)];
+                  desk = zone->desks[x + (y * zone->desk_x_count)];
 
-                       func(desk);
-                    }
+                  func(desk);
                }
           }
      }

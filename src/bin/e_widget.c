@@ -41,6 +41,15 @@ static void _e_smart_clip_set(Evas_Object *obj, Evas_Object *clip);
 static void _e_smart_clip_unset(Evas_Object *obj);
 static void _e_smart_init(void);
 
+static void
+_e_widget_hint(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   int w, h;
+
+   evas_object_size_hint_min_get(obj, &w, &h);
+   e_widget_size_min_set(data, w, h);
+}
+
 /* local subsystem globals */
 static Evas_Smart *_e_smart = NULL;
 
@@ -121,17 +130,13 @@ e_widget_data_get(Evas_Object *obj)
 EAPI void
 e_widget_size_min_set(Evas_Object *obj, Evas_Coord minw, Evas_Coord minh)
 {
-   API_ENTRY return;
-   if (minw >= 0) sd->minw = minw;
-   if (minh >= 0) sd->minh = minh;
+   evas_object_size_hint_min_set(obj, minw, minh);
 }
 
 EAPI void
 e_widget_size_min_get(Evas_Object *obj, Evas_Coord *minw, Evas_Coord *minh)
 {
-   API_ENTRY return;
-   if (minw) *minw = sd->minw;
-   if (minh) *minh = sd->minh;
+   evas_object_size_hint_min_get(obj, minw, minh);
 }
 
 static void
@@ -185,11 +190,17 @@ e_widget_sub_object_del(Evas_Object *obj, Evas_Object *sobj)
 EAPI void
 e_widget_resize_object_set(Evas_Object *obj, Evas_Object *sobj)
 {
+   int w, h;
    API_ENTRY return;
    if (sd->resize_obj) evas_object_smart_member_del(sd->resize_obj);
    sd->resize_obj = sobj;
+   evas_object_event_callback_add(sobj, EVAS_CALLBACK_CHANGED_SIZE_HINTS, _e_widget_hint, obj);
    evas_object_smart_member_add(sobj, obj);
    _e_smart_reconfigure(sd);
+   evas_object_size_hint_min_get(obj, &w, &h);
+   if ((w > 0) || (h > 0)) return; //already set
+   evas_object_size_hint_min_get(sobj, &w, &h);
+   evas_object_size_hint_min_set(obj, w, h);
 }
 
 EAPI void
@@ -481,19 +492,20 @@ e_widget_disabled_get(Evas_Object *obj)
 EAPI E_Pointer *
 e_widget_pointer_get(Evas_Object *obj)
 {
-   E_Win *win = NULL;
+   Evas_Object *win = NULL;
 
    API_ENTRY return NULL;
    win = e_win_evas_object_win_get(obj);
-   if (win) return win->pointer;
+   if (win) return e_win_pointer_get(win);
    return NULL;
 }
 
 EAPI void
 e_widget_size_min_resize(Evas_Object *obj)
 {
-   API_ENTRY return;
-   evas_object_resize(obj, sd->minw, sd->minh);
+   Evas_Coord minw, minh;
+   evas_object_size_hint_min_get(obj, &minw, &minh);
+   evas_object_resize(obj, minw, minh);
 }
 
 /* local subsystem functions */
@@ -537,6 +549,7 @@ _e_smart_del(Evas_Object *obj)
          * BORKER CERTIFICATION: GOLD
          * -discomfitor, 7/4/2012
          */
+        evas_object_event_callback_del(sobj, EVAS_CALLBACK_DEL, _sub_obj_del);
         sd->subobjs = eina_list_remove_list(sd->subobjs, sd->subobjs);
         evas_object_del(sobj);
      }

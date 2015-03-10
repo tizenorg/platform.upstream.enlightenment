@@ -1,4 +1,4 @@
-Wayland support in Enlightenment 0.19.0
+Wayland support in Enlightenment
 
 Caution: Support for running Enlightenment in a Wayland-Only
 configuration is considered Highly Experimental !! Use at your own
@@ -22,6 +22,9 @@ Firstly, you MUST have EFL built with the following options:
   --enable-wayland
   --enable-systemd
 
+Note that the drm engine will not be functional unless the target system
+has libsystemd-login installed.
+
 This Readme does not address the dependencies needed to enable Wayland
 in EFL. If you require any information for that, please see:
 
@@ -39,10 +42,8 @@ Wayland-Only:
 -------------
 
 If you wish to test out the Highly Experimental standalone
-Wayland-Only (no X11) compositor, then you should checkout the
-e_comp_wl development branch:
-
-https://git.enlightenment.org/core/enlightenment.git/log/?h=devs/devilhorns/e_comp_wl
+Wayland-Only (no X11) compositor, then read below about how to compile
+support for a wayland-only Enlightenment.
 
 Compiling:
 -------------
@@ -56,6 +57,7 @@ own separate prefix so that you can still safely fallback to the X11 version.
 This can be done by passing:
 
   --prefix=<some_other_install_location>
+  --with-systemdunitdir=<some_other_install_location>/some/path
 
 Now, on to the magic bits ;)
 
@@ -63,13 +65,8 @@ In order for Enlightenment to be compiled without X11, using Wayland
 only, you will need to pass a few more options to the configure stage
 of Enlightenment:
 
-  --enable-wayland-clients
-  --enable-wl-drm
-
-If you wish to test the experimental Wayland-Only compositor, then
-also pass to configure:
-
   --enable-wayland-only
+  --enable-wl-drm
 
 Since this is all still a work-in-progress, there are a few
 Enlightenment modules that have not been "fixed" to work without X11
@@ -79,7 +76,6 @@ option:
   --disable-shot
   --disable-xkbswitch
   --disable-conf-randr
-  --disable-everything (don't worry, this is just the everything module)
   --disable-wl-x11
 
 

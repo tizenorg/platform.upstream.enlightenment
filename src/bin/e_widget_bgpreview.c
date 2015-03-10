@@ -125,19 +125,22 @@ _e_wid_livethumb_resize_job(void *data)
    int w, h;
 
    zone = e_comp_object_util_zone_get(dd->live);
-   if (!zone) zone = eina_list_data_get(e_comp_get(NULL)->zones);
+   if (!zone) zone = eina_list_data_get(e_comp->zones);
    evas_object_geometry_get(dd->live, NULL, NULL, &w, &h);
-   w *= 2;
-   h *= 2;
-   if (w > 128)
+   if ((w != zone->w) || (h != zone->h))
      {
-        w = 128;
-        h = (zone->h * w) / zone->w;
-     }
-   if (h > 128)
-     {
-        h = 128;
-        w = (zone->w * h) / zone->h;
+        w *= 2;
+        h *= 2;
+        if (w > 128)
+          {
+             w = 128;
+             h = (zone->h * w) / zone->w;
+          }
+        if (h > 128)
+          {
+             h = 128;
+             w = (zone->w * h) / zone->h;
+          }
      }
    e_livethumb_vsize_set(dd->live, w, h);
    dd->resize_job = NULL;
@@ -279,7 +282,7 @@ _e_wid_desk_cb_config(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUS
 
         snprintf(buff, sizeof(buff), "%i %i %i %i",
                  dd->manager, dd->zone, dd->x, dd->y);
-        e_configure_registry_call("internal/desk", e_util_comp_current_get(), buff);
+        e_configure_registry_call("internal/desk", NULL, buff);
      }
 }
 

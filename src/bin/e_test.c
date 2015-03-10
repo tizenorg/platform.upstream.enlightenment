@@ -1,6 +1,6 @@
 #include "e.h"
 
-static void _e_test_internal(E_Comp *c);
+static void _e_test_internal(void);
 
 #ifdef DESKMIRROR_TEST
 
@@ -30,7 +30,7 @@ deskmirror_test(void *d EINA_UNUSED)
 EAPI void
 e_test(void)
 {
-   E_LIST_FOREACH(e_comp_list(), _e_test_internal);
+   _e_test_internal();
 
 #ifdef DESKMIRROR_TEST
    ecore_timer_add(2.0, deskmirror_test, NULL);
@@ -67,7 +67,7 @@ _e_test_timer(void *data)
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    _e_test_timer(NULL);
 }
@@ -92,22 +92,22 @@ _e_test_delete(E_Win *win)
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    E_Win *win;
    Evas_Object *o;
 
-   win = e_win_new(c);
-   e_win_resize_callback_set(win, _e_test_resize);
+   win = e_win_new(e_comp);
+   evas_object_resize_callback_set(win, _e_test_resize);
    e_win_delete_callback_set(win, _e_test_delete);
    e_win_placed_set(win, 0);
-   e_win_move_resize(win, 10, 80, 400, 200);
+   evas_object_geometry_set(win, 10, 80, 400, 200);
    e_win_name_class_set(win, "E", "_test_window");
    e_win_title_set(win, "A test window");
-   e_win_raise(win);
-   e_win_show(win);
+   elm_win_raise(win);
+   evas_object_show(win);
 
-   o = evas_object_rectangle_add(e_win_evas_get(win));
+   o = evas_object_rectangle_add(evas_object_evas_get(win));
    evas_object_color_set(o, 255, 200, 100, 255);
    evas_object_resize(o, 400, 200);
    evas_object_show(o);
@@ -130,7 +130,7 @@ _e_test_timer(void *data)
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    E_Menu *m;
    Eina_List *l;
@@ -157,7 +157,7 @@ _e_test_dialog_del(void *obj)
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    E_Dialog *dia;
 
@@ -169,7 +169,7 @@ _e_test_internal(E_Comp *c)
    e_dialog_button_add(dia, "OK", NULL, NULL, NULL);
    e_dialog_button_add(dia, "Apply", "system-restart", NULL, NULL);
    e_dialog_button_add(dia, "Cancel", "application-exit", NULL, NULL);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
 }
 
@@ -188,7 +188,7 @@ _e_test_click(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    E_Dialog *dia;
    Evas_Object *o, *o2, *o3;
@@ -216,7 +216,7 @@ _e_test_internal(E_Comp *c)
 
    e_dialog_content_set(dia, o2, 500, 300);
    e_dialog_button_add(dia, "OK", NULL, NULL, NULL);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
 
    evas_object_focus_set(o, 1);
@@ -254,7 +254,7 @@ _e_test_timer(void *data)
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    tcon = c;
    _e_test_timer(NULL);
@@ -293,7 +293,7 @@ _e_test_resize(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    E_Dialog *dia;
    Evas_Coord mw, mh, vw, vh;
@@ -363,7 +363,7 @@ _e_test_internal(E_Comp *c)
    e_scrollframe_child_viewport_size_get(o2, &vw, &vh);
    e_dialog_content_set(dia, o2, 200, 150);
    e_dialog_button_add(dia, "OK", NULL, NULL, NULL);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_resizable_set(dia, 1);
    e_dialog_show(dia);
 
@@ -381,7 +381,7 @@ _e_test_cb_e_smart_pan_changed_hook(void *data, Evas_Object *obj, void *event_in
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    E_Dialog *dia;
    Evas_Object *o;
@@ -402,7 +402,7 @@ _e_test_internal(E_Comp *c)
    e_dialog_content_set(dia, o, 240 + mw, mh);
 
    e_dialog_button_add(dia, "OK", NULL, NULL, NULL);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
 
    evas_object_focus_set(o, 1);
@@ -410,7 +410,7 @@ _e_test_internal(E_Comp *c)
 
 #elif 0
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    E_Dialog *dia;
    Evas_Object *o;
@@ -449,7 +449,7 @@ _e_test_internal(E_Comp *c)
    e_dialog_content_set(dia, o, 160, 160);
 
    e_dialog_button_add(dia, "OK", NULL, NULL, NULL);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
 
    evas_object_focus_set(o, 1);
@@ -528,7 +528,7 @@ _e_test_cb_selected(void *data, Evas_Object *obj, void *event_info)
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    E_Dialog *dia;
    Evas_Object *ofm, *ofm2, *of, *ob, *ot;
@@ -621,9 +621,9 @@ _e_test_internal(E_Comp *c)
    /* buttons at the bottom */
    e_dialog_button_add(dia, "OK", NULL, NULL, NULL);
    e_dialog_resizable_set(dia, 1);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
-   e_win_resize(dia->win, 400, 300);
+   evas_object_resize(dia->win, 400, 300);
 }
 
 #elif 0
@@ -641,7 +641,7 @@ _e_test_cb_selected(void *data, Evas_Object *obj)
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    E_Dialog *dia;
    Evas_Object *o;
@@ -660,9 +660,9 @@ _e_test_internal(E_Comp *c)
    /* buttons at the bottom */
    e_dialog_button_add(dia, "OK", NULL, NULL, NULL);
    e_dialog_resizable_set(dia, 1);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
-   e_win_resize(dia->win, 400, 300);
+   evas_object_resize(dia->win, 400, 300);
 }
 
 #elif 0
@@ -674,7 +674,7 @@ _e_test_cb_ok(E_Color_Dialog *dia, E_Color *color, void *data)
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    E_Color_Dialog *d;
 
@@ -685,7 +685,7 @@ _e_test_internal(E_Comp *c)
 
 #elif 0
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    E_Dialog *dia;
    Evas_Object *o, *ob, *of;
@@ -697,8 +697,8 @@ _e_test_internal(E_Comp *c)
 
    of = e_scrollframe_add(dia->win->evas);
 
-   ob = e_box_add(dia->win->evas);
-   e_box_orientation_set(ob, 0);
+   ob = elm_box_add(dia->win->evas);
+   elm_box_horizontal_set(ob, 0);
 
    for (i = 0; i < 8; i++)
      {
@@ -729,13 +729,13 @@ _e_test_internal(E_Comp *c)
                             "/home/raster/pix/OLD/Download/orange_chair_heaven_falling.jpg",
                             NULL, NULL);
 
-        e_box_pack_end(ob, o);
-        e_box_pack_options_set(o, 1, 1, 1, 0, 0.5, 0.5, 300, 100, 300, 100);
+        elm_box_pack_end(ob, o);
+        elm_box_pack_options_set(o, 1, 1, 1, 0, 0.5, 0.5, 300, 100, 300, 100);
         evas_object_show(o);
      }
 
    /* fixme... more */
-   e_box_size_min_get(ob, &mw, &mh);
+   evas_object_size_hint_min_get(ob, &mw, &mh);
    evas_object_resize(ob, mw, mh);
 
    e_scrollframe_child_set(of, ob);
@@ -748,13 +748,13 @@ _e_test_internal(E_Comp *c)
    /* buttons at the bottom */
    e_dialog_button_add(dia, "OK", NULL, NULL, NULL);
    e_dialog_resizable_set(dia, 1);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
-   e_win_resize(dia->win, 400, 400);
+   evas_object_resize(dia->win, 400, 400);
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    ecore_timer_add(1.0, _e_test_timer, c);
 }
@@ -813,15 +813,15 @@ _e_test_timer(void *data)
    /* buttons at the bottom */
    e_dialog_button_add(dia, "OK", NULL, NULL, NULL);
    e_dialog_resizable_set(dia, 1);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
-   e_win_resize(dia->win, 400, 200);
+   evas_object_resize(dia->win, 400, 200);
 
    return 0;
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    ecore_timer_add(1.0, _e_test_timer, c);
 }
@@ -880,22 +880,22 @@ _e_test_timer(void *data)
    /* buttons at the bottom */
    e_dialog_button_add(dia, "OK", NULL, NULL, NULL);
    e_dialog_resizable_set(dia, 1);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
-   e_win_resize(dia->win, 400, 200);
+   evas_object_resize(dia->win, 400, 200);
 
    return 0;
 }
 
 static void
-_e_test_internal(E_Comp *c)
+_e_test_internal(void)
 {
    ecore_timer_add(1.0, _e_test_timer, c);
 }
 
 #else
 static void
-_e_test_internal(E_Comp *c __UNUSED__)
+_e_test_internal(void)
 {
 }
 

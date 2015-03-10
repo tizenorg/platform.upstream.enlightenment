@@ -158,7 +158,6 @@ static Pager_Win       *_pager_desk_window_find(Pager_Desk *pd, E_Client *client
 static Pager_Popup     *_pager_popup_new(E_Zone *zone, int keyaction);
 static void             _pager_popup_free(Pager_Popup *pp);
 static Pager_Popup     *_pager_popup_find(E_Zone *zone);
-static E_Config_Dialog *_pager_config_dialog(E_Comp *comp, const char *params);
 
 /* functions for pager popup on key actions */
 static int              _pager_popup_show(void);
@@ -307,8 +306,8 @@ _pager_new(Evas *evas, E_Zone *zone, E_Gadcon *gc)
    p = E_NEW(Pager, 1);
    p->inst = NULL;
    p->popup = NULL;
-   p->o_table = e_table_add(evas);
-   e_table_homogenous_set(p->o_table, 1);
+   p->o_table = elm_table_add(e_win_evas_win_get(evas));
+   elm_table_homogeneous_set(p->o_table, 1);
    p->zone = zone;
    _pager_fill(p, gc);
    pagers = eina_list_append(pagers, p);
@@ -357,7 +356,6 @@ _pager_fill(Pager *p, E_Gadcon *gc)
      }
    e_zone_desk_count_get(p->zone, &(p->xnum), &(p->ynum));
    if (p->ynum != 1) p->invert = EINA_FALSE;
-   e_table_freeze(p->o_table);
    for (x = 0; x < p->xnum; x++)
      {
         for (y = 0; y < p->ynum; y++)
@@ -378,7 +376,6 @@ _pager_fill(Pager *p, E_Gadcon *gc)
                }
           }
      }
-   e_table_thaw(p->o_table);
 }
 
 static void
@@ -456,11 +453,13 @@ _pager_desk_new(Pager *p, E_Desk *desk, int xpos, int ypos, Eina_Bool invert)
      }
 
    edje_object_size_min_calc(o, &w, &h);
+   E_EXPAND(o);
+   E_FILL(o);
+   evas_object_size_hint_min_set(o, w, h);
    if (invert)
-     e_table_pack(p->o_table, o, ypos, xpos, 1, 1);
+     elm_table_pack(p->o_table, o, ypos, xpos, 1, 1);
    else
-     e_table_pack(p->o_table, o, xpos, ypos, 1, 1);
-   e_table_pack_options_set(o, 1, 1, 1, 1, 0.5, 0.5, w, h, -1, -1);
+     elm_table_pack(p->o_table, o, xpos, ypos, 1, 1);
 
    evo = (Evas_Object *)edje_object_part_object_get(o, "e.eventarea");
    if (!evo) evo = o;
@@ -899,7 +898,7 @@ _pager_inst_cb_menu_configure(void *data __UNUSED__, E_Menu *m __UNUSED__, E_Men
 }
 
 static E_Config_Dialog *
-_pager_config_dialog(E_Comp *comp __UNUSED__, const char *params __UNUSED__)
+_pager_config_dialog(Evas_Object *parent __UNUSED__, const char *params __UNUSED__)
 {
    if (!pager_config) return NULL;
    if (pager_config->config_dialog) return NULL;
@@ -909,13 +908,9 @@ _pager_config_dialog(E_Comp *comp __UNUSED__, const char *params __UNUSED__)
 }
 
 static void
-_pager_inst_cb_menu_virtual_desktops_dialog(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_pager_inst_cb_menu_virtual_desktops_dialog(void *data EINA_UNUSED, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
 {
-   Instance *inst;
-
-   inst = data;
-   e_configure_registry_call("screen/virtual_desktops",
-                             inst->gcc->gadcon->zone->comp, NULL);
+   e_configure_registry_call("screen/virtual_desktops", NULL, NULL);
 }
 
 static void
@@ -1739,7 +1734,6 @@ _pager_cb_event_bg_update(void *data __UNUSED__, int type __UNUSED__, void *even
    Eina_List *l, *ll;
    Pager *p;
    Pager_Desk *pd;
-   E_Comp *comp;
    E_Zone *zone;
    E_Desk *desk;
 
@@ -1750,12 +1744,10 @@ _pager_cb_event_bg_update(void *data __UNUSED__, int type __UNUSED__, void *even
             _pager_desk_livethumb_setup(pd);
         return ECORE_CALLBACK_RENEW;
      }
-   comp = eina_list_nth(e_comp_list(), ev->manager);
-   if (!comp) return ECORE_CALLBACK_RENEW;
-   zone = eina_list_nth(comp->zones, ev->zone);
+   zone = eina_list_nth(e_comp->zones, ev->zone);
    if (!zone) return ECORE_CALLBACK_RENEW;
    desk = e_desk_at_xy_get(zone, ev->desk_x, ev->desk_y);
-   if (!zone) return ECORE_CALLBACK_RENEW;
+   if (!desk) return ECORE_CALLBACK_RENEW;
    EINA_LIST_FOREACH(pagers, l, p)
      {
         pd = _pager_desk_find(p, desk);
@@ -1870,7 +1862,11 @@ _pager_window_cb_mouse_move(void *data, Evas *e __UNUSED__, Evas_Object *obj __U
 
    if (!pw) return;
    if (pw->client->lock_user_location) return;
-   if ((pw->desk->pager->popup) && (!act_popup)) return;
+   if ((pw->desk) && (pw->desk->pager))
+     {
+        if ((pw->desk->pager->popup) && (!act_popup)) return;
+     }
+
    /* prevent drag for a few pixels */
    if (pw->drag.start)
      {
@@ -1882,7 +1878,8 @@ _pager_window_cb_mouse_move(void *data, Evas *e __UNUSED__, Evas_Object *obj __U
         if (((unsigned int)(dx * dx) + (unsigned int)(dy * dy)) <=
             (resist * resist)) return;
 
-        pw->desk->pager->dragging = 1;
+        if ((pw->desk) && (pw->desk->pager))
+          pw->desk->pager->dragging = 1;
         pw->drag.start = 0;
         e_comp_object_effect_clip(pw->client->frame);
         edje_object_signal_emit(pw->desk->o_desk, "e,action,drag,in", "e");

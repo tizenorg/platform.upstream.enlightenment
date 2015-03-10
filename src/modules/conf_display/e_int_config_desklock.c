@@ -11,7 +11,6 @@ static Evas_Object *_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dia
 static void         _cb_method_change(void *data, Evas_Object *obj, void *event_info);
 static void         _login_method_change(void *data, Evas_Object *obj, void *event_info);
 static void         _cb_login_change(void *data, Evas_Object *obj);
-static int          _zone_count_get(void);
 
 static void         _cb_bg_mouse_down(void *data, Evas *evas, Evas_Object *obj, void *event);
 
@@ -61,7 +60,7 @@ struct _E_Config_Dialog_Data
 };
 
 E_Config_Dialog *
-e_int_config_desklock(E_Comp *comp, const char *params __UNUSED__)
+e_int_config_desklock(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -77,7 +76,7 @@ e_int_config_desklock(E_Comp *comp, const char *params __UNUSED__)
    v->basic.check_changed = _basic_check_changed;
    v->override_auto_apply = 1;
 
-   cfd = e_config_dialog_new(comp, _("Screen Lock Settings"), "E",
+   cfd = e_config_dialog_new(NULL, _("Screen Lock Settings"), "E",
                              "screen/screen_lock", "preferences-system-lock-screen",
                              0, v, NULL);
    return cfd;
@@ -106,6 +105,7 @@ e_int_config_desklock_fsel_done(E_Config_Dialog *cfd, Evas_Object *bg, const cha
    if (!cbg) return; //wtf
    eina_stringshare_replace(&cbg->file, bg_file);
    cbg->hide_logo = hide_logo;
+   evas_object_data_set(bg, "hide_logo", (void*)(long)cbg->hide_logo);
    e_widget_preview_edje_set(bg, bg_file, "e/desktop/background");
 }
 
@@ -132,7 +132,7 @@ _fill_data(E_Config_Dialog_Data *cfdata)
    E_Config_Desklock_Background *bg;
    int x;
 
-   cfdata->zone_count = _zone_count_get();
+   cfdata->zone_count = eina_list_count(e_comp->zones);
    EINA_LIST_FOREACH(e_config->desklock_backgrounds, l, bg)
      cfdata->bgs = eina_list_append(cfdata->bgs, desklock_bg_dup(bg, NULL));
    if (!cfdata->bgs)
@@ -210,17 +210,17 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static Evas_Object *
-_basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    E_Config_XKB_Layout *cl;
    int grp = 0;
-   Evas_Object *otb, *ol, *ow, *of, *ot, *oc;
-   const Eina_List *l, *ll;
+   Evas_Object *otb, *ol, *ow, *of, *oc;
+   const Eina_List *l;
    E_Zone *zone;
    E_Radio_Group *rg;
-   E_Comp *comp;
    int screen_count, x = 0;
 
+   e_dialog_resizable_set(cfd->dia, 1);
    screen_count = eina_list_count(e_xinerama_screens_get());
 
    otb = e_widget_toolbook_add(evas, (24 * e_scale), (24 * e_scale));
@@ -249,19 +249,19 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    e_widget_list_object_append(ol, ow, 1, 1, 0.5);
 
    of = e_widget_framelist_add(evas, _("Personal Screenlock Password"), 0);
-   cfdata->passwd_entry = ow = e_widget_entry_add(evas, &(cfdata->desklock_personal_passwd), NULL, NULL, NULL);
+   cfdata->passwd_entry = ow = e_widget_entry_add(cfd->dia->win, &(cfdata->desklock_personal_passwd), NULL, NULL, NULL);
    e_widget_entry_password_set(ow, 1);
    e_widget_framelist_object_append(of, ow);
    e_widget_list_object_append(ol, of, 1, 1, 0.5);
 
    of = e_widget_framelist_add(evas, _("PIN Entry"), 0);
-   cfdata->pin_entry = ow = e_widget_entry_add(evas, &(cfdata->pin_str), NULL, NULL, NULL);
+   cfdata->pin_entry = ow = e_widget_entry_add(cfd->dia->win, &(cfdata->pin_str), NULL, NULL, NULL);
    e_widget_entry_password_set(ow, 1);
    e_widget_framelist_object_append(of, ow);
    e_widget_list_object_append(ol, of, 1, 1, 0.5);
 
    of = e_widget_framelist_add(evas, _("External Screenlock Command"), 0);
-   cfdata->lock_cmd_entry = ow = e_widget_entry_add(evas, &(cfdata->custom_lock_cmd), NULL, NULL, NULL);
+   cfdata->lock_cmd_entry = ow = e_widget_entry_add(cfd->dia->win, &(cfdata->custom_lock_cmd), NULL, NULL, NULL);
    e_widget_framelist_object_append(of, ow);
 
    e_widget_disabled_set(cfdata->passwd_entry,
@@ -382,7 +382,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
 
    /* Wallpapers */
    ol = e_widget_list_add(evas, 0, 0);
-   of = e_widget_table_add(evas, 1);
+   of = e_widget_table_add(e_win_evas_win_get(evas), 1);
    rg = e_widget_radio_group_new((int *)&(cfdata->bg_method));
    ow = e_widget_radio_add(evas, _("Theme Defined"),
                            E_DESKLOCK_BACKGROUND_METHOD_THEME_DESKLOCK, rg);
@@ -402,19 +402,18 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    e_widget_table_object_append(of, ow, 1, 1, 1, 1, 1, 0, 1, 0);
    e_widget_list_object_append(ol, of, 1, 1, 0.5);
 
-   cfdata->gui.o_table = ot = e_widget_table_add(evas, 1);
+   cfdata->gui.o_table = e_widget_table_add(e_win_evas_win_get(evas), 1);
 
-   EINA_LIST_FOREACH(e_comp_list(), l, comp)
-     EINA_LIST_FOREACH(comp->zones, ll, zone)
-       {
-          ow = e_widget_preview_add(evas, 100, 140);
-          cfdata->gui.bgs = eina_list_append(cfdata->gui.bgs, ow);
-          evas_object_data_set(ow, "zone", zone);
-          e_widget_disabled_set(ow,
-            (cfdata->bg_method < E_DESKLOCK_BACKGROUND_METHOD_CUSTOM));
-          evas_object_event_callback_add(ow, EVAS_CALLBACK_MOUSE_DOWN, _cb_bg_mouse_down, cfdata);
-          e_widget_table_object_append(cfdata->gui.o_table, ow, x++, 0, 1, 1, 1, 1, 1, 1);
-       }
+   EINA_LIST_FOREACH(e_comp->zones, l, zone)
+     {
+        ow = e_widget_preview_add(evas, 100, 140);
+        cfdata->gui.bgs = eina_list_append(cfdata->gui.bgs, ow);
+        evas_object_data_set(ow, "zone", zone);
+        e_widget_disabled_set(ow,
+          (cfdata->bg_method < E_DESKLOCK_BACKGROUND_METHOD_CUSTOM));
+        evas_object_event_callback_add(ow, EVAS_CALLBACK_MOUSE_DOWN, _cb_bg_mouse_down, cfdata);
+        e_widget_table_object_append(cfdata->gui.o_table, ow, x++, 0, 1, 1, 1, 1, 1, 1);
+     }
    _cb_method_change(cfdata, NULL, NULL);
    e_widget_list_object_append(ol, cfdata->gui.o_table, 1, 1, 0.5);
    e_widget_toolbook_page_append(otb, NULL, _("Wallpaper"), ol,
@@ -434,9 +433,13 @@ _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
    e_config->desklock_auth_method = cfdata->desklock_auth_method;
    if (e_config->desklock_auth_method == E_DESKLOCK_AUTH_METHOD_PERSONAL)
      {
-        e_config->desklock_passwd =
-          eina_hash_djb2(cfdata->desklock_personal_passwd,
-          strlen(cfdata->desklock_personal_passwd));
+        if ((!e_config->desklock_passwd) &&
+            cfdata->desklock_personal_passwd && cfdata->desklock_personal_passwd[0])
+          {
+             e_config->desklock_passwd =
+               e_auth_hash_djb2(cfdata->desklock_personal_passwd,
+               strlen(cfdata->desklock_personal_passwd));
+          }
      }
    else if (cfdata->desklock_auth_method == E_DESKLOCK_AUTH_METHOD_PIN)
      {
@@ -450,7 +453,7 @@ _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
              if (errno) return 0; //NAN
              if (pp && pp[0]) return 0;
              if (test < 1) return 0;
-             e_config->desklock_pin = eina_hash_djb2(cfdata->pin_str, strlen(cfdata->pin_str));
+             e_config->desklock_pin = e_auth_hash_djb2(cfdata->pin_str, strlen(cfdata->pin_str));
           }
         else
           /* dumb, but let them do what they want... */
@@ -532,17 +535,25 @@ _basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfda
      return 1;
    if (e_config->desklock_auth_method == E_DESKLOCK_AUTH_METHOD_PERSONAL)
      {
-        if (e_config->desklock_passwd !=
-          eina_hash_djb2(cfdata->desklock_personal_passwd,
-          strlen(cfdata->desklock_personal_passwd)))
-          return 1;
+        if ((!e_config->desklock_passwd) &&
+            cfdata->desklock_personal_passwd && cfdata->desklock_personal_passwd[0])
+          {
+             if (e_config->desklock_passwd !=
+               e_auth_hash_djb2(cfdata->desklock_personal_passwd,
+               strlen(cfdata->desklock_personal_passwd)))
+               return 1;
+          }
      }
    if (e_config->desklock_auth_method == E_DESKLOCK_AUTH_METHOD_PIN)
      {
-        if (e_config->desklock_pin !=
-          eina_hash_djb2(cfdata->pin_str,
-          strlen(cfdata->pin_str)))
-          return 1;
+        if ((!e_config->desklock_pin) &&
+            cfdata->pin_str && cfdata->pin_str[0])
+          {
+             if (e_config->desklock_pin !=
+               e_auth_hash_djb2(cfdata->pin_str,
+               strlen(cfdata->pin_str)))
+               return 1;
+          }
      }
 
    if (e_config->desklock_autolock_screensaver != cfdata->screensaver_lock)
@@ -696,6 +707,7 @@ _cb_method_change(void *data, Evas_Object *obj __UNUSED__, void *event_info __UN
              EINA_LIST_FOREACH(e_config->desklock_backgrounds, l, cbg)
                {
                   if (!ll) break;
+                  evas_object_data_set(ll->data, "hide_logo", (void*)(long)cbg->hide_logo);
                   e_widget_preview_edje_set(ll->data, cbg->file, "e/desktop/background");
                   cfdata->bgs = eina_list_append(cfdata->bgs, desklock_bg_dup(cbg, NULL));
                   ll = ll->next;
@@ -745,18 +757,6 @@ _cb_login_change(void *data, Evas_Object *obj __UNUSED__)
    e_widget_disabled_set(cfdata->gui.loginbox_slider, (cfdata->login_zone < 0));
 }
 
-static int
-_zone_count_get(void)
-{
-   int num = 0;
-   const Eina_List *l;
-   E_Comp *comp;
-
-   EINA_LIST_FOREACH(e_comp_list(), l, comp)
-     num += eina_list_count(comp->zones);
-   return num;
-}
-
 static void
 _cb_bg_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj, void *event __UNUSED__)
 {
@@ -765,7 +765,7 @@ _cb_bg_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj, void *eve
    if (e_widget_disabled_get(obj)) return;
    if (!(cfdata = data)) return;
    if (cfdata->bg_fsel)
-     e_win_raise(cfdata->bg_fsel->dia->win);
+     elm_win_raise(cfdata->bg_fsel->dia->win);
    else
      cfdata->bg_fsel = e_int_config_desklock_fsel(cfdata->cfd, obj);
 }

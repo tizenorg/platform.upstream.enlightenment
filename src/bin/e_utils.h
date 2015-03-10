@@ -17,8 +17,8 @@ EAPI void         e_util_env_set(const char *var, const char *val);
 EAPI E_Zone      *e_util_zone_current_get(E_Manager *man);
 EAPI int          e_util_glob_match(const char *str, const char *glob);
 EAPI int          e_util_glob_case_match(const char *str, const char *glob);
-EAPI E_Zone      *e_util_comp_zone_id_get(int con_num, int id);
-EAPI E_Zone      *e_util_comp_zone_number_get(int con_num, int zone_num);
+EINA_DEPRECATED EAPI E_Zone      *e_util_comp_zone_id_get(int con_num, int id);
+EINA_DEPRECATED EAPI E_Zone      *e_util_comp_zone_number_get(int con_num, int zone_num);
 EAPI int          e_util_head_exec(int head, const char *cmd);
 EAPI int          e_util_strcasecmp(const char *s1, const char *s2);
 EAPI int          e_util_strcmp(const char *s1, const char *s2);
@@ -45,7 +45,7 @@ EAPI void         e_util_desktop_menu_item_icon_add(Efreet_Desktop *desktop, uns
 EAPI int          e_util_dir_check(const char *dir);
 EAPI void         e_util_defer_object_del(E_Object *obj);
 EAPI const char  *e_util_winid_str_get(Ecore_X_Window win);
-EAPI void         e_util_win_auto_resize_fill(E_Win *win);
+EAPI void         e_util_win_auto_resize_fill(Evas_Object *win);
 /* check if loaded config version matches the current version, show a
    dialog warning if loaded version is older or newer than current */
 EAPI Eina_Bool    e_util_module_config_check(const char *module_name, int loaded, int current);
@@ -91,6 +91,12 @@ static inline Eina_Bool
 isedje(const Evas_Object *obj)
 {
    return obj && !e_util_strcmp(evas_object_type_get(obj), "edje");
+}
+
+static inline Eina_Bool
+dblequal(double a, double b)
+{
+   return fabs(a - b) < DBL_EPSILON;
 }
 
 #endif

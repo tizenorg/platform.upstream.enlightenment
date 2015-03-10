@@ -23,12 +23,8 @@ static void         _cb_dir_up(void *data1, void *data2);
 E_Config_Dialog *
 e_int_config_desklock_fsel(E_Config_Dialog *parent, Evas_Object *bg)
 {
-   E_Comp *comp = NULL;
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
-
-   if (parent)
-     comp = parent->comp;
 
    v = E_NEW(E_Config_Dialog_View, 1);
    v->create_cfdata = _create_data;
@@ -37,7 +33,7 @@ e_int_config_desklock_fsel(E_Config_Dialog *parent, Evas_Object *bg)
    v->basic_only = 1;
    v->normal_win = 1;
 
-   cfd = e_config_dialog_new(comp, _("Select a Background..."),
+   cfd = e_config_dialog_new(parent->dia->win, _("Select a Background..."),
                              "E", "_desklock_fsel_dialog",
                              "enlightenment/background", 0, v, bg);
    cfd->data = parent;
@@ -47,11 +43,12 @@ e_int_config_desklock_fsel(E_Config_Dialog *parent, Evas_Object *bg)
 
 /* local functions */
 static void *
-_create_data(E_Config_Dialog *cfd __UNUSED__)
+_create_data(E_Config_Dialog *cfd)
 {
    E_Config_Dialog_Data *cfdata;
 
    cfdata = E_NEW(E_Config_Dialog_Data, 1);
+   cfdata->hide_logo = !!evas_object_data_get(cfd->data, "hide_logo");
 
    return cfdata;
 }
@@ -93,8 +90,8 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
      cfdata->bg = NULL;
 
    rg = e_widget_radio_group_new(&(cfdata->fmdir));
-   ot = e_widget_table_add(evas, 0);
-   rt = e_widget_table_add(evas, 1);
+   ot = e_widget_table_add(e_win_evas_win_get(evas), 0);
+   rt = e_widget_table_add(e_win_evas_win_get(evas), 1);
 
    ow = e_widget_radio_add(evas, _("Personal"), 0, rg);
    evas_object_smart_callback_add(ow, "changed", _cb_radio_changed, cfdata);

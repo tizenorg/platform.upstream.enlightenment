@@ -639,7 +639,7 @@ gadman_update_bg(void)
       case BG_CUSTOM:
         if (eina_str_has_extension(Man->conf->custom_bg, ".edj"))
           {
-             //THIS IS FOR E19 backgrounds
+             //THIS IS FOR E backgrounds
              obj = edje_object_add(Man->comp->evas);
              edje_object_file_set(obj, Man->conf->custom_bg,
                                   "e/desktop/background");
@@ -1225,11 +1225,11 @@ on_menu_edit(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
 }
 
 static void
-on_menu_add(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
+on_menu_add(void *data __UNUSED__, E_Menu *m EINA_UNUSED, E_Menu_Item *mi __UNUSED__)
 {
    if (Man->visible)
      gadman_gadgets_hide();
-   e_configure_registry_call("extensions/gadman", m->zone->comp, NULL);
+   e_configure_registry_call("extensions/gadman", NULL, NULL);
 }
 
 static void

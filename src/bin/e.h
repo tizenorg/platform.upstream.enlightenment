@@ -1,6 +1,8 @@
 #ifndef E_H
 # define E_H
 
+# define E_VERSION_MAJOR 20
+
 /**
  * @defgroup API Enlightenment API
  *
@@ -97,6 +99,11 @@ void *alloca (size_t);
 #  include <execinfo.h>
 # endif
 
+/* egl.h must come before Evas_GL.h otherwise they will conflict */
+# ifdef HAVE_WAYLAND_EGL
+#  include <EGL/egl.h>
+# endif
+
 # include <setjmp.h>
 # include <Eo.h>
 # include <Eina.h>
@@ -119,11 +126,7 @@ void *alloca (size_t);
 # include <Emotion.h>
 # include <Elementary.h>
 
-# ifdef HAVE_HAL
-#  include <E_Hal.h>
-# endif
-
-# ifdef HAVE_WAYLAND
+# if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
 #  include <Ecore_Wayland.h>
 #  include <uuid.h>
 # endif
@@ -180,6 +183,10 @@ typedef struct _E_Rect         E_Rect;
 /* convenience macro to compress code and avoid typos */
 #ifndef MAX
 # define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#endif
+
+#ifndef MIN
+# define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #endif
 
 # define E_FREE_FUNC(_h, _fn) do { if (_h) { _fn((void*)_h); _h = NULL; } } while (0)
@@ -262,12 +269,27 @@ typedef struct _E_Rect         E_Rect;
        }                                                          \
   }
 
+#define E_WEIGHT evas_object_size_hint_weight_set
+#define E_ALIGN evas_object_size_hint_align_set
+#define E_EXPAND(X) E_WEIGHT((X), EVAS_HINT_EXPAND, EVAS_HINT_EXPAND)
+#define E_FILL(X) E_ALIGN((X), EVAS_HINT_FILL, EVAS_HINT_FILL)
+
 # define E_REMOTE_OPTIONS 1
 # define E_REMOTE_OUT     2
 # define E_WM_IN          3
 # define E_REMOTE_IN      4
 # define E_ENUM           5
 # define E_LIB_IN         6
+
+
+/* if you see a deprecated warning for a YOLO function,
+ * you are attempting to use an extremely dangerous function.
+ */
+#ifdef EXECUTIVE_MODE_ENABLED
+ #define YOLO
+#else
+ #define YOLO EINA_DEPRECATED
+#endif
 
 # define E_TYPEDEFS       1
 # include "e_includes.h"

@@ -188,6 +188,8 @@ _mixer_module_configuration_new(void)
    conf = E_NEW(E_Mixer_Module_Config, 1);
    conf->desktop_notification = 1;
    conf->disable_pulse = 0;
+   conf->external_mixer_enabled = 0;
+   conf->external_mixer_command = eina_stringshare_add("");
 
    return conf;
 }
@@ -205,6 +207,9 @@ _mixer_module_configuration_free(E_Mixer_Module_Config *conf)
         eina_hash_free(conf->gadgets);
      }
    eina_stringshare_del(conf->default_gc_id);
+
+   if (conf->external_mixer_command)
+     eina_stringshare_del(conf->external_mixer_command);
    free(conf);
 }
 
@@ -506,6 +511,13 @@ _mixer_popup_cb_mixer(void *data, void *data2 __UNUSED__)
         return;
      }
 
+   if (ctxt->conf->external_mixer_enabled)
+     {
+        E_Zone *zone = e_util_zone_current_get(e_manager_current_get());
+        e_exec (zone, NULL, ctxt->conf->external_mixer_command, NULL, NULL);
+        return;
+     }
+
    ctxt->mixer_dialog = e_mixer_app_dialog_new(NULL, _mixer_app_cb_del, ctxt);
 
    _mixer_app_select_current(ctxt->mixer_dialog, inst);
@@ -536,7 +548,7 @@ _mixer_popup_new(E_Mixer_Instance *inst)
    inst->popup = e_gadcon_popup_new(inst->gcc, 0);
    evas = e_comp_get(inst->gcc)->evas;
 
-   inst->ui.table = e_widget_table_add(evas, 0);
+   inst->ui.table = e_widget_table_add(e_win_evas_win_get(evas), 0);
 
    inst->ui.label = e_widget_label_add(evas, inst->conf->channel_name);
    e_widget_table_object_append(inst->ui.table, inst->ui.label,
@@ -1111,7 +1123,7 @@ _mixer_cb_volume_modify(Eina_Bool up)
 
    ctxt->last_act_time = ecore_loop_time_get();
 
-   if (ctxt->default_instance->conf->keybindings_popup)
+   if (ctxt->default_instance->conf->keybindings_popup && (!e_comp_get(NULL)->nocomp))
      _mixer_popup_timer_new(ctxt->default_instance);
    _mixer_volume_change(ctxt->default_instance, up, EINA_TRUE);
 }
@@ -1148,13 +1160,13 @@ _mixer_cb_volume_mute(E_Object *obj __UNUSED__, const char *params __UNUSED__)
 
    ctxt->last_act_time = ecore_loop_time_get();
 
-   if (ctxt->default_instance->conf->keybindings_popup)
+   if (ctxt->default_instance->conf->keybindings_popup && (!e_comp_get(NULL)->nocomp))
      _mixer_popup_timer_new(ctxt->default_instance);
    _mixer_toggle_mute(ctxt->default_instance, EINA_TRUE);
 }
 
 static E_Config_Dialog *
-_mixer_module_config(E_Comp *comp, const char *params __UNUSED__)
+_mixer_module_config(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
 {
    E_Mixer_Module_Context *ctxt;
 
@@ -1175,7 +1187,7 @@ _mixer_module_config(E_Comp *comp, const char *params __UNUSED__)
           return NULL;
      }
 
-   ctxt->conf_dialog = e_mixer_config_module_dialog_new(comp, ctxt);
+   ctxt->conf_dialog = e_mixer_config_module_dialog_new(NULL, ctxt);
    return ctxt->conf_dialog;
 }
 
@@ -1212,6 +1224,8 @@ _mixer_module_configuration_descriptor_new(E_Config_DD *gadget_conf_edd)
    E_CONFIG_HASH(conf_edd, E_Mixer_Module_Config, gadgets, gadget_conf_edd);
    E_CONFIG_VAL(conf_edd, E_Mixer_Module_Config, desktop_notification, INT);
    E_CONFIG_VAL(conf_edd, E_Mixer_Module_Config, disable_pulse, INT);
+   E_CONFIG_VAL(conf_edd, E_Mixer_Module_Config, external_mixer_enabled, INT);
+   E_CONFIG_VAL(conf_edd, E_Mixer_Module_Config, external_mixer_command, STR);
 
    return conf_edd;
 }
@@ -1287,6 +1301,11 @@ _mixer_module_configuration_setup(E_Mixer_Module_Context *ctxt)
    ctxt->conf->version = MOD_CONFIG_FILE_VERSION;
    ctxt->desktop_notification = ctxt->conf->desktop_notification;
    ctxt->disable_pulse = ctxt->conf->disable_pulse;
+   ctxt->external_mixer_enabled = ctxt->conf->external_mixer_enabled;
+   if (ctxt->conf->external_mixer_command)
+     ctxt->external_mixer_command = strdup(ctxt->conf->external_mixer_command);
+   else
+     ctxt->external_mixer_command = strdup("");
 }
 
 static const char _act_increase[] = "volume_increase";

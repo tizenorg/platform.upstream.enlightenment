@@ -83,7 +83,7 @@ e_screensaver_update(void)
         changed = EINA_TRUE;
      }
 
-   if (e_comp_get(NULL)->comp_type == E_PIXMAP_TYPE_X)
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
      {
         if (changed)
           ecore_x_screensaver_set(timeout, interval, blanking, expose);
@@ -96,7 +96,7 @@ e_screensaver_force_update(void)
 {
 #ifndef HAVE_WAYLAND_ONLY
    int timeout = e_screensaver_timeout_get(EINA_TRUE);
-   if (e_comp_get(NULL)->comp_type == E_PIXMAP_TYPE_X)
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
      {
         ecore_x_screensaver_set(timeout + 10,
                                 0,
@@ -202,7 +202,7 @@ _e_screensaver_ask_presentation_mode(void)
 
    e_dialog_button_focus_num(dia, 0);
    e_widget_list_homogeneous_set(dia->box_object, 0);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
 
    evas_object_event_callback_add(dia->bg_object, EVAS_CALLBACK_KEY_DOWN,
@@ -440,10 +440,9 @@ EAPI void
 e_screensaver_activate(void)
 {
 #ifndef HAVE_WAYLAND_ONLY
-   if (e_comp_get(NULL)->comp_type == E_PIXMAP_TYPE_X)
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
      {
-        NULL;
-        // ecore_x_screensaver_activate();
+        ecore_x_screensaver_activate();
      }
 #else
 #endif
@@ -453,10 +452,9 @@ EAPI void
 e_screensaver_deactivate(void)
 {
 #ifndef HAVE_WAYLAND_ONLY
-   if (e_comp_get(NULL)->comp_type == E_PIXMAP_TYPE_X)
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
      {
-        NULL;
-        // ecore_x_screensaver_reset();
+        ecore_x_screensaver_reset();
      }
 #else
 #endif

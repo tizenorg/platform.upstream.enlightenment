@@ -54,8 +54,7 @@ _create_dialog(E_Gadcon *gc, const char *title, E_Gadcon_Site site)
 
    if (gc->config_dialog)
      {
-        e_win_raise(gc->config_dialog->dia->win);
-        evas_object_focus_set(gc->config_dialog->dia->win->client->frame, 1);
+        e_client_activate(e_win_client_get(gc->config_dialog->dia->win), 1);
         return;
      }
    if (!(v = E_NEW(E_Config_Dialog_View, 1))) return;
@@ -69,7 +68,7 @@ _create_dialog(E_Gadcon *gc, const char *title, E_Gadcon_Site site)
      e_config_dialog_new(NULL, title, "E", "_gadcon_config_dialog",
                          "preferences-desktop-shelf", 0, v, gc);
    if (site) gc->config_dialog->cfdata->site = site;
-   e_win_centered_set(gc->config_dialog->dia->win, EINA_TRUE);
+   elm_win_center(gc->config_dialog->dia->win, 1, 1);
 }
 
 static void *
@@ -682,7 +681,7 @@ _advanced_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
    cfdata->basic.o_list = NULL;
    otb = e_widget_toolbook_add(evas, 48 * e_scale, 48 * e_scale);
    ////////////////////////////////////////////////////////////
-   ot = e_widget_table_add(evas, EINA_FALSE);
+   ot = e_widget_table_add(e_win_evas_win_get(evas), EINA_FALSE);
 
    cfdata->advanced.o_list =
      e_widget_ilist_add(evas, (24 * e_scale), (24 * e_scale), &cfdata->sel);
@@ -702,7 +701,7 @@ _advanced_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
    e_widget_toolbook_page_append(otb, NULL, _("Loaded Gadgets"), ot, 1, 1, 1, 1, 0.5, 0.0);
    ////////////////////////////////////////////////////////////
 //   ot = e_widget_list_add(evas, 0, 0);
-   ot = e_widget_table_add(evas, EINA_FALSE);
+   ot = e_widget_table_add(e_win_evas_win_get(evas), EINA_FALSE);
 
    cfdata->class_list =
      e_widget_ilist_add(evas, (24 * e_scale), (24 * e_scale), NULL);
@@ -725,7 +724,7 @@ _advanced_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
    if (cfdata->load_timer) ecore_timer_del(cfdata->load_timer);
    cfdata->load_timer = ecore_timer_add(0.01, _cb_load_timer, cfdata);
 
-   e_win_centered_set(cfd->dia->win, EINA_TRUE);
+   elm_win_center(cfd->dia->win, 1, 1);
 
    return otb;
 }
@@ -737,7 +736,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
    int mw;
 
    cfdata->advanced.o_list = cfdata->class_list = NULL;
-   ot = e_widget_table_add(evas, 0);
+   ot = e_widget_table_add(e_win_evas_win_get(evas), 0);
 
    cfdata->basic.o_list = e_widget_ilist_add(evas, 24, 24, NULL);
    e_widget_ilist_multi_select_set(cfdata->basic.o_list, EINA_TRUE);
@@ -759,7 +758,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
    if (cfdata->load_timer) ecore_timer_del(cfdata->load_timer);
    cfdata->load_timer = ecore_timer_add(0.01, _cb_load_timer, cfdata);
 
-   e_win_centered_set(cfd->dia->win, EINA_TRUE);
+   elm_win_center(cfd->dia->win, 1, 1);
 
    return ot;
 }

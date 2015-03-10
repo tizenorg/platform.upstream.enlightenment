@@ -58,9 +58,9 @@ _e_pointer_cb_idle_poller(void *data)
 #ifndef HAVE_WAYLAND_ONLY
    if (!ptr->canvas)
      ecore_x_pointer_xy_get(ptr->win, &x, &y);
-#else
-   ecore_evas_pointer_xy_get(ptr->ee, &x, &y);
+   else
 #endif
+     ecore_evas_pointer_xy_get(ptr->ee, &x, &y);
 
    if ((ptr->x != x) || (ptr->y != y))
      {
@@ -81,13 +81,11 @@ _e_pointer_cb_idle_wait(void *data)
    E_Pointer *ptr;
 
    if (!(ptr = data)) return ECORE_CALLBACK_RENEW;
-
+   ptr->idle_tmr = NULL;
    if ((e_powersave_mode_get() >= E_POWERSAVE_MODE_MEDIUM) || 
        (!e_config->idle_cursor))
      {
         E_FREE_FUNC(ptr->idle_poll, ecore_poller_del);
-        ptr->idle_poll = NULL;
-        ptr->idle_tmr = NULL;
         return ECORE_CALLBACK_CANCEL;
      }
 
@@ -95,7 +93,6 @@ _e_pointer_cb_idle_wait(void *data)
      ptr->idle_poll = ecore_poller_add(ECORE_POLLER_CORE, 64, 
                                        _e_pointer_cb_idle_poller, ptr);
 
-   ptr->idle_tmr = NULL;
    return ECORE_CALLBACK_CANCEL;
 }
 
@@ -109,9 +106,9 @@ _e_pointer_cb_idle_pre(void *data)
 #ifndef HAVE_WAYLAND_ONLY
    if (!ptr->canvas)
      ecore_x_pointer_xy_get(ptr->win, &ptr->x, &ptr->y);
-#else
-   ecore_evas_pointer_xy_get(ptr->ee, &ptr->x, &ptr->y);
+   else
 #endif
+     ecore_evas_pointer_xy_get(ptr->ee, &ptr->x, &ptr->y);
 
    ptr->idle_tmr = ecore_timer_loop_add(4.0, _e_pointer_cb_idle_wait, ptr);
 
@@ -126,7 +123,6 @@ _e_pointer_active_handle(E_Pointer *ptr)
      ecore_timer_reset(ptr->idle_tmr);
    else
      {
-        E_FREE_FUNC(ptr->idle_tmr, ecore_timer_del);
         E_FREE_FUNC(ptr->idle_poll, ecore_poller_del);
         if (e_powersave_mode_get() >= E_POWERSAVE_MODE_MEDIUM) return;
         if (!e_config->idle_cursor) return;
@@ -294,7 +290,6 @@ _e_pointer_canvas_add(E_Pointer *ptr)
 
    evas_object_move(ptr->o_ptr, 0, 0);
    evas_object_resize(ptr->o_ptr, ptr->w, ptr->h);
-   evas_object_show(ptr->o_ptr);
 
    return;
 
@@ -340,14 +335,14 @@ _e_pointer_cb_free(E_Pointer *ptr)
 
    E_FREE_LIST(ptr->stack, _e_pointer_stack_free);
 
-   if (ptr->type) eina_stringshare_del(ptr->type);
+   eina_stringshare_del(ptr->type);
 
    E_FREE_FUNC(ptr->idle_tmr, ecore_timer_del);
    E_FREE_FUNC(ptr->idle_poll, ecore_poller_del);
 
    if (!ptr->canvas) _e_pointer_canvas_del(ptr);
 
-   E_FREE(ptr);
+   free(ptr);
 }
 
 static void 
@@ -390,11 +385,10 @@ _e_pointer_type_set(E_Pointer *ptr, const char *type)
                                       &x, &y, NULL, NULL);
         _e_pointer_hot_update(ptr, x, y);
 
-        evas_object_show(ptr->o_ptr);
-
         if (ptr->canvas)
-          ecore_evas_object_cursor_set(ptr->ee, ptr->o_ptr, EVAS_LAYER_MAX, 
-                                       ptr->hot.x, ptr->hot.y);
+          e_pointer_object_set(ptr, NULL, 0, 0);
+        else
+          evas_object_show(ptr->o_ptr);
 
         return;
      }
@@ -473,7 +467,6 @@ EAPI E_Pointer *
 e_pointer_window_new(Ecore_Window win, Eina_Bool filled)
 {
    E_Pointer *ptr = NULL;
-   E_Comp *comp;
 
    EINA_SAFETY_ON_FALSE_RETURN_VAL(win, NULL);
 
@@ -486,11 +479,8 @@ e_pointer_window_new(Ecore_Window win, Eina_Bool filled)
    ptr->e_cursor = e_config->use_e_cursor;
    ptr->win = win;
    ptr->color = EINA_FALSE;
-   if ((comp = e_comp_get(NULL)))
-     {
-        if (comp->pointer)
-          ptr->color = comp->pointer->color;
-     }
+   if (e_comp->pointer)
+     ptr->color = e_comp->pointer->color;
 
    /* set pointer default type */
    if (filled) e_pointer_type_push(ptr, ptr, "default");
@@ -530,7 +520,6 @@ e_pointer_canvas_new(Ecore_Evas *ee, Eina_Bool filled)
    evas_object_event_callback_add(ptr->o_hot, EVAS_CALLBACK_SHOW, 
                                   _e_pointer_cb_hot_show, ptr);
 
-   evas_object_layer_set(ptr->o_ptr, EVAS_LAYER_MAX);
    evas_object_move(ptr->o_ptr, 0, 0);
    evas_object_resize(ptr->o_ptr, ptr->w, ptr->h);
 
@@ -559,7 +548,12 @@ e_pointers_size_set(int size)
         if ((ptr->evas) && (!ptr->canvas))
           _e_pointer_canvas_resize(ptr, size, size);
         else if (ptr->canvas)
-          evas_object_resize(ptr->o_ptr, size, size);
+          {
+             ptr->w = size;
+             ptr->h = size;
+             evas_object_resize(ptr->o_ptr, size, size);
+          }
+
 #ifndef HAVE_WAYLAND_ONLY
         ecore_x_cursor_size_set(e_config->cursor_size * 3 / 4);
 #endif
@@ -632,39 +626,39 @@ e_pointer_mode_push(void *obj, E_Pointer_Mode mode)
    switch (mode)
      {
       case E_POINTER_RESIZE_TL:
-        e_pointer_type_push(e_comp_get(obj)->pointer, obj, "resize_tl");
+        e_pointer_type_push(e_comp->pointer, obj, "resize_tl");
         break;
 
       case E_POINTER_RESIZE_T:
-        e_pointer_type_push(e_comp_get(obj)->pointer, obj, "resize_t");
+        e_pointer_type_push(e_comp->pointer, obj, "resize_t");
         break;
 
       case E_POINTER_RESIZE_TR:
-        e_pointer_type_push(e_comp_get(obj)->pointer, obj, "resize_tr");
+        e_pointer_type_push(e_comp->pointer, obj, "resize_tr");
         break;
 
       case E_POINTER_RESIZE_R:
-        e_pointer_type_push(e_comp_get(obj)->pointer, obj, "resize_r");
+        e_pointer_type_push(e_comp->pointer, obj, "resize_r");
         break;
 
       case E_POINTER_RESIZE_BR:
-        e_pointer_type_push(e_comp_get(obj)->pointer, obj, "resize_br");
+        e_pointer_type_push(e_comp->pointer, obj, "resize_br");
         break;
 
       case E_POINTER_RESIZE_B:
-        e_pointer_type_push(e_comp_get(obj)->pointer, obj, "resize_b");
+        e_pointer_type_push(e_comp->pointer, obj, "resize_b");
         break;
 
       case E_POINTER_RESIZE_BL:
-        e_pointer_type_push(e_comp_get(obj)->pointer, obj, "resize_bl");
+        e_pointer_type_push(e_comp->pointer, obj, "resize_bl");
         break;
 
       case E_POINTER_RESIZE_L:
-        e_pointer_type_push(e_comp_get(obj)->pointer, obj, "resize_l");
+        e_pointer_type_push(e_comp->pointer, obj, "resize_l");
         break;
 
       case E_POINTER_MOVE:
-        e_pointer_type_push(e_comp_get(obj)->pointer, obj, "move");
+        e_pointer_type_push(e_comp->pointer, obj, "move");
         break;
 
       default: break;
@@ -677,39 +671,39 @@ e_pointer_mode_pop(void *obj, E_Pointer_Mode mode)
    switch (mode)
      {
       case E_POINTER_RESIZE_TL:
-        e_pointer_type_pop(e_comp_get(obj)->pointer, obj, "resize_tl");
+        e_pointer_type_pop(e_comp->pointer, obj, "resize_tl");
         break;
 
       case E_POINTER_RESIZE_T:
-        e_pointer_type_pop(e_comp_get(obj)->pointer, obj, "resize_t");
+        e_pointer_type_pop(e_comp->pointer, obj, "resize_t");
         break;
 
       case E_POINTER_RESIZE_TR:
-        e_pointer_type_pop(e_comp_get(obj)->pointer, obj, "resize_tr");
+        e_pointer_type_pop(e_comp->pointer, obj, "resize_tr");
         break;
 
       case E_POINTER_RESIZE_R:
-        e_pointer_type_pop(e_comp_get(obj)->pointer, obj, "resize_r");
+        e_pointer_type_pop(e_comp->pointer, obj, "resize_r");
         break;
 
       case E_POINTER_RESIZE_BR:
-        e_pointer_type_pop(e_comp_get(obj)->pointer, obj, "resize_br");
+        e_pointer_type_pop(e_comp->pointer, obj, "resize_br");
         break;
 
       case E_POINTER_RESIZE_B:
-        e_pointer_type_pop(e_comp_get(obj)->pointer, obj, "resize_b");
+        e_pointer_type_pop(e_comp->pointer, obj, "resize_b");
         break;
 
       case E_POINTER_RESIZE_BL:
-        e_pointer_type_pop(e_comp_get(obj)->pointer, obj, "resize_bl");
+        e_pointer_type_pop(e_comp->pointer, obj, "resize_bl");
         break;
 
       case E_POINTER_RESIZE_L:
-        e_pointer_type_pop(e_comp_get(obj)->pointer, obj, "resize_l");
+        e_pointer_type_pop(e_comp->pointer, obj, "resize_l");
         break;
 
       case E_POINTER_MOVE:
-        e_pointer_type_pop(e_comp_get(obj)->pointer, obj, "move");
+        e_pointer_type_pop(e_comp->pointer, obj, "move");
         break;
 
       default: break;
@@ -751,4 +745,31 @@ e_pointer_idler_before(void)
 
         ptr->hot.update = EINA_FALSE;
      }
+}
+
+EAPI void
+e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
+{
+   Evas_Object *o;
+   E_Client *ec;
+
+   ecore_evas_cursor_get(ptr->ee, &o, NULL, NULL, NULL);
+   if (o)
+     {
+        if (o == obj) return;
+        ec = e_comp_object_client_get(o);
+        if (ec)
+          ec->hidden = 1;
+     }
+   ecore_evas_cursor_unset(ptr->ee);
+
+   if (obj)
+     {
+        ec = e_comp_object_client_get(obj);
+        if (ec)
+          ec->hidden = 1;
+        ecore_evas_object_cursor_set(ptr->ee, obj, EVAS_LAYER_MAX, x, y);
+     }
+   else
+     ecore_evas_object_cursor_set(ptr->ee, ptr->o_ptr, EVAS_LAYER_MAX, ptr->hot.x, ptr->hot.y);
 }

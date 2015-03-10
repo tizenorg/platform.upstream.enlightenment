@@ -21,7 +21,7 @@ struct _E_Config_Dialog_Data
 };
 
 E_Config_Dialog *
-e_int_config_desk(E_Comp *comp, const char *params)
+e_int_config_desk(Evas_Object *parent EINA_UNUSED, const char *params)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -49,7 +49,7 @@ e_int_config_desk(E_Comp *comp, const char *params)
    v->basic.create_widgets = _basic_create;
    v->override_auto_apply = 1;
 
-   cfd = e_config_dialog_new(comp, _("Desk Settings"), "E", "internal/desk",
+   cfd = e_config_dialog_new(NULL, _("Desk Settings"), "E", "internal/desk",
                              "preferences-desktop", 0, v, cfdata);
    return cfd;
 }
@@ -166,20 +166,20 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
    Evas_Object *o, *of, *ol, *ob;
    E_Zone *zone;
 
-   zone = e_zone_current_get(cfd->comp);
+   zone = e_zone_current_get(e_comp_get(NULL));
 
    o = e_widget_list_add(evas, 0, 0);
 
    ol = e_widget_list_add(evas, 0, 1);
    ob = e_widget_label_add(evas, _("Name"));
    e_widget_list_object_append(ol, ob, 1, 0, 0.5);
-   ob = e_widget_entry_add(evas, &(cfdata->name), NULL, NULL, NULL);
+   ob = e_widget_entry_add(cfd->dia->win, &(cfdata->name), NULL, NULL, NULL);
    e_widget_list_object_append(ol, ob, 1, 1, 0.5);
    e_widget_list_object_append(o, ol, 1, 1, 0.5);
    of = e_widget_frametable_add(evas, _("Desktop Window Profile"), 0);
    ob = e_widget_label_add(evas, _("Profile name"));
    e_widget_frametable_object_append(of, ob, 0, 0, 1, 1, 1, 1, 0, 0);
-   ob = e_widget_entry_add(evas, &(cfdata->profile), NULL, NULL, NULL);
+   ob = e_widget_entry_add(cfd->dia->win, &(cfdata->profile), NULL, NULL, NULL);
    e_widget_disabled_set(ob, !(e_config->use_desktop_window_profile));
    e_widget_frametable_object_append(of, ob, 1, 0, 2, 1, 1, 1, 1, 0);
    e_widget_list_object_append(o, of, 1, 1, 0.5);
@@ -211,8 +211,7 @@ _cb_config(void *data, void *data2 __UNUSED__)
    if (!cfdata) return;
    snprintf(buf, sizeof(buf), "%i %i %i %i",
             cfdata->man_num, cfdata->zone_num, cfdata->desk_x, cfdata->desk_y);
-   e_configure_registry_call("internal/wallpaper_desk",
-                             NULL, buf);
+   e_configure_registry_call("internal/wallpaper_desk", NULL, buf);
 }
 
 static Eina_Bool

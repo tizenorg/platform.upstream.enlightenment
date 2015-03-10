@@ -1,6 +1,6 @@
 #include "e.h"
 
-#if ((E19_PROFILE >= LOWRES_PDA) && (E19_PROFILE <= HIRES_PDA))
+#if ((E_PROFILE >= LOWRES_PDA) && (E_PROFILE <= HIRES_PDA))
 #define DEF_MENUCLICK             1.25
 #else
 #define DEF_MENUCLICK             0.25
@@ -641,6 +641,7 @@ _e_config_edd_init(Eina_Bool old)
 
    E_CONFIG_VAL(D, T, icon_theme, STR);
    E_CONFIG_VAL(D, T, icon_theme_overrides, UCHAR);
+   E_CONFIG_VAL(D, T, desktop_environment, STR);
 
    E_CONFIG_VAL(D, T, desk_flip_animate_mode, INT);
    E_CONFIG_VAL(D, T, desk_flip_animate_type, STR);
@@ -1028,7 +1029,7 @@ e_config_load(void)
         _e_config_edd_init(EINA_TRUE);
         e_config = e_config_domain_load("e", _e_config_edd);
         /* I made a c&p error here and fucked the world, so this ugliness
-         * will be my public mark of shame until E19 :/
+         * will be my public mark of shame until E :/
          * -zmike, 2013
          */
         if (e_config)
@@ -1278,7 +1279,7 @@ e_config_load(void)
                   cf_es->popup = 0;
                }
 
-             /* E19 layer values are higher */
+             /* E layer values are higher */
              EINA_LIST_FOREACH(e_config->remembers, l, rem)
                if (rem->apply & E_REMEMBER_APPLY_LAYER)
                  rem->prop.layer += 100;
@@ -1787,7 +1788,7 @@ _e_config_mv_error(const char *from, const char *to)
    e_dialog_text_set(dia, buf);
    e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
    e_dialog_button_focus_num(dia, 0);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_object_del_attach_func_set(E_OBJECT(dia),
                                 _e_config_error_dialog_cb_delete);
    e_dialog_show(dia);
@@ -2274,6 +2275,7 @@ _e_config_free(E_Config *ecf)
    if (ecf->input_method) eina_stringshare_del(ecf->input_method);
    if (ecf->exebuf_term_cmd) eina_stringshare_del(ecf->exebuf_term_cmd);
    if (ecf->icon_theme) eina_stringshare_del(ecf->icon_theme);
+   if (ecf->desktop_environment) eina_stringshare_del(ecf->desktop_environment);
    if (ecf->wallpaper_import_last_dev) eina_stringshare_del(ecf->wallpaper_import_last_dev);
    if (ecf->wallpaper_import_last_path) eina_stringshare_del(ecf->wallpaper_import_last_path);
    if (ecf->theme_default_border_style) eina_stringshare_del(ecf->theme_default_border_style);
@@ -2430,7 +2432,7 @@ _e_config_eet_close_handle(Eet_File *ef, char *file)
                   e_dialog_text_set(dia, buf);
                   e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
                   e_dialog_button_focus_num(dia, 0);
-                  e_win_centered_set(dia->win, 1);
+                  elm_win_center(dia->win, 1, 1);
                   e_object_del_attach_func_set(E_OBJECT(dia),
                                                _e_config_error_dialog_cb_delete);
                   e_dialog_show(dia);

@@ -23,9 +23,15 @@ e_modapi_init(E_Module *m)
 
    ecore_fb_size_get(&w, &h);
    ee = ecore_evas_fb_new(NULL, 0, w, h);
-   comp = e_comp_new();
-   comp->comp_type = E_PIXMAP_TYPE_WL;
+
+   if (!(comp = e_comp))
+     {
+        comp = e_comp_new();
+        comp->comp_type = E_PIXMAP_TYPE_WL;
+     }
+
    comp->ee = ee;
+
    if (!e_xinerama_fake_screens_exist())
      {
         screen = E_NEW(E_Screen, 1);
@@ -36,7 +42,7 @@ e_modapi_init(E_Module *m)
         screen->h = h;
         e_xinerama_screens_set(eina_list_append(NULL, screen));
      }
-   comp->man = e_manager_new(0, comp, w, h);
+   comp->man = e_manager_new(ecore_evas_window_get(comp->ee), comp, w, h);
    e_comp_wl_init();
    e_comp_canvas_init(comp);
    e_comp_canvas_fake_layers_init(comp);

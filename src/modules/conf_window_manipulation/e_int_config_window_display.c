@@ -25,7 +25,7 @@ struct _E_Config_Dialog_Data
 
 /* a nice easy setup function that does the dirty work */
 E_Config_Dialog *
-e_int_config_window_display(E_Comp *comp, const char *params __UNUSED__)
+e_int_config_window_display(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -41,7 +41,7 @@ e_int_config_window_display(E_Comp *comp, const char *params __UNUSED__)
    v->basic.check_changed = _basic_check_changed;
 
    /* create config diaolg for NULL object/data */
-   cfd = e_config_dialog_new(comp, _("Window Display"),
+   cfd = e_config_dialog_new(NULL, _("Window Display"),
                              "E", "windows/window_display",
                              "preferences-system-windows", 0, v, NULL);
    return cfd;
@@ -123,6 +123,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    Evas_Object *otb, *ol, *of, *ow, *oc;
    E_Radio_Group *rg;
 
+   e_dialog_resizable_set(cfd->dia, 1);
    otb = e_widget_toolbook_add(evas, (24 * e_scale), (24 * e_scale));
 
    /* Display */
@@ -242,13 +243,13 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
 
    rg = e_widget_radio_group_new(&(cfdata->screen_limits));
 
-   ow = e_widget_radio_add(evas, _("Keep windows within the visual screen limits"), E_SCREEN_LIMITS_WITHIN, rg);
+   ow = e_widget_radio_add(evas, _("Keep windows within the visual screen limits"), E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE, rg);
    e_widget_list_object_append(ol, ow, 1, 1, 0.5);
 
-   ow = e_widget_radio_add(evas, _("Allow windows partly out of the visual screen limits"), E_SCREEN_LIMITS_PARTLY, rg);
+   ow = e_widget_radio_add(evas, _("Allow windows partly out of the visual screen limits"), E_CLIENT_OFFSCREEN_LIMIT_ALLOW_PARTIAL, rg);
    e_widget_list_object_append(ol, ow, 1, 1, 0.5);
 
-   ow = e_widget_radio_add(evas, _("Allow windows completely out of visual screen limits"), E_SCREEN_LIMITS_COMPLETELY, rg);
+   ow = e_widget_radio_add(evas, _("Allow windows completely out of visual screen limits"), E_CLIENT_OFFSCREEN_LIMIT_ALLOW_FULL, rg);
    e_widget_list_object_append(ol, ow, 1, 1, 0.5);
 
    e_widget_toolbook_page_append(otb, NULL, _("Screen Limits"), ol,

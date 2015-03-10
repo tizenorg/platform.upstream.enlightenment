@@ -329,7 +329,7 @@ _e_qa_entry_relaunch_setup_help(void *data, E_Dialog *dia)
    e_dialog_icon_set(dia, "enlightenment", 64);
    e_dialog_text_set(dia, buf);
    e_dialog_button_add(dia, _("Cancel"), NULL, _e_qa_entry_relaunch_setup_cancel, entry);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
    e_object_data_set(E_OBJECT(dia), entry);
    e_object_del_attach_func_set(E_OBJECT(dia), _e_qa_entry_dia_hide);
@@ -347,7 +347,7 @@ _e_qa_entry_relaunch_setup(E_Quick_Access_Entry *entry)
 
    if (entry->dia)
      {
-        e_win_raise(entry->dia->win);
+        elm_win_raise(entry->dia->win);
         return;
      }
    if ((!entry->class) || (!entry->name))
@@ -391,7 +391,7 @@ _e_qa_entry_relaunch_setup(E_Quick_Access_Entry *entry)
         e_dialog_button_add(dia, _("Continue"), NULL, _e_qa_entry_relaunch_setup_continue, entry);
         e_dialog_button_add(dia, _("More Help"), NULL, _e_qa_entry_relaunch_setup_help, entry);
         e_dialog_button_add(dia, _("Cancel"), NULL, _e_qa_entry_relaunch_setup_cancel, entry);
-        e_win_centered_set(dia->win, 1);
+        elm_win_center(dia->win, 1, 1);
         e_dialog_show(dia);
         e_object_data_set(E_OBJECT(dia), entry);
         e_object_del_attach_func_set(E_OBJECT(dia), _e_qa_entry_dia_hide);
@@ -592,22 +592,19 @@ _e_qa_begin(void)
      }
    if (count)
      {
-        E_Comp *comp;
-        const Eina_List *lll;
         /* some non-transient entries exist without assigned borders
          * try assigning from existing borders
          */
-        EINA_LIST_FOREACH(e_comp_list(), lll, comp)
-          EINA_LIST_FOREACH(comp->clients, l, ec)
-            {
-               if (e_client_util_ignored_get(ec)) continue;
-               entry = _e_qa_entry_find_match(ec, 1);
-               if ((!entry) || entry->client) continue;
-               DBG("border=%p matches entry %s", ec, entry->id);
-               _e_qa_entry_border_associate(entry, ec);
-               count--;
-               if (!count) break;
-            }
+        EINA_LIST_FOREACH(e_comp->clients, l, ec)
+          {
+             if (e_client_util_ignored_get(ec)) continue;
+             entry = _e_qa_entry_find_match(ec, 1);
+             if ((!entry) || entry->client) continue;
+             DBG("border=%p matches entry %s", ec, entry->id);
+             _e_qa_entry_border_associate(entry, ec);
+             count--;
+             if (!count) break;
+          }
      }
 }
 
@@ -923,7 +920,7 @@ _e_qa_help_timeout(void *data __UNUSED__)
    if (qa_mod->demo_dia)
      {
         E_Quick_Access_Entry *entry;
-        entry = _e_qa_entry_find_border(qa_mod->demo_dia->win->client);
+        entry = _e_qa_entry_find_border(e_win_client_get(qa_mod->demo_dia->win));
         e_qa_entry_free(entry);
         e_object_del(E_OBJECT(qa_mod->demo_dia));
      }
@@ -1000,7 +997,7 @@ _e_qa_help5(void *data __UNUSED__)
 {
    char buf[PATH_MAX];
 
-   if (_e_qa_entry_find_border(qa_mod->demo_dia->win->client))
+   if (_e_qa_entry_find_border(e_win_client_get(qa_mod->demo_dia->win)))
      {
         qa_mod->help_timer = ecore_timer_add(1, _e_qa_help_timer_cb, NULL);
         return;
@@ -1052,7 +1049,7 @@ _e_qa_help_activate_hook(E_Quick_Access_Entry *entry)
       default:
         snprintf(buf, sizeof(buf), "%s/e-module-quickaccess.edj", e_module_dir_get(qa_mod->module));
         if (entry->config.hidden)
-          _e_qa_border_activate(_e_qa_entry_find_border(qa_mod->demo_dia->win->client));
+          _e_qa_border_activate(_e_qa_entry_find_border(e_win_client_get(qa_mod->demo_dia->win)));
         qa_mod->help_dia = (E_Object*)e_confirm_dialog_show(_("Quickaccess Help"), buf,
                                                              _("Well done.<br>"
                                                                "Now to delete the entry we just made..."),
@@ -1081,7 +1078,7 @@ _e_qa_help_qa_added_cb(void *data __UNUSED__)
    E_Quick_Access_Entry *entry;
 
    ecore_timer_thaw(qa_mod->help_timeout);
-   if ((!qa_mod->demo_dia) || (!_e_qa_entry_find_border(qa_mod->demo_dia->win->client)))
+   if ((!qa_mod->demo_dia) || (!_e_qa_entry_find_border(e_win_client_get(qa_mod->demo_dia->win))))
      {
         _e_qa_help_timeout(NULL);
         return;
@@ -1123,7 +1120,7 @@ _e_qa_help_timer_helper(void)
    E_Menu_Item *mi;
    Eina_List *items;
 
-   ec = qa_mod->demo_dia->win->client;
+   ec = e_win_client_get(qa_mod->demo_dia->win);
    ecore_timer_interval_set(qa_mod->help_timer, 0.2);
    mi = e_menu_item_active_get();
    if (qa_mod->menu)
@@ -1178,11 +1175,11 @@ _e_qa_help_timer2_cb(void *data __UNUSED__)
 {
    E_Client *ec;
 
-   if ((!qa_mod->demo_dia) || (!qa_mod->demo_dia->win) || (!qa_mod->demo_dia->win->client))
+   if ((!qa_mod->demo_dia) || (!qa_mod->demo_dia->win) || (!e_win_client_get(qa_mod->demo_dia->win)))
      /* FIXME */
      return EINA_TRUE;
 
-   ec = qa_mod->demo_dia->win->client;
+   ec = e_win_client_get(qa_mod->demo_dia->win);
    switch (qa_mod->demo_state)
      {
       case 0:
@@ -1202,11 +1199,11 @@ _e_qa_help_timer_cb(void *data __UNUSED__)
 {
    E_Client *ec;
 
-   if ((!qa_mod->demo_dia) || (!qa_mod->demo_dia->win) || (!qa_mod->demo_dia->win->client))
+   if ((!qa_mod->demo_dia) || (!qa_mod->demo_dia->win) || (!e_win_client_get(qa_mod->demo_dia->win)))
      /* wait longer */
      return EINA_TRUE;
 
-   ec = qa_mod->demo_dia->win->client;
+   ec = e_win_client_get(qa_mod->demo_dia->win);
    switch (qa_mod->demo_state)
      {
       case 0:

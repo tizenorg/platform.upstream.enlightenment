@@ -217,7 +217,7 @@ _list_rename(void *data, void *list)
 
    if (cfdata->ed)
      {
-        e_win_raise(cfdata->ed->dia->win);
+        elm_win_raise(cfdata->ed->dia->win);
         return;
      }
 
@@ -236,7 +236,8 @@ _advanced_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_
    Evas_Object *ob, *ol, *otb, *tab;
    int w, h;
 
-   tab = e_widget_table_add(evas, 0);
+   e_dialog_resizable_set(cfd->dia, 1);
+   tab = e_widget_table_add(e_win_evas_win_get(evas), 0);
    evas_object_name_set(tab, "dia_table");
 
    otb = e_widget_toolbook_add(evas, 48 * e_scale, 48 * e_scale);
@@ -251,8 +252,7 @@ _advanced_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_
    e_widget_toolbook_page_append(otb, NULL, _("Behavior"), ol, 1, 1, 1, 1, 0.5, 0.5);
 
 /////////////////////////////////////////////////////////////////
-   ol = e_widget_table_add(evas, 0);
-   e_widget_table_freeze(ol);
+   ol = e_widget_table_add(e_win_evas_win_get(evas), 0);
 
    cfdata->o_list_entry = ob = e_widget_ilist_add(evas, 0, 0, &cfdata->entry);
    evas_event_freeze(evas_object_evas_get(ob));
@@ -277,12 +277,10 @@ _advanced_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_
    e_widget_table_object_append(ol, ob, 1, 1, 1, 1, 1, 1, 0, 0);
 
 
-   e_widget_table_thaw(ol);
 
    e_widget_toolbook_page_append(otb, NULL, _("Entries"), ol, 1, 1, 1, 1, 0.5, 0.5);
 /////////////////////////////////////////////////////////////////
-   ol = e_widget_table_add(evas, 0);
-   e_widget_table_freeze(ol);
+   ol = e_widget_table_add(e_win_evas_win_get(evas), 0);
 
    cfdata->o_list_transient = ob = e_widget_ilist_add(evas, 0, 0, &cfdata->entry);
    evas_event_freeze(evas_object_evas_get(ob));
@@ -306,7 +304,6 @@ _advanced_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_
    ob = e_widget_button_add(evas, _("Delete"), "edit-delete", _list_delete, cfdata, cfdata->o_list_transient);
    e_widget_table_object_append(ol, ob, 1, 1, 1, 1, 1, 1, 0, 0);
 
-   e_widget_table_thaw(ol);
 
    e_widget_toolbook_page_append(otb, NULL, _("Transients"), ol, 1, 1, 1, 1, 0.5, 0.5);
 /////////////////////////////////////////////////////////////////
@@ -322,9 +319,10 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
 {
    Evas_Object *ob, *ol, *otb, *tab;
 
+   e_dialog_resizable_set(cfd->dia, 1);
    cfdata->o_list_entry = cfdata->o_list_transient = NULL;
 
-   tab = e_widget_table_add(evas, 0);
+   tab = e_widget_table_add(e_win_evas_win_get(evas), 0);
    evas_object_name_set(tab, "dia_table");
 
    otb = e_widget_toolbook_add(evas, 48 * e_scale, 48 * e_scale);
@@ -540,7 +538,7 @@ e_qa_config_entry_add(E_Quick_Access_Entry *entry)
 }
 
 E_Config_Dialog *
-e_int_config_qa_module(E_Comp *comp, const char *params __UNUSED__)
+e_int_config_qa_module(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -559,7 +557,7 @@ e_int_config_qa_module(E_Comp *comp, const char *params __UNUSED__)
    v->advanced.check_changed = _advanced_check_changed;
 
    snprintf(buf, sizeof(buf), "%s/e-module-quickaccess.edj", e_module_dir_get(qa_mod->module));
-   cfd = e_config_dialog_new(comp, _("Quickaccess Settings"),
+   cfd = e_config_dialog_new(NULL, _("Quickaccess Settings"),
                              "E", "launcher/quickaccess", buf, 32, v, NULL);
    return cfd;
 }

@@ -21,7 +21,7 @@
 
 static Eina_List *handlers = NULL;
 static Eina_List *hooks = NULL;
-static Eina_List *compositors = NULL;
+EAPI E_Comp *e_comp = NULL;
 static Eina_Hash *ignores = NULL;
 static Eina_List *actions = NULL;
 
@@ -97,6 +97,7 @@ _e_comp_visible_object_is(Evas_Object *obj, Evas_Coord x, Evas_Coord y, Evas_Coo
    Evas_Coord xx, yy, ww, hh;
 
    if ((!type) || (!e_util_strcmp(type, "e_comp_object"))) return EINA_FALSE;
+   if (evas_object_data_get(obj, "comp_skip")) return EINA_FALSE;
    evas_object_geometry_get(obj, &xx, &yy, &ww, &hh);
    if (E_INTERSECTS(x, y, w, h, xx, yy, ww, hh))
      {
@@ -270,9 +271,12 @@ _e_comp_cb_nocomp_end(E_Comp *c)
    E_CLIENT_FOREACH(c, ec)
      {
         e_client_redirected_set(ec, 1);
-        if (ec->visible)
+        if (ec->visible && (!ec->input_only))
           e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
      }
+#ifndef HAVE_WAYLAND_ONLY
+   e_comp_x_nocomp_end(c);
+#endif
    e_comp_render_queue(c);
    e_comp_shape_queue_block(c, 0);
    ecore_event_add(E_EVENT_COMPOSITOR_ENABLE, NULL, NULL, NULL);
@@ -332,7 +336,7 @@ _e_comp_client_update(E_Client *ec)
         if (e_pixmap_is_x(ec->pixmap) && (!ec->override))
           evas_object_resize(ec->frame, ec->w, ec->h);
      }
-   return post || (!e_pixmap_is_x(ec->pixmap));
+   return post;
 }
 
 static void
@@ -487,7 +491,7 @@ nocomp:
                        if (ec == c->nocomp_ec) break;
                        if (evas_object_layer_get(ec->frame) < evas_object_layer_get(c->nocomp_ec->frame)) break;
                        if (e_client_is_stacking(ec)) continue;
-                       if (!evas_object_visible_get(ec->frame)) continue;
+                       if (!ec->visible) continue;
                        if (evas_object_data_get(ec->frame, "comp_skip")) continue;
                        if (e_object_is_del(E_OBJECT(ec)) || (!e_client_util_desk_visible(ec, e_desk_current_get(ec->zone)))) continue;
                        if (ec->override || (e_config->allow_above_fullscreen && (!e_config->mode.presentation)))
@@ -527,13 +531,6 @@ _e_comp_cb_animator(void *data)
 
 //////////////////////////////////////////////////////////////////////////
 
-
-static Eina_Bool
-_e_comp_cb_zone_change(void *data EINA_UNUSED, int type EINA_UNUSED, EINA_UNUSED void *event)
-{
-   E_LIST_FOREACH(compositors, e_comp_canvas_update);
-   return ECORE_CALLBACK_PASS_ON;
-}
 
 #ifdef SHAPE_DEBUG
 static void
@@ -600,7 +597,7 @@ _e_comp_shapes_update_comp_client_shape_comp_helper(E_Client *ec, Eina_Tiler *tb
    INF("COMP EC: %p", ec);
 #endif
 
-   if (ec->shape_input_rects || ec->shape_rects)
+   if (ec->shaped || ec->shaped_input)
      {
         int num, tot;
         int l, r, t, b;
@@ -823,6 +820,7 @@ _e_comp_free(E_Comp *c)
    if (c->screen_job) ecore_job_del(c->screen_job);
    if (c->nocomp_delay_timer) ecore_timer_del(c->nocomp_delay_timer);
    if (c->nocomp_override_timer) ecore_timer_del(c->nocomp_override_timer);
+   ecore_job_del(c->shape_job);
 
    free(c);
 }
@@ -850,25 +848,21 @@ _e_comp_override_expire(void *data)
 static Eina_Bool
 _e_comp_screensaver_on(void *data EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
-   Eina_List *l, *ll;
+   Eina_List *l;
    E_Zone *zone;
-   E_Comp *c;
 
+   printf("_e_comp_screensaver_on\n");
    ecore_frametime = ecore_animator_frametime_get();
-   // fixme: use hash if compositors list > 4
-   EINA_LIST_FOREACH(compositors, l, c)
+   if (e_comp->saver) return ECORE_CALLBACK_RENEW;
+   e_comp_override_add(e_comp);
+   e_comp->saver = EINA_TRUE;
+   if (e_comp->render_animator)
+     ecore_animator_freeze(e_comp->render_animator);
+   EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        if (c->saver) continue;
-        e_comp_override_add(c);
-        c->saver = EINA_TRUE;
-        if (c->render_animator)
-          ecore_animator_freeze(c->render_animator);
-        EINA_LIST_FOREACH(c->zones, ll, zone)
-          {
-             e_zone_fade_handle(zone, 1, 3.0);
-             edje_object_signal_emit(zone->base, "e,state,screensaver,on", "e");
-             edje_object_signal_emit(zone->over, "e,state,screensaver,on", "e");
-          }
+        e_zone_fade_handle(zone, 1, 3.0);
+        edje_object_signal_emit(zone->base, "e,state,screensaver,on", "e");
+        edje_object_signal_emit(zone->over, "e,state,screensaver,on", "e");
      }
 
    return ECORE_CALLBACK_PASS_ON;
@@ -877,30 +871,26 @@ _e_comp_screensaver_on(void *data EINA_UNUSED, int type EINA_UNUSED, void *event
 static Eina_Bool
 _e_comp_screensaver_off(void *data EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
-   Eina_List *l, *ll;
+   Eina_List *l;
    E_Zone *zone;
-   E_Comp *c;
+   E_Client *ec;
 
+   printf("_e_comp_screensaver_off\n");
    ecore_animator_frametime_set(ecore_frametime);
-   // fixme: use hash if compositors list > 4
-   EINA_LIST_FOREACH(compositors, l, c)
+   if (!e_comp->saver) return ECORE_CALLBACK_RENEW;
+   e_comp_override_del(e_comp);
+   e_comp->saver = EINA_FALSE;
+   if (!e_comp->nocomp)
+     ecore_evas_manual_render_set(e_comp->ee, EINA_FALSE);
+   EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        E_Client *ec;
-        if (!c->saver) continue;
-        e_comp_override_del(c);
-        c->saver = EINA_FALSE;
-        if (!c->nocomp)
-          ecore_evas_manual_render_set(c->ee, EINA_FALSE);
-        EINA_LIST_FOREACH(c->zones, ll, zone)
-          {
-             edje_object_signal_emit(zone->base, "e,state,screensaver,off", "e");
-             edje_object_signal_emit(zone->over, "e,state,screensaver,off", "e");
-             e_zone_fade_handle(zone, 0, 0.5);
-          }
-        E_CLIENT_FOREACH(c, ec)
-          if (e_comp_object_damage_exists(ec->frame))
-            e_comp_object_render_update_add(ec->frame);
+        edje_object_signal_emit(zone->base, "e,state,screensaver,off", "e");
+        edje_object_signal_emit(zone->over, "e,state,screensaver,off", "e");
+        e_zone_fade_handle(zone, 0, 0.5);
      }
+   E_CLIENT_FOREACH(e_comp, ec)
+     if (e_comp_object_damage_exists(ec->frame))
+       e_comp_object_render_update_add(ec->frame);
 
    return ECORE_CALLBACK_PASS_ON;
 }
@@ -912,19 +902,18 @@ _e_comp_act_opacity_obj_finder(E_Object *obj)
 
    switch (obj->type)
      {
-      case E_WIN_TYPE:
-        ec = ((E_Win*)obj)->client;
-        return ec ? ec->frame : NULL;
       case E_CLIENT_TYPE:
         return ((E_Client*)obj)->frame;
-      default:
       case E_ZONE_TYPE:
       case E_MANAGER_TYPE:
       case E_MENU_TYPE:
         ec = e_client_focused_get();
         return ec ? ec->frame : NULL;
      }
-   return NULL;
+   if (e_obj_is_win(obj))
+     return e_win_client_get((void*)obj)->frame;
+   ec = e_client_focused_get();
+   return ec ? ec->frame : NULL;
 }
 
 static void
@@ -1047,6 +1036,7 @@ e_comp_init(void)
 
 #ifndef HAVE_WAYLAND_ONLY
    if (!e_comp_x_init())
+#endif
      {
         const char **test, *eng[] =
         {
@@ -1068,22 +1058,19 @@ e_comp_init(void)
           }
         return EINA_FALSE;
      }
-#endif
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
    e_comp_wl_init();
 #endif
-   if (!compositors) return EINA_FALSE;
+   if (!e_comp) return EINA_FALSE;
 out:
+   e_comp->elm = elm_win_fake_add(e_comp->ee);
+   evas_object_show(e_comp->elm);
    e_util_env_set("HYBRIS_EGLPLATFORM", NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_ON, _e_comp_screensaver_on, NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_OFF, _e_comp_screensaver_off, NULL);
 
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN, _e_comp_key_down, NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_SIGNAL_USER, _e_comp_signal_user, NULL);
-
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_ZONE_MOVE_RESIZE, _e_comp_cb_zone_change, NULL);
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_ZONE_ADD, _e_comp_cb_zone_change, NULL);
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_ZONE_DEL, _e_comp_cb_zone_change, NULL);
 
    return EINA_TRUE;
 }
@@ -1274,17 +1261,16 @@ EAPI E_Comp *
 e_comp_new(void)
 {
    E_Comp *c;
-   char name[40];
 
+   if (e_comp)
+     CRI("CANNOT REPLACE EXISTING COMPOSITOR");
    c = E_OBJECT_ALLOC(E_Comp, E_COMP_TYPE, _e_comp_free);
    if (!c) return NULL;
 
-   c->num = eina_list_count(compositors);
-   snprintf(name, sizeof(name), _("Compositor %u"), c->num);
-   c->name = eina_stringshare_add(name);
+   c->name = eina_stringshare_add(_("Compositor"));
    c->render_animator = ecore_animator_add(_e_comp_cb_animator, c);
    ecore_animator_freeze(c->render_animator);
-   compositors = eina_list_append(compositors, c);
+   e_comp = c;
    return c;
 }
 
@@ -1297,15 +1283,10 @@ e_comp_internal_save(void)
 EINTERN int
 e_comp_shutdown(void)
 {
-   E_Comp *c;
-
    E_FREE_FUNC(action_timeout, ecore_timer_del);
-   EINA_LIST_FREE(compositors, c)
-     {
-        while (c->clients)
-          e_object_del(eina_list_data_get(c->clients));
-        e_object_del(E_OBJECT(c));
-     }
+   while (e_comp->clients)
+     e_object_del(eina_list_data_get(e_comp->clients));
+   e_object_del(E_OBJECT(e_comp));
    E_FREE_LIST(handlers, ecore_event_handler_del);
    E_FREE_LIST(actions, e_object_del);
    E_FREE_LIST(hooks, e_client_hook_del);
@@ -1377,113 +1358,21 @@ e_comp_config_get(void)
    return conf;
 }
 
-EAPI const Eina_List *
-e_comp_list(void)
-{
-   return compositors;
-}
-
 EAPI void
 e_comp_shadows_reset(void)
 {
-   Eina_List *l;
-   E_Comp *c;
+   E_Client *ec;
 
-   EINA_LIST_FOREACH(compositors, l, c)
-     {
-        E_Client *ec;
-
-        _e_comp_fps_update(c);
-        E_LIST_FOREACH(c->zones, e_comp_canvas_zone_update);
-        E_CLIENT_FOREACH(c, ec)
-          e_comp_object_frame_theme_set(ec->frame, E_COMP_OBJECT_FRAME_RESHADOW);
-     }
+   _e_comp_fps_update(e_comp);
+   E_LIST_FOREACH(e_comp->zones, e_comp_canvas_zone_update);
+   E_CLIENT_FOREACH(e_comp, ec)
+     e_comp_object_frame_theme_set(ec->frame, E_COMP_OBJECT_FRAME_RESHADOW);
 }
 
 EAPI E_Comp *
-e_comp_get(const void *o)
+e_comp_get(const void *o EINA_UNUSED)
 {
-   E_Client *ec;
-   E_Shelf *es;
-   E_Menu *m;
-   E_Desk *desk;
-   E_Menu_Item *mi;
-   const E_Object *obj = o;
-   E_Zone *zone = NULL;
-   E_Manager *man = NULL;
-   E_Gadcon_Popup *gp;
-   E_Gadcon *gc;
-   E_Gadcon_Client *gcc;
-   E_Drag *drag;
-   E_Win *ewin;
-
-   if (!o) 
-     {
-        if (!(obj = (E_Object*)e_manager_current_get()))
-          return NULL;
-     }
-
-   /* try to get to zone type first */
-   switch (obj->type)
-     {
-      case E_WIN_TYPE:
-        ewin = (E_Win*)obj;
-        return ewin->comp;
-      case E_DESK_TYPE:
-        desk = (E_Desk*)obj;
-        obj = (void*)desk->zone;
-        EINA_SAFETY_ON_NULL_RETURN_VAL(obj, NULL);
-        break;
-      case E_CLIENT_TYPE:
-        ec = (E_Client*)obj;
-        return ec->comp;
-      case E_MENU_TYPE:
-        m = (E_Menu*)obj;
-        obj = (void*)m->zone;
-        EINA_SAFETY_ON_NULL_RETURN_VAL(obj, NULL);
-        break;
-      case E_MENU_ITEM_TYPE:
-        mi = (E_Menu_Item*)obj;
-        obj = (void*)mi->menu->zone;
-        EINA_SAFETY_ON_NULL_RETURN_VAL(obj, NULL);
-        break;
-      case E_SHELF_TYPE:
-        es = (E_Shelf*)obj;
-        obj = (void*)es->zone;
-        EINA_SAFETY_ON_NULL_RETURN_VAL(obj, NULL);
-        break;
-      case E_DRAG_TYPE:
-        drag = (E_Drag*)obj;
-        return drag->comp;
-      case E_GADCON_POPUP_TYPE:
-        gp = (E_Gadcon_Popup*)obj;
-        obj = (void*)gp->gcc;
-        EINA_SAFETY_ON_NULL_RETURN_VAL(obj, NULL);
-        /* no break */
-      case E_GADCON_CLIENT_TYPE:
-        gcc = (E_Gadcon_Client*)obj;
-        obj = (void*)gcc->gadcon;
-        EINA_SAFETY_ON_NULL_RETURN_VAL(obj, NULL);
-        /* no break */
-      case E_GADCON_TYPE:
-        gc = (E_Gadcon*)obj;
-        obj = (void*)e_gadcon_zone_get(gc);
-        EINA_SAFETY_ON_NULL_RETURN_VAL(obj, NULL);
-        break;
-      default:
-        break;
-     }
-   switch (obj->type)
-     {
-      case E_ZONE_TYPE:
-        if (!zone) zone = (E_Zone*)obj;
-        return zone->comp;
-      case E_MANAGER_TYPE:
-        if (!man) man = (E_Manager*)obj;
-        return man->comp;
-     }
-   CRI("UNIMPLEMENTED TYPE PASSED! FIXME!");
-   return NULL;
+   return e_comp;
 }
 
 
@@ -1502,12 +1391,11 @@ e_comp_top_window_at_xy_get(E_Comp *c, Evas_Coord x, Evas_Coord y)
 }
 
 EAPI void
-e_comp_util_wins_print(const E_Comp *c)
+e_comp_util_wins_print(const E_Comp *c EINA_UNUSED)
 {
    Evas_Object *o;
 
-   if (!c) c = e_comp_get(NULL);
-   o = evas_object_top_get(c->evas);
+   o = evas_object_top_get(e_comp->evas);
    while (o)
      {
         E_Client *ec;
@@ -1580,51 +1468,33 @@ FIXME
 EAPI void
 e_comp_block_window_add(void)
 {
-   E_Comp *c;
-   Eina_List *l;
-
-   EINA_LIST_FOREACH(compositors, l, c)
-     {
-        c->block_count++;
-        if (c->block_win) continue;
-        c->block_win = ecore_x_window_new(c->man->root, c->man->x, c->man->y, c->man->w, c->man->h);
-        INF("BLOCK WIN: %x", c->block_win);
-        ecore_x_window_background_color_set(c->block_win, 0, 0, 0);
-        e_comp_ignore_win_add(c->block_win);
-        ecore_x_window_configure(c->block_win,
-          ECORE_X_WINDOW_CONFIGURE_MASK_SIBLING | ECORE_X_WINDOW_CONFIGURE_MASK_STACK_MODE,
-          0, 0, 0, 0, 0, ((E_Comp_Win*)c->wins)->win, ECORE_X_WINDOW_STACK_ABOVE);
-        ecore_x_window_show(c->block_win);
-     }
+   e_comp->block_count++;
+   if (e_comp->block_win) return;
+   e_comp->block_win = ecore_x_window_new(e_comp->man->root, e_comp->man->x, e_comp->man->y, e_comp->man->w, e_comp->man->h);
+   INF("BLOCK WIN: %x", e_comp->block_win);
+   ecore_x_window_background_color_set(e_comp->block_win, 0, 0, 0);
+   e_comp_ignore_win_add(e_comp->block_win);
+   ecore_x_window_configure(e_comp->block_win,
+     ECORE_X_WINDOW_CONFIGURE_MASK_SIBLING | ECORE_X_WINDOW_CONFIGURE_MASK_STACK_MODE,
+     0, 0, 0, 0, 0, ((E_Comp_Win*)e_comp->wins)->win, ECORE_X_WINDOW_STACK_ABOVE);
+   ecore_x_window_show(e_comp->block_win);
 }
 
 EAPI void
 e_comp_block_window_del(void)
 {
-   E_Comp *c;
-   Eina_List *l;
-
-   EINA_LIST_FOREACH(compositors, l, c)
-     {
-        if (!c->block_count) continue;
-        c->block_count--;
-        if (c->block_count) continue;
-        if (c->block_win) ecore_x_window_free(c->block_win);
-        c->block_win = 0;
-     }
+   if (!e_comp->block_count) return;
+   e_comp->block_count--;
+   if (e_comp->block_count) return;
+   if (e_comp->block_win) ecore_x_window_free(e_comp->block_win);
+   e_comp->block_win = 0;
 }
 #endif
 
 EAPI E_Comp *
 e_comp_find_by_window(Ecore_Window win)
 {
-   Eina_List *l;
-   E_Comp *c;
-
-   EINA_LIST_FOREACH(compositors, l, c)
-     {
-        if ((c->win == win) || (c->ee_win == win) || (c->man->root == win)) return c;
-     }
+   if ((e_comp->win == win) || (e_comp->ee_win == win) || (e_comp->man->root == win)) return e_comp;
    return NULL;
 }
 
@@ -1645,6 +1515,7 @@ e_comp_e_object_layer_get(const E_Object *obj)
    E_Gadcon *gc = NULL;
 
    if (!obj) return 0;
+
    switch (obj->type)
      {
       case E_GADCON_CLIENT_TYPE:
@@ -1655,10 +1526,7 @@ e_comp_e_object_layer_get(const E_Object *obj)
         if (!gc) gc = (E_Gadcon *)obj;
         if (gc->shelf) return gc->shelf->layer;
         if (!gc->toolbar) return E_LAYER_DESKTOP;
-        return gc->toolbar->fwin->client->layer;
-
-      case E_WIN_TYPE:
-        return ((E_Win *)(obj))->client->layer;
+        return e_win_client_get(gc->toolbar->fwin)->layer;
 
       case E_ZONE_TYPE:
         return E_LAYER_DESKTOP;
@@ -1670,6 +1538,8 @@ e_comp_e_object_layer_get(const E_Object *obj)
       default:
         break;
      }
+   if (e_obj_is_win(obj))
+     return e_win_client_get((void*)obj)->layer;
    return 0;
 }
 
@@ -1717,7 +1587,8 @@ e_comp_ungrab_input(E_Comp *c, Eina_Bool mouse, Eina_Bool kbd)
    evas_event_feed_mouse_out(c->evas, 0, NULL);
    evas_event_feed_mouse_in(c->evas, 0, NULL);
    if (e_client_focused_get()) return;
-   e_client_refocus();
+   if (e_config->focus_policy != E_FOCUS_MOUSE)
+     e_client_refocus();
 }
 
 EAPI void
@@ -1735,34 +1606,22 @@ e_comp_gl_get(void)
 EAPI E_Comp *
 e_comp_evas_find(const Evas *e)
 {
-   Eina_List *l;
-   E_Comp *c;
-
-   EINA_LIST_FOREACH(compositors, l, c)
-     if (c->evas == e) return c;
+   if (e_comp->evas == e) return e_comp;
    return NULL;
 }
 
 EAPI void
 e_comp_button_bindings_ungrab_all(void)
 {
-   Eina_List *l;
-   E_Comp *c;
-
-   EINA_LIST_FOREACH(compositors, l, c)
-     if (c->bindings_ungrab_cb)
-       c->bindings_ungrab_cb(c);
+   if (e_comp->bindings_ungrab_cb)
+     e_comp->bindings_ungrab_cb(e_comp);
 }
 
 EAPI void
 e_comp_button_bindings_grab_all(void)
 {
-   Eina_List *l;
-   E_Comp *c;
-
-   EINA_LIST_FOREACH(compositors, l, c)
-     if (c->bindings_grab_cb)
-       c->bindings_grab_cb(c);
+   if (e_comp->bindings_grab_cb)
+     e_comp->bindings_grab_cb(e_comp);
 }
 
 EAPI void

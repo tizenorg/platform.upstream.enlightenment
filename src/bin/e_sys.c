@@ -70,8 +70,7 @@ _e_sys_comp_done_cb(void *data, Evas_Object *obj, const char *sig, const char *s
 static Eina_Bool
 _e_sys_comp_action_timeout(void *data)
 {
-   const Eina_List *l, *ll;
-   E_Comp *c;
+   const Eina_List *l;
    E_Zone *zone;
    E_Sys_Action a = (long)(intptr_t)data;
    const char *sig = NULL;
@@ -99,9 +98,8 @@ _e_sys_comp_action_timeout(void *data)
    E_FREE_FUNC(action_timeout, ecore_timer_del);
    if (sig)
      {
-        EINA_LIST_FOREACH(e_comp_list(), l, c)
-          EINA_LIST_FOREACH(c->zones, ll, zone)
-            edje_object_signal_callback_del(zone->over, sig, "e", _e_sys_comp_done_cb);
+        EINA_LIST_FOREACH(e_comp->zones, l, zone)
+          edje_object_signal_callback_del(zone->over, sig, "e", _e_sys_comp_done_cb);
      }
    e_sys_action_raw_do(a, NULL);
    return EINA_FALSE;
@@ -110,24 +108,21 @@ _e_sys_comp_action_timeout(void *data)
 static void
 _e_sys_comp_emit_cb_wait(E_Sys_Action a, const char *sig, const char *rep, Eina_Bool nocomp_push)
 {
-   const Eina_List *l, *ll;
+   const Eina_List *l;
    E_Zone *zone;
-   E_Comp *c;
    Eina_Bool first = EINA_TRUE;
 
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
+   if (nocomp_push) e_comp_override_add(e_comp);
+   else e_comp_override_timed_pop(e_comp);
+   printf("_e_sys_comp_emit_cb_wait - [%x] %s %s\n", a, sig, rep);
+   EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        if (nocomp_push) e_comp_override_add(c);
-        else e_comp_override_timed_pop(c);
-        EINA_LIST_FOREACH(c->zones, ll, zone)
-          {
-             e_zone_fade_handle(zone, nocomp_push, 0.5);
-             edje_object_signal_emit(zone->base, sig, "e");
-             edje_object_signal_emit(zone->over, sig, "e");
-             if ((rep) && (first))
-               edje_object_signal_callback_add(zone->over, rep, "e", _e_sys_comp_done_cb, (void *)(long)a);
-             first = EINA_FALSE;
-          }
+        e_zone_fade_handle(zone, nocomp_push, 0.5);
+        edje_object_signal_emit(zone->base, sig, "e");
+        edje_object_signal_emit(zone->over, sig, "e");
+        if ((rep) && (first))
+          edje_object_signal_callback_add(zone->over, rep, "e", _e_sys_comp_done_cb, (void *)(long)a);
+        first = EINA_FALSE;
      }
    if (rep)
      {
@@ -169,11 +164,7 @@ _e_sys_comp_logout(void)
 static void
 _e_sys_comp_resume(void)
 {
-   const Eina_List *l;
-   E_Comp *c;
-
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
-     evas_damage_rectangle_add(c->evas, 0, 0, c->man->w, c->man->h);
+   evas_damage_rectangle_add(e_comp->evas, 0, 0, e_comp->man->w, e_comp->man->h);
    _e_sys_comp_emit_cb_wait(E_SYS_SUSPEND, "e,state,sys,resume", NULL, EINA_FALSE);
    e_screensaver_deactivate();
 }
@@ -277,6 +268,7 @@ e_sys_action_do(E_Sys_Action a, char *param)
         _e_sys_current_action();
         return 0;
      }
+   e_config_save_flush();
    switch (a)
      {
       case E_SYS_EXIT:
@@ -310,6 +302,7 @@ e_sys_action_raw_do(E_Sys_Action a, char *param)
 {
    int ret = 0;
 
+   e_config_save_flush();
    if (_e_sys_action_current != E_SYS_NONE)
      {
         _e_sys_current_action();
@@ -400,7 +393,7 @@ _e_sys_systemd_check_cb(void *data, const Eldbus_Message *m, Eldbus_Pending *p _
    if (!eldbus_message_arguments_get(m, "s", &s)) return;
    if (!s) return;
    if (!strcmp(s, "yes")) *dest = 1;
-   else *dest = 1;
+   else *dest = 0;
 }
 
 static void
@@ -462,6 +455,13 @@ _e_sys_systemd_hibernate(void)
    eldbus_proxy_call(login1_manger_proxy, "Hibernate", NULL, NULL, -1, "b", 0);
 }
 
+static void
+_e_sys_resume_job(void *d EINA_UNUSED)
+{
+   ecore_event_add(E_EVENT_SYS_RESUME, NULL, NULL, NULL);
+   _e_sys_comp_resume();
+}
+
 static Eina_Bool
 _e_sys_susp_hib_check_timer_cb(void *data __UNUSED__)
 {
@@ -475,8 +475,7 @@ _e_sys_susp_hib_check_timer_cb(void *data __UNUSED__)
              e_object_del(E_OBJECT(_e_sys_dialog));
              _e_sys_dialog = NULL;
           }
-        ecore_event_add(E_EVENT_SYS_RESUME, NULL, NULL, NULL);
-        _e_sys_comp_resume();
+        ecore_job_add(_e_sys_resume_job, NULL);
         return EINA_FALSE;
      }
    _e_sys_susp_hib_check_last_tick = t;
@@ -658,17 +657,14 @@ _e_sys_logout_confirm_dialog_update(int remaining)
 static Eina_Bool
 _e_sys_cb_logout_timer(void *data __UNUSED__)
 {
-   const Eina_List *l;
-   E_Comp *c;
    E_Client *ec;
    int pending = 0;
 
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
-     E_CLIENT_FOREACH(c, ec)
-       {
-          if (e_client_util_ignored_get(ec)) continue;
-          if (!ec->internal) pending++;
-       }
+   E_CLIENT_FOREACH(e_comp, ec)
+     {
+        if (e_client_util_ignored_get(ec)) continue;
+        if (!ec->internal) pending++;
+     }
    if (pending == 0) goto after;
    else if (_e_sys_logout_confirm_dialog)
      {
@@ -718,7 +714,7 @@ _e_sys_cb_logout_timer(void *data __UNUSED__)
                                       _e_sys_cb_logout_abort, NULL);
                   e_dialog_button_focus_num(dia, 1);
                   _e_sys_logout_confirm_dialog_update(E_LOGOUT_AUTO_TIME);
-                  e_win_centered_set(dia->win, 1);
+                  elm_win_center(dia->win, 1, 1);
                   e_dialog_show(dia);
                   _e_sys_logout_begin_time = now;
                }
@@ -763,8 +759,7 @@ _e_sys_logout_after(void)
 static void
 _e_sys_logout_begin(E_Sys_Action a_after, Eina_Bool raw)
 {
-   const Eina_List *l, *ll;
-   E_Comp *c;
+   const Eina_List *l;
    E_Client *ec;
    E_Obj_Dialog *od;
 
@@ -784,11 +779,10 @@ _e_sys_logout_begin(E_Sys_Action a_after, Eina_Bool raw)
      }
    _e_sys_action_after = a_after;
    _e_sys_action_after_raw = raw;
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
-     EINA_LIST_FOREACH(c->clients, ll, ec)
-       {
-          e_client_act_close_begin(ec);
-       }
+   EINA_LIST_FOREACH(e_comp->clients, l, ec)
+     {
+        e_client_act_close_begin(ec);
+     }
    /* and poll to see if all pending windows are gone yet every 0.5 sec */
    _e_sys_logout_begin_time = ecore_time_get();
    if (_e_sys_logout_timer) ecore_timer_del(_e_sys_logout_timer);
@@ -846,7 +840,7 @@ _e_sys_current_action(void)
      }
    e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
    e_dialog_button_focus_num(dia, 0);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
 }
 
@@ -887,7 +881,7 @@ _e_sys_action_failed(void)
      }
    e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
    e_dialog_button_focus_num(dia, 0);
-   e_win_centered_set(dia->win, 1);
+   elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
 }
 

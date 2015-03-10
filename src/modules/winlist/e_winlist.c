@@ -14,7 +14,7 @@ struct _E_Winlist_Win
 };
 
 static void      _e_winlist_size_adjust(void);
-static void      _e_winlist_client_add(E_Client *ec, E_Zone *zone, E_Desk *desk);
+static Eina_Bool _e_winlist_client_add(E_Client *ec, E_Zone *zone, E_Desk *desk);
 static void      _e_winlist_client_del(E_Client *ec);
 static void      _e_winlist_activate_nth(int n);
 static void      _e_winlist_activate(void);
@@ -155,10 +155,9 @@ e_winlist_show(E_Zone *zone, E_Winlist_Filter filter)
    e_theme_edje_object_set(o, "base/theme/winlist",
                            "e/widgets/winlist/main");
 
-   o = e_box_add(zone->comp->evas);
+   o = elm_box_add(e_comp->elm);
    _list_object = o;
-   e_box_freeze(_list_object);
-   e_box_homogenous_set(o, 1);
+   elm_box_homogeneous_set(o, 1);
    e_comp_object_util_del_list_append(_winlist, o);
    edje_object_part_swallow(_bg_object, "e.swallow.list", o);
    edje_object_part_text_set(_bg_object, "e.text.title", _("Select a window"));
@@ -189,12 +188,12 @@ e_winlist_show(E_Zone *zone, E_Winlist_Filter filter)
           }
         if (pick) _e_winlist_client_add(ec, _winlist_zone, desk);
      }
-   e_box_thaw(_list_object);
    eina_list_free(wmclasses);
 
    if (!_wins)
      {
         e_winlist_hide();
+        evas_event_thaw(zone->comp->evas);
         return 1;
      }
 
@@ -751,14 +750,11 @@ _e_winlist_size_adjust(void)
    E_Zone *zone;
    int x, y, w, h;
 
-   e_box_freeze(_list_object);
-   e_box_size_min_get(_list_object, &mw, &mh);
-   evas_object_size_hint_min_set(_list_object, mw, mh);
+   elm_box_recalculate(_list_object);
    edje_object_part_swallow(_bg_object, "e.swallow.list", _list_object);
    edje_object_size_min_calc(_bg_object, &mw, &mh);
    evas_object_size_hint_min_set(_list_object, -1, -1);
    edje_object_part_swallow(_bg_object, "e.swallow.list", _list_object);
-   e_box_thaw(_list_object);
 
    zone = _winlist_zone;
    w = (double)zone->w * e_config->winlist_pos_size_w;
@@ -779,7 +775,7 @@ _e_winlist_size_adjust(void)
    evas_object_geometry_set(_winlist, x, y, w, h);
 }
 
-static void
+static Eina_Bool
 _e_winlist_client_add(E_Client *ec, E_Zone *zone, E_Desk *desk)
 {
    E_Winlist_Win *ww;
@@ -787,23 +783,23 @@ _e_winlist_client_add(E_Client *ec, E_Zone *zone, E_Desk *desk)
    Evas_Object *o;
 
    if ((!ec->icccm.accepts_focus) &&
-       (!ec->icccm.take_focus)) return;
-   if (ec->netwm.state.skip_taskbar) return;
-   if (ec->user_skip_winlist) return;
+       (!ec->icccm.take_focus)) return EINA_FALSE;
+   if (ec->netwm.state.skip_taskbar) return EINA_FALSE;
+   if (ec->user_skip_winlist) return EINA_FALSE;
    if (ec->iconic)
      {
-        if (!e_config->winlist_list_show_iconified) return;
+        if (!e_config->winlist_list_show_iconified) return EINA_FALSE;
         if ((ec->zone != zone) &&
-            (!e_config->winlist_list_show_other_screen_iconified)) return;
+            (!e_config->winlist_list_show_other_screen_iconified)) return EINA_FALSE;
         if ((ec->desk != desk) &&
-            (!e_config->winlist_list_show_other_desk_iconified)) return;
+            (!e_config->winlist_list_show_other_desk_iconified)) return EINA_FALSE;
      }
    else
      {
         if (ec->sticky)
           {
              if ((ec->zone != zone) &&
-                 (!e_config->winlist_list_show_other_screen_windows)) return;
+                 (!e_config->winlist_list_show_other_screen_windows)) return EINA_FALSE;
           }
         else
           {
@@ -812,24 +808,25 @@ _e_winlist_client_add(E_Client *ec, E_Zone *zone, E_Desk *desk)
                   if ((ec->zone) && (ec->zone != zone))
                     {
                        if (!e_config->winlist_list_show_other_screen_windows)
-                         return;
+                         return EINA_FALSE;
                        if (ec->zone && ec->desk && (ec->desk != e_desk_current_get(ec->zone)))
                          {
                             if (!e_config->winlist_list_show_other_desk_windows)
-                              return;
+                              return EINA_FALSE;
                          }
                     }
                   else if (!e_config->winlist_list_show_other_desk_windows)
-                    return;
+                    return EINA_FALSE;
                }
           }
      }
 
    ww = E_NEW(E_Winlist_Win, 1);
-   if (!ww) return;
+   if (!ww) return EINA_FALSE;
    ww->client = ec;
    _wins = eina_list_append(_wins, ww);
    o = edje_object_add(ec->comp->evas);
+   E_FILL(o);
    e_comp_object_util_del_list_append(_winlist, o);
    ww->bg_object = o;
    e_theme_edje_object_set(o, "base/theme/winlist",
@@ -855,15 +852,13 @@ _e_winlist_client_add(E_Client *ec, E_Zone *zone, E_Desk *desk)
      }
 
    edje_object_size_min_calc(ww->bg_object, &mw, &mh);
-   e_box_pack_end(_list_object, ww->bg_object);
-   e_box_pack_options_set(ww->bg_object,
-                          1, 1, /* fill */
-                          1, 0, /* expand */
-                          0.5, 0.5, /* align */
-                          mw, mh, /* min */
-                          9999, mh /* max */
-                          );
+   E_WEIGHT(ww->bg_object, 1, 0);
+   E_FILL(ww->bg_object);
+   evas_object_size_hint_min_set(ww->bg_object, mw, mh);
+   evas_object_size_hint_max_set(ww->bg_object, 9999, mh);
+   elm_box_pack_end(_list_object, ww->bg_object);
    e_object_ref(E_OBJECT(ww->client));
+   return EINA_TRUE;
 }
 
 static void
@@ -1053,7 +1048,7 @@ _e_winlist_show_active(void)
    else
      {
         _scroll_align = _scroll_align_to;
-        e_box_align_set(_list_object, 0.5, fabs(1.0 - _scroll_align));
+        elm_box_align_set(_list_object, 0.5, fabs(1.0 - _scroll_align));
      }
 }
 
@@ -1083,9 +1078,9 @@ _e_winlist_cb_event_border_add(void *data __UNUSED__, int type __UNUSED__,
 {
    E_Event_Client *ev = event;
 
-   _e_winlist_client_add(ev->ec, _winlist_zone,
-                         e_desk_current_get(_winlist_zone));
-   _e_winlist_size_adjust();
+   if (_e_winlist_client_add(ev->ec, _winlist_zone,
+                         e_desk_current_get(_winlist_zone)))
+     _e_winlist_size_adjust();
    return ECORE_CALLBACK_PASS_ON;
 }
 
@@ -1337,7 +1332,7 @@ _e_winlist_animator(void *data __UNUSED__)
              _scroll_align = _scroll_align_to;
              _scroll_to = 0;
           }
-        e_box_align_set(_list_object, 0.5, fabs(1.0 - _scroll_align));
+        elm_box_align_set(_list_object, 0.5, fabs(1.0 - _scroll_align));
      }
    if (!_scroll_to) _animator = NULL;
    return _scroll_to;

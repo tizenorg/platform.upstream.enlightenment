@@ -22,7 +22,7 @@ typedef struct _Gadget_Config   Gadget_Config;
 
 struct _Evry_Window
 {
-  E_Win *ewin;
+  Evas_Object *ewin;
   Evas *evas;
   E_Zone *zone;
   Evas_Object *o_main;
@@ -280,7 +280,7 @@ Evry_Type evry_type_register(const char *type);
 const char *evry_type_get(Evry_Type type);
 
 /*** internal ***/
-Tab_View *evry_tab_view_new(Evry_View *view, const Evry_State *s, Evas *e);
+Tab_View *evry_tab_view_new(Evry_View *view, const Evry_State *s, Evas_Object *parent);
 void  evry_tab_view_free(Tab_View *v);
 
 Eina_Bool evry_view_init(void);
@@ -355,8 +355,8 @@ extern E_Module *_mod_evry;
 EAPI void *e_modapi_init     (E_Module *m);
 EAPI int   e_modapi_shutdown (E_Module *m);
 EAPI int   e_modapi_save     (E_Module *m);
-EAPI E_Config_Dialog *evry_config_dialog(E_Comp *comp, const char *params);
-EAPI E_Config_Dialog *evry_collection_conf_dialog(E_Comp *comp, const char *params);
+EAPI E_Config_Dialog *evry_config_dialog(Evas_Object *parent, const char *params);
+EAPI E_Config_Dialog *evry_collection_conf_dialog(Evas_Object *parent, const char *params);
 EAPI extern E_Module_Api e_modapi;
 
 /* #define CHECK_REFS 1

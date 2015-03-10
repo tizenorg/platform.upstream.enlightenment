@@ -30,8 +30,11 @@ internal_bin_PROGRAMS = \
 src/bin/enlightenment_fm_op \
 src/bin/enlightenment_sys \
 src/bin/enlightenment_thumb \
-src/bin/enlightenment_alert \
 src/bin/enlightenment_static_grabber
+
+if ! HAVE_WAYLAND_ONLY
+internal_bin_PROGRAMS += src/bin/enlightenment_alert
+endif
 
 if HAVE_EEZE
 internal_bin_PROGRAMS += src/bin/enlightenment_backlight
@@ -47,8 +50,6 @@ src/bin/e_auth.h \
 src/bin/e_backlight.h \
 src/bin/e_bg.h \
 src/bin/e_bindings.h \
-src/bin/e_box.h \
-src/bin/e_canvas.h \
 src/bin/e_client.h \
 src/bin/e_client.x \
 src/bin/e_color_class.h \
@@ -74,7 +75,6 @@ src/bin/e_dialog.h \
 src/bin/e_dnd.h \
 src/bin/e_dpms.h \
 src/bin/e_desktop_editor.h \
-src/bin/e_entry.h \
 src/bin/e_entry_dialog.h \
 src/bin/e_env.h \
 src/bin/e_error.h \
@@ -91,7 +91,6 @@ src/bin/e_fm_op_registry.h \
 src/bin/e_fm_prop.h \
 src/bin/e_fm_shared_codec.h \
 src/bin/e_fm_shared_device.h \
-src/bin/e_fm_shared_types.h \
 src/bin/e_focus.h \
 src/bin/e_font.h \
 src/bin/e_gadcon.h \
@@ -142,7 +141,7 @@ src/bin/e_place.h \
 src/bin/e_pointer.h \
 src/bin/e_powersave.h \
 src/bin/e_prefix.h \
-src/bin/e_randr.h \
+src/bin/e_randr2.h \
 src/bin/e_remember.h \
 src/bin/e_resist.h \
 src/bin/e_scale.h \
@@ -157,7 +156,6 @@ src/bin/e_slidesel.h \
 src/bin/e_spectrum.h \
 src/bin/e_startup.h \
 src/bin/e_sys.h \
-src/bin/e_table.h \
 src/bin/e_test.h \
 src/bin/e_test_helper.h \
 src/bin/e_theme_about.h \
@@ -216,14 +214,11 @@ enlightenment_src = \
 src/bin/e_about.c \
 src/bin/e_acpi.c \
 src/bin/e_actions.c \
-src/bin/e_alert.c \
 src/bin/e_atoms.c \
 src/bin/e_auth.c \
 src/bin/e_backlight.c \
 src/bin/e_bg.c \
 src/bin/e_bindings.c \
-src/bin/e_box.c \
-src/bin/e_canvas.c \
 src/bin/e_client.c \
 src/bin/e_color.c \
 src/bin/e_color_class.c \
@@ -247,7 +242,6 @@ src/bin/e_dialog.c \
 src/bin/e_dpms.c \
 src/bin/e_desktop_editor.c \
 src/bin/e_dnd.c \
-src/bin/e_entry.c \
 src/bin/e_entry_dialog.c \
 src/bin/e_env.c \
 src/bin/e_error.c \
@@ -326,7 +320,6 @@ src/bin/e_slidesel.c \
 src/bin/e_spectrum.c \
 src/bin/e_startup.c \
 src/bin/e_sys.c \
-src/bin/e_table.c \
 src/bin/e_test.c \
 src/bin/e_test_helper.c \
 src/bin/e_theme_about.c \
@@ -375,7 +368,8 @@ $(ENLIGHTENMENTHEADERS)
 if ! HAVE_WAYLAND_ONLY
 enlightenment_src += \
 src/bin/e_comp_x.c \
-src/bin/e_randr.c \
+src/bin/e_alert.c \
+src/bin/e_randr2.c \
 src/bin/e_xsettings.c
 endif
 
@@ -387,13 +381,19 @@ src/bin/e_comp_wl_input.c \
 src/bin/e_comp_wl.c
 endif
 
-src_bin_enlightenment_CPPFLAGS = $(E_CPPFLAGS) -DEFL_BETA_API_SUPPORT -DEFL_EO_API_SUPPORT -DE_LOGGING=1 @WAYLAND_CFLAGS@ @WAYLAND_EGL_CFLAGS@ @ECORE_X_CFLAGS@ -DNEED_X=1 -DNEED_WL
+src_bin_enlightenment_CPPFLAGS = $(E_CPPFLAGS) -DEFL_BETA_API_SUPPORT -DEFL_EO_API_SUPPORT -DE_LOGGING=1 @WAYLAND_CFLAGS@ @WAYLAND_EGL_CFLAGS@ -DNEED_WL
+if ! HAVE_WAYLAND_ONLY
+src_bin_enlightenment_CPPFLAGS += @ECORE_X_CFLAGS@ -DNEED_X=1
+endif
 src_bin_enlightenment_SOURCES = \
 src/bin/e_main.c \
 $(enlightenment_src)
 
 src_bin_enlightenment_LDFLAGS = -export-dynamic
-src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ @WAYLAND_EGL_LIBS@ -lm @ECORE_X_LIBS@ @SHM_OPEN_LIBS@
+src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ @WL_DRM_LIBS@ @WAYLAND_EGL_LIBS@ -lm @SHM_OPEN_LIBS@
+if ! HAVE_WAYLAND_ONLY
+src_bin_enlightenment_LDADD += @ECORE_X_LIBS@
+endif
 
 src_bin_enlightenment_imc_SOURCES = \
 src/bin/e.h \
@@ -474,7 +474,7 @@ enlightenment-sys-install-data-hook:
 	@chmod $(setuid_root_mode) $(DESTDIR)$(libdir)/enlightenment/utils/enlightenment_sys$(EXEEXT) || true
 endif
 installed_headersdir = $(prefix)/include/enlightenment
-installed_headers_DATA = $(ENLIGHTENMENTHEADERS)
+installed_headers_DATA = $(ENLIGHTENMENTHEADERS) src/bin/e_fm_shared_types.h
 INSTALL_DATA_HOOKS += enlightenment-sys-install-data-hook
 
 PHONIES += e enlightenment install-e install-enlightenment

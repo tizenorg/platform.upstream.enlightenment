@@ -342,14 +342,14 @@ _create_edit_frame(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdat
 
    tb = e_widget_toolbook_add(evas, 48 * e_scale, 48 * e_scale);
 
-   tab2 = e_widget_table_add(evas, 0);
+   tab2 = e_widget_table_add(e_win_evas_win_get(evas), 0);
    if (cfdata->edit_il == cfdata->borders_il)
      {
         if (m->match.title) m->title = strdup(m->match.title);
         else m->title = NULL;
         lb = e_widget_label_add(evas, _("Title"));
         e_widget_table_object_append(tab2, lb, 0, 0, 1, 1, 1, 0, 0, 0);
-        en = e_widget_entry_add(evas, &(m->title), NULL, NULL, NULL);
+        en = e_widget_entry_add(cfd->dia->win, &(m->title), NULL, NULL, NULL);
         e_widget_table_object_append(tab2, en, 1, 0, 1, 1, 1, 0, 1, 0);
      }
    if ((cfdata->edit_il == cfdata->borders_il) ||
@@ -360,7 +360,7 @@ _create_edit_frame(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdat
         else m->name = NULL;
         lb = e_widget_label_add(evas, _("Name"));
         e_widget_table_object_append(tab2, lb, 0, 1, 1, 1, 1, 0, 0, 0);
-        en = e_widget_entry_add(evas, &(m->name), NULL, NULL, NULL);
+        en = e_widget_entry_add(cfd->dia->win, &(m->name), NULL, NULL, NULL);
         e_widget_table_object_append(tab2, en, 1, 1, 1, 1, 1, 0, 1, 0);
      }
    if ((cfdata->edit_il == cfdata->borders_il) ||
@@ -370,7 +370,7 @@ _create_edit_frame(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdat
         else m->clas = NULL;
         lb = e_widget_label_add(evas, _("Class"));
         e_widget_table_object_append(tab2, lb, 0, 2, 1, 1, 1, 0, 0, 0);
-        en = e_widget_entry_add(evas, &(m->clas), NULL, NULL, NULL);
+        en = e_widget_entry_add(cfd->dia->win, &(m->clas), NULL, NULL, NULL);
         e_widget_table_object_append(tab2, en, 1, 2, 1, 1, 1, 0, 1, 0);
      }
    if (cfdata->edit_il == cfdata->borders_il)
@@ -379,7 +379,7 @@ _create_edit_frame(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdat
         else m->role = NULL;
         lb = e_widget_label_add(evas, _("Role"));
         e_widget_table_object_append(tab2, lb, 0, 3, 1, 1, 1, 0, 0, 0);
-        en = e_widget_entry_add(evas, &(m->role), NULL, NULL, NULL);
+        en = e_widget_entry_add(cfd->dia->win, &(m->role), NULL, NULL, NULL);
         e_widget_table_object_append(tab2, en, 1, 3, 1, 1, 1, 0, 1, 0);
      }
    e_widget_toolbook_page_append(tb, NULL, _("Names"), tab2, 1, 1, 1, 1, 0.5, 0.0);
@@ -439,7 +439,7 @@ _create_edit_frame(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdat
    m->modal = m->match.modal;
 
    row = 0;
-   tab2 = e_widget_table_add(evas, 0);
+   tab2 = e_widget_table_add(e_win_evas_win_get(evas), 0);
    lb = e_widget_label_add(evas, _("Unused"));
    e_widget_table_object_append(tab2, lb, 1, row, 1, 1, 0, 0, 0, 0);
    lb = e_widget_label_add(evas, _("On"));
@@ -537,7 +537,12 @@ _create_edit_frame(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdat
    e_widget_frametable_object_append(of, bt, 0, 1, 1, 1, 0, 0, 0, 0);
 
    e_widget_size_min_get(of, &mw, &mh);
-   e_win_resize(cfd->dia->win, MAX(mw, cfd->dia->win->w), MAX(mh, cfd->dia->win->h));
+   {
+      int ww, wh;
+
+      evas_object_geometry_get(cfd->dia->win, NULL, NULL, &ww, &wh);
+      evas_object_resize(cfd->dia->win, MAX(mw, ww), MAX(mh, wh));
+   }
 }
 
 static void
@@ -673,7 +678,7 @@ _create_match_editor(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfd
    Match_Config *m;
    Eina_List *l;
 
-   tab = e_widget_table_add(evas, 0);
+   tab = e_widget_table_add(e_win_evas_win_get(evas), 0);
 
    il = e_widget_ilist_add(evas, 16, 16, NULL);
    e_widget_size_min_set(il, 160, 100);
@@ -793,6 +798,7 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
 
    orec0 = evas_object_rectangle_add(evas);
    evas_object_name_set(orec0, "style_shadows");
+   elm_win_center(cfd->dia->win, 1, 1);
 
    return _create_styles_toolbook(cfd, evas, cfdata);
 }
@@ -863,7 +869,7 @@ _create_data(E_Config_Dialog *cfd)
 }
 
 EAPI E_Config_Dialog *
-e_int_config_comp_match(E_Comp *comp, const char *params __UNUSED__)
+e_int_config_comp_match(Evas_Object *parent, const char *params __UNUSED__)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -876,7 +882,7 @@ e_int_config_comp_match(E_Comp *comp, const char *params __UNUSED__)
    v->basic.apply_cfdata = _basic_apply_data;
    v->basic.create_widgets = _basic_create_widgets;
    
-   cfd = e_config_dialog_new(comp, _("Composite Match Settings"),
+   cfd = e_config_dialog_new(parent, _("Composite Match Settings"),
                              "E", "_comp_matches", "preferences-composite", 0, v, NULL);
    e_dialog_resizable_set(cfd->dia, 1);
    return cfd;
