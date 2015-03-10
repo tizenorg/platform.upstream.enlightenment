@@ -2433,20 +2433,14 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
 EAPI void
 e_client_visibility_calculate(E_Client *ec)
 {
-   const Eina_List *cl;
-   E_Comp *c;
+   E_Zone *zone;
+   Eina_List *zl;
 
    if (e_object_is_del(E_OBJECT(ec))) return;
 
-   EINA_LIST_FOREACH(e_comp_list(), cl, c)
+   EINA_LIST_FOREACH(e_comp->zones, zl, zone)
      {
-        E_Zone *zone;
-        Eina_List *zl;
-
-        EINA_LIST_FOREACH(c->zones, zl, zone)
-          {
-             _e_client_visibility_zone_calculate(zone);
-          }
+        _e_client_visibility_zone_calculate(zone);
      }
 }
 
