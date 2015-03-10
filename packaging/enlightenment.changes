@@ -1,0 +1,21 @@
+* Fri Aug 09 2013 Eduardo Lima (Etrunko) <eduardo.lima@intel.com> upstream/0.17.3@f609183
+- Updated to release 0.17.4
+
+* Tue Jun 18 22:40:53 UTC 2013 - tracy.graydon@intel.com
+- Add BuildRequires:  eet-tools to fix build error; barfing on /usr/bin/eet
+
+* Tue Mar 19 2013 Anas Nashif <anas.nashif@intel.com> upstream/0.17.1@4d31c7c
+- Update to  0.17.1
+
+* Fri Dec 21 2012 Anas Nashif <anas.nashif@intel.com> upstream/0.17.0@4df7d1a
+- Update tp 0.17.0 Final
+
+* Fri Dec 14 2012 Anas Nashif <anas.nashif@intel.com> upstream/0.17.0_lucky@630b358
+- update to 0.17.0 lucky
+
+* Tue Dec 11 2012 Anas Nashif <anas.nashif@intel.com> upstream/0.17.0_gamma@84d6c5b
+- Update to 0.17.0 gamma
+
+* Fri Nov 30 2012 Anas Nashif <anas.nashif@intel.com> upstream/0.17.0_alpha7@ad4aa0b
+- Update to alpha7
+
