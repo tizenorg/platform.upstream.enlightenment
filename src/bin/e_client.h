@@ -49,6 +49,12 @@ typedef enum _E_Focus_Policy
    E_FOCUS_LAST,
 } E_Focus_Policy;
 
+typedef enum _E_Focus_Policy_Ext
+{
+   E_FOCUS_EXT_NONE,
+   E_FOCUS_EXT_TOP_STACK,
+} E_Focus_Policy_Ext;
+
 typedef enum
 {
    /* same as ecore-x types */

@@ -107,6 +107,7 @@ struct _E_Config
    int         window_placement_policy; // GUI
    int         window_grouping; // GUI
    int         focus_policy; // GUI
+   int         focus_policy_ext; // GUI
    int         focus_setting; // GUI
    int         pass_click_on; // GUI
    int         window_activehint_policy; // GUI

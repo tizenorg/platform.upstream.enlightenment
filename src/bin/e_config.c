@@ -489,6 +489,7 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, window_placement_policy, INT); /**/
    E_CONFIG_VAL(D, T, window_grouping, INT); /**/
    E_CONFIG_VAL(D, T, focus_policy, INT); /**/
+   E_CONFIG_VAL(D, T, focus_policy_ext, INT); /**/
    E_CONFIG_VAL(D, T, focus_setting, INT); /**/
    E_CONFIG_VAL(D, T, pass_click_on, INT); /**/
    E_CONFIG_VAL(D, T, window_activehint_policy, INT); /**/
@@ -1372,6 +1373,7 @@ e_config_load(void)
    E_CONFIG_LIMIT(e_config->window_placement_policy, E_WINDOW_PLACEMENT_SMART, E_WINDOW_PLACEMENT_MANUAL);
    E_CONFIG_LIMIT(e_config->window_grouping, 0, 1);
    E_CONFIG_LIMIT(e_config->focus_policy, 0, 2);
+   E_CONFIG_LIMIT(e_config->focus_policy_ext, 0, 1);
    E_CONFIG_LIMIT(e_config->focus_setting, 0, 3);
    E_CONFIG_LIMIT(e_config->pass_click_on, 0, 1);
    E_CONFIG_LIMIT(e_config->window_activehint_policy, E_ACTIVEHINT_POLICY_IGNORE, E_ACTIVEHINT_POLICY_LAST - 1);
