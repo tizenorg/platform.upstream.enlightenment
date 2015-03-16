@@ -5,6 +5,8 @@
  */
 #include "e.h"
 
+#include <Ecore_Drm.h>
+
 #ifdef HAVE_EXECINFO_H
 # include <execinfo.h>
 #endif
@@ -14,7 +16,22 @@ static volatile Eina_Bool _e_x_composite_shutdown_try = 0;
 static void
 _e_x_composite_shutdown(void)
 {
-#ifndef HAVE_WAYLAND_ONLY
+#ifdef HAVE_WAYLAND_ONLY
+   Eina_List *list, *l;
+   Ecore_Drm_Device *dev;
+
+   list = ecore_drm_device_get_list();
+   EINA_LIST_FOREACH(list, l, dev)
+     {
+        ecore_drm_inputs_destroy(dev);
+        ecore_drm_sprites_destroy(dev);
+        ecore_drm_device_close(dev);
+        ecore_drm_launcher_disconnect(dev);
+        ecore_drm_device_free(dev);
+     }
+
+   ecore_drm_shutdown();
+#else
 //   Ecore_X_Display *dpy;
    Ecore_X_Window root;
 
