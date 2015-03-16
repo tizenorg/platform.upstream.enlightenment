@@ -5,6 +5,8 @@
  */
 #include "e.h"
 
+#include <Ecore_Drm.h>
+
 #ifdef HAVE_EXECINFO_H
 # include <execinfo.h>
 #endif
@@ -66,7 +68,22 @@ EAPI void
 e_sigseg_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__)
 {
    _e_x_composite_shutdown();
-#ifndef HAVE_WAYLAND_ONLY
+#ifdef HAVE_WAYLAND_ONLY
+   Eina_List *list, *l;
+   Ecore_Drm_Device *dev;
+
+   list = ecore_drm_device_get_list();
+   EINA_LIST_FOREACH(list, l, dev)
+     {
+        ecore_drm_inputs_destroy(dev);
+        ecore_drm_sprites_destroy(dev);
+        ecore_drm_device_close(dev);
+        ecore_drm_launcher_disconnect(dev);
+        ecore_drm_device_free(dev);
+     }
+
+   ecore_drm_shutdown();
+#else
    ecore_x_pointer_ungrab();
    ecore_x_keyboard_ungrab();
    ecore_x_ungrab();
@@ -97,7 +114,22 @@ EAPI void
 e_sigfpe_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__)
 {
    _e_x_composite_shutdown();
-#ifndef HAVE_WAYLAND_ONLY
+#ifdef HAVE_WAYLAND_ONLY
+   Eina_List *list, *l;
+   Ecore_Drm_Device *dev;
+
+   list = ecore_drm_device_get_list();
+   EINA_LIST_FOREACH(list, l, dev)
+     {
+        ecore_drm_inputs_destroy(dev);
+        ecore_drm_sprites_destroy(dev);
+        ecore_drm_device_close(dev);
+        ecore_drm_launcher_disconnect(dev);
+        ecore_drm_device_free(dev);
+     }
+
+   ecore_drm_shutdown();
+#else
    ecore_x_pointer_ungrab();
    ecore_x_keyboard_ungrab();
    ecore_x_ungrab();
@@ -110,7 +142,22 @@ EAPI void
 e_sigbus_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__)
 {
    _e_x_composite_shutdown();
-#ifndef HAVE_WAYLAND_ONLY
+#ifdef HAVE_WAYLAND_ONLY
+   Eina_List *list, *l;
+   Ecore_Drm_Device *dev;
+
+   list = ecore_drm_device_get_list();
+   EINA_LIST_FOREACH(list, l, dev)
+     {
+        ecore_drm_inputs_destroy(dev);
+        ecore_drm_sprites_destroy(dev);
+        ecore_drm_device_close(dev);
+        ecore_drm_launcher_disconnect(dev);
+        ecore_drm_device_free(dev);
+     }
+
+   ecore_drm_shutdown();
+#else
    ecore_x_pointer_ungrab();
    ecore_x_keyboard_ungrab();
    ecore_x_ungrab();
@@ -123,7 +170,22 @@ EAPI void
 e_sigabrt_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__)
 {
    _e_x_composite_shutdown();
-#ifndef HAVE_WAYLAND_ONLY
+#ifdef HAVE_WAYLAND_ONLY
+   Eina_List *list, *l;
+   Ecore_Drm_Device *dev;
+
+   list = ecore_drm_device_get_list();
+   EINA_LIST_FOREACH(list, l, dev)
+     {
+        ecore_drm_inputs_destroy(dev);
+        ecore_drm_sprites_destroy(dev);
+        ecore_drm_device_close(dev);
+        ecore_drm_launcher_disconnect(dev);
+        ecore_drm_device_free(dev);
+     }
+
+   ecore_drm_shutdown();
+#else
    ecore_x_pointer_ungrab();
    ecore_x_keyboard_ungrab();
    ecore_x_ungrab();
