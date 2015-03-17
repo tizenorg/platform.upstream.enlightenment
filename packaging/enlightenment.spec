@@ -71,6 +71,17 @@ cp %{SOURCE1001} .
       --disable-shot \
       --disable-xkbswitch \
       --disable-conf-randr \
+      --disable-conf-bindings \
+      --disable-conf-display \
+      --disable-conf-theme \
+      --disable-everything \
+      --disable-fileman \
+      --disable-pager \
+      --disable-systray \
+      --disable-tiling \
+      --disable-winlist \
+      --disable-wizard \
+      --disable-pager-plain \
       --disable-wl-x11 \
 %endif
       --enable-mount-eeze
