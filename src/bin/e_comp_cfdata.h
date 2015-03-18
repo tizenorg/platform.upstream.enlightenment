@@ -32,6 +32,7 @@ struct _E_Comp_Config
    unsigned char smooth_windows;
    unsigned char nofade;
    double        first_draw_delay;
+   Eina_Bool skip_first_damage;
    Eina_Bool disable_screen_effects;
    Eina_Bool enable_advanced_features;
    // the following options add the "/fast" suffix to the normal groups

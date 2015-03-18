@@ -2574,7 +2574,9 @@ _e_comp_x_damage(void *data EINA_UNUSED, int type EINA_UNUSED, Ecore_X_Event_Dam
      e_comp_object_damage(ec->frame, 0, 0, ev->area.width, ev->area.height);
    else
      e_comp_object_damage(ec->frame, ev->area.x, ev->area.y, ev->area.width, ev->area.height);
-   if ((!ec->re_manage) && (!ec->override) && (!ec->comp_data->first_damage))
+
+   if ((e_comp_config_get()->skip_first_damage) &&
+       (!ec->re_manage) && (!ec->override) && (!ec->comp_data->first_damage))
      e_comp_object_render_update_del(ec->frame);
    else
      E_FREE_FUNC(ec->comp_data->first_draw_delay, ecore_timer_del);

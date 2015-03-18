@@ -54,6 +54,7 @@ e_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd)
    E_CONFIG_VAL(D, T, nofade, UCHAR);
    E_CONFIG_VAL(D, T, smooth_windows, UCHAR);
    E_CONFIG_VAL(D, T, first_draw_delay, DOUBLE);
+   E_CONFIG_VAL(D, T, skip_first_damage, UCHAR);
    E_CONFIG_VAL(D, T, disable_screen_effects, UCHAR);
    E_CONFIG_VAL(D, T, enable_advanced_features, UCHAR);
    E_CONFIG_VAL(D, T, fast_popups, UCHAR);
@@ -107,6 +108,7 @@ e_comp_cfdata_config_new(void)
    cfg->nofade = 0;
    cfg->smooth_windows = 0; // 1 if gl, 0 if not
    cfg->first_draw_delay = 0.15;
+   cfg->skip_first_damage = 1;
 
    cfg->match.popups = NULL;
 
