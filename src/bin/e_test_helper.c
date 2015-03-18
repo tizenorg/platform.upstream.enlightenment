@@ -129,7 +129,7 @@ _e_test_helper_message_append_clients(Eldbus_Message_Iter *iter)
         eldbus_message_iter_arguments_append
            (struct_of_ec, "usiiiiibb",
             win,
-            e_client_util_name_get(ec) ?: ec->icccm.name,
+            e_client_util_name_get(ec) ?: "NO NAME",
             ec->x, ec->y, ec->w, ec->h, ec->layer,
             ec->visible, ec->argb);
         eldbus_message_iter_container_close(array_of_ec, struct_of_ec);
@@ -220,13 +220,13 @@ _e_test_helper_cb_deregister_window(const Eldbus_Service_Interface *iface EINA_U
         ERR("Error on eldbus_message_arguments_get()\n");
         return reply;
      }
-   eldbus_message_arguments_append(reply, "b", (th_data->registrant.win == id) && (th_data->registrant.vis != 1));
+   eldbus_message_arguments_append(reply, "b", ((!th_data->registrant.win) ||
+                                                ((th_data->registrant.win == id) &&
+                                                 (th_data->registrant.vis != 1))));
 
    if (th_data->registrant.win == id)
      {
         th_data->registrant.disuse = EINA_TRUE;
-
-        if (th_data->registrant.ec) evas_object_hide(th_data->registrant.ec->frame);
         if (th_data->registrant.vis != 1) _e_test_helper_registrant_clear();
      }
 
