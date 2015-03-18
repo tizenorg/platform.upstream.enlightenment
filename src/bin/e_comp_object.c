@@ -1427,7 +1427,7 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
 
         if (!cw->update_count || !(e_pixmap_validate_check(cw->ec->pixmap))
 #ifndef HAVE_WAYLAND_ONLY
-            || (cd->damage_count < 2))
+            || (cd->damage_count < (e_comp_config_get()->skip_first_damage + 1))
 #else
             )
 #endif
