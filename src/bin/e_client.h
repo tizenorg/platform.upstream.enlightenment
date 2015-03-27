@@ -648,10 +648,10 @@ struct E_Client
    } changes;
 
    struct
-  {
-     int opaque;
-     int obscured;
-  } visibility;
+   {
+      int opaque;
+      int obscured;
+   } visibility;
 
    unsigned int       visible : 1; // client is set to be visible by display server (never use this)
    unsigned int       hidden : 1; // set when window has been hidden by api and should not be shown

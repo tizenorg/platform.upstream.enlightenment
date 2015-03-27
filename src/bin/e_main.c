@@ -1023,10 +1023,10 @@ main(int argc, char **argv)
    e_test();
    TS("E_Test Done");
 
-   TS("E_Test_Helper Init");
-   e_test_helper_init();
-   _e_main_shutdown_push(e_test_helper_shutdown);
-   TS("E_Test_Helper Done");
+   TS("E_Test_Service Init");
+   e_test_service_init();
+   _e_main_shutdown_push(e_test_service_shutdown);
+   TS("E_Test_Service Done");
 
    if (e_config->show_splash)
      e_init_status_set(_("Setup Shelves"));
