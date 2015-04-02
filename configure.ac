@@ -575,7 +575,6 @@ PKG_CHECK_MODULES(E, [$e_requires])
 requirements_e="\
 evas >= ${efl_version} \
 ecore >= ${efl_version} \
-ecore-x >= ${efl_version} \
 ecore-evas >= ${efl_version} \
 ecore-con >= ${efl_version} \
 ecore-ipc >= ${efl_version} \
@@ -594,6 +593,9 @@ emotion >= ${efl_version} \
 $udisks_mount \
 $eeze_mount \
 $device_libs"
+if test "x${e_cv_want_wayland_only}" != "xyes"; then
+  requirements_e="$requirements_e ecore-x >= $efl_version"
+fi
 
 PKG_CHECK_MODULES(E_OPEN, [
   eina >= ${efl_version}
