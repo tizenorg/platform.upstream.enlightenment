@@ -689,6 +689,8 @@ e_comp_wl_data_device_keyboard_focus_set(E_Comp_Data *cdata)
 {
    struct wl_resource *data_device_res, *offer_res, *focus;
    E_Comp_Wl_Data_Source *source;
+   E_Pixmap *ep;
+   E_Client *ec;
 
    if (!cdata->kbd.enabled) 
      {
@@ -702,6 +704,10 @@ e_comp_wl_data_device_keyboard_focus_set(E_Comp_Data *cdata)
         return;
      }
 
+   if (!(ep = wl_resource_get_user_data(focus))) return;
+   if (!(ec = e_pixmap_client_get(ep))) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
+
    data_device_res =
       _e_comp_wl_data_find_for_client(cdata->mgr.data_resources,
                                       wl_resource_get_client(focus));
@@ -711,13 +717,18 @@ e_comp_wl_data_device_keyboard_focus_set(E_Comp_Data *cdata)
    if (source)
      {
         uint32_t serial;
+        int cx, cy;
 
         serial = wl_display_next_serial(cdata->wl.disp);
 
         offer_res = _e_comp_wl_data_device_data_offer_create(source,
                                                              data_device_res);
+
+        cx = wl_fixed_to_int(cdata->ptr.x) - ec->client.x;
+        cy = wl_fixed_to_int(cdata->ptr.y) - ec->client.y;
+
         wl_data_device_send_enter(data_device_res, serial, focus, 
-                                  cdata->ptr.x, cdata->ptr.y, offer_res);
+                                  wl_fixed_from_int(cx), wl_fixed_from_int(cy), offer_res);
         wl_data_device_send_selection(data_device_res, offer_res);
      }
 }
