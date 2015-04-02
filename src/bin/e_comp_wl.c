@@ -1029,8 +1029,11 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
 
         if (ec->new_client) placed = ec->placed;
 
-        ec->w = ec->client.w = state->bw;
-        ec->h = ec->client.h = state->bh;
+        if (!ec->lock_client_size)
+          {
+             ec->w = ec->client.w = state->bw;
+             ec->h = ec->client.h = state->bh;
+          }
      }
    if (!e_pixmap_usable_get(ec->pixmap))
      {
@@ -1063,9 +1066,9 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
      {
         if ((ec->comp_data->shell.surface) && (ec->comp_data->shell.configure))
           ec->comp_data->shell.configure(ec->comp_data->shell.surface,
-                                         x, y, state->bw, state->bh);
+                                         x, y, ec->w, ec->h);
         else
-          e_client_util_move_resize_without_frame(ec, x, y, state->bw, state->bh);
+          e_client_util_move_resize_without_frame(ec, x, y, ec->w, ec->h);
 
         if (ec->new_client)
           ec->placed = placed;
