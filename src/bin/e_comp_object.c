@@ -894,6 +894,7 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
 
    if (!e_util_strcmp("wl_pointer-cursor", cw->ec->icccm.window_role))
      {
+        cw->ec->w = w, cw->ec->h = h;
         evas_object_resize(obj, w, h);
         return;
      }
