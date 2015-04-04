@@ -892,6 +892,12 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
    E_Comp_Object *cw = data;
    int pw, ph, fw, fh, iw, ih, prev_w, prev_h;
 
+   if (!e_util_strcmp("wl_pointer-cursor", cw->ec->icccm.window_role))
+     {
+        evas_object_resize(obj, w, h);
+        return;
+     }
+
    if ((cw->w == w) && (cw->h == h))
      {
         if (cw->ec->shading || cw->ec->shaded) return;
