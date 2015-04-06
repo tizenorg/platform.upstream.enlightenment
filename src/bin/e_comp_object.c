@@ -3315,6 +3315,17 @@ e_comp_object_native_surface_set(Evas_Object *obj, Eina_Bool set)
         set = (cw->ec->comp->gl && e_comp_config_get()->texture_from_pixmap && (!cw->ec->shaped));
         if (set)
           set = e_pixmap_native_surface_init(cw->ec->pixmap, &ns);
+
+        /* to show underlay plane on x11, compositor should fill
+         * alpha value of COW with given 24bit window's alpha.
+         */
+        if (set)
+          {
+             E_Pixmap_Type type;
+             type = e_pixmap_type_get(cw->ec->pixmap);
+             if ((type == E_PIXMAP_TYPE_X) && (!cw->ec->argb))
+               evas_object_render_op_set(cw->obj, EVAS_RENDER_COPY);
+          }
      }
    cw->native = set;
 
