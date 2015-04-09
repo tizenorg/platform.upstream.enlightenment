@@ -1083,10 +1083,24 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    /* put state damages into surface */
    if ((!ec->comp->nocomp) && (ec->frame))
      {
-        EINA_LIST_FREE(state->damages, dmg)
+        /* FIXME: workaround for bad wayland egl driver which doesn't send damage request */
+        if (!eina_list_count(state->damages))
           {
-             e_comp_object_damage(ec->frame, dmg->x, dmg->y, dmg->w, dmg->h);
-             eina_rectangle_free(dmg);
+             if (ec->comp_data->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
+               {
+                  e_comp_object_damage(ec->frame,
+                                       0, 0,
+                                       ec->comp_data->buffer_ref.buffer->w,
+                                       ec->comp_data->buffer_ref.buffer->h);
+               }
+          }
+        else
+          {
+             EINA_LIST_FREE(state->damages, dmg)
+               {
+                  e_comp_object_damage(ec->frame, dmg->x, dmg->y, dmg->w, dmg->h);
+                  eina_rectangle_free(dmg);
+               }
           }
      }
 
@@ -2349,6 +2363,83 @@ _e_comp_wl_cb_output_bind(struct wl_client *client, void *data, uint32_t version
      wl_output_send_done(resource);
 }
 
+static void
+_e_comp_wl_gl_init(E_Comp_Data *cdata)
+{
+   Evas_GL *evasgl = NULL;
+   Evas_GL_API *glapi = NULL;
+   Evas_GL_Context *ctx = NULL;
+   Evas_GL_Surface *sfc = NULL;
+   Evas_GL_Config *cfg = NULL;
+   Eina_Bool res;
+   const char *name;
+
+   if (!e_comp_gl_get()) return;
+
+   name = ecore_evas_engine_name_get(e_comp->ee);
+   if (!name) return;
+   if (strcmp(name, "gl_drm")) return;
+
+   /* create dummy evas gl to bind wayland display of enlightenment to egl display */
+   evasgl = evas_gl_new(e_comp->evas);
+   EINA_SAFETY_ON_NULL_GOTO(evasgl, err);
+
+   glapi = evas_gl_api_get(evasgl);
+   EINA_SAFETY_ON_NULL_GOTO(glapi, err);
+
+   cfg = evas_gl_config_new();
+   EINA_SAFETY_ON_NULL_GOTO(cfg, err);
+
+   sfc = evas_gl_surface_create(evasgl, cfg, 1, 1);
+   EINA_SAFETY_ON_NULL_GOTO(sfc, err);
+
+   ctx = evas_gl_context_create(evasgl, NULL);
+   EINA_SAFETY_ON_NULL_GOTO(ctx, err);
+
+   res = evas_gl_make_current(evasgl, sfc, ctx);
+   EINA_SAFETY_ON_FALSE_GOTO(res, err);
+
+   res = glapi->evasglBindWaylandDisplay(evasgl, cdata->wl.disp);
+   EINA_SAFETY_ON_FALSE_GOTO(res, err);
+
+   evas_gl_config_free(cfg);
+
+   cdata->gl.evasgl = evasgl;
+   cdata->gl.api = glapi;
+   cdata->gl.sfc = sfc;
+   cdata->gl.ctx = ctx;
+
+   /* for native surface */
+   e_comp->gl = 1;
+
+   return;
+
+err:
+   evas_gl_config_free(cfg);
+   evas_gl_make_current(evasgl, NULL, NULL);
+   evas_gl_context_destroy(evasgl, ctx);
+   evas_gl_surface_destroy(evasgl, sfc);
+   evas_gl_free(evasgl);
+}
+
+static void
+_e_comp_wl_gl_shutdown(E_Comp_Data *cdata)
+{
+   if (!cdata->gl.evasgl) return;
+
+   cdata->gl.api->evasglUnbindWaylandDisplay(cdata->gl.evasgl, cdata->wl.disp);
+
+   evas_gl_make_current(cdata->gl.evasgl, NULL, NULL);
+   evas_gl_context_destroy(cdata->gl.evasgl, cdata->gl.ctx);
+   evas_gl_surface_destroy(cdata->gl.evasgl, cdata->gl.sfc);
+   evas_gl_free(cdata->gl.evasgl);
+
+   cdata->gl.sfc = NULL;
+   cdata->gl.ctx = NULL;
+   cdata->gl.api = NULL;
+   cdata->gl.evasgl = NULL;
+}
+
 static Eina_Bool
 _e_comp_wl_compositor_create(void)
 {
@@ -2437,6 +2528,8 @@ _e_comp_wl_compositor_create(void)
         ERR("Could not initialize input");
         goto input_err;
      }
+
+   _e_comp_wl_gl_init(cdata);
 
 #ifndef HAVE_WAYLAND_ONLY
    if (getenv("DISPLAY"))
@@ -2611,6 +2704,11 @@ e_comp_wl_surface_create_signal_get(E_Comp *comp)
 EINTERN void
 e_comp_wl_shutdown(void)
 {
+   /* free evas gl */
+   E_Comp_Data *cdata;
+   if ((cdata = e_comp->wl_comp_data))
+     _e_comp_wl_gl_shutdown(cdata);
+
 #ifndef HAVE_WAYLAND_ONLY
    _e_comp_wl_compositor_cb_del(e_comp);
 #endif
@@ -2758,20 +2856,50 @@ e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
 EAPI E_Comp_Wl_Buffer *
 e_comp_wl_buffer_get(struct wl_resource *resource)
 {
-   E_Comp_Wl_Buffer *buffer;
+   E_Comp_Wl_Buffer *buffer = NULL;
    struct wl_listener *listener;
    struct wl_shm_buffer *shmbuff;
+   E_Comp_Data *cdata;
+   Eina_Bool res;
 
    listener =
      wl_resource_get_destroy_listener(resource, _e_comp_wl_buffer_cb_destroy);
    if (listener)
      return container_of(listener, E_Comp_Wl_Buffer, destroy_listener);
 
-   if (!(shmbuff = wl_shm_buffer_get(resource))) return NULL;
    if (!(buffer = E_NEW(E_Comp_Wl_Buffer, 1))) return NULL;
 
-   buffer->w = wl_shm_buffer_get_width(shmbuff);
-   buffer->h = wl_shm_buffer_get_height(shmbuff);
+   shmbuff = wl_shm_buffer_get(resource);
+
+   if (shmbuff)
+     {
+        buffer->type = E_COMP_WL_BUFFER_TYPE_SHM;
+
+        buffer->w = wl_shm_buffer_get_width(shmbuff);
+        buffer->h = wl_shm_buffer_get_height(shmbuff);
+     }
+   else
+     {
+        cdata = e_comp->wl_comp_data;
+        if (cdata->gl.api)
+          {
+             buffer->type = E_COMP_WL_BUFFER_TYPE_NATIVE;
+
+             res = cdata->gl.api->evasglQueryWaylandBuffer(cdata->gl.evasgl,
+                                                           resource,
+                                                           EVAS_GL_WIDTH,
+                                                           &buffer->w);
+             EINA_SAFETY_ON_FALSE_GOTO(res, err);
+
+             res = cdata->gl.api->evasglQueryWaylandBuffer(cdata->gl.evasgl,
+                                                           resource,
+                                                           EVAS_GL_HEIGHT,
+                                                           &buffer->h);
+             EINA_SAFETY_ON_FALSE_GOTO(res, err);
+          }
+        else
+          goto err;
+     }
 
    buffer->resource = resource;
    wl_signal_init(&buffer->destroy_signal);
@@ -2779,6 +2907,11 @@ e_comp_wl_buffer_get(struct wl_resource *resource)
    wl_resource_add_destroy_listener(resource, &buffer->destroy_listener);
 
    return buffer;
+
+err:
+   ERR("Invalid resource:%u", wl_resource_get_id(resource));
+   E_FREE(buffer);
+   return NULL;
 }
 
 /**

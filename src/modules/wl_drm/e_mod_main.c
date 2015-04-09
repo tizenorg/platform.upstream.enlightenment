@@ -79,16 +79,10 @@ EAPI void *
 e_modapi_init(E_Module *m)
 {
    E_Comp *comp;
-   int w = 0, h = 0;
+   int w = 0, h = 0, scr_w = 0, scr_h = 0;
+   char *env_w, *env_h;
 
    printf("LOAD WL_DRM MODULE\n");
-
-   /* try to init ecore_drm */
-   /* if (!ecore_drm_init()) */
-   /*   { */
-   /*      fprintf(stderr, "Could not initialize ecore_drm"); */
-   /*      return NULL; */
-   /*   } */
 
    if (!(comp = e_comp))
      {
@@ -96,17 +90,36 @@ e_modapi_init(E_Module *m)
         comp->comp_type = E_PIXMAP_TYPE_WL;
      }
 
+   /* set gl available if we have ecore_evas support */
+   if (ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_WAYLAND_EGL) ||
+       ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_OPENGL_DRM))
+     e_comp_gl_set(EINA_TRUE);
+
+   if ((env_w = getenv("E_SCREEN_WIDTH"))) scr_w = atoi(env_w);
+   if ((env_h = getenv("E_SCREEN_HEIGHT"))) scr_h = atoi(env_h);
+
+   if (scr_w <= 0) scr_w = 1;
+   if (scr_h <= 0) scr_h = 1;
+
+   DBG("GL available:%d config engine:%d screen size:%dx%d",
+       e_comp_gl_get(), e_comp_config_get()->engine, scr_w, scr_h);
+
    if ((e_comp_gl_get()) &&
        (e_comp_config_get()->engine == E_COMP_ENGINE_GL))
      {
-        comp->ee = ecore_evas_gl_drm_new(NULL, 0, 0, 0, 1, 1);
+        comp->ee = ecore_evas_gl_drm_new(NULL, 0, 0, 0, scr_w, scr_h);
+        DBG("Create ecore_evas_gl_drm canvas:%p", comp->ee);
+
         if (!comp->ee)
           e_comp_gl_set(EINA_FALSE);
      }
 
    /* fallback to framebuffer drm (non-accel) */
    if (!comp->ee)
-     comp->ee = ecore_evas_drm_new(NULL, 0, 0, 0, 1, 1);
+     {
+        comp->ee = ecore_evas_drm_new(NULL, 0, 0, 0, scr_w, scr_h);
+        DBG("Create ecore_evas_drm canvas:%p", comp->ee);
+     }
 
    if (!comp->ee)
      {
@@ -118,7 +131,11 @@ e_modapi_init(E_Module *m)
    ecore_evas_screen_geometry_get(comp->ee, NULL, NULL, &w, &h);
 
    /* resize the canvas */
-   ecore_evas_resize(comp->ee, w, h);
+   if (!((scr_w == w) && (scr_h == h)))
+     {
+        DBG("Change ecore_evas canvas size %dx%d -> %dx%d", scr_w, scr_h, w, h);
+        ecore_evas_resize(comp->ee, w, h);
+     }
 
    /* TODO: hook ecore_evas_callback_resize_set */
 

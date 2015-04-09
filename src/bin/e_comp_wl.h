@@ -36,6 +36,8 @@
       (type *)( (char *)__mptr - offsetof(type,member) ); \
    })
 
+#include <Evas_GL.h>
+
 typedef struct _E_Comp_Wl_Buffer E_Comp_Wl_Buffer;
 typedef struct _E_Comp_Wl_Buffer_Ref E_Comp_Wl_Buffer_Ref;
 typedef struct _E_Comp_Wl_Subsurf_Data E_Comp_Wl_Subsurf_Data;
@@ -44,16 +46,20 @@ typedef struct _E_Comp_Wl_Client_Data E_Comp_Wl_Client_Data;
 typedef struct _E_Comp_Wl_Data E_Comp_Wl_Data;
 typedef struct _E_Comp_Wl_Output E_Comp_Wl_Output;
 
+typedef enum _E_Comp_Wl_Buffer_Type
+{
+   E_COMP_WL_BUFFER_TYPE_NONE = 0,
+   E_COMP_WL_BUFFER_TYPE_SHM = 1,
+   E_COMP_WL_BUFFER_TYPE_NATIVE = 2
+} E_Comp_Wl_Buffer_Type;
+
 struct _E_Comp_Wl_Buffer
 {
+   E_Comp_Wl_Buffer_Type type;
    struct wl_resource *resource;
    struct wl_signal destroy_signal;
    struct wl_listener destroy_listener;
-   union
-     {
-        struct wl_shm_buffer *shm_buffer;
-        void *legacy_buffer;
-     };
+   struct wl_shm_buffer *shm_buffer;
    int32_t w, h;
    uint32_t busy;
 };
@@ -204,6 +210,14 @@ struct _E_Comp_Wl_Data
         size_t size;
         char *area;
      } xkb;
+
+   struct
+     {
+        Evas_GL *evasgl;
+        Evas_GL_API *api;
+        Evas_GL_Surface *sfc;
+        Evas_GL_Context *ctx;
+     } gl;
 
    Eina_List *outputs;
 

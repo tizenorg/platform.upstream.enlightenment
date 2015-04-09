@@ -531,30 +531,56 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
 
         if (!buffer) return;
 
-        if (!(shm_buffer = wl_shm_buffer_get(buffer->resource)))
+        if (buffer->type == E_COMP_WL_BUFFER_TYPE_SHM)
           {
-             WRN("Cannot get shm buffer from buffer resource");
+             shm_buffer = wl_shm_buffer_get(buffer->resource);
+             if (!shm_buffer)
+               {
+                  ERR("No shm_buffer resource:%u", wl_resource_get_id(buffer->resource));
+                  e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
+                  return;
+               }
+
+             buffer->shm_buffer = shm_buffer;
+             cp->w = buffer->w;
+             cp->h = buffer->h;
+
+             switch (wl_shm_buffer_get_format(shm_buffer))
+               {
+                case WL_SHM_FORMAT_ARGB8888:
+                   cp->image_argb = EINA_TRUE;
+                   break;
+                default:
+                   cp->image_argb = EINA_FALSE;
+                   break;
+               }
+
+             cp->data = wl_shm_buffer_get_data(shm_buffer);
+          }
+        else if (buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
+          {
+             if (e_comp->gl)
+               {
+                  buffer->shm_buffer = NULL;
+                  cp->w = buffer->w;
+                  cp->h = buffer->h;
+                  cp->image_argb = EINA_FALSE; /* TODO: format */
+                  cp->data = NULL;
+               }
+             else
+               {
+                  ERR("Invalid native buffer resource:%u", wl_resource_get_id(buffer->resource));
+                  e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
+                  return;
+               }
+
+          }
+        else
+          {
+             ERR("Invalid resource:%u", wl_resource_get_id(buffer->resource));
              e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
              return;
           }
-
-        buffer->shm_buffer = shm_buffer;
-        cp->w = buffer->w;
-        cp->h = buffer->h;
-        /* buffer->w = cp->w = wl_shm_buffer_get_width(shm_buffer); */
-        /* buffer->h = cp->h = wl_shm_buffer_get_height(shm_buffer); */
-
-        switch (wl_shm_buffer_get_format(shm_buffer))
-          {
-           case WL_SHM_FORMAT_ARGB8888:
-             cp->image_argb = EINA_TRUE;
-             break;
-           default:
-             cp->image_argb = EINA_FALSE;
-             break;
-          }
-
-        cp->data = wl_shm_buffer_get_data(shm_buffer);
 
         cp->buffer_destroy_listener.notify = _e_pixmap_cb_buffer_destroy;
         wl_signal_add(&buffer->destroy_signal, &cp->buffer_destroy_listener);
@@ -592,15 +618,15 @@ e_pixmap_native_surface_init(E_Pixmap *cp, Evas_Native_Surface *ns)
         break;
       case E_PIXMAP_TYPE_WL:
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-        ns->type = EVAS_NATIVE_SURFACE_OPENGL;
-        ns->version = EVAS_NATIVE_SURFACE_VERSION;
-        ns->data.opengl.texture_id = 0;
-        ns->data.opengl.framebuffer_id = 0;
-        ns->data.opengl.x = 0;
-        ns->data.opengl.y = 0;
-        ns->data.opengl.w = cp->w;
-        ns->data.opengl.h = cp->h;
-        ret = EINA_TRUE;
+        if (cp->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
+          {
+             ns->type = EVAS_NATIVE_SURFACE_WL;
+             ns->version = EVAS_NATIVE_SURFACE_VERSION;
+             ns->data.wl.legacy_buffer = cp->buffer_ref.buffer->resource;
+             ret = EINA_TRUE;
+          }
+        else
+          ret = EINA_FALSE;
 #endif
         break;
       default:
