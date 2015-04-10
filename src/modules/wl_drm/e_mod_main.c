@@ -112,6 +112,30 @@ e_modapi_init(E_Module *m)
 
         if (!comp->ee)
           e_comp_gl_set(EINA_FALSE);
+        else
+          {
+             Evas_GL *evasgl = NULL;
+             Evas_GL_API *glapi = NULL;
+
+             evasgl = evas_gl_new(ecore_evas_get(comp->ee));
+             if (evasgl)
+               {
+                  glapi = evas_gl_api_get(evasgl);
+                  if (!((glapi) && (glapi->evasglBindWaylandDisplay)))
+                    {
+                       e_comp_gl_set(EINA_FALSE);
+                       ecore_evas_free(comp->ee);
+                       comp->ee = NULL;
+                    }
+               }
+             else
+               {
+                  e_comp_gl_set(EINA_FALSE);
+                  ecore_evas_free(comp->ee);
+                  comp->ee = NULL;
+               }
+             evas_gl_free(evasgl);
+          }
      }
 
    /* fallback to framebuffer drm (non-accel) */
