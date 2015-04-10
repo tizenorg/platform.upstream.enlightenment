@@ -2402,6 +2402,7 @@ _e_comp_wl_gl_init(E_Comp_Data *cdata)
 
    glapi = evas_gl_api_get(evasgl);
    EINA_SAFETY_ON_NULL_GOTO(glapi, err);
+   EINA_SAFETY_ON_NULL_GOTO(glapi->evasglBindWaylandDisplay, err);
 
    cfg = evas_gl_config_new();
    EINA_SAFETY_ON_NULL_GOTO(cfg, err);
