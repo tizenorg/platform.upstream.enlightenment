@@ -19,6 +19,7 @@ static void _e_comp_wl_subsurface_parent_commit(E_Client *ec, Eina_Bool parent_s
 
 /* local variables */
 /* static Eina_Hash *clients_win_hash = NULL; */
+static Eina_Hash *clients_buffer_hash = NULL;
 static Eina_List *handlers = NULL;
 static double _last_event_time = 0.0;
 
@@ -652,8 +653,19 @@ static void
 _e_comp_wl_buffer_cb_destroy(struct wl_listener *listener, void *data EINA_UNUSED)
 {
    E_Comp_Wl_Buffer *buffer;
+   E_Client *ec;
+   uint32_t sid = 0;
 
    buffer = container_of(listener, E_Comp_Wl_Buffer, destroy_listener);
+
+   sid = wl_resource_get_id(buffer->resource);
+   if ((sid) && (ec = eina_hash_find(clients_buffer_hash, &sid)))
+     {
+        if (e_object_is_del(E_OBJECT(ec)))
+          while (e_object_unref(E_OBJECT(ec)) > 0);
+        eina_hash_del_by_key(clients_buffer_hash, &sid);
+     }
+
    wl_signal_emit(&buffer->destroy_signal, buffer);
    free(buffer);
 }
@@ -1167,6 +1179,7 @@ _e_comp_wl_surface_cb_attach(struct wl_client *client EINA_UNUSED, struct wl_res
    E_Pixmap *ep;
    E_Client *ec;
    E_Comp_Wl_Buffer *buffer = NULL;
+   uint32_t sid = 0;
 
    if (!(ep = wl_resource_get_user_data(resource))) return;
    if (!(ec = e_pixmap_client_get(ep))) return;
@@ -1180,6 +1193,9 @@ _e_comp_wl_surface_cb_attach(struct wl_client *client EINA_UNUSED, struct wl_res
              wl_client_post_no_memory(client);
              return;
           }
+
+        if ((sid = wl_resource_get_id(buffer_resource)))
+           eina_hash_add(clients_buffer_hash, &sid, ec);
      }
 
    _e_comp_wl_surface_state_buffer_set(&ec->comp_data->pending, buffer);
@@ -2549,6 +2565,7 @@ e_comp_wl_init(void)
 
    /* create hash to store clients */
    /* clients_win_hash = eina_hash_int64_new(NULL); */
+   clients_buffer_hash = eina_hash_int32_new(NULL);
 
    /* add event handlers to catch E events */
 #ifndef HAVE_WAYLAND_ONLY
@@ -2614,6 +2631,8 @@ e_comp_wl_shutdown(void)
 #ifndef HAVE_WAYLAND_ONLY
    _e_comp_wl_compositor_cb_del(e_comp);
 #endif
+   /* free buffer hash */
+   E_FREE_FUNC(clients_buffer_hash, eina_hash_free);
 
    /* free handlers */
    E_FREE_LIST(handlers, ecore_event_handler_del);
