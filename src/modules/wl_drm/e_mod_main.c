@@ -211,6 +211,14 @@ e_modapi_init(E_Module *m)
    output_handler =
       ecore_event_handler_add(ECORE_DRM_EVENT_OUTPUT,
                               _e_mod_drm_cb_output, comp);
+#else
+   e_comp_wl_output_init("1", "UNKNOWN", "UNKNOWN",
+                         0, 0, w, h,
+                         300, /* physical width */
+                         300, /* physical height */
+                         60, /* refresh */
+                         1, /* subpixel: none */
+                         0);
 #endif
 
    return m;
