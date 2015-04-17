@@ -2,6 +2,7 @@
 #define E_COMP_WL
 #include "e.h"
 #include "e_desktop_shell_protocol.h"
+#include "e_scaler.h"
 
 #define XDG_SERVER_VERSION 4
 
@@ -1487,6 +1488,8 @@ e_modapi_init(E_Module *m)
         ERR("Could not create xdg_shell global: %m");
         return NULL;
      }
+
+   e_scaler_init();
 
    return m;
 }

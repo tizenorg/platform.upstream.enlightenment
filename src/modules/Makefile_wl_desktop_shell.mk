@@ -19,7 +19,11 @@ src_modules_wl_desktop_shell_module_la_LDFLAGS = $(MOD_LDFLAGS)
 src_modules_wl_desktop_shell_module_la_SOURCES = \
   src/modules/wl_desktop_shell/e_mod_main.c \
   src/modules/wl_desktop_shell/e_desktop_shell_protocol.c \
-  src/modules/wl_desktop_shell/e_desktop_shell_protocol.h
+  src/modules/wl_desktop_shell/e_desktop_shell_protocol.h \
+  src/modules/wl_desktop_shell/e_scaler.c \
+  src/modules/wl_desktop_shell/e_scaler.h \
+  src/modules/wl_desktop_shell/e_scaler_protocol.c \
+  src/modules/wl_desktop_shell/e_scaler_protocol.h
 
 PHONIES += wl_desktop_shell install-wl_desktop_shell
 wl_desktop_shell: $(wl_desktop_shellpkg_LTLIBRARIES) $(wl_desktop_shell_DATA)
