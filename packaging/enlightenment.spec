@@ -42,6 +42,7 @@ BuildRequires:  pkgconfig(xext)
 BuildRequires:  pkgconfig(xcb-keysyms)
 BuildRequires:  pkgconfig(ecore-x)
 %else
+BuildRequires:  pkgconfig(cairo)
 BuildRequires:  pkgconfig(wayland-server)
 %endif
 

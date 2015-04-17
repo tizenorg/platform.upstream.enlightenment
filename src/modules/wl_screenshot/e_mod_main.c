@@ -4,6 +4,7 @@
 #include <sys/mman.h>
 #include "e_screenshooter_client_protocol.h"
 #include "e_screenshooter_server.h"
+#include "e_tizen_screenshooter_server.h"
 
 typedef struct _Instance Instance;
 struct _Instance
@@ -67,7 +68,11 @@ e_modapi_init(E_Module *m)
    EINA_SAFETY_ON_NULL_RETURN_VAL(e_comp, NULL);
    engine_name = ecore_evas_engine_name_get(e_comp->ee);
    if (!strncmp(engine_name, "drm", 3) || !strncmp(engine_name, "fb", 2))
-     return e_screenshooter_server_init(m);
+     {
+        e_screenshooter_server_init(m);
+        e_tizen_screenshooter_server_init(m);
+		return m;
+     }
 
    if (!ecore_wl_init(NULL)) return NULL;
 

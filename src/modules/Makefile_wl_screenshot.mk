@@ -4,7 +4,12 @@ src/modules/wl_screenshot/e_screenshooter_client_protocol.h \
 src/modules/wl_screenshot/e_screenshooter_client_protocol.c \
 src/modules/wl_screenshot/e_screenshooter_server.h \
 src/modules/wl_screenshot/e_screenshooter_server.c \
-src/modules/wl_screenshot/e_screenshooter_server_protocol.h
+src/modules/wl_screenshot/e_screenshooter_server_protocol.h \
+src/modules/wl_screenshot/e_tizen_screenshooter_server.c \
+src/modules/wl_screenshot/e_tizen_screenshooter_server.h \
+src/modules/wl_screenshot/e_tizen_screenshooter_server_protocol.c \
+src/modules/wl_screenshot/e_tizen_screenshooter_server_protocol.h
+
 
 if USE_MODULE_WL_SCREENSHOT
 wl_screenshotdir = $(MDIR)/wl_screenshot
@@ -25,7 +30,11 @@ src_modules_wl_screenshot_module_la_SOURCES = src/modules/wl_screenshot/e_mod_ma
                             src/modules/wl_screenshot/e_screenshooter_client_protocol.c \
                             src/modules/wl_screenshot/e_screenshooter_server.h \
                             src/modules/wl_screenshot/e_screenshooter_server.c \
-                            src/modules/wl_screenshot/e_screenshooter_server_protocol.h
+                            src/modules/wl_screenshot/e_screenshooter_server_protocol.h \
+                            src/modules/wl_screenshot/e_tizen_screenshooter_server.c \
+                            src/modules/wl_screenshot/e_tizen_screenshooter_server.h \
+                            src/modules/wl_screenshot/e_tizen_screenshooter_server_protocol.c \
+                            src/modules/wl_screenshot/e_tizen_screenshooter_server_protocol.h
 
 PHONIES += wl_screenshot install-wl_screenshot
 wl_screenshot: $(wl_screenshotpkg_LTLIBRARIES) $(wl_screenshot_DATA)
