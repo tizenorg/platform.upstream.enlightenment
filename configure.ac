@@ -903,6 +903,16 @@ define([CHECK_MODULE_WL_FB],
 ])
 AM_CONDITIONAL([HAVE_WL_FB], [test "x${WL_FB}" = "xtrue"])
 
+define([CHECK_MODULE_WL_SCREENSHOT],
+[
+  if test "x${have_wayland_clients}" = "xyes" || test "x${e_cv_want_wayland_only}" = "xyes"; then
+    AC_E_CHECK_PKG(WL_SCREENSHOT, [ ecore >= $efl_version eina >= $efl_version ], [WL_SCREENSHOT=true], [WL_SCREENSHOT=false])
+  else
+    WL_SCREENSHOT=false
+  fi
+])
+AM_CONDITIONAL([HAVE_WL_SCREENSHOT], [test "x${WL_SCREENSHOT}" = "xtrue"])
+
 define([CHECK_MODULE_WL_DRM],
 [
   if test "x${have_wayland}" = "xyes" ; then
@@ -968,7 +978,7 @@ AC_E_OPTIONAL_MODULE([wl_desktop_shell], $have_wayland, [CHECK_MODULE_WL_DESKTOP
 AC_E_OPTIONAL_MODULE([wl_x11], $have_wayland, $wl_x11)
 AC_E_OPTIONAL_MODULE([wl_fb], $have_wayland, [CHECK_MODULE_WL_FB])
 AC_E_OPTIONAL_MODULE([wl_drm], $have_wayland, [CHECK_MODULE_WL_DRM])
-#AC_E_OPTIONAL_MODULE([wl_screenshot], true, [CHECK_MODULE_WL_SCREENSHOT])
+AC_E_OPTIONAL_MODULE([wl_screenshot], $have_wayland, [CHECK_MODULE_WL_SCREENSHOT])
 AC_E_OPTIONAL_MODULE([policy_mobile], true)
 
 HALT="/sbin/shutdown -h now"

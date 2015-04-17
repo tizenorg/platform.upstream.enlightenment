@@ -129,7 +129,6 @@ include src/modules/Makefile_wl_x11.mk
 
 include src/modules/Makefile_wl_fb.mk
 
-#if HAVE_WAYLAND_SCREENSHOT
-#include src/modules/Makefile_wl_screenshot.mk
+include src/modules/Makefile_wl_screenshot.mk
 
 include src/modules/Makefile_policy_mobile.mk
