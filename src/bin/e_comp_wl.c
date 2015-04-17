@@ -1676,6 +1676,9 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
    /* set reference to pixmap so we can fetch it later */
    wl_resource_set_user_data(res, ep);
 
+   E_Comp_Wl_Client_Data *cdata = e_pixmap_cdata_get(ep);
+   cdata->wl_surface = res;
+
    /* emit surface create signal */
    wl_signal_emit(&comp->wl_comp_data->signals.surface.create, res);
 }
@@ -2335,6 +2338,12 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
    /* add this client to the hash */
    /* eina_hash_add(clients_win_hash, &win, ec); */
    e_hints_client_list_set();
+
+   E_Comp_Wl_Client_Data *cdata = e_pixmap_cdata_get(ec->pixmap);
+   struct wl_resource *wl_resource = cdata->wl_surface;
+   ec->comp_data->scaler = cdata->scaler;
+   e_pixmap_cdata_set(ec->pixmap, ec->comp_data);
+   _e_comp_wl_surface_cb_commit(NULL, wl_resource);
 }
 
 static void
