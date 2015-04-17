@@ -151,14 +151,11 @@ _e_scaler_cb_get_viewport(struct wl_client *client EINA_UNUSED, struct wl_resour
 {
    int version = wl_resource_get_version(scaler);
    E_Pixmap *ep;
-   E_Client *ec;
    struct wl_resource *res;
    E_Comp_Client_Data *cdata;
 
    if (!(ep = wl_resource_get_user_data(surface_resource))) return;
-   if (!(ec = e_pixmap_client_get(ep))) return;
-   if (e_object_is_del(E_OBJECT(ec))) return;
-   if (!(cdata = ec->comp_data)) return;
+   if (!(cdata = e_pixmap_cdata_get(ep))) return;
 
    if (cdata->scaler.viewport)
      {

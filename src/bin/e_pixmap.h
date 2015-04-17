@@ -17,6 +17,8 @@ EAPI E_Pixmap *e_pixmap_ref(E_Pixmap *cp);
 EAPI E_Pixmap *e_pixmap_new(E_Pixmap_Type type, ...);
 EAPI E_Pixmap_Type e_pixmap_type_get(const E_Pixmap *cp);
 EAPI void *e_pixmap_resource_get(E_Pixmap *cp);
+EAPI E_Comp_Client_Data *e_pixmap_cdata_get(E_Pixmap *cp);
+EAPI void e_pixmap_cdata_set(E_Pixmap *cp, E_Comp_Client_Data *cdata);
 EAPI void e_pixmap_resource_set(E_Pixmap *cp, void *resource);
 EAPI void e_pixmap_parent_window_set(E_Pixmap *cp, Ecore_Window win);
 EAPI void e_pixmap_visual_cmap_set(E_Pixmap *cp, void *visual, unsigned int cmap);

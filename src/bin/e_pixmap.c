@@ -36,6 +36,8 @@ struct _E_Pixmap
    struct wl_listener buffer_destroy_listener;
    void *data;
    Eina_Rectangle opaque;
+
+   E_Comp_Wl_Client_Data *cdata;
 #endif
 
    Eina_Bool usable : 1;
@@ -140,6 +142,7 @@ _e_pixmap_new(E_Pixmap_Type type)
    cp->w = cp->h = 0;
    cp->refcount = 1;
    cp->dirty = 1;
+   cp->cdata = calloc(1, sizeof(E_Comp_Wl_Client_Data));
    return cp;
 }
 
@@ -948,4 +951,20 @@ e_pixmap_image_opaque_get(E_Pixmap *cp, int *x, int *y, int *w, int *h)
    if (w) *w = 0;
    if (h) *h = 0;
 #endif
+}
+
+EAPI E_Comp_Client_Data *
+e_pixmap_cdata_get(E_Pixmap *cp)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cp, NULL);
+   return (E_Comp_Client_Data*)cp->cdata;
+}
+
+EAPI void
+e_pixmap_cdata_set(E_Pixmap *cp, E_Comp_Client_Data *cdata)
+{
+   EINA_SAFETY_ON_NULL_RETURN(cp);
+   EINA_SAFETY_ON_NULL_RETURN(cdata);
+   free (cp->cdata);
+   cp->cdata = (E_Comp_Wl_Client_Data*)cdata;
 }

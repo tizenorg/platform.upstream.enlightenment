@@ -261,6 +261,8 @@ struct _E_Comp_Wl_Data
 
 struct _E_Comp_Wl_Client_Data
 {
+   struct wl_resource *wl_surface;
+
    Ecore_Timer *first_draw_tmr;
 
    struct
