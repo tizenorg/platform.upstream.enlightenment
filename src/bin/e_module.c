@@ -24,7 +24,6 @@ static Ecore_Idle_Enterer *_e_module_idler = NULL;
 static Eina_List *_e_modules_delayed = NULL;
 static Eina_Bool _e_modules_initting = EINA_FALSE;
 static Eina_Bool _e_modules_init_end = EINA_FALSE;
-static Eina_Bool _e_modules_load_ready = EINA_FALSE;
 
 static Eina_List *_e_module_path_monitors = NULL;
 static Eina_List *_e_module_path_lists = NULL;
@@ -65,35 +64,11 @@ _module_main_cb(void *d, Eio_File *ls EINA_UNUSED, const Eina_File_Direct_Info *
    eina_stringshare_del(s);
 }
 
-#ifdef HAVE_WAYLAND_ONLY
-static Eina_Bool
-_module_wl_interfaces_bound(void *d EINA_UNUSED, int type, void *ev)
-{
-   if (type != ECORE_WL_EVENT_INTERFACES_BOUND) return ECORE_CALLBACK_RENEW;
-
-   if (_e_modules_load_ready) return ECORE_CALLBACK_RENEW;
-   _e_modules_load_ready = EINA_TRUE;
-   e_module_all_load();
-   if (!_e_modules_init_end)
-     {
-        ecore_event_add(E_EVENT_MODULE_INIT_END, NULL, NULL, NULL);
-        _e_modules_init_end = EINA_TRUE;
-     }
-
-   return ECORE_CALLBACK_RENEW;
-}
-#endif
-
 static void
 _module_done_cb(void *d EINA_UNUSED, Eio_File *ls)
 {
    _e_module_path_lists = eina_list_remove(_e_module_path_lists, ls);
    if (_e_module_path_lists) return;
-#ifdef HAVE_WAYLAND_ONLY
-   E_LIST_HANDLER_APPEND(handlers, ECORE_WL_EVENT_INTERFACES_BOUND,
-                         _module_wl_interfaces_bound, NULL);
-#endif
-   if (!_e_modules_load_ready) return;
    if (_e_modules_initting) e_module_all_load();
    else if (!_e_modules_init_end)
      {
@@ -772,7 +747,12 @@ _e_module_dialog_disable_show(const char *title, const char *body, E_Module *m)
 
    printf("MODULE ERR:\n%s\n", body);
 
-   dia = e_dialog_new(NULL, "E", "_module_unload_dialog");
+   /* FIXME: Stupid hack for ELM_WIN_DIALOG_BASIC not working in wayland */
+#warning REMOVE STUPID ELM HACK FOR WAYLAND BEFORE RELEASE
+   if (e_comp && e_comp->comp_type != E_PIXMAP_TYPE_WL)
+     dia = e_dialog_new(NULL, "E", "_module_unload_dialog");
+   else
+     dia = e_dialog_normal_win_new(NULL, "E", "_module_unload_dialog");
 
    EINA_SAFETY_ON_NULL_RETURN(dia);
 
