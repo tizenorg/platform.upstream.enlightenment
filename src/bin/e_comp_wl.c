@@ -83,6 +83,9 @@ _e_comp_wl_cb_module_idle(void *data)
 
    if (!(cdata = data)) return ECORE_CALLBACK_RENEW;
 
+   /* check if we are still loading modules */
+   if (e_module_loading_get()) return ECORE_CALLBACK_RENEW;
+
    if (!(mod = e_module_find("wl_desktop_shell")))
      mod = e_module_new("wl_desktop_shell");
 
