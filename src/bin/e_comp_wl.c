@@ -2991,10 +2991,15 @@ e_comp_wl_output_init(const char *id, const char *make, const char *model, int x
    if (!output)
      {
         if (!(output = E_NEW(E_Comp_Wl_Output, 1))) return;
-
         if (id) output->id = eina_stringshare_add(id);
-        if (make) output->make = eina_stringshare_add(make);
-        if (model) output->model = eina_stringshare_add(model);
+        if (make)
+          output->make = eina_stringshare_add(make);
+        else
+          output->make = eina_stringshare_add("unknown");
+        if (model)
+          output->model = eina_stringshare_add(model);
+        else
+          output->model = eina_stringshare_add("unknown");
 
         cdata->outputs = eina_list_append(cdata->outputs, output);
 
