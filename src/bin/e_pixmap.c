@@ -36,9 +36,9 @@ struct _E_Pixmap
    struct wl_listener buffer_destroy_listener;
    void *data;
    Eina_Rectangle opaque;
-
-   E_Comp_Wl_Client_Data *cdata;
 #endif
+
+   E_Comp_Client_Data *cdata;
 
    Eina_Bool usable : 1;
    Eina_Bool dirty : 1;
@@ -142,7 +142,11 @@ _e_pixmap_new(E_Pixmap_Type type)
    cp->w = cp->h = 0;
    cp->refcount = 1;
    cp->dirty = 1;
+#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
    cp->cdata = calloc(1, sizeof(E_Comp_Wl_Client_Data));
+#else
+   cp->cdata = calloc(1, sizeof(E_Comp_X_Client_Data));
+#endif
    return cp;
 }
 
@@ -966,5 +970,5 @@ e_pixmap_cdata_set(E_Pixmap *cp, E_Comp_Client_Data *cdata)
    EINA_SAFETY_ON_NULL_RETURN(cp);
    EINA_SAFETY_ON_NULL_RETURN(cdata);
    free (cp->cdata);
-   cp->cdata = (E_Comp_Wl_Client_Data*)cdata;
+   cp->cdata = cdata;
 }
