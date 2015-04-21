@@ -1047,16 +1047,17 @@ e_comp_init(void)
 #ifdef HAVE_WL_FM
            "wl_fb",
 #endif
+           "wl_desktop_shell",
            NULL
         };
 
         e_util_env_set("HYBRIS_EGLPLATFORM", "wayland");
         for (test = eng; *test; test++)
           {
-             if (e_module_enable(e_module_new(*test)))
-               goto out;
+             if (!e_module_enable(e_module_new(*test)))
+               return EINA_FALSE;
           }
-        return EINA_FALSE;
+        goto out;
      }
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
    e_comp_wl_init();
