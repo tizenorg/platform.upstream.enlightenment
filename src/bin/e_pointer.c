@@ -753,6 +753,13 @@ e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
    Evas_Object *o;
    E_Client *ec;
 
+   /* don't show cursor if in hidden mode */
+   if (!e_config->show_cursor)
+     {
+        if (obj) evas_object_hide(obj);
+        return;
+     }
+
    ecore_evas_cursor_get(ptr->ee, &o, NULL, NULL, NULL);
    if (o)
      {
