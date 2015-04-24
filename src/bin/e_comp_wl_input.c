@@ -158,6 +158,10 @@ _e_comp_wl_input_cb_keyboard_get(struct wl_client *client, struct wl_resource *r
 {
    E_Comp_Data *cdata;
    struct wl_resource *res;
+   E_Client *ec;
+   struct wl_client *wc;
+   uint32_t serial, *k;
+   Eina_List *l;
 
    /* get compositor data */
    if (!(cdata = wl_resource_get_user_data(resource))) return;
@@ -179,6 +183,32 @@ _e_comp_wl_input_cb_keyboard_get(struct wl_client *client, struct wl_resource *r
    /* send current keymap */
    wl_keyboard_send_keymap(res, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1, 
                            cdata->xkb.fd, cdata->xkb.size);
+
+   /* if client has focus, send keyboard enter */
+   E_CLIENT_FOREACH(e_comp, ec)
+     {
+        if (!ec->comp_data->surface) continue;
+        if (client != wl_resource_get_client(ec->comp_data->surface)) continue;
+
+          {
+             /* update keyboard modifier state */
+             wl_array_for_each(k, &e_comp->wl_comp_data->kbd.keys)
+                e_comp_wl_input_keyboard_state_update(e_comp->wl_comp_data, *k, EINA_TRUE);
+             ec->comp_data->focus_update = 1;
+             if (!ec->comp_data->surface) return;
+
+             /* send keyboard_enter to all keyboard resources */
+             wc = wl_resource_get_client(ec->comp_data->surface);
+             serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
+             EINA_LIST_FOREACH(e_comp->wl_comp_data->kbd.resources, l, res)
+               {
+                  if (wl_resource_get_client(res) != wc) continue;
+                  wl_keyboard_send_enter(res, serial, ec->comp_data->surface,
+                                         &e_comp->wl_comp_data->kbd.keys);
+                  ec->comp_data->focus_update = 0;
+               }
+          }
+     }
 }
 
 static void 

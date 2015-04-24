@@ -2434,6 +2434,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
            ((ec->icccm.accepts_focus) || (ec->icccm.take_focus)))
         {
            e_client_focused_set(ec);
+           evas_object_focus_set(ec->frame, 1);
         }
 
      }
