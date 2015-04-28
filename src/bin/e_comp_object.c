@@ -3904,3 +3904,13 @@ e_comp_object_is_animating(Evas_Object *obj)
 
    return cw->animating;
 }
+
+EAPI void
+e_comp_object_alpha_set(Evas_Object *obj, Eina_Bool alpha)
+{
+   SOFT_ENTRY(0);
+
+   if (alpha == evas_object_image_alpha_get(cw->obj)) return;
+
+   evas_object_image_alpha_set(cw->obj, alpha);
+}

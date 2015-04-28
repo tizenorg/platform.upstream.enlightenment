@@ -1497,6 +1497,15 @@ _e_comp_wl_surface_cb_opaque_region_set(struct wl_client *client EINA_UNUSED, st
           return;
 
         eina_tiler_union(ec->comp_data->pending.opaque, tmp);
+
+        if (!eina_tiler_empty(ec->comp_data->pending.opaque))
+          {
+             if (ec->argb)
+               {
+                  ec->argb = EINA_FALSE;
+                  e_comp_object_alpha_set(ec->frame, EINA_FALSE);
+               }
+          }
      }
    else
      {
@@ -1504,6 +1513,11 @@ _e_comp_wl_surface_cb_opaque_region_set(struct wl_client *client EINA_UNUSED, st
           {
              eina_tiler_clear(ec->comp_data->pending.opaque);
              /* eina_tiler_free(ec->comp_data->pending.opaque); */
+          }
+        if (!ec->argb)
+          {
+             ec->argb = EINA_TRUE;
+             e_comp_object_alpha_set(ec->frame, EINA_TRUE);
           }
      }
 }
