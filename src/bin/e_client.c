@@ -4329,7 +4329,9 @@ e_client_comp_hidden_set(E_Client *ec, Eina_Bool hidden)
    hidden = !!hidden;
    if (ec->comp_hidden == hidden) return;
    ec->comp_hidden = hidden;
+#ifndef HAVE_WAYLAND_ONLY
    evas_object_smart_callback_call(ec->frame, "comp_hidden", NULL);
+#endif
 }
 
 ///////////////////////////////////////
