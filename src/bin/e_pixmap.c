@@ -36,9 +36,10 @@ struct _E_Pixmap
    struct wl_listener buffer_destroy_listener;
    void *data;
    Eina_Rectangle opaque;
-#endif
 
-   E_Comp_Client_Data *cdata;
+   E_Comp_Wl_Client_Data *cdata;
+   Eina_Bool own_cdata : 1;
+#endif
 
    Eina_Bool usable : 1;
    Eina_Bool dirty : 1;
@@ -84,6 +85,12 @@ _e_pixmap_clear(E_Pixmap *cp, Eina_Bool cache)
           }
 
         e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
+
+        if (cp->own_cdata)
+          {
+             free (cp->cdata);
+             cp->own_cdata = EINA_FALSE;
+          }
 
         (void)cache;
 #endif
@@ -143,9 +150,13 @@ _e_pixmap_new(E_Pixmap_Type type)
    cp->refcount = 1;
    cp->dirty = 1;
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-   cp->cdata = calloc(1, sizeof(E_Comp_Wl_Client_Data));
-#else
-   cp->cdata = calloc(1, sizeof(E_Comp_X_Client_Data));
+   cp->own_cdata = EINA_TRUE;
+   cp->cdata = E_NEW(E_Comp_Wl_Client_Data, 1);
+   cp->cdata->pending.buffer_viewport.buffer.transform = WL_OUTPUT_TRANSFORM_NORMAL;
+   cp->cdata->pending.buffer_viewport.buffer.scale = 1;
+   cp->cdata->pending.buffer_viewport.buffer.src_width = wl_fixed_from_int(-1);
+   cp->cdata->pending.buffer_viewport.surface.width = -1;
+   cp->cdata->pending.buffer_viewport.changed = 0;
 #endif
    return cp;
 }
@@ -961,14 +972,34 @@ EAPI E_Comp_Client_Data *
 e_pixmap_cdata_get(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, NULL);
+
+#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
    return (E_Comp_Client_Data*)cp->cdata;
+#else
+   return NULL;
+#endif
 }
 
 EAPI void
 e_pixmap_cdata_set(E_Pixmap *cp, E_Comp_Client_Data *cdata)
 {
+#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+   E_Comp_Wl_Client_Data *cd = (E_Comp_Wl_Client_Data*)cdata;
+
    EINA_SAFETY_ON_NULL_RETURN(cp);
+   EINA_SAFETY_ON_NULL_RETURN(cp->cdata);
    EINA_SAFETY_ON_NULL_RETURN(cdata);
-   free (cp->cdata);
-   cp->cdata = cdata;
+
+   if (cp->own_cdata)
+     {
+        cd->wl_surface = cp->cdata->wl_surface;
+        cd->scaler.viewport = cp->cdata->scaler.viewport;
+        cd->pending.buffer_viewport = cp->cdata->pending.buffer_viewport;
+
+        free (cp->cdata);
+        cp->own_cdata = EINA_FALSE;
+     }
+
+   cp->cdata = cd;
+#endif
 }

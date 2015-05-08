@@ -110,8 +110,8 @@ _e_comp_wl_map_size_cal_from_buffer(E_Client *ec)
 
    if (!ec->comp_data->buffer_ref.buffer)
      {
-        vp->width_from_buffer = 0;
-        vp->height_from_buffer = 0;
+        ec->comp_data->width_from_buffer = 0;
+        ec->comp_data->height_from_buffer = 0;
         return;
      }
 
@@ -130,8 +130,8 @@ _e_comp_wl_map_size_cal_from_buffer(E_Client *ec)
         break;
      }
 
-   vp->width_from_buffer = width;
-   vp->height_from_buffer = height;
+   ec->comp_data->width_from_buffer = width;
+   ec->comp_data->height_from_buffer = height;
 }
 
 static void
@@ -140,13 +140,13 @@ _e_comp_wl_map_size_cal_from_viewport(E_Client *ec)
    E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
    int32_t width, height;
 
-   width = vp->width_from_buffer;
-   height = vp->height_from_buffer;
+   width = ec->comp_data->width_from_buffer;
+   height = ec->comp_data->height_from_buffer;
 
    if (width != 0 && vp->surface.width != -1)
      {
-        vp->width_from_viewport = vp->surface.width;
-        vp->height_from_viewport = vp->surface.height;
+        ec->comp_data->width_from_viewport = vp->surface.width;
+        ec->comp_data->height_from_viewport = vp->surface.height;
         return;
      }
 
@@ -154,13 +154,13 @@ _e_comp_wl_map_size_cal_from_viewport(E_Client *ec)
      {
         int32_t w = wl_fixed_to_int(wl_fixed_from_int(1) - 1 + vp->buffer.src_width);
         int32_t h = wl_fixed_to_int(wl_fixed_from_int(1) - 1 + vp->buffer.src_height);
-        vp->width_from_viewport = w ?: 1;
-        vp->height_from_viewport = h ?: 1;
+        ec->comp_data->width_from_viewport = w ?: 1;
+        ec->comp_data->height_from_viewport = h ?: 1;
         return;
      }
 
-   vp->width_from_viewport = width;
-   vp->height_from_viewport = height;
+   ec->comp_data->width_from_viewport = width;
+   ec->comp_data->height_from_viewport = height;
 }
 
 static void
@@ -211,14 +211,14 @@ _e_comp_wl_map_apply(E_Client *ec)
 
    evas_map_util_points_populate_from_geometry(map,
                                                ec->x, ec->y,
-                                               vp->width_from_viewport, vp->height_from_viewport, 0);
+                                               ec->comp_data->width_from_viewport, ec->comp_data->height_from_viewport, 0);
 
    if (vp->buffer.src_width == wl_fixed_from_int(-1))
      {
         x1 = 0.0;
         y1 = 0.0;
-        x2 = vp->width_from_buffer;
-        y2 = vp->height_from_buffer;
+        x2 = ec->comp_data->width_from_buffer;
+        y2 = ec->comp_data->height_from_buffer;
      }
    else
      {
@@ -228,22 +228,22 @@ _e_comp_wl_map_apply(E_Client *ec)
         y2 = wl_fixed_to_int(vp->buffer.src_y + vp->buffer.src_height);
      }
 
-   _e_comp_wl_map_transform(vp->width_from_buffer, vp->height_from_buffer,
+   _e_comp_wl_map_transform(ec->comp_data->width_from_buffer, ec->comp_data->height_from_buffer,
                             vp->buffer.transform, vp->buffer.scale,
                             x1, y1, &x, &y);
    evas_map_point_image_uv_set(map, 0, x, y);
 
-   _e_comp_wl_map_transform(vp->width_from_buffer, vp->height_from_buffer,
+   _e_comp_wl_map_transform(ec->comp_data->width_from_buffer, ec->comp_data->height_from_buffer,
                             vp->buffer.transform, vp->buffer.scale,
                             x2, y1, &x, &y);
    evas_map_point_image_uv_set(map, 1, x, y);
 
-   _e_comp_wl_map_transform(vp->width_from_buffer, vp->height_from_buffer,
+   _e_comp_wl_map_transform(ec->comp_data->width_from_buffer, ec->comp_data->height_from_buffer,
                             vp->buffer.transform, vp->buffer.scale,
                             x2, y2, &x, &y);
    evas_map_point_image_uv_set(map, 2, x, y);
 
-   _e_comp_wl_map_transform(vp->width_from_buffer, vp->height_from_buffer,
+   _e_comp_wl_map_transform(ec->comp_data->width_from_buffer, ec->comp_data->height_from_buffer,
                             vp->buffer.transform, vp->buffer.scale,
                             x1, y2, &x, &y);
    evas_map_point_image_uv_set(map, 3, x, y);
@@ -2316,11 +2316,9 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
    /* eina_hash_add(clients_win_hash, &win, ec); */
    e_hints_client_list_set();
 
-   E_Comp_Wl_Client_Data *cdata = e_pixmap_cdata_get(ec->pixmap);
-   struct wl_resource *wl_resource = cdata->wl_surface;
-   ec->comp_data->scaler = cdata->scaler;
    e_pixmap_cdata_set(ec->pixmap, ec->comp_data);
-   _e_comp_wl_surface_cb_commit(NULL, wl_resource);
+   if (ec->comp_data->wl_surface)
+     _e_comp_wl_surface_cb_commit(NULL, ec->comp_data->wl_surface);
 }
 
 static void

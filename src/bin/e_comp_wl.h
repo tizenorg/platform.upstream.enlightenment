@@ -89,14 +89,6 @@ struct _E_Comp_Wl_Buffer_Viewport {
      } surface;
 
    int changed;
-
-   /* before applying viewport */
-   int width_from_buffer;
-   int height_from_buffer;
-
-   /* after applying viewport */
-   int width_from_viewport;
-   int height_from_viewport;
 };
 
 struct _E_Comp_Wl_Surface_State
@@ -304,6 +296,14 @@ struct _E_Comp_Wl_Client_Data
         struct wl_resource *viewport;
         E_Comp_Wl_Buffer_Viewport buffer_viewport;
      } scaler;
+
+   /* before applying viewport */
+   int width_from_buffer;
+   int height_from_buffer;
+
+   /* after applying viewport */
+   int width_from_viewport;
+   int height_from_viewport;
 
    Eina_Bool keep_buffer : 1;
    Eina_Bool mapped : 1;

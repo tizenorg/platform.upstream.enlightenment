@@ -6,8 +6,10 @@
 static void
 _e_viewport_destroy(struct wl_resource *resource)
 {
-   E_Comp_Client_Data *cdata = wl_resource_get_user_data(resource);
+   E_Pixmap *ep = wl_resource_get_user_data(resource);
+   E_Comp_Client_Data *cdata = e_pixmap_cdata_get(ep);
 
+   EINA_SAFETY_ON_NULL_RETURN(cdata);
    EINA_SAFETY_ON_NULL_RETURN(cdata->scaler.viewport);
 
    cdata->scaler.viewport = NULL;
@@ -32,8 +34,10 @@ _e_viewport_cb_set(struct wl_client *client EINA_UNUSED,
                    int32_t dst_width,
                    int32_t dst_height)
 {
-   E_Comp_Client_Data *cdata = wl_resource_get_user_data(resource);
+   E_Pixmap *ep = wl_resource_get_user_data(resource);
+   E_Comp_Client_Data *cdata = e_pixmap_cdata_get(ep);
 
+   EINA_SAFETY_ON_NULL_RETURN(cdata);
    EINA_SAFETY_ON_NULL_RETURN(cdata->scaler.viewport);
 
    if (wl_fixed_to_double(src_width) < 0 || wl_fixed_to_double(src_height) < 0)
@@ -72,8 +76,10 @@ _e_viewport_cb_set_source(struct wl_client *client EINA_UNUSED,
                           wl_fixed_t src_width,
                           wl_fixed_t src_height)
 {
-   E_Comp_Client_Data *cdata = wl_resource_get_user_data(resource);
+   E_Pixmap *ep = wl_resource_get_user_data(resource);
+   E_Comp_Client_Data *cdata = e_pixmap_cdata_get(ep);
 
+   EINA_SAFETY_ON_NULL_RETURN(cdata);
    EINA_SAFETY_ON_NULL_RETURN(cdata->scaler.viewport);
 
    if (src_width == wl_fixed_from_int(-1) && src_height == wl_fixed_from_int(-1))
@@ -107,8 +113,10 @@ _e_viewport_cb_set_destination(struct wl_client *client EINA_UNUSED,
                                int32_t dst_width,
                                int32_t dst_height)
 {
-   E_Comp_Client_Data *cdata = wl_resource_get_user_data(resource);
+   E_Pixmap *ep = wl_resource_get_user_data(resource);
+   E_Comp_Client_Data *cdata = e_pixmap_cdata_get(ep);
 
+   EINA_SAFETY_ON_NULL_RETURN(cdata);
    EINA_SAFETY_ON_NULL_RETURN(cdata->scaler.viewport);
 
    if (dst_width == -1 && dst_height == -1)
@@ -173,7 +181,7 @@ _e_scaler_cb_get_viewport(struct wl_client *client EINA_UNUSED, struct wl_resour
      }
 
    cdata->scaler.viewport = res;
-   wl_resource_set_implementation(res, &_e_viewport_interface, cdata, _e_viewport_destroy);
+   wl_resource_set_implementation(res, &_e_viewport_interface, ep, _e_viewport_destroy);
 }
 
 static const struct wl_scaler_interface _e_scaler_interface =
@@ -185,14 +193,7 @@ static const struct wl_scaler_interface _e_scaler_interface =
 static void
 _e_scaler_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
-   E_Comp_Data *cdata;
    struct wl_resource *res;
-
-   if (!(cdata = data))
-     {
-        wl_client_post_no_memory(client);
-        return;
-     }
 
    if (!(res = wl_resource_create(client, &wl_scaler_interface, MIN(version, 2), id)))
      {
@@ -201,7 +202,7 @@ _e_scaler_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32
         return;
      }
 
-   wl_resource_set_implementation(res, &_e_scaler_interface, cdata, NULL);
+   wl_resource_set_implementation(res, &_e_scaler_interface, NULL, NULL);
 }
 
 Eina_Bool
