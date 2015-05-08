@@ -164,40 +164,8 @@ _e_comp_wl_map_size_cal_from_viewport(E_Client *ec)
 }
 
 static void
-_e_comp_wl_map_coord_to_buffer(E_Client *ec, float sx, float sy, float *dx, float *dy)
-{
-   E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
-   double src_width, src_height;
-   double src_x, src_y;
-
-   if (vp->buffer.src_width == wl_fixed_from_int(-1))
-     {
-        if (vp->surface.width == -1)
-          {
-             *dx = sx, *dy = sy;
-             return;
-          }
-
-        src_x = 0.0;
-        src_y = 0.0;
-        src_width = vp->width_from_buffer;
-        src_height = vp->height_from_buffer;
-     }
-   else
-     {
-        src_x = wl_fixed_to_double(vp->buffer.src_x);
-        src_y = wl_fixed_to_double(vp->buffer.src_y);
-        src_width = wl_fixed_to_double(vp->buffer.src_width);
-        src_height = wl_fixed_to_double(vp->buffer.src_height);
-     }
-
-   *dx = sx * src_width / vp->width_from_viewport + src_x;
-   *dy = sy * src_height / vp->height_from_viewport + src_y;
-}
-
-static void
-_e_comp_wl_map_coord_to_client(int width, int height, uint32_t transform, int32_t scale,
-                               float sx, float sy, float *dx, float *dy)
+_e_comp_wl_map_transform(int width, int height, uint32_t transform, int32_t scale,
+                         int sx, int sy, int *dx, int *dy)
 {
    switch (transform)
      {
@@ -233,65 +201,57 @@ _e_comp_wl_map_coord_to_client(int width, int height, uint32_t transform, int32_
 }
 
 static void
-_e_comp_wl_map_rect_transform(E_Client *ec, Eina_Rectangle *srect, Eina_Rectangle *drect)
-{
-   E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
-   float x1, y1, x2, y2;
-
-   /* first transform box coordinates if the scaler is set */
-   x1 = srect->x;
-   y1 = srect->y;
-   _e_comp_wl_map_coord_to_buffer(ec, srect->w, srect->h, &x2, &y2);
-
-   _e_comp_wl_map_coord_to_client(vp->width_from_buffer, vp->height_from_buffer,
-                                  vp->buffer.transform, vp->buffer.scale,
-                                  x1, y1, &x1, &y1);
-   _e_comp_wl_map_coord_to_client(vp->width_from_buffer, vp->height_from_buffer,
-                                  vp->buffer.transform, vp->buffer.scale,
-                                  x2, y2, &x2, &y2);
-
-   drect->x = (x1 <= x2) ? x1 : x2;
-   drect->w = (x1 <= x2) ? x2 - x1 : x1 - x2;
-   drect->y = (y1 <= y2) ? y1 : y2;
-   drect->h = (y1 <= y2) ? y2 - y1 : y1 - y2;
-}
-
-static void
 _e_comp_wl_map_apply(E_Client *ec)
 {
    E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
-   int dx, dy;
    Evas_Map *map;
-   Eina_Rectangle rect, temp;
+   int x1, y1, x2, y2, x, y;
 
    map = evas_map_new(4);
 
-   evas_object_geometry_get(ec->frame, &dx, &dy, NULL, NULL);
-   evas_map_util_points_populate_from_geometry(map, dx, dy, vp->width_from_viewport, vp->height_from_viewport, 0);
+   evas_map_util_points_populate_from_geometry(map,
+                                               ec->x, ec->y,
+                                               vp->width_from_viewport, vp->height_from_viewport, 0);
 
    if (vp->buffer.src_width == wl_fixed_from_int(-1))
      {
-        rect.x = 0.0;
-        rect.y = 0.0;
-        rect.w = vp->width_from_buffer;
-        rect.h = vp->height_from_buffer;
+        x1 = 0.0;
+        y1 = 0.0;
+        x2 = vp->width_from_buffer;
+        y2 = vp->height_from_buffer;
      }
    else
      {
-        rect.x = wl_fixed_to_double(vp->buffer.src_x);
-        rect.y = wl_fixed_to_double(vp->buffer.src_y);
-        rect.w = wl_fixed_to_double(vp->buffer.src_width);
-        rect.h = wl_fixed_to_double(vp->buffer.src_height);
+        x1 = wl_fixed_to_int(vp->buffer.src_x);
+        y1 = wl_fixed_to_int(vp->buffer.src_y);
+        x2 = wl_fixed_to_int(vp->buffer.src_x + vp->buffer.src_width);
+        y2 = wl_fixed_to_int(vp->buffer.src_y + vp->buffer.src_height);
      }
-   _e_comp_wl_map_rect_transform(ec, &rect, &temp);
 
-   evas_map_point_image_uv_set(map, 0, temp.x, temp.y);
-   evas_map_point_image_uv_set(map, 1, temp.x+temp.w, temp.y);
-   evas_map_point_image_uv_set(map, 2, temp.x+temp.w, temp.y+temp.h);
-   evas_map_point_image_uv_set(map, 3, temp.x, temp.y+temp.h);
+   _e_comp_wl_map_transform(vp->width_from_buffer, vp->height_from_buffer,
+                            vp->buffer.transform, vp->buffer.scale,
+                            x1, y1, &x, &y);
+   evas_map_point_image_uv_set(map, 0, x, y);
+
+   _e_comp_wl_map_transform(vp->width_from_buffer, vp->height_from_buffer,
+                            vp->buffer.transform, vp->buffer.scale,
+                            x2, y1, &x, &y);
+   evas_map_point_image_uv_set(map, 1, x, y);
+
+   _e_comp_wl_map_transform(vp->width_from_buffer, vp->height_from_buffer,
+                            vp->buffer.transform, vp->buffer.scale,
+                            x2, y2, &x, &y);
+   evas_map_point_image_uv_set(map, 2, x, y);
+
+   _e_comp_wl_map_transform(vp->width_from_buffer, vp->height_from_buffer,
+                            vp->buffer.transform, vp->buffer.scale,
+                            x1, y2, &x, &y);
+   evas_map_point_image_uv_set(map, 3, x, y);
 
    evas_object_map_set(ec->frame, map);
-   evas_object_map_enable_set(ec->frame, EINA_TRUE);
+   evas_object_map_enable_set(ec->frame, map ? EINA_TRUE : EINA_FALSE);
+
+   evas_map_free(map);
 }
 
 static void
