@@ -2326,6 +2326,8 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
 {
    /* Eina_Rectangle *dmg; */
    struct wl_resource *cb;
+   E_Client *subc;
+   Eina_List *l;
 
    /* make sure this is a wayland client */
    if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
@@ -2339,6 +2341,11 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
         /* reset pixmap parent window */
         e_pixmap_parent_window_set(ec->pixmap, 0);
      }
+
+   /* remove sub list */
+   EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
+     subc->comp_data->sub.data->parent = NULL;
+   eina_list_free(ec->comp_data->sub.list);
 
    if ((ec->parent) && (ec->parent->modal == ec))
      {
