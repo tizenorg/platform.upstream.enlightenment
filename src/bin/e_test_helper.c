@@ -354,7 +354,8 @@ _e_test_helper_cb_client_restack(void *data EINA_UNUSED, int type EINA_UNUSED, v
    Ecore_Window win;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(th_data, ECORE_CALLBACK_PASS_ON);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(th_data->registrant.ec, ECORE_CALLBACK_PASS_ON);
+
+   if(!th_data->registrant.ec) return ECORE_CALLBACK_PASS_ON;
 
    ec = ev->ec;
 
