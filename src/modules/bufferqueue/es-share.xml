@@ -1,0 +1,123 @@
+<protocol name="esmgr">
+
+  <interface name="es_buffer_queue_manager" version="1">
+    <enum name="error">
+      <entry name="invalid_permission" value="0"/>
+      <entry name="invalid_name" value="1"/>
+      <entry name="already_used" value="2"/>
+    </enum>
+    <request name="create_consumer">
+      <arg name="id" type="new_id" interface="es_consumer"/>
+      <arg name="name" type="string"/>
+      <arg name="queue_size" type="int"/>
+      <arg name="width" type="int"/>
+      <arg name="height" type="int"/>
+    </request>
+    <request name="create_provider">
+      <arg name="id" type="new_id" interface="es_provider"/>
+      <arg name="name" type="string"/>
+    </request>
+  </interface>
+
+  <interface name="es_consumer" version="1">
+    <request name="release_buffer">
+      <arg name="buffer" type="object" interface="es_buffer"/>
+    </request>
+
+    <event name="connected"/>
+    <event name="disconnected"/>
+    <event name="buffer_attached">
+      <arg name="buffer" type="new_id" interface="es_buffer"/>
+      <arg name="engine" type="string"/>
+      <arg name="width" type="int"/>
+      <arg name="height" type="int"/>
+      <arg name="format" type="int"/>
+      <arg name="flags" type="uint"/>
+    </event>
+    <event name="set_buffer_id">
+      <arg name="buffer" type="object" interface="es_buffer"/>
+      <arg name="id" type="int"/>
+      <arg name="offset0" type="int"/>
+      <arg name="stride0" type="int"/>
+      <arg name="offset1" type="int"/>
+      <arg name="stride1" type="int"/>
+      <arg name="offset2" type="int"/>
+      <arg name="stride2" type="int"/>
+    </event>
+    <event name="set_buffer_fd">
+      <arg name="buffer" type="object" interface="es_buffer"/>
+      <arg name="fd" type="fd"/>
+      <arg name="offset0" type="int"/>
+      <arg name="stride0" type="int"/>
+      <arg name="offset1" type="int"/>
+      <arg name="stride1" type="int"/>
+      <arg name="offset2" type="int"/>
+      <arg name="stride2" type="int"/>
+    </event>
+    <event name="buffer_detached">
+      <arg name="buffer" type="object" interface="es_buffer"/>
+    </event>
+    <event name="add_buffer">
+      <arg name="buffer" type="object" interface="es_buffer"/>
+      <arg name="serial" type="uint"/>
+    </event>
+  </interface>
+  
+  <interface name="es_provider" version="1">
+    <enum name="error">
+      <entry name="overflow_queue_size" value="0"/>
+      <entry name="connection" value="0"/>
+    </enum>
+  
+    <request name="attach_buffer">
+      <arg name="buffer" type="new_id" interface="es_buffer"/>
+      <arg name="engine" type="string"/>
+      <arg name="width" type="int"/>
+      <arg name="height" type="int"/>
+      <arg name="format" type="int"/>
+      <arg name="flags" type="uint"/>
+    </request>
+    <request name="set_buffer_id">
+      <arg name="buffer" type="object" interface="es_buffer"/>
+      <arg name="id" type="int"/>
+      <arg name="offset0" type="int"/>
+      <arg name="stride0" type="int"/>
+      <arg name="offset1" type="int"/>
+      <arg name="stride1" type="int"/>
+      <arg name="offset2" type="int"/>
+      <arg name="stride2" type="int"/>
+    </request>
+    <request name="set_buffer_fd">
+      <arg name="buffer" type="object" interface="es_buffer"/>
+      <arg name="fd" type="fd"/>
+      <arg name="offset0" type="int"/>
+      <arg name="stride0" type="int"/>
+      <arg name="offset1" type="int"/>
+      <arg name="stride1" type="int"/>
+      <arg name="offset2" type="int"/>
+      <arg name="stride2" type="int"/>
+    </request>
+    <request name="detach_buffer">
+      <arg name="buffer" type="object" interface="es_buffer"/>
+    </request>
+    <request name="enqueue_buffer">
+      <arg name="buffer" type="object" interface="es_buffer"/>
+      <arg name="serial" type="uint"/>
+    </request>
+
+    <event name="connected">
+      <arg name="queue_size" type="int"/>
+      <arg name="width" type="int"/>
+      <arg name="height" type="int"/>
+    </event>
+    <event name="disconnected"/>
+    <event name="add_buffer">
+      <arg name="buffer" type="object" interface="es_buffer"/>
+      <arg name="serial" type="uint"/>
+    </event>
+  </interface>
+
+  <interface name="es_buffer" version="1">
+  </interface>
+</protocol>
+

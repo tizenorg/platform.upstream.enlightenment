@@ -923,6 +923,16 @@ define([CHECK_MODULE_WL_DRM],
 ])
 AM_CONDITIONAL([HAVE_WL_DRM], [test "x${WL_DRM}" = "xtrue"])
 
+define([CHECK_MODULE_BUFFERQUEUE],
+[
+  if test "x${have_wayland_clients}" = "xyes" || test "x${e_cv_want_wayland_only}" = "xyes"; then
+    AC_E_CHECK_PKG(BUFFERQUEUE, [ ecore >= $efl_version eina >= $efl_version ], [BUFFERQUEUE=true], [BUFFERQUEUE=false])
+  else
+    BUFFERQUEUE=false
+  fi
+])
+AM_CONDITIONAL([HAVE_BUFFERQUEUE], [test "x${BUFFERQUEUE}" = "xtrue"])
+
 AC_E_OPTIONAL_MODULE([ibar], true)
 AC_E_OPTIONAL_MODULE([clock], true)
 AC_E_OPTIONAL_MODULE([pager], true)
@@ -980,6 +990,7 @@ AC_E_OPTIONAL_MODULE([wl_fb], $have_wayland, [CHECK_MODULE_WL_FB])
 AC_E_OPTIONAL_MODULE([wl_drm], $have_wayland, [CHECK_MODULE_WL_DRM])
 AC_E_OPTIONAL_MODULE([wl_screenshot], $have_wayland, [CHECK_MODULE_WL_SCREENSHOT])
 AC_E_OPTIONAL_MODULE([policy_mobile], true)
+AC_E_OPTIONAL_MODULE([bufferqueue], $have_wayland, [CHECK_MODULE_BUFFERQUEUE])
 
 HALT="/sbin/shutdown -h now"
 REBOOT="/sbin/shutdown -r now"
