@@ -1071,6 +1071,43 @@ _e_comp_wl_cb_input_event(void *data EINA_UNUSED, int type, void *ev)
    return ECORE_CALLBACK_RENEW;
 }
 
+static E_Client*
+_e_comp_wl_subsurface_restack(E_Client *ec)
+{
+   E_Client *subc, *below = ec;
+   Eina_List *l;
+
+   if (!ec->comp_data->sub.list) return ec;
+
+   EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
+     {
+        evas_object_stack_above(subc->frame, below->frame);
+        below = subc;
+     }
+
+   return below;
+}
+
+static void
+_e_comp_wl_surface_subsurface_order_commit(E_Client *ec)
+{
+   E_Client *subc;
+   Eina_List *l;
+
+   if (!ec->comp_data->sub.list_changed) return;
+   ec->comp_data->sub.list_changed = EINA_FALSE;
+
+   EINA_LIST_FOREACH(ec->comp_data->sub.list_pending, l, subc)
+     {
+        ec->comp_data->sub.list = eina_list_remove(ec->comp_data->sub.list, subc);
+        ec->comp_data->sub.list = eina_list_append(ec->comp_data->sub.list, subc);
+
+        _e_comp_wl_surface_subsurface_order_commit(subc);
+     }
+
+   _e_comp_wl_subsurface_restack(ec);
+}
+
 static void
 _e_comp_wl_surface_state_size_update(E_Client *ec, E_Comp_Wl_Surface_State *state)
 {
@@ -1194,7 +1231,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
 
    if (state->new_attach || state->buffer_viewport.changed)
      {
-        _e_comp_wl_surface_state_size_update(ec, &ec->comp_data->pending);
+        _e_comp_wl_surface_state_size_update(ec, state);
         _e_comp_wl_map_size_cal_from_viewport(ec);
 
         if (ec->changes.pos)
@@ -1838,6 +1875,8 @@ _e_comp_wl_subsurface_destroy(struct wl_resource *resource)
         /* remove this client from parents sub list */
         sdata->parent->comp_data->sub.list =
           eina_list_remove(sdata->parent->comp_data->sub.list, ec);
+        sdata->parent->comp_data->sub.list_pending =
+          eina_list_remove(sdata->parent->comp_data->sub.list_pending, ec);
      }
 
    _e_comp_wl_surface_state_finish(&sdata->cached);
@@ -1941,6 +1980,8 @@ _e_comp_wl_subsurface_commit_from_cache(E_Client *ec)
 
    e_comp_wl_buffer_reference(&sdata->cached_buffer_ref, NULL);
 
+   _e_comp_wl_surface_subsurface_order_commit(ec);
+
    /* schedule repaint */
    if (e_pixmap_refresh(ec->pixmap))
      {
@@ -2025,13 +2066,13 @@ _e_comp_wl_subsurface_cb_place_above(struct wl_client *client EINA_UNUSED, struc
 
    if (!(parent = ec->comp_data->sub.data->parent)) return;
 
-   parent->comp_data->sub.list =
-     eina_list_remove(parent->comp_data->sub.list, ec);
+   parent->comp_data->sub.list_pending =
+     eina_list_remove(parent->comp_data->sub.list_pending, ec);
 
-   parent->comp_data->sub.list =
-     eina_list_append_relative(parent->comp_data->sub.list, ec, ecs);
+   parent->comp_data->sub.list_pending =
+     eina_list_append_relative(parent->comp_data->sub.list_pending, ec, ecs);
 
-   parent->comp_data->sub.restack_target = parent;
+   parent->comp_data->sub.list_changed = EINA_TRUE;
 }
 
 static void
@@ -2054,13 +2095,13 @@ _e_comp_wl_subsurface_cb_place_below(struct wl_client *client EINA_UNUSED, struc
 
    if (!(parent = ec->comp_data->sub.data->parent)) return;
 
-   parent->comp_data->sub.list =
-     eina_list_remove(parent->comp_data->sub.list, ec);
+   parent->comp_data->sub.list_pending =
+     eina_list_remove(parent->comp_data->sub.list_pending, ec);
 
-   parent->comp_data->sub.list =
-     eina_list_prepend_relative(parent->comp_data->sub.list, ec, ecs);
+   parent->comp_data->sub.list_pending =
+     eina_list_prepend_relative(parent->comp_data->sub.list_pending, ec, ecs);
 
-   parent->comp_data->sub.restack_target = parent;
+   parent->comp_data->sub.list_changed = EINA_TRUE;
 }
 
 static void
@@ -2162,8 +2203,9 @@ _e_comp_wl_subsurface_create(E_Client *ec, E_Client *epc, uint32_t id, struct wl
         if (epc->comp_data)
           {
              /* append this client to the parents subsurface list */
-             epc->comp_data->sub.list =
-               eina_list_append(epc->comp_data->sub.list, ec);
+             epc->comp_data->sub.list_pending =
+               eina_list_append(epc->comp_data->sub.list_pending, ec);
+             epc->comp_data->sub.list_changed = EINA_TRUE;
           }
 
         /* TODO: add callbacks ?? */
@@ -2324,8 +2366,6 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
    e_hints_client_list_set();
 
    e_pixmap_cdata_set(ec->pixmap, ec->comp_data);
-   if (ec->comp_data->wl_surface)
-     _e_comp_wl_surface_cb_commit(NULL, ec->comp_data->wl_surface);
 }
 
 static void
@@ -2334,7 +2374,6 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
    /* Eina_Rectangle *dmg; */
    struct wl_resource *cb;
    E_Client *subc;
-   Eina_List *l;
 
    /* make sure this is a wayland client */
    if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
@@ -2350,9 +2389,10 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
      }
 
    /* remove sub list */
-   EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
+   EINA_LIST_FREE(ec->comp_data->sub.list, subc)
      subc->comp_data->sub.data->parent = NULL;
-   eina_list_free(ec->comp_data->sub.list);
+   EINA_LIST_FREE(ec->comp_data->sub.list_pending, subc)
+     subc->comp_data->sub.data->parent = NULL;
 
    if ((ec->parent) && (ec->parent->modal == ec))
      {
@@ -3025,6 +3065,8 @@ EINTERN Eina_Bool
 e_comp_wl_surface_commit(E_Client *ec)
 {
    _e_comp_wl_surface_state_commit(ec, &ec->comp_data->pending);
+
+   _e_comp_wl_surface_subsurface_order_commit(ec);
 
    /* schedule repaint */
    if (e_pixmap_refresh(ec->pixmap))
