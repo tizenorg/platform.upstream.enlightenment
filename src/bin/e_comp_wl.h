@@ -262,6 +262,8 @@ struct _E_Comp_Wl_Client_Data
         E_Comp_Wl_Subsurf_Data *data;
         E_Client *restack_target;
         Eina_List *list;
+        Eina_List *list_pending;
+        Eina_Bool list_changed : 1;
      } sub;
 
    /* regular surface resource (wl_compositor_create_surface) */
