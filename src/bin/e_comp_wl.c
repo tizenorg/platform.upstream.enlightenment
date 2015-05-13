@@ -1212,7 +1212,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
              else
                {
                   evas_object_hide(ec->frame);
-                  ec->comp_data->mapped = evas_object_visible_get(ec->frame);
+                  ec->comp_data->mapped = EINA_TRUE;
                }
           }
      }
@@ -1225,7 +1225,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
              else
                {
                   evas_object_show(ec->frame);
-                  ec->comp_data->mapped = evas_object_visible_get(ec->frame);
+                  ec->comp_data->mapped = EINA_TRUE;
                }
           }
      }
@@ -3035,7 +3035,7 @@ e_comp_wl_surface_commit(E_Client *ec)
              else
                {
                   evas_object_hide(ec->frame);
-                  ec->comp_data->mapped = evas_object_visible_get(ec->frame);
+                  ec->comp_data->mapped = EINA_TRUE;
                }
           }
      }
@@ -3048,7 +3048,7 @@ e_comp_wl_surface_commit(E_Client *ec)
              else
                {
                   evas_object_show(ec->frame);
-                  ec->comp_data->mapped = evas_object_visible_get(ec->frame);
+                  ec->comp_data->mapped = EINA_TRUE;
                }
           }
      }
