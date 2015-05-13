@@ -173,6 +173,12 @@ main(int argc, char **argv)
    Eldbus_Connection *conn;
    Eldbus_Object     *obj;
 
+   if (argc <= 1)
+     {
+        _print_usage();
+        return 0;
+     }
+
    test_info = E_NEW(E_Test_Info, 1);
    EINA_SAFETY_ON_NULL_GOTO(test_info, err);
 
@@ -202,10 +208,20 @@ main(int argc, char **argv)
         goto err;
      }
 
-   if (argv[1] && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "-help") || !strcmp(argv[1], "--help")))
-     _print_usage();
+   if (!strcmp(argv[1], "-h") ||
+       !strcmp(argv[1], "-help") ||
+       !strcmp(argv[1], "--help"))
+     {
+        _print_usage();
+     }
    else if (!strcmp(argv[1], "-topvwins"))
-     _print_stack_info(test_info);
+     {
+        _print_stack_info(test_info);
+     }
+   else
+     {
+        _print_usage();
+     }
 
    eldbus_proxy_unref(test_info->proxy);
    eldbus_object_unref(obj);
@@ -217,6 +233,5 @@ main(int argc, char **argv)
 
 err:
    E_FREE(test_info);
-
    return -1;
 }
