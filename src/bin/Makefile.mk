@@ -23,7 +23,8 @@ src/bin/enlightenment \
 src/bin/enlightenment_imc \
 src/bin/enlightenment_start \
 src/bin/enlightenment_filemanager \
-src/bin/enlightenment_open
+src/bin/enlightenment_open \
+src/bin/enlightenment_info
 
 internal_bindir = $(libdir)/enlightenment/utils
 internal_bin_PROGRAMS = \
@@ -458,6 +459,12 @@ src_bin_enlightenment_static_grabber_SOURCES = \
 src/bin/e_static_grab.c
 src_bin_enlightenment_static_grabber_LDADD = @E_GRABBER_LIBS@
 src_bin_enlightenment_static_grabber_CPPFLAGS = @E_GRABBER_CFLAGS@
+
+src_bin_enlightenment_info_SOURCES = \
+src/bin/e.h \
+src/bin/e_info.c
+src_bin_enlightenment_info_LDADD = @E_INFO_LIBS@
+src_bin_enlightenment_info_CPPFLAGS = $(E_CPPFLAGS) @E_INFO_CFLAGS@
 
 include src/bin/e_fm/Makefile.mk
 
