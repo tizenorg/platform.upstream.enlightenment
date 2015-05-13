@@ -3,7 +3,7 @@
 #include "e.h"
 #include "e_desktop_shell_protocol.h"
 #include "e_scaler.h"
-#include "e_transient_for_protocol.h"
+#include "tizen_extension_server_protocol.h"
 
 #define XDG_SERVER_VERSION 4
 
@@ -1349,22 +1349,22 @@ _e_xdg_shell_cb_pong(struct wl_client *client EINA_UNUSED, struct wl_resource *r
 }
 
 static void
-_e_tizen_gid_cb_destroy(struct wl_client *client, struct wl_resource *resource)
+_e_tz_res_cb_destroy(struct wl_client *client, struct wl_resource *resource)
 {
    wl_resource_destroy(resource);
 }
 
-static const struct tizen_gid_interface _e_tizen_gid_interface =
+static const struct tizen_resource_interface _e_tz_res_interface =
 {
-   _e_tizen_gid_cb_destroy,
+   _e_tz_res_cb_destroy
 };
 
 static void
-_e_tizen_ext_cb_tizen_gid_get(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface)
+_e_tz_surf_ext_cb_tz_res_get(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface)
 {
    struct wl_resource *res;
    E_Pixmap *ep;
-   uint32_t gid;
+   uint32_t res_id;
 
    /* get the pixmap from this surface so we can find the client */
    if (!(ep = wl_resource_get_user_data(surface)))
@@ -1379,56 +1379,51 @@ _e_tizen_ext_cb_tizen_gid_get(struct wl_client *client, struct wl_resource *reso
    if (e_pixmap_type_get(ep) != E_PIXMAP_TYPE_WL) return;
 
    /* find the window id for this pixmap */
-   gid = e_pixmap_tizen_gid_get(ep);
+   res_id = e_pixmap_res_id_get(ep);
 
-   DBG("TIZEN_EXT: tizen_gid_get %" PRIu32, gid);
+   DBG("tizen resource id %" PRIu32, res_id);
 
    /* try to create a tizen_gid */
-   if (!(res = wl_resource_create(client, &tizen_gid_interface, wl_resource_get_version(resource), id)))
+   if (!(res = wl_resource_create(client,
+                                  &tizen_resource_interface,
+                                  wl_resource_get_version(resource),
+                                  id)))
      {
         wl_resource_post_no_memory(resource);
         return;
      }
-   wl_resource_set_implementation(res, &_e_tizen_gid_interface,
-                                  ep, NULL);
 
-   tizen_gid_send_notify(res, gid);
+   wl_resource_set_implementation(res,
+                                  &_e_tz_res_interface,
+                                  ep,
+                                  NULL);
+
+   tizen_resource_send_resource_id(res, res_id);
 }
 
 static void
-_e_tizen_ext_cb_transient_for_set(struct wl_client *client, struct wl_resource *resource, uint32_t surface_gid, uint32_t parent_gid)
+_e_tz_surf_ext_cb_transient_for_set(struct wl_client *client, struct wl_resource *resource, uint32_t child_id, uint32_t parent_id)
 {
-   E_Client *ec;
-   E_Client *pc;
-   struct wl_resource *parent_resource;
+   E_Client *ec, *pc;
+   struct wl_resource *parent_res;
 
-   DBG("TIZEN_EXT: surface_gid: %" PRIu32 ", parent_gid : %" PRIu32, surface_gid, parent_gid);
+   DBG("chid_id: %" PRIu32 ", parent_id: %" PRIu32, child_id, parent_id);
 
-   ec = e_pixmap_find_client_by_tizen_gid(surface_gid);
-   if (!ec)
-     {
-        ERR("No Client for this surface gid");
-        return;
-     }
+   ec = e_pixmap_find_client_by_res_id(child_id);
+   EINA_SAFETY_ON_NULL_RETURN(ec);
 
-   /* find the parent client */
-   pc = e_pixmap_find_client_by_tizen_gid(parent_gid);
-   if (!pc)
-     {
-        ERR("No Client for this parent gid");
-        return;
-     }
-   if (pc->comp_data->surface)
-     {
-        parent_resource = pc->comp_data->surface;
-        _e_shell_surface_parent_set(ec, parent_resource);
-     }
+   pc = e_pixmap_find_client_by_res_id(parent_id);
+   EINA_SAFETY_ON_NULL_RETURN(pc);
+   EINA_SAFETY_ON_NULL_RETURN(pc->comp_data);
+
+   parent_res = pc->comp_data->surface;
+   _e_shell_surface_parent_set(ec, parent_res);
 }
 
-static const struct tizen_ext_interface _e_tizen_ext_interface =
+static const struct tizen_surface_extension_interface  _e_tz_surf_ext_interface =
 {
-   _e_tizen_ext_cb_tizen_gid_get,
-   _e_tizen_ext_cb_transient_for_set,
+   _e_tz_surf_ext_cb_tz_res_get,
+   _e_tz_surf_ext_cb_transient_for_set
 };
 
 static const struct wl_shell_interface _e_shell_interface =
@@ -1541,7 +1536,7 @@ _e_xdg_shell_cb_bind(struct wl_client *client, void *data, uint32_t version, uin
 }
 
 static void
-_e_tizen_ext_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32_t id)
+_e_tz_surf_ext_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
    E_Comp_Data *cdata;
    struct wl_resource *res;
@@ -1552,14 +1547,17 @@ _e_tizen_ext_cb_bind(struct wl_client *client, void *data, uint32_t version, uin
         return;
      }
 
-   if (!(res = wl_resource_create(client, &tizen_ext_interface, MIN(version, 1), id)))
+   if (!(res = wl_resource_create(client,
+                                  &tizen_surface_extension_interface,
+                                  MIN(version, 1),
+                                  id)))
      {
         ERR("Could not create tizen_ext resource: %m");
         wl_client_post_no_memory(client);
         return;
      }
 
-   wl_resource_set_implementation(res, &_e_tizen_ext_interface, cdata, NULL);
+   wl_resource_set_implementation(res, &_e_tz_surf_ext_interface, cdata, NULL);
 }
 
 EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Wl_Desktop_Shell" };
@@ -1597,11 +1595,14 @@ e_modapi_init(E_Module *m)
 
    e_scaler_init();
 
-   /* try to add tizen_ext to wayland globals */
-   if (!wl_global_create(cdata->wl.disp, &tizen_ext_interface, 1,
-                         cdata, _e_tizen_ext_cb_bind))
+   /* try to create global tizen surface extention interface */
+   if (!wl_global_create(cdata->wl.disp,
+                         &tizen_surface_extension_interface,
+                         1,
+                         cdata,
+                         _e_tz_surf_ext_cb_bind))
      {
-        ERR("Could not add tizen_ext to wayland globals: %m");
+        ERR("Could not create tizen_surface_extension to wayland globals: %m");
         return NULL;
      }
 

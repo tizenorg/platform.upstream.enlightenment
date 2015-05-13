@@ -8,8 +8,8 @@
 #endif
 
 static Eina_Hash *pixmaps[2] = {NULL};
-static Eina_Hash *gids = NULL;
-static uint32_t gid = 0;
+static Eina_Hash *res_ids = NULL;
+static uint32_t res_id = 0;
 
 struct _E_Pixmap
 {
@@ -20,7 +20,7 @@ struct _E_Pixmap
    E_Pixmap_Type type;
 
    uint64_t win;
-   uint32_t gid;
+   uint32_t res_id;
    Ecore_Window parent;
 
    int w, h;
@@ -265,11 +265,11 @@ e_pixmap_new(E_Pixmap_Type type, ...)
         cp = _e_pixmap_new(type);
         cp->win = id;
         eina_hash_add(pixmaps[type], &id, cp);
-        if (!gids)
-          gids = eina_hash_int32_new((Eina_Free_Cb)_e_pixmap_free);
-        gid++;
-        cp->gid = gid;
-        eina_hash_add(gids, &gid, cp);
+        if (!res_ids)
+          res_ids = eina_hash_int32_new((Eina_Free_Cb)_e_pixmap_free);
+        cp->res_id = res_id;
+        eina_hash_add(res_ids, &res_id, cp);
+        res_id++;
 #endif
         break;
      }
@@ -513,21 +513,21 @@ e_pixmap_find_client(E_Pixmap_Type type, ...)
 }
 
 EAPI E_Client *
-e_pixmap_find_client_by_tizen_gid(uint32_t gid)
+e_pixmap_find_client_by_res_id(uint32_t res_id)
 {
    E_Pixmap *cp;
 
-   if (!gids) return NULL;
-   cp = eina_hash_find(gids, &gid);
+   if (!res_ids) return NULL;
+   cp = eina_hash_find(res_ids, &res_id);
 
    return (!cp) ? NULL : cp->client;
 }
 
 EAPI uint32_t
-e_pixmap_tizen_gid_get(E_Pixmap *cp)
+e_pixmap_res_id_get(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, 0);
-   return cp->gid;
+   return cp->res_id;
 }
 
 EAPI uint64_t
