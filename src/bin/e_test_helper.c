@@ -39,13 +39,13 @@ enum
 static const Eldbus_Signal signals[] = {
      [E_TEST_HELPER_SIGNAL_CHANGE_VISIBILITY] =
        {
-          "ChangeVisibility",
+          "VisibilityChanged",
           ELDBUS_ARGS({"ub", "window id, visibility"}),
           0
        },
      [E_TEST_HELPER_SIGNAL_RESTACK] =
        {
-          "Restack",
+          "StackChanged",
           ELDBUS_ARGS({"u", "window id was restacked"}),
           0
        },
@@ -66,13 +66,13 @@ static const Eldbus_Method methods[] ={
           _e_test_helper_cb_deregister_window, 0
        },
        {
-          "ChangeStack",
-          ELDBUS_ARGS({"uiu", "window id to restack, stacking type, above or below"}),
+          "SetWindowStack",
+          ELDBUS_ARGS({"uui", "window id to restack, above or below, stacking type"}),
           NULL,
           _e_test_helper_cb_change_stack, 0
        },
        {
-          "GetClients",
+          "GetWindowInfo",
           NULL,
           ELDBUS_ARGS({"ua(usiiiiibb)", "array of ec"}),
           _e_test_helper_cb_get_clients, 0
@@ -139,34 +139,37 @@ _e_test_helper_message_append_clients(Eldbus_Message_Iter *iter)
 }
 
 static void
-_e_test_helper_restack(Ecore_Window win, int stacking, Ecore_Window target)
+_e_test_helper_restack(Ecore_Window win, Ecore_Window target, int above)
 {
-   E_Client *ec, *tec;
+   E_Client *ec = NULL, *tec = NULL;
 
-   ec = e_pixmap_find_client(E_PIXMAP_TYPE_X, win);
-   tec = e_pixmap_find_client(E_PIXMAP_TYPE_X, target);
+#ifdef HAVE_WAYLAND_ONLY
+   ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, win);
+   tec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, target);
+#else
+   if ((!ec) || ((e_pixmap_type_get(ec->picxmap) == E_PIXMAP_TYPE_X)))
+     {
+        ec = e_pixmap_find_client(E_PIXMAP_TYPE_X, win);
+        tec = e_pixmap_find_client(E_PIXMAP_TYPE_X, target);
+     }
+#endif
 
    if (!ec) return;
 
-   /* TODO: focus setting */
-   switch(stacking)
+   if(!tec)
      {
-      case 0:
-         evas_object_raise(ec->frame);
-         break;
-      case 1:
-         evas_object_lower(ec->frame);
-         break;
-      case 2:
-         if (tec)
-           evas_object_stack_above(ec->frame, tec->frame);
-         break;
-      case 3:
-         if (tec)
-           evas_object_stack_below(ec->frame, tec->frame);
-         break;
-      default:
-         break;
+        if (above)
+          evas_object_raise(ec->frame);
+        else
+          evas_object_lower(ec->frame);
+     }
+   else
+     {
+
+        if (above)
+          evas_object_stack_above(ec->frame, tec->frame);
+        else
+          evas_object_stack_below(ec->frame, tec->frame);
      }
 }
 
@@ -239,18 +242,18 @@ _e_test_helper_cb_change_stack(const Eldbus_Service_Interface *iface EINA_UNUSED
 {
    Eldbus_Message *reply = eldbus_message_method_return_new(msg);
    Ecore_Window win, target;
-   int stacking = -1;
+   int above = -1;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(th_data, reply);
 
-   if (!eldbus_message_arguments_get(msg, "uiu", &win, &stacking, &target))
+   if (!eldbus_message_arguments_get(msg, "uui", &win, &target, &above))
      {
         ERR("error on eldbus_message_arguments_get()\n");
         return reply;
      }
 
-   if ((win) && (stacking != -1))
-     _e_test_helper_restack(win, stacking, target);
+   if ((win) && (above != -1))
+     _e_test_helper_restack(win, target, above);
 
    return reply;
 }
@@ -306,11 +309,11 @@ _e_test_helper_cb_visibility_change(void *data EINA_UNUSED,
    E_Event_Client *ev = event;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(th_data, ECORE_CALLBACK_PASS_ON);
+   if (!th_data->registrant.win) return ECORE_CALLBACK_PASS_ON;
 
    ec = ev->ec;
    win = e_client_util_win_get(ec);
 
-   if (!th_data->registrant.win) return ECORE_CALLBACK_PASS_ON;
    if (win != th_data->registrant.win) return ECORE_CALLBACK_PASS_ON;
 
    if (!th_data->registrant.ec)
