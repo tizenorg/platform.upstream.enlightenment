@@ -16,6 +16,7 @@
  */
 
 static void _e_comp_wl_subsurface_parent_commit(E_Client *ec, Eina_Bool parent_synchronized);
+static void _e_comp_wl_subsurface_restack(E_Client *ec);
 
 /* local variables */
 /* static Eina_Hash *clients_win_hash = NULL; */
@@ -308,6 +309,48 @@ _e_comp_wl_evas_cb_hide(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EIN
 
    EINA_LIST_FOREACH(ec->e.state.video_child, l, tmp)
      evas_object_hide(tmp->frame);
+}
+
+static void
+_e_comp_wl_evas_cb_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   E_Client *ec;
+   E_Client *subc;
+   Eina_List *l;
+   int x, y;
+
+   if (!(ec = data)) return;
+
+   EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
+     {
+        x = ec->x + subc->comp_data->sub.data->position.x;
+        y = ec->y + subc->comp_data->sub.data->position.y;
+        evas_object_move(subc->frame, x, y);
+     }
+}
+
+static void
+_e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   E_Client *ec;
+   E_Client *parent = NULL;
+
+   if (!(ec = data)) return;
+
+   /* return if ec isn't both a parent of a subsurface and a subsurface itself */
+   if (!ec->comp_data->sub.list && !ec->comp_data->sub.below_list && !ec->comp_data->sub.data) return;
+
+   if (ec->comp_data->sub.data)
+     parent = ec->comp_data->sub.data->parent;
+   else
+     parent = ec;
+
+   /* return if parent is in restacking progress */
+   if (parent->comp_data->sub.restacking) return;
+
+   EINA_SAFETY_ON_NULL_RETURN(parent);
+
+   _e_comp_wl_subsurface_restack(parent);
 }
 
 static void
@@ -838,6 +881,12 @@ _e_comp_wl_client_evas_init(E_Client *ec)
    evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_HIDE,
                                   _e_comp_wl_evas_cb_hide, ec);
 
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOVE,
+                                  _e_comp_wl_evas_cb_move, ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_RESTACK,
+                                  _e_comp_wl_evas_cb_restack, ec);
+
+
    /* setup input callbacks */
    evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_IN,
                                   _e_comp_wl_evas_cb_mouse_in, ec);
@@ -1071,21 +1120,32 @@ _e_comp_wl_cb_input_event(void *data EINA_UNUSED, int type, void *ev)
    return ECORE_CALLBACK_RENEW;
 }
 
-static E_Client*
+static void
 _e_comp_wl_subsurface_restack(E_Client *ec)
 {
-   E_Client *subc, *below = ec;
+   E_Client *subc, *temp;
    Eina_List *l;
 
-   if (!ec->comp_data->sub.list) return ec;
+   ec->comp_data->sub.restacking = EINA_TRUE;
 
+   temp = ec;
    EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
      {
-        evas_object_stack_above(subc->frame, below->frame);
-        below = subc;
+        evas_object_stack_above(subc->frame, temp->frame);
+        temp = subc;
      }
 
-   return below;
+   temp = ec;
+   EINA_LIST_REVERSE_FOREACH(ec->comp_data->sub.below_list, l, subc)
+     {
+        evas_object_stack_below(subc->frame, temp->frame);
+        temp = subc;
+     }
+
+   if (ec->comp_data->sub.below_obj)
+     evas_object_stack_below(ec->comp_data->sub.below_obj, temp->frame);
+
+   ec->comp_data->sub.restacking = EINA_FALSE;
 }
 
 static void
@@ -1097,10 +1157,19 @@ _e_comp_wl_surface_subsurface_order_commit(E_Client *ec)
    if (!ec->comp_data->sub.list_changed) return;
    ec->comp_data->sub.list_changed = EINA_FALSE;
 
+   /* TODO: need to check more complicated subsurface tree */
    EINA_LIST_FOREACH(ec->comp_data->sub.list_pending, l, subc)
      {
         ec->comp_data->sub.list = eina_list_remove(ec->comp_data->sub.list, subc);
         ec->comp_data->sub.list = eina_list_append(ec->comp_data->sub.list, subc);
+
+        _e_comp_wl_surface_subsurface_order_commit(subc);
+     }
+
+   EINA_LIST_FOREACH(ec->comp_data->sub.below_list_pending, l, subc)
+     {
+        ec->comp_data->sub.below_list = eina_list_remove(ec->comp_data->sub.below_list, subc);
+        ec->comp_data->sub.below_list = eina_list_append(ec->comp_data->sub.below_list, subc);
 
         _e_comp_wl_surface_subsurface_order_commit(subc);
      }
@@ -1256,9 +1325,12 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
              else
                {
                   evas_object_hide(ec->frame);
-                  ec->comp_data->mapped = EINA_TRUE;
+                  ec->comp_data->mapped = EINA_FALSE;
                }
           }
+
+        if (ec->comp_data->sub.below_obj && evas_object_visible_get(ec->comp_data->sub.below_obj))
+          evas_object_hide(ec->comp_data->sub.below_obj);
      }
    else
      {
@@ -1272,6 +1344,9 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
                   ec->comp_data->mapped = EINA_TRUE;
                }
           }
+
+        if (ec->comp_data->sub.below_obj && !evas_object_visible_get(ec->comp_data->sub.below_obj))
+          evas_object_show(ec->comp_data->sub.below_obj);
      }
 
    if (state->new_attach || state->buffer_viewport.changed)
@@ -1568,6 +1643,12 @@ _e_comp_wl_surface_cb_commit(struct wl_client *client EINA_UNUSED, struct wl_res
    e_comp_wl_surface_commit(ec);
 
    EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
+     {
+        if (ec != subc)
+          _e_comp_wl_subsurface_parent_commit(subc, EINA_FALSE);
+     }
+
+   EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
      {
         if (ec != subc)
           _e_comp_wl_subsurface_parent_commit(subc, EINA_FALSE);
@@ -1877,6 +1958,10 @@ _e_comp_wl_subsurface_destroy(struct wl_resource *resource)
           eina_list_remove(sdata->parent->comp_data->sub.list, ec);
         sdata->parent->comp_data->sub.list_pending =
           eina_list_remove(sdata->parent->comp_data->sub.list_pending, ec);
+        sdata->parent->comp_data->sub.below_list =
+          eina_list_remove(sdata->parent->comp_data->sub.below_list, ec);
+        sdata->parent->comp_data->sub.below_list_pending =
+          eina_list_remove(sdata->parent->comp_data->sub.below_list_pending, ec);
      }
 
    _e_comp_wl_surface_state_finish(&sdata->cached);
@@ -1902,6 +1987,22 @@ _e_comp_wl_subsurface_synchronized_get(E_Comp_Wl_Subsurf_Data *sdata)
      }
 
    return EINA_FALSE;
+}
+
+static void
+_e_comp_wl_subsurface_create_below_bg_rectangle(E_Client *ec)
+{
+   short layer = evas_object_layer_get(ec->frame);
+
+   ec->comp_data->sub.below_obj = evas_object_rectangle_add(ec->comp->evas);
+   EINA_SAFETY_ON_NULL_RETURN(ec->comp_data->sub.below_obj);
+
+   evas_object_layer_set(ec->comp_data->sub.below_obj, layer);
+   evas_object_render_op_set(ec->comp_data->sub.below_obj, EVAS_RENDER_COPY);
+   evas_object_color_set(ec->comp_data->sub.below_obj, 0x00, 0x00, 0x00, 0xff);
+   evas_object_move(ec->comp_data->sub.below_obj, ec->x, ec->y);
+   evas_object_resize(ec->comp_data->sub.below_obj, ec->w, ec->h);
+   evas_object_name_set(ec->comp_data->sub.below_obj, "below_bg_rectangle");
 }
 
 static void
@@ -2015,6 +2116,11 @@ _e_comp_wl_subsurface_parent_commit(E_Client *ec, Eina_Bool parent_synchronized)
           _e_comp_wl_subsurface_commit_from_cache(ec);
 
         EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
+          {
+             if (ec != subc)
+               _e_comp_wl_subsurface_parent_commit(subc, EINA_TRUE);
+          }
+        EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
           {
              if (ec != subc)
                _e_comp_wl_subsurface_parent_commit(subc, EINA_TRUE);
@@ -2214,6 +2320,19 @@ _e_comp_wl_subsurface_create(E_Client *ec, E_Client *epc, uint32_t id, struct wl
    ec->comp_data->surface = surface_resource;
    ec->comp_data->sub.data = sdata;
 
+   ec->lock_user_location = 0;
+   ec->lock_client_location = 0;
+   ec->lock_user_size = 0;
+   ec->lock_client_size = 0;
+   ec->lock_client_stacking = 0;
+   ec->lock_user_shade = 0;
+   ec->lock_client_shade = 0;
+   ec->lock_user_maximize = 0;
+   ec->lock_client_maximize = 0;
+   ec->changes.need_maximize = 0;
+   ec->maximized = E_MAXIMIZE_NONE;
+   EC_CHANGED(ec);
+
    return EINA_TRUE;
 
 res_err:
@@ -2392,6 +2511,10 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
    EINA_LIST_FREE(ec->comp_data->sub.list, subc)
      subc->comp_data->sub.data->parent = NULL;
    EINA_LIST_FREE(ec->comp_data->sub.list_pending, subc)
+     subc->comp_data->sub.data->parent = NULL;
+   EINA_LIST_FREE(ec->comp_data->sub.below_list, subc)
+     subc->comp_data->sub.data->parent = NULL;
+   EINA_LIST_FREE(ec->comp_data->sub.below_list_pending, subc)
      subc->comp_data->sub.data->parent = NULL;
 
    if ((ec->parent) && (ec->parent->modal == ec))
@@ -3066,6 +3189,12 @@ e_comp_wl_surface_commit(E_Client *ec)
 {
    _e_comp_wl_surface_state_commit(ec, &ec->comp_data->pending);
 
+   if (ec->comp_data->sub.below_list || ec->comp_data->sub.below_list_pending)
+     {
+        if (!ec->comp_data->sub.below_obj)
+          _e_comp_wl_subsurface_create_below_bg_rectangle(ec);
+     }
+
    _e_comp_wl_surface_subsurface_order_commit(ec);
 
    /* schedule repaint */
@@ -3084,9 +3213,12 @@ e_comp_wl_surface_commit(E_Client *ec)
              else
                {
                   evas_object_hide(ec->frame);
-                  ec->comp_data->mapped = EINA_TRUE;
+                  ec->comp_data->mapped = EINA_FALSE;
                }
           }
+
+        if (ec->comp_data->sub.below_obj && evas_object_visible_get(ec->comp_data->sub.below_obj))
+          evas_object_hide(ec->comp_data->sub.below_obj);
      }
    else
      {
@@ -3100,6 +3232,9 @@ e_comp_wl_surface_commit(E_Client *ec)
                   ec->comp_data->mapped = EINA_TRUE;
                }
           }
+
+        if (ec->comp_data->sub.below_obj && !evas_object_visible_get(ec->comp_data->sub.below_obj))
+          evas_object_show(ec->comp_data->sub.below_obj);
      }
 
    return EINA_TRUE;
@@ -3129,6 +3264,11 @@ e_comp_wl_subsurface_commit(E_Client *ec)
           e_comp_wl_surface_commit(ec);
 
         EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
+          {
+             if (ec != subc)
+               _e_comp_wl_subsurface_parent_commit(subc, EINA_FALSE);
+          }
+        EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
           {
              if (ec != subc)
                _e_comp_wl_subsurface_parent_commit(subc, EINA_FALSE);

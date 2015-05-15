@@ -14,5 +14,8 @@
          <arg name="child_id" type="uint" /> 
          <arg name="parent_id" type="uint" /> 
       </request>
+      <request name="place_below_parent">
+         <arg name="subsurface" type="object" interface="wl_subsurface"/>
+      </request>
    </interface>
 </protocol>

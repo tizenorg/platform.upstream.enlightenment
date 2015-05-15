@@ -1420,10 +1420,46 @@ _e_tz_surf_ext_cb_transient_for_set(struct wl_client *client, struct wl_resource
    _e_shell_surface_parent_set(ec, parent_res);
 }
 
+static void
+_e_tz_surf_ext_cb_place_below_parent(struct wl_client *client, struct wl_resource *resource, struct wl_resource *subsurface)
+{
+   E_Client *ec;
+   E_Client *epc;
+   E_Comp_Wl_Subsurf_Data *sdata;
+
+   /* try to get the client from resource data */
+   if (!(ec = wl_resource_get_user_data(subsurface)))
+     {
+        wl_resource_post_error(resource, WL_DISPLAY_ERROR_INVALID_OBJECT,
+                               "Invalid subsurface");
+        return;
+     }
+
+   sdata = ec->comp_data->sub.data;
+   if (!sdata)
+     {
+        wl_resource_post_error(resource, WL_DISPLAY_ERROR_INVALID_OBJECT,
+                               "Not subsurface");
+        return;
+     }
+
+   epc = sdata->parent;
+   EINA_SAFETY_ON_NULL_RETURN(epc);
+
+   /* check if a subsurface has already placed below a parent */
+   if (eina_list_data_find(epc->comp_data->sub.below_list, ec)) return;
+
+   epc->comp_data->sub.list = eina_list_remove(epc->comp_data->sub.list, ec);
+   epc->comp_data->sub.list_pending = eina_list_remove(epc->comp_data->sub.list_pending, ec);
+   epc->comp_data->sub.below_list_pending = eina_list_append(epc->comp_data->sub.below_list_pending, ec);
+   epc->comp_data->sub.list_changed = EINA_TRUE;
+}
+
 static const struct tizen_surface_extension_interface  _e_tz_surf_ext_interface =
 {
    _e_tz_surf_ext_cb_tz_res_get,
-   _e_tz_surf_ext_cb_transient_for_set
+   _e_tz_surf_ext_cb_transient_for_set,
+   _e_tz_surf_ext_cb_place_below_parent,
 };
 
 static const struct wl_shell_interface _e_shell_interface =
