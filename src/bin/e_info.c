@@ -117,7 +117,7 @@ e_win_info_list_get(E_Test_Info *test_info)
 {
    Eldbus_Pending *p;
    p = eldbus_proxy_call(test_info->proxy,
-                         "GetClients",
+                         "GetWindowInfo",
                          _cb_method_get_clients,
                          test_info,
                          -1,
