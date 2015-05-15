@@ -204,14 +204,21 @@ static void
 _e_comp_wl_map_apply(E_Client *ec)
 {
    E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
+   E_Comp_Wl_Subsurf_Data *sdata;
    Evas_Map *map;
    int x1, y1, x2, y2, x, y;
+
+   sdata = ec->comp_data->sub.data;
+   EINA_SAFETY_ON_NULL_RETURN(sdata);
 
    map = evas_map_new(4);
 
    evas_map_util_points_populate_from_geometry(map,
-                                               ec->x, ec->y,
-                                               ec->comp_data->width_from_viewport, ec->comp_data->height_from_viewport, 0);
+                                               sdata->parent->x + sdata->position.x,
+                                               sdata->parent->y + sdata->position.y,
+                                               ec->comp_data->width_from_viewport,
+                                               ec->comp_data->height_from_viewport,
+                                               0);
 
    if (vp->buffer.src_width == wl_fixed_from_int(-1))
      {
