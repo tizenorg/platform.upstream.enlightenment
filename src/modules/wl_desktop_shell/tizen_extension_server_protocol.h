@@ -55,6 +55,13 @@ struct tizen_surface_extension_interface {
 				  struct wl_resource *resource,
 				  uint32_t child_id,
 				  uint32_t parent_id);
+	/**
+	 * place_below_parent - (none)
+	 * @subsurface: (none)
+	 */
+	void (*place_below_parent)(struct wl_client *client,
+				   struct wl_resource *resource,
+				   struct wl_resource *subsurface);
 };
 
 
