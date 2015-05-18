@@ -147,7 +147,7 @@ _e_test_helper_restack(Ecore_Window win, Ecore_Window target, int above)
    ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, win);
    tec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, target);
 #else
-   if ((!ec) || ((e_pixmap_type_get(ec->picxmap) == E_PIXMAP_TYPE_X)))
+   if ((!ec) || ((e_pixmap_type_get(ec->pixmap) == E_PIXMAP_TYPE_X)))
      {
         ec = e_pixmap_find_client(E_PIXMAP_TYPE_X, win);
         tec = e_pixmap_find_client(E_PIXMAP_TYPE_X, target);
