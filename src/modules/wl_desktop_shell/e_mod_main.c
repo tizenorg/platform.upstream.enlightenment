@@ -1402,7 +1402,7 @@ _e_tz_surf_ext_cb_tz_res_get(struct wl_client *client, struct wl_resource *resou
 }
 
 static void
-_e_tz_surf_ext_cb_transient_for_set(struct wl_client *client, struct wl_resource *resource, uint32_t child_id, uint32_t parent_id)
+_e_tz_transient_for_cb_set(struct wl_client *client, struct wl_resource *resource, uint32_t child_id, uint32_t parent_id)
 {
    E_Client *ec, *pc;
    struct wl_resource *parent_res;
@@ -1418,12 +1418,19 @@ _e_tz_surf_ext_cb_transient_for_set(struct wl_client *client, struct wl_resource
 
    parent_res = pc->comp_data->surface;
    _e_shell_surface_parent_set(ec, parent_res);
+   tizen_transient_for_send_done(resource, child_id);
+
+   EC_CHANGED(ec);
 }
 
 static const struct tizen_surface_extension_interface  _e_tz_surf_ext_interface =
 {
-   _e_tz_surf_ext_cb_tz_res_get,
-   _e_tz_surf_ext_cb_transient_for_set
+   _e_tz_surf_ext_cb_tz_res_get
+};
+
+static const struct tizen_transient_for_interface  _e_tz_transient_for_interface =
+{
+   _e_tz_transient_for_cb_set
 };
 
 static const struct wl_shell_interface _e_shell_interface =
@@ -1560,6 +1567,30 @@ _e_tz_surf_ext_cb_bind(struct wl_client *client, void *data, uint32_t version, u
    wl_resource_set_implementation(res, &_e_tz_surf_ext_interface, cdata, NULL);
 }
 
+static void
+_e_tz_transient_for_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32_t id)
+{
+   E_Comp_Data *cdata;
+   struct wl_resource *res;
+
+   if (!(cdata = data))
+     {
+        wl_client_post_no_memory(client);
+        return;
+     }
+
+   if (!(res = wl_resource_create(client,
+                                  &tizen_transient_for_interface,
+                                  MIN(version, 1),
+                                  id)))
+     {
+        ERR("Could not create tizen_transient_for resource: %m");
+        wl_client_post_no_memory(client);
+        return;
+     }
+
+   wl_resource_set_implementation(res, &_e_tz_transient_for_interface, cdata, NULL);
+}
 EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Wl_Desktop_Shell" };
 
 EAPI void *
@@ -1603,6 +1634,16 @@ e_modapi_init(E_Module *m)
                          _e_tz_surf_ext_cb_bind))
      {
         ERR("Could not create tizen_surface_extension to wayland globals: %m");
+        return NULL;
+     }
+   /* try to create global tizen transient_for interface */
+   if (!wl_global_create(cdata->wl.disp,
+                         &tizen_transient_for_interface,
+                         1,
+                         cdata,
+                         _e_tz_transient_for_cb_bind))
+     {
+        ERR("Could not create tizen_transient_for to wayland globals: %m");
         return NULL;
      }
 
