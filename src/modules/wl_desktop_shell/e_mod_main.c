@@ -4,6 +4,7 @@
 #include "e_desktop_shell_protocol.h"
 #include "e_scaler.h"
 #include "tizen_extension_server_protocol.h"
+#include "tizen_subsurface_server_protocol.h"
 
 #define XDG_SERVER_VERSION 4
 
@@ -1423,45 +1424,9 @@ _e_tz_transient_for_cb_set(struct wl_client *client, struct wl_resource *resourc
    EC_CHANGED(ec);
 }
 
-static void
-_e_tz_surf_ext_cb_place_below_parent(struct wl_client *client, struct wl_resource *resource, struct wl_resource *subsurface)
-{
-   E_Client *ec;
-   E_Client *epc;
-   E_Comp_Wl_Subsurf_Data *sdata;
-
-   /* try to get the client from resource data */
-   if (!(ec = wl_resource_get_user_data(subsurface)))
-     {
-        wl_resource_post_error(resource, WL_DISPLAY_ERROR_INVALID_OBJECT,
-                               "Invalid subsurface");
-        return;
-     }
-
-   sdata = ec->comp_data->sub.data;
-   if (!sdata)
-     {
-        wl_resource_post_error(resource, WL_DISPLAY_ERROR_INVALID_OBJECT,
-                               "Not subsurface");
-        return;
-     }
-
-   epc = sdata->parent;
-   EINA_SAFETY_ON_NULL_RETURN(epc);
-
-   /* check if a subsurface has already placed below a parent */
-   if (eina_list_data_find(epc->comp_data->sub.below_list, ec)) return;
-
-   epc->comp_data->sub.list = eina_list_remove(epc->comp_data->sub.list, ec);
-   epc->comp_data->sub.list_pending = eina_list_remove(epc->comp_data->sub.list_pending, ec);
-   epc->comp_data->sub.below_list_pending = eina_list_append(epc->comp_data->sub.below_list_pending, ec);
-   epc->comp_data->sub.list_changed = EINA_TRUE;
-}
-
 static const struct tizen_surface_extension_interface  _e_tz_surf_ext_interface =
 {
    _e_tz_surf_ext_cb_tz_res_get,
-   _e_tz_surf_ext_cb_place_below_parent,
 };
 
 static const struct tizen_transient_for_interface _e_tz_transient_for_interface =
@@ -1628,6 +1593,71 @@ _e_tz_transient_for_cb_bind(struct wl_client *client, void *data, uint32_t versi
    wl_resource_set_implementation(res, &_e_tz_transient_for_interface, cdata, NULL);
 }
 
+static void
+_e_tz_subsurface_cb_place_below_parent(struct wl_client *client, struct wl_resource *resource, struct wl_resource *subsurface)
+{
+   E_Client *ec;
+   E_Client *epc;
+   E_Comp_Wl_Subsurf_Data *sdata;
+
+   /* try to get the client from resource data */
+   if (!(ec = wl_resource_get_user_data(subsurface)))
+     {
+        wl_resource_post_error(resource, WL_DISPLAY_ERROR_INVALID_OBJECT,
+                               "Invalid subsurface");
+        return;
+     }
+
+   sdata = ec->comp_data->sub.data;
+   if (!sdata)
+     {
+        wl_resource_post_error(resource, WL_DISPLAY_ERROR_INVALID_OBJECT,
+                               "Not subsurface");
+        return;
+     }
+
+   epc = sdata->parent;
+   EINA_SAFETY_ON_NULL_RETURN(epc);
+
+   /* check if a subsurface has already placed below a parent */
+   if (eina_list_data_find(epc->comp_data->sub.below_list, ec)) return;
+
+   epc->comp_data->sub.list = eina_list_remove(epc->comp_data->sub.list, ec);
+   epc->comp_data->sub.list_pending = eina_list_remove(epc->comp_data->sub.list_pending, ec);
+   epc->comp_data->sub.below_list_pending = eina_list_append(epc->comp_data->sub.below_list_pending, ec);
+   epc->comp_data->sub.list_changed = EINA_TRUE;
+}
+
+static const struct tizen_subsurface_interface  _e_tz_subsurface_interface =
+{
+   _e_tz_subsurface_cb_place_below_parent,
+};
+
+static void
+_e_tz_subsurface_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32_t id)
+{
+   E_Comp_Data *cdata;
+   struct wl_resource *res;
+
+   if (!(cdata = data))
+     {
+        wl_client_post_no_memory(client);
+        return;
+     }
+
+   if (!(res = wl_resource_create(client,
+                                  &tizen_subsurface_interface,
+                                  MIN(version, 1),
+                                  id)))
+     {
+        ERR("Could not create tizen_subsurface resource: %m");
+        wl_client_post_no_memory(client);
+        return;
+     }
+
+   wl_resource_set_implementation(res, &_e_tz_subsurface_interface, cdata, NULL);
+}
+
 EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Wl_Desktop_Shell" };
 
 EAPI void *
@@ -1681,6 +1711,17 @@ e_modapi_init(E_Module *m)
                          _e_tz_transient_for_cb_bind))
      {
         ERR("Could not create tizen_transient_for to wayland globals: %m");
+        return NULL;
+     }
+
+   /* try to create global tizen subsurface interface */
+   if (!wl_global_create(cdata->wl.disp,
+                         &tizen_subsurface_interface,
+                         1,
+                         cdata,
+                         _e_tz_subsurface_cb_bind))
+     {
+        ERR("Could not create tizen_surface_extension to wayland globals: %m");
         return NULL;
      }
 

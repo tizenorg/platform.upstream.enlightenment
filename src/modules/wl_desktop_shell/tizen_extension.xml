@@ -10,9 +10,6 @@
          <arg name="id" type="new_id" interface="tizen_resource" /> 
          <arg name="surface" type="object" interface="wl_surface" /> 
       </request>
-      <request name="place_below_parent">
-         <arg name="subsurface" type="object" interface="wl_subsurface"/>
-      </request>
    </interface>
    <interface name="tizen_transient_for" version="1">
       <request name="set">

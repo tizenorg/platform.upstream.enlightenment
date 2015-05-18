@@ -25,7 +25,9 @@ src_modules_wl_desktop_shell_module_la_SOURCES = \
   src/modules/wl_desktop_shell/e_scaler_protocol.c \
   src/modules/wl_desktop_shell/e_scaler_protocol.h \
   src/modules/wl_desktop_shell/tizen_extension_server_protocol.h \
-  src/modules/wl_desktop_shell/tizen_extension_protocol.c
+  src/modules/wl_desktop_shell/tizen_extension_protocol.c \
+  src/modules/wl_desktop_shell/tizen_subsurface_server_protocol.h \
+  src/modules/wl_desktop_shell/tizen_subsurface_protocol.c
 
 PHONIES += wl_desktop_shell install-wl_desktop_shell
 wl_desktop_shell: $(wl_desktop_shellpkg_LTLIBRARIES) $(wl_desktop_shell_DATA)

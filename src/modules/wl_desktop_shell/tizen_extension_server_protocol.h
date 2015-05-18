@@ -48,14 +48,8 @@ struct tizen_surface_extension_interface {
 				   struct wl_resource *resource,
 				   uint32_t id,
 				   struct wl_resource *surface);
-	/**
-	 * place_below_parent - (none)
-	 * @subsurface: (none)
-	 */
-	void (*place_below_parent)(struct wl_client *client,
-				   struct wl_resource *resource,
-				   struct wl_resource *subsurface);
 };
+
 
 struct tizen_transient_for_interface {
 	/**
@@ -70,6 +64,8 @@ struct tizen_transient_for_interface {
 };
 
 #define TIZEN_TRANSIENT_FOR_DONE	0
+
+#define TIZEN_TRANSIENT_FOR_DONE_SINCE_VERSION	1
 
 static inline void
 tizen_transient_for_send_done(struct wl_resource *resource_, uint32_t child_id)
