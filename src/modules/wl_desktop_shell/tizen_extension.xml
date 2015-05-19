@@ -11,13 +11,4 @@
          <arg name="surface" type="object" interface="wl_surface" /> 
       </request>
    </interface>
-   <interface name="tizen_transient_for" version="1">
-      <request name="set">
-         <arg name="child_id" type="uint" />
-         <arg name="parent_id" type="uint" />
-      </request>
-      <event name="done">
-         <arg name="child_id" type="uint"/>
-      </event>
-   </interface>
 </protocol>

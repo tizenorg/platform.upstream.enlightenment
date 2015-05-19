@@ -5,6 +5,7 @@
 #include "e_scaler.h"
 #include "tizen_extension_server_protocol.h"
 #include "tizen_subsurface_server_protocol.h"
+#include "tizen_transient_for_server_protocol.h"
 
 #define XDG_SERVER_VERSION 4
 
