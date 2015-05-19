@@ -827,6 +827,9 @@ EAPI extern int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL;
 EAPI extern int E_EVENT_CLIENT_ROTATION_CHANGE_END;
 #endif
 EAPI extern int E_EVENT_CLIENT_VISIBILITY_CHANGE;
+#ifdef HAVE_WAYLAND_ONLY
+EAPI extern int E_EVENT_CLIENT_BUFFER_CHANGE;
+#endif
 
 EINTERN void e_client_idler_before(void);
 EINTERN Eina_Bool e_client_init(void);

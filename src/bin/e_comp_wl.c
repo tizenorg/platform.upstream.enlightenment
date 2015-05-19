@@ -208,9 +208,19 @@ _e_comp_wl_map_apply(E_Client *ec)
    E_Comp_Wl_Subsurf_Data *sdata;
    Evas_Map *map;
    int x1, y1, x2, y2, x, y;
+   int dx, dy;
 
    sdata = ec->comp_data->sub.data;
-   EINA_SAFETY_ON_NULL_RETURN(sdata);
+   if (sdata)
+     {
+        dx = sdata->parent->x + sdata->position.x;
+        dy = sdata->parent->y + sdata->position.y;
+     }
+   else
+     {
+        dx = ec->x;
+        dy = ec->y;
+     }
 
    map = evas_map_new(4);
 
@@ -3254,9 +3264,18 @@ e_comp_wl_surface_create(struct wl_client *client, int version, uint32_t id)
    return ret;
 }
 
+static void
+e_comp_wl_surface_event_simple_free(void *d EINA_UNUSED, E_Event_Client *ev)
+{
+   e_object_unref(E_OBJECT(ev->ec));
+   free(ev);
+}
+
 EINTERN void
 e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer)
 {
+   E_Event_Client *ev;
+
    e_comp_wl_buffer_reference(&ec->comp_data->buffer_ref, buffer);
 
    /* set usable early because shell module checks this */
@@ -3266,6 +3285,12 @@ e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer)
 
    _e_comp_wl_surface_state_size_update(ec, &ec->comp_data->pending);
    _e_comp_wl_map_size_cal_from_buffer(ec);
+
+   ev = E_NEW(E_Event_Client, 1);
+   ev->ec = ec;
+   e_object_ref(E_OBJECT(ec));
+   ecore_event_add(E_EVENT_CLIENT_BUFFER_CHANGE, ev,
+                   (Ecore_End_Cb)e_comp_wl_surface_event_simple_free, NULL);
 }
 
 EINTERN Eina_Bool
@@ -3362,7 +3387,7 @@ e_comp_wl_subsurface_commit(E_Client *ec)
    return EINA_TRUE;
 }
 
-EINTERN void
+EAPI void
 e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
 {
    if ((ref->buffer) && (buffer != ref->buffer))
@@ -3371,7 +3396,7 @@ e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
         if (ref->buffer->busy == 0)
           {
              if (!wl_resource_get_client(ref->buffer->resource)) return;
-             wl_resource_queue_event(ref->buffer->resource, WL_BUFFER_RELEASE);
+             wl_buffer_send_release(ref->buffer->resource);
           }
         wl_list_remove(&ref->destroy_listener.link);
      }
@@ -3404,6 +3429,7 @@ e_comp_wl_buffer_get(struct wl_resource *resource)
    struct wl_shm_buffer *shmbuff;
    E_Comp_Data *cdata;
    Eina_Bool res;
+   E_Drm_Buffer *drm_buffer;
 
    listener =
      wl_resource_get_destroy_listener(resource, _e_comp_wl_buffer_cb_destroy);
@@ -3420,6 +3446,12 @@ e_comp_wl_buffer_get(struct wl_resource *resource)
 
         buffer->w = wl_shm_buffer_get_width(shmbuff);
         buffer->h = wl_shm_buffer_get_height(shmbuff);
+     }
+   else if ((drm_buffer = e_drm_buffer_get(resource)))
+     {
+        buffer->type = E_COMP_WL_BUFFER_TYPE_DRM;
+        buffer->w = drm_buffer->width;
+        buffer->h = drm_buffer->height;
      }
    else
      {

@@ -25,6 +25,9 @@ EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL = -1;
 EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_END = -1;
 #endif
 EAPI int E_EVENT_CLIENT_VISIBILITY_CHANGE = -1;
+#ifdef HAVE_WAYLAND_ONLY
+EAPI int E_EVENT_CLIENT_BUFFER_CHANGE = -1;
+#endif
 
 static Eina_Hash *clients_hash = NULL; // pixmap->client
 
@@ -2590,6 +2593,9 @@ e_client_init(void)
    E_EVENT_CLIENT_ROTATION_CHANGE_END = ecore_event_type_new();
 #endif
    E_EVENT_CLIENT_VISIBILITY_CHANGE = ecore_event_type_new();
+#ifdef HAVE_WAYLAND_ONLY
+   E_EVENT_CLIENT_BUFFER_CHANGE = ecore_event_type_new();
+#endif
 
    return (!!clients_hash);
 }

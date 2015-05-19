@@ -7,6 +7,8 @@
 # include "e_comp_x.h"
 #endif
 
+#include "e_drm_buffer_pool_server_protocol.h"
+
 static Eina_Hash *pixmaps[2] = {NULL};
 static Eina_Hash *res_ids = NULL;
 static uint32_t res_id = 0;
@@ -618,6 +620,23 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
                   return;
                }
 
+          }
+        else if (buffer->type == E_COMP_WL_BUFFER_TYPE_DRM)
+          {
+             E_Drm_Buffer *drm_buffer = e_drm_buffer_get(buffer->resource);
+             buffer->shm_buffer = NULL;
+             cp->w = buffer->w;
+             cp->h = buffer->h;
+             switch (drm_buffer->format)
+               {
+                case TIZEN_BUFFER_POOL_FORMAT_ARGB8888:
+                   cp->image_argb = EINA_TRUE;
+                   break;
+                default:
+                   cp->image_argb = EINA_FALSE;
+                   break;
+               }
+             cp->data = NULL;
           }
         else
           {

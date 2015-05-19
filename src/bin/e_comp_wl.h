@@ -51,7 +51,8 @@ typedef enum _E_Comp_Wl_Buffer_Type
 {
    E_COMP_WL_BUFFER_TYPE_NONE = 0,
    E_COMP_WL_BUFFER_TYPE_SHM = 1,
-   E_COMP_WL_BUFFER_TYPE_NATIVE = 2
+   E_COMP_WL_BUFFER_TYPE_NATIVE = 2,
+   E_COMP_WL_BUFFER_TYPE_DRM = 3
 } E_Comp_Wl_Buffer_Type;
 
 struct _E_Comp_Wl_Buffer
@@ -346,7 +347,7 @@ EINTERN void e_comp_wl_surface_destroy(struct wl_resource *resource);
 EINTERN void e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer);
 EINTERN Eina_Bool e_comp_wl_surface_commit(E_Client *ec);
 EINTERN Eina_Bool e_comp_wl_subsurface_commit(E_Client *ec);
-EINTERN void e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer);
+EAPI void e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer);
 EAPI E_Comp_Wl_Buffer *e_comp_wl_buffer_get(struct wl_resource *resource);
 
 EAPI struct wl_signal e_comp_wl_surface_create_signal_get(E_Comp *comp);
