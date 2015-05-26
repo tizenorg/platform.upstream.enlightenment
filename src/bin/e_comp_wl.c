@@ -398,7 +398,7 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
       Evas_Object *o;
 
       ecore_evas_cursor_get(e_comp->ee, &o, NULL, NULL, NULL);
-      if (e_comp->pointer->o_ptr != o)
+      if ((e_comp->pointer->o_ptr != o) && (e_comp->wl_comp_data->ptr.enabled))
         e_pointer_object_set(e_comp->pointer, NULL, 0, 0);
    }
    if (e_object_is_del(E_OBJECT(ec))) return;

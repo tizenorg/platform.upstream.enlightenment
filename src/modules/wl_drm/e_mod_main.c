@@ -4,8 +4,7 @@
 
 EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Wl_Drm" };
 
-static Ecore_Event_Handler *activate_handler;
-static Ecore_Event_Handler *output_handler;
+static Eina_List *event_handlers = NULL;
 static Eina_Bool session_state = EINA_FALSE;
 
 static Eina_Bool
@@ -68,6 +67,39 @@ _e_mod_drm_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
    e_comp_wl_output_init(buff, e->make, e->model, e->x, e->y, e->w, e->h,
                          e->phys_width, e->phys_height, e->refresh,
                          e->subpixel_order, e->transform);
+
+end:
+   return ECORE_CALLBACK_PASS_ON;
+}
+
+static Eina_Bool
+_e_mod_drm_cb_input_device_add(void *data, int type, void *event)
+{
+   Ecore_Drm_Event_Input_Device_Add *e;
+
+   if (!(e = event)) goto end;
+
+   if (e->caps & EVDEV_SEAT_POINTER)
+     {
+        e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
+     }
+
+end:
+   return ECORE_CALLBACK_PASS_ON;
+}
+
+static Eina_Bool
+_e_mod_drm_cb_input_device_del(void *data, int type, void *event)
+{
+   Ecore_Drm_Event_Input_Device_Del *e;
+
+   if (!(e = event)) goto end;
+
+   if (e->caps & EVDEV_SEAT_POINTER)
+     {
+        e_comp_wl_input_pointer_enabled_set(EINA_FALSE);
+        e_pointer_hide(e_comp->pointer);
+     }
 
 end:
    return ECORE_CALLBACK_PASS_ON;
@@ -202,13 +234,14 @@ e_modapi_init(E_Module *m)
     * happens to jive with what drm does */
    e_comp_wl_input_keymap_set(comp->wl_comp_data, NULL, NULL, NULL);
 
-   activate_handler =
-      ecore_event_handler_add(ECORE_DRM_EVENT_ACTIVATE,
-                              _e_mod_drm_cb_activate, comp);
-
-   output_handler =
-      ecore_event_handler_add(ECORE_DRM_EVENT_OUTPUT,
-                              _e_mod_drm_cb_output, comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,
+                         _e_mod_drm_cb_activate, comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_OUTPUT,
+                         _e_mod_drm_cb_output, comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_ADD,
+                         _e_mod_drm_cb_input_device_add, comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_DEL,
+                         _e_mod_drm_cb_input_device_del, comp);
 
    return m;
 }
@@ -219,8 +252,7 @@ e_modapi_shutdown(E_Module *m EINA_UNUSED)
    /* shutdown ecore_drm */
    /* ecore_drm_shutdown(); */
 
-   if (activate_handler) ecore_event_handler_del(activate_handler);
-   activate_handler = NULL;
+   E_FREE_LIST(event_handlers, ecore_event_handler_del);
 
    return 1;
 }

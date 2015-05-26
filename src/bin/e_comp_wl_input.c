@@ -35,7 +35,6 @@ _e_comp_wl_input_pointer_cb_cursor_set(struct wl_client *client, struct wl_resou
    E_Client *ec;
    uint64_t sid;
    Eina_Bool got_mouse = EINA_FALSE;
-   int cursor_w = 0, cursor_h = 0;
 
    /* get compositor data */
    if (!(cdata = wl_resource_get_user_data(resource))) return;
@@ -74,9 +73,6 @@ _e_comp_wl_input_pointer_cb_cursor_set(struct wl_client *client, struct wl_resou
      }
    /* ignore cursor changes during resize/move I guess */
    if (e_client_action_get()) return;
-
-   evas_object_geometry_get(ec->frame, NULL, NULL, &cursor_w, &cursor_h);
-   if ((cursor_w == 0) || (cursor_h == 0)) return;
 
    e_pointer_object_set(e_comp->pointer, ec->frame, x, y);
 }
