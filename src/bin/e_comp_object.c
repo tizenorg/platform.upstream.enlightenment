@@ -86,6 +86,7 @@ typedef struct _E_Comp_Object
    Evas_Object         *zoomobj; // zoomap
    Evas_Object         *shobj;  // shadow object
    Evas_Object         *effect_obj; // effects object
+   Evas_Object         *mask_obj; // mask object: transparent parts of this comp object allow to copy the alpha to current H/W plane.
    unsigned int         layer; //e_comp_canvas_layer_map(cw->ec->layer)
    Eina_List           *obj_mirror;  // extra mirror objects
    Eina_Tiler          *updates; //render update regions
@@ -2062,6 +2063,7 @@ _e_comp_smart_show(Evas_Object *obj)
    evas_object_show(cw->effect_obj);
    if (cw->ec->internal_elm_win && (!evas_object_visible_get(cw->ec->internal_elm_win)))
      evas_object_show(cw->ec->internal_elm_win);
+   if (cw->mask_obj) evas_object_show(cw->mask_obj);
    e_comp_render_queue(cw->comp);
    if (cw->ec->input_only)
      {
@@ -2133,6 +2135,7 @@ _e_comp_smart_del(Evas_Object *obj)
    evas_object_del(cw->zoomobj);
    evas_object_del(cw->input_obj);
    evas_object_del(cw->obj);
+   evas_object_del(cw->mask_obj);
    e_comp_shape_queue(cw->comp);
    eina_stringshare_del(cw->frame_theme);
    eina_stringshare_del(cw->frame_name);
@@ -2186,6 +2189,8 @@ _e_comp_smart_resize(Evas_Object *obj, int w, int h)
         if (cw->zoomobj) e_zoomap_child_resize(cw->zoomobj, pw, ph);
         if (cw->input_obj)
           evas_object_geometry_set(cw->input_obj, cw->x + cw->input_rect.x, cw->y + cw->input_rect.y, cw->input_rect.w, cw->input_rect.h);
+        if (cw->mask_obj)
+          evas_object_resize(cw->mask_obj, w, h);
         /* resize render update tiler */
         if (!first)
           {
@@ -3357,6 +3362,7 @@ e_comp_object_dirty(Evas_Object *obj)
    if (!dirty)
      evas_object_image_data_set(cw->obj, NULL);
    evas_object_image_size_set(cw->obj, w, h);
+   if (cw->mask_obj) evas_object_resize(cw->mask_obj, w, h);
 
    e_pixmap_image_opaque_get(cw->ec->pixmap, &bx, &by, &bxx, &byy);
    if (bxx && byy)
@@ -3916,4 +3922,42 @@ e_comp_object_alpha_set(Evas_Object *obj, Eina_Bool alpha)
    if (alpha == evas_object_image_alpha_get(cw->obj)) return;
 
    evas_object_image_alpha_set(cw->obj, alpha);
+}
+
+EAPI void
+e_comp_object_mask_set(Evas_Object *obj, Eina_Bool set)
+{
+   Eina_Bool mask_set = EINA_FALSE;
+   Evas_Object *o;
+
+   API_ENTRY;
+   EINA_SAFETY_ON_NULL_RETURN(cw->ec);
+   if (cw->ec->input_only) return;
+   mask_set = !!set;
+
+   if (mask_set)
+     {
+        if (!cw->mask_obj)
+          {
+             o = evas_object_rectangle_add(cw->comp->evas);
+             evas_object_color_set(o, 0, 0, 0, 0);
+             evas_object_clip_set(cw->input_obj, o);
+             evas_object_smart_member_add(o, obj);
+             evas_object_move(o, 0, 0);
+             evas_object_render_op_set(o, EVAS_RENDER_COPY);
+             if (cw->visible) evas_object_show(o);
+
+             cw->mask_obj = o;
+          }
+
+        evas_object_layer_set(cw->mask_obj, 9998);
+     }
+   else
+     {
+        if (cw->mask_obj)
+          {
+             evas_object_smart_member_del(cw->mask_obj);
+             E_FREE_FUNC(cw->mask_obj, evas_object_del);
+          }
+     }
 }

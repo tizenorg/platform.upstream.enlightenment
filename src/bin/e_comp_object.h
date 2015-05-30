@@ -109,6 +109,7 @@ EAPI void e_comp_object_intercept_hook_del(E_Comp_Object_Intercept_Hook *ch);
 #endif
 EAPI unsigned int e_comp_object_is_animating(Evas_Object *obj);
 EAPI void e_comp_object_alpha_set(Evas_Object *obj, Eina_Bool alpha);
+EAPI void e_comp_object_mask_set(Evas_Object *obj, Eina_Bool set);
 
 #endif
 #endif
