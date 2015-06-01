@@ -22,6 +22,28 @@ _e_comp_wl_input_update_seat_caps(E_Comp_Data *cdata)
 }
 
 static void
+_e_comp_wl_input_pointer_map(struct wl_resource *resource)
+{
+   E_Pixmap *ep;
+   E_Client *ec;
+
+   if (!(ep = wl_resource_get_user_data(resource))) return;
+   if (!(ec = e_pixmap_client_get(ep))) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
+
+   e_pointer_object_set(e_comp->pointer, ec->frame, ec->x, ec->y);
+   ec->comp_data->mapped = EINA_TRUE;
+}
+
+static void
+_e_comp_wl_input_pointer_confiugre(struct wl_resource *resource,
+                                   Evas_Coord x, Evas_Coord y,
+                                   Evas_Coord w, Evas_Coord h)
+{
+   /* do nothing */
+}
+
+static void
 _e_comp_wl_input_cb_resource_destroy(struct wl_client *client EINA_UNUSED, struct wl_resource *resource)
 {
    wl_resource_destroy(resource);
@@ -35,6 +57,7 @@ _e_comp_wl_input_pointer_cb_cursor_set(struct wl_client *client, struct wl_resou
    E_Client *ec;
    uint64_t sid;
    Eina_Bool got_mouse = EINA_FALSE;
+   int cursor_w = 0, cursor_h = 0;
 
    /* get compositor data */
    if (!(cdata = wl_resource_get_user_data(resource))) return;
@@ -70,9 +93,18 @@ _e_comp_wl_input_pointer_cb_cursor_set(struct wl_client *client, struct wl_resou
         ec->client.w = ec->client.h = 1;
         l = e_client_focus_stack_get();
         e_client_focus_stack_set(eina_list_remove(l, ec));
+
+        /* Set fuctions to prevent unwanted handling by shell */
+        ec->comp_data->shell.surface = surface_resource;
+        ec->comp_data->shell.configure = _e_comp_wl_input_pointer_confiugre;
+        ec->comp_data->shell.map = _e_comp_wl_input_pointer_map;
      }
    /* ignore cursor changes during resize/move I guess */
    if (e_client_action_get()) return;
+
+   evas_object_geometry_get(ec->frame, NULL, NULL, &cursor_w, &cursor_h);
+   if ((cursor_w == 0) || (cursor_h == 0))
+     return;
 
    e_pointer_object_set(e_comp->pointer, ec->frame, x, y);
 }
