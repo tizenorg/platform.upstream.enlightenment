@@ -1225,7 +1225,6 @@ _e_comp_wl_subsurface_restack(E_Client *ec)
    EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
      {
         evas_object_stack_above(subc->frame, temp->frame);
-        e_comp_object_mask_set(subc->frame, EINA_FALSE);
         temp = subc;
      }
 
@@ -1234,9 +1233,6 @@ _e_comp_wl_subsurface_restack(E_Client *ec)
      {
         evas_object_stack_below(subc->frame, temp->frame);
         temp = subc;
-
-        /* TODO: need to check that H/W underlay is available */
-        e_comp_object_mask_set(subc->frame, EINA_TRUE);
      }
 
    if (ec->comp_data->sub.below_obj)

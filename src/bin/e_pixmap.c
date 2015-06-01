@@ -637,6 +637,9 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
                    break;
                }
              cp->data = NULL;
+
+             if (e_config->use_hw_underlay)
+               e_comp_object_mask_set(cp->client->frame, EINA_TRUE);
           }
         else
           {

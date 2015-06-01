@@ -243,6 +243,8 @@ struct _E_Config
    int                       dpms_off_timeout; // GUI
    unsigned char             no_dpms_on_fullscreen; // GUI
 
+   int                       use_hw_underlay;
+
    int                       clientlist_group_by; // GUI
    int                       clientlist_include_all_zones; // GUI
    int                       clientlist_separate_with; // GUI
