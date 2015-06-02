@@ -85,6 +85,7 @@ static Eina_Inlist *_e_client_hooks[] =
    [E_CLIENT_HOOK_RESIZE_BEGIN] = NULL,
    [E_CLIENT_HOOK_RESIZE_UPDATE] = NULL,
    [E_CLIENT_HOOK_RESIZE_END] = NULL,
+   [E_CLIENT_HOOK_FULLSCREEN_PRE] = NULL,
    [E_CLIENT_HOOK_DEL] = NULL,
    [E_CLIENT_HOOK_UNREDIRECT] = NULL,
    [E_CLIENT_HOOK_REDIRECT] = NULL,
@@ -4004,7 +4005,12 @@ e_client_fullscreen(E_Client *ec, E_Fullscreen policy)
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
 
-   if ((ec->shaded) || (ec->shading) || ec->fullscreen) return;
+   if ((ec->shaded) || (ec->shading) || (ec->fullscreen)) return;
+
+   _e_client_hook_call(E_CLIENT_HOOK_FULLSCREEN_PRE, ec);
+
+   if (ec->skip_fullscreen) return;
+
    if (ec->new_client)
      {
         ec->need_fullscreen = 1;

@@ -192,6 +192,7 @@ typedef enum _E_Client_Hook_Point
    E_CLIENT_HOOK_RESIZE_BEGIN,
    E_CLIENT_HOOK_RESIZE_UPDATE,
    E_CLIENT_HOOK_RESIZE_END,
+   E_CLIENT_HOOK_FULLSCREEN_PRE,
    E_CLIENT_HOOK_DEL,
    E_CLIENT_HOOK_UNREDIRECT,
    E_CLIENT_HOOK_REDIRECT,
@@ -671,6 +672,7 @@ struct E_Client
    unsigned int       need_shape_export : 1;
    unsigned int       fullscreen : 1;
    unsigned int       need_fullscreen : 1;
+   unsigned int       skip_fullscreen : 1;
    unsigned int       already_unparented : 1;
    unsigned int       need_reparent : 1;
    unsigned int       button_grabbed : 1;
