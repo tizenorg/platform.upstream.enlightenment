@@ -2573,6 +2573,10 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
    ec->comp_data->scaler.buffer_viewport.buffer.src_width = wl_fixed_from_int(-1);
    ec->comp_data->scaler.buffer_viewport.surface.width = -1;
 
+   E_Comp_Client_Data *p_cdata = e_pixmap_cdata_get(ec->pixmap);
+   EINA_SAFETY_ON_NULL_RETURN(p_cdata);
+   ec->comp_data->accepts_focus = p_cdata->accepts_focus;
+
    /* add this client to the hash */
    /* eina_hash_add(clients_win_hash, &win, ec); */
    e_hints_client_list_set();
