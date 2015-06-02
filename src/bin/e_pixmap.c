@@ -162,6 +162,7 @@ _e_pixmap_new(E_Pixmap_Type type)
    cp->cdata->pending.buffer_viewport.buffer.src_width = wl_fixed_from_int(-1);
    cp->cdata->pending.buffer_viewport.surface.width = -1;
    cp->cdata->pending.buffer_viewport.changed = 0;
+   cp->cdata->accepts_focus = 1;
 #endif
    return cp;
 }

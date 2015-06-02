@@ -1517,12 +1517,9 @@ _e_comp_intercept_focus(void *data, Evas_Object *obj, Eina_Bool focus)
     * expect us to emulate a look of focus but not actually set x input
     * focus as we do - so simply abort any focuse set on such windows */
    /* be strict about accepting focus hint */
-   if (e_pixmap_is_x(ec->pixmap))
-     {
-        /* be strict about accepting focus hint */
-        if ((!ec->icccm.accepts_focus) &&
-            (!ec->icccm.take_focus)) return;
-     }
+   /* be strict about accepting focus hint */
+   if ((!ec->icccm.accepts_focus) &&
+       (!ec->icccm.take_focus)) return;
    if (focus && ec->lock_focus_out) return;
    if (e_object_is_del(E_OBJECT(ec)) && focus)
      CRI("CAN'T FOCUS DELETED CLIENT!");

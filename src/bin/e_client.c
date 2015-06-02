@@ -3561,12 +3561,9 @@ e_client_focus_set_with_pointer(E_Client *ec)
    /* note: this is here as it seems there are enough apps that do not even
     * expect us to emulate a look of focus but not actually set x input
     * focus as we do - so simply abort any focuse set on such windows */
-   if (e_pixmap_is_x(ec->pixmap))
-     {
-        /* be strict about accepting focus hint */
-        if ((!ec->icccm.accepts_focus) &&
-            (!ec->icccm.take_focus)) return;
-     }
+   /* be strict about accepting focus hint */
+   if ((!ec->icccm.accepts_focus) &&
+       (!ec->icccm.take_focus)) return;
    if (ec->lock_focus_out) return;
    if (ec == focused) return;
    evas_object_focus_set(ec->frame, 1);
