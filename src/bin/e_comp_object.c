@@ -3944,6 +3944,7 @@ e_comp_object_mask_set(Evas_Object *obj, Eina_Bool set)
              evas_object_clip_set(cw->input_obj, o);
              evas_object_smart_member_add(o, obj);
              evas_object_move(o, 0, 0);
+             evas_object_render_op_set(obj, EVAS_RENDER_COPY);
              evas_object_render_op_set(o, EVAS_RENDER_COPY);
              if (cw->visible) evas_object_show(o);
 
