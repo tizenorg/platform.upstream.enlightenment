@@ -225,8 +225,7 @@ _e_comp_wl_map_apply(E_Client *ec)
    map = evas_map_new(4);
 
    evas_map_util_points_populate_from_geometry(map,
-                                               sdata->parent->x + sdata->position.x,
-                                               sdata->parent->y + sdata->position.y,
+                                               dx, dy,
                                                ec->comp_data->width_from_viewport,
                                                ec->comp_data->height_from_viewport,
                                                0);
