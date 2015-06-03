@@ -76,11 +76,13 @@ static Eina_Bool
 _e_mod_drm_cb_input_device_add(void *data, int type, void *event)
 {
    Ecore_Drm_Event_Input_Device_Add *e;
+   E_Comp *comp = data;
 
    if (!(e = event)) goto end;
 
    if (e->caps & EVDEV_SEAT_POINTER)
      {
+        e_pointer_object_set(comp->pointer, NULL, 0, 0);
         e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
      }
 
