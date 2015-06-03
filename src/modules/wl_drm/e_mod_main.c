@@ -85,6 +85,15 @@ _e_mod_drm_cb_input_device_add(void *data, int type, void *event)
         e_pointer_object_set(comp->pointer, NULL, 0, 0);
         e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
      }
+   else if (e->caps & EVDEV_SEAT_KEYBOARD)
+     {
+        e_comp_wl_input_keyboard_enabled_set(EINA_TRUE);
+     }
+   else if (e->caps & EVDEV_SEAT_TOUCH)
+     {
+        e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
+        e_comp_wl_input_touch_enabled_set(EINA_TRUE);
+     }
 
 end:
    return ECORE_CALLBACK_PASS_ON;
@@ -214,9 +223,6 @@ e_modapi_init(E_Module *m)
 
    /* NB: This needs to be called AFTER the comp canvas has been setup */
    if (!e_comp_wl_init()) return NULL;
-
-   e_comp_wl_input_keyboard_enabled_set(EINA_TRUE);
-   e_comp_wl_input_touch_enabled_set(EINA_TRUE);
 
    /* comp->pointer =  */
    /*   e_pointer_window_new(ecore_evas_window_get(comp->ee), 1); */
