@@ -712,6 +712,7 @@ _e_xdg_shell_surface_cb_title_set(struct wl_client *client EINA_UNUSED, struct w
 
    /* set title */
    eina_stringshare_replace(&ec->icccm.title, title);
+   eina_stringshare_replace(&ec->icccm.name, title);
    if (ec->frame) e_comp_object_frame_title_set(ec->frame, title);
 }
 
