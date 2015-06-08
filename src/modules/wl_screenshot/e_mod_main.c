@@ -66,7 +66,7 @@ e_modapi_init(E_Module *m)
    const char *engine_name;
    EINA_SAFETY_ON_NULL_RETURN_VAL(e_comp, NULL);
    engine_name = ecore_evas_engine_name_get(e_comp->ee);
-   if (!strncmp(engine_name, "drm", 3) || !strncmp(engine_name, "fb", 2))
+   if (!strncmp(engine_name, "drm", 3) || !strncmp(engine_name, "gl_drm", 2))
      return e_screenshooter_server_init(m);
 
    if (!ecore_wl_init(NULL)) return NULL;
