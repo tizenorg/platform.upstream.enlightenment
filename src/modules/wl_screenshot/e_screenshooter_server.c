@@ -6,40 +6,6 @@
 #include "e_screenshooter_server.h"
 
 static void
-_e_screenshooter_center_rect (int src_w, int src_h, int dst_w, int dst_h, Eina_Rectangle *fit)
-{
-   float rw, rh;
-
-   if (src_w <= 0 || src_h <= 0 || dst_w <= 0 || dst_h <= 0 || !fit)
-     return;
-
-   rw = (float)src_w / dst_w;
-   rh = (float)src_h / dst_h;
-
-   if (rw > rh)
-     {
-        fit->w = dst_w;
-        fit->h = src_h * rw;
-        fit->x = 0;
-        fit->y = (dst_h - fit->h) / 2;
-     }
-   else if (rw < rh)
-     {
-        fit->w = src_w * rw;
-        fit->h = dst_h;
-        fit->x = (dst_w - fit->w) / 2;
-        fit->y = 0;
-     }
-   else
-     {
-        fit->w = dst_w;
-        fit->h = dst_h;
-        fit->x = 0;
-        fit->y = 0;
-     }
-}
-
-static void
 _e_screenshooter_shoot(struct wl_client *client,
                        struct wl_resource *resource,
                        struct wl_resource *output_resource,
@@ -66,16 +32,18 @@ _e_screenshooter_shoot(struct wl_client *client,
    bp = wl_shm_buffer_get_data(shm_buffer);
    bs = wl_shm_buffer_get_stride(shm_buffer);
 
-   _e_screenshooter_center_rect(output->w, output->h, bw, bh, &center);
-printf ("@@@ %s(%d) %d, %d, %d, %x, s(%d,%d,%d,%d) d(%d,%d,%d,%d)\n", __FUNCTION__, __LINE__,
-	bs, bw, bh, bf,
-                    output->x, output->y, output->w, output->h,
-                    center.x, center.y, center.w, center.h);
+   if (bw != output->w || bh != output->h)
+     {
+        wl_resource_post_error(resource, WL_DISPLAY_ERROR_INVALID_OBJECT,
+                               "screenshooter failed: invalid buffer size");
+        return;
+     }
+
    /* do dump */
    wl_shm_buffer_begin_access(shm_buffer);
    evas_render_copy(e_comp->evas, bp, bs, bw, bh, bf,
                     output->x, output->y, output->w, output->h,
-                    center.x, center.y, center.w, center.h);
+                    0, 0, bw, bh);
    wl_shm_buffer_end_access(shm_buffer);
 
    /* done */
