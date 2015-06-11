@@ -18,7 +18,7 @@ _e_shell_surface_parent_set(E_Client *ec, struct wl_resource *parent_resource)
 
    if (!parent_resource)
      {
-        ec->icccm.fetch.transient_for = EINA_FALSE;
+        ec->icccm.fetch.transient_for = EINA_TRUE;
         ec->icccm.transient_for = 0;
         if (ec->parent)
           {
@@ -1430,6 +1430,22 @@ _e_tz_transient_for_cb_set(struct wl_client *client, struct wl_resource *resourc
    EC_CHANGED(ec);
 }
 
+static void
+_e_tz_transient_for_cb_unset(struct wl_client *client, struct wl_resource *resource, uint32_t child_id)
+{
+   E_Client *ec;
+
+   DBG("chid_id: %" PRIu32, child_id);
+
+   ec = e_pixmap_find_client_by_res_id(child_id);
+   EINA_SAFETY_ON_NULL_RETURN(ec);
+
+   _e_shell_surface_parent_set(ec, NULL);
+   tizen_transient_for_send_done(resource, child_id);
+
+   EC_CHANGED(ec);
+}
+
 static const struct tizen_surface_extension_interface  _e_tz_surf_ext_interface =
 {
    _e_tz_surf_ext_cb_tz_res_get,
@@ -1438,6 +1454,7 @@ static const struct tizen_surface_extension_interface  _e_tz_surf_ext_interface 
 static const struct tizen_transient_for_interface _e_tz_transient_for_interface =
 {
    _e_tz_transient_for_cb_set,
+   _e_tz_transient_for_cb_unset,
 };
 
 static const struct wl_shell_interface _e_shell_interface =

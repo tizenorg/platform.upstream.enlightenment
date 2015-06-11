@@ -4,6 +4,9 @@
          <arg name="child_id" type="uint" />
          <arg name="parent_id" type="uint" />
       </request>
+      <request name="unset">
+         <arg name="child_id" type="uint" />
+      </request>
       <event name="done">
          <arg name="child_id" type="uint"/>
       </event>
