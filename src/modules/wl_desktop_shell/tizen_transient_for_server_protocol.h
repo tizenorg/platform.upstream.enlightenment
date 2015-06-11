@@ -26,6 +26,13 @@ struct tizen_transient_for_interface {
 		    struct wl_resource *resource,
 		    uint32_t child_id,
 		    uint32_t parent_id);
+	/**
+	 * unset - (none)
+	 * @child_id: (none)
+	 */
+	void (*unset)(struct wl_client *client,
+		      struct wl_resource *resource,
+		      uint32_t child_id);
 };
 
 #define TIZEN_TRANSIENT_FOR_DONE	0

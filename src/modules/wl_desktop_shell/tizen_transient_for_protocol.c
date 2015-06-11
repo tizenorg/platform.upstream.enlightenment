@@ -10,6 +10,7 @@ static const struct wl_interface *types[] = {
 
 static const struct wl_message tizen_transient_for_requests[] = {
 	{ "set", "uu", types + 0 },
+	{ "unset", "u", types + 0 },
 };
 
 static const struct wl_message tizen_transient_for_events[] = {
@@ -18,7 +19,7 @@ static const struct wl_message tizen_transient_for_events[] = {
 
 WL_EXPORT const struct wl_interface tizen_transient_for_interface = {
 	"tizen_transient_for", 1,
-	1, tizen_transient_for_requests,
+	2, tizen_transient_for_requests,
 	1, tizen_transient_for_events,
 };
 
