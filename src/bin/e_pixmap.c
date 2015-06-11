@@ -625,6 +625,8 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
         else if (buffer->type == E_COMP_WL_BUFFER_TYPE_DRM)
           {
              E_Drm_Buffer *drm_buffer = e_drm_buffer_get(buffer->resource);
+             E_Comp_Wl_Data *cdata = e_comp->wl_comp_data;
+
              buffer->shm_buffer = NULL;
              cp->w = buffer->w;
              cp->h = buffer->h;
@@ -639,7 +641,7 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
                }
              cp->data = NULL;
 
-             if (e_config->use_hw_underlay)
+             if (cdata->available_hw_accel.underlay)
                e_comp_object_mask_set(cp->client->frame, EINA_TRUE);
           }
         else

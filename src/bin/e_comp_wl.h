@@ -242,6 +242,12 @@ struct _E_Comp_Wl_Data
         Evas_GL_Context *ctx;
      } gl;
 
+   struct
+     {
+        Eina_Bool underlay;
+        Eina_Bool scaler;
+     } available_hw_accel;
+
    Eina_List *outputs;
 
    Ecore_Fd_Handler *fd_hdlr;

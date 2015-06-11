@@ -84,6 +84,7 @@ e_screenshooter_server_init(E_Module *m)
 
    if (!e_comp) return EINA_FALSE;
    if (!(cdata = e_comp->wl_comp_data)) return EINA_FALSE;
+   if (cdata->available_hw_accel.scaler) return EINA_FALSE;
    if (!cdata->wl.disp) return EINA_FALSE;
 
    /* try to add screenshooter to wayland globals */
