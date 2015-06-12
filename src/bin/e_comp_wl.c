@@ -3032,6 +3032,9 @@ _e_comp_wl_compositor_create(void)
         goto comp_global_err;
      }
 
+   /* initialize shm mechanism */
+   wl_display_init_shm(cdata->wl.disp);
+
 #ifndef HAVE_WAYLAND_ONLY
    _e_comp_wl_cb_randr_change(NULL, 0, NULL);
 #endif
@@ -3090,9 +3093,6 @@ _e_comp_wl_compositor_create(void)
         e_comp_wl_input_keymap_set(cdata, rules, model, layout);
      }
 #endif
-
-   /* initialize shm mechanism */
-   wl_display_init_shm(cdata->wl.disp);
 
    /* get the wayland display loop */
    cdata->wl.loop = wl_display_get_event_loop(cdata->wl.disp);
