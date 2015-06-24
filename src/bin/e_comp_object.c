@@ -818,7 +818,8 @@ _e_comp_intercept_move(void *data, Evas_Object *obj, int x, int y)
    E_Comp_Object *cw = data;
    int ix, iy;
 
-   if (!e_util_strcmp("wl_pointer-cursor", cw->ec->icccm.window_role))
+   if ((!e_util_strcmp("wl_pointer-cursor", cw->ec->icccm.window_role)) ||
+       (!e_util_strcmp("input_panel_surface", cw->ec->icccm.window_role)))
      {
         cw->ec->client.x = x, cw->ec->client.y = y;
         cw->ec->x = x, cw->ec->y = y;
