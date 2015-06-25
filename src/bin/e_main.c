@@ -84,7 +84,6 @@ static void      _e_main_desk_save(void);
 static void      _e_main_desk_restore(void);
 static void      _e_main_efreet_paths_init(void);
 static void      _e_main_modules_load(Eina_Bool safe_mode);
-static Eina_Bool _e_main_cb_x_flusher(void *data __UNUSED__);
 static Eina_Bool _e_main_cb_idle_before(void *data __UNUSED__);
 static Eina_Bool _e_main_cb_idle_after(void *data __UNUSED__);
 static Eina_Bool _e_main_cb_startup_fake_end(void *data __UNUSED__);
@@ -100,7 +99,6 @@ static int(*_e_main_shutdown_func[MAX_LEVEL]) (void);
 
 static Ecore_Idle_Enterer *_idle_before = NULL;
 static Ecore_Idle_Enterer *_idle_after = NULL;
-static Ecore_Idle_Enterer *_idle_flush = NULL;
 
 static Ecore_Event_Handler *mod_init_end = NULL;
 
@@ -991,10 +989,6 @@ main(int argc, char **argv)
    TS("E_Order Init Done");
    _e_main_shutdown_push(e_order_shutdown);
 
-   TS("Add Idler For X Flush");
-   _idle_flush = ecore_idle_enterer_add(_e_main_cb_x_flusher, NULL);
-   TS("Add Idler For X Flush Done");
-
    TS("E_Manager Keys Grab");
    e_managers_keys_grab();
    TS("E_Manager Keys Grab Done");
@@ -1114,8 +1108,6 @@ _e_main_shutdown(int errcode)
    _idle_before = NULL;
    if (_idle_after) ecore_idle_enterer_del(_idle_after);
    _idle_after = NULL;
-   if (_idle_flush) ecore_idle_enterer_del(_idle_flush);
-   _idle_flush = NULL;
 
    dir = getenv("XDG_RUNTIME_DIR");
    if (dir)
@@ -1771,6 +1763,7 @@ _e_main_cb_idle_after(void *data __UNUSED__)
 {
    static int first_idle = 1;
 
+   eet_clearcache();
    edje_freeze();
 
 #ifdef E_RELEASE_BUILD
@@ -1789,17 +1782,6 @@ _e_main_cb_idle_after(void *data __UNUSED__)
      }
 #endif
 
-   return ECORE_CALLBACK_RENEW;
-}
-
-static Eina_Bool
-_e_main_cb_x_flusher(void *data __UNUSED__)
-{
-   eet_clearcache();
-#ifndef HAVE_WAYLAND_ONLY
-   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
-     ecore_x_flush();
-#endif
    return ECORE_CALLBACK_RENEW;
 }
 
