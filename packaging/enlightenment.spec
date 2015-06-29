@@ -43,6 +43,7 @@ BuildRequires:  pkgconfig(xcb-keysyms)
 BuildRequires:  pkgconfig(ecore-x)
 %else
 BuildRequires:  pkgconfig(wayland-server)
+BuildRequires:  wayland-extension-server-devel
 %endif
 
 
