@@ -36,6 +36,7 @@ BuildRequires:  pkgconfig(elementary)
 BuildRequires:  pkgconfig(ice)
 BuildRequires:  pkgconfig(libudev)
 BuildRequires:  pkgconfig(udev)
+BuildRequires:  pkgconfig(libtbm)
 %if %{with x}
 BuildRequires:  pkgconfig(x11)
 BuildRequires:  pkgconfig(xext)

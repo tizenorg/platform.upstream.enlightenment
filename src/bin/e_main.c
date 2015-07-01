@@ -1028,6 +1028,11 @@ main(int argc, char **argv)
    _e_main_shutdown_push(e_test_helper_shutdown);
    TS("E_Test_Helper Done");
 
+   TS("E_INFO_SERVER Init");
+   e_info_server_init();
+   _e_main_shutdown_push(e_info_server_shutdown);
+   TS("E_INFO_SERVER Done");
+
    if (e_config->show_splash)
      e_init_status_set(_("Setup Shelves"));
    TS("E_Shelf Init");

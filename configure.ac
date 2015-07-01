@@ -565,6 +565,7 @@ e_requires="\
   elementary >= $efl_version \
   emotion >= $efl_version \
   $eeze_mount \
+  libtbm \
   $udisks_mount \
   $device_libs"
 if test "x${e_cv_want_wayland_only}" != "xyes"; then

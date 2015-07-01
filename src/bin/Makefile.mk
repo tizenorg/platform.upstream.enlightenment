@@ -378,6 +378,7 @@ endif
 
 if HAVE_WAYLAND
 enlightenment_src += \
+src/bin/e_info_server.c \
 src/bin/e_drm_buffer_pool.c \
 src/bin/e_drm_buffer_pool_server_protocol.c \
 src/bin/e_uuid_store.c \
@@ -466,7 +467,7 @@ src_bin_enlightenment_static_grabber_CPPFLAGS = @E_GRABBER_CFLAGS@
 
 src_bin_enlightenment_info_SOURCES = \
 src/bin/e.h \
-src/bin/e_info.c
+src/bin/e_info_client.c
 src_bin_enlightenment_info_LDADD = @E_INFO_LIBS@
 src_bin_enlightenment_info_CPPFLAGS = $(E_CPPFLAGS) @E_INFO_CFLAGS@
 
