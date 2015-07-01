@@ -574,8 +574,14 @@ _e_shell_cb_shell_surface_get(struct wl_client *client, struct wl_resource *reso
 
    if (!ec)
      {
-        /* no client found. not internal window. maybe external client app ? */
-        if (!(ec = e_client_new(NULL, ep, 0, 0)))
+        pid_t pid;
+        int internal = 0;
+
+        /* check if it's internal or external */
+        wl_client_get_credentials(client, &pid, NULL, NULL);
+        if (pid == getpid()) internal = 1;
+
+        if (!(ec = e_client_new(NULL, ep, 0, internal)))
           {
              wl_resource_post_error(surface_resource,
                                     WL_DISPLAY_ERROR_INVALID_OBJECT,
@@ -1155,8 +1161,14 @@ _e_xdg_shell_cb_surface_get(struct wl_client *client, struct wl_resource *resour
 
    if (!ec)
      {
-        /* no client found. not internal window. maybe external client app ? */
-        if (!(ec = e_client_new(NULL, ep, 0, 0)))
+        pid_t pid;
+        int internal = 0;
+
+        /* check if it's internal or external */
+        wl_client_get_credentials(client, &pid, NULL, NULL);
+        if (pid == getpid()) internal = 1;
+
+        if (!(ec = e_client_new(NULL, ep, 0, internal)))
           {
              wl_resource_post_error(surface_resource,
                                     WL_DISPLAY_ERROR_INVALID_OBJECT,
