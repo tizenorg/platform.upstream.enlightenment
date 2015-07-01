@@ -68,6 +68,12 @@ _e_mod_drm_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
                          e->phys_width, e->phys_height, e->refresh,
                          e->subpixel_order, e->transform);
 
+   /* previous calculation of e_scale gave unsuitable value because
+    * there were no sufficient information to calculate dpi.
+    * so it's considerable to re-calculate e_scale with output geometry.
+    */
+   e_scale_manual_update(((e->w * 254 / e->phys_width) + 5) / 10);
+
 end:
    return ECORE_CALLBACK_PASS_ON;
 }
