@@ -2961,6 +2961,47 @@ _e_comp_wl_gl_shutdown(E_Comp_Data *cdata)
    cdata->gl.evasgl = NULL;
 }
 
+static void
+_e_comp_wl_gl_cb_popup(void *data,
+                       Evas_Object *obj EINA_UNUSED,
+                       void *event_info EINA_UNUSED)
+{
+   evas_object_del(data);
+}
+
+static Eina_Bool
+_e_comp_wl_gl_idle(void *data)
+{
+   if (!e_comp->gl)
+     {
+        /* show warning window to notify failue of gl init */
+        Evas_Object *win, *popup, *btn;
+
+        win = elm_win_util_standard_add("compositor warning", "Compositor Warning");
+        elm_win_autodel_set(win, EINA_TRUE);
+        elm_win_borderless_set(win, EINA_TRUE);
+        elm_win_role_set(win, "wl-warning-popup");
+
+        popup = elm_popup_add(win);
+        elm_object_text_set(popup,
+                            _( "Your screen does not support OpenGL.<br>"
+                               "Falling back to software engine."));
+        elm_object_part_text_set(popup, "title,text", "Compositor Warning");
+
+        btn = elm_button_add(popup);
+        elm_object_text_set(btn, "Close");
+        elm_object_part_content_set(popup, "button1", btn);
+        evas_object_smart_callback_add(btn, "unpressed", _e_comp_wl_gl_cb_popup, win);
+
+        evas_object_show(popup);
+        evas_object_show(win);
+     }
+
+   return ECORE_CALLBACK_CANCEL;
+}
+
+
+
 static Eina_Bool
 _e_comp_wl_compositor_create(void)
 {
@@ -3109,6 +3150,9 @@ _e_comp_wl_compositor_create(void)
 
    /* setup module idler to load shell mmodule */
    ecore_idler_add(_e_comp_wl_cb_module_idle, cdata);
+
+   /* check if gl init succeded */
+   ecore_idler_add(_e_comp_wl_gl_idle, cdata);
 
    if (comp->comp_type == E_PIXMAP_TYPE_X)
      {
