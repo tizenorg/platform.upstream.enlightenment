@@ -105,6 +105,7 @@ src/bin/e_ilist.h \
 src/bin/e_import_config_dialog.h \
 src/bin/e_import_dialog.h \
 src/bin/e_includes.h \
+src/bin/e_info_server.h \
 src/bin/e_init.h \
 src/bin/e_int_client_locks.h \
 src/bin/e_int_client_menu.h \
@@ -271,6 +272,7 @@ src/bin/e_icon.c \
 src/bin/e_ilist.c \
 src/bin/e_import_config_dialog.c \
 src/bin/e_import_dialog.c \
+src/bin/e_info_server.c \
 src/bin/e_init.c \
 src/bin/e_int_client_locks.c \
 src/bin/e_int_client_menu.c \
@@ -378,7 +380,6 @@ endif
 
 if HAVE_WAYLAND
 enlightenment_src += \
-src/bin/e_info_server.c \
 src/bin/e_drm_buffer_pool.c \
 src/bin/e_drm_buffer_pool_server_protocol.c \
 src/bin/e_uuid_store.c \
