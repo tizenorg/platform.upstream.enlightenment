@@ -2575,6 +2575,7 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
    E_Comp_Client_Data *p_cdata = e_pixmap_cdata_get(ec->pixmap);
    EINA_SAFETY_ON_NULL_RETURN(p_cdata);
    ec->comp_data->accepts_focus = p_cdata->accepts_focus;
+   ec->comp_data->conformant = p_cdata->conformant;
 
    /* add this client to the hash */
    /* eina_hash_add(clients_win_hash, &win, ec); */
