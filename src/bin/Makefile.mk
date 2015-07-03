@@ -206,6 +206,7 @@ if HAVE_WAYLAND
 ENLIGHTENMENTHEADERS += \
 src/bin/e_drm_buffer_pool.h \
 src/bin/e_drm_buffer_pool_server_protocol.h \
+src/bin/e_info_server.h \
 src/bin/e_uuid_store.h \
 src/bin/e_comp_wl_data.h \
 src/bin/e_comp_wl_input.h \

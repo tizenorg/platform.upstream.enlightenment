@@ -43,7 +43,6 @@
 #include "e_ipc_codec.h"
 #include "e_test.h"
 #include "e_test_helper.h"
-#include "e_info_server.h"
 #include "e_prefix.h"
 #include "e_datastore.h"
 #include "e_msg.h"
@@ -159,6 +158,7 @@
 # include "e_comp_wl.h"
 # include "e_comp_wl_data.h"
 # include "e_comp_wl_input.h"
+# include "e_info_server.h"
 # include "e_uuid_store.h"
 # include "e_drm_buffer_pool.h"
 #endif
