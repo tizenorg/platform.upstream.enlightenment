@@ -14,7 +14,9 @@ typedef struct _E_Info_Server
 static E_Info_Server e_info_server;
 
 struct wl_drm;
-struct wl_drm_buffer {
+
+struct wl_drm_buffer
+{
    struct wl_resource *resource;
    struct wl_drm *drm;
    int32_t width, height;
@@ -26,7 +28,7 @@ struct wl_drm_buffer {
 };
 
 static void
-_message_append_clients(Eldbus_Message_Iter *iter)
+_msg_clients_append(Eldbus_Message_Iter *iter)
 {
    Eldbus_Message_Iter *array_of_ec;
    E_Client *ec;
@@ -47,12 +49,14 @@ _message_append_clients(Eldbus_Message_Iter *iter)
         win = e_client_util_win_get(ec);
 
         eldbus_message_iter_arguments_append(array_of_ec, "(usiiiiibb)", &struct_of_ec);
+
         eldbus_message_iter_arguments_append
            (struct_of_ec, "usiiiiibb",
             win,
             e_client_util_name_get(ec) ?: "NO NAME",
             ec->x, ec->y, ec->w, ec->h, ec->layer,
             ec->visible, ec->argb);
+
         eldbus_message_iter_container_close(array_of_ec, struct_of_ec);
      }
 
@@ -61,19 +65,17 @@ _message_append_clients(Eldbus_Message_Iter *iter)
 
 /* Method Handlers */
 static Eldbus_Message *
-_e_info_server_cb_get_window_info(const Eldbus_Service_Interface *iface EINA_UNUSED,
-                                  const Eldbus_Message *msg)
+_e_info_server_cb_window_info_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
 {
    Eldbus_Message *reply = eldbus_message_method_return_new(msg);
 
-   _message_append_clients(eldbus_message_iter_get(reply));
+   _msg_clients_append(eldbus_message_iter_get(reply));
 
    return reply;
 }
 
 static Eldbus_Message *
-_e_info_server_cb_shot_topvwins(const Eldbus_Service_Interface *iface EINA_UNUSED,
-                                const Eldbus_Message *msg)
+_e_info_server_cb_topvwins_dump(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
 {
    Eldbus_Message *reply = eldbus_message_method_return_new(msg);
    const char *dir;
@@ -135,6 +137,7 @@ _e_info_server_cb_shot_topvwins(const Eldbus_Service_Interface *iface EINA_UNUSE
         evas_object_image_alpha_set(img, ec->argb);
         evas_object_image_size_set(img, w, h);
         evas_object_image_data_set(img, data);
+
         if (!evas_object_image_save(img, fname, NULL, "compress=1 quality=100"))
           ERR("Cannot save window to '%s'", fname);
 
@@ -147,24 +150,16 @@ err:
           }
 #endif
 
-        if (img)
-          evas_object_del(img);
-        if (ee)
-          ecore_evas_free(ee);
+        if (img) evas_object_del(img);
+        if (ee) ecore_evas_free(ee);
      }
 
    return reply;
 }
 
 static const Eldbus_Method methods[] = {
-   {
-      "get_window_info", NULL, ELDBUS_ARGS({"a(usiiiiibb)", "array of ec"}),
-      _e_info_server_cb_get_window_info, 0
-   },
-   {
-      "shot_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL,
-      _e_info_server_cb_shot_topvwins, ELDBUS_METHOD_FLAG_NOREPLY
-   },
+   { "get_window_info", NULL, ELDBUS_ARGS({"a(usiiiiibb)", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
+   { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, ELDBUS_METHOD_FLAG_NOREPLY },
    { NULL, NULL, NULL, NULL, 0 }
 };
 
@@ -186,6 +181,7 @@ e_info_server_init(void)
    EINA_SAFETY_ON_NULL_GOTO(e_info_server.iface, err);
 
    return 1;
+
 err:
    e_info_server_shutdown();
    return 0;
@@ -199,6 +195,7 @@ e_info_server_shutdown(void)
         eldbus_service_interface_unregister(e_info_server.iface);
         e_info_server.iface = NULL;
      }
+
    if (e_info_server.conn)
      {
         eldbus_connection_unref(e_info_server.conn);

@@ -7,13 +7,13 @@ typedef void (*E_Info_Message_Cb)(const Eldbus_Message *msg);
 typedef struct _E_Info_Client
 {
    /* eldbus */
-   int eldbus_init;
-   Eldbus_Proxy *proxy;
+   int                eldbus_init;
+   Eldbus_Proxy      *proxy;
    Eldbus_Connection *conn;
-   Eldbus_Object  *obj;
+   Eldbus_Object     *obj;
 
    /* topvwins */
-   Eina_List    *win_list;
+   Eina_List         *win_list;
 } E_Info_Client;
 
 typedef struct _E_Win_Info
@@ -28,20 +28,11 @@ typedef struct _E_Win_Info
 
 static E_Info_Client e_info_client;
 
-static Eina_Bool
-_e_info_client_eldbus_message(const char *method, E_Info_Message_Cb cb);
-static Eina_Bool
-_e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb,
-                                        const char *signature, ...);
+static Eina_Bool _e_info_client_eldbus_message(const char *method, E_Info_Message_Cb cb);
+static Eina_Bool _e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb, const char *signature, ...);
 
 static E_Win_Info *
-_e_win_info_new(Ecore_Window id,
-                Eina_Bool alpha,
-                const char *name,
-                int x, int y,
-                int w, int h,
-                int layer,
-                int visible)
+_e_win_info_new(Ecore_Window id, Eina_Bool alpha, const char *name, int x, int y, int w, int h, int layer, int visible)
 {
    E_Win_Info *win = NULL;
 
@@ -73,7 +64,7 @@ _e_win_info_free(E_Win_Info *win)
 }
 
 static void
-_get_window_info_cb(const Eldbus_Message *msg)
+_cb_window_info_get(const Eldbus_Message *msg)
 {
    const char *name = NULL, *text = NULL;
    Eldbus_Message_Iter *array, *ec;
@@ -121,13 +112,13 @@ finish:
 }
 
 static void
-_e_info_client_proc_topvwins(int argc, char **argv)
+_e_info_client_proc_topvwins_info(int argc, char **argv)
 {
    E_Win_Info *win;
    Eina_List *l;
    int i = 0;
 
-   if (!_e_info_client_eldbus_message("get_window_info", _get_window_info_cb))
+   if (!_e_info_client_eldbus_message("get_window_info", _cb_window_info_get))
      return;
 
    printf("%d Top level windows\n", eina_list_count(e_info_client.win_list));
@@ -152,7 +143,7 @@ _e_info_client_proc_topvwins(int argc, char **argv)
    E_FREE_LIST(e_info_client.win_list, _e_win_info_free);
 }
 
-static char*
+static char *
 _directory_make(char *path)
 {
    char dir[PATH_MAX], curdir[PATH_MAX], stamp[PATH_MAX];
@@ -233,12 +224,12 @@ _directory_make(char *path)
 }
 
 static void
-_e_info_client_proc_shot_topvwins(int argc, char **argv)
+_e_info_client_proc_topvwins_shot(int argc, char **argv)
 {
    char *directory = _directory_make(argv[2]);
    EINA_SAFETY_ON_NULL_RETURN(directory);
 
-   if (!_e_info_client_eldbus_message_with_args("shot_topvwins", NULL, "s", directory))
+   if (!_e_info_client_eldbus_message_with_args("dump_topvwins", NULL, "s", directory))
      {
         free(directory);
         return;
@@ -258,24 +249,21 @@ static struct
    {
       "topvwins", NULL,
       "Print top visible windows",
-      _e_info_client_proc_topvwins
+      _e_info_client_proc_topvwins_info
    },
    {
-      "shot_topvwins", "[directory_path]",
-      "Dump topvwins (default directory_path : current working directory)",
-      _e_info_client_proc_shot_topvwins
+      "dump_topvwins", "[directory_path]",
+      "Dump top-level visible windows (default directory_path : current working directory)",
+      _e_info_client_proc_topvwins_shot
    },
 };
 
 static void
-_e_info_client_eldbus_message_cb(void *data,
-                                 const Eldbus_Message *msg,
-                                 Eldbus_Pending *p EINA_UNUSED)
+_e_info_client_eldbus_message_cb(void *data, const Eldbus_Message *msg, Eldbus_Pending *p EINA_UNUSED)
 {
    E_Info_Message_Cb cb = (E_Info_Message_Cb)data;
 
-   if (cb)
-     cb(msg);
+   if (cb) cb(msg);
 
    ecore_main_loop_quit();
 }
@@ -295,8 +283,7 @@ _e_info_client_eldbus_message(const char *method, E_Info_Message_Cb cb)
 }
 
 static Eina_Bool
-_e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb,
-                                        const char *signature, ...)
+_e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb, const char *signature, ...)
 {
    Eldbus_Pending *p;
    va_list ap;
@@ -320,16 +307,19 @@ _e_info_client_eldbus_disconnect(void)
         eldbus_proxy_unref(e_info_client.proxy);
         e_info_client.proxy = NULL;
      }
+
    if (e_info_client.obj)
      {
         eldbus_object_unref(e_info_client.obj);
         e_info_client.obj = NULL;
      }
+
    if (e_info_client.conn)
      {
         eldbus_connection_unref(e_info_client.conn);
         e_info_client.conn = NULL;
      }
+
    if (e_info_client.eldbus_init)
      {
         eldbus_shutdown();
@@ -387,17 +377,19 @@ _e_info_client_print_usage(const char *exec)
    int nproc = sizeof(procs) / sizeof(procs[0]);
    int i;
 
-   printf("\n");
-   printf("Usage:\n");
+   printf("\nUsage:\n");
+
    for (i = 0; i < nproc; i++)
      printf("  %s -%s %s\n", exec, procs[i].option, (procs[i].params)?procs[i].params:"");
-   printf("\n");
-   printf("Option:\n");
+
+   printf("\nOptions:\n");
+
    for (i = 0; i < nproc; i++)
      {
         printf("  -%s\n", procs[i].option);
         printf("      %s\n", (procs[i].description)?procs[i].description:"");
      }
+
    printf("\n");
 }
 
@@ -417,7 +409,9 @@ main(int argc, char **argv)
    if (!strcmp(argv[1], "-h") ||
        !strcmp(argv[1], "-help") ||
        !strcmp(argv[1], "--help"))
-     _e_info_client_print_usage(argv[0]);
+     {
+        _e_info_client_print_usage(argv[0]);
+     }
    else
      {
         /* handling a client request */
@@ -430,6 +424,7 @@ main(int argc, char **argv)
 
    /* disconnecting dbus */
    _e_info_client_eldbus_disconnect();
+
    return 0;
 
 err:
