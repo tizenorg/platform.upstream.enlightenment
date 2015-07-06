@@ -111,14 +111,14 @@ _e_info_server_cb_topvwins_dump(const Eldbus_Service_Interface *iface EINA_UNUSE
           {
              data = wl_shm_buffer_get_data(wl_shm_buffer_get(buffer->resource));
              w = wl_shm_buffer_get_stride(wl_shm_buffer_get(buffer->resource))/4;
-             h = wl_shm_buffer_get_height(wl_shm_buffer_get(buffer->resource));
+             h = ec->h;
           }
         else if (buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
           {
              struct wl_drm_buffer *drm_buffer = wl_resource_get_user_data(buffer->resource);
              data = tbm_bo_map((tbm_bo)drm_buffer->driver_buffer, TBM_DEVICE_CPU, TBM_OPTION_READ).ptr;
-             w = drm_buffer->width;
-             h = drm_buffer->height;
+             w = drm_buffer->stride[0]/4;
+             h = ec->h;
           }
         else
           {
