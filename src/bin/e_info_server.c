@@ -117,7 +117,7 @@ _e_info_server_cb_topvwins_dump(const Eldbus_Service_Interface *iface EINA_UNUSE
           {
              struct wl_drm_buffer *drm_buffer = wl_resource_get_user_data(buffer->resource);
              data = tbm_bo_map((tbm_bo)drm_buffer->driver_buffer, TBM_DEVICE_CPU, TBM_OPTION_READ).ptr;
-             w = drm_buffer->width;
+             w = drm_buffer->stride[0]/4;
              h = drm_buffer->height;
           }
         else
