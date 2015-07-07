@@ -3345,11 +3345,11 @@ e_client_above_get(const E_Client *ec)
           if (!e_object_is_del(E_OBJECT(ec2)))
             return ec2;
      }
-   if (ec->layer == E_LAYER_CLIENT_PRIO) return NULL;
+   if (ec->layer == E_LAYER_CLIENT_NOTIFICATION_HIGH) return NULL;
    if (e_comp_canvas_client_layer_map(ec->layer) == 9999) return NULL;
 
    /* go up the layers until we find one */
-   for (x = e_comp_canvas_layer_map(ec->layer) + 1; x <= e_comp_canvas_layer_map(E_LAYER_CLIENT_PRIO); x++)
+   for (x = e_comp_canvas_layer_map(ec->layer) + 1; x <= e_comp_canvas_layer_map(E_LAYER_CLIENT_NOTIFICATION_HIGH); x++)
      {
         if (!ec->comp->layers[x].clients) continue;
         EINA_INLIST_FOREACH(ec->comp->layers[x].clients, ec2)
@@ -3400,7 +3400,7 @@ e_client_bottom_get(const E_Comp *c)
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(c, NULL);
 
-   for (x = e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x <= e_comp_canvas_layer_map(E_LAYER_CLIENT_PRIO); x++)
+   for (x = e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x <= e_comp_canvas_layer_map(E_LAYER_CLIENT_NOTIFICATION_HIGH); x++)
      {
         E_Client *ec2;
 
@@ -3419,7 +3419,7 @@ e_client_top_get(const E_Comp *c)
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(c, NULL);
 
-   for (x = e_comp_canvas_layer_map(E_LAYER_CLIENT_PRIO); x >= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x--)
+   for (x = e_comp_canvas_layer_map(E_LAYER_CLIENT_NOTIFICATION_HIGH); x >= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x--)
      {
         E_Client *ec2;
 
