@@ -2963,11 +2963,19 @@ _e_comp_wl_gl_shutdown(E_Comp_Data *cdata)
 }
 
 static void
-_e_comp_wl_gl_cb_popup(void *data,
-                       Evas_Object *obj EINA_UNUSED,
-                       void *event_info EINA_UNUSED)
+_e_comp_wl_gl_popup_cb_close(void *data,
+                             Evas_Object *obj EINA_UNUSED,
+                             void *event_info EINA_UNUSED)
 {
    evas_object_del(data);
+}
+
+static void
+_e_comp_wl_gl_popup_cb_focus(void *data,
+                             Evas_Object *obj EINA_UNUSED,
+                             void *event_info EINA_UNUSED)
+{
+   elm_object_focus_set(data, EINA_TRUE);
 }
 
 static Eina_Bool
@@ -2975,13 +2983,21 @@ _e_comp_wl_gl_idle(void *data)
 {
    if (!e_comp->gl)
      {
-        /* show warning window to notify failue of gl init */
-        Evas_Object *win, *popup, *btn;
+        /* show warning window to notify failure of gl init */
+        Evas_Object *win, *bg, *popup, *btn;
 
-        win = elm_win_util_standard_add("compositor warning", "Compositor Warning");
+        win = elm_win_add(NULL, "compositor warning", ELM_WIN_BASIC);
+        elm_win_title_set(win, "Compositor Warning");
         elm_win_autodel_set(win, EINA_TRUE);
         elm_win_borderless_set(win, EINA_TRUE);
         elm_win_role_set(win, "wl-warning-popup");
+        elm_win_alpha_set(win, EINA_TRUE);
+
+        bg = evas_object_rectangle_add(evas_object_evas_get(win));
+        evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+        elm_win_resize_object_add(win, bg);
+        evas_object_color_set(bg, 125, 125, 125, 125);
+        evas_object_show(bg);
 
         popup = elm_popup_add(win);
         elm_object_text_set(popup,
@@ -2992,7 +3008,10 @@ _e_comp_wl_gl_idle(void *data)
         btn = elm_button_add(popup);
         elm_object_text_set(btn, "Close");
         elm_object_part_content_set(popup, "button1", btn);
-        evas_object_smart_callback_add(btn, "unpressed", _e_comp_wl_gl_cb_popup, win);
+        evas_object_show(btn);
+
+        evas_object_smart_callback_add(win, "focus,in", _e_comp_wl_gl_popup_cb_focus, popup);
+        evas_object_smart_callback_add(btn, "unpressed", _e_comp_wl_gl_popup_cb_close, win);
 
         evas_object_show(popup);
         evas_object_show(win);
