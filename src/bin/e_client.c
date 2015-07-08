@@ -635,6 +635,8 @@ _e_client_del(E_Client *ec)
    if (e_pixmap_free(ec->pixmap))
      e_pixmap_client_set(ec->pixmap, NULL);
    ec->pixmap = NULL;
+
+   e_client_visibility_calculate();
 }
 
 ///////////////////////////////////////////
@@ -1419,6 +1421,8 @@ _e_client_cb_evas_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UN
      _e_client_hook_call(E_CLIENT_HOOK_MOVE_UPDATE, ec);
    e_remember_update(ec);
    ec->pre_cb.x = x; ec->pre_cb.y = y;
+
+   e_client_visibility_calculate();
 }
 
 static void
@@ -1459,6 +1463,8 @@ _e_client_cb_evas_resize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_
      _e_client_hook_call(E_CLIENT_HOOK_RESIZE_UPDATE, ec);
    e_remember_update(ec);
    ec->pre_cb.w = w; ec->pre_cb.h = h;
+
+   e_client_visibility_calculate();
 }
 
 static void
@@ -1503,6 +1509,8 @@ _e_client_cb_evas_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA
    if (ec->unredirected_single) return;
    e_remember_update(ec);
    _e_client_event_simple(ec, E_EVENT_CLIENT_STACK);
+
+   e_client_visibility_calculate();
 }
 
 ////////////////////////////////////////////////
@@ -2346,6 +2354,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
 
         /* check e_client and skip e_clients not intersects with zone */
         if (!ec) continue;
+        if (e_object_is_del(E_OBJECT(ec))) continue;
         if (e_client_util_ignored_get(ec)) continue;
         if (ec->zone != zone) continue;
         if (!E_INTERSECTS(ec->x, ec->y, ec->w, ec->h,
@@ -2447,12 +2456,10 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
 }
 
 EAPI void
-e_client_visibility_calculate(E_Client *ec)
+e_client_visibility_calculate(void)
 {
    E_Zone *zone;
    Eina_List *zl;
-
-   if (e_object_is_del(E_OBJECT(ec))) return;
 
    EINA_LIST_FOREACH(e_comp->zones, zl, zone)
      {
@@ -2490,9 +2497,6 @@ e_client_idler_before(void)
         client_type = ec->client_type;
         if (client_type != _e_client_type_get(ec))
            _e_client_event_property(ec, E_CLIENT_PROPERTY_CLIENT_TYPE);
-
-        /* calculate visibility of the client" */
-        e_client_visibility_calculate(ec);
 
         /* PRE_POST_FETCH calls e_remember apply for new client */
         if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_PRE_POST_FETCH, ec)) continue;
@@ -2542,7 +2546,12 @@ e_client_idler_before(void)
           }
 
         if (ec->changed)
-          _e_client_eval(ec);
+          {
+             _e_client_eval(ec);
+
+             /* calculate visibility of clients */
+             e_client_visibility_calculate();
+          }
 
         if ((ec->changes.visible) && (ec->visible) && (!ec->changed))
           {

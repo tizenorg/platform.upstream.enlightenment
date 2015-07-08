@@ -3679,7 +3679,7 @@ _e_comp_object_effect_end_cb(void *data, Evas_Object *obj, const char *emission,
    if (evas_object_data_get(cw->smart_obj, "effect_running"))
      {
         evas_object_data_del(cw->smart_obj, "effect_running");
-        e_client_visibility_calculate(cw->ec);
+        e_client_visibility_calculate();
      }
 
    end_cb = evas_object_data_get(obj, "_e_comp.end_cb");
@@ -3755,7 +3755,7 @@ e_comp_object_effect_stop(Evas_Object *obj, Edje_Signal_Cb end_cb)
    if (evas_object_data_get(cw->smart_obj, "effect_running"))
      {
         evas_object_data_del(cw->smart_obj, "effect_running");
-        e_client_visibility_calculate(cw->ec);
+        e_client_visibility_calculate();
      }
 }
 

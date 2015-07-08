@@ -914,7 +914,7 @@ EAPI Eina_Bool e_client_is_stacking(const E_Client *ec);
 EAPI Eina_Bool e_client_desk_window_profile_available_check(E_Client *ec, const char *profile);
 EAPI void      e_client_desk_window_profile_wait_desk_set(E_Client *ec, E_Desk *desk);
 EAPI void      e_client_layout_cb_set(E_Client_Layout_Cb cb);
-EAPI void      e_client_visibility_calculate(E_Client *ec);
+EAPI void      e_client_visibility_calculate(void);
 
 YOLO EAPI void e_client_focus_stack_set(Eina_List *l);
 
