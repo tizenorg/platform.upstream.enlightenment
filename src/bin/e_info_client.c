@@ -32,7 +32,7 @@ static Eina_Bool _e_info_client_eldbus_message(const char *method, E_Info_Messag
 static Eina_Bool _e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb, const char *signature, ...);
 
 static E_Win_Info *
-_e_win_info_new(Ecore_Window id, Eina_Bool alpha, const char *name, int x, int y, int w, int h, int layer, int visible)
+_e_win_info_new(uint64_t id, Eina_Bool alpha, const char *name, int x, int y, int w, int h, int layer, int visible)
 {
    E_Win_Info *win = NULL;
 
@@ -73,7 +73,7 @@ _cb_window_info_get(const Eldbus_Message *msg)
    res = eldbus_message_error_get(msg, &name, &text);
    EINA_SAFETY_ON_TRUE_GOTO(res, finish);
 
-   res = eldbus_message_arguments_get(msg, "a(usiiiiibb)", &array);
+   res = eldbus_message_arguments_get(msg, "a(xsiiiiibb)", &array);
    EINA_SAFETY_ON_FALSE_GOTO(res, finish);
 
    while (eldbus_message_iter_get_and_next(array, 'r', &ec))
@@ -81,10 +81,10 @@ _cb_window_info_get(const Eldbus_Message *msg)
         const char *win_name;
         int x, y, w, h, layer;
         Eina_Bool visible, alpha;
-        Ecore_Window id;
+        uint64_t id;
         E_Win_Info *win = NULL;
         res = eldbus_message_iter_arguments_get(ec,
-                                                "usiiiiibb",
+                                                "xsiiiiibb",
                                                 &id,
                                                 &win_name,
                                                 &x,
@@ -123,7 +123,7 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
 
    printf("%d Top level windows\n", eina_list_count(e_info_client.win_list));
    printf("-------------------------[ topvwins ]------------------------------\n");
-   printf("No   PID     w     h     x     y   Depth         Title    map state\n");
+   printf("No          win ID          w     h     x     y   Depth         Title    map state\n");
    printf("-------------------------------------------------------------------\n");
 
    if (!e_info_client.win_list)

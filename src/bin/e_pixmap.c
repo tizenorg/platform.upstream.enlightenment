@@ -23,7 +23,7 @@ struct _E_Pixmap
 
    uint64_t win;
    uint32_t res_id;
-   Ecore_Window parent;
+   uint64_t parent;
 
    int w, h;
 
@@ -288,7 +288,7 @@ e_pixmap_type_get(const E_Pixmap *cp)
 }
 
 EAPI void
-e_pixmap_parent_window_set(E_Pixmap *cp, Ecore_Window win)
+e_pixmap_parent_window_set(E_Pixmap *cp, uint64_t win)
 {
    EINA_SAFETY_ON_NULL_RETURN(cp);
    if (cp->parent == win) return;
@@ -659,7 +659,7 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
 #endif
 }
 
-EAPI Ecore_Window
+EAPI uint64_t
 e_pixmap_parent_window_get(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, 0);

@@ -34,13 +34,13 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
    E_Client *ec;
    Evas_Object *o;
 
-   eldbus_message_iter_arguments_append(iter, "a(usiiiiibb)", &array_of_ec);
+   eldbus_message_iter_arguments_append(iter, "a(xsiiiiibb)", &array_of_ec);
 
    // append clients.
    for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
      {
         Eldbus_Message_Iter* struct_of_ec;
-        Ecore_Window win;
+        uint64_t win;
 
         ec = evas_object_data_get(o, "E_Client");
         if (!ec) continue;
@@ -48,10 +48,10 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
 
         win = e_client_util_win_get(ec);
 
-        eldbus_message_iter_arguments_append(array_of_ec, "(usiiiiibb)", &struct_of_ec);
+        eldbus_message_iter_arguments_append(array_of_ec, "(xsiiiiibb)", &struct_of_ec);
 
         eldbus_message_iter_arguments_append
-           (struct_of_ec, "usiiiiibb",
+           (struct_of_ec, "xsiiiiibb",
             win,
             e_client_util_name_get(ec) ?: "NO NAME",
             ec->x, ec->y, ec->w, ec->h, ec->layer,
@@ -158,7 +158,7 @@ err:
 }
 
 static const Eldbus_Method methods[] = {
-   { "get_window_info", NULL, ELDBUS_ARGS({"a(usiiiiibb)", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
+   { "get_window_info", NULL, ELDBUS_ARGS({"a(xsiiiiibb)", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, ELDBUS_METHOD_FLAG_NOREPLY },
    { NULL, NULL, NULL, NULL, 0 }
 };

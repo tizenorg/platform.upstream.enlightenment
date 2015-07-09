@@ -1417,7 +1417,7 @@ e_comp_util_wins_print(const E_Comp *c EINA_UNUSED)
 }
 
 EAPI void
-e_comp_ignore_win_add(E_Pixmap_Type type, Ecore_Window win)
+e_comp_ignore_win_add(E_Pixmap_Type type, uint64_t win)
 {
    E_Client *ec;
 
@@ -1429,7 +1429,7 @@ e_comp_ignore_win_add(E_Pixmap_Type type, Ecore_Window win)
 }
 
 EAPI void
-e_comp_ignore_win_del(E_Pixmap_Type type, Ecore_Window win)
+e_comp_ignore_win_del(E_Pixmap_Type type, uint64_t win)
 {
    E_Client *ec;
 
@@ -1441,7 +1441,7 @@ e_comp_ignore_win_del(E_Pixmap_Type type, Ecore_Window win)
 }
 
 EAPI Eina_Bool
-e_comp_ignore_win_find(Ecore_Window win)
+e_comp_ignore_win_find(uint64_t win)
 {
    return !!eina_hash_find(ignores, &win);
 }
