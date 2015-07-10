@@ -91,7 +91,7 @@ _e_info_server_cb_topvwins_dump(const Eldbus_Service_Interface *iface EINA_UNUSE
      {
         E_Client *ec = evas_object_data_get(o, "E_Client");
         char fname[PATH_MAX];
-        uint64_t win;
+        Ecore_Window win;
         void *data = NULL;
         int w = 0, h = 0;
         Ecore_Evas *ee = NULL;
@@ -101,7 +101,7 @@ _e_info_server_cb_topvwins_dump(const Eldbus_Service_Interface *iface EINA_UNUSE
         if (e_client_util_ignored_get(ec)) continue;
 
         win = e_client_util_win_get(ec);
-        snprintf(fname, sizeof(fname), "%s/%llu.png", dir, win);
+        snprintf(fname, sizeof(fname), "%s/%"PRIo16".png", dir, win);
 
 #ifdef HAVE_WAYLAND_ONLY
         E_Comp_Wl_Buffer *buffer = e_pixmap_resource_get(ec->pixmap);
