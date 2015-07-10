@@ -38,7 +38,7 @@ EAPI E_Pixmap *e_pixmap_find(E_Pixmap_Type type, ...);
 EAPI E_Client *e_pixmap_find_client(E_Pixmap_Type type, ...);
 EAPI E_Client *e_pixmap_find_client_by_res_id(uint32_t res_id);
 EAPI uint32_t e_pixmap_res_id_get(E_Pixmap *cp);
-EAPI uint64_t e_pixmap_window_get(E_Pixmap *cp);
+EAPI Ecore_Window e_pixmap_window_get(E_Pixmap *cp);
 EAPI Ecore_Window e_pixmap_parent_window_get(E_Pixmap *cp);
 EAPI Eina_Bool e_pixmap_native_surface_init(E_Pixmap *cp, Evas_Native_Surface *ns);
 EAPI void e_pixmap_image_clear(E_Pixmap *cp, Eina_Bool cache);

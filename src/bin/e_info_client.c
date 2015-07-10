@@ -18,7 +18,7 @@ typedef struct _E_Info_Client
 
 typedef struct _E_Win_Info
 {
-   uint64_t     id;         // native window id
+   Ecore_Window     id;         // native window id
    const char  *name;       // name of client window
    int          x, y, w, h; // geometry
    int          layer;      // value of E_Layer
@@ -123,7 +123,7 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
 
    printf("%d Top level windows\n", eina_list_count(e_info_client.win_list));
    printf("-------------------------[ topvwins ]------------------------------\n");
-   printf("No   PID     w     h     x     y   Depth         Title    map state\n");
+   printf("No       Window_ID       w     h     x     y   Depth         Title    map state\n");
    printf("-------------------------------------------------------------------\n");
 
    if (!e_info_client.win_list)
@@ -136,7 +136,7 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
      {
         if (!win) return;
         i++;
-        printf("%3d %"PRIu64" %5d %5d %5d %5d %5d ", i, win->id, win->w, win->h, win->x, win->y, win->alpha? 32:24);
+        printf("%3d %lu %5d %5d %5d %5d %5d ", i, win->id, win->id, win->w, win->h, win->x, win->y, win->alpha? 32:24);
         printf("%15s %11s\n", win->name?:"No Name", win->vis? "Viewable":"NotViewable");
      }
 

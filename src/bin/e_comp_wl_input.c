@@ -55,7 +55,6 @@ _e_comp_wl_input_pointer_cb_cursor_set(struct wl_client *client, struct wl_resou
    E_Comp_Data *cdata;
    pid_t pid;
    E_Client *ec;
-   uint64_t sid;
    Eina_Bool got_mouse = EINA_FALSE;
    int cursor_w = 0, cursor_h = 0;
 
@@ -77,13 +76,12 @@ _e_comp_wl_input_pointer_cb_cursor_set(struct wl_client *client, struct wl_resou
         e_pointer_object_set(e_comp->pointer, NULL, x, y);
         return;
      }
-   wl_client_get_credentials(client, &pid, NULL, NULL);
-   sid = e_comp_wl_id_get(wl_resource_get_id(surface_resource), pid);
-   if (!(ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, sid)))
+   if (!(ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, (uintptr_t)surface_resource)))
      {
         Eina_List *l;
 
-        ec = e_client_new(NULL, e_pixmap_new(E_PIXMAP_TYPE_WL, sid), 1, 0);
+        ec = e_client_new(NULL, e_pixmap_new(E_PIXMAP_TYPE_WL, surface_resource), 1, 0);
+        if (!ec) return;
         ec->lock_focus_out = ec->layer_block = ec->visible = ec->override = 1;
         ec->new_client = 0;
         e_comp->new_clients--;
