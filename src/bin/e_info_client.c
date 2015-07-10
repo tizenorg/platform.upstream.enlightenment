@@ -18,7 +18,8 @@ typedef struct _E_Info_Client
 
 typedef struct _E_Win_Info
 {
-   uint64_t     id;         // native window id
+   Ecore_Window     id;         // native window id
+   //uint64_t     id;
    const char  *name;       // name of client window
    int          x, y, w, h; // geometry
    int          layer;      // value of E_Layer
@@ -73,7 +74,7 @@ _cb_window_info_get(const Eldbus_Message *msg)
    res = eldbus_message_error_get(msg, &name, &text);
    EINA_SAFETY_ON_TRUE_GOTO(res, finish);
 
-   res = eldbus_message_arguments_get(msg, "a(usiiiiibb)", &array);
+   res = eldbus_message_arguments_get(msg, "a(isiiiiibb)", &array);
    EINA_SAFETY_ON_FALSE_GOTO(res, finish);
 
    while (eldbus_message_iter_get_and_next(array, 'r', &ec))
@@ -84,7 +85,7 @@ _cb_window_info_get(const Eldbus_Message *msg)
         Ecore_Window id;
         E_Win_Info *win = NULL;
         res = eldbus_message_iter_arguments_get(ec,
-                                                "usiiiiibb",
+                                                "isiiiiibb",
                                                 &id,
                                                 &win_name,
                                                 &x,
@@ -136,7 +137,7 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
      {
         if (!win) return;
         i++;
-        printf("%3d %"PRIu64" %5d %5d %5d %5d %5d ", i, win->id, win->w, win->h, win->x, win->y, win->alpha? 32:24);
+        printf("%3d %"PRIo16" %5d %5d %5d %5d %5d ", i, win->id, win->w, win->h, win->x, win->y, win->alpha? 32:24);
         printf("%15s %11s\n", win->name?:"No Name", win->vis? "Viewable":"NotViewable");
      }
 

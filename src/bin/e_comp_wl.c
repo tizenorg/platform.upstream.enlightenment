@@ -1827,8 +1827,7 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
 {
    E_Comp *comp;
    struct wl_resource *res;
-   E_Pixmap *ep;
-   uint64_t win;
+   E_Client *ec = NULL;
    pid_t pid;
 
    if (!(comp = wl_resource_get_user_data(resource))) return;
@@ -1851,27 +1850,27 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
                                   _e_comp_wl_surface_destroy);
 
    wl_client_get_credentials(client, &pid, NULL, NULL);
-   win = e_comp_wl_id_get(id, pid);
-   /* check for existing pixmap */
-   if (!(ep = e_pixmap_find(E_PIXMAP_TYPE_WL, win)))
+   if (pid == getpid()) //internal!
+     ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, (uintptr_t)id);
+   if (!ec)
      {
+        E_Pixmap *ep;
         /* try to create new pixmap */
-        if (!(ep = e_pixmap_new(E_PIXMAP_TYPE_WL, win)))
+        if (!(ep = e_pixmap_new(E_PIXMAP_TYPE_WL, res)))
           {
              ERR("Could not create new pixmap");
              wl_resource_destroy(res);
              wl_client_post_no_memory(client);
              return;
           }
+        DBG("\tUsing Pixmap: %p", ep);
+
+        /* set reference to pixmap so we can fetch it later */
+        wl_resource_set_user_data(res, ep);
+
+        E_Comp_Wl_Client_Data *cdata = e_pixmap_cdata_get(ep);
+        cdata->wl_surface = res;
      }
-
-   DBG("\tUsing Pixmap: %d", id);
-
-   /* set reference to pixmap so we can fetch it later */
-   wl_resource_set_user_data(res, ep);
-
-   E_Comp_Wl_Client_Data *cdata = e_pixmap_cdata_get(ep);
-   cdata->wl_surface = res;
 
    /* emit surface create signal */
    wl_signal_emit(&comp->wl_comp_data->signals.surface.create, res);
@@ -2523,7 +2522,7 @@ _e_comp_wl_subcompositor_cb_bind(struct wl_client *client, void *data, uint32_t 
 static void
 _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
 {
-   uint64_t win;
+   Ecore_Window win;
 
    /* make sure this is a wayland client */
    if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
@@ -2656,7 +2655,7 @@ _e_comp_wl_client_cb_post_new(void *data EINA_UNUSED, E_Client *ec)
 static void
 _e_comp_wl_client_cb_pre_frame(void *data EINA_UNUSED, E_Client *ec)
 {
-   uint64_t parent;
+   Ecore_Window parent;
 
    if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
    if (!ec->comp_data->need_reparent) return;
