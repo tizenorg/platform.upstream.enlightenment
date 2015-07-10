@@ -34,25 +34,39 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
    E_Client *ec;
    Evas_Object *o;
 
-   eldbus_message_iter_arguments_append(iter, "a(usiiiiibb)", &array_of_ec);
+   eldbus_message_iter_arguments_append(iter, "a(uuisiiiiibb)", &array_of_ec);
 
    // append clients.
    for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
      {
         Eldbus_Message_Iter* struct_of_ec;
         Ecore_Window win;
+        uint32_t res_id;
+        pid_t pid;
 
         ec = evas_object_data_get(o, "E_Client");
         if (!ec) continue;
         if (e_client_util_ignored_get(ec)) continue;
 
         win = e_client_util_win_get(ec);
-
-        eldbus_message_iter_arguments_append(array_of_ec, "(usiiiiibb)", &struct_of_ec);
+        if (ec->pixmap)
+          res_id = e_pixmap_res_id_get(ec->pixmap);
+#ifdef HAVE_WAYLAND_ONLY
+        if (ec->comp_data)
+          {
+             E_Comp_Wl_Client_Data *cdata = ec->comp_data;
+             if (cdata->surface)
+               wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
+          }
+#endif
+printf("msg_clients_append:%d, %d, %d\n", win, res_id, pid);
+        eldbus_message_iter_arguments_append(array_of_ec, "(uuisiiiiibb)", &struct_of_ec);
 
         eldbus_message_iter_arguments_append
-           (struct_of_ec, "usiiiiibb",
+           (struct_of_ec, "uuisiiiiibb",
             win,
+            res_id,
+            pid,
             e_client_util_name_get(ec) ?: "NO NAME",
             ec->x, ec->y, ec->w, ec->h, ec->layer,
             ec->visible, ec->argb);
@@ -91,7 +105,7 @@ _e_info_server_cb_topvwins_dump(const Eldbus_Service_Interface *iface EINA_UNUSE
      {
         E_Client *ec = evas_object_data_get(o, "E_Client");
         char fname[PATH_MAX];
-        uint64_t win;
+        Ecore_Window win;
         void *data = NULL;
         int w = 0, h = 0;
         Ecore_Evas *ee = NULL;
@@ -101,7 +115,7 @@ _e_info_server_cb_topvwins_dump(const Eldbus_Service_Interface *iface EINA_UNUSE
         if (e_client_util_ignored_get(ec)) continue;
 
         win = e_client_util_win_get(ec);
-        snprintf(fname, sizeof(fname), "%s/%llu.png", dir, win);
+        snprintf(fname, sizeof(fname), "%s/0x%08x.png", dir, win);
 
 #ifdef HAVE_WAYLAND_ONLY
         E_Comp_Wl_Buffer *buffer = e_pixmap_resource_get(ec->pixmap);
@@ -158,7 +172,7 @@ err:
 }
 
 static const Eldbus_Method methods[] = {
-   { "get_window_info", NULL, ELDBUS_ARGS({"a(usiiiiibb)", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
+   { "get_window_info", NULL, ELDBUS_ARGS({"a(uuisiiiiibb)", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, ELDBUS_METHOD_FLAG_NOREPLY },
    { NULL, NULL, NULL, NULL, 0 }
 };

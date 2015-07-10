@@ -371,7 +371,7 @@ struct E_Client
       double                    min_aspect, max_aspect;
       Ecore_Window            icon_window;
       Ecore_Window            window_group;
-      uint64_t                transient_for;
+      Ecore_Window            transient_for;
       Ecore_Window            client_leader;
 #ifndef HAVE_WAYLAND_ONLY
       Ecore_X_Window_State_Hint initial_state;
