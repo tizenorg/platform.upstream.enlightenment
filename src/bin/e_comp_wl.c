@@ -2990,7 +2990,7 @@ _e_comp_wl_gl_idle(void *data)
         elm_win_title_set(win, "Compositor Warning");
         elm_win_autodel_set(win, EINA_TRUE);
         elm_win_borderless_set(win, EINA_TRUE);
-        elm_win_role_set(win, "wl-warning-popup");
+        elm_win_role_set(win, "notification-low");
         elm_win_alpha_set(win, EINA_TRUE);
 
         bg = evas_object_rectangle_add(evas_object_evas_get(win));
