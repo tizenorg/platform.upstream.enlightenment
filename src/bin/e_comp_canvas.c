@@ -478,7 +478,7 @@ e_comp_canvas_fake_layers_init(E_Comp *comp)
    unsigned int layer;
 
    /* init layers */
-   for (layer = e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); layer <= e_comp_canvas_layer_map(E_LAYER_CLIENT_NOTIFICATION_HIGH); layer++)
+   for (layer = e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); layer <= e_comp_canvas_layer_map(E_LAYER_CLIENT_ALERT); layer++)
      {
         Evas_Object *o2;
 
