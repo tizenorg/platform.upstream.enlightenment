@@ -157,9 +157,93 @@ err:
    return reply;
 }
 
+static Eldbus_Message *
+_e_info_server_cb_eina_log_levels(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   const char *start = NULL;
+
+   if (!eldbus_message_arguments_get(msg, "s", &start) || !start)
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   while (1)
+     {
+        char module_name[256];
+        char *end = NULL;
+        char *tmp = NULL;
+        int level;
+
+        end = strchr(start, ':');
+        if (!end)
+           break;
+
+        // Parse level, keep going if failed
+        level = (int)strtol((char *)(end + 1), &tmp, 10);
+        if (tmp == (end + 1))
+           goto parse_end;
+
+        // Parse name
+        strncpy(module_name, start, MIN(end - start, (sizeof module_name) - 1));
+        module_name[end - start] = '\0';
+
+		  eina_log_domain_level_set((const char*)module_name, level);
+
+parse_end:
+        start = strchr(tmp, ',');
+        if (start)
+           start++;
+        else
+           break;
+     }
+
+   return reply;
+}
+
+static Eldbus_Message *
+_e_info_server_cb_eina_log_path(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   const char *path = NULL;
+   static int old_stderr = -1;
+   int  log_fd = -1;
+   FILE *log_fl;
+
+   if (!eldbus_message_arguments_get(msg, "s", &path) || !path)
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   if (old_stderr == -1)
+     old_stderr = dup(STDOUT_FILENO);
+
+   log_fl = fopen(path, "a");
+   if (!log_fl)
+     {
+        ERR("failed: open file(%s)\n", path);
+        return reply;
+     }
+
+   fflush(stderr);
+   close(STDOUT_FILENO);
+
+   setvbuf(log_fl, NULL, _IOLBF, 512);
+   log_fd = fileno(log_fl);
+
+   dup2(log_fd, STDOUT_FILENO);
+   fclose(log_fl);
+
+   return reply;
+}
+
 static const Eldbus_Method methods[] = {
    { "get_window_info", NULL, ELDBUS_ARGS({"a(usiiiiibb)", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
-   { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, ELDBUS_METHOD_FLAG_NOREPLY },
+   { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, 0 },
+   { "eina_log_levels", ELDBUS_ARGS({"s", "eina log levels"}), NULL, _e_info_server_cb_eina_log_levels, 0 },
+   { "eina_log_path", ELDBUS_ARGS({"s", "eina log path"}), NULL, _e_info_server_cb_eina_log_path, 0 },
    { NULL, NULL, NULL, NULL, 0 }
 };
 

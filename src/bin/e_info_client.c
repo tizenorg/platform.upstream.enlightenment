@@ -238,6 +238,57 @@ _e_info_client_proc_topvwins_shot(int argc, char **argv)
    free(directory);
 }
 
+static void
+_e_info_client_proc_eina_log_levels(int argc, char **argv)
+{
+   EINA_SAFETY_ON_FALSE_RETURN(argc == 3);
+   EINA_SAFETY_ON_NULL_RETURN(argv[2]);
+
+   if (!_e_info_client_eldbus_message_with_args("eina_log_levels", NULL, "s", argv[2]))
+     {
+        return;
+     }
+}
+
+static void
+_e_info_client_proc_eina_log_path(int argc, char **argv)
+{
+   char fd_name[PATH_MAX];
+   int pid;
+   char cwd[PATH_MAX];
+
+   EINA_SAFETY_ON_FALSE_RETURN(argc == 3);
+   EINA_SAFETY_ON_NULL_RETURN(argv[2]);
+
+   pid = getpid();
+
+   cwd[0] = '\0';
+   if (!getcwd(cwd, sizeof(cwd)))
+     snprintf(cwd, sizeof(cwd), "/tmp");
+
+   if (!strncmp(argv[2], "console", 7))
+     snprintf(fd_name, PATH_MAX, "/proc/%d/fd/1", pid);
+   else
+     {
+        if (argv[2][0] == '/')
+          snprintf(fd_name, PATH_MAX, "%s", argv[2]);
+        else
+          {
+             if (strlen(cwd) > 0)
+               snprintf(fd_name, PATH_MAX, "%s/%s", cwd, argv[2]);
+             else
+               snprintf(fd_name, PATH_MAX, "%s", argv[2]);
+          }
+     }
+
+   printf("eina-log-path: %s\n", fd_name);
+
+   if (!_e_info_client_eldbus_message_with_args("eina_log_path", NULL, "s", fd_name))
+     {
+        return;
+     }
+}
+
 static struct
 {
    const char *option;
@@ -255,6 +306,16 @@ static struct
       "dump_topvwins", "[directory_path]",
       "Dump top-level visible windows (default directory_path : current working directory)",
       _e_info_client_proc_topvwins_shot
+   },
+   {
+      "eina_log_levels", "[mymodule1:5,mymodule2:2]",
+      "Set EINA_LOG_LEVELS in runtime",
+      _e_info_client_proc_eina_log_levels
+   },
+   {
+      "eina_log_path", "[console|file_path]",
+      "Set EINA_LOG_LEVELS in runtime",
+      _e_info_client_proc_eina_log_path
    },
 };
 
