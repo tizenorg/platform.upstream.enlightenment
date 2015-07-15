@@ -688,7 +688,7 @@ _e_xdg_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges
 static void
 _e_xdg_shell_surface_cb_destroy(struct wl_client *client EINA_UNUSED, struct wl_resource *resource)
 {
-   _e_shell_surface_destroy(resource);
+   wl_resource_destroy(resource);
 }
 
 static void
