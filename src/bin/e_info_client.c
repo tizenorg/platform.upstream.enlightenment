@@ -314,7 +314,7 @@ static struct
    },
    {
       "eina_log_path", "[console|file_path]",
-      "Set EINA_LOG_LEVELS in runtime",
+      "Set eina-log path in runtime",
       _e_info_client_proc_eina_log_path
    },
 };
