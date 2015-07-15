@@ -213,8 +213,16 @@ _e_comp_wl_map_apply(E_Client *ec)
    sdata = ec->comp_data->sub.data;
    if (sdata)
      {
-        dx = sdata->parent->x + sdata->position.x;
-        dy = sdata->parent->y + sdata->position.y;
+        if (sdata->parent)
+          {
+             dx = sdata->parent->x + sdata->position.x;
+             dy = sdata->parent->y + sdata->position.y;
+          }
+        else
+          {
+             dx = sdata->position.x;
+             dy = sdata->position.y;
+          }
      }
    else
      {
