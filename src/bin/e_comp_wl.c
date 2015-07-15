@@ -362,10 +362,10 @@ _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
    else
      parent = ec;
 
-   /* return if parent is in restacking progress */
-   if (parent->comp_data->sub.restacking) return;
-
    EINA_SAFETY_ON_NULL_RETURN(parent);
+
+   /* return if parent is null or is in restacking progress */
+   if (parent->comp_data->sub.restacking) return;
 
    _e_comp_wl_subsurface_restack(parent);
 }
