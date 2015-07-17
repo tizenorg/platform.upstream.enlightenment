@@ -1,5 +1,9 @@
 #include "e.h"
 
+#ifdef OBJECT_HASH_CHECK
+static Eina_Hash *_e_object_hash = NULL;
+#endif
+
 /* yes - i know. glibc specific... but i like being able to do my own */
 /* backtraces! NB: you need CFLAGS="-rdynamic -g" LDFLAGS="-rdynamic -g" */
 #ifdef OBJECT_PARANOIA_CHECK
@@ -23,6 +27,9 @@ e_object_alloc(int size, int type, E_Object_Cleanup_Func cleanup_func)
    obj->type = type;
    obj->references = 1;
    obj->cleanup_func = cleanup_func;
+#ifdef OBJECT_HASH_CHECK
+   eina_hash_add(_e_object_hash, &obj, obj);
+#endif
    return obj;
 }
 
@@ -117,6 +124,10 @@ e_object_free(E_Object *obj)
    obj->magic = E_OBJECT_MAGIC_FREED;
 #endif
    obj->cleanup_func(obj);
+
+#ifdef OBJECT_HASH_CHECK
+   eina_hash_del_by_key(_e_object_hash, &obj);
+#endif
 }
 
 EAPI int
@@ -423,6 +434,28 @@ e_object_delfn_del(E_Object *obj, E_Object_Delfn *dfn)
      printf("CRUMB: %s\n", key);
    }
  */
+
+#ifdef OBJECT_HASH_CHECK
+EAPI void
+e_object_hash_init(void)
+{
+  if (!_e_object_hash) _e_object_hash = eina_hash_pointer_new(NULL);
+}
+
+EAPI void
+e_object_hash_shutdown(void)
+{
+  if (_e_object_hash) E_FREE_FUNC(_e_object_hash, eina_hash_free);
+}
+
+EAPI E_Object *
+e_object_hash_find(E_Object *obj)
+{
+   if (!_e_object_hash) return NULL;
+   return (E_Object*)eina_hash_find(_e_object_hash, &obj);
+}
+
+#endif
 
 #ifdef OBJECT_PARANOIA_CHECK
 /* local subsystem functions */

@@ -289,6 +289,9 @@ main(int argc, char **argv)
         _e_main_shutdown(-1);
      }
    _e_main_shutdown_push(eina_shutdown);
+#ifdef OBJECT_HASH_CHECK
+    e_object_hash_init();
+#endif
    if (!e_log_init())
      {
         e_error_message_show(_("Enlightenment could not create a logging domain!\n"));
@@ -1122,6 +1125,9 @@ _e_main_shutdown(int errcode)
      }
    for (i = (_e_main_lvl - 1); i >= 0; i--)
      (*_e_main_shutdown_func[i])();
+#ifdef OBJECT_HASH_CHECK
+  e_object_hash_shutdown();
+#endif
    if (errcode < 0) exit(errcode);
 }
 
