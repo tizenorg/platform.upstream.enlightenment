@@ -2,7 +2,7 @@
 #include "e.h"
 #include <wayland-server.h>
 #include <Ecore_Wayland.h>
-#include "e_screenshooter_server_protocol.h"
+#include <screenshooter-server-protocol.h>
 #include "e_screenshooter_server.h"
 
 static void

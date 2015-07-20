@@ -36,7 +36,7 @@
 #include <Ecore_Drm.h>
 #include "e.h"
 #include "e_drm_buffer_pool.h"
-#include "e_drm_buffer_pool_server_protocol.h"
+#include <tizen-extension-server-protocol.h>
 
 #undef MIN
 #define MIN(x,y) (((x)<(y))?(x):(y))

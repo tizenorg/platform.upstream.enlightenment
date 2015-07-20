@@ -2,7 +2,7 @@
 #include <wayland-client.h>
 #include <Ecore_Wayland.h>
 #include <sys/mman.h>
-#include "e_screenshooter_client_protocol.h"
+#include <screenshooter-client-protocol.h>
 #include "e_screenshooter_server.h"
 
 typedef struct _Instance Instance;

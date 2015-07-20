@@ -1,7 +1,7 @@
 #define EXECUTIVE_MODE_ENABLED
 #define E_COMP_WL
 #include "e.h"
-#include "e_scaler_protocol.h"
+#include <scaler-server-protocol.h>
 
 static void
 _e_viewport_destroy(struct wl_resource *resource)

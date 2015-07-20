@@ -44,7 +44,11 @@ BuildRequires:  pkgconfig(xcb-keysyms)
 BuildRequires:  pkgconfig(ecore-x)
 %else
 BuildRequires:  pkgconfig(wayland-server)
-BuildRequires:  wayland-extension-server-devel
+BuildRequires:  pkgconfig(xdg-shell-server)
+BuildRequires:  pkgconfig(scaler-server)
+BuildRequires:  pkgconfig(screenshooter-server)
+BuildRequires:  pkgconfig(screenshooter-client)
+BuildRequires:  pkgconfig(tizen-extension-server)
 %endif
 
 

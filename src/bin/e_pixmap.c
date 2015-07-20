@@ -7,7 +7,7 @@
 # include "e_comp_x.h"
 #endif
 
-#include "e_drm_buffer_pool_server_protocol.h"
+#include <tizen-extension-server-protocol.h>
 
 static Eina_Hash *pixmaps[2] = {NULL};
 static Eina_Hash *res_ids = NULL;
