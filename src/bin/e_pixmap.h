@@ -12,6 +12,26 @@ typedef enum
 # ifndef E_PIXMAP_H
 # define E_PIXMAP_H
 
+typedef struct _E_Pixmap_Hook E_Pixmap_Hook;
+
+typedef enum _E_Pixmap_Hook_Point
+{
+   E_PIXMAP_HOOK_NEW,
+   E_PIXMAP_HOOK_DEL,
+   E_PIXMAP_HOOK_LAST
+} E_Pixmap_Hook_Point;
+
+typedef void (*E_Pixmap_Hook_Cb)(void *data, E_Pixmap *cp);
+
+struct _E_Pixmap_Hook
+{
+   EINA_INLIST;
+   E_Pixmap_Hook_Point hookpoint;
+   E_Pixmap_Hook_Cb    func;
+   void               *data;
+   unsigned char       delete_me : 1;
+};
+
 EAPI int e_pixmap_free(E_Pixmap *cp);
 EAPI E_Pixmap *e_pixmap_ref(E_Pixmap *cp);
 EAPI E_Pixmap *e_pixmap_new(E_Pixmap_Type type, ...);
@@ -52,6 +72,8 @@ EAPI Eina_Bool e_pixmap_validate_check(const E_Pixmap *cp);
 
 EAPI void e_pixmap_image_opaque_set(E_Pixmap *cp, int x, int y, int w, int h);
 EAPI void e_pixmap_image_opaque_get(E_Pixmap *cp, int *x, int *y, int *w, int *h);
+EAPI E_Pixmap_Hook *e_pixmap_hook_add(E_Pixmap_Hook_Point hookpoint, E_Pixmap_Hook_Cb func, const void *data);
+EAPI void e_pixmap_hook_del(E_Pixmap_Hook *ph);
 
 static inline Eina_Bool
 e_pixmap_is_x(const E_Pixmap *cp)

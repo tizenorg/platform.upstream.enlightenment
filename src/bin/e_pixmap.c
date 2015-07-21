@@ -50,6 +50,48 @@ struct _E_Pixmap
    Eina_Bool image_argb : 1;
 };
 
+static int _e_pixmap_hooks_delete = 0;
+static int _e_pixmap_hooks_walking = 0;
+
+static Eina_Inlist *_e_pixmap_hooks[] =
+{
+   [E_PIXMAP_HOOK_NEW] = NULL,
+   [E_PIXMAP_HOOK_DEL] = NULL,
+};
+
+static void
+_e_pixmap_hooks_clean(void)
+{
+   Eina_Inlist *l;
+   E_Pixmap_Hook *ph;
+   unsigned int x;
+
+   for (x = 0; x < E_PIXMAP_HOOK_LAST; x++)
+     EINA_INLIST_FOREACH_SAFE(_e_pixmap_hooks[x], l, ph)
+       {
+          if (!ph->delete_me) continue;
+          _e_pixmap_hooks[x] = eina_inlist_remove(_e_pixmap_hooks[x],
+                                                  EINA_INLIST_GET(ph));
+          free(ph);
+       }
+}
+
+static void
+_e_pixmap_hook_call(E_Pixmap_Hook_Point hookpoint, E_Pixmap *cp)
+{
+   E_Pixmap_Hook *ph;
+
+   _e_pixmap_hooks_walking++;
+   EINA_INLIST_FOREACH(_e_pixmap_hooks[hookpoint], ph)
+     {
+        if (ph->delete_me) continue;
+        ph->func(ph->data, cp);
+     }
+   _e_pixmap_hooks_walking--;
+   if ((_e_pixmap_hooks_walking == 0) && (_e_pixmap_hooks_delete > 0))
+     _e_pixmap_hooks_clean();
+}
+
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
 static void 
 _e_pixmap_cb_buffer_destroy(struct wl_listener *listener, void *data EINA_UNUSED)
@@ -196,6 +238,7 @@ e_pixmap_free(E_Pixmap *cp)
 {
    if (!cp) return 0;
    if (--cp->refcount) return cp->refcount;
+   _e_pixmap_hook_call(E_PIXMAP_HOOK_DEL, cp);
    e_pixmap_image_clear(cp, EINA_FALSE);
    if (cp->parent) eina_hash_set(pixmaps[cp->type], &cp->parent, NULL);
    eina_hash_del_by_key(pixmaps[cp->type], &cp->win);
@@ -271,6 +314,7 @@ e_pixmap_new(E_Pixmap_Type type, ...)
         break;
      }
    va_end(l);
+   _e_pixmap_hook_call(E_PIXMAP_HOOK_NEW, cp);
    return cp;
 }
 
@@ -1051,4 +1095,34 @@ e_pixmap_cdata_set(E_Pixmap *cp, E_Comp_Client_Data *cdata)
 
    cp->cdata = cd;
 #endif
+}
+
+EAPI E_Pixmap_Hook *
+e_pixmap_hook_add(E_Pixmap_Hook_Point hookpoint, E_Pixmap_Hook_Cb func, const void *data)
+{
+   E_Pixmap_Hook *ph;
+
+   EINA_SAFETY_ON_TRUE_RETURN_VAL(hookpoint >= E_PIXMAP_HOOK_LAST, NULL);
+   ph = E_NEW(E_Pixmap_Hook, 1);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ph, NULL);
+   ph->hookpoint = hookpoint;
+   ph->func = func;
+   ph->data = (void*)data;
+   _e_pixmap_hooks[hookpoint] = eina_inlist_append(_e_pixmap_hooks[hookpoint],
+                                                   EINA_INLIST_GET(ph));
+   return ph;
+}
+
+EAPI void
+e_pixmap_hook_del(E_Pixmap_Hook *ph)
+{
+   ph->delete_me = 1;
+   if (_e_pixmap_hooks_walking == 0)
+     {
+        _e_pixmap_hooks[ph->hookpoint] = eina_inlist_remove(_e_pixmap_hooks[ph->hookpoint],
+                                                            EINA_INLIST_GET(ph));
+        free(ph);
+     }
+   else
+     _e_pixmap_hooks_delete++;
 }
