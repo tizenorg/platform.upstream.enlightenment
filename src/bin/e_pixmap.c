@@ -43,7 +43,6 @@ struct _E_Pixmap
    Eina_Rectangle opaque;
 
    E_Comp_Wl_Client_Data *cdata;
-   Eina_Bool own_cdata : 1;
 #endif
 
    Eina_Bool usable : 1;
@@ -91,11 +90,7 @@ _e_pixmap_clear(E_Pixmap *cp, Eina_Bool cache)
 
         e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
 
-        if (cp->own_cdata)
-          {
-             free (cp->cdata);
-             cp->own_cdata = EINA_FALSE;
-          }
+        if (cp->cdata) E_FREE(cp->cdata);
 
         (void)cache;
 #endif
@@ -155,7 +150,6 @@ _e_pixmap_new(E_Pixmap_Type type)
    cp->refcount = 1;
    cp->dirty = 1;
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-   cp->own_cdata = EINA_TRUE;
    cp->cdata = E_NEW(E_Comp_Wl_Client_Data, 1);
    cp->cdata->pending.buffer_viewport.buffer.transform = WL_OUTPUT_TRANSFORM_NORMAL;
    cp->cdata->pending.buffer_viewport.buffer.scale = 1;
@@ -625,7 +619,7 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
         else if (buffer->type == E_COMP_WL_BUFFER_TYPE_DRM)
           {
              E_Drm_Buffer *drm_buffer = e_drm_buffer_get(buffer->resource);
-             E_Comp_Wl_Data *cdata = e_comp->wl_comp_data;
+             E_Comp_Wl_Data *wl_comp_data = e_comp->wl_comp_data;
 
              buffer->shm_buffer = NULL;
              cp->w = buffer->w;
@@ -641,7 +635,7 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
                }
              cp->data = NULL;
 
-             if (cdata->available_hw_accel.underlay)
+             if (wl_comp_data->available_hw_accel.underlay)
                e_comp_object_mask_set(cp->client->frame, EINA_TRUE);
           }
         else
@@ -1038,17 +1032,21 @@ e_pixmap_cdata_set(E_Pixmap *cp, E_Comp_Client_Data *cdata)
    E_Comp_Wl_Client_Data *cd = (E_Comp_Wl_Client_Data*)cdata;
 
    EINA_SAFETY_ON_NULL_RETURN(cp);
-   EINA_SAFETY_ON_NULL_RETURN(cp->cdata);
-   EINA_SAFETY_ON_NULL_RETURN(cdata);
 
-   if (cp->own_cdata)
+   if (cp->cdata)
      {
-        cd->wl_surface = cp->cdata->wl_surface;
-        cd->scaler.viewport = cp->cdata->scaler.viewport;
-        cd->pending.buffer_viewport = cp->cdata->pending.buffer_viewport;
+        if (cd)
+          {
+             cd->wl_surface = cp->cdata->wl_surface;
+             cd->scaler.viewport = cp->cdata->scaler.viewport;
+             cd->pending.buffer_viewport = cp->cdata->pending.buffer_viewport;
+          }
 
-        free (cp->cdata);
-        cp->own_cdata = EINA_FALSE;
+        if ((cp->client) &&
+            (cp->client->comp_data != cp->cdata))
+          {
+             E_FREE(cp->cdata);
+          }
      }
 
    cp->cdata = cd;
