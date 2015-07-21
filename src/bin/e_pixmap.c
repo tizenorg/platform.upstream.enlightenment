@@ -43,6 +43,7 @@ struct _E_Pixmap
    Eina_Rectangle opaque;
 
    E_Comp_Wl_Client_Data *cdata;
+   Eina_Bool own_cdata : 1;
 #endif
 
    Eina_Bool usable : 1;
@@ -132,8 +133,6 @@ _e_pixmap_clear(E_Pixmap *cp, Eina_Bool cache)
 
         e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
 
-        if (cp->cdata) E_FREE(cp->cdata);
-
         (void)cache;
 #endif
         break;
@@ -177,6 +176,13 @@ _e_pixmap_free(E_Pixmap *cp)
       default:
         break;
      }
+#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+   if (cp->own_cdata)
+     {
+        E_FREE(cp->cdata);
+        cp->own_cdata = EINA_FALSE;
+     }
+#endif
    _e_pixmap_clear(cp, 1);
    free(cp);
 }
@@ -199,6 +205,7 @@ _e_pixmap_new(E_Pixmap_Type type)
    cp->cdata->pending.buffer_viewport.surface.width = -1;
    cp->cdata->pending.buffer_viewport.changed = 0;
    cp->cdata->accepts_focus = 1;
+   cp->own_cdata = EINA_TRUE;
 #endif
    return cp;
 }
@@ -1079,17 +1086,17 @@ e_pixmap_cdata_set(E_Pixmap *cp, E_Comp_Client_Data *cdata)
 
    if (cp->cdata)
      {
-        if (cd)
+        if (cp->own_cdata)
           {
-             cd->wl_surface = cp->cdata->wl_surface;
-             cd->scaler.viewport = cp->cdata->scaler.viewport;
-             cd->pending.buffer_viewport = cp->cdata->pending.buffer_viewport;
-          }
+             if (cd)
+               {
+                  cd->wl_surface = cp->cdata->wl_surface;
+                  cd->scaler.viewport = cp->cdata->scaler.viewport;
+                  cd->pending.buffer_viewport = cp->cdata->pending.buffer_viewport;
+               }
 
-        if ((cp->client) &&
-            (cp->client->comp_data != cp->cdata))
-          {
              E_FREE(cp->cdata);
+             cp->own_cdata = EINA_FALSE;
           }
      }
 
