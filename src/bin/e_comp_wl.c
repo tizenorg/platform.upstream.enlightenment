@@ -2641,6 +2641,8 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
    if (ec->comp_data->surface)
      wl_resource_set_user_data(ec->comp_data->surface, NULL);
 
+   e_pixmap_cdata_set(ec->pixmap, NULL);
+
    E_FREE(ec->comp_data);
 
    _e_comp_wl_focus_check(ec->comp);
