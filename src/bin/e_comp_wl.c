@@ -1824,7 +1824,10 @@ _e_comp_wl_surface_destroy(struct wl_resource *resource)
 
    /* try to get the e_client from this pixmap */
    if (!(ec = e_pixmap_client_get(ep)))
-     return;
+     {
+        e_pixmap_free(ep);
+        return;
+     }
 
    evas_object_hide(ec->frame);
    e_object_del(E_OBJECT(ec));
