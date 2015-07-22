@@ -49,6 +49,7 @@ BuildRequires:  pkgconfig(scaler-server)
 BuildRequires:  pkgconfig(screenshooter-server)
 BuildRequires:  pkgconfig(screenshooter-client)
 BuildRequires:  pkgconfig(tizen-extension-server)
+Requires:       libwayland-extension-server
 %endif
 
 
