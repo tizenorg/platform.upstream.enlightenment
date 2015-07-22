@@ -11,6 +11,11 @@ static void _e_object_segv(int sig);
 static sigjmp_buf _e_object_segv_buf;
 #endif
 
+#ifdef OBJECT_HASH_CHECK
+EAPI Eina_Bool e_obj_hash_check = EINA_FALSE;
+EAPI Eina_Hash *e_obj_hash = NULL;
+#endif
+
 /* externally accessible functions */
 EAPI void *
 e_object_alloc(int size, int type, E_Object_Cleanup_Func cleanup_func)
@@ -23,6 +28,10 @@ e_object_alloc(int size, int type, E_Object_Cleanup_Func cleanup_func)
    obj->type = type;
    obj->references = 1;
    obj->cleanup_func = cleanup_func;
+#ifdef OBJECT_HASH_CHECK
+   if (e_obj_hash_check)
+     eina_hash_add(e_obj_hash, &obj, obj);
+#endif
    return obj;
 }
 
@@ -117,6 +126,10 @@ e_object_free(E_Object *obj)
    obj->magic = E_OBJECT_MAGIC_FREED;
 #endif
    obj->cleanup_func(obj);
+#ifdef OBJECT_HASH_CHECK
+   if (e_obj_hash_check)
+     eina_hash_del_by_key(e_obj_hash, &obj);
+#endif
 }
 
 EAPI int
@@ -423,6 +436,29 @@ e_object_delfn_del(E_Object *obj, E_Object_Delfn *dfn)
      printf("CRUMB: %s\n", key);
    }
  */
+
+#ifdef OBJECT_HASH_CHECK
+EAPI void
+e_object_hash_init(void)
+{
+   char *val;
+
+   e_obj_hash_check = EINA_FALSE;
+
+   val = getenv("E_OBJECT_HASH_CHECK");
+   if ((val) && (!strcmp(val, "1")))
+     {
+        e_obj_hash_check = EINA_TRUE;
+        e_obj_hash = eina_hash_pointer_new(NULL);
+     }
+}
+
+EAPI void
+e_object_hash_shutdown(void)
+{
+   E_FREE_FUNC(e_obj_hash, eina_hash_free);
+}
+#endif
 
 #ifdef OBJECT_PARANOIA_CHECK
 /* local subsystem functions */

@@ -23,6 +23,10 @@
 #define E_OBJECT_ALLOC(x, type, cleanup_func) e_object_alloc(sizeof(x), (type), E_OBJECT_CLEANUP_FUNC(cleanup_func))
 #define E_OBJECT_DEL_SET(x, del_func)   e_object_del_func_set(E_OBJECT(x), E_OBJECT_CLEANUP_FUNC(del_func))
 
+#ifdef OBJECT_HASH_CHECK
+# define E_OBJECT_HASH_FIND(x)          e_object_hash_find(x)
+#endif
+
 #ifdef OBJECT_PARANOIA_CHECK
 # define E_OBJECT_CHECK(x)                       do {if (e_object_error(E_OBJECT(x))) return;} while (0)
 # define E_OBJECT_CHECK_RETURN(x, ret)           do {if (e_object_error(E_OBJECT(x))) return ret;} while (0)
@@ -31,8 +35,23 @@
 #  define E_OBJECT_IF_NOT_TYPE(x, tp)            if (E_OBJECT(x)->type != (tp))
 #else
 # ifdef OBJECT_CHECK
-#  define E_OBJECT_CHECK(x)                       do {if ((!E_OBJECT(x)) || (E_OBJECT(x)->magic != (int)E_OBJECT_MAGIC)) return;} while (0)
-#  define E_OBJECT_CHECK_RETURN(x, ret)           do {if ((!E_OBJECT(x)) || (E_OBJECT(x)->magic != (int)E_OBJECT_MAGIC)) return ret;} while (0)
+#  ifdef OBJECT_HASH_CHECK
+#   define E_OBJECT_CHECK(x)                                              \
+   do {                                                                   \
+     if (!E_OBJECT(x))return;                                             \
+     else if ((e_obj_hash_check) && (!E_OBJECT_HASH_FIND(x))) return;     \
+     else if ((E_OBJECT(x)->magic != (int)E_OBJECT_MAGIC)) return;        \
+   } while (0)
+#   define E_OBJECT_CHECK_RETURN(x, ret)                                  \
+   do {                                                                   \
+     if (!E_OBJECT(x)) return ret;                                        \
+     else if ((e_obj_hash_check) && (!E_OBJECT_HASH_FIND(x))) return ret; \
+     else if ((E_OBJECT(x)->magic != (int)E_OBJECT_MAGIC)) return ret;    \
+   } while (0)
+#  else
+#   define E_OBJECT_CHECK(x)                      do {if ((!E_OBJECT(x)) || (E_OBJECT(x)->magic != (int)E_OBJECT_MAGIC)) return;} while (0)
+#   define E_OBJECT_CHECK_RETURN(x, ret)          do {if ((!E_OBJECT(x)) || (E_OBJECT(x)->magic != (int)E_OBJECT_MAGIC)) return ret;} while (0)
+#  endif
 #  define E_OBJECT_TYPE_CHECK(x, tp)              do {if ((E_OBJECT(x)->type) != (int)(tp)) { CRI("Object type check failed in %s", __FUNCTION__); return;} } while (0)
 #  define E_OBJECT_TYPE_CHECK_RETURN(x, tp, ret)  do {if ((E_OBJECT(x)->type) != (int)(tp)) { CRI("Object type check failed in %s", __FUNCTION__); return ret;} } while (0)
 #  define E_OBJECT_IF_NOT_TYPE(x, tp)             if (E_OBJECT(x)->type != (int)(tp))
@@ -102,6 +121,20 @@ EAPI void            e_object_delfn_del (E_Object *obj, E_Object_Delfn *dfn);
 EAPI void            e_object_delfn_clear(E_Object *obj);
 
 EAPI void e_object_ref_debug_set(E_Object *obj, Eina_Bool set);
+
+#ifdef OBJECT_HASH_CHECK
+extern EAPI Eina_Bool e_obj_hash_check;
+extern EAPI Eina_Hash *e_obj_hash;
+
+EAPI void      e_object_hash_init       (void);
+EAPI void      e_object_hash_shutdown   (void);
+
+static inline E_Object *
+e_object_hash_find(E_Object *obj)
+{
+   return (E_Object *)eina_hash_find(e_obj_hash, &obj);
+}
+#endif
 
 /*
 EAPI void  e_object_breadcrumb_add      (E_Object *obj, char *crumb);
