@@ -21,6 +21,7 @@
 #  define OBJECT_PARANOIA_CHECK
 # endif
 # define OBJECT_CHECK
+# define OBJECT_HASH_CHECK
 
 # ifndef _FILE_OFFSET_BITS
 #  define _FILE_OFFSET_BITS 64
