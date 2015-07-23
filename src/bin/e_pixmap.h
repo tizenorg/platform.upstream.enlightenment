@@ -33,6 +33,8 @@ struct _E_Pixmap_Hook
 };
 
 EAPI int e_pixmap_free(E_Pixmap *cp);
+EAPI void e_pixmap_del(E_Pixmap *cp);
+EAPI Eina_Bool e_pixmap_is_del(E_Pixmap *cp);
 EAPI E_Pixmap *e_pixmap_ref(E_Pixmap *cp);
 EAPI E_Pixmap *e_pixmap_new(E_Pixmap_Type type, ...);
 EAPI E_Pixmap_Type e_pixmap_type_get(const E_Pixmap *cp);

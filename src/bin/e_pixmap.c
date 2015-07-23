@@ -9,6 +9,7 @@
 #endif
 
 static Eina_Hash *pixmaps[2] = {NULL};
+static Eina_Hash *deleted[2] = {NULL};
 static Eina_Hash *res_ids = NULL;
 static uint32_t res_id = 0;
 
@@ -247,8 +248,39 @@ e_pixmap_free(E_Pixmap *cp)
    _e_pixmap_hook_call(E_PIXMAP_HOOK_DEL, cp);
    e_pixmap_image_clear(cp, EINA_FALSE);
    if (cp->parent) eina_hash_set(pixmaps[cp->type], &cp->parent, NULL);
+   eina_hash_del_by_key(res_ids, &cp->res_id);
    eina_hash_del_by_key(pixmaps[cp->type], &cp->win);
+
+   if (e_pixmap_is_del(cp))
+     eina_hash_del_by_key(deleted[cp->type], &cp->win);
+   else
+     _e_pixmap_free(cp);
+
    return 0;
+}
+
+EAPI void
+e_pixmap_del(E_Pixmap *cp)
+{
+#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+   if (!cp) return;
+   if (cp->type != E_PIXMAP_TYPE_WL) return;
+   if (eina_hash_find(pixmaps[cp->type], &cp->win))
+     {
+        eina_hash_del_by_key(pixmaps[cp->type], &cp->win);
+        eina_hash_add(deleted[cp->type], &cp->win, cp);
+     }
+#endif
+}
+
+EAPI Eina_Bool
+e_pixmap_is_del(E_Pixmap *cp)
+{
+#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+   if (!cp) return 0;
+   if (cp->type != E_PIXMAP_TYPE_WL) return 0;
+   return !!eina_hash_find(deleted[cp->type], &cp->win);
+#endif
 }
 
 EAPI E_Pixmap *
@@ -307,12 +339,15 @@ e_pixmap_new(E_Pixmap_Type type, ...)
                }
           }
         else
-          pixmaps[type] = eina_hash_pointer_new((Eina_Free_Cb)_e_pixmap_free);
+          {
+             pixmaps[type] = eina_hash_pointer_new(NULL);
+             deleted[type] = eina_hash_pointer_new((Eina_Free_Cb)_e_pixmap_free);
+          }
         cp = _e_pixmap_new(type);
         cp->win = id;
         eina_hash_add(pixmaps[type], &id, cp);
         if (!res_ids)
-          res_ids = eina_hash_int32_new((Eina_Free_Cb)_e_pixmap_free);
+          res_ids = eina_hash_int32_new(NULL);
         cp->res_id = res_id;
         eina_hash_add(res_ids, &res_id, cp);
         res_id++;
