@@ -114,7 +114,11 @@ _e_elm_win_trap_show(void *data, Evas_Object *o)
              ecore_evas_title_set(ee, title);
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
              if (type == E_PIXMAP_TYPE_WL)
-               cp = e_pixmap_new(type, wl_win_id);
+               {
+                  cp = e_pixmap_find(type, wl_win_id);
+                  if (!cp)
+                    cp = e_pixmap_new(type, wl_win_id);
+               }
              else
 #endif
                cp = e_pixmap_new(type, win);
