@@ -53,7 +53,6 @@ static void
 _e_comp_wl_input_pointer_cb_cursor_set(struct wl_client *client, struct wl_resource *resource EINA_UNUSED, uint32_t serial EINA_UNUSED, struct wl_resource *surface_resource, int32_t x, int32_t y)
 {
    E_Comp_Data *cdata;
-   pid_t pid;
    E_Client *ec;
    Eina_Bool got_mouse = EINA_FALSE;
    int cursor_w = 0, cursor_h = 0;
