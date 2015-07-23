@@ -670,7 +670,7 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
         else if (buffer->type == E_COMP_WL_BUFFER_TYPE_DRM)
           {
              E_Drm_Buffer *drm_buffer = e_drm_buffer_get(buffer->resource);
-             E_Comp_Wl_Data *wl_comp_data = e_comp->wl_comp_data;
+             E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
 
              buffer->shm_buffer = NULL;
              cp->w = buffer->w;
