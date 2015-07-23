@@ -2,12 +2,11 @@
 
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
 # include "e_comp_wl.h"
+#include <tizen-extension-server-protocol.h>
 #endif
 #ifndef HAVE_WAYLAND_ONLY
 # include "e_comp_x.h"
 #endif
-
-#include <tizen-extension-server-protocol.h>
 
 static Eina_Hash *pixmaps[2] = {NULL};
 static Eina_Hash *res_ids = NULL;
