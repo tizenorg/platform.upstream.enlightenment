@@ -304,13 +304,13 @@ _e_comp_wl_data_device_cb_drag_start(struct wl_client *client, struct wl_resourc
    if (!(source = wl_resource_get_user_data(source_resource))) return;
 
    /* TODO: create icon for pointer ?? */
-   if (icon_resource)
-     {
-        E_Pixmap *cp;
-
-        DBG("\tHave Icon Resource: %p", icon_resource);
-        cp = wl_resource_get_user_data(icon_resource);
-     }
+   //if (icon_resource)
+   //  {
+   //     E_Pixmap *cp;
+   //
+   //     DBG("\tHave Icon Resource: %p", icon_resource);
+   //     cp = wl_resource_get_user_data(icon_resource);
+   //  }
 
    EINA_LIST_FOREACH(cdata->ptr.resources, l, res)
      {
