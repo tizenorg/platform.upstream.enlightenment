@@ -2664,6 +2664,7 @@ _e_comp_wl_client_cb_post_new(void *data EINA_UNUSED, E_Client *ec)
      }
 }
 
+#if 0
 static void
 _e_comp_wl_client_cb_pre_frame(void *data EINA_UNUSED, E_Client *ec)
 {
@@ -2742,6 +2743,7 @@ _e_comp_wl_client_cb_pre_frame(void *data EINA_UNUSED, E_Client *ec)
 
    ec->comp_data->reparented = EINA_TRUE;
 }
+#endif
 
 static void
 _e_comp_wl_client_cb_focus_set(void *data EINA_UNUSED, E_Client *ec)
