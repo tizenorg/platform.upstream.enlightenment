@@ -110,7 +110,7 @@ _e_test_helper_message_append_clients(Eldbus_Message_Iter *iter)
 
    EINA_SAFETY_ON_NULL_RETURN(th_data);
 
-   if (!(comp = e_comp_get(NULL))) return;
+   if (!(comp = e_comp)) return;
 
    eldbus_message_iter_arguments_append(iter, "ua(usiiiiibb)", th_data->registrant.win, &array_of_ec);
 
@@ -124,7 +124,12 @@ _e_test_helper_message_append_clients(Eldbus_Message_Iter *iter)
         if (!ec) continue;
         if (e_client_util_ignored_get(ec)) continue;
 
+#ifdef HAVE_WAYLAND_ONLY
+        win = e_pixmap_res_id_get(ec->pixmap);
+#else
         win = e_client_util_win_get(ec);
+#endif
+
         eldbus_message_iter_arguments_append(array_of_ec, "(usiiiiibb)", &struct_of_ec);
         eldbus_message_iter_arguments_append
            (struct_of_ec, "usiiiiibb",
@@ -144,8 +149,8 @@ _e_test_helper_restack(Ecore_Window win, Ecore_Window target, int above)
    E_Client *ec = NULL, *tec = NULL;
 
 #ifdef HAVE_WAYLAND_ONLY
-   ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, win);
-   tec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, target);
+   ec = e_pixmap_find_client_by_res_id(win);
+   tec = e_pixmap_find_client_by_res_id(target);
 #else
    if ((!ec) || ((e_pixmap_type_get(ec->pixmap) == E_PIXMAP_TYPE_X)))
      {
@@ -312,7 +317,11 @@ _e_test_helper_cb_visibility_change(void *data EINA_UNUSED,
    if (!th_data->registrant.win) return ECORE_CALLBACK_PASS_ON;
 
    ec = ev->ec;
+#ifdef HAVE_WAYLAND_ONLY
+   win = e_pixmap_res_id_get(ec->pixmap);
+#else
    win = e_client_util_win_get(ec);
+#endif
 
    if (win != th_data->registrant.win) return ECORE_CALLBACK_PASS_ON;
 
@@ -362,7 +371,13 @@ _e_test_helper_cb_client_restack(void *data EINA_UNUSED, int type EINA_UNUSED, v
 
    ec = ev->ec;
 
-   if ((win = e_client_util_win_get(ec)))
+#ifdef HAVE_WAYLAND_ONLY
+   win = e_pixmap_res_id_get(ec->pixmap);
+#else
+   win = e_client_util_win_get(ec);
+#endif
+
+   if (win)
      {
         sig = eldbus_service_signal_new(th_data->iface, E_TEST_HELPER_SIGNAL_RESTACK);
         eldbus_message_arguments_append(sig, "u", win);
