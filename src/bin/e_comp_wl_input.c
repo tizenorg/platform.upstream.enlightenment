@@ -78,8 +78,13 @@ _e_comp_wl_input_pointer_cb_cursor_set(struct wl_client *client, struct wl_resou
    if (!(ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, (uintptr_t)surface_resource)))
      {
         Eina_List *l;
+        E_Pixmap *ep = NULL;
 
-        ec = e_client_new(NULL, e_pixmap_new(E_PIXMAP_TYPE_WL, surface_resource), 1, 0);
+        ep = e_pixmap_find(E_PIXMAP_TYPE_WL, surface_resource);
+        if (!ep) ep = e_pixmap_new(E_PIXMAP_TYPE_WL, surface_resource);
+        EINA_SAFETY_ON_NULL_RETURN(ep);
+
+        ec = e_client_new(NULL, ep, 1, 0);
         if (!ec) return;
         ec->lock_focus_out = ec->layer_block = ec->visible = ec->override = 1;
         ec->new_client = 0;

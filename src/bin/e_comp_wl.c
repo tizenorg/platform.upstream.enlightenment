@@ -1828,6 +1828,8 @@ _e_comp_wl_surface_destroy(struct wl_resource *resource)
         e_pixmap_free(ep);
         return;
      }
+   else
+     e_pixmap_del(ep);
 
    evas_object_hide(ec->frame);
    e_object_del(E_OBJECT(ec));
@@ -1861,8 +1863,21 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
                                   _e_comp_wl_surface_destroy);
 
    wl_client_get_credentials(client, &pid, NULL, NULL);
-   if (pid == getpid()) //internal!
-     ep = e_pixmap_find(E_PIXMAP_TYPE_WL, (uintptr_t)id);
+   if (pid == getpid())
+     {
+        /* pixmap of internal win was supposed to be created at trap show */
+        ep = e_pixmap_find(E_PIXMAP_TYPE_WL, (uintptr_t)id);
+     }
+   else
+     {
+        if ((ep = e_pixmap_find(E_PIXMAP_TYPE_WL, (uintptr_t)res)))
+          {
+             ERR("There is e_pixmap already, Delete old e_pixmap %p", ep);
+             e_pixmap_del(ep);
+             ep = NULL;
+          }
+     }
+
    if (!ep)
      {
         /* try to create new pixmap */
