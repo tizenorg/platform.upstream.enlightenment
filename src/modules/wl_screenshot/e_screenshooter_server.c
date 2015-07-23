@@ -13,7 +13,6 @@ _e_screenshooter_shoot(struct wl_client *client,
 {
    E_Comp_Wl_Output *output = wl_resource_get_user_data(output_resource);
    struct wl_shm_buffer *shm_buffer = wl_shm_buffer_get(buffer_resource);
-   Eina_Rectangle center = {0,};
    int32_t bw, bh, bs;
    uint32_t bf;
    void *bp;
