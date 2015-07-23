@@ -68,7 +68,7 @@ _e_elm_win_trap_show(void *data, Evas_Object *o)
         E_Client *ec;
         Ecore_Window win;
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-        uintptr_t wl_win_id;
+        uintptr_t wl_win_id = NULL;
 #endif
         E_Pixmap_Type type = E_PIXMAP_TYPE_X;
 
@@ -92,7 +92,7 @@ _e_elm_win_trap_show(void *data, Evas_Object *o)
           }
 #endif
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-        if (type == E_PIXMAP_TYPE_WL)
+        if ((type == E_PIXMAP_TYPE_WL) && (wl_win_id))
           ec = e_pixmap_find_client(type, wl_win_id);
         else
 #endif
