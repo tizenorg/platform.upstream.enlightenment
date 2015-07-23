@@ -1880,7 +1880,8 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
    wl_resource_set_user_data(res, ep);
 
    E_Comp_Wl_Client_Data *cdata = e_pixmap_cdata_get(ep);
-   cdata->wl_surface = res;
+   if (cdata)
+     cdata->wl_surface = res;
 
    /* emit surface create signal */
    wl_signal_emit(&comp->wl_comp_data->signals.surface.create, res);
