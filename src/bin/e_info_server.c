@@ -41,7 +41,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
      {
         Eldbus_Message_Iter* struct_of_ec;
         Ecore_Window win;
-        uint32_t res_id;
+        uint32_t res_id = 0;
         pid_t pid;
 
         ec = evas_object_data_get(o, "E_Client");
