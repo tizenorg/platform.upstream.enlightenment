@@ -446,7 +446,6 @@ _e_client_free(E_Client *ec)
 {
    Eina_List *l, *ll;
    E_Client *ec2;
-   int count = 0;
    EINA_LIST_FOREACH_SAFE(e_comp->post_updates, l, ll, ec2)
      {
         if (ec2 == ec)

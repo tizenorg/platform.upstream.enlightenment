@@ -2205,7 +2205,6 @@ _e_comp_wl_subsurface_commit_from_cache(E_Client *ec)
      {
         Eina_List *l, *ll;
         E_Client *ec2;
-        int count = 0;
         EINA_LIST_FOREACH_SAFE(e_comp->post_updates, l, ll, ec2)
           {
              if (ec2 == ec)
@@ -3415,7 +3414,6 @@ e_comp_wl_surface_commit(E_Client *ec)
      {
         Eina_List *l, *ll;
         E_Client *ec2;
-        int count = 0;
         EINA_LIST_FOREACH_SAFE(e_comp->post_updates, l, ll, ec2)
           {
              if (ec2 == ec)
