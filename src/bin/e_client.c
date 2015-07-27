@@ -444,7 +444,14 @@ _e_client_revert_focus(E_Client *ec)
 static void
 _e_client_free(E_Client *ec)
 {
-   ec->comp->post_updates = eina_list_remove(ec->comp->post_updates, ec);
+   Eina_List *l, *ll;
+   E_Client *ec2;
+   int count = 0;
+   EINA_LIST_FOREACH_SAFE(e_comp->post_updates, l, ll, ec2)
+     {
+        if (ec2 == ec)
+          e_comp->post_updates = eina_list_remove_list(e_comp->post_updates, l);
+     }
 
    e_comp_object_redirected_set(ec->frame, 0);
    e_comp_object_render_update_del(ec->frame);
