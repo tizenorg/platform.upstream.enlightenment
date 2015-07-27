@@ -456,6 +456,7 @@ _e_client_free(E_Client *ec)
    e_comp_object_redirected_set(ec->frame, 0);
    e_comp_object_render_update_del(ec->frame);
 
+   E_OBJECT(ec)->references++;
    if (ec->fullscreen)
      {
         ec->desk->fullscreen_clients = eina_list_remove(ec->desk->fullscreen_clients, ec);
@@ -549,6 +550,7 @@ _e_client_free(E_Client *ec)
 
    e_hints_client_list_set();
    evas_object_del(ec->frame);
+   E_OBJECT(ec)->references--;
    free(ec);
 }
 
