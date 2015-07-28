@@ -216,5 +216,7 @@ e_comp_util_client_is_fullscreen(const E_Client *ec)
 
 extern EAPI E_Comp *e_comp;
 
+EAPI void e_comp_post_update_add(E_Client *ec);
+EAPI void e_comp_post_update_purge(E_Client *ec);
 #endif
 #endif

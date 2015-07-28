@@ -611,3 +611,33 @@ e_comp_canvas_client_layer_map_nearest(int layer)
    LAYER_MAP(E_LAYER_CLIENT_NOTIFICATION_HIGH);
    return E_LAYER_CLIENT_ALERT;
 }
+
+EAPI void
+e_comp_post_update_add(E_Client *ec)
+{
+   Eina_List *l, *ll;
+   E_Client *ec2;
+
+   if (!e_comp) return;
+
+   ec2 = eina_list_data_find(e_comp->post_updates, ec);
+   if (ec2) return;
+
+   e_comp->post_updates = eina_list_append(e_comp->post_updates, ec);
+   e_object_ref(E_OBJECT(ec));
+}
+
+EAPI void
+e_comp_post_update_purge(E_Client *ec)
+{
+   Eina_List *l, *ll;
+   E_Client *ec2;
+
+   if (!e_comp) return;
+
+   EINA_LIST_FOREACH_SAFE(e_comp->post_updates, l, ll, ec2)
+     {
+        if (ec2 == ec)
+          e_comp->post_updates = eina_list_remove_list(e_comp->post_updates, l);
+     }
+}

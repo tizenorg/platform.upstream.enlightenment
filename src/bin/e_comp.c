@@ -374,10 +374,7 @@ _e_comp_cb_update(E_Comp *c)
         /* clear update flag */
         e_comp_object_render_update_del(ec->frame);
         if (_e_comp_client_update(ec))
-          {
-             c->post_updates = eina_list_append(c->post_updates, ec);
-             e_object_ref(E_OBJECT(ec));
-          }
+          e_comp_post_update_add(ec);
      }
    _e_comp_fps_update(c);
    if (conf->fps_show)

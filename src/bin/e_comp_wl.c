@@ -2202,17 +2202,7 @@ _e_comp_wl_subsurface_commit_from_cache(E_Client *ec)
 
    /* schedule repaint */
    if (e_pixmap_refresh(ec->pixmap))
-     {
-        Eina_List *l, *ll;
-        E_Client *ec2;
-        EINA_LIST_FOREACH_SAFE(e_comp->post_updates, l, ll, ec2)
-          {
-             if (ec2 == ec)
-               e_comp->post_updates = eina_list_remove_list(e_comp->post_updates, l);
-          }
-        e_comp->post_updates = eina_list_append(e_comp->post_updates, ec);
-        e_object_ref(E_OBJECT(ec));
-     }
+     e_comp_post_update_add(ec);
 }
 
 static void
@@ -3411,17 +3401,7 @@ e_comp_wl_surface_commit(E_Client *ec)
 
    /* schedule repaint */
    if (e_pixmap_refresh(ec->pixmap))
-     {
-        Eina_List *l, *ll;
-        E_Client *ec2;
-        EINA_LIST_FOREACH_SAFE(e_comp->post_updates, l, ll, ec2)
-          {
-             if (ec2 == ec)
-               e_comp->post_updates = eina_list_remove_list(e_comp->post_updates, l);
-          }
-        e_comp->post_updates = eina_list_append(e_comp->post_updates, ec);
-        e_object_ref(E_OBJECT(ec));
-     }
+     e_comp_post_update_add(ec);
 
    if (!e_pixmap_usable_get(ec->pixmap))
      {
