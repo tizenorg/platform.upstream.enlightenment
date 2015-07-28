@@ -339,7 +339,10 @@ _e_client_hook_call(E_Client_Hook_Point hookpoint, E_Client *ec)
 static void
 _e_client_event_simple_free(void *d EINA_UNUSED, E_Event_Client *ev)
 {
-   e_object_unref(E_OBJECT(ev->ec));
+#ifdef E_OBJECT_HASH_CHECK
+   if (E_OBJECT_HASH_FIND(E_OBJECT(ev->ec)))
+#endif
+     e_object_unref(E_OBJECT(ev->ec));
    free(ev);
 }
 
