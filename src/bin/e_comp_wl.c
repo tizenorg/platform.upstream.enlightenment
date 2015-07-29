@@ -956,9 +956,14 @@ _e_comp_wl_buffer_cb_destroy(struct wl_listener *listener, void *data EINA_UNUSE
    sid = wl_resource_get_id(buffer->resource);
    if ((sid) && (ec = eina_hash_find(clients_buffer_hash, &sid)))
      {
-        if (e_object_is_del(E_OBJECT(ec)))
-          while (e_object_unref(E_OBJECT(ec)) > 0);
         eina_hash_del_by_key(clients_buffer_hash, &sid);
+        if (e_object_is_del(E_OBJECT(ec)))
+          {
+             /* clear comp object immediately */
+             e_comp_object_redirected_set(ec->frame, 0);
+             evas_object_del(ec->frame);
+             ec->frame = NULL;
+          }
      }
 
    wl_signal_emit(&buffer->destroy_signal, buffer);
