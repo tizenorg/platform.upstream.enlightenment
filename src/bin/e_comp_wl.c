@@ -949,14 +949,12 @@ _e_comp_wl_buffer_cb_destroy(struct wl_listener *listener, void *data EINA_UNUSE
 {
    E_Comp_Wl_Buffer *buffer;
    E_Client *ec;
-   uint32_t sid = 0;
 
    buffer = container_of(listener, E_Comp_Wl_Buffer, destroy_listener);
 
-   sid = wl_resource_get_id(buffer->resource);
-   if ((sid) && (ec = eina_hash_find(clients_buffer_hash, &sid)))
+   if ((ec = eina_hash_find(clients_buffer_hash, &buffer->resource)))
      {
-        eina_hash_del_by_key(clients_buffer_hash, &sid);
+        eina_hash_del_by_key(clients_buffer_hash, &buffer->resource);
         if (e_object_is_del(E_OBJECT(ec)))
           {
              /* clear comp object immediately */
@@ -964,6 +962,7 @@ _e_comp_wl_buffer_cb_destroy(struct wl_listener *listener, void *data EINA_UNUSE
              evas_object_del(ec->frame);
              ec->frame = NULL;
           }
+        e_object_unref(E_OBJECT(ec));
      }
 
    wl_signal_emit(&buffer->destroy_signal, buffer);
@@ -1583,7 +1582,6 @@ _e_comp_wl_surface_cb_attach(struct wl_client *client EINA_UNUSED, struct wl_res
    E_Pixmap *ep;
    E_Client *ec;
    E_Comp_Wl_Buffer *buffer = NULL;
-   uint32_t sid = 0;
 
    if (!(ep = wl_resource_get_user_data(resource))) return;
    if (!(ec = e_pixmap_client_get(ep))) return;
@@ -1598,8 +1596,10 @@ _e_comp_wl_surface_cb_attach(struct wl_client *client EINA_UNUSED, struct wl_res
              return;
           }
 
-        if ((sid = wl_resource_get_id(buffer_resource)))
-           eina_hash_add(clients_buffer_hash, &sid, ec);
+        /* ref only if it's first buffer of client */
+        if (!eina_hash_del_by_data(clients_buffer_hash, ec))
+          e_object_ref(E_OBJECT(ec));
+        eina_hash_add(clients_buffer_hash, &buffer_resource, ec);
      }
 
    _e_comp_wl_surface_state_buffer_set(&ec->comp_data->pending, buffer);
@@ -3270,7 +3270,7 @@ e_comp_wl_init(void)
 
    /* create hash to store clients */
    /* clients_win_hash = eina_hash_int64_new(NULL); */
-   clients_buffer_hash = eina_hash_int32_new(NULL);
+   clients_buffer_hash = eina_hash_pointer_new(NULL);
 
    /* add event handlers to catch E events */
 #ifndef HAVE_WAYLAND_ONLY
