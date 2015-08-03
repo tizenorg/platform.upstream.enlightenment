@@ -5,7 +5,6 @@
 #include <tizen-extension-server-protocol.h>
 #include "e_scaler.h"
 #include "tizen_extension_server_protocol.h"
-#include "tizen_transient_for_server_protocol.h"
 
 #define XDG_SERVER_VERSION 4
 
@@ -1428,53 +1427,9 @@ _e_tz_surf_ext_cb_tz_res_get(struct wl_client *client, struct wl_resource *resou
    tizen_resource_send_resource_id(res, res_id);
 }
 
-static void
-_e_tz_transient_for_cb_set(struct wl_client *client, struct wl_resource *resource, uint32_t child_id, uint32_t parent_id)
-{
-   E_Client *ec, *pc;
-   struct wl_resource *parent_res;
-
-   DBG("chid_id: %" PRIu32 ", parent_id: %" PRIu32, child_id, parent_id);
-
-   ec = e_pixmap_find_client_by_res_id(child_id);
-   EINA_SAFETY_ON_NULL_RETURN(ec);
-
-   pc = e_pixmap_find_client_by_res_id(parent_id);
-   EINA_SAFETY_ON_NULL_RETURN(pc);
-   EINA_SAFETY_ON_NULL_RETURN(pc->comp_data);
-
-   parent_res = pc->comp_data->surface;
-   _e_shell_surface_parent_set(ec, parent_res);
-   tizen_transient_for_send_done(resource, child_id);
-
-   EC_CHANGED(ec);
-}
-
-static void
-_e_tz_transient_for_cb_unset(struct wl_client *client, struct wl_resource *resource, uint32_t child_id)
-{
-   E_Client *ec;
-
-   DBG("chid_id: %" PRIu32, child_id);
-
-   ec = e_pixmap_find_client_by_res_id(child_id);
-   EINA_SAFETY_ON_NULL_RETURN(ec);
-
-   _e_shell_surface_parent_set(ec, NULL);
-   tizen_transient_for_send_done(resource, child_id);
-
-   EC_CHANGED(ec);
-}
-
 static const struct tizen_surface_extension_interface  _e_tz_surf_ext_interface =
 {
    _e_tz_surf_ext_cb_tz_res_get,
-};
-
-static const struct tizen_transient_for_interface _e_tz_transient_for_interface =
-{
-   _e_tz_transient_for_cb_set,
-   _e_tz_transient_for_cb_unset,
 };
 
 static const struct wl_shell_interface _e_shell_interface =
@@ -1586,7 +1541,6 @@ _e_xdg_shell_cb_bind(struct wl_client *client, void *data, uint32_t version, uin
    wl_resource_set_dispatcher(res, _e_xdg_shell_cb_dispatch, NULL, cdata, NULL);
 }
 
-
 static void
 _e_tz_surf_ext_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
@@ -1684,31 +1638,6 @@ _e_tz_surf_cb_bind(struct wl_client *client, void *data, uint32_t version, uint3
    wl_resource_set_implementation(res, &_e_tz_surf_interface, cdata, NULL);
 }
 
-static void
-_e_tz_transient_for_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32_t id)
-{
-   E_Comp_Data *cdata;
-   struct wl_resource *res;
-
-   if (!(cdata = data))
-     {
-        wl_client_post_no_memory(client);
-        return;
-     }
-
-   if (!(res = wl_resource_create(client,
-                                  &tizen_transient_for_interface,
-                                  MIN(version, 1),
-                                  id)))
-     {
-        ERR("Could not create tizen_transient_for resource: %m");
-        wl_client_post_no_memory(client);
-        return;
-     }
-
-   wl_resource_set_implementation(res, &_e_tz_transient_for_interface, cdata, NULL);
-}
-
 EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Wl_Desktop_Shell" };
 
 EAPI void *
@@ -1752,16 +1681,6 @@ e_modapi_init(E_Module *m)
                          _e_tz_surf_ext_cb_bind))
      {
         ERR("Could not create tizen_surface_extension to wayland globals: %m");
-        return NULL;
-     }
-   /* try to create global tizen transient_for interface */
-   if (!wl_global_create(cdata->wl.disp,
-                         &tizen_transient_for_interface,
-                         1,
-                         cdata,
-                         _e_tz_transient_for_cb_bind))
-     {
-        ERR("Could not create tizen_transient_for to wayland globals: %m");
         return NULL;
      }
 
