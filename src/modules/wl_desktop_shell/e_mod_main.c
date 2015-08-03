@@ -4,7 +4,6 @@
 #include <xdg-shell-server-protocol.h>
 #include <tizen-extension-server-protocol.h>
 #include "e_scaler.h"
-#include "tizen_extension_server_protocol.h"
 
 #define XDG_SERVER_VERSION 4
 
@@ -1385,53 +1384,6 @@ static const struct tizen_resource_interface _e_tz_res_interface =
    _e_tz_res_cb_destroy
 };
 
-static void
-_e_tz_surf_ext_cb_tz_res_get(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface)
-{
-   struct wl_resource *res;
-   E_Pixmap *ep;
-   uint32_t res_id;
-
-   /* get the pixmap from this surface so we can find the client */
-   if (!(ep = wl_resource_get_user_data(surface)))
-     {
-        wl_resource_post_error(surface,
-                               WL_DISPLAY_ERROR_INVALID_OBJECT,
-                               "No Pixmap Set On Surface");
-        return;
-     }
-
-   /* make sure it's a wayland pixmap */
-   if (e_pixmap_type_get(ep) != E_PIXMAP_TYPE_WL) return;
-
-   /* find the window id for this pixmap */
-   res_id = e_pixmap_res_id_get(ep);
-
-   DBG("tizen resource id %" PRIu32, res_id);
-
-   /* try to create a tizen_gid */
-   if (!(res = wl_resource_create(client,
-                                  &tizen_resource_interface,
-                                  wl_resource_get_version(resource),
-                                  id)))
-     {
-        wl_resource_post_no_memory(resource);
-        return;
-     }
-
-   wl_resource_set_implementation(res,
-                                  &_e_tz_res_interface,
-                                  ep,
-                                  NULL);
-
-   tizen_resource_send_resource_id(res, res_id);
-}
-
-static const struct tizen_surface_extension_interface  _e_tz_surf_ext_interface =
-{
-   _e_tz_surf_ext_cb_tz_res_get,
-};
-
 static const struct wl_shell_interface _e_shell_interface =
 {
    _e_shell_cb_shell_surface_get
@@ -1542,31 +1494,6 @@ _e_xdg_shell_cb_bind(struct wl_client *client, void *data, uint32_t version, uin
 }
 
 static void
-_e_tz_surf_ext_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32_t id)
-{
-   E_Comp_Data *cdata;
-   struct wl_resource *res;
-
-   if (!(cdata = data))
-     {
-        wl_client_post_no_memory(client);
-        return;
-     }
-
-   if (!(res = wl_resource_create(client,
-                                  &tizen_surface_extension_interface,
-                                  MIN(version, 1),
-                                  id)))
-     {
-        ERR("Could not create tizen_ext resource: %m");
-        wl_client_post_no_memory(client);
-        return;
-     }
-
-   wl_resource_set_implementation(res, &_e_tz_surf_ext_interface, cdata, NULL);
-}
-
-static void
 _e_tz_surf_cb_tz_res_get(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface)
 {
    struct wl_resource *res;
@@ -1672,17 +1599,6 @@ e_modapi_init(E_Module *m)
      }
 
    e_scaler_init();
-
-   /* try to create global tizen surface extention interface */
-   if (!wl_global_create(cdata->wl.disp,
-                         &tizen_surface_extension_interface,
-                         1,
-                         cdata,
-                         _e_tz_surf_ext_cb_bind))
-     {
-        ERR("Could not create tizen_surface_extension to wayland globals: %m");
-        return NULL;
-     }
 
    if (!wl_global_create(cdata->wl.disp,
                          &tizen_surface_interface,

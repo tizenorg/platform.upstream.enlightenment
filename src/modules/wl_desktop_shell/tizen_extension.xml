@@ -1,8 +1,0 @@
-<protocol name="tizen_extension">
-   <interface name="tizen_surface_extension" version="1">
-      <request name="get_tizen_resource">
-         <arg name="id" type="new_id" interface="tizen_resource" />
-         <arg name="surface" type="object" interface="wl_surface" />
-      </request>
-   </interface>
-</protocol>
