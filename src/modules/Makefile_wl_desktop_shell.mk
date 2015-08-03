@@ -20,8 +20,6 @@ src_modules_wl_desktop_shell_module_la_SOURCES = \
   src/modules/wl_desktop_shell/e_scaler.h \
   src/modules/wl_desktop_shell/tizen_extension_server_protocol.h \
   src/modules/wl_desktop_shell/tizen_extension_protocol.c \
-  src/modules/wl_desktop_shell/tizen_subsurface_server_protocol.h \
-  src/modules/wl_desktop_shell/tizen_subsurface_protocol.c \
   src/modules/wl_desktop_shell/tizen_transient_for_server_protocol.h \
   src/modules/wl_desktop_shell/tizen_transient_for_protocol.c
 
