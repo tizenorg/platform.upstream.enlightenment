@@ -17,7 +17,7 @@ _e_log_cb(const Eina_Log_Domain *d, Eina_Log_Level level, const char *file, cons
 
    color = eina_log_level_color_get(level);
    fprintf(stdout,
-           "%s%s<" EINA_COLOR_RESET "%s%s>" EINA_COLOR_RESET "%s:%d" EINA_COLOR_RESET " ",
+           "%s%s<" EINA_COLOR_RESET "%s%s>" EINA_COLOR_RESET "%30.30s:%04d" EINA_COLOR_RESET " ",
            color, _names[level > EINA_LOG_LEVEL_DBG ? EINA_LOG_LEVEL_DBG : level],
            d->domain_str, color, file, line);
    vfprintf(stdout, fmt, args);
@@ -29,7 +29,8 @@ e_log_init(void)
 {
    e_log_dom = eina_log_domain_register("e", EINA_COLOR_WHITE);
    eina_log_print_cb_set(_e_log_cb, NULL);
-   return e_log_dom != -1;
+   eina_log_domain_level_set("e", 3);
+   return 1;
 }
 
 EINTERN int

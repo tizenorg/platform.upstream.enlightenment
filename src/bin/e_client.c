@@ -544,6 +544,7 @@ _e_client_free(E_Client *ec)
    e_hints_client_list_set();
    evas_object_del(ec->frame);
    E_OBJECT(ec)->references--;
+   ELOG("CLIENT FREE", ec->pixmap, ec);
    free(ec);
 }
 
@@ -614,6 +615,8 @@ _e_client_del(E_Client *ec)
 
    if ((!ec->new_client) && (!stopping))
      _e_client_event_simple(ec, E_EVENT_CLIENT_REMOVE);
+
+   ELOG("CLIENT DEL", ec->pixmap, ec);
 
    if (ec->parent)
      {
@@ -2732,6 +2735,7 @@ e_client_new(E_Comp *c EINA_UNUSED, E_Pixmap *cp, int first_map, int internal)
    e_comp->clients = eina_list_append(e_comp->clients, ec);
    eina_hash_add(clients_hash, &ec->pixmap, ec);
 
+   ELOG("CLIENT ADD", ec->pixmap, ec);
    _e_client_event_simple(ec, E_EVENT_CLIENT_ADD);
    e_comp_object_client_add(ec);
    if (ec->frame)

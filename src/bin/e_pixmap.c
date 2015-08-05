@@ -132,6 +132,7 @@ _e_pixmap_clear(E_Pixmap *cp, Eina_Bool cache)
           }
 
         e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
+        ELOG("PIXMAP CLEAR", cp, cp->client);
 
         (void)cache;
 #endif
@@ -184,6 +185,7 @@ _e_pixmap_free(E_Pixmap *cp)
      }
 #endif
    _e_pixmap_clear(cp, 1);
+   ELOG("PIXMAP FREE", cp, cp->client);
    free(cp);
 }
 
@@ -245,6 +247,7 @@ e_pixmap_free(E_Pixmap *cp)
 {
    if (!cp) return 0;
    if (--cp->refcount) return cp->refcount;
+   ELOG("PIXMAP DEL", cp, cp->client);
    _e_pixmap_hook_call(E_PIXMAP_HOOK_DEL, cp);
    e_pixmap_image_clear(cp, EINA_FALSE);
    if (cp->parent) eina_hash_set(pixmaps[cp->type], &cp->parent, NULL);
@@ -351,6 +354,7 @@ e_pixmap_new(E_Pixmap_Type type, ...)
         cp->res_id = res_id;
         eina_hash_add(res_ids, &res_id, cp);
         res_id++;
+        ELOG("PIXMAP NEW", cp, cp->client);
 #endif
         break;
      }

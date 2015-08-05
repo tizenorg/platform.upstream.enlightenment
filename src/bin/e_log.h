@@ -17,6 +17,36 @@
 #define ERR(...)            EINA_LOG_DOM_ERR(e_log_dom, __VA_ARGS__)
 #define CRI(...)            EINA_LOG_DOM_CRIT(e_log_dom, __VA_ARGS__)
 
+#define ELOG(t, cp, ec)                                    \
+   do                                                      \
+     {                                                     \
+        if ((!cp) && (!ec))                                \
+          INF("EWL|%20.20s|             |             |",  \
+              (t));                                        \
+        else                                               \
+          INF("EWL|%20.20s|cp:0x%08x|ec:0x%08x|",          \
+              (t),                                         \
+              (unsigned int)(cp),                          \
+              (unsigned int)(ec));                         \
+     }                                                     \
+   while (0)
+
+#define ELOGF(t, f, cp, ec, x...)                          \
+   do                                                      \
+     {                                                     \
+        if ((!cp) && (!ec))                                \
+          INF("EWL|%20.20s|             |             |"f, \
+              (t), ##x);                                   \
+        else                                               \
+          INF("EWL|%20.20s|cp:0x%08x|ec:0x%08x|"f,         \
+              (t),                                         \
+              (unsigned int)(cp),                          \
+              (unsigned int)(ec),                          \
+              ##x);                                        \
+     }                                                     \
+   while (0)
+
+
 EINTERN extern int e_log_dom;
 
 EINTERN int e_log_init(void);
@@ -27,11 +57,15 @@ EINTERN int e_log_shutdown(void);
 #undef WRN
 #undef ERR
 #undef CRI
+#undef ELOG
+#undef ELOGF
 #define DBG(...)            printf(__VA_ARGS__); putc('\n', stdout)
 #define INF(...)            printf(__VA_ARGS__); putc('\n', stdout)
 #define WRN(...)            printf(__VA_ARGS__); putc('\n', stdout)
 #define ERR(...)            printf(__VA_ARGS__); putc('\n', stdout)
 #define CRI(...)            printf(__VA_ARGS__); putc('\n', stdout)
+#define ELOG(...)           ;
+#define ELOGF(...)          ;
 #endif
 
 #endif
