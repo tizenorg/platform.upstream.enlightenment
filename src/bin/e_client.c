@@ -1495,7 +1495,7 @@ _e_client_cb_evas_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA
    if (e_config->transient.raise && ec->transients)
      {
         Eina_List *list = eina_list_clone(ec->transients);
-        E_Client *child, *below = NULL;
+        E_Client *child, *below = NULL, *above = NULL;
 
         E_LIST_REVERSE_FREE(list, child)
           {
@@ -1503,11 +1503,23 @@ _e_client_cb_evas_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA
               * thats another option.
               */
              if (child->iconic) continue;
-             if (below)
-               evas_object_stack_below(child->frame, below->frame);
-             else
-               evas_object_stack_above(child->frame, ec->frame);
-             below = child;
+             if (child->transient_policy == E_TRANSIENT_ABOVE)
+               {
+                  if (below)
+                    evas_object_stack_below(child->frame, below->frame);
+                  else
+                    evas_object_stack_above(child->frame, ec->frame);
+                  below = child;
+               }
+             else if (child->transient_policy == E_TRANSIENT_BELOW)
+               {
+                  if (above)
+                    evas_object_stack_above(child->frame, above->frame);
+                  else
+                    evas_object_stack_below(child->frame, ec->frame);
+                  above = child;
+               }
+
           }
      }
    if (ec->unredirected_single) return;

@@ -116,6 +116,12 @@ typedef enum _E_Fullscreen
    E_FULLSCREEN_ZOOM
 } E_Fullscreen;
 
+typedef enum _E_Transient
+{
+   E_TRANSIENT_ABOVE,
+   E_TRANSIENT_BELOW,
+} E_Transient;
+
 typedef enum _E_Window_Placement
 {
    E_WINDOW_PLACEMENT_SMART,
@@ -684,6 +690,7 @@ struct E_Client
    unsigned int       user_skip_winlist : 1;
    E_Maximize         maximized;
    E_Fullscreen       fullscreen_policy;
+   E_Transient        transient_policy;
    unsigned int       borderless : 1;
    unsigned char      offer_resistance : 1;
    Eina_Stringshare  *bordername;
