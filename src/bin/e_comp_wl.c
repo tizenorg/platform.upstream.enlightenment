@@ -2033,10 +2033,61 @@ static const struct wl_compositor_interface _e_comp_interface =
 };
 
 static void
+_e_comp_wl_pname_print(pid_t pid)
+{
+   FILE *h;
+   char proc[512], pname[512];
+   size_t len;
+
+   sprintf(proc, "/proc/%d/cmdline", pid);
+
+   h = fopen(proc, "r");
+   if (!h) return;
+
+   len = fread(pname, sizeof(char), 512, h);
+   if (len > 0)
+     {
+        if ('\n' == pname[len - 1])
+          pname[len - 1] = '\0';
+     }
+
+   fclose(h);
+
+   ELOGF("COMP", "         |%s", NULL, NULL, pname);
+}
+
+
+static void
+_e_comp_wl_compositor_cb_unbind(struct wl_resource *res_comp)
+{
+   struct wl_client *client;
+   pid_t pid = 0;
+   uid_t uid = 0;
+   gid_t gid = 0;
+
+   client = wl_resource_get_client(res_comp);
+   if (client)
+     wl_client_get_credentials(client,
+                               &pid,
+                               &uid,
+                               &gid);
+
+   ELOGF("COMP",
+         "UNBIND   |res_comp:0x%08x|client:0x%08x|%d|%d|%d",
+         NULL, NULL,
+         (unsigned int)res_comp,
+         (unsigned int)client,
+         pid, uid, gid);
+}
+
+static void
 _e_comp_wl_compositor_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
    E_Comp *comp;
    struct wl_resource *res;
+   pid_t pid = 0;
+   uid_t uid = 0;
+   gid_t gid = 0;
 
    if (!(comp = data)) return;
 
@@ -2049,7 +2100,21 @@ _e_comp_wl_compositor_cb_bind(struct wl_client *client, void *data, uint32_t ver
         return;
      }
 
-   wl_resource_set_implementation(res, &_e_comp_interface, comp, NULL);
+   wl_resource_set_implementation(res,
+                                  &_e_comp_interface,
+                                  comp,
+                                  _e_comp_wl_compositor_cb_unbind);
+
+   wl_client_get_credentials(client, &pid, &uid, &gid);
+
+   ELOGF("COMP",
+         "BIND     |res_comp:0x%08x|client:0x%08x|%d|%d|%d",
+         NULL, NULL,
+         (unsigned int)res,
+         (unsigned int)client,
+         pid, uid, gid);
+
+   _e_comp_wl_pname_print(pid);
 }
 
 static void
