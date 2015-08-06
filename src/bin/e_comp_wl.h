@@ -312,6 +312,19 @@ struct _E_Comp_Wl_Client_Data
         E_Comp_Wl_Buffer_Viewport buffer_viewport;
      } scaler;
 
+   struct
+     {
+        Eina_Bool enabled : 1;
+        Eina_Bool start : 1;
+        int sx, sy;
+        int dx, dy;
+
+        struct
+          {
+             int x, y, z;
+          } maps[4];
+     } transform;
+
    /* before applying viewport */
    int width_from_buffer;
    int height_from_buffer;
