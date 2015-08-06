@@ -2,6 +2,7 @@
 #define E_COMP_WL
 #include "e.h"
 #include <scaler-server-protocol.h>
+#include <transform-server-protocol.h>
 
 static void
 _e_viewport_destroy(struct wl_resource *resource)
@@ -205,6 +206,109 @@ _e_scaler_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32
    wl_resource_set_implementation(res, &_e_scaler_interface, NULL, NULL);
 }
 
+static void
+_e_rotator_cb_destroy(struct wl_client *client EINA_UNUSED, struct wl_resource *resource)
+{
+   E_Pixmap *ep;
+   E_Client *ec;
+   E_Comp_Client_Data *cdata = NULL;
+
+   if ((ep = wl_resource_get_user_data(resource)))
+     {
+        if ((ec = e_pixmap_client_get(ep)))
+          {
+             if ((cdata = ec->comp_data))
+               cdata->transform.enabled = EINA_FALSE;
+          }
+     }
+
+     wl_resource_destroy(resource);
+}
+
+static void
+_e_rotator_cb_set(struct wl_client *client EINA_UNUSED, struct wl_resource *resource)
+{
+   E_Pixmap *ep;
+   E_Client *ec;
+   E_Comp_Client_Data *cdata = NULL;
+
+   if (!(ep = wl_resource_get_user_data(resource))) return;
+   if (!(ec = e_pixmap_client_get(ep))) return;
+   if (!(cdata = ec->comp_data)) return;
+
+   cdata->transform.enabled = EINA_TRUE;
+
+   DBG("SET ROTATOR");
+}
+
+static void
+_e_rotator_cb_unset(struct wl_client *client EINA_UNUSED, struct wl_resource *resource)
+{
+   E_Pixmap *ep;
+   E_Client *ec;
+   E_Comp_Client_Data *cdata = NULL;
+
+   if (!(ep = wl_resource_get_user_data(resource))) return;
+   if (!(ec = e_pixmap_client_get(ep))) return;
+   if (!(cdata = ec->comp_data)) return;
+
+   cdata->transform.enabled = EINA_FALSE;
+   DBG("UNSET ROTATOR");
+}
+
+static const struct wl_rotator_interface _e_rotator_interface =
+{
+   _e_rotator_cb_destroy,
+   _e_rotator_cb_set,
+   _e_rotator_cb_unset,
+};
+
+static void
+_e_transform_cb_destroy(struct wl_client *client EINA_UNUSED, struct wl_resource *resource)
+{
+   wl_resource_destroy(resource);
+}
+
+static void
+_e_transform_cb_get_rotator(struct wl_client *client EINA_UNUSED, struct wl_resource *transform, uint32_t id, struct wl_resource *surface_resource)
+{
+   int version = wl_resource_get_version(transform);
+   E_Pixmap *ep;
+   struct wl_resource *res;
+
+   if (!(ep = wl_resource_get_user_data(surface_resource))) return;
+
+   res = wl_resource_create(client, &wl_rotator_interface, version, id);
+   if (res == NULL)
+     {
+        wl_client_post_no_memory(client);
+        return;
+     }
+
+   wl_resource_set_implementation(res, &_e_rotator_interface, ep, NULL);
+}
+
+static const struct wl_transform_interface _e_transform_interface =
+{
+   _e_transform_cb_destroy,
+   _e_transform_cb_get_rotator
+};
+
+static void
+_e_transform_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32_t id)
+{
+   struct wl_resource *res;
+
+   if (!(res = wl_resource_create(client, &wl_transform_interface, version, id)))
+     {
+        ERR("Could not create transform resource: %m");
+        wl_client_post_no_memory(client);
+        return;
+     }
+
+   wl_resource_set_implementation(res, &_e_transform_interface, NULL, NULL);
+}
+
 Eina_Bool
 e_scaler_init(void)
 {
@@ -219,6 +323,13 @@ e_scaler_init(void)
                          cdata, _e_scaler_cb_bind))
      {
         ERR("Could not add scaler to wayland globals: %m");
+        return EINA_FALSE;
+     }
+
+   if (!wl_global_create(cdata->wl.disp, &wl_transform_interface, 1,
+                         cdata, _e_transform_cb_bind))
+     {
+        ERR("Could not add transform to wayland globals: %m");
         return EINA_FALSE;
      }
 

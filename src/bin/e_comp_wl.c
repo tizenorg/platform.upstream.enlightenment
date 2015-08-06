@@ -26,6 +26,57 @@ static double _last_event_time = 0.0;
 
 /* local functions */
 static void
+_e_comp_wl_transform_set(E_Client *ec)
+{
+   int nx, ny, nw, nh;
+   int sx, sy, dx, dy;
+   int mx, my;
+   static int transform_degree = 0;
+   Evas_Map *map;
+
+   mx = ec->client.x + ec->client.w/2;
+   my = ec->client.y + ec->client.h/2;
+
+   sx = ec->comp_data->transform.sx;
+   sy = ec->comp_data->transform.sy;
+   dx = ec->comp_data->transform.dx;
+   dy = ec->comp_data->transform.dy;
+
+   map = evas_map_new(4);
+   evas_map_util_points_populate_from_geometry(map,
+                                               ec->client.x, ec->client.y,
+                                               ec->comp_data->width_from_viewport,
+                                               ec->comp_data->height_from_viewport,
+                                               0);
+
+   transform_degree += 30;
+   transform_degree %= 360;
+   evas_map_util_rotate(map, transform_degree, mx, my);
+
+   evas_object_map_set(ec->frame, map);
+   evas_object_map_enable_set(ec->frame, map? EINA_TRUE: EINA_FALSE);
+
+   evas_map_point_coord_get(map, 0,
+                            &ec->comp_data->transform.maps[0].x,
+                            &ec->comp_data->transform.maps[0].y,
+                            &ec->comp_data->transform.maps[0].z);
+   evas_map_point_coord_get(map, 1,
+                            &ec->comp_data->transform.maps[1].x,
+                            &ec->comp_data->transform.maps[1].y,
+                            &ec->comp_data->transform.maps[1].z);
+   evas_map_point_coord_get(map, 2,
+                            &ec->comp_data->transform.maps[2].x,
+                            &ec->comp_data->transform.maps[2].y,
+                            &ec->comp_data->transform.maps[2].z);
+   evas_map_point_coord_get(map, 3,
+                            &ec->comp_data->transform.maps[3].x,
+                            &ec->comp_data->transform.maps[3].y,
+                            &ec->comp_data->transform.maps[3].z);
+
+   evas_map_free(map);
+}
+
+static void
 _e_comp_wl_focus_down_set(E_Client *ec)
 {
    Ecore_Window win = 0;
@@ -389,6 +440,7 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    if (!ec->comp_data->surface) return;
+   if (ec->comp_data->transform.start) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(ec->comp->wl_comp_data->wl.disp);
@@ -425,6 +477,7 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    if (!ec->comp_data->surface) return;
+   if (ec->comp_data->transform.start) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(ec->comp->wl_comp_data->wl.disp);
@@ -455,6 +508,14 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (e_client_util_ignored_get(ec)) return;
    if (!ec->comp_data->surface) return;
+   if (ec->comp_data->transform.start) return;
+   if (ec->comp_data->transform.enabled &&
+       E_INSIDE(wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x),
+                wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y),
+                ec->client.x + ec->client.w - 40,
+                ec->client.y + ec->client.h - 40,
+                40, 40))
+     DBG("TRANSFORM this area for transform!!");
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
@@ -498,6 +559,45 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
    ec->comp->wl_comp_data->ptr.button = btn;
 
    if (!ec->comp_data->surface) return EINA_FALSE;
+
+   if (ec->comp_data->transform.enabled)
+     {
+        DBG("TRANSFORM enabled state:%s", state==WL_POINTER_BUTTON_STATE_PRESSED?"pressed":"released");
+        DBG("TRANSFORM is inside of %d,%d (%dx%d)??", ec->client.x + ec->client.w - 40, ec->client.y + ec->client.h - 40, 40, 40);
+        if (state == WL_POINTER_BUTTON_STATE_PRESSED)
+          {
+             if (E_INSIDE(wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x),
+                          wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y),
+                          ec->client.x + ec->client.w - 40,
+                          ec->client.y + ec->client.h - 40,
+                          40, 40))
+               {
+                  ec->comp_data->transform.start = 1;
+                  ec->comp_data->transform.sx = wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x);
+                  ec->comp_data->transform.sy = wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y);
+
+                  DBG("TRANSFORM start %d,%d",
+                      ec->comp_data->transform.sx, ec->comp_data->transform.sy);
+                  return EINA_FALSE;
+               }
+             else
+               ec->comp_data->transform.start = 0;
+          }
+        else if (state == WL_POINTER_BUTTON_STATE_RELEASED)
+          {
+             if (ec->comp_data->transform.start)
+               {
+                  ec->comp_data->transform.dx = wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x);
+                  ec->comp_data->transform.dy = wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y);
+
+                  DBG("TRANSFORM end %d,%d",
+                      ec->comp_data->transform.dx, ec->comp_data->transform.dy);
+                  _e_comp_wl_transform_set(ec);
+                  ec->comp_data->transform.start = 0;
+                  return EINA_FALSE;
+               }
+          }
+     }
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(ec->comp->wl_comp_data->wl.disp);
