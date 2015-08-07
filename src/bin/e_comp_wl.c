@@ -31,8 +31,9 @@ _e_comp_wl_transform_set(E_Client *ec)
    int nx, ny, nw, nh;
    int sx, sy, dx, dy;
    int mx, my;
-   static int transform_degree = 0;
+   int transform_degree;
    Evas_Map *map;
+   Evas_Map *orig_map;
 
    mx = ec->client.x + ec->client.w/2;
    my = ec->client.y + ec->client.h/2;
@@ -42,15 +43,20 @@ _e_comp_wl_transform_set(E_Client *ec)
    dx = ec->comp_data->transform.dx;
    dy = ec->comp_data->transform.dy;
 
-   map = evas_map_new(4);
-   evas_map_util_points_populate_from_geometry(map,
-                                               ec->client.x, ec->client.y,
-                                               ec->comp_data->width_from_viewport,
-                                               ec->comp_data->height_from_viewport,
-                                               0);
+   orig_map = evas_object_map_get(ec->frame);
+   if (orig_map)
+     {
+        map = evas_map_new(4);
+        evas_map_util_points_populate_from_geometry(map,
+                                                    ec->client.x, ec->client.y,
+                                                    ec->comp_data->width_from_viewport,
+                                                    ec->comp_data->height_from_viewport,
+                                                    0);
+     }
+   else
+      map = evas_map_dup(orig_map);
 
-   transform_degree += 30;
-   transform_degree %= 360;
+   transform_degree = 30;
    evas_map_util_rotate(map, transform_degree, mx, my);
 
    evas_object_map_set(ec->frame, map);
