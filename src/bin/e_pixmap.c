@@ -725,7 +725,10 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
              cp->data = NULL;
 
              if (wl_comp_data->available_hw_accel.underlay)
-               e_comp_object_mask_set(cp->client->frame, EINA_TRUE);
+               {
+                  cp->client->argb = EINA_FALSE;
+                  e_comp_object_mask_set(cp->client->frame, EINA_TRUE);
+               }
           }
         else
           {
