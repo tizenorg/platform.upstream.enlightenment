@@ -343,6 +343,7 @@ struct _E_Comp_Wl_Client_Data
    Eina_Bool set_win_type : 1;
    Eina_Bool frame_update : 1;
    Eina_Bool focus_update : 1;
+   Eina_Bool opaque_state : 1;
    unsigned char accepts_focus : 1;
    unsigned char conformant : 1;
 };
