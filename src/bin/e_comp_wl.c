@@ -618,13 +618,13 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
           {
              if (E_INSIDE(wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x),
                           wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y),
-                          ec->comp_data->transform.maps[2].x ? ec->comp_data->transform.maps[2].x - 40 : ec->client.x + ec->client.w - 40,
-                          ec->comp_data->transform.maps[2].y ? ec->comp_data->transform.maps[2].y - 40 : ec->client.y + ec->client.h - 40,
+                          ec->client.x + ec->client.w - 40,
+                          ec->client.y + ec->client.h - 40,
                           40, 40))
                {
                   ec->comp_data->transform.start = 1;
-                  ec->comp_data->transform.sx = wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x);
-                  ec->comp_data->transform.sy = wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y);
+                  ec->comp_data->transform.sx = ec->mouse.current.mx;
+                  ec->comp_data->transform.sy = ec->mouse.current.my;
 
                   DBG("TRANSFORM start %d,%d",
                       ec->comp_data->transform.sx, ec->comp_data->transform.sy);
