@@ -25,37 +25,6 @@ static Eina_List *handlers = NULL;
 static double _last_event_time = 0.0;
 
 /* local functions */
-static int
-compute_degree(int sx, int sy, int dx, int dy, int mx, int my)
-{
-   double theta, degree;
-   double svx, svy, dvx, dvy, length;
-
-   svx = sx - mx;
-   svy = sy - my;
-   length = (double)((svx * svx) + (svy * svy));
-   length = sqrt(length);
-   if (length != 0)
-     {
-        svx /= length;
-        svy /= length;
-     }
-   dvx = dx - mx;
-   dvy = dy - my;
-   length = (double)((dvx * dvx) + (dvy * dvy));
-   length = sqrt(length);
-   if (length != 0)
-     {
-        dvx /= length;
-        dvy /= length;
-     }
-   theta = (svx * dvx) + (svy * dvy);
-   theta = acos(theta);
-    if(svx * dvy - svy * dvx < 0) theta = -theta;
-   degree = theta / M_PI * 180.0;
-   return degree;
-}
-
 static void
 _e_comp_wl_transform_set(E_Client *ec)
 {
@@ -75,7 +44,7 @@ _e_comp_wl_transform_set(E_Client *ec)
    dy = ec->comp_data->transform.dy;
 
    orig_map = evas_object_map_get(ec->frame);
-   if (!orig_map)
+   if (orig_map)
      {
         map = evas_map_new(4);
         evas_map_util_points_populate_from_geometry(map,
@@ -87,7 +56,7 @@ _e_comp_wl_transform_set(E_Client *ec)
    else
       map = evas_map_dup(orig_map);
 
-   transform_degree = compute_degree(sx, sy, dx, dy, mx, my);
+   transform_degree = 30;
    evas_map_util_rotate(map, transform_degree, mx, my);
 
    evas_object_map_set(ec->frame, map);
@@ -537,13 +506,10 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
 
    ev = event;
 
-   e_comp->wl_comp_data->ptr.x = wl_fixed_from_int(ev->cur.output.x);
-   e_comp->wl_comp_data->ptr.y = wl_fixed_from_int(ev->cur.output.y);
+   e_comp->wl_comp_data->ptr.x = wl_fixed_from_int(ev->cur.canvas.x);
+   e_comp->wl_comp_data->ptr.y = wl_fixed_from_int(ev->cur.canvas.y);
 
    if (!(ec = data)) return;
-   DBG("TRANSFORM move ptr.x:%d, canvas:%d, output:%d", wl_fixed_to_int(e_comp->wl_comp_data->ptr.x), ev->cur.canvas.x, ev->cur.output.x);
-   DBG("TRANSFORM move ptr.y:%d, canvas:%d, output:%d", wl_fixed_to_int(e_comp->wl_comp_data->ptr.y), ev->cur.canvas.y, ev->cur.output.y);
-
    if (ec->cur_mouse_action) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (e_client_util_ignored_get(ec)) return;
@@ -552,8 +518,8 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    if (ec->comp_data->transform.enabled &&
        E_INSIDE(wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x),
                 wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y),
-                ec->comp_data->transform.maps[2].x ? ec->comp_data->transform.maps[2].x - 40 : ec->client.x + ec->client.w - 40,
-                ec->comp_data->transform.maps[2].y ? ec->comp_data->transform.maps[2].y - 40 : ec->client.y + ec->client.h - 40,
+                ec->client.x + ec->client.w - 40,
+                ec->client.y + ec->client.h - 40,
                 40, 40))
      DBG("TRANSFORM this area for transform!!");
 
@@ -608,8 +574,8 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
           {
              if (E_INSIDE(wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x),
                           wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y),
-                          ec->comp_data->transform.maps[2].x ? ec->comp_data->transform.maps[2].x - 40 : ec->client.x + ec->client.w - 40,
-                          ec->comp_data->transform.maps[2].y ? ec->comp_data->transform.maps[2].y - 40 : ec->client.y + ec->client.h - 40,
+                          ec->client.x + ec->client.w - 40,
+                          ec->client.y + ec->client.h - 40,
                           40, 40))
                {
                   ec->comp_data->transform.start = 1;
