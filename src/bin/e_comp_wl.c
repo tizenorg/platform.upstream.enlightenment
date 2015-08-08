@@ -25,6 +25,40 @@ static Eina_List *handlers = NULL;
 static double _last_event_time = 0.0;
 
 /* local functions */
+static int
+compute_degree(int sx, int sy, int dx, int dy, int mx, int my)
+{
+   double theta, degree;
+   double svx, svy, dvx, dvy, length;
+
+   svx = sx - mx;
+   svy = sy - my;
+   length = (double)((svx * svx) + (svy * svy));
+   length = sqrt(length);
+   if (length != 0)
+     {
+        svx /= length;
+        svy /= length;
+     }
+
+   dvx = dx - mx;
+   dvy = dy - my;
+   length = (double)((dvx * dvx) + (dvy * dvy));
+   length = sqrt(length);
+   if (length != 0)
+     {
+        dvx /= length;
+        dvy /= length;
+     }
+
+   theta = (svx * dvx) + (svy * dvy);
+   theta = acos(theta);
+   if(svx * dvy - svy * dvx < 0) theta = -theta;
+   degree = theta / M_PI * 180.0;
+
+   return degree;
+}
+
 static void
 _e_comp_wl_transform_set(E_Client *ec)
 {
@@ -32,8 +66,7 @@ _e_comp_wl_transform_set(E_Client *ec)
    int sx, sy, dx, dy;
    int mx, my;
    int transform_degree;
-   Evas_Map *map;
-   Evas_Map *orig_map;
+   Evas_Map *orig_map, *map;
 
    mx = ec->client.x + ec->client.w/2;
    my = ec->client.y + ec->client.h/2;
@@ -44,19 +77,21 @@ _e_comp_wl_transform_set(E_Client *ec)
    dy = ec->comp_data->transform.dy;
 
    orig_map = evas_object_map_get(ec->frame);
-   if (orig_map)
+   if (!orig_map)
      {
         map = evas_map_new(4);
-        evas_map_util_points_populate_from_geometry(map,
-                                                    ec->client.x, ec->client.y,
-                                                    ec->comp_data->width_from_viewport,
-                                                    ec->comp_data->height_from_viewport,
-                                                    0);
+        evas_map_util_points_populate_from_geometry
+          (map,
+           ec->client.x,
+           ec->client.y,
+           ec->comp_data->width_from_viewport,
+           ec->comp_data->height_from_viewport,
+           0);
      }
    else
-      map = evas_map_dup(orig_map);
+     map = evas_map_dup(orig_map);
 
-   transform_degree = 30;
+   transform_degree = compute_degree(sx, sy, dx, dy, mx, my);
    evas_map_util_rotate(map, transform_degree, mx, my);
 
    evas_object_map_set(ec->frame, map);
@@ -515,13 +550,20 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    if (e_client_util_ignored_get(ec)) return;
    if (!ec->comp_data->surface) return;
    if (ec->comp_data->transform.start) return;
-   if (ec->comp_data->transform.enabled &&
-       E_INSIDE(wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x),
-                wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y),
-                ec->client.x + ec->client.w - 40,
-                ec->client.y + ec->client.h - 40,
-                40, 40))
-     DBG("TRANSFORM this area for transform!!");
+   if (ec->comp_data->transform.enabled)
+     {
+        e_comp->wl_comp_data->ptr.x = wl_fixed_from_int(ev->cur.output.x);
+        e_comp->wl_comp_data->ptr.y = wl_fixed_from_int(ev->cur.output.y);
+
+        if (E_INSIDE(wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x),
+                     wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y),
+                     ec->comp_data->transform.maps[2].x ? ec->comp_data->transform.maps[2].x - 40 : ec->client.x + ec->client.w - 40,
+                     ec->comp_data->transform.maps[2].x ? ec->comp_data->transform.maps[2].x - 40 : ec->client.x + ec->client.w - 40,
+                     40, 40))
+          {
+             DBG("TRANSFORM this area for transform!!");
+          }
+     }
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
@@ -574,8 +616,8 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
           {
              if (E_INSIDE(wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x),
                           wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y),
-                          ec->client.x + ec->client.w - 40,
-                          ec->client.y + ec->client.h - 40,
+                          ec->comp_data->transform.maps[2].x ? ec->comp_data->transform.maps[2].x - 40 : ec->client.x + ec->client.w - 40,
+                          ec->comp_data->transform.maps[2].y ? ec->comp_data->transform.maps[2].y - 40 : ec->client.y + ec->client.h - 40,
                           40, 40))
                {
                   ec->comp_data->transform.start = 1;
