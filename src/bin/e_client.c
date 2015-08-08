@@ -2351,7 +2351,7 @@ _e_client_type_get(E_Client *ec)
 static void
 _e_client_visibility_zone_calculate(E_Zone *zone)
 {
-   E_Client *ec, *top_visible_ec = NULL;
+   E_Client *ec, *top_visible_ec = NULL, *demo_ec = NULL;
    Evas_Object *o;
    Eina_Tiler *t;
    Eina_Rectangle r, *_r;
@@ -2401,6 +2401,9 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
           }
         eina_iterator_free(itr);
 
+        if (!e_util_strcmp("e_demo", ec->icccm.window_role))
+          demo_ec = ec;
+
         /* check some visible state */
         if ((!ec->visible) || (ec->iconic) ||
             (!evas_object_visible_get(ec->frame)) ||
@@ -2417,7 +2420,9 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         if (is_intersected)
           {
              Eina_Bool opaque = EINA_FALSE;
-             if (!top_visible_ec) top_visible_ec = ec;
+
+             if (!top_visible_ec && e_util_strcmp("e_demo", ec->icccm.window_role))
+               top_visible_ec = ec;
 
              /* unobscured case */
              if (ec->visibility.obscured == 0)
@@ -2463,7 +2468,8 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
        if ((e_config->focus_policy_ext == E_FOCUS_EXT_TOP_STACK) &&
            (!ec->focused) && (ec == top_visible_ec) &&
            (!ec->visibility.obscured) &&
-           ((ec->icccm.accepts_focus) || (ec->icccm.take_focus)))
+           ((ec->icccm.accepts_focus) || (ec->icccm.take_focus)) &&
+           (demo_ec && !demo_ec->focused))
         {
            e_client_focused_set(ec);
            evas_object_focus_set(ec->frame, 1);
