@@ -911,6 +911,8 @@ _e_client_resize_handle(E_Client *ec)
    int tw, th;
    Eina_List *skiplist = NULL;
 
+   if (ec->transformed) return;
+
    x = ec->x;
    y = ec->y;
    w = ec->w;
