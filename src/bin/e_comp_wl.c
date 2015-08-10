@@ -90,7 +90,7 @@ _e_comp_wl_transform_set(E_Client *ec)
    int sx, sy, dx, dy;
    int mx, my;
    int transform_degree;
-   Evas_Map *orig_map, *map;
+   Evas_Map *map;
 
    mx = ec->client.x + ec->client.w / 2;
    my = ec->client.y + ec->client.h / 2;
@@ -101,24 +101,19 @@ _e_comp_wl_transform_set(E_Client *ec)
    dy = ec->comp_data->transform.dy;
    DBG("TRANSFORM s:%d,%d, d:%d,%d", sx, sy, dx, dy);
 
-   orig_map = evas_object_map_get(ec->frame);
-   if (!orig_map)
-     {
-        map = evas_map_new(4);
-        evas_map_util_points_populate_from_geometry
+   map = evas_map_new(4);
+   evas_map_util_points_populate_from_geometry
           (map,
            ec->client.x,
            ec->client.y,
            ec->comp_data->width_from_viewport,
            ec->comp_data->height_from_viewport,
            0);
-     }
-   else
-     map = evas_map_dup(orig_map);
 
    transform_degree = compute_degree(sx, sy, dx, dy, mx, my);
-   ec->comp_data->transform.degree += transform_degree;
+   ec->comp_data->transform.degree = transform_degree + ec->comp_data->transform.prev_degree;
    ec->comp_data->transform.degree %= 360;
+   DBG("TRANSFORM degree:%d, prev_degree%d, total_degree:%d", transform_degree, ec->comp_data->transform.prev_degree, ec->comp_data->transform.degree);
 
    if (ec->comp_data->transform.degree == 0)
      {
@@ -127,8 +122,7 @@ _e_comp_wl_transform_set(E_Client *ec)
         evas_object_map_enable_set(ec->frame, EINA_FALSE);
         return;
      }
-
-   evas_map_util_rotate(map, transform_degree, mx, my);
+   evas_map_util_rotate(map, ec->comp_data->transform.degree, mx, my);
    evas_map_util_object_move_sync_set(map, EINA_TRUE);
    evas_object_map_set(ec->frame, map);
    evas_object_map_enable_set(ec->frame, map? EINA_TRUE: EINA_FALSE);
@@ -655,8 +649,6 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
      {
         e_comp->wl_comp_data->ptr.x = wl_fixed_from_int(ev->cur.output.x);
         e_comp->wl_comp_data->ptr.y = wl_fixed_from_int(ev->cur.output.y);
-        ec->comp_data->transform.sx = ev->prev.output.x;
-        ec->comp_data->transform.sy = ev->prev.output.y;
         ec->comp_data->transform.dx = ev->cur.output.x;
         ec->comp_data->transform.dy = ev->cur.output.y;
         _e_comp_wl_transform_set(ec);
@@ -730,6 +722,8 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
                           40, 40))
                {
                   ec->comp_data->transform.start = 1;
+                  ec->comp_data->transform.sx = ec->mouse.current.mx;
+                  ec->comp_data->transform.sy = ec->mouse.current.my;
 
                   DBG("TRANSFORM start %d,%d",
                       ec->comp_data->transform.sx, ec->comp_data->transform.sy);
@@ -745,6 +739,7 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
                   DBG("TRANSFORM end %d,%d",
                       ec->comp_data->transform.dx, ec->comp_data->transform.dy);
                   ec->comp_data->transform.start = 0;
+                  ec->comp_data->transform.prev_degree = ec->comp_data->transform.degree;
                   return EINA_FALSE;
                }
           }

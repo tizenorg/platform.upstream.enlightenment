@@ -318,6 +318,7 @@ struct _E_Comp_Wl_Client_Data
         Eina_Bool start : 1;
         int sx, sy;
         int dx, dy;
+        int prev_degree;
         int degree;
 
         struct
