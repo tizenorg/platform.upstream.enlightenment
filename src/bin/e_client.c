@@ -2351,7 +2351,7 @@ _e_client_type_get(E_Client *ec)
 static void
 _e_client_visibility_zone_calculate(E_Zone *zone)
 {
-   E_Client *ec, *top_visible_ec = NULL, *demo_ec = NULL;
+   E_Client *ec, *top_visible_ec = NULL, *demo_ec;
    Evas_Object *o;
    Eina_Tiler *t;
    Eina_Rectangle r, *_r;
@@ -2401,6 +2401,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
           }
         eina_iterator_free(itr);
 
+        demo_ec = NULL;
         if (!e_util_strcmp("e_demo", ec->icccm.window_role))
           demo_ec = ec;
 
@@ -2469,7 +2470,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
            (!ec->focused) && (ec == top_visible_ec) &&
            (!ec->visibility.obscured) &&
            ((ec->icccm.accepts_focus) || (ec->icccm.take_focus)) &&
-           (demo_ec && !demo_ec->focused))
+           (!demo_ec || (demo_ec && !demo_ec->focused)))
         {
            e_client_focused_set(ec);
            evas_object_focus_set(ec->frame, 1);
