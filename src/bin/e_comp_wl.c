@@ -75,6 +75,7 @@ _e_comp_wl_transform_set(E_Client *ec)
    sy = ec->comp_data->transform.sy;
    dx = ec->comp_data->transform.dx;
    dy = ec->comp_data->transform.dy;
+   DBG("TRANSFORM s:%d,%d, d:%d,%d", sx, sy, dx, dy);
 
    orig_map = evas_object_map_get(ec->frame);
    if (!orig_map)
@@ -553,6 +554,11 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
      {
         e_comp->wl_comp_data->ptr.x = wl_fixed_from_int(ev->cur.output.x);
         e_comp->wl_comp_data->ptr.y = wl_fixed_from_int(ev->cur.output.y);
+        ec->comp_data->transform.sx = ev->prev.output.x;
+        ec->comp_data->transform.sy = ev->prev.output.y;
+        ec->comp_data->transform.dx = ev->cur.output.x;
+        ec->comp_data->transform.dy = ev->cur.output.y;
+        _e_comp_wl_transform_set(ec);
         return;
      }
    if (ec->comp_data->transform.enabled)
@@ -623,8 +629,6 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
                           40, 40))
                {
                   ec->comp_data->transform.start = 1;
-                  ec->comp_data->transform.sx = ec->mouse.current.mx;
-                  ec->comp_data->transform.sy = ec->mouse.current.my;
 
                   DBG("TRANSFORM start %d,%d",
                       ec->comp_data->transform.sx, ec->comp_data->transform.sy);
@@ -637,12 +641,8 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
           {
              if (ec->comp_data->transform.start)
                {
-                  ec->comp_data->transform.dx = wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x);
-                  ec->comp_data->transform.dy = wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y);
-
                   DBG("TRANSFORM end %d,%d",
                       ec->comp_data->transform.dx, ec->comp_data->transform.dy);
-                  _e_comp_wl_transform_set(ec);
                   ec->comp_data->transform.start = 0;
                   return EINA_FALSE;
                }
