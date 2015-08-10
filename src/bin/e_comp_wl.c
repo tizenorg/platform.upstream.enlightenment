@@ -407,6 +407,9 @@ _e_comp_wl_evas_cb_show(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EIN
 
    EINA_LIST_FOREACH(ec->e.state.video_child, l, tmp)
      evas_object_show(tmp->frame);
+
+   if (ec->comp_data->sub.below_obj)
+     evas_object_show(ec->comp_data->sub.below_obj);
 }
 
 static void
@@ -420,6 +423,9 @@ _e_comp_wl_evas_cb_hide(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EIN
 
    EINA_LIST_FOREACH(ec->e.state.video_child, l, tmp)
      evas_object_hide(tmp->frame);
+
+   if (ec->comp_data->sub.below_obj)
+     evas_object_hide(ec->comp_data->sub.below_obj);
 }
 
 static void
@@ -439,6 +445,9 @@ _e_comp_wl_evas_cb_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
         y = ec->y + subc->comp_data->sub.data->position.y;
         evas_object_move(subc->frame, x, y);
      }
+
+   if (ec->comp_data->sub.below_obj)
+     evas_object_move(ec->comp_data->sub.below_obj, ec->x, ec->y);
 }
 
 static void
@@ -451,7 +460,11 @@ _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    /* return if ec isn't both a parent of a subsurface and a subsurface itself */
-   if (!ec->comp_data->sub.list && !ec->comp_data->sub.below_list && !ec->comp_data->sub.data) return;
+   if (!ec->comp_data->sub.list && !ec->comp_data->sub.below_list && !ec->comp_data->sub.data)
+     {
+        if (ec->comp_data->sub.below_obj) _e_comp_wl_subsurface_restack(ec);
+        return;
+     }
 
    if (ec->comp_data->sub.data)
      parent = ec->comp_data->sub.data->parent;
@@ -1019,6 +1032,9 @@ _e_comp_wl_evas_cb_resize(void *data, Evas_Object *obj EINA_UNUSED, void *event 
      ec->comp_data->shell.configure_send(ec->comp_data->shell.surface,
                                  ec->comp->wl_comp_data->resize.edges,
                                  ec->client.w, ec->client.h);
+
+   if (ec->comp_data->sub.below_obj)
+     evas_object_resize(ec->comp_data->sub.below_obj, ec->w, ec->h);
 }
 
 static void
@@ -1598,9 +1614,6 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
                   ec->comp_data->mapped = EINA_FALSE;
                }
           }
-
-        if (ec->comp_data->sub.below_obj && evas_object_visible_get(ec->comp_data->sub.below_obj))
-          evas_object_hide(ec->comp_data->sub.below_obj);
      }
    else
      {
@@ -1614,9 +1627,6 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
                   ec->comp_data->mapped = EINA_TRUE;
                }
           }
-
-        if (ec->comp_data->sub.below_obj && !evas_object_visible_get(ec->comp_data->sub.below_obj))
-          evas_object_show(ec->comp_data->sub.below_obj);
      }
 
    if (state->new_attach || state->buffer_viewport.changed)
@@ -2343,19 +2353,40 @@ _e_comp_wl_subsurface_synchronized_get(E_Comp_Wl_Subsurf_Data *sdata)
 }
 
 static void
+_e_comp_wl_subsurface_bg_evas_cb_resize(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
+{
+   E_Client *ec;
+
+   if (!(ec = data)) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (!ec->comp_data) return;
+
+   if (ec->comp_data->sub.below_obj)
+      evas_object_resize(ec->comp_data->sub.below_obj, ec->w, ec->h);
+}
+
+static void
 _e_comp_wl_subsurface_create_below_bg_rectangle(E_Client *ec)
 {
-   short layer = evas_object_layer_get(ec->frame);
+   short layer;
+
+   if (ec->comp_data->sub.below_obj) return;
 
    ec->comp_data->sub.below_obj = evas_object_rectangle_add(ec->comp->evas);
    EINA_SAFETY_ON_NULL_RETURN(ec->comp_data->sub.below_obj);
 
+   layer = evas_object_layer_get(ec->frame);
    evas_object_layer_set(ec->comp_data->sub.below_obj, layer);
    evas_object_render_op_set(ec->comp_data->sub.below_obj, EVAS_RENDER_COPY);
-   evas_object_color_set(ec->comp_data->sub.below_obj, 0x00, 0x00, 0x00, 0xff);
+   evas_object_color_set(ec->comp_data->sub.below_obj, 0xFF, 0x00, 0x00, 0xff);
    evas_object_move(ec->comp_data->sub.below_obj, ec->x, ec->y);
    evas_object_resize(ec->comp_data->sub.below_obj, ec->w, ec->h);
    evas_object_name_set(ec->comp_data->sub.below_obj, "below_bg_rectangle");
+
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_RESIZE,
+                                  _e_comp_wl_subsurface_bg_evas_cb_resize, ec);
+
+   _e_comp_wl_subsurface_restack(ec);
 }
 
 static void
@@ -2911,6 +2942,9 @@ _e_comp_wl_client_cb_post_new(void *data EINA_UNUSED, E_Client *ec)
         e_comp_shape_queue(ec->comp);
         ec->need_shape_export = EINA_FALSE;
      }
+
+   if (ec->argb && ec->frame && !e_util_strcmp("video", ec->icccm.window_role))
+     _e_comp_wl_subsurface_create_below_bg_rectangle(ec);
 }
 
 #if 0
@@ -3652,8 +3686,6 @@ e_comp_wl_surface_commit(E_Client *ec)
                }
           }
 
-        if (ec->comp_data->sub.below_obj && evas_object_visible_get(ec->comp_data->sub.below_obj))
-          evas_object_hide(ec->comp_data->sub.below_obj);
      }
    else
      {
@@ -3667,9 +3699,6 @@ e_comp_wl_surface_commit(E_Client *ec)
                   ec->comp_data->mapped = EINA_TRUE;
                }
           }
-
-        if (ec->comp_data->sub.below_obj && !evas_object_visible_get(ec->comp_data->sub.below_obj))
-          evas_object_show(ec->comp_data->sub.below_obj);
      }
 
    return EINA_TRUE;
