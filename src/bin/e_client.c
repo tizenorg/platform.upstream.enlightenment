@@ -4463,10 +4463,14 @@ e_client_act_resize_begin(E_Client *ec, E_Binding_Event_Mouse_Button *ev)
         snprintf(source, sizeof(source) - 1, "mouse,down,%i", ev->button);
         _e_client_moveinfo_gather(ec, source);
      }
-   if ((ec->mouse.current.mx > (ec->x + ec->w / 5)) &&
-       (ec->mouse.current.mx < (ec->x + ec->w * 4 / 5)))
+
+   /* Use canvas.x, canvas.y of event.
+    * Transformed coordinates has to be considered for accurate resize_mode
+    * rather than absolute coordinates. */
+   if ((ev->canvas.x > (ec->x + ec->w / 5)) &&
+       (ev->canvas.x < (ec->x + ec->w * 4 / 5)))
      {
-        if (ec->mouse.current.my < (ec->y + ec->h / 2))
+        if (ev->canvas.y < (ec->y + ec->h / 2))
           {
              ec->resize_mode = E_POINTER_RESIZE_T;
           }
@@ -4475,14 +4479,14 @@ e_client_act_resize_begin(E_Client *ec, E_Binding_Event_Mouse_Button *ev)
              ec->resize_mode = E_POINTER_RESIZE_B;
           }
      }
-   else if (ec->mouse.current.mx < (ec->x + ec->w / 2))
+   else if (ev->canvas.x < (ec->x + ec->w / 2))
      {
-        if ((ec->mouse.current.my > (ec->y + ec->h / 5)) &&
-            (ec->mouse.current.my < (ec->y + ec->h * 4 / 5)))
+        if ((ev->canvas.y > (ec->y + ec->h / 5)) &&
+            (ev->canvas.y < (ec->y + ec->h * 4 / 5)))
           {
              ec->resize_mode = E_POINTER_RESIZE_L;
           }
-        else if (ec->mouse.current.my < (ec->y + ec->h / 2))
+        else if (ev->canvas.y < (ec->y + ec->h / 2))
           {
              ec->resize_mode = E_POINTER_RESIZE_TL;
           }
@@ -4493,12 +4497,12 @@ e_client_act_resize_begin(E_Client *ec, E_Binding_Event_Mouse_Button *ev)
      }
    else
      {
-        if ((ec->mouse.current.my > (ec->y + ec->h / 5)) &&
-            (ec->mouse.current.my < (ec->y + ec->h * 4 / 5)))
+        if ((ev->canvas.y > (ec->y + ec->h / 5)) &&
+            (ev->canvas.y < (ec->y + ec->h * 4 / 5)))
           {
              ec->resize_mode = E_POINTER_RESIZE_R;
           }
-        else if (ec->mouse.current.my < (ec->y + ec->h / 2))
+        else if (ev->canvas.y < (ec->y + ec->h / 2))
           {
              ec->resize_mode = E_POINTER_RESIZE_TR;
           }
