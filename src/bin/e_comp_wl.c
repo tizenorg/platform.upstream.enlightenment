@@ -2986,15 +2986,32 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
         e_pixmap_parent_window_set(ec->pixmap, 0);
      }
 
+   if (ec->comp_data->sub.data)
+     {
+        E_Comp_Wl_Subsurf_Data *sdata = ec->comp_data->sub.data;
+        if (sdata->parent && sdata->parent->comp_data)
+          {
+             /* remove this client from parents sub list */
+             sdata->parent->comp_data->sub.list =
+               eina_list_remove(sdata->parent->comp_data->sub.list, ec);
+             sdata->parent->comp_data->sub.list_pending =
+               eina_list_remove(sdata->parent->comp_data->sub.list_pending, ec);
+             sdata->parent->comp_data->sub.below_list =
+               eina_list_remove(sdata->parent->comp_data->sub.below_list, ec);
+             sdata->parent->comp_data->sub.below_list_pending =
+               eina_list_remove(sdata->parent->comp_data->sub.below_list_pending, ec);
+          }
+     }
+
    /* remove sub list */
    EINA_LIST_FREE(ec->comp_data->sub.list, subc)
-     subc->comp_data->sub.data->parent = NULL;
+     if (subc->comp_data && subc->comp_data->sub.data) subc->comp_data->sub.data->parent = NULL;
    EINA_LIST_FREE(ec->comp_data->sub.list_pending, subc)
-     subc->comp_data->sub.data->parent = NULL;
+     if (subc->comp_data && subc->comp_data->sub.data) subc->comp_data->sub.data->parent = NULL;
    EINA_LIST_FREE(ec->comp_data->sub.below_list, subc)
-     subc->comp_data->sub.data->parent = NULL;
+     if (subc->comp_data && subc->comp_data->sub.data) subc->comp_data->sub.data->parent = NULL;
    EINA_LIST_FREE(ec->comp_data->sub.below_list_pending, subc)
-     subc->comp_data->sub.data->parent = NULL;
+     if (subc->comp_data && subc->comp_data->sub.data) subc->comp_data->sub.data->parent = NULL;
 
    if ((ec->parent) && (ec->parent->modal == ec))
      {
