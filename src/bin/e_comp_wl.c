@@ -60,16 +60,40 @@ compute_degree(int sx, int sy, int dx, int dy, int mx, int my)
 }
 
 static void
+_e_comp_wl_transform_geometry_set(E_Client *ec)
+{
+   const Evas_Map *map;
+
+   if (!(map = evas_object_map_get(ec->frame))) return;
+
+   evas_map_point_precise_coord_get(map, 0,
+                                    &ec->comp_data->transform.maps[0].x,
+                                    &ec->comp_data->transform.maps[0].y,
+                                    &ec->comp_data->transform.maps[0].z);
+   evas_map_point_precise_coord_get(map, 1,
+                                    &ec->comp_data->transform.maps[1].x,
+                                    &ec->comp_data->transform.maps[1].y,
+                                    &ec->comp_data->transform.maps[1].z);
+   evas_map_point_precise_coord_get(map, 2,
+                                    &ec->comp_data->transform.maps[2].x,
+                                    &ec->comp_data->transform.maps[2].y,
+                                    &ec->comp_data->transform.maps[2].z);
+   evas_map_point_precise_coord_get(map, 3,
+                                    &ec->comp_data->transform.maps[3].x,
+                                    &ec->comp_data->transform.maps[3].y,
+                                    &ec->comp_data->transform.maps[3].z);
+}
+
+static void
 _e_comp_wl_transform_set(E_Client *ec)
 {
-   int nx, ny, nw, nh;
    int sx, sy, dx, dy;
    int mx, my;
    int transform_degree;
    Evas_Map *orig_map, *map;
 
-   mx = ec->client.x + ec->client.w/2;
-   my = ec->client.y + ec->client.h/2;
+   mx = ec->client.x + ec->client.w / 2;
+   my = ec->client.y + ec->client.h / 2;
 
    sx = ec->comp_data->transform.sx;
    sy = ec->comp_data->transform.sy;
@@ -93,29 +117,93 @@ _e_comp_wl_transform_set(E_Client *ec)
      map = evas_map_dup(orig_map);
 
    transform_degree = compute_degree(sx, sy, dx, dy, mx, my);
-   evas_map_util_rotate(map, transform_degree, mx, my);
+   ec->comp_data->transform.degree += transform_degree;
+   ec->comp_data->transform.degree %= 360;
 
+   if (ec->comp_data->transform.degree == 0)
+     {
+        evas_map_free(map);
+        evas_object_map_set(ec->frame, NULL);
+        evas_object_map_enable_set(ec->frame, EINA_FALSE);
+        return;
+     }
+
+   evas_map_util_rotate(map, transform_degree, mx, my);
+   evas_map_util_object_move_sync_set(map, EINA_TRUE);
    evas_object_map_set(ec->frame, map);
    evas_object_map_enable_set(ec->frame, map? EINA_TRUE: EINA_FALSE);
-
-   evas_map_point_coord_get(map, 0,
-                            &ec->comp_data->transform.maps[0].x,
-                            &ec->comp_data->transform.maps[0].y,
-                            &ec->comp_data->transform.maps[0].z);
-   evas_map_point_coord_get(map, 1,
-                            &ec->comp_data->transform.maps[1].x,
-                            &ec->comp_data->transform.maps[1].y,
-                            &ec->comp_data->transform.maps[1].z);
-   evas_map_point_coord_get(map, 2,
-                            &ec->comp_data->transform.maps[2].x,
-                            &ec->comp_data->transform.maps[2].y,
-                            &ec->comp_data->transform.maps[2].z);
-   evas_map_point_coord_get(map, 3,
-                            &ec->comp_data->transform.maps[3].x,
-                            &ec->comp_data->transform.maps[3].y,
-                            &ec->comp_data->transform.maps[3].z);
-
    evas_map_free(map);
+
+   _e_comp_wl_transform_geometry_set(ec);
+}
+
+static void
+_e_comp_wl_transform_resize(E_Client *ec)
+{
+   Evas_Map *map, *rotmap;
+   int mx, my;
+   double dx = 0, dy = 0;
+   double px0, py0, px1, py1, px2, py2, px3, py3;
+   int fx, fy, fw, fh;
+
+   if (ec->comp_data->transform.degree == 0) return;
+
+   mx = ec->client.x + ec->client.w / 2;
+   my = ec->client.y + ec->client.h / 2;
+
+   /* step 1: Rotate resized object and get map points */
+   map = evas_map_new(4);
+   evas_map_util_points_populate_from_geometry(map,
+                                               ec->x, ec->y,
+                                               ec->comp_data->width_from_viewport,
+                                               ec->comp_data->height_from_viewport,
+                                               0);
+   evas_map_util_rotate(map, ec->comp_data->transform.degree, mx, my);
+
+   evas_map_point_precise_coord_get(map, 0, &px0, &py0, NULL);
+   evas_map_point_precise_coord_get(map, 1, &px1, &py1, NULL);
+   evas_map_point_precise_coord_get(map, 2, &px2, &py2, NULL);
+   evas_map_point_precise_coord_get(map, 3, &px3, &py3, NULL);
+   evas_map_free(map);
+
+   /* step 2: get distance to keep up fixed position according to resize mode */
+   switch (ec->resize_mode)
+     {
+      case E_POINTER_RESIZE_R:
+      case E_POINTER_RESIZE_BR:
+         dx = ec->comp_data->transform.maps[0].x - px0;
+         dy = ec->comp_data->transform.maps[0].y - py0;
+         break;
+      case E_POINTER_RESIZE_BL:
+      case E_POINTER_RESIZE_B:
+         dx = ec->comp_data->transform.maps[1].x - px1;
+         dy = ec->comp_data->transform.maps[1].y - py1;
+         break;
+      case E_POINTER_RESIZE_TL:
+      case E_POINTER_RESIZE_L:
+         dx = ec->comp_data->transform.maps[2].x - px2;
+         dy = ec->comp_data->transform.maps[2].y - py2;
+         break;
+      case E_POINTER_RESIZE_T:
+      case E_POINTER_RESIZE_TR:
+         dx = ec->comp_data->transform.maps[3].x - px3;
+         dy = ec->comp_data->transform.maps[3].y - py3;
+         break;
+      default:
+         break;
+     }
+
+   /* step 3: set each points of the quadrangle */
+   rotmap = evas_map_new(4);
+   evas_map_util_points_populate_from_object_full(rotmap, ec->frame, 0);
+   evas_map_point_precise_coord_set(rotmap, 0, px0 + dx, py0 + dy, 0);
+   evas_map_point_precise_coord_set(rotmap, 1, px1 + dx, py1 + dy, 0);
+   evas_map_point_precise_coord_set(rotmap, 2, px2 + dx, py2 + dy, 0);
+   evas_map_point_precise_coord_set(rotmap, 3, px3 + dx, py3 + dy, 0);
+   evas_map_util_object_move_sync_set(rotmap, EINA_TRUE);
+   evas_object_map_set(ec->frame, rotmap);
+   evas_object_map_enable_set(ec->frame, rotmap? EINA_TRUE : EINA_FALSE);
+   evas_map_free(rotmap);
 }
 
 static void
@@ -1024,6 +1112,11 @@ _e_comp_wl_evas_cb_resize(void *data, Evas_Object *obj EINA_UNUSED, void *event 
            default:
              y -= ay;
           }
+
+        /* TODO: find point to resize transform object
+         * when this callback is not called */
+        _e_comp_wl_transform_resize(ec);
+
         ec->comp_data->shell.configure_send(ec->comp_data->shell.surface,
                                  ec->comp->wl_comp_data->resize.edges,
                                  x, y);
@@ -3111,6 +3204,8 @@ _e_comp_wl_client_cb_resize_begin(void *data EINA_UNUSED, E_Client *ec)
         ec->comp->wl_comp_data->resize.edges = 0;
         break;
      }
+
+   _e_comp_wl_transform_geometry_set(ec);
 }
 
 static void
@@ -3131,6 +3226,8 @@ _e_comp_wl_client_cb_resize_end(void *data EINA_UNUSED, E_Client *ec)
      }
 
    E_FREE_LIST(ec->pending_resize, free);
+
+   _e_comp_wl_transform_geometry_set(ec);
 }
 
 static void

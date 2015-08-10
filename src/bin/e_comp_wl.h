@@ -318,10 +318,11 @@ struct _E_Comp_Wl_Client_Data
         Eina_Bool start : 1;
         int sx, sy;
         int dx, dy;
+        int degree;
 
         struct
           {
-             int x, y, z;
+             double x, y, z;
           } maps[4];
      } transform;
 
