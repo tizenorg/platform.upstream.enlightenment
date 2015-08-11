@@ -623,6 +623,7 @@ e_pointer_type_pop(E_Pointer *ptr, void *obj, const char *type)
 EAPI void 
 e_pointer_mode_push(void *obj, E_Pointer_Mode mode)
 {
+#ifndef HAVE_WAYLAND_ONLY
    switch (mode)
      {
       case E_POINTER_RESIZE_TL:
@@ -663,6 +664,7 @@ e_pointer_mode_push(void *obj, E_Pointer_Mode mode)
 
       default: break;
      }
+#endif
 }
 
 EAPI void 
