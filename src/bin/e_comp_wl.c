@@ -322,7 +322,6 @@ _e_comp_wl_transform_resize(E_Client *ec)
    evas_map_point_precise_coord_set(rotmap, 1, px1 + dx, py1 + dy, 0);
    evas_map_point_precise_coord_set(rotmap, 2, px2 + dx, py2 + dy, 0);
    evas_map_point_precise_coord_set(rotmap, 3, px3 + dx, py3 + dy, 0);
-   evas_map_util_object_move_sync_set(rotmap, EINA_TRUE);
    evas_object_map_set(ec->frame, rotmap);
    evas_object_map_enable_set(ec->frame, rotmap? EINA_TRUE : EINA_FALSE);
    evas_map_free(rotmap);
@@ -3366,6 +3365,8 @@ _e_comp_wl_client_cb_resize_begin(void *data EINA_UNUSED, E_Client *ec)
 static void
 _e_comp_wl_client_cb_resize_end(void *data EINA_UNUSED, E_Client *ec)
 {
+   Evas_Map *map;
+
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
 
@@ -3386,6 +3387,11 @@ _e_comp_wl_client_cb_resize_end(void *data EINA_UNUSED, E_Client *ec)
      {
         e_moveresize_replace(EINA_TRUE);
         _e_comp_wl_transform_geometry_set(ec);
+
+        if ((map = (Evas_Map*)evas_object_map_get(ec->frame)))
+          {
+             evas_map_util_object_move_sync_set(map, EINA_TRUE);
+          }
      }
 }
 
