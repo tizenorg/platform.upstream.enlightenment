@@ -2353,12 +2353,14 @@ _e_client_type_get(E_Client *ec)
 static void
 _e_client_visibility_zone_calculate(E_Zone *zone)
 {
-   E_Client *ec, *top_visible_ec = NULL, *demo_ec = NULL;
+   E_Client *ec;
+   E_Client *focus_ec = NULL;
    Evas_Object *o;
    Eina_Tiler *t;
    Eina_Rectangle r, *_r;
-   Eina_Iterator *itr;
-   Eina_Bool is_intersected = EINA_FALSE;
+   Eina_Iterator *it;
+   Eina_Bool canvas_vis = EINA_TRUE;
+   Eina_Bool ec_vis, ec_opaque, changed;
    const int edge = 1;
 
    if (!zone) return;
@@ -2369,7 +2371,8 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
    EINA_RECTANGLE_SET(&r, zone->x, zone->y, zone->w, zone->h);
    eina_tiler_rect_add(t, &r);
 
-   for (o = evas_object_top_get(zone->comp->evas); o; o = evas_object_below_get(o))
+   o = evas_object_top_get(zone->comp->evas);
+   for (; o; o = evas_object_below_get(o))
      {
         ec = evas_object_data_get(o, "E_Client");
 
@@ -2378,77 +2381,78 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         if (e_object_is_del(E_OBJECT(ec))) continue;
         if (e_client_util_ignored_get(ec)) continue;
         if (ec->zone != zone) continue;
-        if (!E_INTERSECTS(ec->x, ec->y, ec->w, ec->h,
-                          zone->x, zone->y, zone->w, zone->h))
-          continue;
-
+        /* TODO: need to check whether window intersects with entire screen, not zone. */
+        /* if (!E_INTERSECTS(ec->x, ec->y, ec->w, ec->h, zone->x, zone->y, zone->w, zone->h)) continue; */
         /* check if internal animation is running */
         if (e_comp_object_is_animating(ec->frame)) continue;
-
         /* check if external animation is running */
         if (evas_object_data_get(ec->frame, "effect_running")) continue;
 
-        /* check intersects */
-        if (eina_tiler_empty(t)) is_intersected = EINA_FALSE;
+        ec_vis = ec_opaque = changed = EINA_FALSE;
 
-        itr = eina_tiler_iterator_new(t);
-        EINA_ITERATOR_FOREACH(itr, _r)
+        ////////////////////////////////////////////////////////////////////////
+        /* check some visible state */
+        if ((!ec->visible) ||
+            (ec->iconic) ||
+            (!evas_object_visible_get(ec->frame))
+#ifndef HAVE_WAYLAND_ONLY
+            /* check if it entered to hide process. TODO: support for wayland */
+            || (ec->icccm.state == ECORE_X_WINDOW_STATE_HINT_WITHDRAWN)
+#endif
+           )
           {
-             if (E_INTERSECTS(ec->x, ec->y, ec->w, ec->h,
-                              _r->x, _r->y, _r->w, _r->h))
+             ; /* do nothing */
+          }
+        else
+          {
+             if (canvas_vis)
                {
-                  is_intersected = EINA_TRUE;
-                  break;
+                  it = eina_tiler_iterator_new(t);
+                  EINA_ITERATOR_FOREACH(it, _r)
+                    {
+                       if (E_INTERSECTS(ec->x, ec->y, ec->w, ec->h,
+                                        _r->x, _r->y, _r->w, _r->h))
+                         {
+                            ec_vis = EINA_TRUE;
+                            break;
+                         }
+                    }
+                  eina_iterator_free(it);
                }
           }
-        eina_iterator_free(itr);
+        ////////////////////////////////////////////////////////////////////////
 
-        if (!e_util_strcmp("e_demo", ec->icccm.window_role))
-          demo_ec = ec;
-
-        /* check some visible state */
-        if ((!ec->visible) || (ec->iconic) ||
-            (!evas_object_visible_get(ec->frame)) ||
-            (e_object_is_del(E_OBJECT(ec))))
-          is_intersected = EINA_FALSE;
-
-#ifndef HAVE_WAYLAND_ONLY
-        /* check if it entered to hide process
-         * TODO: support wayland
-         */
-        if (ec->icccm.state ==  ECORE_X_WINDOW_STATE_HINT_WITHDRAWN)
-          is_intersected = EINA_FALSE;
-#endif
-        if (is_intersected)
+        if (ec_vis)
           {
-             Eina_Bool opaque = EINA_FALSE;
-
-             if (!top_visible_ec && e_util_strcmp("e_demo", ec->icccm.window_role))
-               top_visible_ec = ec;
-
              /* unobscured case */
-             if (ec->visibility.obscured == 0)
+             if (ec->visibility.obscured != 0)
                {
-                  /* previous state is unobscured */
-                  /* do nothing */
-               }
-             else
-               {
-                  /* previous state is obscured */
+                  /* previous state is obscured: -1 or 1 */
                   ec->visibility.obscured = 0;
-                  _e_client_event_simple(ec, E_EVENT_CLIENT_VISIBILITY_CHANGE);
+                  changed = EINA_TRUE;
+                  ELOG("CLIENT VIS ON", ec->pixmap, ec);
                }
 
-             /* check alpha window is opaque or not. */
-             if ((ec->visibility.opaque > 0) && (ec->argb)) opaque = EINA_TRUE;
-
-             /* if e_client is not alpha or opaque then delete intersect rect */
-             if ((!ec->argb) || (opaque))
+             /* subtract window region from canvas region */
+             if (canvas_vis)
                {
-                  EINA_RECTANGLE_SET(&r,
-                                     ec->x, ec->y,
-                                     ec->w + edge, ec->h + edge);
-                  eina_tiler_rect_del(t, &r);
+                  /* check alpha window is opaque or not. */
+                  if ((ec->visibility.opaque > 0) && (ec->argb))
+                    ec_opaque = EINA_TRUE;
+
+                  /* if e_client is not alpha or opaque then delete intersect rect */
+                  if ((!ec->argb) || (ec_opaque))
+                    {
+                       EINA_RECTANGLE_SET(&r,
+                                          ec->x,
+                                          ec->y,
+                                          ec->w + edge,
+                                          ec->h + edge);
+                       eina_tiler_rect_del(t, &r);
+
+                       if (eina_tiler_empty(t))
+                         canvas_vis = EINA_FALSE;
+                    }
                }
           }
         else
@@ -2456,30 +2460,39 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
              /* obscured case */
              if (ec->visibility.obscured != 1)
                {
-                  /* previous state is unobscured */
+                  /* previous state is unobscured: -1 or 0 */
                   ec->visibility.obscured = 1;
-                  _e_client_event_simple(ec, E_EVENT_CLIENT_VISIBILITY_CHANGE);
-               }
-             else
-               {
-                  /* previous state is obscured */
-                  /* do nothing */
+                  changed = EINA_TRUE;
+                  ELOG("CLIENT VIS OFF", ec->pixmap, ec);
                }
           }
 
-       if ((e_config->focus_policy_ext == E_FOCUS_EXT_TOP_STACK) &&
-           (!ec->focused) && (ec == top_visible_ec) &&
-           (!ec->visibility.obscured) &&
-           ((ec->icccm.accepts_focus) || (ec->icccm.take_focus)) &&
-           (!demo_ec || (demo_ec && !demo_ec->focused)))
-        {
-           e_client_focused_set(ec);
-           evas_object_focus_set(ec->frame, 1);
-        }
+        if (e_config->focus_policy_ext == E_FOCUS_EXT_TOP_STACK)
+          {
+             if ((ec_vis) && (!focus_ec))
+               {
+                  if ((ec->icccm.accepts_focus) || (ec->icccm.take_focus))
+                    {
+                       focus_ec = ec;
+                    }
+               }
+          }
 
+        if (changed)
+          _e_client_event_simple(ec, E_EVENT_CLIENT_VISIBILITY_CHANGE);
      }
 
    eina_tiler_free(t);
+
+   if (focus_ec)
+     {
+        ec = e_client_focused_get();
+        if (ec != focus_ec)
+          {
+             e_client_focused_set(focus_ec);
+             evas_object_focus_set(focus_ec->frame, 1);
+          }
+     }
 }
 
 EAPI void
@@ -3632,6 +3645,7 @@ e_client_focused_set(E_Client *ec)
    Eina_List *l, *ll;
 
    if (ec == focused) return;
+   ELOG("CLIENT FOCUS_SET", NULL, ec);
    focused = ec;
    if (ec)
      {
