@@ -623,7 +623,15 @@ e_pointer_type_pop(E_Pointer *ptr, void *obj, const char *type)
 EAPI void 
 e_pointer_mode_push(void *obj, E_Pointer_Mode mode)
 {
-#ifndef HAVE_WAYLAND_ONLY
+   E_Client *ec;
+   Evas_Object *o;
+
+   EINA_SAFETY_ON_NULL_RETURN(e_comp->pointer);
+
+   ecore_evas_cursor_get(e_comp->pointer->ee, &o, NULL, NULL, NULL);
+   if ((o != e_comp->pointer->o_ptr) && (ec = e_comp_object_client_get(o)))
+     return;
+
    switch (mode)
      {
       case E_POINTER_RESIZE_TL:
@@ -664,7 +672,6 @@ e_pointer_mode_push(void *obj, E_Pointer_Mode mode)
 
       default: break;
      }
-#endif
 }
 
 EAPI void 
