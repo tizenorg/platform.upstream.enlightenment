@@ -712,9 +712,10 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
      {
         if (!e_comp_wl_input_pointer_check(res)) continue;
         if (wl_resource_get_client(res) != wc) continue;
+
         wl_pointer_send_enter(res, serial, ec->comp_data->surface,
-                              wl_fixed_from_int(ev->canvas.x),
-                              wl_fixed_from_int(ev->canvas.y));
+                              wl_fixed_from_int(ev->canvas.x - ec->client.x),
+                              wl_fixed_from_int(ev->canvas.y - ec->client.y));
      }
 }
 
