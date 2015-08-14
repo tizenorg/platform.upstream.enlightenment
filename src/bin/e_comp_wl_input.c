@@ -36,11 +36,18 @@ _e_comp_wl_input_pointer_map(struct wl_resource *resource)
 }
 
 static void
-_e_comp_wl_input_pointer_confiugre(struct wl_resource *resource,
+_e_comp_wl_input_pointer_configure(struct wl_resource *resource,
                                    Evas_Coord x, Evas_Coord y,
                                    Evas_Coord w, Evas_Coord h)
 {
-   /* do nothing */
+   E_Pixmap *ep;
+   E_Client *ec;
+
+   if (!(ep = wl_resource_get_user_data(resource))) return;
+   if (!(ec = e_pixmap_client_get(ep))) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
+
+   e_client_util_move_resize_without_frame(ec, x, y, w, h);
 }
 
 static void
@@ -98,7 +105,7 @@ _e_comp_wl_input_pointer_cb_cursor_set(struct wl_client *client, struct wl_resou
 
         /* Set fuctions to prevent unwanted handling by shell */
         ec->comp_data->shell.surface = surface_resource;
-        ec->comp_data->shell.configure = _e_comp_wl_input_pointer_confiugre;
+        ec->comp_data->shell.configure = _e_comp_wl_input_pointer_configure;
         ec->comp_data->shell.map = _e_comp_wl_input_pointer_map;
      }
    /* ignore cursor changes during resize/move I guess */
