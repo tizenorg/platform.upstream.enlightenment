@@ -58,6 +58,7 @@ typedef enum _E_Layer
 
 extern EAPI int E_EVENT_COMPOSITOR_DISABLE;
 extern EAPI int E_EVENT_COMPOSITOR_ENABLE;
+extern EAPI int E_EVENT_COMPOSITOR_FPS_UPDATE;
 
 struct _E_Comp
 {
@@ -116,6 +117,7 @@ struct _E_Comp
    int             animating;
    double          frametimes[122];
    int             frameskip;
+   double          fps;
 
    int             nocomp_override; //number of times nocomp override has been requested
    Ecore_Window block_win;
@@ -138,6 +140,7 @@ struct _E_Comp
    Eina_Bool       nocomp_want : 1;
    Eina_Bool       saver : 1;
    Eina_Bool       shape_queue_blocked : 1;
+   Eina_Bool       calc_fps : 1;
 };
 
 

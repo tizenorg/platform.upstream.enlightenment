@@ -39,6 +39,7 @@ static int _e_comp_log_dom = -1;
 EAPI int E_EVENT_COMPOSITOR_RESIZE = -1;
 EAPI int E_EVENT_COMPOSITOR_DISABLE = -1;
 EAPI int E_EVENT_COMPOSITOR_ENABLE = -1;
+EAPI int E_EVENT_COMPOSITOR_FPS_UPDATE = -1;
 
 //////////////////////////////////////////////////////////////////////////
 #undef DBG
@@ -435,6 +436,35 @@ _e_comp_cb_update(E_Comp *c)
         evas_object_move(c->fps_bg, x, y);
         evas_object_resize(c->fps_bg, w, h);
         evas_object_move(c->fps_fg, x + 4, y + 4);
+     }
+   else
+     {
+        if (c->calc_fps)
+          {
+             double fps = 0.0, dt;
+             double t = ecore_time_get();
+             int i, avg_range = 60;
+
+             dt = t - c->frametimes[avg_range - 1];
+
+             if (dt > 0.0) fps = (double)avg_range / dt;
+             else fps = 0.0;
+
+             if (fps > 60.0) fps = 60.0;
+             if (fps < 0.0) fps = 0.0;
+
+             for (i = avg_range; i >= 1; i--)
+               c->frametimes[i] = c->frametimes[i - 1];
+
+             c->frametimes[0] = t;
+             c->frameskip++;
+             if (c->frameskip >= avg_range)
+               {
+                  c->frameskip = 0;
+				  c->fps = fps;
+				  ecore_event_add(E_EVENT_COMPOSITOR_FPS_UPDATE, NULL, NULL, NULL);
+               }
+          }
      }
    if (conf->lock_fps)
      {
@@ -964,6 +994,7 @@ e_comp_init(void)
    E_EVENT_COMP_OBJECT_ADD = ecore_event_type_new();
    E_EVENT_COMPOSITOR_DISABLE = ecore_event_type_new();
    E_EVENT_COMPOSITOR_ENABLE = ecore_event_type_new();
+   E_EVENT_COMPOSITOR_FPS_UPDATE = ecore_event_type_new();
 
    ignores = eina_hash_pointer_new(NULL);
 
