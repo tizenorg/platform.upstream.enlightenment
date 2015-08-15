@@ -1197,10 +1197,6 @@ _e_comp_wl_evas_cb_resize(void *data, Evas_Object *obj EINA_UNUSED, void *event 
    if ((ec->shading) || (ec->shaded)) return;
    if (!ec->comp_data->shell.configure_send) return;
 
-   /* TODO: find point to resize transform object
-    * when this callback is not called */
-   _e_comp_wl_transform_resize(ec);
-
    /* TODO: calculate x, y with transfrom object */
    if ((e_client_util_resizing_get(ec)) && (!ec->transformed))
      {
@@ -1876,6 +1872,10 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
 
    if (state->buffer_viewport.changed)
      _e_comp_wl_map_apply(ec);
+
+   /* resize transform object */
+   if ((ec->transformed) && (e_client_util_resizing_get(ec)))
+     _e_comp_wl_transform_resize(ec);
 
    state->sx = 0;
    state->sy = 0;
