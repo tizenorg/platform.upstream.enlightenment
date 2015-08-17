@@ -3386,9 +3386,18 @@ _e_comp_wl_client_cb_resize_end(void *data EINA_UNUSED, E_Client *ec)
 
    if (ec->transformed)
      {
+        int new_cx = 0, new_cy = 0, new_x = 0, new_y = 0;
         e_moveresize_replace(EINA_TRUE);
         _e_comp_wl_transform_geometry_set(ec);
 
+        new_cx = ec->comp_data->transform.maps[0].x + (ec->comp_data->transform.maps[2].x - ec->comp_data->transform.maps[0].x) / 2;
+        new_cy = ec->comp_data->transform.maps[0].y + (ec->comp_data->transform.maps[2].y - ec->comp_data->transform.maps[0].y) / 2;
+        _e_comp_wl_transform_point_get(new_cx, new_cy,
+                                       ec->comp_data->transform.maps[0].x, ec->comp_data->transform.maps[0].y,
+                                       &new_x, &new_y,
+                                       ec->comp_data->transform.degree);
+        DBG("TRANSFORM resize_end! new cx:%d, new cy:%d, new_x:%d, new_y:%d ", new_cx, new_cy, new_x, new_y);
+        e_client_util_move_without_frame(ec, new_x, new_y);
         if ((map = (Evas_Map*)evas_object_map_get(ec->frame)))
           {
              evas_map_util_object_move_sync_set(map, EINA_TRUE);
