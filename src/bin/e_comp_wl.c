@@ -25,6 +25,20 @@ static Eina_List *handlers = NULL;
 static double _last_event_time = 0.0;
 
 /* local functions */
+static double
+_e_comp_wl_transform_zoom_get(E_Client *ec)
+{
+   uintptr_t zoom;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ec, 1.0);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ec->frame, 1.0);
+
+   if (!(zoom = (uintptr_t)evas_object_data_get(ec->frame, "zoom")))
+     return 1.0;
+
+   return ((int)zoom / (double)100);
+}
+
 static void
 _e_comp_wl_transform_point_get(int cx, int cy,
                                int x, int y,
@@ -146,13 +160,13 @@ _e_comp_wl_transform_client_resize_handle(E_Client *ec)
 }
 
 static int
-compute_degree(int sx, int sy, int dx, int dy, int mx, int my)
+compute_degree(int sx, int sy, int dx, int dy, int cx, int cy)
 {
    double theta, degree;
    double svx, svy, dvx, dvy, length;
 
-   svx = sx - mx;
-   svy = sy - my;
+   svx = sx - cx;
+   svy = sy - cy;
    length = (double)((svx * svx) + (svy * svy));
    length = sqrt(length);
    if (length != 0)
@@ -161,8 +175,8 @@ compute_degree(int sx, int sy, int dx, int dy, int mx, int my)
         svy /= length;
      }
 
-   dvx = dx - mx;
-   dvy = dy - my;
+   dvx = dx - cx;
+   dvy = dy - cy;
    length = (double)((dvx * dvx) + (dvy * dvy));
    length = sqrt(length);
    if (length != 0)
@@ -180,12 +194,11 @@ compute_degree(int sx, int sy, int dx, int dy, int mx, int my)
 }
 
 static void
-_e_comp_wl_transform_geometry_set(E_Client *ec)
+_e_comp_wl_transform_geometry_set(E_Client *ec, const Evas_Map* map)
 {
-   const Evas_Map *map;
    int i;
 
-   if (!(map = evas_object_map_get(ec->frame))) return;
+   if (!map) return;
 
    for (i = 0; i < 4; i ++)
      {
@@ -211,19 +224,29 @@ _e_comp_wl_transform_unset(E_Client *ec)
 static void
 _e_comp_wl_transform_set(E_Client *ec)
 {
-   int sx, sy, dx, dy;
-   int mx, my;
+   int sx, sy, dx, dy, cx, cy;
    int transform_degree;
+   double zoom = 1.0;
    Evas_Map *map;
 
-   mx = ec->client.x + ec->client.w / 2;
-   my = ec->client.y + ec->client.h / 2;
+   cx = ec->client.x + ec->client.w / 2;
+   cy = ec->client.y + ec->client.h / 2;
 
    sx = ec->comp_data->transform.sx;
    sy = ec->comp_data->transform.sy;
    dx = ec->comp_data->transform.dx;
    dy = ec->comp_data->transform.dy;
    DBG("TRANSFORM s:%d,%d, d:%d,%d", sx, sy, dx, dy);
+
+   transform_degree = compute_degree(sx, sy, dx, dy, cx, cy);
+   ec->comp_data->transform.degree = transform_degree + ec->comp_data->transform.prev_degree;
+   ec->comp_data->transform.degree %= 360;
+
+   zoom = _e_comp_wl_transform_zoom_get(ec);
+
+   DBG("TRANSFORM degree:%d, prev_degree:%d, total_degree:%d zoom:%lf",
+       transform_degree, ec->comp_data->transform.prev_degree,
+       ec->comp_data->transform.degree, zoom);
 
    map = evas_map_new(4);
    evas_map_util_points_populate_from_geometry
@@ -234,20 +257,18 @@ _e_comp_wl_transform_set(E_Client *ec)
            ec->client.h,
            0);
 
-   transform_degree = compute_degree(sx, sy, dx, dy, mx, my);
-   ec->comp_data->transform.degree = transform_degree + ec->comp_data->transform.prev_degree;
-   ec->comp_data->transform.degree %= 360;
-   DBG("TRANSFORM degree:%d, prev_degree%d, total_degree:%d", transform_degree, ec->comp_data->transform.prev_degree, ec->comp_data->transform.degree);
+   evas_map_util_rotate(map, ec->comp_data->transform.degree, cx, cy);
+   _e_comp_wl_transform_geometry_set(ec, map);
 
-   evas_map_util_rotate(map, ec->comp_data->transform.degree, mx, my);
+   /* apply zoom if it has zoom value */
+   evas_map_util_zoom(map, zoom, zoom, cx, cy);
+
    evas_map_util_object_move_sync_set(map, EINA_TRUE);
    evas_object_map_set(ec->frame, map);
    evas_object_map_enable_set(ec->frame, map? EINA_TRUE: EINA_FALSE);
    evas_map_free(map);
 
    ec->transformed = EINA_TRUE;
-
-   _e_comp_wl_transform_geometry_set(ec);
 }
 
 static void
@@ -258,6 +279,7 @@ _e_comp_wl_transform_resize(E_Client *ec)
    double dx = 0, dy = 0;
    double px0, py0, px1, py1, px2, py2, px3, py3;
    int pw, ph;
+   double zoom = 1.0;
 
    if (!ec->transformed) return;
 
@@ -277,6 +299,9 @@ _e_comp_wl_transform_resize(E_Client *ec)
                                                pw, ph,
                                                0);
    evas_map_util_rotate(map, ec->comp_data->transform.degree, cx, cy);
+
+   zoom = _e_comp_wl_transform_zoom_get(ec);
+   evas_map_util_zoom(map, zoom, zoom, cx, cy);
 
    evas_map_point_precise_coord_get(map, 0, &px0, &py0, NULL);
    evas_map_point_precise_coord_get(map, 1, &px1, &py1, NULL);
@@ -3358,8 +3383,18 @@ _e_comp_wl_client_cb_resize_begin(void *data EINA_UNUSED, E_Client *ec)
 
    if (ec->transformed)
      {
+        double zoom;
         e_moveresize_replace(EINA_FALSE);
-        _e_comp_wl_transform_geometry_set(ec);
+
+        zoom = _e_comp_wl_transform_zoom_get(ec);
+
+        if (zoom == 1.0)
+          _e_comp_wl_transform_geometry_set(ec, evas_object_map_get(ec->frame));
+        else
+          {
+             /* TODO */
+             _e_comp_wl_transform_geometry_set(ec, evas_object_map_get(ec->frame));
+          }
      }
 }
 
@@ -3387,20 +3422,97 @@ _e_comp_wl_client_cb_resize_end(void *data EINA_UNUSED, E_Client *ec)
    if (ec->transformed)
      {
         int new_cx = 0, new_cy = 0, new_x = 0, new_y = 0;
+        double zoom;
         e_moveresize_replace(EINA_TRUE);
-        _e_comp_wl_transform_geometry_set(ec);
 
-        new_cx = ec->comp_data->transform.maps[0].x + (ec->comp_data->transform.maps[2].x - ec->comp_data->transform.maps[0].x) / 2;
-        new_cy = ec->comp_data->transform.maps[0].y + (ec->comp_data->transform.maps[2].y - ec->comp_data->transform.maps[0].y) / 2;
-        _e_comp_wl_transform_point_get(new_cx, new_cy,
-                                       ec->comp_data->transform.maps[0].x, ec->comp_data->transform.maps[0].y,
-                                       &new_x, &new_y,
-                                       ec->comp_data->transform.degree);
-        DBG("TRANSFORM resize_end! new cx:%d, new cy:%d, new_x:%d, new_y:%d ", new_cx, new_cy, new_x, new_y);
-        e_client_util_move_without_frame(ec, new_x, new_y);
-        if ((map = (Evas_Map*)evas_object_map_get(ec->frame)))
+        map = (Evas_Map*)evas_object_map_get(ec->frame);
+
+        if (!map) return;
+
+        zoom = _e_comp_wl_transform_zoom_get(ec);
+        if (zoom == 1.0)
           {
-             evas_map_util_object_move_sync_set(map, EINA_TRUE);
+             _e_comp_wl_transform_geometry_set(ec, map);
+
+             new_cx =
+                ec->comp_data->transform.maps[0].x +
+                (ec->comp_data->transform.maps[2].x -
+                 ec->comp_data->transform.maps[0].x) / 2;
+             new_cy = ec->comp_data->transform.maps[0].y +
+                (ec->comp_data->transform.maps[2].y -
+                 ec->comp_data->transform.maps[0].y) / 2;
+
+             _e_comp_wl_transform_point_get(new_cx, new_cy,
+                                            ec->comp_data->transform.maps[0].x,
+                                            ec->comp_data->transform.maps[0].y,
+                                            &new_x, &new_y,
+                                            ec->comp_data->transform.degree);
+
+             DBG("TRANSFORM resize_end! new cx:%d, new cy:%d, new_x:%d, new_y:%d ", new_cx, new_cy, new_x, new_y);
+
+             e_client_util_move_without_frame(ec, new_x, new_y);
+          }
+        else
+          {
+             int i;
+             double zoom = 1.0;
+             int cx, cy, pw, ph;
+             Evas_Map *tmp_map;
+
+             if (!e_pixmap_size_get(ec->pixmap, &pw, &ph))
+               {
+                  pw = ec->client.w;
+                  ph = ec->client.h;
+               }
+
+             cx = ec->client.x + pw / 2;
+             cy = ec->client.y + ph / 2;
+
+             tmp_map = evas_map_dup(map);
+             evas_map_util_zoom(tmp_map,
+                                1/zoom, 1/zoom,
+                                cx + ec->comp_data->transform.adjusted_x,
+                                cy + ec->comp_data->transform.adjusted_y);
+
+             _e_comp_wl_transform_geometry_set(ec, tmp_map);
+             evas_map_free(tmp_map);
+          }
+
+        evas_map_util_object_move_sync_set(map, EINA_TRUE);
+     }
+}
+
+static void
+_e_comp_wl_client_cb_move_end(void *data EINA_UNUSED, E_Client *ec)
+{
+   int i;
+   double dx, dy;
+   Evas_Map *map;
+
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
+
+   if (ec->transformed)
+     {
+        map = (Evas_Map*)evas_object_map_get(ec->frame);
+        if (!map) return;
+
+        if (!evas_object_data_get(ec->frame, "zoom"))
+          _e_comp_wl_transform_geometry_set(ec, map);
+        else
+          {
+             double px0, py0;
+
+             evas_map_point_precise_coord_get(map, 0, &px0, &py0, NULL);
+
+             dx = px0 - ec->comp_data->transform.maps[0].x;
+             dy = py0 - ec->comp_data->transform.maps[0].y;
+
+             for (i = 0; i < 4; i++)
+               {
+                  ec->comp_data->transform.maps[i].x += dx;
+                  ec->comp_data->transform.maps[i].y += dy;
+               }
           }
      }
 }
@@ -3849,6 +3961,8 @@ e_comp_wl_init(void)
                      _e_comp_wl_client_cb_resize_begin, NULL);
    e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,
                      _e_comp_wl_client_cb_resize_end, NULL);
+   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,
+                     _e_comp_wl_client_cb_move_end, NULL);
 
    _last_event_time = ecore_loop_time_get();
 
