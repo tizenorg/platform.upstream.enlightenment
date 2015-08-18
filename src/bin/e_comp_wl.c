@@ -3454,7 +3454,6 @@ _e_comp_wl_client_cb_resize_end(void *data EINA_UNUSED, E_Client *ec)
           }
         else
           {
-             int i;
              double zoom = 1.0;
              int cx, cy, pw, ph;
              Evas_Map *tmp_map;
