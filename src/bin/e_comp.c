@@ -201,15 +201,27 @@ _e_comp_fps_update(E_Comp *c)
         if (c->fps_bg) return;
 
         c->fps_bg = evas_object_rectangle_add(c->evas);
+#if 0
         evas_object_color_set(c->fps_bg, 0, 0, 0, 128);
+#else
+        evas_object_color_set(c->fps_bg, 0, 0, 0, 0);
+        evas_object_pass_events_set(c->fps_bg, 1);
+#endif
         evas_object_layer_set(c->fps_bg, E_LAYER_MAX);
         evas_object_name_set(c->fps_bg, "c->fps_bg");
         evas_object_lower(c->fps_bg);
         evas_object_show(c->fps_bg);
 
         c->fps_fg = evas_object_text_add(c->evas);
+#if 0
         evas_object_text_font_set(c->fps_fg, "Sans", 10);
         evas_object_text_text_set(c->fps_fg, "???");
+#else
+        evas_object_pass_events_set(c->fps_fg, 1);
+        evas_object_text_font_set(c->fps_fg, "TizenSans", 75);
+        evas_object_size_hint_align_set(c->fps_fg, EVAS_HINT_FILL, 0.0);
+        evas_object_text_text_set(c->fps_fg, "FPS: 0.0");
+#endif
         evas_object_color_set(c->fps_fg, 255, 255, 255, 255);
         evas_object_layer_set(c->fps_fg, E_LAYER_MAX);
         evas_object_name_set(c->fps_bg, "c->fps_fg");
@@ -396,6 +408,9 @@ _e_comp_cb_update(E_Comp *c)
         dt = t - c->frametimes[conf->fps_average_range - 1];
         if (dt > 0.0) fps = (double)conf->fps_average_range / dt;
         else fps = 0.0;
+#if 1
+        if (fps > 60.0) fps = 60.0;
+#endif
         if (fps > 0.0) snprintf(buf, sizeof(buf), "FPS: %1.1f", fps);
         else snprintf(buf, sizeof(buf), "N/A");
         for (i = 121; i >= 1; i--)
@@ -437,7 +452,12 @@ _e_comp_cb_update(E_Comp *c)
           }
         evas_object_move(c->fps_bg, x, y);
         evas_object_resize(c->fps_bg, w, h);
+#if 0
         evas_object_move(c->fps_fg, x + 4, y + 4);
+#else
+        evas_object_move(c->fps_fg, 90, 20);
+#endif
+
      }
    if (conf->lock_fps)
      {
