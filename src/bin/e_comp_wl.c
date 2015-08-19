@@ -1862,6 +1862,9 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
                   ec->comp_data->mapped = EINA_FALSE;
                }
           }
+
+        if (ec->comp_data->sub.below_obj && evas_object_visible_get(ec->comp_data->sub.below_obj))
+          evas_object_hide(ec->comp_data->sub.below_obj);
      }
    else
      {
@@ -1875,6 +1878,9 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
                   ec->comp_data->mapped = EINA_TRUE;
                }
           }
+
+        if (ec->comp_data->sub.below_obj && !evas_object_visible_get(ec->comp_data->sub.below_obj))
+          evas_object_show(ec->comp_data->sub.below_obj);
      }
 
    if (state->new_attach || state->buffer_viewport.changed)
@@ -4071,6 +4077,8 @@ e_comp_wl_surface_commit(E_Client *ec)
                }
           }
 
+        if (ec->comp_data->sub.below_obj && evas_object_visible_get(ec->comp_data->sub.below_obj))
+          evas_object_hide(ec->comp_data->sub.below_obj);
      }
    else
      {
@@ -4084,6 +4092,9 @@ e_comp_wl_surface_commit(E_Client *ec)
                   ec->comp_data->mapped = EINA_TRUE;
                }
           }
+
+        if (ec->comp_data->sub.below_obj && !evas_object_visible_get(ec->comp_data->sub.below_obj))
+          evas_object_show(ec->comp_data->sub.below_obj);
      }
 
    return EINA_TRUE;
