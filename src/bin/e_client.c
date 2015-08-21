@@ -626,7 +626,8 @@ void
 _e_client_transform_resize_end(E_Client *ec)
 {
    Evas_Map *map;
-   int new_cx = 0, new_cy = 0, new_x = 0, new_y = 0;
+   int new_x = 0, new_y = 0;
+   int cx, cy, pw, ph;
 
    if (!ec->transformed) return;
 
@@ -634,19 +635,20 @@ _e_client_transform_resize_end(E_Client *ec)
    if (!map) return;
 
    e_moveresize_replace(EINA_TRUE);
+
+   if (!e_pixmap_size_get(ec->pixmap, &pw, &ph))
+     {
+        pw = ec->client.w;
+        ph = ec->client.h;
+     }
+
+
+   cx = ec->client.x + pw / 2 + ec->transform.adjusted.x;
+   cy = ec->client.y + ph / 2 + ec->transform.adjusted.y;
+
    if (ec->transform.zoom != 1.0)
      {
-        int cx, cy, pw, ph;
         Evas_Map *tmp_map;
-
-        if (!e_pixmap_size_get(ec->pixmap, &pw, &ph))
-          {
-             pw = ec->client.w;
-             ph = ec->client.h;
-          }
-
-        cx = ec->client.x + pw / 2;
-        cy = ec->client.y + ph / 2;
 
         tmp_map = evas_map_dup(map);
         evas_map_util_zoom(tmp_map,
@@ -662,15 +664,9 @@ _e_client_transform_resize_end(E_Client *ec)
         _e_client_transform_geometry_save(ec, map);
      }
 
-   /* move original object to adjusted position during the resizing */
-   new_cx =
-      ec->transform.saved[0].x +
-      (ec->transform.saved[2].x - ec->transform.saved[0].x) / 2;
-   new_cy =
-      ec->transform.saved[0].y +
-      (ec->transform.saved[2].y - ec->transform.saved[0].y) / 2;
-
-   _e_client_transform_point_transform(new_cx, new_cy, ec->transform.angle,
+   /* move original object to adjusted position after resizing */
+   _e_client_transform_point_transform(cx, cy,
+                                       ec->transform.angle,
                                        ec->transform.saved[0].x,
                                        ec->transform.saved[0].y,
                                        &new_x, &new_y);
