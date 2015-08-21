@@ -655,10 +655,24 @@ struct E_Client
    } changes;
 
    struct
-  {
-     int opaque;
-     int obscured;
-  } visibility;
+   {
+      int opaque;
+      int obscured;
+   } visibility;
+
+   struct
+   {
+      double zoom;
+      double angle;
+
+      Evas_Point center;
+      Evas_Point adjusted;
+
+      struct
+        {
+           double x, y, z;
+        } saved[4];
+   } transform;
 
    unsigned int       visible : 1; // client is set to be visible by display server (never use this)
    unsigned int       hidden : 1; // set when window has been hidden by api and should not be shown
@@ -923,6 +937,10 @@ EAPI Eina_Bool e_client_desk_window_profile_available_check(E_Client *ec, const 
 EAPI void      e_client_desk_window_profile_wait_desk_set(E_Client *ec, E_Desk *desk);
 EAPI void      e_client_layout_cb_set(E_Client_Layout_Cb cb);
 EAPI void      e_client_visibility_calculate(void);
+
+EAPI void e_client_transform_update(E_Client *ec);
+EAPI void e_client_transform_apply(E_Client *ec, double degree, double zoom, int cx, int cy);
+EAPI void e_client_transform_clear(E_Client *ec);
 
 YOLO EAPI void e_client_focus_stack_set(Eina_List *l);
 

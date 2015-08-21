@@ -26,141 +26,7 @@ static double _last_event_time = 0.0;
 
 /* local functions */
 static double
-_e_comp_wl_transform_zoom_get(E_Client *ec)
-{
-   uintptr_t zoom;
-
-   EINA_SAFETY_ON_NULL_RETURN_VAL(ec, 1.0);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(ec->frame, 1.0);
-
-   if (!(zoom = (uintptr_t)evas_object_data_get(ec->frame, "zoom")))
-     return 1.0;
-
-   return ((int)zoom / (double)100);
-}
-
-static void
-_e_comp_wl_transform_point_get(int cx, int cy,
-                               int x, int y,
-                               int *tx, int *ty,
-                               int angle)
-{
-   double s = sin(angle * M_PI / 180);
-   double c = cos(angle * M_PI / 180);
-   int rx, ry;
-
-   x -= cx;
-   y -= cy;
-
-   rx = x * c + y * s;
-   ry = - x * s + y * c;
-
-   rx += cx;
-   ry += cy;
-
-   *tx = rx;
-   *ty = ry;
-}
-
-static void
-_e_comp_wl_transform_client_resize_handle(E_Client *ec)
-{
-   int new_x, new_y, new_w, new_h;
-   int org_w, org_h;
-   int button_id;
-   int cx, cy;
-   Evas_Point current, moveinfo;
-
-   if (e_object_is_del(E_OBJECT(ec))) return;
-   if (e_client_util_ignored_get(ec)) return;
-   if (!ec->comp_data->surface) return;
-   if (!ec->transformed) return;
-
-   button_id = ec->moveinfo.down.button;
-
-   org_w = ec->mouse.last_down[button_id - 1].w;
-   org_h = ec->mouse.last_down[button_id - 1].h;
-
-   new_w = ec->client.w;
-   new_h = ec->client.h;
-   new_x = ec->client.x;
-   new_y = ec->client.y;
-
-   /* step 1: get center coordinate its' based on original object geometry*/
-   cx = ec->client.x + org_w / 2;
-   cy = ec->client.y + org_h / 2;
-
-   /* step 2: transform coordinates of mouse position
-    * subtract adjusted value from mouse position is needed */
-   current.x = ec->mouse.current.mx - ec->comp_data->transform.adjusted_x;
-   current.y = ec->mouse.current.my - ec->comp_data->transform.adjusted_y;
-   moveinfo.x = ec->moveinfo.down.mx - ec->comp_data->transform.adjusted_x;
-   moveinfo.y = ec->moveinfo.down.my - ec->comp_data->transform.adjusted_y;
-
-   _e_comp_wl_transform_point_get(cx, cy,
-                                  current.x, current.y,
-                                  &current.x, &current.y,
-                                  ec->comp_data->transform.degree);
-   _e_comp_wl_transform_point_get(cx, cy,
-                                  moveinfo.x, moveinfo.y,
-                                  &moveinfo.x, &moveinfo.y,
-                                  ec->comp_data->transform.degree);
-
-   /* step 3: calculate new size */
-   if ((ec->resize_mode == E_POINTER_RESIZE_TR) ||
-       (ec->resize_mode == E_POINTER_RESIZE_R) ||
-       (ec->resize_mode == E_POINTER_RESIZE_BR))
-     {
-        if ((button_id >= 1) && (button_id <= 3))
-          new_w = org_w + (current.x - moveinfo.x);
-        else
-          new_w = ec->moveinfo.down.w + (current.x - moveinfo.x);
-     }
-   else if ((ec->resize_mode == E_POINTER_RESIZE_TL) ||
-            (ec->resize_mode == E_POINTER_RESIZE_L) ||
-            (ec->resize_mode == E_POINTER_RESIZE_BL))
-     {
-        if ((button_id >= 1) && (button_id <= 3))
-          new_w = org_w - (current.x - moveinfo.x);
-        else
-          new_w = ec->moveinfo.down.w - (current.x - moveinfo.x);
-     }
-
-   if ((ec->resize_mode == E_POINTER_RESIZE_TL) ||
-       (ec->resize_mode == E_POINTER_RESIZE_T) ||
-       (ec->resize_mode == E_POINTER_RESIZE_TR))
-     {
-        if ((button_id >= 1) && (button_id <= 3))
-          new_h = org_h - (current.y - moveinfo.y);
-        else
-          new_h = ec->moveinfo.down.h - (current.y - moveinfo.y);
-     }
-   else if ((ec->resize_mode == E_POINTER_RESIZE_BL) ||
-            (ec->resize_mode == E_POINTER_RESIZE_B) ||
-            (ec->resize_mode == E_POINTER_RESIZE_BR))
-     {
-        if ((button_id >= 1) && (button_id <= 3))
-          new_h = org_h + (current.y - moveinfo.y);
-        else
-          new_h = ec->moveinfo.down.h + (current.y - moveinfo.y);
-     }
-
-   /* step 4: move to new position */
-   if ((ec->resize_mode == E_POINTER_RESIZE_TL) ||
-       (ec->resize_mode == E_POINTER_RESIZE_L) ||
-       (ec->resize_mode == E_POINTER_RESIZE_BL))
-     new_x += (new_w - org_w);
-   if ((ec->resize_mode == E_POINTER_RESIZE_TL) ||
-       (ec->resize_mode == E_POINTER_RESIZE_T) ||
-       (ec->resize_mode == E_POINTER_RESIZE_TR))
-     new_y += (new_h - org_h);
-
-   /* step 5: set geometry to new value */
-   evas_object_geometry_set(ec->frame, new_x, new_y, new_w, new_h);
-}
-
-static int
-compute_degree(int sx, int sy, int dx, int dy, int cx, int cy)
+_e_comp_wl_transform_degree_compute(int sx, int sy, int dx, int dy, int cx, int cy)
 {
    double theta, degree;
    double svx, svy, dvx, dvy, length;
@@ -194,162 +60,45 @@ compute_degree(int sx, int sy, int dx, int dy, int cx, int cy)
 }
 
 static void
-_e_comp_wl_transform_geometry_set(E_Client *ec, const Evas_Map* map)
-{
-   int i;
-
-   if (!map) return;
-
-   for (i = 0; i < 4; i ++)
-     {
-        evas_map_point_precise_coord_get(map, i,
-                                         &ec->comp_data->transform.maps[i].x,
-                                         &ec->comp_data->transform.maps[i].y,
-                                         &ec->comp_data->transform.maps[i].z);
-     }
-}
-
-static void
 _e_comp_wl_transform_unset(E_Client *ec)
 {
    ec->comp_data->transform.start = 0;
-   ec->comp_data->transform.degree = 0;
+   ec->comp_data->transform.cur_degree = 0;
    ec->comp_data->transform.prev_degree = 0;
-   evas_object_map_enable_set(ec->frame, EINA_FALSE);
-   evas_object_map_set(ec->frame, NULL);
 
-   ec->transformed = EINA_FALSE;
+   e_client_transform_apply(ec, 0.0, -1.0,
+                            ec->client.x - 1, ec->client.y - 1);
 }
 
 static void
 _e_comp_wl_transform_set(E_Client *ec)
 {
+   E_Comp_Wl_Client_Data *cdata;
    int sx, sy, dx, dy, cx, cy;
-   int transform_degree;
-   double zoom = 1.0;
-   Evas_Map *map;
+   double transform_degree;
+
+   cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
 
    cx = ec->client.x + ec->client.w / 2;
    cy = ec->client.y + ec->client.h / 2;
 
-   sx = ec->comp_data->transform.sx;
-   sy = ec->comp_data->transform.sy;
-   dx = ec->comp_data->transform.dx;
-   dy = ec->comp_data->transform.dy;
+   sx = cdata->transform.sx;
+   sy = cdata->transform.sy;
+   dx = cdata->transform.dx;
+   dy = cdata->transform.dy;
    DBG("TRANSFORM s:%d,%d, d:%d,%d", sx, sy, dx, dy);
 
-   transform_degree = compute_degree(sx, sy, dx, dy, cx, cy);
-   ec->comp_data->transform.degree = transform_degree + ec->comp_data->transform.prev_degree;
-   ec->comp_data->transform.degree %= 360;
+   transform_degree =
+      _e_comp_wl_transform_degree_compute(sx, sy, dx, dy, cx, cy);
+   cdata->transform.cur_degree = transform_degree + cdata->transform.prev_degree;
+   cdata->transform.cur_degree = fmod(cdata->transform.cur_degree,  360.0);
 
-   zoom = _e_comp_wl_transform_zoom_get(ec);
+   DBG("TRANSFORM degree:%lf, prev_degree:%lf, total_degree:%lf",
+       transform_degree,
+       cdata->transform.prev_degree,
+       cdata->transform.cur_degree);
 
-   DBG("TRANSFORM degree:%d, prev_degree:%d, total_degree:%d zoom:%lf",
-       transform_degree, ec->comp_data->transform.prev_degree,
-       ec->comp_data->transform.degree, zoom);
-
-   map = evas_map_new(4);
-   evas_map_util_points_populate_from_geometry
-          (map,
-           ec->client.x,
-           ec->client.y,
-           ec->client.w,
-           ec->client.h,
-           0);
-
-   evas_map_util_rotate(map, ec->comp_data->transform.degree, cx, cy);
-   _e_comp_wl_transform_geometry_set(ec, map);
-
-   /* apply zoom if it has zoom value */
-   evas_map_util_zoom(map, zoom, zoom, cx, cy);
-
-   evas_map_util_object_move_sync_set(map, EINA_TRUE);
-   evas_object_map_set(ec->frame, map);
-   evas_object_map_enable_set(ec->frame, map? EINA_TRUE: EINA_FALSE);
-   evas_map_free(map);
-
-   ec->transformed = EINA_TRUE;
-}
-
-static void
-_e_comp_wl_transform_resize(E_Client *ec)
-{
-   Evas_Map *map, *rotmap;
-   int cx, cy;
-   double dx = 0, dy = 0;
-   double px0, py0, px1, py1, px2, py2, px3, py3;
-   int pw, ph;
-   double zoom = 1.0;
-
-   if (!ec->transformed) return;
-
-   if (!e_pixmap_size_get(ec->pixmap, &pw, &ph))
-     {
-        pw = ec->client.w;
-        ph = ec->client.h;
-     }
-
-   cx = ec->client.x + pw / 2;
-   cy = ec->client.y + ph / 2;
-
-   /* step 1: Rotate resized object and get map points */
-   map = evas_map_new(4);
-   evas_map_util_points_populate_from_geometry(map,
-                                               ec->client.x, ec->client.y,
-                                               pw, ph,
-                                               0);
-   evas_map_util_rotate(map, ec->comp_data->transform.degree, cx, cy);
-
-   zoom = _e_comp_wl_transform_zoom_get(ec);
-   evas_map_util_zoom(map, zoom, zoom, cx, cy);
-
-   evas_map_point_precise_coord_get(map, 0, &px0, &py0, NULL);
-   evas_map_point_precise_coord_get(map, 1, &px1, &py1, NULL);
-   evas_map_point_precise_coord_get(map, 2, &px2, &py2, NULL);
-   evas_map_point_precise_coord_get(map, 3, &px3, &py3, NULL);
-   evas_map_free(map);
-
-   /* step 2: get adjusted values to keep up fixed position according
-    * to resize mode */
-   switch (ec->resize_mode)
-     {
-      case E_POINTER_RESIZE_R:
-      case E_POINTER_RESIZE_BR:
-         dx = ec->comp_data->transform.maps[0].x - px0;
-         dy = ec->comp_data->transform.maps[0].y - py0;
-         break;
-      case E_POINTER_RESIZE_BL:
-      case E_POINTER_RESIZE_B:
-         dx = ec->comp_data->transform.maps[1].x - px1;
-         dy = ec->comp_data->transform.maps[1].y - py1;
-         break;
-      case E_POINTER_RESIZE_TL:
-      case E_POINTER_RESIZE_L:
-         dx = ec->comp_data->transform.maps[2].x - px2;
-         dy = ec->comp_data->transform.maps[2].y - py2;
-         break;
-      case E_POINTER_RESIZE_T:
-      case E_POINTER_RESIZE_TR:
-         dx = ec->comp_data->transform.maps[3].x - px3;
-         dy = ec->comp_data->transform.maps[3].y - py3;
-         break;
-      default:
-         break;
-     }
-
-   ec->comp_data->transform.adjusted_x = dx;
-   ec->comp_data->transform.adjusted_y = dy;
-
-   /* step 3: set each points of the quadrangle */
-   rotmap = evas_map_new(4);
-   evas_map_util_points_populate_from_object_full(rotmap, ec->frame, 0);
-   evas_map_point_precise_coord_set(rotmap, 0, px0 + dx, py0 + dy, 0);
-   evas_map_point_precise_coord_set(rotmap, 1, px1 + dx, py1 + dy, 0);
-   evas_map_point_precise_coord_set(rotmap, 2, px2 + dx, py2 + dy, 0);
-   evas_map_point_precise_coord_set(rotmap, 3, px3 + dx, py3 + dy, 0);
-   evas_object_map_set(ec->frame, rotmap);
-   evas_object_map_enable_set(ec->frame, rotmap? EINA_TRUE : EINA_FALSE);
-   evas_map_free(rotmap);
+   e_client_transform_apply(ec, cdata->transform.cur_degree, -1.0, cx, cy);
 }
 
 static void
@@ -795,13 +544,7 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
 
    if (!(ec = data)) return;
 
-   if (ec->cur_mouse_action)
-     {
-        if (e_client_util_resizing_get(ec))
-          _e_comp_wl_transform_client_resize_handle(ec);
-        return;
-     }
-
+   if (ec->cur_mouse_action) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (e_client_util_ignored_get(ec)) return;
    if (!ec->comp_data->surface) return;
@@ -813,17 +556,6 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
         ec->comp_data->transform.dy = ev->cur.output.y;
         _e_comp_wl_transform_set(ec);
         return;
-     }
-   if (ec->comp_data->transform.enabled)
-     {
-        if (E_INSIDE(wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x),
-                     wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y),
-                     ec->comp_data->transform.maps[2].x ? ec->comp_data->transform.maps[2].x - 40 : ec->client.x + ec->client.w - 40,
-                     ec->comp_data->transform.maps[2].x ? ec->comp_data->transform.maps[2].x - 40 : ec->client.x + ec->client.w - 40,
-                     40, 40))
-          {
-             DBG("TRANSFORM this area for transform!!");
-          }
      }
 
    wc = wl_resource_get_client(ec->comp_data->surface);
@@ -871,8 +603,6 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
 
    if (ec->comp_data->transform.enabled)
      {
-        DBG("TRANSFORM enabled state:%s", state==WL_POINTER_BUTTON_STATE_PRESSED?"pressed":"released");
-        DBG("TRANSFORM is inside of %d,%d (%dx%d)??", ec->client.x + ec->client.w - 40, ec->client.y + ec->client.h - 40, 40, 40);
         if (state == WL_POINTER_BUTTON_STATE_PRESSED)
           {
              if (E_INSIDE(wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x),
@@ -899,8 +629,8 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
                   DBG("TRANSFORM end %d,%d",
                       ec->comp_data->transform.dx, ec->comp_data->transform.dy);
                   ec->comp_data->transform.start = 0;
-                  ec->comp_data->transform.prev_degree = ec->comp_data->transform.degree;
-                  if (ec->comp_data->transform.degree == 0)
+                  ec->comp_data->transform.prev_degree = ec->comp_data->transform.cur_degree;
+                  if (ec->comp_data->transform.cur_degree == 0)
                     _e_comp_wl_transform_unset(ec);
                   return EINA_FALSE;
                }
@@ -1905,8 +1635,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
      _e_comp_wl_map_apply(ec);
 
    /* resize transform object */
-   if ((ec->transformed) && (e_client_util_resizing_get(ec)))
-     _e_comp_wl_transform_resize(ec);
+   if (ec->transformed)
+     e_client_transform_update(ec);
 
    state->sx = 0;
    state->sy = 0;
@@ -3386,29 +3116,11 @@ _e_comp_wl_client_cb_resize_begin(void *data EINA_UNUSED, E_Client *ec)
         ec->comp->wl_comp_data->resize.edges = 0;
         break;
      }
-
-   if (ec->transformed)
-     {
-        double zoom;
-        e_moveresize_replace(EINA_FALSE);
-
-        zoom = _e_comp_wl_transform_zoom_get(ec);
-
-        if (zoom == 1.0)
-          _e_comp_wl_transform_geometry_set(ec, evas_object_map_get(ec->frame));
-        else
-          {
-             /* TODO */
-             _e_comp_wl_transform_geometry_set(ec, evas_object_map_get(ec->frame));
-          }
-     }
 }
 
 static void
 _e_comp_wl_client_cb_resize_end(void *data EINA_UNUSED, E_Client *ec)
 {
-   Evas_Map *map;
-
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
 
@@ -3424,102 +3136,6 @@ _e_comp_wl_client_cb_resize_end(void *data EINA_UNUSED, E_Client *ec)
      }
 
    E_FREE_LIST(ec->pending_resize, free);
-
-   if (ec->transformed)
-     {
-        int new_cx = 0, new_cy = 0, new_x = 0, new_y = 0;
-        double zoom;
-        e_moveresize_replace(EINA_TRUE);
-
-        map = (Evas_Map*)evas_object_map_get(ec->frame);
-
-        if (!map) return;
-
-        zoom = _e_comp_wl_transform_zoom_get(ec);
-        if (zoom == 1.0)
-          {
-             _e_comp_wl_transform_geometry_set(ec, map);
-
-             new_cx =
-                ec->comp_data->transform.maps[0].x +
-                (ec->comp_data->transform.maps[2].x -
-                 ec->comp_data->transform.maps[0].x) / 2;
-             new_cy = ec->comp_data->transform.maps[0].y +
-                (ec->comp_data->transform.maps[2].y -
-                 ec->comp_data->transform.maps[0].y) / 2;
-
-             _e_comp_wl_transform_point_get(new_cx, new_cy,
-                                            ec->comp_data->transform.maps[0].x,
-                                            ec->comp_data->transform.maps[0].y,
-                                            &new_x, &new_y,
-                                            ec->comp_data->transform.degree);
-
-             DBG("TRANSFORM resize_end! new cx:%d, new cy:%d, new_x:%d, new_y:%d ", new_cx, new_cy, new_x, new_y);
-
-             e_client_util_move_without_frame(ec, new_x, new_y);
-          }
-        else
-          {
-             double zoom = 1.0;
-             int cx, cy, pw, ph;
-             Evas_Map *tmp_map;
-
-             if (!e_pixmap_size_get(ec->pixmap, &pw, &ph))
-               {
-                  pw = ec->client.w;
-                  ph = ec->client.h;
-               }
-
-             cx = ec->client.x + pw / 2;
-             cy = ec->client.y + ph / 2;
-
-             tmp_map = evas_map_dup(map);
-             evas_map_util_zoom(tmp_map,
-                                1/zoom, 1/zoom,
-                                cx + ec->comp_data->transform.adjusted_x,
-                                cy + ec->comp_data->transform.adjusted_y);
-
-             _e_comp_wl_transform_geometry_set(ec, tmp_map);
-             evas_map_free(tmp_map);
-          }
-
-        evas_map_util_object_move_sync_set(map, EINA_TRUE);
-     }
-}
-
-static void
-_e_comp_wl_client_cb_move_end(void *data EINA_UNUSED, E_Client *ec)
-{
-   int i;
-   double dx, dy;
-   Evas_Map *map;
-
-   if (e_object_is_del(E_OBJECT(ec))) return;
-   if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
-
-   if (ec->transformed)
-     {
-        map = (Evas_Map*)evas_object_map_get(ec->frame);
-        if (!map) return;
-
-        if (!evas_object_data_get(ec->frame, "zoom"))
-          _e_comp_wl_transform_geometry_set(ec, map);
-        else
-          {
-             double px0, py0;
-
-             evas_map_point_precise_coord_get(map, 0, &px0, &py0, NULL);
-
-             dx = px0 - ec->comp_data->transform.maps[0].x;
-             dy = py0 - ec->comp_data->transform.maps[0].y;
-
-             for (i = 0; i < 4; i++)
-               {
-                  ec->comp_data->transform.maps[i].x += dx;
-                  ec->comp_data->transform.maps[i].y += dy;
-               }
-          }
-     }
 }
 
 static void
@@ -3966,8 +3582,6 @@ e_comp_wl_init(void)
                      _e_comp_wl_client_cb_resize_begin, NULL);
    e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,
                      _e_comp_wl_client_cb_resize_end, NULL);
-   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,
-                     _e_comp_wl_client_cb_move_end, NULL);
 
    _last_event_time = ecore_loop_time_get();
 
