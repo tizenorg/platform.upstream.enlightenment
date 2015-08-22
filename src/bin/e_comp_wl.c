@@ -2682,6 +2682,12 @@ _e_comp_wl_subsurface_create(E_Client *ec, E_Client *epc, uint32_t id, struct wl
 
    if (epc)
      {
+        if (epc->frame)
+          {
+            short layer = evas_object_layer_get(epc->frame);
+            evas_object_layer_set(ec->frame, layer);
+          }
+
         if (epc->comp_data)
           {
              /* append this client to the parents subsurface list */
