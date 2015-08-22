@@ -430,6 +430,13 @@ _e_comp_wl_evas_cb_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
         evas_object_move(subc->frame, x, y);
      }
 
+   EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
+     {
+        x = ec->x + subc->comp_data->sub.data->position.x;
+        y = ec->y + subc->comp_data->sub.data->position.y;
+        evas_object_move(subc->frame, x, y);
+     }
+
    if (ec->comp_data->sub.below_obj)
      evas_object_move(ec->comp_data->sub.below_obj, ec->x, ec->y);
 }
