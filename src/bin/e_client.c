@@ -2658,6 +2658,49 @@ _e_client_type_get(E_Client *ec)
    return ec->client_type;
 }
 
+#ifdef HAVE_WAYLAND_ONLY
+static void
+_e_client_transform_sub_apply(E_Client *ec, E_Client *epc, double zoom)
+{
+   E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+   E_Comp_Wl_Subsurf_Data *sdata = cdata->sub.data;
+   E_Client *subc;
+   Eina_List *l;
+   int px, py;
+   int ox, oy, ow, oh;
+   int mx, my, mw, mh;
+   Evas_Map *map;
+
+   EINA_SAFETY_ON_NULL_RETURN(sdata);
+
+   ox = sdata->position.x;
+   oy = sdata->position.y;
+   ow = cdata->width_from_viewport;
+   oh = cdata->height_from_viewport;
+
+   map = (Evas_Map*)evas_object_map_get(epc->frame);
+   evas_map_point_coord_get(map, 0, &px, &py, 0);
+
+   mx = ox * zoom + px;
+   my = oy * zoom + py;
+   mw = ow * zoom;
+   mh = oh * zoom;
+
+   map = evas_map_new(4);
+   evas_map_util_points_populate_from_geometry(map, mx, my, mw, mh, 0);
+   evas_map_util_object_move_sync_set(map, EINA_TRUE);
+   evas_object_map_set(ec->frame, map);
+   evas_object_map_enable_set(ec->frame, EINA_TRUE);
+
+   EINA_LIST_FOREACH(cdata->sub.list, l, subc)
+     _e_client_transform_sub_apply(subc, ec, zoom);
+   EINA_LIST_REVERSE_FOREACH(cdata->sub.below_list, l, subc)
+     _e_client_transform_sub_apply(subc, ec, zoom);
+
+   evas_map_free(map);
+}
+#endif
+
 static void
 _e_client_visibility_zone_calculate(E_Zone *zone)
 {
@@ -5438,6 +5481,14 @@ EAPI void e_client_transform_update(E_Client *ec)
 EAPI void e_client_transform_apply(E_Client *ec, double angle, double zoom, int cx, int cy)
 {
    Evas_Map *map;
+#ifdef HAVE_WAYLAND_ONLY
+   E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+   E_Client *subc;
+   Eina_List *l;
+
+   /* check if it's subsurface */
+   if (cdata->sub.data) return;
+#endif
 
    /* check if it's different with current state */
    if ((ec->transform.angle == angle) &&
@@ -5470,6 +5521,20 @@ EAPI void e_client_transform_apply(E_Client *ec, double angle, double zoom, int 
    evas_map_util_object_move_sync_set(map, EINA_TRUE);
    evas_object_map_set(ec->frame, map);
    evas_object_map_enable_set(ec->frame, EINA_TRUE);
+
+#ifdef HAVE_WAYLAND_ONLY
+   if (cdata->sub.below_obj)
+     {
+        evas_object_map_set(cdata->sub.below_obj, map);
+        evas_object_map_enable_set(cdata->sub.below_obj, EINA_TRUE);
+     }
+
+   EINA_LIST_FOREACH(cdata->sub.list, l, subc)
+     _e_client_transform_sub_apply(subc, ec, zoom);
+   EINA_LIST_REVERSE_FOREACH(cdata->sub.below_list, l, subc)
+     _e_client_transform_sub_apply(subc, ec, zoom);
+#endif
+
    evas_map_free(map);
 
    ec->transform.zoom = zoom;
