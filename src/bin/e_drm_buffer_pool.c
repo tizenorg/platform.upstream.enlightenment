@@ -121,6 +121,17 @@ create_drm_buffer(struct wl_client *client, struct wl_resource *resource, uint32
         return;
      }
 
+   buffer->resource = wl_resource_create(client, &wl_buffer_interface, 1, id);
+   if (!buffer->resource)
+     {
+        wl_resource_post_no_memory(resource);
+        free(buffer);
+        return;
+     }
+
+   wl_resource_set_implementation(buffer->resource, &_e_drm_buffer_interface,
+                                  buffer, destroy_drm_buffer);
+
    buffer->width = width;
    buffer->height = height;
    buffer->format = format;
@@ -142,18 +153,6 @@ create_drm_buffer(struct wl_client *client, struct wl_resource *resource, uint32
         free(buffer);
         return;
      }
-
-   buffer->resource = wl_resource_create(client, &wl_buffer_interface, 1, id);
-   if (!buffer->resource)
-     {
-        wl_resource_post_no_memory(resource);
-        pool->callbacks->release_buffer(pool->user_data, buffer);
-        free(buffer);
-        return;
-     }
-
-   wl_resource_set_implementation(buffer->resource, &_e_drm_buffer_interface,
-                                  buffer, destroy_drm_buffer);
 }
 
 static void
