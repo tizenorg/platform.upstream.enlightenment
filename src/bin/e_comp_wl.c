@@ -1,6 +1,10 @@
 #define E_COMP_WL
 #include "e.h"
 
+#ifdef HAVE_WAYLAND_TBM
+# include "e_tbm_wl.h"
+#endif
+
 /* handle include for printing uint64_t */
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -3713,6 +3717,10 @@ e_comp_wl_init(void)
    /* clients_win_hash = eina_hash_int64_new(NULL); */
    clients_buffer_hash = eina_hash_pointer_new(NULL);
 
+#ifdef HAVE_WAYLAND_TBM
+   e_tbm_wl_init();
+#endif
+
    /* add event handlers to catch E events */
 #ifndef HAVE_WAYLAND_ONLY
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_RANDR_CHANGE,
@@ -3790,6 +3798,10 @@ e_comp_wl_shutdown(void)
 
    /* free handlers */
    E_FREE_LIST(handlers, ecore_event_handler_del);
+
+#ifdef HAVE_WAYLAND_TBM
+   e_tbm_wl_shutdown();
+#endif
 
    /* shutdown ecore_wayland */
    ecore_wl_shutdown();
