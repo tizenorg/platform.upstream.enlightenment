@@ -248,6 +248,11 @@ struct _E_Comp_Wl_Data
         Eina_Bool scaler;
      } available_hw_accel;
 
+   struct
+     {
+        void *server;
+     } tbm;
+
    Eina_List *outputs;
 
    Ecore_Fd_Handler *fd_hdlr;
