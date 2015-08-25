@@ -942,7 +942,7 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
    if (cw->ec->new_client || (!cw->ec->visible) || (!cw->effect_obj))
      {
         /* do nothing until client idler loops */
-        if (!cw->ec->maximized)
+        if (!cw->ec->maximized && (cw->ec->w != w || cw->ec->h != h))
           {
              cw->ec->w = w, cw->ec->h = h;
              cw->ec->changes.size = 1;
