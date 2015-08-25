@@ -179,7 +179,7 @@ AC_ARG_ENABLE(simple-x11,
   AS_HELP_STRING([--enable-simple-x11], [enable simple x11 linking]),
   [ want_evas_simple_x11=$enableval ]
 )
-    
+
 dnl x_dir=""
 dnl x_cflags=""
 dnl x_libs=""
@@ -627,7 +627,7 @@ PKG_CHECK_EXISTS([xkeyboard-config],[
 
 profile="SLOW_PC"
 AC_ARG_WITH(profile,
-  AS_HELP_STRING([--with-profile=TARGET_PROFILE], 
+  AS_HELP_STRING([--with-profile=TARGET_PROFILE],
   [specify a target format profile of:
                                     LOWRES_PDA, MEDIUMRES_PDA, HIRES_PDA, SLOW_PC, MEDIUM_PC, FAST_PC]),
   [profile=$withval])
@@ -727,7 +727,7 @@ if test "x$e_cv_want_enotify" != "xno" ; then
   AC_E_CHECK_PKG(ENOTIFY, [ eldbus >= $efl_version ],
   [
     AC_DEFINE_UNQUOTED([HAVE_ENOTIFY], [1], [enable enotify])
-  ], 
+  ],
   [
     AC_MSG_NOTICE([enotify disabled])
     e_cv_want_enotify=no
@@ -798,7 +798,7 @@ shm_unlink("/");
 LIBS=${LIBS_save}
 AC_MSG_RESULT([${have_shm_open}])
 AC_SUBST(SHM_OPEN_LIBS)
-                           
+
 AC_SUBST([SOUND_CFLAGS])
 AC_SUBST([SOUND_LIBS])
 
@@ -868,10 +868,33 @@ if test "x${have_wayland}" = "xyes"; then
   fi
 fi
 
+# wayland tbm
+
+have_wayland_tbm=no
+AC_ARG_ENABLE([wayland-tbm],
+  AS_HELP_STRING([--enable-wayland-tbm],[enable wayland-tbm @<:@default=enabled@:>@]),
+  [e_cv_want_wayland_tbm=$enableval],
+  [e_cv_want_wayland_tbm=yes])
+AC_MSG_CHECKING([whether wayland TBM support is enabled])
+AC_MSG_RESULT([${e_cv_want_wayland_tbm}])
+
+if test "x$e_cv_want_wayland_tbm" != "xno";then
+  PKG_CHECK_MODULES([WAYLAND_TBM], [wayland-tbm-server],
+    [
+      have_wayland_tbm=yes
+      AC_DEFINE_UNQUOTED([HAVE_WAYLAND_TBM],[1],[enable wayland-tbm support])
+    ])
+
+  PKG_CHECK_MODULES([ECORE_DRM], [ecore-drm >= ${efl_version}])
+else
+  have_wayland_tbm=no
+fi
+
 AM_CONDITIONAL([HAVE_WAYLAND], [test "x${have_wayland}" = "xyes"])
 AM_CONDITIONAL([HAVE_WAYLAND_ONLY], [test "x${have_wayland_only}" = "xyes"])
 AM_CONDITIONAL([HAVE_WAYLAND_CLIENTS], [test "x${have_wayland_clients}" = "xyes"])
 AM_CONDITIONAL([HAVE_WAYLAND_EGL], [test "x${have_wayland_egl}" = "xyes"])
+AM_CONDITIONAL([HAVE_WAYLAND_TBM], [test "x${have_wayland_tbm}" = "xyes"])
 
 if test "x${have_wayland_only}" != "xyes"; then
   PKG_CHECK_MODULES([ECORE_X], [ecore-x >= ${efl_version}])

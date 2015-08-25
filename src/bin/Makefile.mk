@@ -11,6 +11,7 @@ E_CPPFLAGS = \
 @EDJE_DEF@ \
 @WAYLAND_CFLAGS@ \
 @WAYLAND_EGL_CFLAGS@ \
+@WAYLAND_EGL_CFLAGS@ \
 -DE_BINDIR=\"$(bindir)\" \
 -DPACKAGE_BIN_DIR=\"@PACKAGE_BIN_DIR@\" \
 -DPACKAGE_LIB_DIR=\"@PACKAGE_LIB_DIR@\" \
@@ -210,6 +211,12 @@ src/bin/e_uuid_store.h \
 src/bin/e_comp_wl_data.h \
 src/bin/e_comp_wl_input.h \
 src/bin/e_comp_wl.h
+
+if HAVE_WAYLAND_TBM
+ENLIGHTENMENTHEADERS += \
+src/bin/e_tbm_wl.h
+endif
+
 endif
 
 
@@ -384,11 +391,20 @@ src/bin/e_uuid_store.c \
 src/bin/e_comp_wl_data.c \
 src/bin/e_comp_wl_input.c \
 src/bin/e_comp_wl.c
+
+if HAVE_WAYLAND_TBM
+enlightenment_src += \
+src/bin/e_tbm_wl.c
+endif
+
 endif
 
 src_bin_enlightenment_CPPFLAGS = $(E_CPPFLAGS) -DEFL_BETA_API_SUPPORT -DEFL_EO_API_SUPPORT -DE_LOGGING=1 @WAYLAND_CFLAGS@ @WAYLAND_EGL_CFLAGS@ -DNEED_WL
 if ! HAVE_WAYLAND_ONLY
 src_bin_enlightenment_CPPFLAGS += @ECORE_X_CFLAGS@ -DNEED_X=1
+endif
+if HAVE_WAYLAND_TBM
+src_bin_enlightenment_CPPFLAGS += @WAYLAND_TBM_CFLAGS@ @ECORE_DRM_CFLAGS@
 endif
 src_bin_enlightenment_SOURCES = \
 src/bin/e_main.c \
@@ -398,6 +414,9 @@ src_bin_enlightenment_LDFLAGS = -export-dynamic
 src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ @WL_DRM_LIBS@ @WAYLAND_EGL_LIBS@ -lm @SHM_OPEN_LIBS@
 if ! HAVE_WAYLAND_ONLY
 src_bin_enlightenment_LDADD += @ECORE_X_LIBS@
+endif
+if HAVE_WAYLAND_TBM
+src_bin_enlightenment_LDADD += @WAYLAND_TBM_LIBS@ @ECORE_DRM_LIBS@
 endif
 
 src_bin_enlightenment_imc_SOURCES = \
@@ -492,4 +511,4 @@ PHONIES += e enlightenment install-e install-enlightenment
 e: $(bin_PROGRAMS)
 enlightenment: e
 install-e: install-binPROGRAMS
-install-enlightenment: install-e 
+install-enlightenment: install-e

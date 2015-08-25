@@ -1,6 +1,9 @@
 #include "e.h"
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
 # include "e_comp_wl.h"
+#ifdef HAVE_WAYLAND_TBM
+# include "e_tbm_wl.h"
+#endif
 #endif
 
 #define OVER_FLOW 1
@@ -81,7 +84,7 @@ _e_comp_visible_object_clip_is(Evas_Object *obj)
 {
    Evas_Object *clip;
    int a;
-   
+
    clip = evas_object_clip_get(obj);
    if (!evas_object_visible_get(clip)) return EINA_FALSE;
    evas_object_color_get(clip, NULL, NULL, NULL, &a);
@@ -107,7 +110,7 @@ _e_comp_visible_object_is(Evas_Object *obj, Evas_Coord x, Evas_Coord y, Evas_Coo
            )
           {
              int a;
-             
+
              evas_object_color_get(obj, NULL, NULL, NULL, &a);
              if (a > 0)
                {
@@ -126,12 +129,12 @@ _e_comp_visible_object_is(Evas_Object *obj, Evas_Coord x, Evas_Coord y, Evas_Coo
                   else
                     {
                        Eina_List *children;
-                       
+
                        if ((children = evas_object_smart_members_get(obj)))
                          {
                             Eina_List *l;
                             Evas_Object *o;
-                            
+
                             EINA_LIST_FOREACH(children, l, o)
                               {
                                  if (_e_comp_visible_object_is(o, x, y, w, h))
@@ -158,7 +161,7 @@ static Eina_Bool
 _e_comp_visible_object_is_above(Evas_Object *obj, Evas_Coord x, Evas_Coord y, Evas_Coord w, Evas_Coord h)
 {
    Evas_Object *above;
-   
+
    for (above = evas_object_above_get(obj); above;
         above = evas_object_above_get(above))
      {
@@ -1050,7 +1053,7 @@ e_comp_init(void)
 
    {
       const char *eng;
-      
+
       eng = getenv("E_WL_FORCE");
       if (eng)
         {
@@ -1091,7 +1094,15 @@ e_comp_init(void)
    e_comp_wl_init();
 #endif
    if (!e_comp) return EINA_FALSE;
+
 out:
+
+#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND_TBM
+   e_tbm_wl_init();
+#endif
+#endif
+
    e_comp->elm = elm_win_fake_add(e_comp->ee);
    evas_object_show(e_comp->elm);
    e_util_env_set("HYBRIS_EGLPLATFORM", NULL);
@@ -1321,6 +1332,9 @@ e_comp_shutdown(void)
    E_FREE_LIST(hooks, e_client_hook_del);
 
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND_TBM
+   e_tbm_wl_shutdown();
+#endif
    e_comp_wl_shutdown();
 #endif
 
