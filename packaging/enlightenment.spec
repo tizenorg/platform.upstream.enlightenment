@@ -50,6 +50,8 @@ BuildRequires:  pkgconfig(transform-server)
 BuildRequires:  pkgconfig(screenshooter-server)
 BuildRequires:  pkgconfig(screenshooter-client)
 BuildRequires:  pkgconfig(tizen-extension-server)
+BuildRequires:  pkgconfig(wayland-tbm-server)
+BuildRequires:  pkgconfig(ecore-drm)
 Requires:       libwayland-extension-server
 %endif
 
