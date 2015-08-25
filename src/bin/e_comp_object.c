@@ -942,7 +942,7 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
    if (cw->ec->new_client || (!cw->ec->visible) || (!cw->effect_obj))
      {
         /* do nothing until client idler loops */
-        if (!cw->ec->maximized)
+        if (!cw->ec->maximized && (cw->ec->w != w || cw->ec->h != h))
           {
              cw->ec->w = w, cw->ec->h = h;
              cw->ec->changes.size = 1;
@@ -969,11 +969,13 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
      }
    if ((!cw->ec->input_only) && (!e_pixmap_size_get(cw->ec->pixmap, &pw, &ph)))
      {
+#ifndef HAVE_WAYLAND_ONLY
         /* client can't be resized if its pixmap isn't usable, try again */
         e_pixmap_dirty(cw->ec->pixmap);
         e_comp_object_render_update_add(obj);
         cw->ec->changes.size = 1;
         EC_CHANGED(cw->ec);
+#endif
         return;
      }
    prev_w = cw->w, prev_h = cw->h;
