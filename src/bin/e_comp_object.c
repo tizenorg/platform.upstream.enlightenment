@@ -3964,3 +3964,11 @@ e_comp_object_mask_set(Evas_Object *obj, Eina_Bool set)
           }
      }
 }
+
+EAPI void
+e_comp_object_size_update(Evas_Object *obj, int w, int h)
+{
+   SOFT_ENTRY();
+
+   evas_object_image_size_set(cw->obj, w, h);
+}

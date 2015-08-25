@@ -696,6 +696,14 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
                   cp->h = buffer->h;
                   cp->image_argb = EINA_FALSE; /* TODO: format */
                   cp->data = NULL;
+
+                  /* TODO: Current buffer management process doesn't ensure
+                   * to render all committed buffer, it means there are buffers
+                   * never rendered. New attached buffer resources should be
+                   * managed and be pending if previous buffer is not rendered yet. */
+                  /* set size of image object to new buffer size */
+                  e_comp_object_size_update(cp->client->frame,
+                                            buffer->w, buffer->h);
                }
              else
                {
