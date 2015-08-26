@@ -47,7 +47,7 @@ _e_comp_wl_input_pointer_configure(struct wl_resource *resource,
    if (!(ec = e_pixmap_client_get(ep))) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
-   e_client_util_move_resize_without_frame(ec, x, y, w, h);
+   e_client_util_resize_without_frame(ec, w, h);
 }
 
 static void
