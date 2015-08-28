@@ -317,8 +317,9 @@ struct _E_Comp_Wl_Client_Data
         Eina_Bool enabled : 1;
         Eina_Bool start : 1;
 
+        unsigned int scount, stime;
         int sx, sy, dx, dy;
-        double prev_degree, cur_degree;
+        int prev_degree, cur_degree;
      } transform;
 
    /* before applying viewport */

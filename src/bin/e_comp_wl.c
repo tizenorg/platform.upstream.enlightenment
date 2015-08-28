@@ -19,86 +19,150 @@ static void _e_comp_wl_subsurface_parent_commit(E_Client *ec, Eina_Bool parent_s
 static void _e_comp_wl_subsurface_restack(E_Client *ec);
 
 /* local variables */
+typedef struct _E_Comp_Wl_Transform_Context
+{
+   E_Client *ec;
+   int direction;
+   int degree;
+} E_Comp_Wl_Transform_Context;
+
 /* static Eina_Hash *clients_win_hash = NULL; */
 static Eina_Hash *clients_buffer_hash = NULL;
 static Eina_List *handlers = NULL;
 static double _last_event_time = 0.0;
 
 /* local functions */
-static double
-_e_comp_wl_transform_degree_compute(int sx, int sy, int dx, int dy, int cx, int cy)
+static void
+_e_comp_wl_transform_effect_end(Elm_Transit_Effect *context,
+                                Elm_Transit *trans)
 {
-   double theta, degree;
-   double svx, svy, dvx, dvy, length;
+   E_Client *ec = NULL;
+   E_Comp_Wl_Transform_Context *ctxt = context;
 
-   svx = sx - cx;
-   svy = sy - cy;
-   length = (double)((svx * svx) + (svy * svy));
-   length = sqrt(length);
-   if (length != 0)
+   if (!ctxt) return;
+   ec = ctxt->ec;
+   if ((ec) && (!e_object_is_del(E_OBJECT(ec))))
      {
-        svx /= length;
-        svy /= length;
+        ec->comp_data->transform.start = 0;
+        ec->comp_data->transform.cur_degree += ctxt->degree * ctxt->direction;
+        if (ec->comp_data->transform.cur_degree < 0)
+          ec->comp_data->transform.cur_degree += 360;
+        else
+          ec->comp_data->transform.cur_degree %= 360;
+        ec->comp_data->transform.scount = 0;
+        ec->comp_data->transform.stime = 0;
      }
 
-   dvx = dx - cx;
-   dvy = dy - cy;
-   length = (double)((dvx * dvx) + (dvy * dvy));
-   length = sqrt(length);
-   if (length != 0)
-     {
-        dvx /= length;
-        dvy /= length;
-     }
+   E_FREE(ctxt);
+}
 
-   theta = (svx * dvx) + (svy * dvy);
-   theta = acos(theta);
-   if(svx * dvy - svy * dvx < 0) theta = -theta;
-   degree = theta / M_PI * 180.0;
+static void
+_e_comp_wl_transform_effect_del(void *data,
+                                Elm_Transit *trans EINA_UNUSED)
+{
+   E_Client *ec = data;
+   if (!ec) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
 
-   return degree;
+   e_client_transform_apply(ec, ec->comp_data->transform.cur_degree, -1.0, -1, -1);
+}
+
+static void
+_e_comp_wl_transform_effect_run(Elm_Transit_Effect *context,
+                                Elm_Transit *trans EINA_UNUSED,
+                                double progress)
+{
+   E_Comp_Wl_Transform_Context *ctxt = context;
+   E_Client *ec = NULL;
+   int cx, cy;
+
+   ec = ctxt->ec;
+   if (!ec) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
+
+   cx = ec->client.x + ec->client.w / 2;
+   cy = ec->client.y + ec->client.h / 2;
+
+   e_client_transform_apply(ec, ec->comp_data->transform.cur_degree + ctxt->degree * ctxt->direction * progress, -1.0, cx, cy);
 }
 
 static void
 _e_comp_wl_transform_unset(E_Client *ec)
 {
-   ec->comp_data->transform.start = 0;
-   ec->comp_data->transform.cur_degree = 0;
-   ec->comp_data->transform.prev_degree = 0;
 
-   e_client_transform_apply(ec, 0.0, -1.0,
-                            ec->client.x - 1, ec->client.y - 1);
+   Elm_Transit *trans;
+   E_Comp_Wl_Transform_Context *ctxt;
+
+   ec->comp_data->transform.start = 1;
+
+   ctxt = E_NEW(E_Comp_Wl_Transform_Context, 1);
+   ctxt->direction = 1;
+   ctxt->ec = ec;
+   ctxt->degree = 360 - ec->comp_data->transform.cur_degree;
+
+   trans = elm_transit_add();
+   elm_transit_del_cb_set(trans, _e_comp_wl_transform_effect_del, ec);
+   elm_transit_tween_mode_set(trans, ELM_TRANSIT_TWEEN_MODE_ACCELERATE);
+   elm_transit_object_add(trans, ec->frame);
+   elm_transit_effect_add(trans,
+                          _e_comp_wl_transform_effect_run,
+                          (void*)ctxt,
+                          _e_comp_wl_transform_effect_end);
+   elm_transit_duration_set(trans, 0.45);
+   elm_transit_go(trans);
 }
 
-static void
-_e_comp_wl_transform_set(E_Client *ec)
+static Eina_Bool
+_e_comp_wl_transform_set(E_Client *ec, 
+                         int direction,
+                         int count,
+                         unsigned int time)
 {
-   E_Comp_Wl_Client_Data *cdata;
-   int sx, sy, dx, dy, cx, cy;
-   double transform_degree;
+   Elm_Transit *trans;
+   E_Comp_Wl_Transform_Context *ctxt;
+   int degree;
 
-   cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+   switch (count)
+     {
+      case 3:
+         if (time <= 50)
+           return EINA_FALSE;
+         else if (time <= 100)
+           degree = 100;
+         else
+           degree = 50;
+         break;
+      case 4:
+         if (time <= 50)
+           degree = 350;
+         else if (time <= 100)
+           degree = 250;
+         else
+           degree = 150;
+         break;
+      default:
+         return EINA_FALSE;
+     }
 
-   cx = ec->client.x + ec->client.w / 2;
-   cy = ec->client.y + ec->client.h / 2;
+   ec->comp_data->transform.start = 1;
 
-   sx = cdata->transform.sx;
-   sy = cdata->transform.sy;
-   dx = cdata->transform.dx;
-   dy = cdata->transform.dy;
-   DBG("TRANSFORM s:%d,%d, d:%d,%d", sx, sy, dx, dy);
+   ctxt = E_NEW(E_Comp_Wl_Transform_Context, 1);
+   ctxt->direction = direction / abs(direction);
+   ctxt->ec = ec;
+   ctxt->degree = degree;
 
-   transform_degree =
-      _e_comp_wl_transform_degree_compute(sx, sy, dx, dy, cx, cy);
-   cdata->transform.cur_degree = transform_degree + cdata->transform.prev_degree;
-   cdata->transform.cur_degree = fmod(cdata->transform.cur_degree,  360.0);
+   trans = elm_transit_add();
+   elm_transit_del_cb_set(trans, _e_comp_wl_transform_effect_del, ec);
+   elm_transit_tween_mode_set(trans, ELM_TRANSIT_TWEEN_MODE_DECELERATE);
+   elm_transit_object_add(trans, ec->frame);
+   elm_transit_effect_add(trans,
+                          _e_comp_wl_transform_effect_run,
+                          (void*)ctxt,
+                          _e_comp_wl_transform_effect_end);
+   elm_transit_duration_set(trans, (double)count/10.0);
+   elm_transit_go(trans);
 
-   DBG("TRANSFORM degree:%lf, prev_degree:%lf, total_degree:%lf",
-       transform_degree,
-       cdata->transform.prev_degree,
-       cdata->transform.cur_degree);
-
-   e_client_transform_apply(ec, cdata->transform.cur_degree, -1.0, cx, cy);
+   return EINA_TRUE;
 }
 
 static void
@@ -555,15 +619,6 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (e_client_util_ignored_get(ec)) return;
    if (!ec->comp_data->surface) return;
-   if (ec->comp_data->transform.start)
-     {
-        e_comp->wl_comp_data->ptr.x = wl_fixed_from_int(ev->cur.output.x);
-        e_comp->wl_comp_data->ptr.y = wl_fixed_from_int(ev->cur.output.y);
-        ec->comp_data->transform.dx = ev->cur.output.x;
-        ec->comp_data->transform.dy = ev->cur.output.y;
-        _e_comp_wl_transform_set(ec);
-        return;
-     }
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
@@ -608,40 +663,11 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
 
    if (!ec->comp_data->surface) return EINA_FALSE;
 
-   if (ec->comp_data->transform.enabled)
+   if ((ec->comp_data->transform.cur_degree != 0) &&
+       (btn == BTN_MIDDLE))
      {
-        if (state == WL_POINTER_BUTTON_STATE_PRESSED)
-          {
-             if (E_INSIDE(wl_fixed_to_int(ec->comp->wl_comp_data->ptr.x),
-                          wl_fixed_to_int(ec->comp->wl_comp_data->ptr.y),
-                          ec->client.x + ec->client.w - 40,
-                          ec->client.y + ec->client.h - 40,
-                          40, 40))
-               {
-                  ec->comp_data->transform.start = 1;
-                  ec->comp_data->transform.sx = ec->mouse.current.mx;
-                  ec->comp_data->transform.sy = ec->mouse.current.my;
-
-                  DBG("TRANSFORM start %d,%d",
-                      ec->comp_data->transform.sx, ec->comp_data->transform.sy);
-                  return EINA_FALSE;
-               }
-             else
-               ec->comp_data->transform.start = 0;
-          }
-        else if (state == WL_POINTER_BUTTON_STATE_RELEASED)
-          {
-             if (ec->comp_data->transform.start)
-               {
-                  DBG("TRANSFORM end %d,%d",
-                      ec->comp_data->transform.dx, ec->comp_data->transform.dy);
-                  ec->comp_data->transform.start = 0;
-                  ec->comp_data->transform.prev_degree = ec->comp_data->transform.cur_degree;
-                  if (ec->comp_data->transform.cur_degree == 0)
-                    _e_comp_wl_transform_unset(ec);
-                  return EINA_FALSE;
-               }
-          }
+        _e_comp_wl_transform_unset(ec);
+        return EINA_TRUE;
      }
 
    wc = wl_resource_get_client(ec->comp_data->surface);
@@ -709,6 +735,27 @@ _e_comp_wl_evas_cb_mouse_wheel(void *data, Evas *evas EINA_UNUSED, Evas_Object *
      dir = wl_fixed_from_int(ev->z);
 
    if (!ec->comp_data->surface) return;
+
+   if (ec->comp_data->transform.start) return;
+   if (ec->comp_data->transform.enabled)
+     {
+        if (ec->comp_data->transform.stime == 0)
+          {
+             ec->comp_data->transform.stime = ev->timestamp;
+             return;
+          }
+
+        if (_e_comp_wl_transform_set(ec, ev->z,
+                                     ++ec->comp_data->transform.scount,
+                                     ev->timestamp - ec->comp_data->transform.stime))
+          {
+             ec->comp_data->transform.scount = 0;
+             ec->comp_data->transform.stime = 0;
+          }
+
+        /* do not send wheel event to client */
+        return;
+     }
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
