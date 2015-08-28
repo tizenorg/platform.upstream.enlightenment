@@ -5510,6 +5510,12 @@ EAPI void e_client_transform_apply(E_Client *ec, double angle, double zoom, int 
         cy = ec->transform.center.y;
      }
 
+   if ((angle == 0) && (zoom == 1.0))
+     {
+        e_client_transform_clear(ec);
+        return;
+     }
+
    map = evas_map_new(4);
    evas_map_util_points_populate_from_object_full(map, ec->frame, 0);
 
@@ -5548,8 +5554,26 @@ EAPI void e_client_transform_apply(E_Client *ec, double angle, double zoom, int 
 
 EAPI void e_client_transform_clear(E_Client *ec)
 {
+ #ifdef HAVE_WAYLAND_ONLY
+   E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+   E_Client *subc;
+   Eina_List *l;
+#endif
    evas_object_map_enable_set(ec->frame, EINA_FALSE);
    evas_object_map_set(ec->frame, NULL);
+
+#ifdef HAVE_WAYLAND_ONLY
+   if (cdata->sub.below_obj)
+     {
+        evas_object_map_enable_set(cdata->sub.below_obj, EINA_FALSE);
+        evas_object_map_set(cdata->sub.below_obj, NULL);
+     }
+
+   EINA_LIST_FOREACH(cdata->sub.list, l, subc)
+     _e_client_transform_sub_apply(subc, ec, 1.0);
+   EINA_LIST_REVERSE_FOREACH(cdata->sub.below_list, l, subc)
+     _e_client_transform_sub_apply(subc, ec, 1.0);
+#endif
 
    ec->transform.zoom = 1.0;
    ec->transform.angle = 0.0;
