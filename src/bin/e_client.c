@@ -1290,7 +1290,7 @@ _e_client_resize_handle(E_Client *ec)
 
    w = new_w;
    h = new_h;
-   if (e_config->screen_limits == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
+   if (e_client_screen_limit_get(ec) == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
      {
         w = MIN(w, ec->zone->w);
         h = MIN(h, ec->zone->h);
@@ -1396,7 +1396,7 @@ _e_client_resize_key_down(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev
    else if ((strncmp(ev->key, "Control", sizeof("Control") - 1) != 0) &&
             (strncmp(ev->key, "Alt", sizeof("Alt") - 1) != 0))
      goto stop;
-   if (e_config->screen_limits == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
+   if (e_client_screen_limit_get(action_client) == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
      {
         w = MIN(w, action_client->zone->w);
         h = MIN(h, action_client->zone->h);
@@ -2042,7 +2042,7 @@ _e_client_eval(E_Client *ec)
 
         e_zone_useful_geometry_get(ec->zone, &zx, &zy, &zw, &zh);
         /* enforce wm size hints for initial sizing */
-        if (e_config->screen_limits == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
+        if (e_client_screen_limit_get(ec) == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
           {
              ec->w = MIN(ec->w, ec->zone->w);
              ec->h = MIN(ec->h, ec->zone->h);
@@ -2917,7 +2917,7 @@ e_client_idler_before(void)
             (!E_INSIDE(ec->x, ec->y, 0 - ec->w + 5, 0 - ec->h + 5, ec->comp->man->w - 5, ec->comp->man->h - 5))
             )
           {
-             if (e_config->screen_limits != E_CLIENT_OFFSCREEN_LIMIT_ALLOW_FULL)
+             if (e_client_screen_limit_get(ec) != E_CLIENT_OFFSCREEN_LIMIT_ALLOW_FULL)
                _e_client_move_lost_window_to_center(ec);
           }
      }
@@ -3039,6 +3039,7 @@ e_client_new(E_Comp *c EINA_UNUSED, E_Pixmap *cp, int first_map, int internal)
    ec->resize_mode = E_POINTER_RESIZE_NONE;
    ec->layer = E_LAYER_CLIENT_NORMAL;
 
+   ec->screen_limits = E_CLIENT_OFFSCREEN_LIMIT_ALLOW_CONFIG;
    /* printf("##- ON MAP CLIENT 0x%x SIZE %ix%i %i:%i\n",
     *     ec->win, ec->w, ec->h, att->x, att->y); */
 
@@ -3500,7 +3501,7 @@ e_client_mouse_move(E_Client *ec, Evas_Point *output)
                                  &new_x, &new_y, &new_w, &new_h);
         eina_list_free(skiplist);
 
-        if (e_config->screen_limits == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
+        if (e_client_screen_limit_get(ec) == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
           _e_client_stay_within_canvas(ec, x, y, &new_x, &new_y);
 
         ec->shelf_fix.x = 0;
@@ -5578,4 +5579,32 @@ EAPI void e_client_transform_clear(E_Client *ec)
    ec->transform.zoom = 1.0;
    ec->transform.angle = 0.0;
    ec->transformed = EINA_FALSE;
+}
+
+////////////////////////////////////////////
+
+EAPI void e_client_screen_limit_set(E_Client *ec, E_Client_Screen_Limit limit)
+{
+   E_OBJECT_CHECK(ec);
+   E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
+
+   if (limit < E_CLIENT_OFFSCREEN_LIMIT_ALLOW_CONFIG ||
+       limit > E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE)
+     return;
+
+   ec->screen_limits = limit;
+}
+
+////////////////////////////////////////////
+
+EAPI E_Client_Screen_Limit e_client_screen_limit_get(E_Client *ec)
+{
+   E_OBJECT_CHECK_RETURN(ec, e_config->screen_limits);
+   E_OBJECT_TYPE_CHECK_RETURN(ec, E_CLIENT_TYPE, e_config->screen_limits);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ec, e_config->screen_limits);
+
+   if (ec->screen_limits == E_CLIENT_OFFSCREEN_LIMIT_ALLOW_CONFIG)
+     return e_config->screen_limits;
+
+   return ec->screen_limits;
 }

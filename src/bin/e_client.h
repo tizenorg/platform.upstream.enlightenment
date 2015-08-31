@@ -1,6 +1,7 @@
 #ifdef E_TYPEDEFS
 typedef enum _E_Client_Screen_Limit
 {
+    E_CLIENT_OFFSCREEN_LIMIT_ALLOW_CONFIG = -1,
     E_CLIENT_OFFSCREEN_LIMIT_ALLOW_PARTIAL = 0,
     E_CLIENT_OFFSCREEN_LIMIT_ALLOW_FULL = 1,
     E_CLIENT_OFFSCREEN_LIMIT_ALLOW_NONE = 2
@@ -300,7 +301,9 @@ struct E_Client
 
    E_Comp_Client_Data       *comp_data;
 
-   E_Action                  *cur_mouse_action;
+   E_Action                 *cur_mouse_action;
+
+   E_Client_Screen_Limit     screen_limits;
 
    int               border_size; //size of client's border
 
@@ -941,6 +944,8 @@ EAPI void      e_client_visibility_calculate(void);
 EAPI void e_client_transform_update(E_Client *ec);
 EAPI void e_client_transform_apply(E_Client *ec, double degree, double zoom, int cx, int cy);
 EAPI void e_client_transform_clear(E_Client *ec);
+EAPI void e_client_screen_limit_set(E_Client *ec, E_Client_Screen_Limit limit);
+EAPI E_Client_Screen_Limit e_client_screen_limit_get(E_Client *ec);
 
 YOLO EAPI void e_client_focus_stack_set(Eina_List *l);
 
