@@ -70,11 +70,8 @@ _e_comp_wl_input_pointer_cb_cursor_set(struct wl_client *client, struct wl_resou
      {
        if (!ec->comp_data->surface) continue;
        if (client != wl_resource_get_client(ec->comp_data->surface)) continue;
-       if (ec->mouse.in)
-         {
-           got_mouse = EINA_TRUE;
-           break;
-         }
+       got_mouse = EINA_TRUE;
+       break;
      }
    if (!got_mouse) return;
    if (!surface_resource)
