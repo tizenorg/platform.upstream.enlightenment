@@ -33,6 +33,106 @@ static double _last_event_time = 0.0;
 
 /* local functions */
 static void
+_e_comp_wl_transform_stay_within_canvas(E_Client *ec, int x, int y, int *new_x, int *new_y)
+{
+   int new_x_max, new_y_max;
+   int zw, zh;
+   Eina_Bool lw, lh;
+
+   if (!ec->zone)
+     {
+        if (new_x) *new_x = x;
+        if (new_y) *new_y = y;
+        return;
+     }
+
+   zw = ec->zone->w;
+   zh = ec->zone->h;
+
+   new_x_max = zw - ec->w;
+   new_y_max = zh - ec->h;
+   lw = ec->w > zw ? EINA_TRUE : EINA_FALSE;
+   lh = ec->h > zh ? EINA_TRUE : EINA_FALSE;
+
+   if (new_x)
+     {
+        if (lw)
+          {
+             if (x <= new_x_max)
+               *new_x = new_x_max;
+             else if (x >= 0)
+               *new_x = 0;
+          }
+        else
+          {
+             if (x >= new_x_max)
+               *new_x = new_x_max;
+             else if (x <= 0)
+               *new_x = 0;
+          }
+     }
+
+   if (new_y)
+     {
+        if (lh)
+          {
+             if (y <= new_y_max)
+               *new_y = new_y_max;
+             else if (y >= 0)
+               *new_y = 0;
+          }
+        else
+          {
+             if (y >= new_y_max)
+               *new_y = new_y_max;
+             else if (y <= 0)
+               *new_y = 0;
+          }
+     }
+}
+
+static void
+_e_comp_wl_transform_pull_del(void *data,
+                              Elm_Transit *trans EINA_UNUSED)
+{
+   E_Client *ec = data;
+   if (!ec) return;
+
+   e_object_unref(E_OBJECT(ec));
+}
+
+static void
+_e_comp_wl_transform_pull(E_Client *ec)
+{
+   Elm_Transit *trans;
+   int new_x, new_y;
+
+   new_x = ec->client.x;
+   new_y = ec->client.y;
+
+   _e_comp_wl_transform_stay_within_canvas(ec,
+                                           ec->client.x, ec->client.y,
+                                           &new_x, &new_y);
+
+   if ((ec->client.x == new_x) && (ec->client.y == new_y))
+     return;
+
+   e_object_ref(E_OBJECT(ec));
+
+   trans = elm_transit_add();
+   elm_transit_del_cb_set(trans, _e_comp_wl_transform_pull_del, ec);
+   elm_transit_tween_mode_set(trans, ELM_TRANSIT_TWEEN_MODE_DECELERATE);
+   elm_transit_effect_translation_add(trans,
+                                      0, 0,
+                                      new_x - ec->client.x,
+                                      new_y - ec->client.y);
+   elm_transit_object_add(trans, ec->frame);
+   elm_transit_objects_final_state_keep_set(trans, EINA_TRUE);
+   elm_transit_duration_set(trans, 0.4);
+   elm_transit_go(trans);
+}
+
+static void
 _e_comp_wl_transform_effect_end(Elm_Transit_Effect *context,
                                 Elm_Transit *trans)
 {
@@ -41,6 +141,7 @@ _e_comp_wl_transform_effect_end(Elm_Transit_Effect *context,
 
    if (!ctxt) return;
    ec = ctxt->ec;
+
    if ((ec) && (!e_object_is_del(E_OBJECT(ec))))
      {
         ec->comp_data->transform.start = 0;
@@ -3199,6 +3300,16 @@ _e_comp_wl_client_cb_resize_end(void *data EINA_UNUSED, E_Client *ec)
 }
 
 static void
+_e_comp_wl_client_cb_move_end(void *data EINA_UNUSED, E_Client *ec)
+{
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
+
+   if (ec->comp_data->transform.enabled)
+     _e_comp_wl_transform_pull(ec);
+}
+
+static void
 _e_comp_wl_cb_output_unbind(struct wl_resource *resource)
 {
    E_Comp_Wl_Output *output;
@@ -3642,6 +3753,9 @@ e_comp_wl_init(void)
                      _e_comp_wl_client_cb_resize_begin, NULL);
    e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,
                      _e_comp_wl_client_cb_resize_end, NULL);
+
+   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,
+                     _e_comp_wl_client_cb_move_end, NULL);
 
    _last_event_time = ecore_loop_time_get();
 

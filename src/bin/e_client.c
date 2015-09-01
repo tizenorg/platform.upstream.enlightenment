@@ -599,6 +599,9 @@ _e_client_transform_resize_handle(E_Client *ec)
           new_h = ec->moveinfo.down.h + (current.y - moveinfo.y);
      }
 
+   new_w = MIN(new_w, ec->zone->w);
+   new_h = MIN(new_h, ec->zone->h);
+
    /* step 4: move to new position */
    if ((ec->resize_mode == E_POINTER_RESIZE_TL) ||
        (ec->resize_mode == E_POINTER_RESIZE_L) ||
@@ -1736,6 +1739,11 @@ _e_client_cb_evas_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UN
      }
    if (ec->moving || (ecmove == ec))
      _e_client_hook_call(E_CLIENT_HOOK_MOVE_UPDATE, ec);
+
+   if ((!ec->moving) && (ec->transformed))
+     _e_client_transform_geometry_save(ec,
+                                       (Evas_Map *)evas_object_map_get(ec->frame));
+
    e_remember_update(ec);
    ec->pre_cb.x = x; ec->pre_cb.y = y;
 
