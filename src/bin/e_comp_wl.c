@@ -565,16 +565,22 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
 }
 
 static void
-_e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
+_e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    E_Client *ec;
+   Evas_Event_Mouse_Out *ev;
    struct wl_resource *res;
    struct wl_client *wc;
    Eina_List *l;
    uint32_t serial;
+   Eina_Bool inside_check;
+
+   ev = event;
 
    if (!(ec = data)) return;
-   if (ec->cur_mouse_action) return;
+   inside_check = E_INSIDE(ev->canvas.x, ev->canvas.y,
+                          ec->client.x, ec->client.y, ec->client.w, ec->client.h);
+   if (ec->cur_mouse_action && inside_check) return;
    if (e_object_is_del(E_OBJECT(e_comp))) return;
    /* FIXME? this is a hack to just reset the cursor whenever we mouse out. not sure if accurate */
    {
