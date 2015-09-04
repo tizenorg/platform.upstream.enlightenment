@@ -3724,47 +3724,25 @@ e_comp_wl_init(void)
 
    /* add event handlers to catch E events */
 #ifndef HAVE_WAYLAND_ONLY
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_RANDR_CHANGE,
-                         _e_comp_wl_cb_randr_change, NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_RANDR_CHANGE,          _e_comp_wl_cb_randr_change,    NULL);
 #endif
-
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD,
-                         _e_comp_wl_cb_comp_object_add, NULL);
-
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN,
-                         _e_comp_wl_cb_input_event, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_UP,
-                         _e_comp_wl_cb_input_event, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_DOWN,
-                         _e_comp_wl_cb_input_event, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_UP,
-                         _e_comp_wl_cb_input_event, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_MOVE,
-                         _e_comp_wl_cb_input_event, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_WHEEL,
-                         _e_comp_wl_cb_input_event, NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD,       _e_comp_wl_cb_comp_object_add, NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN,          _e_comp_wl_cb_input_event,     NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_UP,            _e_comp_wl_cb_input_event,     NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_DOWN, _e_comp_wl_cb_input_event,     NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_UP,   _e_comp_wl_cb_input_event,     NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_MOVE,        _e_comp_wl_cb_input_event,     NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_WHEEL,       _e_comp_wl_cb_input_event,     NULL);
 
    /* add hooks to catch e_client events */
-   e_client_hook_add(E_CLIENT_HOOK_NEW_CLIENT, _e_comp_wl_client_cb_new, NULL);
-   e_client_hook_add(E_CLIENT_HOOK_DEL, _e_comp_wl_client_cb_del, NULL);
-
-   e_client_hook_add(E_CLIENT_HOOK_EVAL_POST_NEW_CLIENT,
-                     _e_comp_wl_client_cb_post_new, NULL);
-   /* e_client_hook_add(E_CLIENT_HOOK_EVAL_PRE_FRAME_ASSIGN,  */
-   /*                   _e_comp_wl_client_cb_pre_frame, NULL); */
-
-   e_client_hook_add(E_CLIENT_HOOK_FOCUS_SET,
-                     _e_comp_wl_client_cb_focus_set, NULL);
-   e_client_hook_add(E_CLIENT_HOOK_FOCUS_UNSET,
-                     _e_comp_wl_client_cb_focus_unset, NULL);
-
-   e_client_hook_add(E_CLIENT_HOOK_RESIZE_BEGIN,
-                     _e_comp_wl_client_cb_resize_begin, NULL);
-   e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,
-                     _e_comp_wl_client_cb_resize_end, NULL);
-
-   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,
-                     _e_comp_wl_client_cb_move_end, NULL);
+   e_client_hook_add(E_CLIENT_HOOK_NEW_CLIENT,           _e_comp_wl_client_cb_new,          NULL);
+   e_client_hook_add(E_CLIENT_HOOK_DEL,                  _e_comp_wl_client_cb_del,          NULL);
+   e_client_hook_add(E_CLIENT_HOOK_EVAL_POST_NEW_CLIENT, _e_comp_wl_client_cb_post_new,     NULL);
+   e_client_hook_add(E_CLIENT_HOOK_FOCUS_SET,            _e_comp_wl_client_cb_focus_set,    NULL);
+   e_client_hook_add(E_CLIENT_HOOK_FOCUS_UNSET,          _e_comp_wl_client_cb_focus_unset,  NULL);
+   e_client_hook_add(E_CLIENT_HOOK_RESIZE_BEGIN,         _e_comp_wl_client_cb_resize_begin, NULL);
+   e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,           _e_comp_wl_client_cb_resize_end,   NULL);
+   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,             _e_comp_wl_client_cb_move_end,     NULL);
 
    _last_event_time = ecore_loop_time_get();
 
