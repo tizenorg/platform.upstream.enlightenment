@@ -1294,69 +1294,41 @@ static void
 _e_comp_wl_client_evas_init(E_Client *ec)
 {
    if (ec->comp_data->evas_init) return;
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_SHOW,
-                                  _e_comp_wl_evas_cb_show, ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_HIDE,
-                                  _e_comp_wl_evas_cb_hide, ec);
 
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOVE,
-                                  _e_comp_wl_evas_cb_move, ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_RESTACK,
-                                  _e_comp_wl_evas_cb_restack, ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_SHOW,        _e_comp_wl_evas_cb_show,        ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_HIDE,        _e_comp_wl_evas_cb_hide,        ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOVE,        _e_comp_wl_evas_cb_move,        ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_RESTACK,     _e_comp_wl_evas_cb_restack,     ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_IN,    _e_comp_wl_evas_cb_mouse_in,    ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_OUT,   _e_comp_wl_evas_cb_mouse_out,   ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_MOVE,  _e_comp_wl_evas_cb_mouse_move,  ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_DOWN,  _e_comp_wl_evas_cb_mouse_down,  ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_UP,    _e_comp_wl_evas_cb_mouse_up,    ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_WHEEL, _e_comp_wl_evas_cb_mouse_wheel, ec);
 
+   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MULTI_DOWN, EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_multi_down, ec);
+   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MULTI_UP,   EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_multi_up,   ec);
+   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MULTI_MOVE, EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_multi_move, ec);
 
-   /* setup input callbacks */
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_IN,
-                                  _e_comp_wl_evas_cb_mouse_in, ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_OUT,
-                                  _e_comp_wl_evas_cb_mouse_out, ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_MOVE,
-                                  _e_comp_wl_evas_cb_mouse_move, ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_DOWN,
-                                  _e_comp_wl_evas_cb_mouse_down, ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_UP,
-                                  _e_comp_wl_evas_cb_mouse_up, ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_WHEEL,
-                                  _e_comp_wl_evas_cb_mouse_wheel, ec);
-
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MULTI_DOWN, EVAS_CALLBACK_PRIORITY_AFTER,
-                                  _e_comp_wl_evas_cb_multi_down, ec);
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MULTI_UP, EVAS_CALLBACK_PRIORITY_AFTER,
-                                  _e_comp_wl_evas_cb_multi_up, ec);
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MULTI_MOVE, EVAS_CALLBACK_PRIORITY_AFTER,
-                                  _e_comp_wl_evas_cb_multi_move, ec);
-
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_FOCUS_IN,
-                                  _e_comp_wl_evas_cb_focus_in, ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_FOCUS_OUT,
-                                  _e_comp_wl_evas_cb_focus_out, ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_FOCUS_IN,    _e_comp_wl_evas_cb_focus_in,    ec);
+   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_FOCUS_OUT,   _e_comp_wl_evas_cb_focus_out,   ec);
 
    if (!ec->override)
      {
-        evas_object_smart_callback_add(ec->frame, "client_resize",
-                                       _e_comp_wl_evas_cb_resize, ec);
-        evas_object_smart_callback_add(ec->frame, "maximize_done",
-                                       _e_comp_wl_evas_cb_state_update, ec);
-        evas_object_smart_callback_add(ec->frame, "unmaximize_done",
-                                       _e_comp_wl_evas_cb_state_update, ec);
-        evas_object_smart_callback_add(ec->frame, "fullscreen",
-                                       _e_comp_wl_evas_cb_state_update, ec);
-        evas_object_smart_callback_add(ec->frame, "unfullscreen",
-                                       _e_comp_wl_evas_cb_state_update, ec);
+        evas_object_smart_callback_add(ec->frame, "client_resize",   _e_comp_wl_evas_cb_resize,       ec);
+        evas_object_smart_callback_add(ec->frame, "maximize_done",   _e_comp_wl_evas_cb_state_update, ec);
+        evas_object_smart_callback_add(ec->frame, "unmaximize_done", _e_comp_wl_evas_cb_state_update, ec);
+        evas_object_smart_callback_add(ec->frame, "fullscreen",      _e_comp_wl_evas_cb_state_update, ec);
+        evas_object_smart_callback_add(ec->frame, "unfullscreen",    _e_comp_wl_evas_cb_state_update, ec);
      }
 
    /* setup delete/kill callbacks */
-   evas_object_smart_callback_add(ec->frame, "delete_request",
-                                  _e_comp_wl_evas_cb_delete_request, ec);
-   evas_object_smart_callback_add(ec->frame, "kill_request",
-                                  _e_comp_wl_evas_cb_kill_request, ec);
+   evas_object_smart_callback_add(ec->frame, "delete_request", _e_comp_wl_evas_cb_delete_request, ec);
+   evas_object_smart_callback_add(ec->frame, "kill_request",   _e_comp_wl_evas_cb_kill_request,   ec);
 
    /* setup ping callback */
-   evas_object_smart_callback_add(ec->frame, "ping",
-                                  _e_comp_wl_evas_cb_ping, ec);
-
-   evas_object_smart_callback_add(ec->frame, "color_set",
-                                  _e_comp_wl_evas_cb_color_set, ec);
+   evas_object_smart_callback_add(ec->frame, "ping",           _e_comp_wl_evas_cb_ping,           ec);
+   evas_object_smart_callback_add(ec->frame, "color_set",      _e_comp_wl_evas_cb_color_set,      ec);
 
    ec->comp_data->evas_init = EINA_TRUE;
 }
@@ -3299,7 +3271,6 @@ _e_comp_wl_client_cb_resize_end(void *data EINA_UNUSED, E_Client *ec)
 
    if (ec->pending_resize)
      {
-
         ec->changes.pos = EINA_TRUE;
         ec->changes.size = EINA_TRUE;
         EC_CHANGED(ec);
@@ -3724,47 +3695,25 @@ e_comp_wl_init(void)
 
    /* add event handlers to catch E events */
 #ifndef HAVE_WAYLAND_ONLY
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_RANDR_CHANGE,
-                         _e_comp_wl_cb_randr_change, NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_RANDR_CHANGE,          _e_comp_wl_cb_randr_change,    NULL);
 #endif
-
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD,
-                         _e_comp_wl_cb_comp_object_add, NULL);
-
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN,
-                         _e_comp_wl_cb_input_event, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_UP,
-                         _e_comp_wl_cb_input_event, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_DOWN,
-                         _e_comp_wl_cb_input_event, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_UP,
-                         _e_comp_wl_cb_input_event, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_MOVE,
-                         _e_comp_wl_cb_input_event, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_WHEEL,
-                         _e_comp_wl_cb_input_event, NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD,       _e_comp_wl_cb_comp_object_add, NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN,          _e_comp_wl_cb_input_event,     NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_UP,            _e_comp_wl_cb_input_event,     NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_DOWN, _e_comp_wl_cb_input_event,     NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_UP,   _e_comp_wl_cb_input_event,     NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_MOVE,        _e_comp_wl_cb_input_event,     NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_WHEEL,       _e_comp_wl_cb_input_event,     NULL);
 
    /* add hooks to catch e_client events */
-   e_client_hook_add(E_CLIENT_HOOK_NEW_CLIENT, _e_comp_wl_client_cb_new, NULL);
-   e_client_hook_add(E_CLIENT_HOOK_DEL, _e_comp_wl_client_cb_del, NULL);
-
-   e_client_hook_add(E_CLIENT_HOOK_EVAL_POST_NEW_CLIENT,
-                     _e_comp_wl_client_cb_post_new, NULL);
-   /* e_client_hook_add(E_CLIENT_HOOK_EVAL_PRE_FRAME_ASSIGN,  */
-   /*                   _e_comp_wl_client_cb_pre_frame, NULL); */
-
-   e_client_hook_add(E_CLIENT_HOOK_FOCUS_SET,
-                     _e_comp_wl_client_cb_focus_set, NULL);
-   e_client_hook_add(E_CLIENT_HOOK_FOCUS_UNSET,
-                     _e_comp_wl_client_cb_focus_unset, NULL);
-
-   e_client_hook_add(E_CLIENT_HOOK_RESIZE_BEGIN,
-                     _e_comp_wl_client_cb_resize_begin, NULL);
-   e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,
-                     _e_comp_wl_client_cb_resize_end, NULL);
-
-   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,
-                     _e_comp_wl_client_cb_move_end, NULL);
+   e_client_hook_add(E_CLIENT_HOOK_NEW_CLIENT,           _e_comp_wl_client_cb_new,          NULL);
+   e_client_hook_add(E_CLIENT_HOOK_DEL,                  _e_comp_wl_client_cb_del,          NULL);
+   e_client_hook_add(E_CLIENT_HOOK_EVAL_POST_NEW_CLIENT, _e_comp_wl_client_cb_post_new,     NULL);
+   e_client_hook_add(E_CLIENT_HOOK_FOCUS_SET,            _e_comp_wl_client_cb_focus_set,    NULL);
+   e_client_hook_add(E_CLIENT_HOOK_FOCUS_UNSET,          _e_comp_wl_client_cb_focus_unset,  NULL);
+   e_client_hook_add(E_CLIENT_HOOK_RESIZE_BEGIN,         _e_comp_wl_client_cb_resize_begin, NULL);
+   e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,           _e_comp_wl_client_cb_resize_end,   NULL);
+   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,             _e_comp_wl_client_cb_move_end,     NULL);
 
    _last_event_time = ecore_loop_time_get();
 
