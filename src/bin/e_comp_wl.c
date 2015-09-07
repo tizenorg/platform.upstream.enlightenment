@@ -1824,7 +1824,11 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
           {
              EINA_LIST_FREE(state->damages, dmg)
                {
-                  e_comp_object_damage(ec->frame, dmg->x, dmg->y, dmg->w, dmg->h);
+                  /* not creating damage for ec that shows a underlay video */
+                  if (ec->comp_data->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_DRM ||
+                      !ec->comp_data->available_hw_accel.underlay)
+                    e_comp_object_damage(ec->frame, dmg->x, dmg->y, dmg->w, dmg->h);
+
                   eina_rectangle_free(dmg);
                }
           }
@@ -1881,6 +1885,10 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
     * NB: This clears state->frames list */
    EINA_LIST_FOREACH(state->frames, l, cb)
      eina_list_move(&ec->comp_data->frames, &state->frames, cb);
+
+   if (ec->comp_data->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_DRM &&
+       !ec->comp_data->available_hw_accel.underlay)
+     e_pixmap_image_clear(ec->pixmap, 1);
 
    return;
 
