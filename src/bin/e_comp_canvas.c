@@ -638,6 +638,9 @@ e_comp_post_update_purge(E_Client *ec)
    EINA_LIST_FOREACH_SAFE(e_comp->post_updates, l, ll, ec2)
      {
         if (ec2 == ec)
-          e_comp->post_updates = eina_list_remove_list(e_comp->post_updates, l);
+          {
+             e_comp->post_updates = eina_list_remove_list(e_comp->post_updates, l);
+             e_object_unref(E_OBJECT(ec));
+          }
      }
 }
