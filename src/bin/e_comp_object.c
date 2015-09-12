@@ -2104,6 +2104,7 @@ _e_comp_smart_del(Evas_Object *obj)
    if (cw->animating)
      {
         cw->comp->animating--;
+        e_object_unref(E_OBJECT(cw->ec));
      }
    cw->animating = 0;
    E_FREE_FUNC(cw->updates, eina_tiler_free);
