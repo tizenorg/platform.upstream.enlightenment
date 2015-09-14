@@ -1,6 +1,8 @@
 #define E_COMP_WL
 #include "e.h"
 
+#include <wayland-tbm-server.h>
+
 /* handle include for printing uint64_t */
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -1797,7 +1799,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
              EINA_LIST_FREE(state->damages, dmg)
                {
                   /* not creating damage for ec that shows a underlay video */
-                  if (ec->comp_data->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_DRM ||
+                  if (ec->comp_data->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_TBM ||
                       !e_comp->wl_comp_data->available_hw_accel.underlay)
                     e_comp_object_damage(ec->frame, dmg->x, dmg->y, dmg->w, dmg->h);
 
@@ -1858,7 +1860,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    EINA_LIST_FOREACH(state->frames, l, cb)
      eina_list_move(&ec->comp_data->frames, &state->frames, cb);
 
-   if (ec->comp_data->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_DRM &&
+   if (ec->comp_data->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_TBM &&
        e_comp->wl_comp_data->available_hw_accel.underlay)
      e_pixmap_image_clear(ec->pixmap, 1);
 
@@ -3942,7 +3944,7 @@ e_comp_wl_buffer_get(struct wl_resource *resource)
    struct wl_shm_buffer *shmbuff;
    E_Comp_Data *cdata;
    Eina_Bool res;
-   E_Drm_Buffer *drm_buffer;
+   tbm_surface_h tbm_surf;
 
    listener =
      wl_resource_get_destroy_listener(resource, _e_comp_wl_buffer_cb_destroy);
@@ -3960,16 +3962,16 @@ e_comp_wl_buffer_get(struct wl_resource *resource)
         buffer->w = wl_shm_buffer_get_width(shmbuff);
         buffer->h = wl_shm_buffer_get_height(shmbuff);
      }
-   else if ((drm_buffer = e_drm_buffer_get(resource)))
-     {
-        buffer->type = E_COMP_WL_BUFFER_TYPE_DRM;
-        buffer->w = drm_buffer->width;
-        buffer->h = drm_buffer->height;
-     }
    else
      {
         cdata = e_comp->wl_comp_data;
-        if (cdata->gl.api)
+        if ((tbm_surf = wayland_tbm_server_get_surface(cdata->tbm.server, resource)))
+          {
+             buffer->type = E_COMP_WL_BUFFER_TYPE_TBM;
+             buffer->w = tbm_surface_get_width(tbm_surf);
+             buffer->h = tbm_surface_get_height(tbm_surf);
+          }
+        else if (cdata->gl.api)
           {
              buffer->type = E_COMP_WL_BUFFER_TYPE_NATIVE;
 

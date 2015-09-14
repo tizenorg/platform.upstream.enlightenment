@@ -160,7 +160,6 @@
 # include "e_comp_wl_data.h"
 # include "e_comp_wl_input.h"
 # include "e_uuid_store.h"
-# include "e_drm_buffer_pool.h"
 #ifdef HAVE_WAYLAND_TBM
 # include "e_comp_wl_tbm.h"
 #endif

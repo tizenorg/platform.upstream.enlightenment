@@ -2,6 +2,7 @@
 
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
 # include "e_comp_wl.h"
+# include <wayland-tbm-server.h>
 #include <tizen-extension-server-protocol.h>
 #endif
 #ifndef HAVE_WAYLAND_ONLY
@@ -713,17 +714,17 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
                }
 
           }
-        else if (buffer->type == E_COMP_WL_BUFFER_TYPE_DRM)
+        else if (buffer->type == E_COMP_WL_BUFFER_TYPE_TBM)
           {
-             E_Drm_Buffer *drm_buffer = e_drm_buffer_get(buffer->resource);
              E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+             tbm_surface_h tbm_surf = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
 
              buffer->shm_buffer = NULL;
              cp->w = buffer->w;
              cp->h = buffer->h;
-             switch (drm_buffer->format)
+             switch (tbm_surface_get_format(tbm_surf))
                {
-                case TIZEN_BUFFER_POOL_FORMAT_ARGB8888:
+                case TBM_FORMAT_ARGB8888:
                    cp->image_argb = EINA_TRUE;
                    break;
                 default:

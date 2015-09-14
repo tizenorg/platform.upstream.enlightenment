@@ -206,7 +206,6 @@ src/bin/e_zone.h
 
 if HAVE_WAYLAND
 ENLIGHTENMENTHEADERS += \
-src/bin/e_drm_buffer_pool.h \
 src/bin/e_uuid_store.h \
 src/bin/e_comp_wl_data.h \
 src/bin/e_comp_wl_input.h \
@@ -386,7 +385,6 @@ endif
 
 if HAVE_WAYLAND
 enlightenment_src += \
-src/bin/e_drm_buffer_pool.c \
 src/bin/e_uuid_store.c \
 src/bin/e_comp_wl_data.c \
 src/bin/e_comp_wl_input.c \

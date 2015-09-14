@@ -52,7 +52,7 @@ typedef enum _E_Comp_Wl_Buffer_Type
    E_COMP_WL_BUFFER_TYPE_NONE = 0,
    E_COMP_WL_BUFFER_TYPE_SHM = 1,
    E_COMP_WL_BUFFER_TYPE_NATIVE = 2,
-   E_COMP_WL_BUFFER_TYPE_DRM = 3
+   E_COMP_WL_BUFFER_TYPE_TBM = 3
 } E_Comp_Wl_Buffer_Type;
 
 struct _E_Comp_Wl_Buffer
