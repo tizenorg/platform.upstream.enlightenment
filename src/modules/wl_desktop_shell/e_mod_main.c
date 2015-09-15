@@ -277,6 +277,7 @@ _e_shell_surface_cb_toplevel_set(struct wl_client *client EINA_UNUSED, struct wl
      }
 
    /* set toplevel client properties */
+   ec->icccm.accepts_focus = 1;
    if (!ec->internal)
      ec->borderless = !ec->internal;
 
