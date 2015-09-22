@@ -17,6 +17,8 @@ EAPI Ecore_X_Atom ATM_NETWM_SHOW_WINDOW_MENU = 0;
 EAPI Ecore_X_Atom ATM_NETWM_PERFORM_BUTTON_ACTION = 0;
 #endif
 
+static Eina_List *aux_hints_supported = NULL;
+
 EINTERN void
 e_hints_init(Ecore_Window root, Ecore_Window propwin)
 {
@@ -1730,3 +1732,46 @@ e_hints_scale_update(void)
 #endif
 }
 
+EAPI const Eina_List *
+e_hints_aux_hint_supported_add(const char *hint)
+{
+#ifdef HAVE_WAYLAND_ONLY
+   Eina_List *l;
+   const char *supported;
+   EINA_LIST_FOREACH(aux_hints_supported, l, supported)
+     {
+        if (!strcmp(supported, hint))
+          return aux_hints_supported;
+     }
+   aux_hints_supported = eina_list_append(aux_hints_supported, hint);
+   return aux_hints_supported;
+#else
+(void)hint;
+#endif
+}
+
+EAPI const Eina_List *
+e_hints_aux_hint_supported_del(const char *hint)
+{
+#ifdef HAVE_WAYLAND_ONLY
+   Eina_List *l;
+   const char *supported;
+   EINA_LIST_FOREACH(aux_hints_supported, l, supported)
+     {
+        if (!strcmp(supported, hint))
+          {
+             aux_hints_supported = eina_list_remove(aux_hints_supported, hint);
+             break;
+          }
+     }
+   return aux_hints_supported;
+#else
+(void)hint;
+#endif
+}
+
+EAPI const Eina_List *
+e_hints_aux_hint_supported_get(void)
+{
+   return aux_hints_supported;
+}

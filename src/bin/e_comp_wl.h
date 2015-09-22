@@ -38,6 +38,7 @@
 
 #include <Evas_GL.h>
 
+typedef struct _E_Comp_Wl_Aux_Hint  E_Comp_Wl_Aux_Hint;
 typedef struct _E_Comp_Wl_Buffer E_Comp_Wl_Buffer;
 typedef struct _E_Comp_Wl_Buffer_Ref E_Comp_Wl_Buffer_Ref;
 typedef struct _E_Comp_Wl_Buffer_Viewport E_Comp_Wl_Buffer_Viewport;
@@ -54,6 +55,13 @@ typedef enum _E_Comp_Wl_Buffer_Type
    E_COMP_WL_BUFFER_TYPE_NATIVE = 2,
    E_COMP_WL_BUFFER_TYPE_TBM = 3
 } E_Comp_Wl_Buffer_Type;
+
+struct _E_Comp_Wl_Aux_Hint
+{
+   unsigned int id;
+   const char *hint;
+   const char *val;
+};
 
 struct _E_Comp_Wl_Buffer
 {
@@ -326,6 +334,11 @@ struct _E_Comp_Wl_Client_Data
         int sx, sy, dx, dy;
         int prev_degree, cur_degree;
      } transform;
+
+   struct
+     {
+        Eina_List *hints;
+     } aux_hint;
 
    /* before applying viewport */
    int width_from_buffer;
