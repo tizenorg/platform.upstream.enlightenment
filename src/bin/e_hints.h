@@ -45,9 +45,10 @@ EAPI void e_hints_window_qtopia_soft_menus_get(E_Client *ec);
 EAPI void e_hints_window_virtual_keyboard_state_get(E_Client *ec);
 EAPI void e_hints_window_virtual_keyboard_get(E_Client *ec);
 
-
 EAPI void e_hints_scale_update(void);
-
+EAPI const Eina_List * e_hints_aux_hint_supported_add(const char *hint);
+EAPI const Eina_List * e_hints_aux_hint_supported_del(const char *hint);
+EAPI const Eina_List * e_hints_aux_hint_supported_get(void);
 
 #ifdef E_COMP_X_H
 EAPI void e_hints_window_state_update(E_Client *ec, int state, int action);
