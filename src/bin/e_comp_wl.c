@@ -3005,6 +3005,7 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
    EINA_SAFETY_ON_NULL_RETURN(p_cdata);
    ec->comp_data->accepts_focus = p_cdata->accepts_focus;
    ec->comp_data->conformant = p_cdata->conformant;
+   ec->comp_data->aux_hint.hints = p_cdata->aux_hint.hints;
 
    /* add this client to the hash */
    /* eina_hash_add(clients_win_hash, &win, ec); */
@@ -3077,6 +3078,17 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
 
    if (ec->comp_data->surface)
      wl_resource_set_user_data(ec->comp_data->surface, NULL);
+
+   if (ec->comp_data->aux_hint.hints)
+     {
+        E_Comp_Wl_Aux_Hint *hint;
+        EINA_LIST_FREE(ec->comp_data->aux_hint.hints, hint)
+          {
+             eina_stringshare_del(hint->hint);
+             eina_stringshare_del(hint->val);
+             E_FREE(hint);
+          }
+     }
 
    e_pixmap_cdata_set(ec->pixmap, NULL);
 
