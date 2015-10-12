@@ -1144,11 +1144,23 @@ e_config_load(void)
                  EINA_LIST_FOREACH(e_config->xkb.used_layouts, l, cl)
                    {
                       if (cl->name == e_config->xkb.cur_layout)
-                        e_config->xkb.current_layout = e_config_xkb_layout_dup(cl);
+                        {
+                           if (e_config->xkb.current_layout)
+                             e_config_xkb_layout_free(e_config->xkb.current_layout);
+                           e_config->xkb.current_layout = e_config_xkb_layout_dup(cl);
+                        }
                       if (cl->name == e_config->xkb.selected_layout)
-                        e_config->xkb.sel_layout = e_config_xkb_layout_dup(cl);
+                        {
+                           if (e_config->xkb.sel_layout)
+                             e_config_xkb_layout_free(e_config->xkb.sel_layout);
+                           e_config->xkb.sel_layout = e_config_xkb_layout_dup(cl);
+                        }
                       if (cl->name == e_config->xkb.desklock_layout)
-                        e_config->xkb.lock_layout = e_config_xkb_layout_dup(cl);
+                        {
+                           if (e_config->xkb.lock_layout)
+                             e_config_xkb_layout_free(e_config->xkb.lock_layout);
+                           e_config->xkb.lock_layout = e_config_xkb_layout_dup(cl);
+                        }
                       if (((!!e_config->xkb.current_layout) == (!!e_config->xkb.cur_layout)) &&
                           ((!!e_config->xkb.sel_layout) == (!!e_config->xkb.selected_layout)) &&
                           ((!!e_config->xkb.lock_layout) == (!!e_config->xkb.desklock_layout)))
@@ -1634,7 +1646,7 @@ e_config_profile_list(void)
           }
      }
    len = e_prefix_data_concat_static(buf, "data/config");
-   if (len >= sizeof(buf))
+   if (len + 1 >= sizeof(buf))
      return NULL;
 
    files = ecore_file_ls(buf);
