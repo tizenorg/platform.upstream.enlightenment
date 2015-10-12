@@ -202,6 +202,11 @@ _e_pixmap_new(E_Pixmap_Type type)
    cp->dirty = 1;
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
    cp->cdata = E_NEW(E_Comp_Wl_Client_Data, 1);
+   if (!cp->cdata)
+     {
+        E_FREE(cp);
+        return NULL;
+     }
    cp->cdata->pending.buffer_viewport.buffer.transform = WL_OUTPUT_TRANSFORM_NORMAL;
    cp->cdata->pending.buffer_viewport.buffer.scale = 1;
    cp->cdata->pending.buffer_viewport.buffer.src_width = wl_fixed_from_int(-1);
