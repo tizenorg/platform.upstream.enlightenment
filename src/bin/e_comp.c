@@ -736,6 +736,8 @@ _e_comp_shapes_update_job(E_Comp *c)
 
    E_FREE_LIST(c->debug_rects, evas_object_del);
    tb = eina_tiler_new(c->man->w, c->man->h);
+   EINA_SAFETY_ON_NULL_GOTO(tb, tb_fail);
+
    eina_tiler_tile_size_set(tb, 1, 1);
    /* background */
    eina_tiler_rect_add(tb, &(Eina_Rectangle){0, 0, c->man->w, c->man->h});
@@ -765,14 +767,21 @@ _e_comp_shapes_update_job(E_Comp *c)
      }
 
    ti = eina_tiler_iterator_new(tb);
+   EINA_SAFETY_ON_NULL_GOTO(ti, ti_fail);
    tile_count = 128;
+
    exr = malloc(sizeof(Eina_Rectangle) * tile_count);
+   EINA_SAFETY_ON_NULL_GOTO(exr, exr_fail);
+
    i = 0;
    EINA_ITERATOR_FOREACH(ti, tr)
      {
         exr[i++] = *(Eina_Rectangle*)((char*)tr);
         if (i == tile_count - 1)
-          exr = realloc(exr, sizeof(Eina_Rectangle) * (tile_count *= 2));
+          {
+             exr = realloc(exr, sizeof(Eina_Rectangle) * (tile_count *= 2));
+             EINA_SAFETY_ON_NULL_GOTO(exr, exr_fail);
+          }
 #ifdef SHAPE_DEBUG
         Eina_List *l;
 
@@ -790,12 +799,15 @@ _e_comp_shapes_update_job(E_Comp *c)
    ecore_x_window_shape_input_rectangles_set(c->win, (Ecore_X_Rectangle*)exr, i);
 #endif
 
+exr_fail:
+   free(exr);
+ti_fail:
+   eina_iterator_free(ti);
 #ifdef SHAPE_DEBUG
    E_FREE_LIST(rl, free);
    printf("\n");
 #endif
-   free(exr);
-   eina_iterator_free(ti);
+tb_fail:
    eina_tiler_free(tb);
    c->shape_job = NULL;
 }
@@ -1031,24 +1043,32 @@ e_comp_init(void)
    {
       E_Action *act;
 
-      act = e_action_add("opacity_change");
-      act->func.go = _e_comp_act_opacity_change_go;
-      e_action_predef_name_set(N_("Compositor"),
-                               N_("Change current window opacity"), "opacity_change",
-                               NULL, "syntax: +/- the amount to change opacity by (>0 for more opaque)", 1);
-      actions = eina_list_append(actions, act);
-      act = e_action_add("opacity_set");
-      act->func.go = _e_comp_act_opacity_set_go;
-      e_action_predef_name_set(N_("Compositor"),
-                               N_("Set current window opacity"), "opacity_set",
-                               "255", "syntax: number between 0-255 to set for transparent-opaque", 1);
-      actions = eina_list_append(actions, act);
-      act = e_action_add("redirect_toggle");
-      act->func.go = _e_comp_act_redirect_toggle_go;
-      e_action_predef_name_set(N_("Compositor"),
-                               N_("Toggle focused client's redirect state"), "redirect_toggle",
-                               NULL, NULL, 0);
-      actions = eina_list_append(actions, act);
+      if ((act = e_action_add("opacity_change")))
+        {
+           act->func.go = _e_comp_act_opacity_change_go;
+           e_action_predef_name_set(N_("Compositor"),
+                                    N_("Change current window opacity"), "opacity_change",
+                                    NULL, "syntax: +/- the amount to change opacity by (>0 for more opaque)", 1);
+           actions = eina_list_append(actions, act);
+        }
+
+      if ((act = e_action_add("opacity_set")))
+        {
+           act->func.go = _e_comp_act_opacity_set_go;
+           e_action_predef_name_set(N_("Compositor"),
+                                    N_("Set current window opacity"), "opacity_set",
+                                    "255", "syntax: number between 0-255 to set for transparent-opaque", 1);
+           actions = eina_list_append(actions, act);
+        }
+
+      if ((act = e_action_add("redirect_toggle")))
+        {
+           act->func.go = _e_comp_act_redirect_toggle_go;
+           e_action_predef_name_set(N_("Compositor"),
+                                    N_("Toggle focused client's redirect state"), "redirect_toggle",
+                                    NULL, NULL, 0);
+           actions = eina_list_append(actions, act);
+        }
    }
 
    {
@@ -1545,6 +1565,7 @@ EAPI unsigned int
 e_comp_e_object_layer_get(const E_Object *obj)
 {
    E_Gadcon *gc = NULL;
+   E_Client *ec = NULL;
 
    if (!obj) return 0;
 
@@ -1571,7 +1592,11 @@ e_comp_e_object_layer_get(const E_Object *obj)
         break;
      }
    if (e_obj_is_win(obj))
-     return e_win_client_get((void*)obj)->layer;
+     {
+        ec = e_win_client_get((void*)obj);
+        if (ec)
+          return ec->layer;
+     }
    return 0;
 }
 
@@ -1678,7 +1703,7 @@ e_comp_util_object_is_above_nocomp(Evas_Object *obj)
    EINA_SAFETY_ON_NULL_RETURN_VAL(obj, EINA_FALSE);
    if (!evas_object_visible_get(obj)) return EINA_FALSE;
    comp = e_comp_util_evas_object_comp_get(obj);
-   if (!comp->nocomp_ec) return EINA_FALSE;
+   if ((!comp) || (!comp->nocomp_ec)) return EINA_FALSE;
    cl = evas_object_layer_get(comp->nocomp_ec->frame);
    ol = evas_object_layer_get(obj);
    if (cl > ol) return EINA_FALSE;
