@@ -195,10 +195,10 @@ _e_comp_wl_transform_unset(E_Client *ec)
 
    Elm_Transit *trans;
    E_Comp_Wl_Transform_Context *ctxt;
+   ctxt = E_NEW(E_Comp_Wl_Transform_Context, 1);
+   if (!ctxt) return;
 
    ec->comp_data->transform.start = 1;
-
-   ctxt = E_NEW(E_Comp_Wl_Transform_Context, 1);
    ctxt->direction = 1;
    ctxt->ec = ec;
    ctxt->degree = 360 - ec->comp_data->transform.cur_degree;
@@ -247,9 +247,11 @@ _e_comp_wl_transform_set(E_Client *ec,
          return EINA_FALSE;
      }
 
+   ctxt = E_NEW(E_Comp_Wl_Transform_Context, 1);
+   if (!ctxt) return EINA_FALSE;
+
    ec->comp_data->transform.start = 1;
 
-   ctxt = E_NEW(E_Comp_Wl_Transform_Context, 1);
    ctxt->direction = direction / abs(direction);
    ctxt->ec = ec;
    ctxt->degree = degree;
@@ -2339,7 +2341,7 @@ _e_comp_wl_pname_print(pid_t pid)
    char proc[512], pname[512];
    size_t len;
 
-   sprintf(proc, "/proc/%d/cmdline", pid);
+   snprintf(proc, 512,"/proc/%d/cmdline", pid);
 
    h = fopen(proc, "r");
    if (!h) return;
@@ -3811,6 +3813,8 @@ EINTERN void
 e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer)
 {
    E_Event_Client *ev;
+   ev = E_NEW(E_Event_Client, 1);
+   if (!ev) return;
 
    e_comp_wl_buffer_reference(&ec->comp_data->buffer_ref, buffer);
 
@@ -3822,7 +3826,6 @@ e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer)
    _e_comp_wl_surface_state_size_update(ec, &ec->comp_data->pending);
    _e_comp_wl_map_size_cal_from_buffer(ec);
 
-   ev = E_NEW(E_Event_Client, 1);
    ev->ec = ec;
    e_object_ref(E_OBJECT(ec));
    ecore_event_add(E_EVENT_CLIENT_BUFFER_CHANGE, ev,
