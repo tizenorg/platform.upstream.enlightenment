@@ -189,6 +189,7 @@ _directory_make(char *path)
         if (!temp)
           {
              free(buf);
+             free(fullpath);
              return NULL;
           }
         if (path)
@@ -204,6 +205,8 @@ _directory_make(char *path)
 
    if (!(dp = opendir (dir)))
      {
+        free(buf);
+        free(fullpath);
         printf("not exist: %s\n", dir);
         return NULL;
      }
@@ -223,6 +226,7 @@ _directory_make(char *path)
    if ((mkdir(fullpath, 0755)) < 0)
      {
         printf("fail: mkdir '%s'\n", fullpath);
+        free(fullpath);
         return NULL;
      }
 
