@@ -352,7 +352,8 @@ _e_shell_surface_cb_popup_set(struct wl_client *client EINA_UNUSED, struct wl_re
      ec->border.changed = ec->changes.border = !ec->borderless;
    ec->changes.icon = !!ec->icccm.class;
    ec->netwm.type = E_WINDOW_TYPE_POPUP_MENU;
-   ec->comp_data->set_win_type = EINA_TRUE;
+   if (ec->comp_data)
+     ec->comp_data->set_win_type = EINA_TRUE;
    ec->layer = E_LAYER_CLIENT_POPUP;
 
    /* set this client as a transient for parent */
