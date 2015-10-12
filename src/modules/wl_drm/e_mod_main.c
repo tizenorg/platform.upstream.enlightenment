@@ -127,7 +127,7 @@ e_modapi_init(E_Module *m)
 {
    E_Comp *comp;
    int w = 0, h = 0, scr_w = 0, scr_h = 0;
-   char *env_w, *env_h;
+   const char *env_w, *env_h;
 
    printf("LOAD WL_DRM MODULE\n");
 
@@ -144,8 +144,21 @@ e_modapi_init(E_Module *m)
        ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_OPENGL_DRM))
      e_comp_gl_set(EINA_TRUE);
 
-   if ((env_w = getenv("E_SCREEN_WIDTH"))) scr_w = atoi(env_w);
-   if ((env_h = getenv("E_SCREEN_HEIGHT"))) scr_h = atoi(env_h);
+   env_w = getenv("E_SCREEN_WIDTH");
+   if (env_w)
+     {
+        char buf[8];
+        snprintf(buf, sizeof(buf), "%s", env_w);
+        scr_w = atoi(buf);
+     }
+
+   env_h = getenv("E_SCREEN_HEIGHT");
+   if (env_h)
+     {
+        char buf[8];
+        snprintf(buf, sizeof(buf), "%s", env_h);
+        scr_h = atoi(buf);
+     }
 
    if (scr_w <= 0) scr_w = 1;
    if (scr_h <= 0) scr_h = 1;
