@@ -3798,10 +3798,10 @@ e_client_below_get(const E_Client *ec)
                return ec2;
           }
      }
-   if (ec->layer == E_LAYER_CLIENT_DESKTOP) return NULL;
-   if (e_comp_canvas_client_layer_map(ec->layer) == 9999) return NULL;
 
    /* go down the layers until we find one */
+   if (e_comp_canvas_layer_map(ec->layer) == 9999) return NULL;
+   if (e_comp_canvas_layer_map(ec->layer) <= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP)) return NULL;
    for (x = e_comp_canvas_layer_map(ec->layer) - 1; x >= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x--)
      {
         if (!ec->comp->layers[x].clients) continue;
