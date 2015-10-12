@@ -938,7 +938,10 @@ _e_comp_act_opacity_obj_finder(E_Object *obj)
         return ec ? ec->frame : NULL;
      }
    if (e_obj_is_win(obj))
-     return e_win_client_get((void*)obj)->frame;
+     {
+        ec = e_win_client_get((Evas_Object *)obj);
+        return ec ? ec->frame : NULL;
+     }
    ec = e_client_focused_get();
    return ec ? ec->frame : NULL;
 }
