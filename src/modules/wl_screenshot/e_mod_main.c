@@ -115,6 +115,7 @@ _gc_init(E_Gadcon *gc, const char *name, const char *id, const char *style)
    char buff[PATH_MAX];
 
    inst = E_NEW(Instance, 1);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(inst, NULL);
 
    snprintf(buff, sizeof(buff), "%s/e-module-wl_screenshot.edj", _mod->dir);
 
@@ -124,6 +125,13 @@ _gc_init(E_Gadcon *gc, const char *name, const char *id, const char *style)
      edje_object_file_set(o, buff, "modules/wl_screenshot/main");
 
    gcc = e_gadcon_client_new(gc, name, id, style, o);
+   if (!gcc)
+     {
+        evas_object_del(o);
+        E_FREE(inst);
+        return NULL;
+     }
+
    gcc->data = inst;
 
    inst->gcc = gcc;
@@ -261,6 +269,8 @@ _create_shm_buffer(struct wl_shm *_shm, int width, int height, void **data_out)
 
    pool = wl_shm_create_pool(_shm, fd, size);
    close(fd);
+   if (!pool)
+     return NULL;
 
    buffer = 
      wl_shm_pool_create_buffer(pool, 0, width, height, stride,
@@ -324,11 +334,15 @@ _cb_timer(void *data __UNUSED__)
 
    /* FIXME: ow and oh should probably be the size of all outputs */
    buffer = _create_shm_buffer(ecore_wl_shm_get(), ow, oh, &d);
+   if (!buffer) return EINA_FALSE;
+
    screenshooter_shoot(_shooter, _output, buffer);
 
    ecore_wl_sync();
 
    _save_png(ow, oh, d);
+
+   wl_buffer_destroy(buffer);
 
    return EINA_FALSE;
 }
