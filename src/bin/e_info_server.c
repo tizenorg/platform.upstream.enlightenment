@@ -42,7 +42,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
         Eldbus_Message_Iter* struct_of_ec;
         Ecore_Window win;
         uint32_t res_id = 0;
-        pid_t pid;
+        pid_t pid = -1;
 
         ec = evas_object_data_get(o, "E_Client");
         if (!ec) continue;
@@ -55,7 +55,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
 #ifdef HAVE_WAYLAND_ONLY
         if (ec->comp_data)
           {
-             E_Comp_Wl_Client_Data *cdata = ec->comp_data;
+             E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
              if (cdata->surface)
                wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
           }
@@ -118,14 +118,19 @@ _e_info_server_cb_topvwins_dump(const Eldbus_Service_Interface *iface EINA_UNUSE
         snprintf(fname, sizeof(fname), "%s/0x%08x.png", dir, win);
 
 #ifdef HAVE_WAYLAND_ONLY
+        struct wl_shm_buffer *shmbuffer = NULL;
         E_Comp_Wl_Buffer *buffer = e_pixmap_resource_get(ec->pixmap);
         if (!buffer) continue;
 
         if (buffer->type == E_COMP_WL_BUFFER_TYPE_SHM)
           {
-             data = wl_shm_buffer_get_data(wl_shm_buffer_get(buffer->resource));
-             w = wl_shm_buffer_get_stride(wl_shm_buffer_get(buffer->resource))/4;
-             h = wl_shm_buffer_get_height(wl_shm_buffer_get(buffer->resource));
+             shmbuffer = wl_shm_buffer_get(buffer->resource);
+             if (shmbuffer)
+               {
+                  data = wl_shm_buffer_get_data(shmbuffer);
+                  w = wl_shm_buffer_get_stride(shmbuffer)/4;
+                  h = wl_shm_buffer_get_height(shmbuffer);
+               }
           }
         else if (buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
           {
