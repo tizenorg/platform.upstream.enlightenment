@@ -349,6 +349,7 @@ _e_client_event_simple(E_Client *ec, int type)
    E_Event_Client *ev;
 
    ev = E_NEW(E_Event_Client, 1);
+   if (!ev) return;
    ev->ec = ec;
    e_object_ref(E_OBJECT(ec));
    ecore_event_add(type, ev, (Ecore_End_Cb)_e_client_event_simple_free, NULL);
@@ -360,6 +361,7 @@ _e_client_event_property(E_Client *ec, int prop)
    E_Event_Client_Property *ev;
 
    ev = E_NEW(E_Event_Client_Property, 1);
+   if (!ev) return;
    ev->ec = ec;
    ev->property = prop;
    e_object_ref(E_OBJECT(ec));
@@ -716,6 +718,7 @@ _e_client_revert_focus(E_Client *ec)
    if (stopping) return;
    if (!ec->focused) return;
    desk = e_desk_current_get(ec->zone);
+   if (!desk) return;
    if (ec->desk == desk)
      evas_object_focus_set(ec->frame, 0);
 
@@ -3266,11 +3269,14 @@ e_client_desk_set(E_Client *ec, E_Desk *desk)
    if (old_desk)
      {
         ev = E_NEW(E_Event_Client_Desk_Set, 1);
-        ev->ec = ec;
-        e_object_ref(E_OBJECT(ec));
-        ev->desk = old_desk;
-        e_object_ref(E_OBJECT(old_desk));
-        ecore_event_add(E_EVENT_CLIENT_DESK_SET, ev, (Ecore_End_Cb)_e_client_event_desk_set_free, NULL);
+        if (ev)
+          {
+             ev->ec = ec;
+             e_object_ref(E_OBJECT(ec));
+             ev->desk = old_desk;
+             e_object_ref(E_OBJECT(old_desk));
+             ecore_event_add(E_EVENT_CLIENT_DESK_SET, ev, (Ecore_End_Cb)_e_client_event_desk_set_free, NULL);
+          }
 
         if (old_desk->zone == ec->zone)
           {
@@ -3674,6 +3680,9 @@ e_client_zone_set(E_Client *ec, E_Zone *zone)
    E_OBJECT_TYPE_CHECK(zone, E_ZONE_TYPE);
    if (ec->zone == zone) return;
 
+   ev = E_NEW(E_Event_Client_Zone_Set, 1);
+   if (!ev) return;
+
    /* if the window does not lie in the new zone, move it so that it does */
    if (!E_INTERSECTS(ec->x, ec->y, ec->w, ec->h, zone->x, zone->y, zone->w, zone->h))
      {
@@ -3712,7 +3721,6 @@ e_client_zone_set(E_Client *ec, E_Zone *zone)
    if ((!ec->desk) || (ec->desk->zone != ec->zone))
      e_client_desk_set(ec, e_desk_current_get(ec->zone));
 
-   ev = E_NEW(E_Event_Client_Zone_Set, 1);
    ev->ec = ec;
    e_object_ref(E_OBJECT(ec));
    ev->zone = zone;
@@ -4839,53 +4847,53 @@ e_client_act_resize_begin(E_Client *ec, E_Binding_Event_Mouse_Button *ev)
 
         snprintf(source, sizeof(source) - 1, "mouse,down,%i", ev->button);
         _e_client_moveinfo_gather(ec, source);
-     }
 
-   /* Use canvas.x, canvas.y of event.
-    * Transformed coordinates has to be considered for accurate resize_mode
-    * rather than absolute coordinates. */
-   if ((ev->canvas.x > (ec->x + ec->w / 5)) &&
-       (ev->canvas.x < (ec->x + ec->w * 4 / 5)))
-     {
-        if (ev->canvas.y < (ec->y + ec->h / 2))
+        /* Use canvas.x, canvas.y of event.
+         * Transformed coordinates has to be considered for accurate resize_mode
+         * rather than absolute coordinates. */
+        if ((ev->canvas.x > (ec->x + ec->w / 5)) &&
+            (ev->canvas.x < (ec->x + ec->w * 4 / 5)))
           {
-             ec->resize_mode = E_POINTER_RESIZE_T;
+             if (ev->canvas.y < (ec->y + ec->h / 2))
+               {
+                  ec->resize_mode = E_POINTER_RESIZE_T;
+               }
+             else
+               {
+                  ec->resize_mode = E_POINTER_RESIZE_B;
+               }
+          }
+        else if (ev->canvas.x < (ec->x + ec->w / 2))
+          {
+             if ((ev->canvas.y > (ec->y + ec->h / 5)) &&
+                 (ev->canvas.y < (ec->y + ec->h * 4 / 5)))
+               {
+                  ec->resize_mode = E_POINTER_RESIZE_L;
+               }
+             else if (ev->canvas.y < (ec->y + ec->h / 2))
+               {
+                  ec->resize_mode = E_POINTER_RESIZE_TL;
+               }
+             else
+               {
+                  ec->resize_mode = E_POINTER_RESIZE_BL;
+               }
           }
         else
           {
-             ec->resize_mode = E_POINTER_RESIZE_B;
-          }
-     }
-   else if (ev->canvas.x < (ec->x + ec->w / 2))
-     {
-        if ((ev->canvas.y > (ec->y + ec->h / 5)) &&
-            (ev->canvas.y < (ec->y + ec->h * 4 / 5)))
-          {
-             ec->resize_mode = E_POINTER_RESIZE_L;
-          }
-        else if (ev->canvas.y < (ec->y + ec->h / 2))
-          {
-             ec->resize_mode = E_POINTER_RESIZE_TL;
-          }
-        else
-          {
-             ec->resize_mode = E_POINTER_RESIZE_BL;
-          }
-     }
-   else
-     {
-        if ((ev->canvas.y > (ec->y + ec->h / 5)) &&
-            (ev->canvas.y < (ec->y + ec->h * 4 / 5)))
-          {
-             ec->resize_mode = E_POINTER_RESIZE_R;
-          }
-        else if (ev->canvas.y < (ec->y + ec->h / 2))
-          {
-             ec->resize_mode = E_POINTER_RESIZE_TR;
-          }
-        else
-          {
-             ec->resize_mode = E_POINTER_RESIZE_BR;
+             if ((ev->canvas.y > (ec->y + ec->h / 5)) &&
+                 (ev->canvas.y < (ec->y + ec->h * 4 / 5)))
+               {
+                  ec->resize_mode = E_POINTER_RESIZE_R;
+               }
+             else if (ev->canvas.y < (ec->y + ec->h / 2))
+               {
+                  ec->resize_mode = E_POINTER_RESIZE_TR;
+               }
+             else
+               {
+                  ec->resize_mode = E_POINTER_RESIZE_BR;
+               }
           }
      }
    if (!e_client_resize_begin(ec))
@@ -5366,7 +5374,7 @@ e_client_under_pointer_get(E_Desk *desk, E_Client *exclude)
           }
      }
 
-   return _e_client_under_pointer_helper(desk, exclude, x, y);
+   return desk ? _e_client_under_pointer_helper(desk, exclude, x, y) : NULL;
 }
 
 ////////////////////////////////////////////
