@@ -621,7 +621,11 @@ _e_comp_wl_clipboard_source_create(E_Comp_Data *cdata, const char *mime_type, ui
       ecore_main_fd_handler_add(fd, ECORE_FD_READ,
                                 _e_comp_wl_clipboard_source_save,
                                 cdata, NULL, NULL);
-   if (!source->fd_handler) return NULL;
+   if (!source->fd_handler)
+     {
+        E_FREE(source);
+        return NULL;
+     }
 
    source->fd = fd;
 
