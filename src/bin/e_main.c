@@ -1120,8 +1120,10 @@ _e_main_shutdown(int errcode)
    dir = getenv("XDG_RUNTIME_DIR");
    if (dir)
      {
-        snprintf(buf, sizeof(buf), "%s/.e-deleteme", dir);
-        if (ecore_file_exists(buf)) ecore_file_recursive_rm(dir);
+        char buf_env[PATH_MAX];
+        snprintf(buf_env, sizeof(buf_env), "%s", dir);
+        snprintf(buf, sizeof(buf), "%s/.e-deleteme", buf_env);
+        if (ecore_file_exists(buf)) ecore_file_recursive_rm(buf_env);
      }
    for (i = (_e_main_lvl - 1); i >= 0; i--)
      (*_e_main_shutdown_func[i])();
@@ -1659,18 +1661,20 @@ _e_main_desk_restore(void)
 {
    const Eina_List *l;
    E_Zone *zone;
-   char *env;
+   const char *env;
    char name[1024];
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
         E_Desk *desk;
         int desk_x, desk_y;
+        char buf_e[64];
 
         snprintf(name, sizeof(name), "DESK_%d_%d", e_comp->num, zone->num);
         env = getenv(name);
         if (!env) continue;
-        if (!sscanf(env, "%d,%d", &desk_x, &desk_y)) continue;
+        snprintf(buf_e, sizeof(buf_e), "%s", env);
+        if (!sscanf(buf_e, "%d,%d", &desk_x, &desk_y)) continue;
         desk = e_desk_at_xy_get(zone, desk_x, desk_y);
         if (!desk) continue;
         e_desk_show(desk);
