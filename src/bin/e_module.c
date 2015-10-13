@@ -744,6 +744,11 @@ _e_module_desktop_list_cb(const Eina_Hash *hash EINA_UNUSED, const void *key EIN
    if (desktop)
      {
         md = E_NEW(E_Module_Desktop, 1);
+        if (!md)
+          {
+             efreet_desktop_free(desktop);
+             return EINA_FALSE;
+          }
         md->desktop = desktop;
         md->dir = eina_stringshare_ref(data);
         *l = eina_list_append(*l, md);
