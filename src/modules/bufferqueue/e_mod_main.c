@@ -182,12 +182,21 @@ _e_bq_mgr_new(char *sock_name)
 
    /* try to get the current compositor */
    if (!(comp = e_comp))
-     return NULL;
+     {
+        free(bq_mgr);
+        return NULL;
+     }
 
    if ((comp->comp_type == E_PIXMAP_TYPE_X) ||
        (sock_name != NULL))
      {
         bq_mgr->wdpy = wl_display_create();
+        if (bq_mgr->wdpy)
+          {
+             free(bq_mgr);
+             return NULL;
+          }
+
         bq_mgr->loop = wl_display_get_event_loop(bq_mgr->wdpy);
         if (bq_mgr->loop)
           {
