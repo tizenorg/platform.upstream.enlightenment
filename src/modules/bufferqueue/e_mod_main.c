@@ -438,6 +438,9 @@ _e_bq_mgr_consumer_side_buffer_create(E_Bq_Consumer *consumer, E_Bq_Buffer *buff
      return;
 
    resource = e_object_data_get(E_OBJECT(consumer));
+   if (!resource)
+     return;
+
    buffer->consumer = wl_resource_create(wl_resource_get_client(resource),
                                         &bq_buffer_interface, 1, 0);
 
@@ -585,6 +588,9 @@ _e_bq_mgr_provider_buffer_attach(struct wl_client *client, struct wl_resource *r
    consumer = bq->consumer;
 
    bq_buf = E_OBJECT_ALLOC(E_Bq_Buffer, E_BQ_BUFFER_TYPE, _e_bq_mgr_buffer_free);
+   if (!bq_buf)
+     return;
+
    bq_buf->provider = wl_resource_create(client, &bq_buffer_interface, 1, buffer);
    if (!bq_buf->provider)
      {
