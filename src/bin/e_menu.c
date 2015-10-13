@@ -607,6 +607,8 @@ e_menu_item_new(E_Menu *m)
    E_OBJECT_CHECK_RETURN(m, NULL);
    E_OBJECT_TYPE_CHECK_RETURN(m, E_MENU_TYPE, NULL);
    mi = E_OBJECT_ALLOC(E_Menu_Item, E_MENU_ITEM_TYPE, _e_menu_item_free);
+   if (!mi) return NULL;
+
    mi->menu = m;
    mi->menu->items = eina_list_append(mi->menu->items, mi);
    mi->list_position = eina_list_last(mi->menu->items);
@@ -627,6 +629,8 @@ e_menu_item_new_relative(E_Menu *m, E_Menu_Item *rel)
      }
 
    mi = E_OBJECT_ALLOC(E_Menu_Item, E_MENU_ITEM_TYPE, _e_menu_item_free);
+   if (!mi) return NULL;
+
    mi->menu = m;
 
    if (rel)
