@@ -216,6 +216,8 @@ _e_comp_object_event_add(Evas_Object *obj)
 
    if (stopping) return;
    ev = E_NEW(E_Event_Comp_Object, 1);
+   EINA_SAFETY_ON_NULL_RETURN(ev);
+
    evas_object_ref(obj);
    ev->comp_object = obj;
    ecore_event_add(E_EVENT_COMP_OBJECT_ADD, ev, _e_comp_object_event_free, NULL);
@@ -1961,6 +1963,8 @@ _e_comp_smart_add(Evas_Object *obj)
    E_Comp_Object *cw;
 
    cw = E_NEW(E_Comp_Object, 1);
+   EINA_SAFETY_ON_NULL_RETURN(cw);
+
    cw->smart_obj = obj;
    cw->x = cw->y = cw->w = cw->h = -1;
    evas_object_smart_data_set(obj, cw);
@@ -2250,13 +2254,15 @@ e_comp_object_zoomap_set(Evas_Object *obj, Eina_Bool enabled)
 {
    API_ENTRY;
 
+   EINA_SAFETY_ON_NULL_RETURN(cw->ec);
+
    enabled = !enabled;
    if (cw->zoomap_disabled == enabled) return;
    if (enabled)
      {
         cw->zoomobj = e_zoomap_add(cw->comp->evas);
         e_zoomap_smooth_set(cw->zoomobj, e_comp_config_get()->smooth_windows);
-        e_zoomap_child_set(cw->zoomobj, cw->ec ? cw->frame_object : cw->obj);
+        e_zoomap_child_set(cw->zoomobj, cw->frame_object);
         edje_object_part_swallow(cw->shobj, "e.swallow.content", cw->zoomobj);
         e_zoomap_child_edje_solid_setup(cw->zoomobj);
         if (cw->ec->override)
@@ -2268,7 +2274,7 @@ e_comp_object_zoomap_set(Evas_Object *obj, Eina_Bool enabled)
      {
         edje_object_part_unswallow(cw->shobj, cw->zoomobj);
         E_FREE_FUNC(cw->zoomobj, evas_object_del);
-        edje_object_part_swallow(cw->shobj, "e.swallow.content", cw->ec ? cw->frame_object : cw->obj);
+        edje_object_part_swallow(cw->shobj, "e.swallow.content", cw->frame_object);
      }
    cw->zoomap_disabled = enabled;
 }
