@@ -149,9 +149,12 @@ e_module_init(void)
    if (!mod_src_path)
      {
         const char *src_path = getenv("E_MODULE_SRC_PATH");
-        char buf_p[PATH_MAX];
-        snprintf(buf_p, sizeof(buf_p), "%s", src_path);
-        mod_src_path = eina_stringshare_add((const char*)buf_p);
+        if (src_path)
+          {
+             char buf_p[PATH_MAX];
+             snprintf(buf_p, sizeof(buf_p), "%s", src_path);
+             mod_src_path = eina_stringshare_add((const char*)buf_p);
+          }
      }
 
    E_LIST_HANDLER_APPEND(handlers, EIO_MONITOR_DIRECTORY_CREATED, _module_monitor_dir_create, NULL);
@@ -318,9 +321,12 @@ e_module_new(const char *name)
         if (!mod_src_path)
           {
              const char *src_path = getenv("E_MODULE_SRC_PATH");
-             char buf_p[PATH_MAX];
-             snprintf(buf_p, sizeof(buf_p), "%s", src_path);
-             mod_src_path = eina_stringshare_add((const char*)buf_p);
+             if (src_path)
+               {
+                  char buf_p[PATH_MAX];
+                  snprintf(buf_p, sizeof(buf_p), "%s", src_path);
+                  mod_src_path = eina_stringshare_add((const char*)buf_p);
+               }
           }
         if (mod_src_path)
           {
