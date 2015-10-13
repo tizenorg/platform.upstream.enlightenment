@@ -309,6 +309,8 @@ e_module_new(const char *name)
 
    if (!name) return NULL;
    m = E_OBJECT_ALLOC(E_Module, E_MODULE_TYPE, _e_module_free);
+   if (!m) return NULL;
+
    if (name[0] != '/')
      {
         Eina_Stringshare *path = NULL;
