@@ -516,6 +516,7 @@ _e_comp_wl_clipboard_offer_create(E_Comp_Wl_Clipboard_Source* source, int fd)
    E_Comp_Wl_Clipboard_Offer *offer;
 
    offer = E_NEW(E_Comp_Wl_Clipboard_Offer, 1);
+   if (!offer) return;
 
    offer->offset = 0;
    offer->source = source;
