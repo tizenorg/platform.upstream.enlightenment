@@ -147,7 +147,12 @@ e_module_init(void)
    _e_modules_hash = eina_hash_string_superfast_new(NULL);
 
    if (!mod_src_path)
-     mod_src_path = eina_stringshare_add(getenv("E_MODULE_SRC_PATH"));
+     {
+        const char *src_path = getenv("E_MODULE_SRC_PATH");
+        char buf_p[PATH_MAX];
+        snprintf(buf_p, sizeof(buf_p), "%s", src_path);
+        mod_src_path = eina_stringshare_add((const char*)buf_p);
+     }
 
    E_LIST_HANDLER_APPEND(handlers, EIO_MONITOR_DIRECTORY_CREATED, _module_monitor_dir_create, NULL);
    E_LIST_HANDLER_APPEND(handlers, EIO_MONITOR_DIRECTORY_DELETED, _module_monitor_dir_del, NULL);
@@ -309,7 +314,12 @@ e_module_new(const char *name)
         Eina_Stringshare *path = NULL;
 
         if (!mod_src_path)
-          mod_src_path = eina_stringshare_add(getenv("E_MODULE_SRC_PATH"));
+          {
+             const char *src_path = getenv("E_MODULE_SRC_PATH");
+             char buf_p[PATH_MAX];
+             snprintf(buf_p, sizeof(buf_p), "%s", src_path);
+             mod_src_path = eina_stringshare_add((const char*)buf_p);
+          }
         if (mod_src_path)
           {
              snprintf(buf, sizeof(buf), "%s/%s/.libs/module.so", mod_src_path, name);
