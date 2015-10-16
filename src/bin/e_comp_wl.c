@@ -4066,7 +4066,7 @@ _e_comp_wl_output_get(Eina_List *outputs, const char *id)
  * @param h          output's height in pixels
  * @param pw         output's physical width in millimeters
  * @param ph         output's physical height in millimeters
- * @param refresh    output's refresh rate in Hz
+ * @param refresh    output's refresh rate in mHz
  * @param subpixel   output's subpixel layout
  * @param transform  output's rotation and/or mirror transformation
  */
@@ -4110,7 +4110,7 @@ e_comp_wl_output_init(const char *id, const char *make, const char *model, int x
    output->h = h;
    output->phys_width = pw;
    output->phys_height = ph;
-   output->refresh = refresh * 1000;
+   output->refresh = refresh;
    output->subpixel = subpixel;
    output->transform = transform;
 
