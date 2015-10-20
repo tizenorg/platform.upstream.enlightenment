@@ -373,6 +373,7 @@ struct _E_Comp_Wl_Client_Data
    Eina_Bool opaque_state : 1;
    unsigned char accepts_focus : 1;
    unsigned char conformant : 1;
+   E_Window_Type win_type;
 };
 
 struct _E_Comp_Wl_Output

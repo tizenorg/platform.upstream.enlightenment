@@ -1234,6 +1234,7 @@ _e_xdg_shell_cb_surface_get(struct wl_client *client, struct wl_resource *resour
    E_Comp_Client_Data *p_cdata = e_pixmap_cdata_get(ep);
    EINA_SAFETY_ON_NULL_RETURN(p_cdata);
    ec->icccm.accepts_focus = ec->icccm.take_focus = p_cdata->accepts_focus;
+   ec->netwm.type = p_cdata->win_type;
 }
 
 static void

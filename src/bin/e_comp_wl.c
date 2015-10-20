@@ -3040,6 +3040,7 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
    ec->comp_data->accepts_focus = p_cdata->accepts_focus;
    ec->comp_data->conformant = p_cdata->conformant;
    ec->comp_data->aux_hint.hints = p_cdata->aux_hint.hints;
+   ec->comp_data->win_type = p_cdata->win_type;
 
    /* add this client to the hash */
    /* eina_hash_add(clients_win_hash, &win, ec); */

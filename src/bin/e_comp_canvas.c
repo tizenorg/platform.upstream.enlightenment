@@ -524,11 +524,12 @@ e_comp_canvas_layer_map_to(unsigned int layer)
       case 15: return E_LAYER_CLIENT_NOTIFICATION_LOW;
       case 16: return E_LAYER_CLIENT_NOTIFICATION_NORMAL;
       case 17: return E_LAYER_CLIENT_NOTIFICATION_HIGH;
-      case 18: return E_LAYER_CLIENT_ALERT;
-      case 19: return E_LAYER_POPUP;
-      case 20: return E_LAYER_MENU;
-      case 21: return E_LAYER_DESKLOCK;
-      case 22: return E_LAYER_MAX;
+      case 18: return E_LAYER_CLIENT_NOTIFICATION_TOP;
+      case 19: return E_LAYER_CLIENT_ALERT;
+      case 20: return E_LAYER_POPUP;
+      case 21: return E_LAYER_MENU;
+      case 22: return E_LAYER_DESKLOCK;
+      case 23: return E_LAYER_MAX;
       default: break;
      }
    return -INT_MAX;
@@ -557,11 +558,12 @@ e_comp_canvas_layer_map(E_Layer layer)
       case E_LAYER_CLIENT_NOTIFICATION_LOW: return 15;
       case E_LAYER_CLIENT_NOTIFICATION_NORMAL: return 16;
       case E_LAYER_CLIENT_NOTIFICATION_HIGH: return 17;
-      case E_LAYER_CLIENT_ALERT: return 18;
-      case E_LAYER_POPUP: return 19;
-      case E_LAYER_MENU: return 20;
-      case E_LAYER_DESKLOCK: return 21;
-      case E_LAYER_MAX: return 22;
+      case E_LAYER_CLIENT_NOTIFICATION_TOP: return 18;
+      case E_LAYER_CLIENT_ALERT: return 19;
+      case E_LAYER_POPUP: return 20;
+      case E_LAYER_MENU: return 21;
+      case E_LAYER_DESKLOCK: return 22;
+      case E_LAYER_MAX: return 23;
       default: break;
      }
    return 9999;
@@ -586,7 +588,8 @@ e_comp_canvas_client_layer_map(E_Layer layer)
       case E_LAYER_CLIENT_NOTIFICATION_LOW: return 11;
       case E_LAYER_CLIENT_NOTIFICATION_NORMAL: return 12;
       case E_LAYER_CLIENT_NOTIFICATION_HIGH: return 13;
-      case E_LAYER_CLIENT_ALERT: return 14;
+      case E_LAYER_CLIENT_NOTIFICATION_TOP: return 14;
+      case E_LAYER_CLIENT_ALERT: return 15;
       default: break;
      }
    return 9999;
@@ -612,6 +615,7 @@ e_comp_canvas_client_layer_map_nearest(int layer)
    LAYER_MAP(E_LAYER_CLIENT_NOTIFICATION_LOW);
    LAYER_MAP(E_LAYER_CLIENT_NOTIFICATION_NORMAL);
    LAYER_MAP(E_LAYER_CLIENT_NOTIFICATION_HIGH);
+   LAYER_MAP(E_LAYER_CLIENT_NOTIFICATION_TOP);
    return E_LAYER_CLIENT_ALERT;
 }
 
