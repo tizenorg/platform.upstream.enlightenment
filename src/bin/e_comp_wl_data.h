@@ -54,6 +54,9 @@ struct _E_Comp_Wl_Clipboard_Offer
 EINTERN void e_comp_wl_data_device_keyboard_focus_set(E_Comp_Data *cdata);
 EINTERN Eina_Bool e_comp_wl_data_manager_init(E_Comp_Data *cdata);
 EINTERN void e_comp_wl_data_manager_shutdown(E_Comp_Data *cdata);
+EINTERN Eina_Bool e_comp_wl_data_dnd_focus(E_Client *ec);
+EINTERN void e_comp_wl_data_dnd_motion(E_Client *ec, unsigned int time, int x, int y);
+EINTERN void e_comp_wl_data_dnd_drop(E_Client *ec, unsigned int time, uint32_t btn, uint32_t state);
 
 # endif
 #endif

@@ -656,6 +656,12 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    if (!ec->comp_data->surface) return;
    if (ec->comp_data->transform.start) return;
 
+   if (e_comp->wl_comp_data->dnd.enabled)
+     {
+        e_comp_wl_data_dnd_focus(ec);
+        return;
+     }
+
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(ec->comp->wl_comp_data->wl.disp);
    EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
@@ -700,6 +706,12 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
    if (!ec->comp_data->surface) return;
    if (ec->comp_data->transform.start) return;
 
+   if (e_comp->wl_comp_data->dnd.enabled)
+     {
+        if (e_comp->wl_comp_data->dnd.focus == ec->comp_data->surface)
+          e_comp_wl_data_dnd_focus(NULL);
+     }
+
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(ec->comp->wl_comp_data->wl.disp);
    EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
@@ -730,6 +742,14 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (e_client_util_ignored_get(ec)) return;
    if (!ec->comp_data->surface) return;
+
+   if (e_comp->wl_comp_data->dnd.enabled)
+     {
+        e_comp_wl_data_dnd_motion(ec, ev->timestamp,
+                                  ev->cur.canvas.x - ec->client.x,
+                                  ev->cur.canvas.y - ec->client.y);
+        return;
+     }
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
@@ -779,6 +799,12 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
      {
         _e_comp_wl_transform_unset(ec);
         return EINA_TRUE;
+     }
+
+   if (e_comp->wl_comp_data->dnd.enabled)
+     {
+        e_comp_wl_data_dnd_drop(ec, timestamp, btn, state);
+        return EINA_FALSE;
      }
 
    wc = wl_resource_get_client(ec->comp_data->surface);

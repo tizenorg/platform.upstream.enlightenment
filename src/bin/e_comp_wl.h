@@ -228,6 +228,18 @@ struct _E_Comp_Wl_Data
 
    struct
      {
+        void *data_source;
+        E_Client *icon;
+        uint32_t serial;
+        struct wl_signal signal;
+        struct wl_listener data_source_listener;
+        struct wl_client *client;
+        struct wl_resource *focus;
+        Eina_Bool enabled : 1;
+     } dnd;
+
+   struct
+     {
         struct wl_resource *resource;
         uint32_t edges;
      } resize;
