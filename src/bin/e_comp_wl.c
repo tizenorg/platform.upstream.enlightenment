@@ -1454,10 +1454,6 @@ _e_comp_wl_cb_key_down(void *event)
         if (*k == keycode) return;
      }
 
-   cdata->kbd.keys.size = (const char *)end - (const char *)cdata->kbd.keys.data;
-   k = wl_array_add(&cdata->kbd.keys, sizeof(*k));
-   *k = keycode;
-
    /* update modifier state */
    e_comp_wl_input_keyboard_state_update(cdata, keycode, EINA_TRUE);
 
@@ -1479,6 +1475,11 @@ _e_comp_wl_cb_key_down(void *event)
                        wl_keyboard_send_key(res, serial, ev->timestamp,
                                             keycode, WL_KEYBOARD_KEY_STATE_PRESSED);
                     }
+
+                  /* Add a only delivered to the client key to the list */
+                  cdata->kbd.keys.size = (const char *)end - (const char *)cdata->kbd.keys.data;
+                  k = wl_array_add(&cdata->kbd.keys, sizeof(*k));
+                  *k = keycode;
                }
           }
      }
@@ -1497,21 +1498,30 @@ _e_comp_wl_cb_key_up(void *event)
    E_Comp_Data *cdata;
    Ecore_Event_Key *ev;
    uint32_t serial, *end, *k, keycode;
+   uint32_t delivered_key;
 
    ev = event;
    keycode = (ev->keycode - 8);
+   delivered_key = 0;
    if (!(cdata = e_comp->wl_comp_data)) return;
 
    end = (uint32_t *)cdata->kbd.keys.data + (cdata->kbd.keys.size / sizeof(*k));
    for (k = cdata->kbd.keys.data; k < end; k++)
-     if (*k == keycode) *k = *--end;
+     {
+        if (*k == keycode)
+          {
+             *k = *--end;
+             delivered_key = 1;
+          }
+     }
 
    cdata->kbd.keys.size = (const char *)end - (const char *)cdata->kbd.keys.data;
 
    /* update modifier state */
    e_comp_wl_input_keyboard_state_update(cdata, keycode, EINA_FALSE);
 
-   if ((!e_client_action_get()) && (!e_comp->input_key_grabs) && (!e_menu_grab_window_get()))
+   /* If a key down event is delivered to a client, deliver key up event to client for pairing key event sequence up/down */
+   if (delivered_key || ((!e_client_action_get()) && (!e_comp->input_key_grabs) && (!e_menu_grab_window_get())))
      {
         if ((ec = e_client_focused_get()))
           {
