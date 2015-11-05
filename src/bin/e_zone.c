@@ -34,6 +34,7 @@ EAPI int E_EVENT_ZONE_ROTATION_CHANGE_BEGIN = 0;
 EAPI int E_EVENT_ZONE_ROTATION_CHANGE_CANCEL = 0;
 EAPI int E_EVENT_ZONE_ROTATION_CHANGE_END = 0;
 #endif
+EAPI int E_EVENT_ZONE_DISPLAY_STATE_CHANGE = 0;
 
 #define E_ZONE_FLIP_LEFT(zone)  (((e_config->desk_flip_wrap && ((zone)->desk_x_count > 1)) || ((zone)->desk_x_current > 0)) && (zone)->edge.left)
 #define E_ZONE_FLIP_RIGHT(zone) (((e_config->desk_flip_wrap && ((zone)->desk_x_count > 1)) || (((zone)->desk_x_current + 1) < (zone)->desk_x_count)) && (zone)->edge.right)
@@ -60,6 +61,7 @@ e_zone_init(void)
    E_EVENT_ZONE_ROTATION_CHANGE_CANCEL = ecore_event_type_new();
    E_EVENT_ZONE_ROTATION_CHANGE_END = ecore_event_type_new();
 #endif
+   E_EVENT_ZONE_DISPLAY_STATE_CHANGE = ecore_event_type_new();
 
    return 1;
 }
@@ -215,6 +217,8 @@ e_zone_new(E_Comp *c, int num, int id, int x, int y, int w, int h)
    zone->useful_geometry.y = -1;
    zone->useful_geometry.w = -1;
    zone->useful_geometry.h = -1;
+
+   zone->display_state = E_ZONE_DISPLAY_STATE_ON;
 
    //printf("@@@@@@@@@@ e_zone_new: %i %i | %i %i %ix%i = %p\n", num, id, x, y, w, h, zone);
 
@@ -1440,6 +1444,33 @@ e_zone_unstow(E_Zone *zone)
 
    zone->stowed = EINA_FALSE;
 }
+
+EAPI void
+e_zone_display_state_set(E_Zone *zone, E_Zone_Display_State state)
+{
+   E_Event_Zone_Display_State_Change *ev;
+
+   E_OBJECT_CHECK(zone);
+   E_OBJECT_TYPE_CHECK(zone, E_ZONE_TYPE);
+
+   zone->display_state = state;
+
+   ev = E_NEW(E_Event_Zone_Display_State_Change, 1);
+   if (!ev) return;
+   ev->zone = zone;
+   e_object_ref(E_OBJECT(ev->zone));
+   ecore_event_add(E_EVENT_ZONE_DISPLAY_STATE_CHANGE, ev, _e_zone_event_generic_free, NULL);
+}
+
+EAPI E_Zone_Display_State
+e_zone_display_state_get(E_Zone *zone)
+{
+   E_OBJECT_CHECK_RETURN(zone, E_ZONE_DISPLAY_STATE_OFF);
+   E_OBJECT_TYPE_CHECK_RETURN(zone, E_ZONE_TYPE, E_ZONE_DISPLAY_STATE_OFF);
+
+   return zone->display_state;
+}
+
 
 /* local subsystem functions */
 static void
