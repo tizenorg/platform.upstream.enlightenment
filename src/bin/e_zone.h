@@ -13,6 +13,12 @@ typedef enum _E_Zone_Edge
    E_ZONE_EDGE_BOTTOM_LEFT
 } E_Zone_Edge;
 
+typedef enum _E_Zone_Display_State
+{
+   E_ZONE_DISPLAY_STATE_OFF,
+   E_ZONE_DISPLAY_STATE_ON,
+} E_Zone_Display_State;
+
 typedef struct _E_Zone                      E_Zone;
 
 typedef struct _E_Event_Zone_Generic        E_Event_Zone_Desk_Count_Set;
@@ -29,6 +35,7 @@ typedef struct _E_Event_Zone_Rotation_Change_Begin  E_Event_Zone_Rotation_Change
 typedef struct _E_Event_Zone_Rotation_Change_Cancel E_Event_Zone_Rotation_Change_Cancel;
 typedef struct _E_Event_Zone_Rotation_Change_End    E_Event_Zone_Rotation_Change_End;
 #endif
+typedef struct _E_Event_Zone_Display_State_Change   E_Event_Zone_Display_State_Change;
 
 #else
 #ifndef E_ZONE_H
@@ -106,6 +113,8 @@ struct _E_Zone
       Eina_Bool unknown_state : 1;
    } rot;
 #endif
+
+   E_Zone_Display_State display_state;
 };
 
 struct _E_Event_Zone_Generic
@@ -152,6 +161,11 @@ struct _E_Event_Zone_Rotation_Change_End
 };
 #endif
 
+struct _E_Event_Zone_Display_State_Change
+{
+   E_Zone *zone;
+};
+
 EINTERN int    e_zone_init(void);
 EINTERN int    e_zone_shutdown(void);
 EAPI E_Zone   *e_zone_new(E_Comp *con, int num, int id, int x, int y, int w, int h);
@@ -185,6 +199,9 @@ EAPI void      e_zone_unstow(E_Zone *zone);
 
 EAPI void      e_zone_fade_handle(E_Zone *zone, int out, double tim);
 
+EAPI void      e_zone_display_state_set(E_Zone *zone, E_Zone_Display_State state);
+EAPI void      e_zone_display_state_get(E_Zone *zone, E_Zone_Display_State *state);
+
 extern EAPI int E_EVENT_ZONE_DESK_COUNT_SET;
 extern EAPI int E_EVENT_ZONE_MOVE_RESIZE;
 extern EAPI int E_EVENT_ZONE_ADD;
@@ -201,6 +218,8 @@ extern EAPI int E_EVENT_ZONE_ROTATION_CHANGE_BEGIN;
 extern EAPI int E_EVENT_ZONE_ROTATION_CHANGE_CANCEL;
 extern EAPI int E_EVENT_ZONE_ROTATION_CHANGE_END;
 #endif
+
+extern EAPI int E_EVENT_ZONE_DISPLAY_STATE_CHANGE;
 
 #endif
 #endif
