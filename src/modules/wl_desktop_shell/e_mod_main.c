@@ -5,7 +5,7 @@
 #include <tizen-extension-server-protocol.h>
 #include "e_scaler.h"
 
-#define XDG_SERVER_VERSION 4
+#define XDG_SERVER_VERSION 5
 
 static void
 _e_shell_surface_parent_set(E_Client *ec, struct wl_resource *parent_resource)
@@ -693,13 +693,24 @@ _e_xdg_shell_surface_cb_destroy(struct wl_client *client EINA_UNUSED, struct wl_
 static void
 _e_xdg_shell_surface_cb_parent_set(struct wl_client *client EINA_UNUSED, struct wl_resource *resource, struct wl_resource *parent_resource)
 {
-   E_Client *ec;
+   E_Client *ec, *pc;
 
    if (!(ec = wl_resource_get_user_data(resource)))
      {
         wl_resource_post_error(resource, WL_DISPLAY_ERROR_INVALID_OBJECT,
                                "No Client For Shell Surface");
         return;
+     }
+
+   if (parent_resource)
+     {
+        if (!(pc = wl_resource_get_user_data(parent_resource)))
+          {
+             ERR("Could not get parent resource clinet");
+             return;
+          }
+        if (!pc->comp_data) return;
+        parent_resource = pc->comp_data->surface;
      }
 
    /* set this client as a transient for parent */
@@ -1019,6 +1030,12 @@ static const struct xdg_surface_interface _e_xdg_surface_interface =
    _e_xdg_shell_surface_cb_fullscreen_unset,
    _e_xdg_shell_surface_cb_minimized_set,
 };
+
+static void
+_e_xdg_shell_cb_destroy(struct wl_client *client EINA_UNUSED, struct wl_resource *resource)
+{
+   wl_resource_destroy(resource);
+}
 
 static void
 _e_xdg_shell_cb_unstable_version(struct wl_client *client EINA_UNUSED, struct wl_resource *resource, int32_t version)
@@ -1393,6 +1410,7 @@ static const struct wl_shell_interface _e_shell_interface =
 
 static const struct xdg_shell_interface _e_xdg_shell_interface =
 {
+   _e_xdg_shell_cb_destroy,
    _e_xdg_shell_cb_unstable_version,
    _e_xdg_shell_cb_surface_get,
    _e_xdg_shell_cb_popup_get,
@@ -1418,7 +1436,7 @@ _e_xdg_shell_cb_dispatch(const void *implementation EINA_UNUSED, void *target, u
    if (!(res = target)) return 0;
    if (!(cdata = wl_resource_get_user_data(res))) return 0;
 
-   if (opcode != 0)
+   if (opcode != 1)
      {
         wl_resource_post_error(res, WL_DISPLAY_ERROR_INVALID_OBJECT,
                                "Must call use_unstable_version first");
