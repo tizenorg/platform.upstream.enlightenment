@@ -245,6 +245,8 @@ e_modapi_init(E_Module *m)
    /* NB: This needs to be called AFTER the comp canvas has been setup */
    if (!e_comp_wl_init()) return NULL;
 
+   evas_event_feed_mouse_in(comp->evas, 0, NULL);
+
    /* comp->pointer =  */
    /*   e_pointer_window_new(ecore_evas_window_get(comp->ee), 1); */
    comp->pointer = e_pointer_canvas_new(comp->ee, EINA_TRUE);
