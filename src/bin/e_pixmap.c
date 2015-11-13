@@ -845,14 +845,12 @@ e_pixmap_image_clear(E_Pixmap *cp, Eina_Bool cache)
           {
              E_Comp_Wl_Client_Data *cd;
              struct wl_resource *cb;
+             Eina_List *l, *ll;
 
              if ((!cp->client) || (!cp->client->comp_data)) return;
              cd = (E_Comp_Wl_Client_Data *)cp->client->comp_data;
-             EINA_LIST_FREE(cd->frames, cb)
-               {
-                  wl_callback_send_done(cb, ecore_time_unix_get());
-                  wl_resource_destroy(cb);
-               }
+             EINA_LIST_FOREACH_SAFE(cd->frames, l, ll, cb)
+                wl_callback_send_done(cb, ecore_time_unix_get());
           }
 #endif
         break;
