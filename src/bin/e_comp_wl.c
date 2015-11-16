@@ -723,6 +723,28 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
 }
 
 static void
+_e_comp_wl_evas_handle_mouse_move_to_touch(E_Client *ec, uint32_t timestamp, int canvas_x, int canvas_y)
+{
+   Eina_List *l;
+   struct wl_client *wc;
+   uint32_t serial;
+   struct wl_resource *res;
+   wl_fixed_t x, y;
+
+   wc = wl_resource_get_client(ec->comp_data->surface);
+
+   x = wl_fixed_from_int(canvas_x - ec->client.x);
+   y = wl_fixed_from_int(canvas_y - ec->client.y);
+
+   EINA_LIST_FOREACH(e_comp->wl_comp_data->touch.resources, l, res)
+     {
+        if (wl_resource_get_client(res) != wc) continue;
+        if (!e_comp_wl_input_touch_check(res)) continue;
+        wl_touch_send_motion(res, timestamp, 0, x, y); //id 0 for the 1st finger
+     }
+}
+
+static void
 _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    E_Client *ec;
@@ -730,6 +752,7 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    struct wl_resource *res;
    struct wl_client *wc;
    Eina_List *l;
+   Evas_Device *dev = NULL;
 
    ev = event;
 
@@ -751,14 +774,20 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
         return;
      }
 
-   wc = wl_resource_get_client(ec->comp_data->surface);
-   EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
+   dev = ev->dev;
+   if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
+     _e_comp_wl_evas_handle_mouse_move_to_touch(ec, ev->timestamp, ev->cur.canvas.x, ev->cur.canvas.y);
+   else
      {
-        if (!e_comp_wl_input_pointer_check(res)) continue;
-        if (wl_resource_get_client(res) != wc) continue;
-        wl_pointer_send_motion(res, ev->timestamp,
-                               wl_fixed_from_int(ev->cur.canvas.x - ec->client.x),
-                               wl_fixed_from_int(ev->cur.canvas.y - ec->client.y));
+        wc = wl_resource_get_client(ec->comp_data->surface);
+        EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
+          {
+             if (!e_comp_wl_input_pointer_check(res)) continue;
+             if (wl_resource_get_client(res) != wc) continue;
+             wl_pointer_send_motion(res, ev->timestamp,
+                                    wl_fixed_from_int(ev->cur.canvas.x - ec->client.x),
+                                    wl_fixed_from_int(ev->cur.canvas.y - ec->client.y));
+          }
      }
 }
 
@@ -820,15 +849,49 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
 }
 
 static void
+_e_comp_wl_evas_handle_mouse_button_to_touch(E_Client *ec, uint32_t timestamp, int canvas_x, int canvas_y, Eina_Bool flag)
+{
+   Eina_List *l;
+   struct wl_client *wc;
+   uint32_t serial;
+   struct wl_resource *res;
+   wl_fixed_t x, y;
+
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (!ec->comp_data->surface) return;
+
+   wc = wl_resource_get_client(ec->comp_data->surface);
+   serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
+
+   x = wl_fixed_from_int(canvas_x - ec->client.x);
+   y = wl_fixed_from_int(canvas_y - ec->client.y);
+
+   EINA_LIST_FOREACH(e_comp->wl_comp_data->touch.resources, l, res)
+     {
+        if (wl_resource_get_client(res) != wc) continue;
+        if (!e_comp_wl_input_touch_check(res)) continue;
+        if (flag)
+          wl_touch_send_down(res, serial, timestamp, ec->comp_data->surface, 0, x, y); //id 0 for the 1st finger
+        else
+          wl_touch_send_up(res, serial, timestamp, 0);
+     }
+}
+
+static void
 _e_comp_wl_evas_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    E_Client *ec = data;
    Evas_Event_Mouse_Down *ev = event;
+   Evas_Device *dev = NULL;
 
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
-   _e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
+   dev = ev->dev;
+   if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
+     _e_comp_wl_evas_handle_mouse_button_to_touch(ec, ev->timestamp, ev->canvas.x, ev->canvas.y, EINA_TRUE);
+   else
+     _e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
                                        WL_POINTER_BUTTON_STATE_PRESSED);
 }
 
@@ -837,11 +900,16 @@ _e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
 {
    E_Client *ec = data;
    Evas_Event_Mouse_Up *ev = event;
+   Evas_Device *dev = NULL;
 
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
-   _e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
+   dev = ev->dev;
+   if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
+     _e_comp_wl_evas_handle_mouse_button_to_touch(ec, ev->timestamp, ev->canvas.x, ev->canvas.y, EINA_FALSE);
+   else
+     _e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
                                        WL_POINTER_BUTTON_STATE_RELEASED);
 }
 
