@@ -78,6 +78,68 @@ end:
    return ECORE_CALLBACK_PASS_ON;
 }
 
+static short
+_e_mod_drm_caps_to_class(int caps)
+{
+   switch(caps)
+     {
+      case EVDEV_SEAT_POINTER:
+         return EVAS_DEVICE_CLASS_MOUSE;
+      case EVDEV_SEAT_KEYBOARD:
+         return EVAS_DEVICE_CLASS_KEYBOARD;
+      case EVDEV_SEAT_TOUCH:
+         return EVAS_DEVICE_CLASS_TOUCH;
+     }
+   return EVAS_DEVICE_CLASS_NONE;
+}
+static void
+_e_mod_drm_device_add_event_send(void *event)
+{
+   Ecore_Drm_Event_Input_Device_Add *e = event;
+   Ecore_Drm_Seat *seat = NULL;
+   unsigned int win = 0;
+   Ecore_Event_Device_Add *ev;
+
+   seat = ecore_drm_seat_name_seat_get(e->seatname);
+   if (!seat) return;
+   win = ecore_drm_seat_window_get(seat);
+   if (!win) return;
+
+   if (!(ev = calloc(1, sizeof(Ecore_Event_Device_Add))))
+     return;
+   ev->name = eina_stringshare_add(e->name);
+   ev->sysname = eina_stringshare_add(e->sysname);
+   ev->seatname = eina_stringshare_add(e->seatname);
+   ev->clas = _e_mod_drm_caps_to_class(e->caps);
+   ev->window = win;
+
+   ecore_event_add(ECORE_EVENT_DEVICE_ADD, ev, NULL, NULL);
+}
+
+static void
+_e_mod_drm_device_del_event_send(void *event)
+{
+   Ecore_Drm_Event_Input_Device_Del *e = event;
+   Ecore_Drm_Seat *seat = NULL;
+   unsigned int win = 0;
+   Ecore_Event_Device_Del *ev;
+
+   seat = ecore_drm_seat_name_seat_get(e->seatname);
+   if (!seat) return;
+   win = ecore_drm_seat_window_get(seat);
+   if (!win) return;
+
+   if (!(ev = calloc(1, sizeof(Ecore_Event_Device_Del))))
+     return;
+   ev->name = eina_stringshare_add(e->name);
+   ev->sysname = eina_stringshare_add(e->sysname);
+   ev->seatname = eina_stringshare_add(e->seatname);
+   ev->clas = _e_mod_drm_caps_to_class(e->caps);
+   ev->window = win;
+
+   ecore_event_add(ECORE_EVENT_DEVICE_DEL, ev, NULL, NULL);
+}
+
 static Eina_Bool
 _e_mod_drm_cb_input_device_add(void *data, int type, void *event)
 {
@@ -85,6 +147,8 @@ _e_mod_drm_cb_input_device_add(void *data, int type, void *event)
    E_Comp *comp = data;
 
    if (!(e = event)) goto end;
+
+   _e_mod_drm_device_add_event_send((void*)e);
 
    if (e->caps & EVDEV_SEAT_POINTER)
      {
@@ -100,6 +164,7 @@ _e_mod_drm_cb_input_device_add(void *data, int type, void *event)
         e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
         e_comp_wl_input_touch_enabled_set(EINA_TRUE);
      }
+   DBG("_e_mod_drm_cb_input_device_add: name:%s, sysname:%s, seatname:%s, caps:%d", e->name, e->sysname, e->seatname, e->caps);
 
 end:
    return ECORE_CALLBACK_PASS_ON;
@@ -112,11 +177,14 @@ _e_mod_drm_cb_input_device_del(void *data, int type, void *event)
 
    if (!(e = event)) goto end;
 
+   _e_mod_drm_device_del_event_send((void*)e);
+
    if (e->caps & EVDEV_SEAT_POINTER)
      {
         e_comp_wl_input_pointer_enabled_set(EINA_FALSE);
         e_pointer_hide(e_comp->pointer);
      }
+   DBG("_e_mod_drm_cb_input_device_add: name:%s, sysname:%s, seatname:%s, caps:%d", e->name, e->sysname, e->seatname, e->caps);
 
 end:
    return ECORE_CALLBACK_PASS_ON;
