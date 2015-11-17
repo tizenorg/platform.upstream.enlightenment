@@ -804,6 +804,13 @@ struct E_Client
 #endif
 
    int client_type; //e_client_type
+
+   struct
+   {
+      unsigned char by_visibility : 1;
+      unsigned char not_raise : 1;
+      unsigned char use_resize : 1;
+   } exp_iconify;
 };
 
 #define e_client_focus_policy_click(ec) \
