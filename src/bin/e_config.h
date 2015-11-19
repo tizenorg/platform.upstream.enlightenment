@@ -429,6 +429,7 @@ struct _E_Config
       E_Config_XKB_Layout *sel_layout;
       E_Config_XKB_Layout *lock_layout;
       Eina_Bool dont_touch_my_damn_keyboard;
+      Eina_Bool cache_enable;
 
       /* NO LONGER USED BECAUSE I SUCK
        * -zmike, 31 January 2013
