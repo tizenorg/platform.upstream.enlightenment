@@ -1124,6 +1124,14 @@ out:
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN, _e_comp_key_down, NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_SIGNAL_USER, _e_comp_signal_user, NULL);
 
+   E_Module  *mod = e_module_new("e_comp_gestures");
+   ERR("e_comp_gestures module: %p", mod);
+   if (mod)
+     {
+        ERR("ENABLING e_comp_gestures");
+        e_module_enable(mod);
+     }
+
    return EINA_TRUE;
 }
 
