@@ -330,6 +330,32 @@ _e_comp_wl_input_cb_bind_seat(struct wl_client *client, void *data, uint32_t ver
      wl_seat_send_name(res, cdata->seat.name);
 }
 
+static void
+_e_comp_wl_input_keymap_cache_create(char *keymap_path, char *keymap_data)
+{
+   FILE *file = NULL;
+
+   if (EINA_FALSE == e_config->xkb.use_cache) return;
+
+   if (keymap_path)
+     {
+        file = fopen(keymap_path, "w");
+        EINA_SAFETY_ON_NULL_RETURN(file);
+
+        if (fputs(keymap_data, file) < 0)
+          {
+             WRN("Failed  to write keymap file: %s\n", keymap_path);
+             fclose(file);
+             unlink(keymap_path);
+          }
+        else
+          {
+             INF("Success to make keymap file: %s\n", keymap_path);
+             fclose(file);
+          }
+     }
+}
+
 static int
 _e_comp_wl_input_keymap_fd_get(off_t size)
 {
@@ -378,7 +404,7 @@ _e_comp_wl_input_keymap_fd_get(off_t size)
 }
 
 static void
-_e_comp_wl_input_keymap_update(E_Comp_Data *cdata, struct xkb_keymap *keymap)
+_e_comp_wl_input_keymap_update(E_Comp_Data *cdata, struct xkb_keymap *keymap, char *keymap_path)
 {
    char *tmp;
    xkb_mod_mask_t latched = 0, locked = 0, group = 0;
@@ -435,6 +461,8 @@ _e_comp_wl_input_keymap_update(E_Comp_Data *cdata, struct xkb_keymap *keymap)
         ERR("Could not create keymap file");
         return;
      }
+
+   _e_comp_wl_input_keymap_cache_create(keymap_path, tmp);
 
    cdata->xkb.area =
      mmap(NULL, cdata->xkb.size, (PROT_READ | PROT_WRITE),
@@ -627,6 +655,8 @@ e_comp_wl_input_keymap_set(E_Comp_Data *cdata, const char *rules, const char *mo
 {
    struct xkb_keymap *keymap;
    struct xkb_rule_names names;
+   FILE *file = NULL;
+   char *keymap_path = NULL;
 
    /* check for valid compositor data */
    if (!cdata)
@@ -649,13 +679,38 @@ e_comp_wl_input_keymap_set(E_Comp_Data *cdata, const char *rules, const char *mo
    /* create a new xkb context */
    cdata->xkb.context = xkb_context_new(0);
 
-   /* fetch new keymap based on names */
-   keymap = xkb_map_new_from_names(cdata->xkb.context, &names, 0);
+   if (e_config->xkb.use_cache)
+     {
+        keymap_path = eina_stringshare_printf("/var/lib/xkb/%s-%s-%s-%s-%s.xkb",
+              names.rules?names.rules:"",
+              names.model?names.model:"",
+              names.layout?names.layout:"",
+              names.variant?names.variant:"",
+              names.options?names.options:"");
+        ERR("keymap path: %s, strlen: %d, sizeof: %d\n", keymap_path, strlen(keymap_path), sizeof(keymap_path));
+
+        file = fopen(keymap_path, "r");
+     }
+
+   if (!file)
+     {
+        INF("There is a no keymap file (%s). Generate keymap using rmlvo\n", keymap_path);
+        /* fetch new keymap based on names */
+        keymap = xkb_map_new_from_names(cdata->xkb.context, &names, 0);
+     }
+   else
+     {
+        INF("Keymap file (%s) has been found. xkb_keymap is going to be generated with it.\n", keymap_path);
+        keymap = xkb_map_new_from_file(cdata->xkb.context, file, XKB_KEYMAP_FORMAT_TEXT_V1, 0);
+        eina_stringshare_del(keymap_path);
+        keymap_path = NULL;
+     }
 
    /* update compositor keymap */
-   _e_comp_wl_input_keymap_update(cdata, keymap);
+   _e_comp_wl_input_keymap_update(cdata, keymap, keymap_path);
 
    /* cleanup */
+   if (keymap_path) eina_stringshare_del(keymap_path);
    free((char *)names.rules);
    free((char *)names.model);
    free((char *)names.layout);
