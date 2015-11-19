@@ -263,7 +263,7 @@ e_modapi_init(E_Module *m)
 
    /* FIXME: This is just for testing at the moment....
     * happens to jive with what drm does */
-   e_comp_wl_input_keymap_set(comp->wl_comp_data, NULL, NULL, NULL);
+   e_comp_wl_input_keymap_set(comp->wl_comp_data, "evdev", "pc105", "us");
 
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,
                          _e_mod_drm_cb_activate, comp);
