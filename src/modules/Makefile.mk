@@ -134,3 +134,5 @@ include src/modules/Makefile_wl_screenshot.mk
 include src/modules/Makefile_policy_mobile.mk
 
 include src/modules/Makefile_bufferqueue.mk
+
+include src/modules/Makefile_e_comp_gestures.mk
