@@ -669,9 +669,27 @@ _e_xdg_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges
    wl_array_init(&states);
 
    if (ec->fullscreen)
-     _e_xdg_surface_state_add(resource, &states, XDG_SURFACE_STATE_FULLSCREEN);
+     {
+        _e_xdg_surface_state_add(resource, &states, XDG_SURFACE_STATE_FULLSCREEN);
+
+        //send fullscreen size
+        if ((width == 0) && (height == 0))
+          {
+             width = ec->client.w && ec->client.h? ec->client.w : ec->w;
+             height = ec->client.w && ec->client.h? ec->client.h : ec->h;
+          }
+     }
    else if (ec->maximized)
-     _e_xdg_surface_state_add(resource, &states, XDG_SURFACE_STATE_MAXIMIZED);
+     {
+        _e_xdg_surface_state_add(resource, &states, XDG_SURFACE_STATE_MAXIMIZED);
+
+        //send maximized size
+        if ((width == 0) && (height == 0))
+          {
+             width = ec->client.w && ec->client.h? ec->client.w : ec->w;
+             height = ec->client.w && ec->client.h? ec->client.h : ec->h;
+          }
+     }
    if (edges != 0)
      _e_xdg_surface_state_add(resource, &states, XDG_SURFACE_STATE_RESIZING);
    if (ec->focused)
