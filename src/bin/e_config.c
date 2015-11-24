@@ -759,6 +759,7 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, xkb.dont_touch_my_damn_keyboard, UCHAR);
    E_CONFIG_VAL(D, T, xkb.default_model, STR);
    E_CONFIG_VAL(D, T, xkb.use_cache, UCHAR);
+   E_CONFIG_VAL(D, T, xkb.delay_held_key_input_to_focus, UINT);
 
    E_CONFIG_VAL(D, T, keyboard.repeat_delay, INT);
    E_CONFIG_VAL(D, T, keyboard.repeat_rate, INT);
@@ -1546,6 +1547,8 @@ e_config_load(void)
 
    E_CONFIG_LIMIT(e_config->keyboard.repeat_delay, -1, 1000); // 1 second
    E_CONFIG_LIMIT(e_config->keyboard.repeat_rate, -1, 1000); // 1 second
+
+   E_CONFIG_LIMIT(e_config->xkb.delay_held_key_input_to_focus, 0,5000); // 1 second
 
    if (!e_config->icon_theme)
      e_config->icon_theme = eina_stringshare_add("hicolor");  // FDO default
