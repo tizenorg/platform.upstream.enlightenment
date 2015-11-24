@@ -439,6 +439,12 @@ struct _E_Config
       const char *desklock_layout;
    } xkb;
    
+   struct
+   {
+      int repeat_delay;//delay in milliseconds since key down until repeating starts
+      int repeat_rate;//the rate of repeating keys in characters per second
+   } keyboard;
+
    Eina_List  *menu_applications;
    unsigned char exe_always_single_instance; // GUI
    int           use_desktop_window_profile; // GUI

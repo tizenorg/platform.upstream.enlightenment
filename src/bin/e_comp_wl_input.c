@@ -220,6 +220,10 @@ _e_comp_wl_input_cb_keyboard_get(struct wl_client *client, struct wl_resource *r
    wl_resource_set_implementation(res, &_e_keyboard_interface, cdata,
                                   _e_comp_wl_input_cb_keyboard_unbind);
 
+   /* send current repeat_info */
+   if (wl_resource_get_version(res) >= WL_KEYBOARD_REPEAT_INFO_SINCE_VERSION)
+     wl_keyboard_send_repeat_info(res, cdata->kbd.repeat_rate, cdata->kbd.repeat_delay);
+
    /* send current keymap */
    wl_keyboard_send_keymap(res, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
                            cdata->xkb.fd, cdata->xkb.size);
@@ -508,6 +512,15 @@ e_comp_wl_input_init(E_Comp_Data *cdata)
    if (!cdata->seat.name) cdata->seat.name = "default";
 
    cdata->xkb.fd = -1;
+
+   /* get default keyboard repeat rate/delay from configuration */
+   cdata->kbd.repeat_delay = e_config->keyboard.repeat_delay;
+   cdata->kbd.repeat_rate = e_config->keyboard.repeat_rate;
+
+   /* check for valid repeat_delay and repeat_rate value */
+   /* if invalid, set the default value of repeat delay and rate value */
+   if (cdata->kbd.repeat_delay < 0) cdata->kbd.repeat_delay = 400;
+   if (cdata->kbd.repeat_delay < 0) cdata->kbd.repeat_rate = 25;
 
    /* create the global resource for input seat */
    cdata->seat.global =
