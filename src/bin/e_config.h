@@ -430,6 +430,7 @@ struct _E_Config
       E_Config_XKB_Layout *lock_layout;
       Eina_Bool dont_touch_my_damn_keyboard;
       Eina_Bool use_cache;
+      float changed_focus_key_delay;
 
       /* NO LONGER USED BECAUSE I SUCK
        * -zmike, 31 January 2013

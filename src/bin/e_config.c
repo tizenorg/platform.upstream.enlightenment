@@ -759,6 +759,7 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, xkb.dont_touch_my_damn_keyboard, UCHAR);
    E_CONFIG_VAL(D, T, xkb.default_model, STR);
    E_CONFIG_VAL(D, T, xkb.use_cache, UCHAR);
+   E_CONFIG_VAL(D, T, xkb.changed_focus_key_delay, FLOAT);
 
    if (old)
      {
@@ -1546,6 +1547,9 @@ e_config_load(void)
 
    /* FIXME: disabled auto apply because it causes problems */
    e_config->cfgdlg_auto_apply = 0;
+
+   if (!e_config->xkb.changed_focus_key_delay)
+     e_config->xkb.changed_focus_key_delay = 0.8;
 
    ecore_event_add(E_EVENT_CONFIG_LOADED, NULL, NULL, NULL);
 }
