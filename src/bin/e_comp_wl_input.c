@@ -682,11 +682,11 @@ e_comp_wl_input_keymap_set(E_Comp_Data *cdata, const char *rules, const char *mo
    if (e_config->xkb.use_cache)
      {
         keymap_path = eina_stringshare_printf("/var/lib/xkb/%s-%s-%s-%s-%s.xkb",
-              names.rules?names.rules:"",
-              names.model?names.model:"",
-              names.layout?names.layout:"",
-              names.variant?names.variant:"",
-              names.options?names.options:"");
+              names.rules ? names.rules : "",
+              names.model ? names.model : "",
+              names.layout ? names.layout : "",
+              names.variant ? names.variant : "",
+              names.options ? names.options : "");
 
         file = fopen(keymap_path, "r");
      }
