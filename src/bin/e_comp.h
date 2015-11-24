@@ -185,6 +185,7 @@ EAPI void e_comp_block_window_del(void);
 EAPI E_Comp *e_comp_find_by_window(Ecore_Window win);
 EAPI void e_comp_override_timed_pop(E_Comp *c);
 EAPI unsigned int e_comp_e_object_layer_get(const E_Object *obj);
+EAPI void e_comp_layer_name_get(unsigned int layer, char *buff, int buff_size);
 EAPI Eina_Bool e_comp_grab_input(E_Comp *c, Eina_Bool mouse, Eina_Bool kbd);
 EAPI void e_comp_ungrab_input(E_Comp *c, Eina_Bool mouse, Eina_Bool kbd);
 EAPI void e_comp_gl_set(Eina_Bool set);

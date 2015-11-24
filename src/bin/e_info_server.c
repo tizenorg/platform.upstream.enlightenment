@@ -34,7 +34,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
    E_Client *ec;
    Evas_Object *o;
 
-   eldbus_message_iter_arguments_append(iter, "a(uuisiiiiibb)", &array_of_ec);
+   eldbus_message_iter_arguments_append(iter, "a(uuisiiiiibbs)", &array_of_ec);
 
    // append clients.
    for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
@@ -43,12 +43,14 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
         Ecore_Window win;
         uint32_t res_id = 0;
         pid_t pid = -1;
+        char layer_name[32];
 
         ec = evas_object_data_get(o, "E_Client");
         if (!ec) continue;
         if (e_client_util_ignored_get(ec)) continue;
 
         win = e_client_util_win_get(ec);
+        e_comp_layer_name_get(ec->layer, layer_name, sizeof(layer_name));
 
         if (ec->pixmap)
           res_id = e_pixmap_res_id_get(ec->pixmap);
@@ -60,16 +62,16 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
                wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
           }
 #endif
-        eldbus_message_iter_arguments_append(array_of_ec, "(uuisiiiiibb)", &struct_of_ec);
+        eldbus_message_iter_arguments_append(array_of_ec, "(uuisiiiiibbs)", &struct_of_ec);
 
         eldbus_message_iter_arguments_append
-           (struct_of_ec, "uuisiiiiibb",
+           (struct_of_ec, "uuisiiiiibbs",
             win,
             res_id,
             pid,
             e_client_util_name_get(ec) ?: "NO NAME",
             ec->x, ec->y, ec->w, ec->h, ec->layer,
-            ec->visible, ec->argb);
+            ec->visible, ec->argb, layer_name);
 
         eldbus_message_iter_container_close(array_of_ec, struct_of_ec);
      }
@@ -259,7 +261,7 @@ _e_info_server_cb_eina_log_path(const Eldbus_Service_Interface *iface EINA_UNUSE
 }
 
 static const Eldbus_Method methods[] = {
-   { "get_window_info", NULL, ELDBUS_ARGS({"a(uuisiiiiibb)", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
+   { "get_window_info", NULL, ELDBUS_ARGS({"a(uuisiiiiibbs)", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, 0 },
    { "eina_log_levels", ELDBUS_ARGS({"s", "eina log levels"}), NULL, _e_info_server_cb_eina_log_levels, 0 },
    { "eina_log_path", ELDBUS_ARGS({"s", "eina log path"}), NULL, _e_info_server_cb_eina_log_path, 0 },

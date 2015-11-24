@@ -26,6 +26,7 @@ typedef struct _E_Win_Info
    int          layer;      // value of E_Layer
    int          vis;        // visibility
    int          alpha;      // alpha window
+   const char  *layer_name; // layer name
 } E_Win_Info;
 
 static E_Info_Client e_info_client;
@@ -34,7 +35,7 @@ static Eina_Bool _e_info_client_eldbus_message(const char *method, E_Info_Messag
 static Eina_Bool _e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb, const char *signature, ...);
 
 static E_Win_Info *
-_e_win_info_new(Ecore_Window id, uint32_t res_id, int pid, Eina_Bool alpha, const char *name, int x, int y, int w, int h, int layer, int visible)
+_e_win_info_new(Ecore_Window id, uint32_t res_id, int pid, Eina_Bool alpha, const char *name, int x, int y, int w, int h, int layer, int visible, const char *layer_name)
 {
    E_Win_Info *win = NULL;
 
@@ -52,6 +53,7 @@ _e_win_info_new(Ecore_Window id, uint32_t res_id, int pid, Eina_Bool alpha, cons
    win->layer = layer;
    win->alpha = alpha;
    win->vis = visible;
+   win->layer_name = eina_stringshare_add(layer_name);
 
    return win;
 }
@@ -63,6 +65,9 @@ _e_win_info_free(E_Win_Info *win)
 
    if (win->name)
      eina_stringshare_del(win->name);
+
+   if (win->layer_name)
+     eina_stringshare_del(win->layer_name);
 
    E_FREE(win);
 }
@@ -77,12 +82,13 @@ _cb_window_info_get(const Eldbus_Message *msg)
    res = eldbus_message_error_get(msg, &name, &text);
    EINA_SAFETY_ON_TRUE_GOTO(res, finish);
 
-   res = eldbus_message_arguments_get(msg, "a(uuisiiiiibb)", &array);
+   res = eldbus_message_arguments_get(msg, "a(uuisiiiiibbs)", &array);
    EINA_SAFETY_ON_FALSE_GOTO(res, finish);
 
    while (eldbus_message_iter_get_and_next(array, 'r', &ec))
      {
         const char *win_name;
+        const char *layer_name;
         int x, y, w, h, layer;
         Eina_Bool visible, alpha;
         Ecore_Window id;
@@ -90,7 +96,7 @@ _cb_window_info_get(const Eldbus_Message *msg)
         int pid;
         E_Win_Info *win = NULL;
         res = eldbus_message_iter_arguments_get(ec,
-                                                "uuisiiiiibb",
+                                                "uuisiiiiibbs",
                                                 &id,
                                                 &res_id,
                                                 &pid,
@@ -101,14 +107,15 @@ _cb_window_info_get(const Eldbus_Message *msg)
                                                 &h,
                                                 &layer,
                                                 &visible,
-                                                &alpha);
+                                                &alpha,
+                                                &layer_name);
         if (!res)
           {
              printf("Failed to get win info\n");
              continue;
           }
 
-        win = _e_win_info_new(id, res_id, pid, alpha, win_name, x, y, w, h, layer, visible);
+        win = _e_win_info_new(id, res_id, pid, alpha, win_name, x, y, w, h, layer, visible, layer_name);
         e_info_client.win_list = eina_list_append(e_info_client.win_list, win);
      }
 
@@ -125,6 +132,8 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
    E_Win_Info *win;
    Eina_List *l;
    int i = 0;
+   int prev_layer = -1;
+   const char *prev_layer_name = NULL;
 
    if (!_e_info_client_eldbus_message("get_window_info", _cb_window_info_get))
      return;
@@ -144,9 +153,21 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
      {
         if (!win) return;
         i++;
+        if (win->layer != prev_layer)
+          {
+             if (prev_layer != -1)
+                printf("------------------------------------------------------------------------------------------------------------[%s]\n",
+                       prev_layer_name ? prev_layer_name : " ");
+             prev_layer = win->layer;
+             prev_layer_name = win->layer_name;
+          }
         printf("%3d 0x%08x    %5d    %5d   %5d %5d %5d %5d %5d  ", i, win->id, win->res_id, win->pid, win->w, win->h, win->x, win->y, win->alpha? 32:24);
         printf("%30s %11s\n", win->name?:"No Name", win->vis? "Viewable":"NotViewable");
      }
+
+   if (prev_layer_name)
+      printf("------------------------------------------------------------------------------------------------------------[%s]\n",
+             prev_layer_name ? prev_layer_name : " ");
 
    E_FREE_LIST(e_info_client.win_list, _e_win_info_free);
 }
