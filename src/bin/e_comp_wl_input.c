@@ -186,11 +186,16 @@ static void
 _e_comp_wl_input_cb_keyboard_unbind(struct wl_resource *resource)
 {
    E_Comp_Data *cdata;
+   Eina_List *l, *ll;
+   struct wl_resource *res;
 
    /* get compositor data */
    if (!(cdata = wl_resource_get_user_data(resource))) return;
 
    cdata->kbd.resources = eina_list_remove(cdata->kbd.resources, resource);
+   EINA_LIST_FOREACH_SAFE(cdata->kbd.focused, l, ll, res)
+     if (res == resource)
+       cdata->kbd.focused = eina_list_remove_list(cdata->kbd.resources, l);
 }
 
 static void
