@@ -322,6 +322,86 @@ _e_info_client_proc_eina_log_path(int argc, char **argv)
      }
 }
 
+static void
+_cb_window_prop_get(const Eldbus_Message *msg)
+{
+   const char *name = NULL, *text = NULL;
+   Eldbus_Message_Iter *array, *ec;
+   Eina_Bool res;
+
+   res = eldbus_message_error_get(msg, &name, &text);
+   EINA_SAFETY_ON_TRUE_GOTO(res, finish);
+
+   res = eldbus_message_arguments_get(msg, "a(ss)", &array);
+   EINA_SAFETY_ON_FALSE_GOTO(res, finish);
+
+   printf("--------------------------------------[ window prop ]-----------------------------------------------------\n");
+   while (eldbus_message_iter_get_and_next(array, 'r', &ec))
+     {
+        const char *title;
+        const char *value;
+        res = eldbus_message_iter_arguments_get(ec,
+                                                "ss",
+                                                &title,
+                                                &value);
+        if (!res)
+          {
+             printf("Failed to get win prop info\n");
+             continue;
+          }
+
+        if (!strcmp(title, "[WINDOW PROP]"))
+           printf("---------------------------------------------------------------------------------------------------------\n");
+        else
+           printf("%20s : %s\n", title, value);
+     }
+   printf("----------------------------------------------------------------------------------------------------------\n");
+
+finish:
+   if ((name) || (text))
+     {
+        printf("errname:%s errmsg:%s\n", name, text);
+     }
+}
+
+static void
+_e_info_client_prop_prop_info(int argc, char **argv)
+{
+   const static int WINDOW_ID_MODE = 0;
+   const static int WINDOW_PID_MODE = 1;
+   const static int WINDOW_NAME_MODE = 2;
+   const char *value;
+   uint32_t mode = 0;
+
+   if (argc < 3 || argv[2] == NULL)
+     {
+        printf("Error Check Args: enlightenment_info -prop [windowID]\n"
+               "                  enlightenment_info -prop -id [windowID]\n"
+               "                  enlightenment_info -prop -pid [PID]\n"
+               "                  enlightenment_info -prop -name [name]\n");
+        return;
+     }
+
+   if (strlen(argv[2]) > 2 && argv[2][0] == '-')
+     {
+        if (!strcmp(argv[2], "-id")) mode = WINDOW_ID_MODE;
+        if (!strcmp(argv[2], "-pid")) mode = WINDOW_PID_MODE;
+        if (!strcmp(argv[2], "-name")) mode = WINDOW_NAME_MODE;
+        value = (argc >= 4 ? argv[3] : NULL);
+     }
+   else
+     {
+        mode = WINDOW_ID_MODE;
+        value = argv[2];
+     }
+
+   if (!_e_info_client_eldbus_message_with_args("get_window_prop", _cb_window_prop_get, "us", mode, value))
+     {
+        printf("_e_info_client_eldbus_message_with_args error");
+        return;
+     }
+}
+
 static struct
 {
    const char *option;
@@ -349,6 +429,11 @@ static struct
       "eina_log_path", "[console|file_path]",
       "Set eina-log path in runtime",
       _e_info_client_proc_eina_log_path
+   },
+   {
+      "prop", "[id]",
+      "print window infomation",
+      _e_info_client_prop_prop_info
    },
 };
 
