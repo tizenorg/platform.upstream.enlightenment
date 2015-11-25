@@ -90,6 +90,226 @@ _e_info_server_cb_window_info_get(const Eldbus_Service_Interface *iface EINA_UNU
    return reply;
 }
 
+static void
+_msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
+{
+   Eldbus_Message_Iter* struct_of_ec;
+   pid_t pid = -1;
+   char win_resid[16] = {0,};
+   char char_True[] = "TRUE";
+   char char_False[] = "FALSE";
+   char layer_name[32] = {0,};
+   char layer[64] = {0,};
+   char transients[128] = {0,};
+   char shape_rects[128] = {0,};
+   char shape_input[128] = {0,};
+
+   if (!target_ec) return;
+
+   if (target_ec->pixmap)
+      snprintf(win_resid, sizeof(win_resid), "%d", e_pixmap_res_id_get(target_ec->pixmap));
+
+   e_comp_layer_name_get(target_ec->layer, layer_name, sizeof(layer_name));
+   snprintf(layer, sizeof(layer), "[%d, %s]",  target_ec->layer, layer_name);
+
+   if (target_ec->transients)
+     {
+        E_Client *child;
+        const Eina_List *l;
+
+        EINA_LIST_FOREACH(target_ec->transients, l, child)
+          {
+             char temp[16];
+             snprintf(temp, sizeof(temp), "0x%x", e_client_util_win_get(child));
+             strncat( transients, temp, sizeof(transients) - strlen(transients));
+          }
+     }
+
+   if (target_ec->shape_rects && target_ec->shape_rects_num > 0)
+     {
+        int i = 0;
+        for (i = 0 ; i < target_ec->shape_rects_num ; ++i)
+          {
+             char temp[32];
+             snprintf(temp, sizeof(temp), "[%d,%d,%d,%d] ", target_ec->shape_rects[i].x, target_ec->shape_rects[i].y,
+                      target_ec->shape_rects[i].w, target_ec->shape_rects[i].h);
+             strncat( shape_rects, temp, sizeof(shape_rects) - strlen(shape_rects));
+          }
+     }
+
+   if (target_ec->shape_input_rects && target_ec->shape_input_rects_num > 0)
+     {
+        int i = 0;
+        for (i = 0 ; i < target_ec->shape_input_rects_num ; ++i)
+          {
+             char temp[32];
+             snprintf(temp, sizeof(temp), "[%d,%d,%d,%d] ", target_ec->shape_input_rects[i].x, target_ec->shape_input_rects[i].y,
+                      target_ec->shape_input_rects[i].w, target_ec->shape_input_rects[i].h);
+             strncat( shape_input, temp, sizeof(shape_input) - strlen(shape_input));
+          }
+     }
+
+#ifdef HAVE_WAYLAND_ONLY
+   if (target_ec->comp_data)
+     {
+
+        E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)target_ec->comp_data;
+        if (cdata->surface)
+          {
+             wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
+          }
+     }
+#endif
+
+#define __WINDOW_PROP_ARG_APPEND(title, value) ({                                    \
+                                                eldbus_message_iter_arguments_append(iter, "(ss)", &struct_of_ec);    \
+                                                eldbus_message_iter_arguments_append(struct_of_ec, "ss", (title), (value));  \
+                                                eldbus_message_iter_container_close(iter, struct_of_ec);})
+
+#define __WINDOW_PROP_ARG_APPEND_TYPE(title, str, x...) ({                           \
+                                                         char __temp[128] = {0,};                                                     \
+                                                         snprintf(__temp, sizeof(__temp), str, ##x);                                  \
+                                                         eldbus_message_iter_arguments_append(iter, "(ss)", &struct_of_ec);    \
+                                                         eldbus_message_iter_arguments_append(struct_of_ec, "ss", (title), (__temp)); \
+                                                         eldbus_message_iter_container_close(iter, struct_of_ec);})
+
+   __WINDOW_PROP_ARG_APPEND("[WINDOW PROP]", "[WINDOW PROP]");
+   __WINDOW_PROP_ARG_APPEND_TYPE("Window_ID", "0x%x", e_client_util_win_get(target_ec));
+   __WINDOW_PROP_ARG_APPEND_TYPE("PID", "%d", pid);
+   __WINDOW_PROP_ARG_APPEND("ResourceID", win_resid);
+   __WINDOW_PROP_ARG_APPEND("Window_Name", e_client_util_name_get(target_ec) ?: "NO NAME");
+   __WINDOW_PROP_ARG_APPEND_TYPE("Geometry", "[%d, %d, %d, %d]", target_ec->x, target_ec->y, target_ec->w, target_ec->h);
+   __WINDOW_PROP_ARG_APPEND_TYPE("ParentWindowID", "0x%x", target_ec->parent ? e_client_util_win_get(target_ec->parent) : 0);
+   __WINDOW_PROP_ARG_APPEND("Transients", transients);
+   __WINDOW_PROP_ARG_APPEND("Shape_rects", shape_rects);
+   __WINDOW_PROP_ARG_APPEND("Shape_input", shape_input);
+   __WINDOW_PROP_ARG_APPEND("Layer", layer);
+   __WINDOW_PROP_ARG_APPEND("Visible",  target_ec->visible ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("32bit",  target_ec->argb ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Hidden", target_ec->hidden ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Moving", target_ec->moving ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Focused", target_ec->focused ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Iconic", target_ec->iconic ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Sticky", target_ec->sticky ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Urgent", target_ec->urgent ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Fullscreen", target_ec->fullscreen ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Re_manage", target_ec->re_manage ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Take_focus", target_ec->take_focus ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Want_focus", target_ec->want_focus ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND_TYPE("E_Maximize_Policy", "0x%x", target_ec->maximized);
+   __WINDOW_PROP_ARG_APPEND_TYPE("E_FullScreen_Policy", "%d", target_ec->fullscreen_policy);
+   __WINDOW_PROP_ARG_APPEND_TYPE("E_Transient_Policy", "%d", target_ec->transient_policy);
+   __WINDOW_PROP_ARG_APPEND("Override", target_ec->override ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Input_only", target_ec->input_only ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Dialog", target_ec->dialog ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Tooltip", target_ec->tooltip ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Redirected", target_ec->redirected ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Unredirected_single", target_ec->unredirected_single ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Shape_changed", target_ec->shape_changed ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Layer_block", target_ec->layer_block ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Ignored", target_ec->ignored ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("No_shape_cut", target_ec->no_shape_cut ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Maximize_override", target_ec->maximize_override ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND("Transformed", target_ec->transformed ? char_True : char_False);
+   __WINDOW_PROP_ARG_APPEND_TYPE("Ignore_first_unmap", "%c", target_ec->ignore_first_unmap);
+
+#undef __WINDOW_PROP_ARG_APPEND
+#undef __WINDOW_PROP_ARG_APPEND_TYPE
+}
+
+static void
+_msg_window_prop_append(Eldbus_Message_Iter *iter, uint32_t mode, const char *value)
+{
+   const static int WINDOW_ID_MODE = 0;
+   const static int WINDOW_PID_MODE = 1;
+   const static int WINDOW_NAME_MODE = 2;
+
+   Eldbus_Message_Iter *array_of_ec;
+   E_Client *ec;
+   Evas_Object *o;
+   int32_t value_number = 0;
+
+   eldbus_message_iter_arguments_append(iter, "a(ss)", &array_of_ec);
+
+   if (mode == WINDOW_ID_MODE || mode == WINDOW_PID_MODE)
+     {
+        if (!value) value_number = 0;
+        else
+          {
+             if (strlen(value) >= 2 && value[0] == '0' && value[1] == 'x')
+                sscanf(value, "%x", &value_number);
+             else
+                sscanf(value, "%d", &value_number);
+          }
+     }
+
+   for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
+     {
+        ec = evas_object_data_get(o, "E_Client");
+        if (!ec) continue;
+
+        if (mode == WINDOW_ID_MODE)
+          {
+             Ecore_Window win = e_client_util_win_get(ec);
+
+             if (win == value_number)
+               {
+                  _msg_window_prop_client_append(array_of_ec, ec);
+                  break;
+               }
+          }
+        else if (mode == WINDOW_PID_MODE)
+          {
+             pid_t pid = -1;
+#ifdef HAVE_WAYLAND_ONLY
+             if (ec->comp_data)
+               {
+                  E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+                  if (cdata->surface)
+                    {
+                       wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
+                    }
+               }
+#endif
+             if (pid == value_number)
+               {
+                  _msg_window_prop_client_append(array_of_ec, ec);
+               }
+          }
+        else if (mode == WINDOW_NAME_MODE)
+          {
+             const char *name = e_client_util_name_get(ec) ?: "NO NAME";
+
+             if (name != NULL && value != NULL)
+               {
+                  const char *find = strstr(name, value);
+
+                  if (find)
+                     _msg_window_prop_client_append(array_of_ec, ec);
+               }
+          }
+     }
+
+   eldbus_message_iter_container_close(iter, array_of_ec);
+}
+
+static Eldbus_Message *
+_e_info_server_cb_window_prop_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   uint32_t mode = 0;
+   const char *value = NULL;
+
+   if (!eldbus_message_arguments_get(msg, "us", &mode, &value))
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   _msg_window_prop_append(eldbus_message_iter_get(reply), mode, value);
+   return reply;
+}
+
 static Eldbus_Message *
 _e_info_server_cb_topvwins_dump(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
 {
@@ -265,6 +485,7 @@ static const Eldbus_Method methods[] = {
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, 0 },
    { "eina_log_levels", ELDBUS_ARGS({"s", "eina log levels"}), NULL, _e_info_server_cb_eina_log_levels, 0 },
    { "eina_log_path", ELDBUS_ARGS({"s", "eina log path"}), NULL, _e_info_server_cb_eina_log_path, 0 },
+   { "get_window_prop", ELDBUS_ARGS({"us", "query_mode_value"}), ELDBUS_ARGS({"a(ss)", "array_of_ec"}), _e_info_server_cb_window_prop_get, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 
