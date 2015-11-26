@@ -3147,7 +3147,11 @@ _e_comp_x_hook_client_fetch(void *d EINA_UNUSED, E_Client *ec)
              /* If this is a new window, set the state as requested. */
              if ((ec->new_client) &&
                  (ec->icccm.initial_state == ECORE_X_WINDOW_STATE_HINT_ICONIC))
-               e_client_iconify(ec);
+               {
+                  ELOG("Set ICONIFY BY CLIENT", ec->pixmap, ec);
+                  ec->exp_iconify.by_client = 1;
+                  e_client_iconify(ec);
+               }
           }
         ec->icccm.fetch.hints = 0;
         rem_change = 1;
