@@ -4029,7 +4029,7 @@ e_comp_wl_buffer_get(struct wl_resource *resource)
         cdata = e_comp->wl_comp_data;
         tbm_surf = wayland_tbm_server_get_surface(cdata->tbm.server, resource);
         format = tbm_surface_get_format(tbm_surf);
-        if (format != TBM_FORMAT_ARGB8888 && format != TBM_FORMAT_XRGB8888)
+        if (tbm_surf && format != TBM_FORMAT_ARGB8888 && format != TBM_FORMAT_XRGB8888)
           {
              buffer->type = E_COMP_WL_BUFFER_TYPE_TBM;
              buffer->w = tbm_surface_get_width(tbm_surf);
