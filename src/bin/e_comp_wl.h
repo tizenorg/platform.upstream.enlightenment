@@ -53,7 +53,7 @@ typedef enum _E_Comp_Wl_Buffer_Type
    E_COMP_WL_BUFFER_TYPE_NONE = 0,
    E_COMP_WL_BUFFER_TYPE_SHM = 1,
    E_COMP_WL_BUFFER_TYPE_NATIVE = 2,
-   E_COMP_WL_BUFFER_TYPE_TBM = 3
+   E_COMP_WL_BUFFER_TYPE_VIDEO = 3,
 } E_Comp_Wl_Buffer_Type;
 
 struct _E_Comp_Wl_Aux_Hint
@@ -373,6 +373,7 @@ struct _E_Comp_Wl_Client_Data
    Eina_Bool frame_update : 1;
    Eina_Bool focus_update : 1;
    Eina_Bool opaque_state : 1;
+   Eina_Bool video_client : 1;
    unsigned char accepts_focus : 1;
    unsigned char conformant : 1;
    E_Window_Type win_type;
@@ -407,7 +408,7 @@ EINTERN void e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer);
 EINTERN Eina_Bool e_comp_wl_surface_commit(E_Client *ec);
 EINTERN Eina_Bool e_comp_wl_subsurface_commit(E_Client *ec);
 EAPI void e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer);
-EAPI E_Comp_Wl_Buffer *e_comp_wl_buffer_get(struct wl_resource *resource);
+EAPI E_Comp_Wl_Buffer *e_comp_wl_buffer_get(struct wl_resource *resource, struct wl_resource *surface);
 
 EAPI struct wl_signal e_comp_wl_surface_create_signal_get(E_Comp *comp);
 EAPI double e_comp_wl_idle_time_get(void);

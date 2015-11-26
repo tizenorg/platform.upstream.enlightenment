@@ -1843,7 +1843,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
              EINA_LIST_FREE(state->damages, dmg)
                {
                   /* not creating damage for ec that shows a underlay video */
-                  if (ec->comp_data->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_TBM ||
+                  if (ec->comp_data->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_VIDEO ||
                       !e_comp->wl_comp_data->available_hw_accel.underlay)
                     e_comp_object_damage(ec->frame, dmg->x, dmg->y, dmg->w, dmg->h);
 
@@ -1904,7 +1904,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    EINA_LIST_FOREACH(state->frames, l, cb)
      eina_list_move(&ec->comp_data->frames, &state->frames, cb);
 
-   if (ec->comp_data->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_TBM &&
+   if (ec->comp_data->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO &&
        e_comp->wl_comp_data->available_hw_accel.underlay)
      e_pixmap_image_clear(ec->pixmap, 1);
 
@@ -1940,7 +1940,7 @@ _e_comp_wl_surface_cb_attach(struct wl_client *client EINA_UNUSED, struct wl_res
 
    if (buffer_resource)
      {
-        if (!(buffer = e_comp_wl_buffer_get(buffer_resource)))
+        if (!(buffer = e_comp_wl_buffer_get(buffer_resource, resource)))
           {
              ERR("Could not get buffer from resource");
              wl_client_post_no_memory(client);
@@ -3054,6 +3054,7 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
    ec->comp_data->layer = p_cdata->layer;
    ec->comp_data->fetch.win_type = p_cdata->fetch.win_type;
    ec->comp_data->fetch.layer = p_cdata->fetch.layer;
+   ec->comp_data->video_client = p_cdata->video_client;
 
    /* add this client to the hash */
    /* eina_hash_add(clients_win_hash, &win, ec); */
@@ -3998,7 +3999,7 @@ e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
  * @returns a new E_Comp_Wl_Buffer object
  */
 EAPI E_Comp_Wl_Buffer *
-e_comp_wl_buffer_get(struct wl_resource *resource)
+e_comp_wl_buffer_get(struct wl_resource *resource, struct wl_resource *surface)
 {
    E_Comp_Wl_Buffer *buffer = NULL;
    struct wl_listener *listener;
@@ -4025,13 +4026,14 @@ e_comp_wl_buffer_get(struct wl_resource *resource)
      }
    else
      {
-        tbm_format format;
+        E_Pixmap *ep = wl_resource_get_user_data(surface);
+        E_Comp_Wl_Client_Data *p_cdata = e_pixmap_cdata_get(ep);
+
         cdata = e_comp->wl_comp_data;
-        tbm_surf = wayland_tbm_server_get_surface(cdata->tbm.server, resource);
-        format = tbm_surface_get_format(tbm_surf);
-        if (tbm_surf && format != TBM_FORMAT_ARGB8888 && format != TBM_FORMAT_XRGB8888)
+        if (p_cdata && p_cdata->video_client)
           {
-             buffer->type = E_COMP_WL_BUFFER_TYPE_TBM;
+             tbm_surf = wayland_tbm_server_get_surface(cdata->tbm.server, resource);
+             buffer->type = E_COMP_WL_BUFFER_TYPE_VIDEO;
              buffer->w = tbm_surface_get_width(tbm_surf);
              buffer->h = tbm_surface_get_height(tbm_surf);
           }

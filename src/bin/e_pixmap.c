@@ -719,7 +719,7 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
                }
 
           }
-        else if (buffer->type == E_COMP_WL_BUFFER_TYPE_TBM)
+        else if (buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO)
           {
              E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
              tbm_surface_h tbm_surf = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
