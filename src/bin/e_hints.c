@@ -587,7 +587,11 @@ e_hints_window_init(E_Client *ec)
        (ec->netwm.state.hidden))
      {
         if (!ec->lock_client_iconify)
-          e_client_iconify(ec);
+          {
+             ELOG("Set ICONIFY BY CLIENT", ec->pixmap, ec);
+             ec->exp_iconify.by_client = 1;
+             e_client_iconify(ec);
+          }
         else
           e_hints_window_visible_set(ec);
      }
