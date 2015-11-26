@@ -807,7 +807,7 @@ struct E_Client
 
    struct
    {
-      unsigned char by_visibility : 1;
+      unsigned char by_client : 1;
       unsigned char not_raise : 1;
       unsigned char use_resize : 1;
    } exp_iconify;

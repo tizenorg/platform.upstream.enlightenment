@@ -3067,7 +3067,7 @@ e_client_new(E_Comp *c EINA_UNUSED, E_Pixmap *cp, int first_map, int internal)
    ec->new_client = 1;
    ec->comp->new_clients++;
 
-   ec->exp_iconify.by_visibility = 0;
+   ec->exp_iconify.by_client = 0;
    ec->exp_iconify.not_raise = 0;
    ec->exp_iconify.use_resize = 0;
 
@@ -4113,6 +4113,10 @@ e_client_activate(E_Client *ec, Eina_Bool just_do_it)
           (e_config->focus_setting == E_FOCUS_NEW_DIALOG_IF_OWNER_FOCUSED)))) ||
        (just_do_it))
      {
+        ELOG("Un-Set ICONIFY BY CLIENT", ec->pixmap, ec);
+        ec->exp_iconify.by_client = 0;
+        ec->exp_iconify.not_raise = 0;
+
         if (ec->iconic)
           {
              if (e_config->clientlist_warp_to_iconified_desktop == 1)
@@ -4548,9 +4552,9 @@ e_client_iconify(E_Client *ec)
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
 
-   ELOGF("TZVIS", "ICONIFY  |not_raise:%d       |by_vis:%d",
+   ELOGF("TZVIS", "ICONIFY  |not_raise:%d       |by_client:%d",
          ec->pixmap, ec, (unsigned int)ec->exp_iconify.not_raise,
-         ec->exp_iconify.by_visibility);
+         ec->exp_iconify.by_client);
 
    if (ec->shading || ec->iconic) return;
    ec->iconic = 1;
@@ -4571,18 +4575,12 @@ e_client_iconify(E_Client *ec)
 
    if (e_config->transient.iconify)
      {
-        Eina_Bool not_raise;
         E_Client *child;
         Eina_List *list = eina_list_clone(ec->transients);
 
-        not_raise = ec->exp_iconify.not_raise;
         EINA_LIST_FREE(list, child)
-          {
-             child->exp_iconify.not_raise = not_raise;
-             e_client_iconify(child);
-          }
+          e_client_iconify(child);
      }
-   ec->exp_iconify.not_raise = EINA_FALSE;
    e_remember_update(ec);
 }
 
@@ -4590,18 +4588,20 @@ EAPI void
 e_client_uniconify(E_Client *ec)
 {
    E_Desk *desk;
+   Eina_Bool not_raise;
 
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
 
-   ELOGF("TZVIS", "UNICONIFY|not_raise:%d       |by_vis:%d",
+   ELOGF("TZVIS", "UNICONIFY|not_raise:%d       |by_client:%d",
          ec->pixmap, ec, (unsigned int)ec->exp_iconify.not_raise,
-         ec->exp_iconify.by_visibility);
+         ec->exp_iconify.by_client);
 
    if (ec->shading || (!ec->iconic)) return;
    desk = e_desk_current_get(ec->desk->zone);
    e_client_desk_set(ec, desk);
-   if (!ec->exp_iconify.not_raise)
+   not_raise = ec->exp_iconify.not_raise;
+   if (!not_raise)
      evas_object_raise(ec->frame);
    evas_object_show(ec->frame);
    e_client_comp_hidden_set(ec, 0);
@@ -4616,8 +4616,13 @@ e_client_uniconify(E_Client *ec)
         Eina_List *list = eina_list_clone(ec->transients);
 
         EINA_LIST_FREE(list, child)
-          e_client_uniconify(child);
+          {
+             child->exp_iconify.not_raise = not_raise;
+             e_client_uniconify(child);
+          }
      }
+   ec->exp_iconify.not_raise = 0;
+   ec->exp_iconify.by_client = 0;
    e_remember_update(ec);
 }
 
