@@ -140,7 +140,6 @@ _e_comp_wl_data_source_send_send(E_Comp_Wl_Data_Source *source, const char* mime
 {
    DBG("Data Source Source Send");
    wl_data_source_send_send(source->resource, mime_type, fd);
-   close(fd);
 }
 
 static void
@@ -566,7 +565,8 @@ _e_comp_wl_clipboard_source_unref(E_Comp_Wl_Clipboard_Source *source)
    if (source->fd_handler)
      {
         ecore_main_fd_handler_del(source->fd_handler);
-        close(source->fd);
+        close(source->fd[0]);
+        close(source->fd[1]);
      }
 
    EINA_LIST_FREE(source->data_source.mime_types, t)
@@ -645,12 +645,13 @@ _e_comp_wl_clipboard_source_save(void *data, Ecore_Fd_Handler *handler)
 
    p = (char*)source->contents.data + source->contents.size;
    size = source->contents.alloc - source->contents.size;
-   len = read(source->fd, p, size);
+   len = read(source->fd[0], p, size);
 
    if (len == 0)
      {
         ecore_main_fd_handler_del(handler);
-        close(source->fd);
+        close(source->fd[0]);
+        close(source->fd[1]);
         source->fd_handler = NULL;
      }
    else if (len < 0)
@@ -693,7 +694,7 @@ _e_comp_wl_clipboard_source_cancelled_send(E_Comp_Wl_Data_Source *source EINA_UN
 }
 
 static E_Comp_Wl_Clipboard_Source*
-_e_comp_wl_clipboard_source_create(E_Comp_Data *cdata, const char *mime_type, uint32_t serial, int fd)
+_e_comp_wl_clipboard_source_create(E_Comp_Data *cdata, const char *mime_type, uint32_t serial, int* fd)
 {
    E_Comp_Wl_Clipboard_Source *source;
 
@@ -716,7 +717,7 @@ _e_comp_wl_clipboard_source_create(E_Comp_Data *cdata, const char *mime_type, ui
                        eina_stringshare_add(mime_type));
 
    source->fd_handler =
-      ecore_main_fd_handler_add(fd, ECORE_FD_READ,
+      ecore_main_fd_handler_add(fd[0], ECORE_FD_READ,
                                 _e_comp_wl_clipboard_source_save,
                                 cdata, NULL, NULL);
    if (!source->fd_handler)
@@ -725,7 +726,8 @@ _e_comp_wl_clipboard_source_create(E_Comp_Data *cdata, const char *mime_type, ui
         return NULL;
      }
 
-   source->fd = fd;
+   source->fd[0] = fd[0];
+   source->fd[1] = fd[1];
 
    return source;
 }
@@ -767,10 +769,13 @@ _e_comp_wl_clipboard_selection_set(struct wl_listener *listener EINA_UNUSED, voi
 
    cdata->clipboard.source =
       _e_comp_wl_clipboard_source_create(cdata, mime_type,
-                                         cdata->selection.serial, p[0]);
+                                         cdata->selection.serial, p);
 
    if (!cdata->clipboard.source)
-     close(p[0]);
+     {
+        close(p[0]);
+        close(p[1]);
+     }
 }
 
 static void

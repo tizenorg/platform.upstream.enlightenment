@@ -41,7 +41,7 @@ struct _E_Comp_Wl_Clipboard_Source
 
    struct wl_array contents; //for extendable buffer
    int ref;
-   int fd;
+   int fd[2];
 };
 
 struct _E_Comp_Wl_Clipboard_Offer
