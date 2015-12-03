@@ -48,3 +48,18 @@ e_mouse_update(void)
    return 1;
 }
 
+EAPI int
+e_mouse_button_remap(E_Mouse_Hand mouse_hand)
+{
+   if (e_config->mouse_hand == mouse_hand) return 1;
+
+   e_config->mouse_hand = mouse_hand;
+#ifdef HAVE_WAYLAND
+   /* FIXME: Do not save configure information in config file. */
+   e_config_save_queue();
+#endif
+#ifndef HAVE_WAYLAND_ONLY
+   e_mouse_update();
+#endif
+   return 1;
+}
