@@ -17,6 +17,7 @@ typedef struct _E_Comp_Client_Data E_Comp_Client_Data;
 #endif
 
 typedef struct _E_Comp_Demo_Style_Item E_Comp_Demo_Style_Item;
+typedef struct _E_Comp_Connected_Client_Info E_Comp_Connected_Client_Info;
 
 # define E_COMP_TYPE (int) 0xE0b01003
 
@@ -142,6 +143,8 @@ struct _E_Comp
    Eina_Bool       saver : 1;
    Eina_Bool       shape_queue_blocked : 1;
    Eina_Bool       calc_fps : 1;
+
+   Eina_List      *connected_clients;
 };
 
 
@@ -153,6 +156,14 @@ struct _E_Comp_Demo_Style_Item
    Evas_Object *layout;
    Evas_Object *border;
    Evas_Object *client;
+};
+
+struct _E_Comp_Connected_Client_Info
+{
+   const char *name;
+   int pid;
+   int uid;
+   int gid;
 };
 
 typedef enum

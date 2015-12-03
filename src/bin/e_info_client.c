@@ -402,6 +402,62 @@ _e_info_client_prop_prop_info(int argc, char **argv)
      }
 }
 
+static void
+_cb_window_proc_connected_clients_get(const Eldbus_Message *msg)
+{
+   const char *name = NULL, *text = NULL;
+   Eldbus_Message_Iter *array, *ec;
+   Eina_Bool res;
+
+   res = eldbus_message_error_get(msg, &name, &text);
+   EINA_SAFETY_ON_TRUE_GOTO(res, finish);
+
+   res = eldbus_message_arguments_get(msg, "a(ss)", &array);
+   EINA_SAFETY_ON_FALSE_GOTO(res, finish);
+
+   printf("--------------------------------------[ connected clients ]-----------------------------------------------------\n");
+   int cnt = 0;
+   while (eldbus_message_iter_get_and_next(array, 'r', &ec))
+     {
+        const char *title;
+        const char *value;
+        res = eldbus_message_iter_arguments_get(ec,
+                                                "ss",
+                                                &title,
+                                                &value);
+        if (!res)
+          {
+             printf("Failed to get connected clients info\n");
+             continue;
+          }
+
+        if (!strcmp(title, "[Connected Clients]"))
+          {
+             printf("\n[%2d] %s\n", ++cnt, value);
+          }
+        else if (!strcmp(title, "[E_Client Info]"))
+          {
+             printf("      |----- %s :: %s\n", title, value);
+          }
+     }
+
+finish:
+   if ((name) || (text))
+     {
+        printf("errname:%s errmsg:%s\n", name, text);
+     }
+}
+
+static void
+_e_info_client_proc_connected_clients(int argc, char **argv)
+{
+   if (!_e_info_client_eldbus_message("get_connected_clients", _cb_window_proc_connected_clients_get))
+     {
+        printf("_e_info_client_eldbus_message error");
+        return;
+     }
+}
+
 static struct
 {
    const char *option;
@@ -434,6 +490,11 @@ static struct
       "prop", "[id]",
       "print window infomation",
       _e_info_client_prop_prop_info
+   },
+   {
+      "connected_clients", NULL,
+      "print connected clients on Enlightenment",
+      _e_info_client_proc_connected_clients
    },
 };
 

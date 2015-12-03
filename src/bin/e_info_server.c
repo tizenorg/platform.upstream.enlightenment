@@ -91,6 +91,74 @@ _e_info_server_cb_window_info_get(const Eldbus_Service_Interface *iface EINA_UNU
 }
 
 static void
+_msg_connected_clients_append(Eldbus_Message_Iter *iter)
+{
+   Eldbus_Message_Iter *array_of_ec;
+   E_Client *ec;
+   Evas_Object *o;
+
+   eldbus_message_iter_arguments_append(iter, "a(ss)", &array_of_ec);
+
+   Eina_List *l;
+   E_Comp_Connected_Client_Info *cinfo;
+
+
+   Eldbus_Message_Iter* struct_of_ec;
+
+#define __CONNECTED_CLIENTS_ARG_APPEND_TYPE(title, str, x...) ({                           \
+                                                               char __temp[128] = {0,};                                                     \
+                                                               snprintf(__temp, sizeof(__temp), str, ##x);                                  \
+                                                               eldbus_message_iter_arguments_append(array_of_ec, "(ss)", &struct_of_ec);    \
+                                                               eldbus_message_iter_arguments_append(struct_of_ec, "ss", (title), (__temp)); \
+                                                               eldbus_message_iter_container_close(array_of_ec, struct_of_ec);})
+
+   EINA_LIST_FOREACH(e_comp->connected_clients, l, cinfo)
+     {
+        __CONNECTED_CLIENTS_ARG_APPEND_TYPE("[Connected Clients]", "name:%20s pid:%3d uid:%3d gid:%3d", cinfo->name ?: "NO_NAME", cinfo->pid, cinfo->uid, cinfo->gid);
+        for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
+          {
+             Ecore_Window win;
+             uint32_t res_id = 0;
+             pid_t pid = -1;
+
+             ec = evas_object_data_get(o, "E_Client");
+             if (!ec) continue;
+             if (e_client_util_ignored_get(ec)) continue;
+
+             win = e_client_util_win_get(ec);
+
+             if (ec->pixmap)
+               res_id = e_pixmap_res_id_get(ec->pixmap);
+#ifdef HAVE_WAYLAND_ONLY
+             if (ec->comp_data)
+               {
+                  E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+                  if (cdata->surface)
+                    wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
+               }
+#endif
+             if (cinfo->pid == pid)
+               {
+                  __CONNECTED_CLIENTS_ARG_APPEND_TYPE("[E_Client Info]", "win:0x%08x res_id:%5d, name:%20s, geo:(%4d, %4d, %4dx%4d), layer:%5d, visible:%d, argb:%d",
+                                                      win, res_id, e_client_util_name_get(ec) ?: "NO_NAME", ec->x, ec->y, ec->w, ec->h, ec->layer, ec->visible, ec->argb);
+               }
+          }
+     }
+
+   eldbus_message_iter_container_close(iter, array_of_ec);
+}
+
+static Eldbus_Message *
+_e_info_server_cb_connected_clients_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+
+   _msg_connected_clients_append(eldbus_message_iter_get(reply));
+
+   return reply;
+}
+
+static void
 _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
 {
    Eldbus_Message_Iter* struct_of_ec;
@@ -486,6 +554,7 @@ static const Eldbus_Method methods[] = {
    { "eina_log_levels", ELDBUS_ARGS({"s", "eina log levels"}), NULL, _e_info_server_cb_eina_log_levels, 0 },
    { "eina_log_path", ELDBUS_ARGS({"s", "eina log path"}), NULL, _e_info_server_cb_eina_log_path, 0 },
    { "get_window_prop", ELDBUS_ARGS({"us", "query_mode_value"}), ELDBUS_ARGS({"a(ss)", "array_of_ec"}), _e_info_server_cb_window_prop_get, 0},
+   { "get_connected_clients", NULL, ELDBUS_ARGS({"a(ss)", "array of ec"}), _e_info_server_cb_connected_clients_get, 0 },
    { NULL, NULL, NULL, NULL, 0 }
 };
 

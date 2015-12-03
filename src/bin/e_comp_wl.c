@@ -2371,6 +2371,32 @@ static const struct wl_compositor_interface _e_comp_interface =
 };
 
 static void
+_e_comp_wl_pname_get(pid_t pid, char* name, int size)
+{
+   if (!name) return;
+
+   FILE *h;
+   char proc[512], pname[512];
+   size_t len;
+
+   snprintf(proc, 512,"/proc/%d/cmdline", pid);
+
+   h = fopen(proc, "r");
+   if (!h) return;
+
+   len = fread(pname, sizeof(char), 512, h);
+   if (len > 0)
+     {
+        if ('\n' == pname[len - 1])
+          pname[len - 1] = '\0';
+     }
+
+   fclose(h);
+
+   strncpy(name, pname, size);
+}
+
+static void
 _e_comp_wl_pname_print(pid_t pid)
 {
    FILE *h;
@@ -2416,6 +2442,26 @@ _e_comp_wl_compositor_cb_unbind(struct wl_resource *res_comp)
          (unsigned int)res_comp,
          (unsigned int)client,
          pid, uid, gid);
+
+   E_Comp *comp;
+   if ((comp = wl_resource_get_user_data(res_comp)))
+     {
+        Eina_List *l;
+        E_Comp_Connected_Client_Info *cinfo;
+        EINA_LIST_FOREACH(comp->connected_clients, l, cinfo)
+          {
+             if (cinfo->pid == pid)
+               break;
+             cinfo = NULL;
+          }
+        if (cinfo)
+          {
+             if (cinfo->name)
+               eina_stringshare_del(cinfo->name);
+             comp->connected_clients = eina_list_remove(comp->connected_clients, cinfo);
+             E_FREE(cinfo);
+          }
+     }
 }
 
 static void
@@ -2453,6 +2499,20 @@ _e_comp_wl_compositor_cb_bind(struct wl_client *client, void *data, uint32_t ver
          pid, uid, gid);
 
    _e_comp_wl_pname_print(pid);
+
+   char *name[512];
+   _e_comp_wl_pname_get(pid, name, sizeof(name));
+
+   E_Comp_Connected_Client_Info *cinfo;
+   cinfo = E_NEW(E_Comp_Connected_Client_Info, 1);
+   if (cinfo)
+     {
+        cinfo->name = eina_stringshare_add(name);
+        cinfo->pid = pid;
+        cinfo->uid = uid;
+        cinfo->gid = gid;
+        comp->connected_clients= eina_list_append(comp->connected_clients, cinfo);
+     }
 }
 
 static void
