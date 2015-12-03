@@ -805,13 +805,15 @@ _e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t b
    switch (button_id)
      {
       case 1:
-        btn = BTN_LEFT;
+        if (e_config->mouse_hand == E_MOUSE_HAND_LEFT) btn = BTN_RIGHT;
+        else btn = BTN_LEFT;
         break;
       case 2:
         btn = BTN_MIDDLE;
         break;
       case 3:
-        btn = BTN_RIGHT;
+        if (e_config->mouse_hand == E_MOUSE_HAND_LEFT) btn = BTN_LEFT;
+        else btn = BTN_RIGHT;
         break;
       default:
         btn = button_id;
