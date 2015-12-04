@@ -5,6 +5,8 @@
 #define PATH "/org/enlightenment/wm"
 #define IFACE "org.enlightenment.wm.info"
 
+EAPI int E_EVENT_INFO_ROTATION_MESSAGE = -1;
+
 typedef struct _E_Info_Server
 {
    Eldbus_Connection *conn;
@@ -551,6 +553,83 @@ _e_info_server_cb_eina_log_path(const Eldbus_Service_Interface *iface EINA_UNUSE
    return reply;
 }
 
+static Eldbus_Message *
+_e_info_server_cb_rotation_query(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+
+   /* TODO: need implementation */
+
+   return reply;
+}
+
+static void
+_e_info_event_rotation_free(void *data EINA_UNUSED, void *event)
+{
+   E_Event_Info_Rotation_Message *ev = event;
+
+   e_object_unref(E_OBJECT(ev->zone));
+   free(ev);
+}
+
+static Eldbus_Message *
+_e_info_server_cb_rotation_message(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   E_Event_Info_Rotation_Message *ev;
+   E_Info_Rotation_Message rot_msg;
+   E_Zone *z;
+   Eina_List *l;
+   uint32_t zone_num;
+   uint32_t rval;
+
+   if (!eldbus_message_arguments_get(msg, "iii", &rot_msg, &zone_num, &rval))
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   if (rot_msg == E_INFO_ROTATION_MESSAGE_SET)
+     {
+        /* check if rval is valid */
+        if ((rval < 0) || (rval > 270) || (rval % 90 != 0))
+          return reply;
+     }
+
+   ev = E_NEW(E_Event_Info_Rotation_Message, 1);
+   if (EINA_UNLIKELY(!ev))
+     {
+        ERR("Failed to allocate ""E_Event_Info_Rotation_Message""");
+        return reply;
+     }
+
+   if (zone_num == -1)
+     ev->zone = e_zone_current_get(e_comp);
+   else
+     {
+        EINA_LIST_FOREACH(e_comp->zones, l, z)
+          {
+             if (z->num == zone_num)
+               ev->zone = z;
+          }
+     }
+
+   if (!ev->zone)
+     {
+        ERR("Failed to found zone by given num: num %d", zone_num);
+        free(ev);
+        return reply;
+     }
+
+   e_object_ref(E_OBJECT(ev->zone));
+   ev->message = rot_msg;
+   ev->rotation = rval;
+
+   ecore_event_add(E_EVENT_INFO_ROTATION_MESSAGE, ev, _e_info_event_rotation_free, NULL);
+
+   return reply;
+}
+
 static const Eldbus_Method methods[] = {
    { "get_window_info", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_TOPVWINS")", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, 0 },
@@ -558,6 +637,8 @@ static const Eldbus_Method methods[] = {
    { "eina_log_path", ELDBUS_ARGS({"s", "eina log path"}), NULL, _e_info_server_cb_eina_log_path, 0 },
    { "get_window_prop", ELDBUS_ARGS({"us", "query_mode_value"}), ELDBUS_ARGS({"a(ss)", "array_of_ec"}), _e_info_server_cb_window_prop_get, 0},
    { "get_connected_clients", NULL, ELDBUS_ARGS({"a(ss)", "array of ec"}), _e_info_server_cb_connected_clients_get, 0 },
+   { "rotation_query", ELDBUS_ARGS({"i", "query_rotation"}), NULL, _e_info_server_cb_rotation_query, 0},
+   { "rotation_message", ELDBUS_ARGS({"iii", "rotation_message"}), NULL, _e_info_server_cb_rotation_message, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 
@@ -577,6 +658,8 @@ e_info_server_init(void)
                                                            PATH,
                                                            &iface_desc);
    EINA_SAFETY_ON_NULL_GOTO(e_info_server.iface, err);
+
+   E_EVENT_INFO_ROTATION_MESSAGE = ecore_event_type_new();
 
    return 1;
 
