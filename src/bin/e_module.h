@@ -62,6 +62,7 @@ struct _E_Module_Api
 EINTERN int          e_module_init(void);
 EINTERN int          e_module_shutdown(void);
 
+EAPI void         e_module_deferred_job(void);
 EAPI void         e_module_all_load(void);
 EAPI E_Module    *e_module_new(const char *name);
 EAPI int          e_module_save(E_Module *m);

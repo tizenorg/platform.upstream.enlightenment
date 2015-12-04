@@ -9,6 +9,7 @@
 
 /* local subsystem functions */
 static void      _e_module_free(E_Module *m);
+static void      _e_module_dialog_disable_defer(const char *title, const char *body, E_Module *m);
 static void      _e_module_dialog_disable_show(const char *title, const char *body, E_Module *m);
 static void      _e_module_cb_dialog_disable(void *data, E_Dialog *dia);
 static void      _e_module_event_update_free(void *data, void *event);
@@ -34,6 +35,14 @@ EAPI int E_EVENT_MODULE_UPDATE = 0;
 EAPI int E_EVENT_MODULE_INIT_END = 0;
 
 static Eina_Stringshare *mod_src_path = NULL;
+static Eina_List *deferred_dialogs = NULL;
+
+typedef struct _Defer_Dialog
+{
+   const char *title;
+   const char *body;
+   E_Module *m;
+} Defer_Dialog;
 
 static Eina_Bool
 _module_filter_cb(void *d EINA_UNUSED, Eio_File *ls EINA_UNUSED, const Eina_File_Direct_Info *info)
@@ -697,6 +706,21 @@ e_module_desktop_list(void)
 }
 
 EAPI void
+e_module_deferred_job(void)
+{
+   Defer_Dialog *dd;
+
+   if (!deferred_dialogs) return;
+
+   EINA_LIST_FREE(deferred_dialogs, dd)
+     {
+        _e_module_dialog_disable_show(dd->title, dd->body, dd->m);
+        eina_stringshare_del(dd->title);
+        eina_stringshare_del(dd->body);
+     }
+}
+
+EAPI void
 e_module_desktop_free(E_Module_Desktop *md)
 {
    if (!md) return;
@@ -763,10 +787,37 @@ _e_module_desktop_list_cb(const Eina_Hash *hash EINA_UNUSED, const void *key EIN
 }
 
 static void
+_e_module_dialog_disable_defer(const char *title, const char *body, E_Module *m)
+{
+   Defer_Dialog *dd;
+
+   dd = E_NEW(Defer_Dialog, 1);
+   if (!dd)
+     {
+        ERR("Failed to allocate Defer_Dialog");
+        return;
+     }
+
+   dd->title = eina_stringshare_add(title);
+   dd->body = eina_stringshare_add(body);
+   dd->m = m;
+
+   deferred_dialogs = eina_list_append(deferred_dialogs, dd);
+}
+
+static void
 _e_module_dialog_disable_show(const char *title, const char *body, E_Module *m)
 {
    E_Dialog *dia;
    char buf[4096];
+
+#ifdef ENABLE_QUICK_INIT
+   if (!_e_modules_init_end)
+     {
+        _e_module_dialog_disable_defer(title, body, m);
+        return;
+     }
+#endif
 
    printf("MODULE ERR:\n%s\n", body);
 

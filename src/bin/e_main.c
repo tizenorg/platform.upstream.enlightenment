@@ -200,12 +200,79 @@ _xdg_data_dirs_augment(void)
      }
 }
 
+#ifndef ENABLE_QUICK_INIT
 static Eina_Bool
 _e_main_shelf_init_job(void *data EINA_UNUSED)
 {
    e_shelf_config_update();
    return ECORE_CALLBACK_CANCEL;
 }
+#else
+static Eina_Bool
+_e_main_subsystem_defer(void *data EINA_UNUSED)
+{
+   int argc;
+   char **argv;
+
+   ecore_app_args_get(&argc, &argv);
+
+   /* try to init delayed subsystems */
+   TS("[DEFERRED] Elementary Init");
+   if (!elm_init(argc, argv))
+     {
+        e_error_message_show(_("Enlightenment cannot initialize Elementary!\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("[DEFERRED] Elementary Init Done");
+   //_e_main_shutdown_push(elm_shutdown);
+   //
+   TS("[DEFERRED] Screens Init: win");
+   if (!e_win_init())
+     {
+        e_error_message_show(_("Enlightenment cannot setup elementary trap!\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("[DEFERRED] Screens Init: win Done");
+
+   TS("[DEFERRED] E_Scale Init");
+   if (!e_scale_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its scale system.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("[DEFERRED E_Scale Init Done");
+   _e_main_shutdown_push(e_scale_shutdown);
+
+   TS("[DEFERRED] E_Test_Helper Init");
+   e_test_helper_init();
+   _e_main_shutdown_push(e_test_helper_shutdown);
+   TS("[DEFERRED] E_Test_Helper Done");
+
+   TS("[DEFERRED] E_INFO_SERVER Init");
+   e_info_server_init();
+   _e_main_shutdown_push(e_info_server_shutdown);
+   TS("[DEFERRED] E_INFO_SERVER Done");
+
+   /* try to do deferred job of any subsystems*/
+   TS("[DEFERRED] Compositor's deferred job");
+   e_comp_deferred_job();
+   TS("[DEFERRED] Compositor's deferred job Done");
+
+   TS("[DEFERRED] E_Module's deferred job");
+   e_module_deferred_job();
+   TS("[DEFERRED] E_Module's deferred job Done");
+
+   return ECORE_CALLBACK_DONE;
+}
+
+static Eina_Bool
+_e_main_deferred_job_schedule(void *d EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_UNUSED)
+{
+   ecore_idler_add(_e_main_subsystem_defer, NULL);
+   return ECORE_CALLBACK_DONE;
+}
+
+#endif
 
 /* externally accessible functions */
 int
@@ -404,6 +471,7 @@ main(int argc, char **argv)
    TS("Ecore_File Init Done");
    _e_main_shutdown_push(ecore_file_shutdown);
 
+#ifndef ENABLE_QUICK_INIT
    TS("Ecore_Con Init");
    if (!ecore_con_init())
      {
@@ -1041,6 +1109,320 @@ main(int argc, char **argv)
    TS("E_Shelf Init Done");
 
    ecore_idle_enterer_before_add(_e_main_shelf_init_job, NULL);
+#else
+   _idle_before = ecore_idle_enterer_before_add(_e_main_cb_idle_before, NULL);
+
+   _xdg_data_dirs_augment();
+
+   TS("Ecore_Evas Init");
+   if (!ecore_evas_init())
+     {
+        e_error_message_show(_("Enlightenment cannot initialize Ecore_Evas!\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("Ecore_Evas Init Done");
+//   _e_main_shutdown_push(ecore_evas_shutdown);
+
+   /* e doesn't sync to compositor - it should be one */
+   ecore_evas_app_comp_sync_set(0);
+
+   TS("Ecore_Evas Engine Check");
+#ifdef HAVE_WAYLAND_ONLY
+   if (!ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_WAYLAND_SHM))
+     {
+        e_error_message_show(_("Enlightenment found ecore_evas doesn't support the Wayland SHM\n"
+                               "rendering in Evas. Please check your installation of Evas and\n"
+                                "Ecore and check they support the Wayland SHM rendering engine."));
+        _e_main_shutdown(-1);
+     }
+#else
+   if (!ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_SOFTWARE_XCB))
+     {
+        if (!ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_SOFTWARE_XLIB))
+          {
+             e_error_message_show(_("Enlightenment found ecore_evas doesn't support the Software X11\n"
+                                    "rendering in Evas. Please check your installation of Evas and\n"
+                                    "Ecore and check they support the Software X11 rendering engine."));
+             _e_main_shutdown(-1);
+          }
+     }
+#endif
+   if (!ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_SOFTWARE_BUFFER))
+     {
+        e_error_message_show(_("Enlightenment found ecore_evas doesn't support the Software Buffer\n"
+                               "rendering in Evas. Please check your installation of Evas and\n"
+                               "Ecore and check they support the Software Buffer rendering engine."));
+        _e_main_shutdown(-1);
+     }
+   TS("Ecore_Evas Engine Check Done");
+
+   TS("Edje Init");
+   if (!edje_init())
+     {
+        e_error_message_show(_("Enlightenment cannot initialize Edje!\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("Edje Init Done");
+   _e_main_shutdown_push(edje_shutdown);
+   edje_freeze();
+
+   /*** Initialize E Subsystems We Need ***/
+
+   TS("E Directories Init");
+   /* setup directories we will be using for configurations storage etc. */
+   if (!_e_main_dirs_init())
+     {
+        e_error_message_show(_("Enlightenment cannot create directories in your home directory.\n"
+                               "Perhaps you have no home directory or the disk is full?"));
+        _e_main_shutdown(-1);
+     }
+   TS("E Directories Init Done");
+   _e_main_shutdown_push(_e_main_dirs_shutdown);
+
+   TS("E_Config Init");
+   if (!e_config_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its config system.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Config Init Done");
+   _e_main_shutdown_push(e_config_shutdown);
+
+   TS("E_Env Init");
+   if (!e_env_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its environment.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Env Init Done");
+   _e_main_shutdown_push(e_env_shutdown);
+
+   efreet_desktop_environment_set(e_config->desktop_environment);
+   e_util_env_set("E_ICON_THEME", e_config->icon_theme);
+   ecore_exe_run_priority_set(e_config->priority);
+   locked |= e_config->desklock_start_locked;
+
+   s = getenv("E_DESKLOCK_LOCKED");
+   if ((s) && (!strcmp(s, "locked"))) waslocked = EINA_TRUE;
+
+   TS("E Paths Init");
+   if (!_e_main_path_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up paths for finding files.\n"
+                               "Perhaps you are out of memory?"));
+        _e_main_shutdown(-1);
+     }
+   TS("E Paths Init Done");
+   _e_main_shutdown_push(_e_main_path_shutdown);
+
+   edje_frametime_set(1.0 / e_config->framerate);
+
+   TS("E_Font Init");
+   if (!e_font_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its font system.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Font Init Done");
+   _e_main_shutdown_push(e_font_shutdown);
+
+   TS("E_Font Apply");
+   e_font_apply();
+   TS("E_Font Apply Done");
+
+   TS("E_Theme Init");
+   if (!e_theme_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its theme system.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Theme Init Done");
+   _e_main_shutdown_push(e_theme_shutdown);
+
+   TS("E_Moveresize Init");
+   e_moveresize_init();
+   TS("E_Moveresize Init Done");
+   _e_main_shutdown_push(e_moveresize_shutdown);
+
+   TS("Efreet Init");
+   if (!efreet_init())
+     {
+        e_error_message_show(_("Enlightenment cannot initialize the FDO desktop system.\n"
+                               "Perhaps you lack permissions on ~/.cache/efreet or are\n"
+                               "out of memory or disk space?"));
+        _e_main_shutdown(-1);
+     }
+   TS("Efreet Init Done");
+   _e_main_shutdown_push(efreet_shutdown);
+
+   e_screensaver_preinit();
+
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup Actions"));
+   TS("E_Actions Init");
+   if (!e_actions_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its actions system.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Actions Init Done");
+   _e_main_shutdown_push(e_actions_shutdown);
+
+   /* these just add event handlers and can't fail
+    * timestamping them is dumb.
+    */
+   e_zone_init();
+   e_desk_init();
+   e_exehist_init();
+
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup Powersave Modes"));
+   TS("E_Powersave Init");
+   if (!e_powersave_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its powersave modes.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Powersave Init Done");
+   _e_main_shutdown_push(e_powersave_shutdown);
+
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup Screensaver"));
+   TS("E_Screensaver Init");
+   if (!e_screensaver_init())
+     {
+        e_error_message_show(_("Enlightenment cannot configure the X screensaver.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Screensaver Init Done");
+   _e_main_shutdown_push(e_screensaver_shutdown);
+
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup Screens"));
+   TS("Screens Init");
+   if (!_e_main_screens_init())
+     {
+        e_error_message_show(_("Enlightenment set up window management for all the screens on your system\n"
+                               "failed. Perhaps another window manager is running?\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("Screens Init Done");
+   _e_main_shutdown_push(_e_main_screens_shutdown);
+   e_screensaver_force_update();
+
+   TS("E_Pointer Init");
+   if (!e_pointer_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its pointer system.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Pointer Init Done");
+   _e_main_shutdown_push(e_pointer_shutdown);
+   e_menu_init();
+
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup Paths"));
+   TS("Efreet Paths");
+   _e_main_efreet_paths_init();
+   TS("Efreet Paths Done");
+
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup System Controls"));
+   TS("E_Sys Init");
+   if (!e_sys_init())
+     {
+        e_error_message_show(_("Enlightenment cannot initialize the System Command system.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Sys Init Done");
+   _e_main_shutdown_push(e_sys_shutdown);
+
+   TS("E_Comp Freeze");
+   e_comp_all_freeze();
+   TS("E_Comp Freeze Done");
+
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup Grab Input Handling"));
+   TS("E_Grabinput Init");
+   if (!e_grabinput_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its grab input handling system.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Grabinput Init Done");
+   _e_main_shutdown_push(e_grabinput_shutdown);
+
+   ecore_event_handler_add(E_EVENT_MODULE_INIT_END, _e_main_deferred_job_schedule, NULL);
+
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup Modules"));
+   TS("E_Module Init");
+   if (!e_module_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its module system.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Module Init Done");
+   _e_main_shutdown_push(e_module_shutdown);
+
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup Remembers"));
+   TS("E_Remember Init");
+   if (!e_remember_init(after_restart ? E_STARTUP_RESTART : E_STARTUP_START))
+     {
+        e_error_message_show(_("Enlightenment cannot setup remember settings.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Remember Init Done");
+   _e_main_shutdown_push(e_remember_shutdown);
+
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup Mouse"));
+   TS("E_Mouse Init");
+   if (!e_mouse_update())
+     {
+        e_error_message_show(_("Enlightenment cannot configure the mouse settings.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Mouse Init Done");
+
+   if (e_config->show_splash)
+     e_init_status_set(_("Setup Bindings"));
+   TS("E_Bindings Init");
+   if (!e_bindings_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its bindings system.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Bindings Init Done");
+   _e_main_shutdown_push(e_bindings_shutdown);
+
+   TS("E_Icon Init");
+   if (!e_icon_init())
+     {
+        e_error_message_show(_("Enlightenment cannot initialize the Icon Cache system.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Icon Init Done");
+   _e_main_shutdown_push(e_icon_shutdown);
+
+   TS("E_Manager Keys Grab");
+   e_managers_keys_grab();
+   TS("E_Manager Keys Grab Done");
+
+   if (e_config->show_splash)
+     e_init_status_set(_("Load Modules"));
+   TS("Load Modules");
+   _e_main_modules_load(safe_mode);
+   TS("Load Modules Done");
+
+   if (e_config->show_splash && (!after_restart))
+     ecore_timer_add(2.0, _e_main_cb_startup_fake_end, NULL);
+
+   TS("E_Comp Thaw");
+   e_comp_all_thaw();
+   TS("E_Comp Thaw Done");
+#endif
 
    _idle_after = ecore_idle_enterer_add(_e_main_cb_idle_after, NULL);
 
@@ -1578,8 +1960,10 @@ _e_main_screens_init(void)
 
    TS("\tscreens: client");
    if (!e_client_init()) return 0;
+#ifndef ENABLE_QUICK_INIT
    TS("\tscreens: win");
    if (!e_win_init()) return 0;
+#endif
 #ifndef HAVE_WAYLAND_ONLY
    TS("E_Xkb Init");
    if (!e_xkb_init())

@@ -1115,8 +1115,10 @@ e_comp_init(void)
 #endif
    if (!e_comp) return EINA_FALSE;
 out:
+#ifndef ENABLE_QUICK_INIT
    e_comp->elm = elm_win_fake_add(e_comp->ee);
    evas_object_show(e_comp->elm);
+#endif
    e_util_env_set("HYBRIS_EGLPLATFORM", NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_ON, _e_comp_screensaver_on, NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_OFF, _e_comp_screensaver_off, NULL);
@@ -1126,7 +1128,6 @@ out:
 
    return EINA_TRUE;
 }
-
 
 static Eina_Bool
 _style_demo(void *data)
@@ -1357,6 +1358,15 @@ e_comp_shutdown(void)
    E_FREE_FUNC(ignores, eina_hash_free);
 
    return 1;
+}
+
+EAPI void
+e_comp_deferred_job(void)
+{
+   e_comp->elm = elm_win_fake_add(e_comp->ee);
+   evas_object_show(e_comp->elm);
+
+   e_comp_wl_deferred_job();
 }
 
 EAPI void

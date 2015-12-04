@@ -3822,9 +3822,11 @@ _e_comp_wl_compositor_create(void)
    /* setup module idler to load shell mmodule */
    ecore_idler_add(_e_comp_wl_cb_module_idle, cdata);
 
+#ifndef ENABLE_QUICK_INIT
    /* check if gl init succeded */
    ecore_idler_add(_e_comp_wl_gl_idle, cdata);
 
+#endif
    if (comp->comp_type == E_PIXMAP_TYPE_X)
      {
         e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
@@ -3921,6 +3923,12 @@ e_comp_wl_init(void)
    _last_event_time = ecore_loop_time_get();
 
    return EINA_TRUE;
+}
+
+EAPI void
+e_comp_wl_deferred_job(void)
+{
+   ecore_idle_enterer_add(_e_comp_wl_gl_idle, NULL);
 }
 
 /**
