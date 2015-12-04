@@ -1,17 +1,25 @@
 #include "e.h"
 
 EAPI double e_scale = 1.0;
+static Eina_Bool _initted = EINA_FALSE;
+static int _dpi = -1;
 
 EINTERN int
 e_scale_init(void)
 {
-   e_scale_update();
+   _initted = EINA_TRUE;
+
+   if (_dpi == -1) e_scale_update();
+   else e_scale_manual_update(_dpi);
+
    return 1;
 }
 
 EINTERN int
 e_scale_shutdown(void)
 {
+   _initted = EINA_FALSE;
+   _dpi = -1;
    return 1;
 }
 
@@ -52,6 +60,12 @@ EAPI void
 e_scale_manual_update(int dpi)
 {
    char buf[128];
+
+   if (!_initted)
+     {
+        _dpi = dpi;
+        return;
+     }
 
    e_scale = (double)dpi / (double)e_config->scale.base_dpi;
 

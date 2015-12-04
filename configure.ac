@@ -454,6 +454,17 @@ AC_ARG_ENABLE([wayland-only],
 AC_MSG_CHECKING([whether wayland-only version is enabled])
 AC_MSG_RESULT([${e_cv_want_wayland_only}])
 
+quick_init=no
+AC_ARG_ENABLE([quick-init],
+  AS_HELP_STRING([--enable-quick-init],[]),
+  [
+   quick_init=yes
+   AC_DEFINE_UNQUOTED([ENABLE_QUICK_INIT], [1], [enable quick init])
+  ],
+  [quick_init=no])
+AC_MSG_CHECKING([whether enlightenment quick initialization is enabled])
+AC_MSG_RESULT([${quick_init}])
+
 # doxygen program for documentation building
 
 EFL_CHECK_DOXYGEN([build_doc="yes"], [build_doc="no"])

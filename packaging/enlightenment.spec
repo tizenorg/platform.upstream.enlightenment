@@ -92,6 +92,7 @@ cp %{SOURCE1001} .
       --disable-winlist \
       --disable-wizard \
       --disable-wl-x11 \
+      --enable-quick-init \
 %endif
       --enable-mount-eeze
 
