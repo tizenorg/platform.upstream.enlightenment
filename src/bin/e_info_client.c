@@ -1,4 +1,5 @@
 #include "e.h"
+#include "e_info_shared_types.h"
 #include <time.h>
 #include <dirent.h>
 
@@ -469,6 +470,86 @@ _e_info_client_proc_connected_clients(int argc, char **argv)
      }
 }
 
+#define ROTATION_USAGE \
+   "[COMMAND] [ARG]...\n" \
+   "\tset     : Set the orientation of zone (Usage: set [zone-no] [rval(0|90|180|270)]\n" \
+   "\tinfo    : Get the information of zone's rotation (Usage: info [zone-no]) (Not Implemented)\n" \
+   "\tenable  : Enable the rotation of zone (Usage: enable [zone-no]\n" \
+   "\tdisable : Disable the rotation of zone (Usage: disable [zone-no]\n"
+
+static void
+_cb_rotation_query(const Eldbus_Message *msg)
+{
+   (void)msg;
+   /* TODO: need implementation */
+}
+
+static void
+_e_info_client_proc_rotation(int argc, char **argv)
+{
+   E_Info_Rotation_Message req;
+   int32_t zone_num = -1;
+   int32_t rval = -1;
+   const int off_len = 2, cmd_len = 1;
+   Eina_Bool res = EINA_FALSE;
+
+   if (argc < off_len + cmd_len)
+     goto arg_err;
+
+   if (eina_streq(argv[off_len], "info"))
+     {
+        if (argc > off_len + cmd_len)
+          zone_num = atoi(argv[off_len + 1]);
+
+        res = _e_info_client_eldbus_message_with_args("rotation_query",
+                                                      _cb_rotation_query,
+                                                      "i", zone_num);
+     }
+   else
+     {
+        if (eina_streq(argv[off_len], "set"))
+          {
+             if (argc < off_len + cmd_len + 1)
+               goto arg_err;
+             else if (argc > off_len + cmd_len + 1)
+               {
+                  zone_num = atoi(argv[off_len + 1]);
+                  rval = atoi(argv[off_len + 2]);
+               }
+             else
+               rval = atoi(argv[off_len + 1]);
+
+             if ((rval < 0) || (rval > 270) || (rval % 90 != 0))
+               goto arg_err;
+
+             req = E_INFO_ROTATION_MESSAGE_SET;
+          }
+        else
+          {
+             if (argc > off_len + cmd_len)
+               zone_num = atoi(argv[off_len + 1]);
+
+             if (eina_streq(argv[off_len], "enable"))
+               req = E_INFO_ROTATION_MESSAGE_ENABLE;
+             else if (eina_streq(argv[off_len], "disable"))
+               req = E_INFO_ROTATION_MESSAGE_DISABLE;
+             else
+               goto arg_err;
+          }
+
+        res = _e_info_client_eldbus_message_with_args("rotation_message",
+                                                      NULL, "iii",
+                                                      req, zone_num, rval);
+     }
+
+   if (!res)
+     printf("_e_info_client_eldbus_message_with_args error");
+
+   return;
+arg_err:
+   printf("Usage: enlightenment_info -rotation %s", ROTATION_USAGE);
+}
+
 static struct
 {
    const char *option;
@@ -506,6 +587,12 @@ static struct
       "connected_clients", NULL,
       "print connected clients on Enlightenment",
       _e_info_client_proc_connected_clients
+   },
+   {
+      "rotation",
+      ROTATION_USAGE,
+      "Send a message about rotation",
+      _e_info_client_proc_rotation
    },
 };
 
