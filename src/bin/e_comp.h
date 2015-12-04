@@ -166,6 +166,7 @@ EINTERN Eina_Bool e_comp_init(void);
 EAPI E_Comp *e_comp_new(void);
 EAPI int e_comp_internal_save(void);
 EINTERN int e_comp_shutdown(void);
+EAPI void e_comp_deferred_job(void);
 EAPI void e_comp_render_queue(E_Comp *c);
 EAPI void e_comp_shape_queue(E_Comp *c);
 EAPI void e_comp_shape_queue_block(E_Comp *c, Eina_Bool block);
