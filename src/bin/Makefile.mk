@@ -106,6 +106,7 @@ src/bin/e_ilist.h \
 src/bin/e_import_config_dialog.h \
 src/bin/e_import_dialog.h \
 src/bin/e_includes.h \
+src/bin/e_info_shared_types.h \
 src/bin/e_info_server.h \
 src/bin/e_init.h \
 src/bin/e_int_client_locks.h \

@@ -1,0 +1,11 @@
+#ifndef _E_INFO_SHARED_TYPES_
+#define _E_INFO_SHARED_TYPES_
+
+typedef enum
+{
+   E_INFO_ROTATION_MESSAGE_SET,
+   E_INFO_ROTATION_MESSAGE_ENABLE,
+   E_INFO_ROTATION_MESSAGE_DISABLE
+} E_Info_Rotation_Message;
+
+#endif /* end of _E_INFO_SHARED_TYPES_ */
