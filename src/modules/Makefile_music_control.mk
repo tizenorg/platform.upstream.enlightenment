@@ -1,5 +1,6 @@
 EXTRA_DIST += src/modules/music-control/module.desktop.in \
 src/modules/music-control/e-module-music-control.edj
+if USE_MODULE_MUSIC_CONTROL
 music_controldir = $(MDIR)/music-control
 music_control_DATA = src/modules/music-control/module.desktop \
 src/modules/music-control/e-module-music-control.edj
@@ -26,3 +27,4 @@ src/modules/music-control/gen/eldbus_mpris_media_player2.h
 PHONIES += music-control install-music-control
 music-control: $(music_controlpkg_LTLIBRARIES) $(music_control_DATA)
 install-music-control: install-music_controlDATA install-music_controlpkgLTLIBRARIES
+endif
