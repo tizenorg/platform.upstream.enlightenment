@@ -79,6 +79,8 @@ cp %{SOURCE1001} .
 
 
 %build
+export CFLAGS+=" -fPIE "
+export LDFLAGS+=" -pie "
 %autogen \
 %if %{with wayland}
       --enable-wayland-only \
