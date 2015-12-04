@@ -10,6 +10,12 @@ Url:            http://www.enlightenment.org/
 Group:          Graphics/EFL
 Source0:        enlightenment-%{version}.tar.bz2
 Source1001:     enlightenment.manifest
+
+%if "%{profile}" != "common"
+%define light_e 1
+%define _unpackaged_files_terminate_build 0
+%endif
+
 BuildRequires:  doxygen
 BuildRequires:  eet-tools
 BuildRequires:  fdupes
@@ -93,6 +99,44 @@ cp %{SOURCE1001} .
       --disable-wizard \
       --disable-wl-x11 \
 %endif
+%if 0%{?light_e}
+      --disable-appmenu \
+      --disable-backlight \
+      --disable-battery \
+      --disable-bluez4 \
+      --disable-clock \
+      --disable-conf \
+      --disable-conf_applications \
+      --disable-conf_dialogs \
+      --disable-conf_interaction \
+      --disable-conf_intl \
+      --disable-conf_menus \
+      --disable-conf_paths \
+      --disable-conf_performance \
+      --disable-conf_shelves \
+      --disable-conf_window_manipulation \
+      --disable-conf_window_remembers \
+      --disable-connman \
+      --disable-contact  \
+      --disable-cpufreq \
+      --disable-fileman_opinfo \
+      --disable-gadman \
+      --disable-ibar \
+      --disable-ibox \
+      --disable-lokker \
+      --disable-mixer \
+      --disable-msgbus \
+      --disable-music_control \
+      --disable-notification \
+      --disable-packagekit \
+      --disable-policy_mobile \
+      --disable-quickaccess \
+      --disable-start \
+      --disable-syscon \
+      --disable-tasks \
+      --disable-teamwork \
+      --disable-temperature \
+%endif
       --enable-mount-eeze
 
 make %{?_smp_mflags}
@@ -122,6 +166,35 @@ rm -f %{buildroot}%{_prefix}/lib/systemd/user/enlightenment.service
 %{_datadir}/applications/enlightenment_filemanager.desktop
 %{_sysconfdir}/dbus-1/system.d/org.enlightenment.wm.conf
 %exclude /usr/share/enlightenment/data/config/profile.cfg
+%if 0%{?light_e}
+%exclude %{_bindir}/enlightenment_filemanager
+%exclude %{_bindir}/enlightenment_imc
+%exclude %{_bindir}/enlightenment_open
+%exclude %{_bindir}/enlightenment_remote
+%exclude %{_bindir}/enlightenment_start
+%exclude %{_libdir}/enlightenment/utils/enlightenment_backlight
+%exclude %{_libdir}/enlightenment/utils/enlightenment_fm
+%exclude %{_libdir}/enlightenment/utils/enlightenment_fm_op
+%exclude %{_libdir}/enlightenment/utils/enlightenment_static_grabber
+%exclude %{_libdir}/enlightenment/utils/enlightenment_thumb
+%exclude %{_datadir}/enlightenment/data/backgrounds/*
+%exclude %{_datadir}/enlightenment/data/backgrounds
+%exclude %{_datadir}/enlightenment/data/config/*
+%exclude %{_datadir}/enlightenment/data/favorites/*
+%exclude %{_datadir}/enlightenment/data/favorites/.order
+%exclude %{_datadir}/enlightenment/data/favorites
+%exclude %{_datadir}/enlightenment/data/flags/*
+%exclude %{_datadir}/enlightenment/data/flags
+%exclude %{_datadir}/enlightenment/data/icons/*
+%exclude %{_datadir}/enlightenment/data/icons
+%exclude %{_datadir}/enlightenment/data/input_methods/*
+%exclude %{_datadir}/enlightenment/data/input_methods
+%exclude %{_datadir}/enlightenment/doc/*
+%exclude %{_datadir}/enlightenment/doc
+%exclude %{_datadir}/xsessions/enlightenment.desktop
+%exclude %{_sysconfdir}/xdg/menus/e-applications.menu
+%exclude %{_datadir}/applications/enlightenment_filemanager.desktop
+%endif
 
 %files devel
 %manifest %{name}.manifest
