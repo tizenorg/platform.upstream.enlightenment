@@ -3069,7 +3069,7 @@ e_client_new(E_Comp *c EINA_UNUSED, E_Pixmap *cp, int first_map, int internal)
 
    ec->exp_iconify.by_client = 0;
    ec->exp_iconify.not_raise = 0;
-   ec->exp_iconify.use_resize = 0;
+   ec->exp_iconify.skip_iconify = 0;
 
    if (!_e_client_hook_call(E_CLIENT_HOOK_NEW_CLIENT, ec)) 
      {

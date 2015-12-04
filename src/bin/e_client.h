@@ -809,7 +809,7 @@ struct E_Client
    {
       unsigned char by_client : 1;
       unsigned char not_raise : 1;
-      unsigned char use_resize : 1;
+      unsigned char skip_iconify : 1;
    } exp_iconify;
 };
 
