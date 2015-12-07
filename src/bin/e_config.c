@@ -1329,7 +1329,7 @@ e_config_load(void)
              CONFIG_VERSION_UPDATE_INFO(15);
              if (e_config->desklock_use_custom_desklock)
                e_config->desklock_auth_method = E_DESKLOCK_AUTH_METHOD_EXTERNAL;
-#if 0
+#if USE_MODULE_LOKKER
              EINA_LIST_FOREACH(e_config->modules, l, em)
                if (!strcmp(em->name, "lokker"))
                  {
