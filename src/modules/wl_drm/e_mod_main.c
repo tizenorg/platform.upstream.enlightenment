@@ -88,15 +88,21 @@ _e_mod_drm_cb_input_device_add(void *data, int type, void *event)
 
    if (e->caps & EVDEV_SEAT_POINTER)
      {
-        e_pointer_object_set(comp->pointer, NULL, 0, 0);
-        e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
+        if (comp->wl_comp_data->ptr.num_devices == 0)
+          {
+             e_pointer_object_set(comp->pointer, NULL, 0, 0);
+             e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
+          }
+        comp->wl_comp_data->ptr.num_devices++;
      }
    else if (e->caps & EVDEV_SEAT_KEYBOARD)
      {
+        comp->wl_comp_data->kbd.num_devices++;
         e_comp_wl_input_keyboard_enabled_set(EINA_TRUE);
      }
    else if (e->caps & EVDEV_SEAT_TOUCH)
      {
+        comp->wl_comp_data->touch.num_devices++;
         e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
         e_comp_wl_input_touch_enabled_set(EINA_TRUE);
      }
@@ -109,13 +115,18 @@ static Eina_Bool
 _e_mod_drm_cb_input_device_del(void *data, int type, void *event)
 {
    Ecore_Drm_Event_Input_Device_Del *e;
+   E_Comp *comp = data;
 
    if (!(e = event)) goto end;
 
    if (e->caps & EVDEV_SEAT_POINTER)
      {
-        e_comp_wl_input_pointer_enabled_set(EINA_FALSE);
-        e_pointer_hide(e_comp->pointer);
+        comp->wl_comp_data->ptr.num_devices--;
+        if (comp->wl_comp_data->ptr.num_devices == 0)
+          {
+             e_comp_wl_input_pointer_enabled_set(EINA_FALSE);
+             e_pointer_hide(e_comp->pointer);
+          }
      }
 
 end:
