@@ -184,6 +184,7 @@ struct _E_Comp_Wl_Data
         int mod_changed;
         int repeat_delay;
         int repeat_rate;
+        unsigned int num_devices;
      } kbd;
 
    struct
@@ -193,12 +194,14 @@ struct _E_Comp_Wl_Data
         wl_fixed_t x, y;
         wl_fixed_t grab_x, grab_y;
         uint32_t button;
+        unsigned int num_devices;
      } ptr;
 
    struct
      {
         Eina_List *resources;
         Eina_Bool enabled : 1;
+        unsigned int num_devices;
      } touch;
 
    struct
