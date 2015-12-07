@@ -1196,7 +1196,7 @@ _e_comp_wl_evas_cb_focus_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    _e_comp_wl_client_focus(ec);
 
    ec->comp_data->on_focus_timer =
-     ecore_timer_add(((e_config->xkb.delay_held_key_input_to_focus)/1000),
+     ecore_timer_add(((e_config->xkb.delay_held_key_input_to_focus)/1000.0),
                           (Ecore_Task_Cb)_e_comp_wl_evas_cb_focus_in_timer, ec);
 }
 
