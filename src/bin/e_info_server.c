@@ -166,7 +166,7 @@ _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
    char win_resid[16] = {0,};
    char char_True[] = "TRUE";
    char char_False[] = "FALSE";
-   char layer_name[32] = {0,};
+   char layer_name[48] = {0,};
    char layer[64] = {0,};
    char transients[128] = {0,};
    char shape_rects[128] = {0,};
@@ -246,6 +246,7 @@ _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
    __WINDOW_PROP_ARG_APPEND_TYPE("PID", "%d", pid);
    __WINDOW_PROP_ARG_APPEND("ResourceID", win_resid);
    __WINDOW_PROP_ARG_APPEND("Window_Name", e_client_util_name_get(target_ec) ?: "NO NAME");
+   __WINDOW_PROP_ARG_APPEND("Role", target_ec->icccm.window_role ?: "NO ROLE");
    __WINDOW_PROP_ARG_APPEND_TYPE("Geometry", "[%d, %d, %d, %d]", target_ec->x, target_ec->y, target_ec->w, target_ec->h);
    __WINDOW_PROP_ARG_APPEND_TYPE("ParentWindowID", "0x%x", target_ec->parent ? e_client_util_win_get(target_ec->parent) : 0);
    __WINDOW_PROP_ARG_APPEND("Transients", transients);
