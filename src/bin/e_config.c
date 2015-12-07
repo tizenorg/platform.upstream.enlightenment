@@ -1549,7 +1549,7 @@ e_config_load(void)
    E_CONFIG_LIMIT(e_config->keyboard.repeat_delay, -1, 1000); // 1 second
    E_CONFIG_LIMIT(e_config->keyboard.repeat_rate, -1, 1000); // 1 second
 
-   E_CONFIG_LIMIT(e_config->xkb.delay_held_key_input_to_focus, 0,5000); // 1 second
+   E_CONFIG_LIMIT(e_config->xkb.delay_held_key_input_to_focus, 0,5000); // 5000(ms) == 5(s)
 
    if (!e_config->icon_theme)
      e_config->icon_theme = eina_stringshare_add("hicolor");  // FDO default
