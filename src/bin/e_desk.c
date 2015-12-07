@@ -296,10 +296,12 @@ e_desk_show(E_Desk *desk)
           evas_object_focus_set(e_client_focused_get()->frame, 0);
      }
 
+#ifndef ENABLE_QUICK_INIT
    if (was_zone)
      e_bg_zone_update(desk->zone, E_BG_TRANSITION_DESK);
    else
      e_bg_zone_update(desk->zone, E_BG_TRANSITION_START);
+#endif
 
    ev = E_NEW(E_Event_Desk_Show, 1);
    ev->desk = desk;

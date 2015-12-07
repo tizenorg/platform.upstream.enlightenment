@@ -10,6 +10,7 @@ struct _E_Pointer_Stack
 /* local variables */
 static Eina_List *_hdlrs = NULL;
 static Eina_List *_ptrs = NULL;
+static Eina_Bool _initted = EINA_FALSE;
 
 static inline void 
 _e_pointer_hot_update(E_Pointer *ptr, int x, int y)
@@ -453,12 +454,14 @@ e_pointer_init(void)
                          _e_pointer_cb_mouse_move, NULL);
    E_LIST_HANDLER_APPEND(_hdlrs, ECORE_EVENT_MOUSE_WHEEL, 
                          _e_pointer_cb_mouse_wheel, NULL);
+   _initted = EINA_TRUE;
    return 1;
 }
 
 EINTERN int 
 e_pointer_shutdown(void)
 {
+   _initted = EINA_FALSE;
    E_FREE_LIST(_hdlrs, ecore_event_handler_del);
    return 1;
 }
@@ -469,6 +472,7 @@ e_pointer_window_new(Ecore_Window win, Eina_Bool filled)
    E_Pointer *ptr = NULL;
 
    EINA_SAFETY_ON_FALSE_RETURN_VAL(win, NULL);
+   if (!_initted) return NULL;
 
    /* allocate space for new pointer */
    if (!(ptr = E_OBJECT_ALLOC(E_Pointer, E_POINTER_TYPE, _e_pointer_cb_free)))
@@ -497,6 +501,7 @@ e_pointer_canvas_new(Ecore_Evas *ee, Eina_Bool filled)
    E_Pointer *ptr = NULL;
 
    EINA_SAFETY_ON_FALSE_RETURN_VAL(ee, NULL);
+   if (!_initted) return NULL;
 
    /* allocate space for new pointer */
    if (!(ptr = E_OBJECT_ALLOC(E_Pointer, E_POINTER_TYPE, _e_pointer_cb_free)))
@@ -563,6 +568,8 @@ e_pointers_size_set(int size)
 EAPI void 
 e_pointer_hide(E_Pointer *ptr)
 {
+   EINA_SAFETY_ON_NULL_RETURN(ptr);
+
    if ((ptr->evas) && (!ptr->canvas)) 
      _e_pointer_canvas_del(ptr);
    else if (ptr->canvas)
@@ -762,6 +769,8 @@ e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
    Evas_Object *o;
    E_Client *ec;
 
+   EINA_SAFETY_ON_NULL_RETURN(ptr);
+
    /* don't show cursor if in hidden mode */
    if (!e_config->show_cursor)
      {
@@ -786,7 +795,7 @@ e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
           ec->hidden = 1;
         ecore_evas_object_cursor_set(ptr->ee, obj, EVAS_LAYER_MAX, x, y);
      }
-   else
+   else if (ptr->o_ptr)
      {
         ecore_evas_object_cursor_set(ptr->ee, ptr->o_ptr, EVAS_LAYER_MAX, ptr->hot.x, ptr->hot.y);
         evas_object_show(ptr->o_ptr);

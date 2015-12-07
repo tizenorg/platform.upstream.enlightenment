@@ -2971,10 +2971,12 @@ e_client_init(void)
 
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_POINTER_WARP,
                          _e_client_cb_pointer_warp, NULL);
+#ifndef ENABLE_QUICK_INIT
    E_LIST_HANDLER_APPEND(handlers, EFREET_EVENT_DESKTOP_CACHE_UPDATE,
                          _e_client_cb_efreet_cache_update, NULL);
    E_LIST_HANDLER_APPEND(handlers, EFREET_EVENT_ICON_CACHE_UPDATE,
                          _e_client_cb_efreet_cache_update, NULL);
+#endif
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_CONFIG_ICON_THEME,
                          _e_client_cb_config_icon_theme, NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_CONFIG_MODE_CHANGED,

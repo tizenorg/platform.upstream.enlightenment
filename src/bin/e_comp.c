@@ -1363,8 +1363,22 @@ e_comp_shutdown(void)
 EAPI void
 e_comp_deferred_job(void)
 {
+   /* Add elm fake win */
    e_comp->elm = elm_win_fake_add(e_comp->ee);
    evas_object_show(e_comp->elm);
+
+   /* Bg update */
+   if (e_zone_current_get(e_comp)->bg_object)
+     e_bg_zone_update(e_zone_current_get(e_comp), E_BG_TRANSITION_DESK);
+   else
+     e_bg_zone_update(e_zone_current_get(e_comp), E_BG_TRANSITION_START);
+
+   /* Pointer setting */
+   if (!e_comp->pointer)
+     {
+        e_comp->pointer = e_pointer_canvas_new(e_comp->ee, EINA_TRUE);
+        e_pointer_hide(e_comp->pointer);
+     }
 
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
    e_comp_wl_deferred_job();
