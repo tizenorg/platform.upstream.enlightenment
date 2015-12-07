@@ -249,9 +249,11 @@ e_modapi_init(E_Module *m)
 
    /* comp->pointer =  */
    /*   e_pointer_window_new(ecore_evas_window_get(comp->ee), 1); */
-   comp->pointer = e_pointer_canvas_new(comp->ee, EINA_TRUE);
-   comp->pointer->color = EINA_TRUE;
-   e_pointer_hide(comp->pointer);
+   if ((comp->pointer = e_pointer_canvas_new(comp->ee, EINA_TRUE)))
+     {
+        comp->pointer->color = EINA_TRUE;
+        e_pointer_hide(comp->pointer);
+     }
 
    /* FIXME: We need a way to trap for user changing the keymap inside of E
     *        without the event coming from X11 */

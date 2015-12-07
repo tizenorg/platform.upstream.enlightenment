@@ -225,6 +225,26 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
      }
    TS("[DEFERRED] Elementary Init Done");
 
+   TS("[DEFERRED] Edje Init");
+   if (!edje_init())
+     {
+        e_error_message_show(_("Enlightenment cannot initialize Edje!\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("[DEFERRED] Edje Init Done");
+   _e_main_shutdown_push(edje_shutdown);
+
+   TS("[DEFERRED] Efreet Init");
+   if (!efreet_init())
+     {
+        e_error_message_show(_("Enlightenment cannot initialize the FDO desktop system.\n"
+                               "Perhaps you lack permissions on ~/.cache/efreet or are\n"
+                               "out of memory or disk space?"));
+        _e_main_shutdown(-1);
+     }
+   TS("[DEFERRED] Efreet Init Done");
+   _e_main_shutdown_push(efreet_shutdown);
+
    TS("[DEFERRED] Screens Init: win");
    if (!e_win_init())
      {
@@ -232,6 +252,16 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
         _e_main_shutdown(-1);
      }
    TS("[DEFERRED] Screens Init: win Done");
+
+   TS("[DEFERRED] E_Pointer Init");
+   if (!e_pointer_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its pointer system.\n"));
+        _e_main_shutdown(-1);
+     }
+
+   TS("[DEFERRED] E_Pointer Init Done");
+   _e_main_shutdown_push(e_pointer_shutdown);
 
    TS("[DEFERRED] E_Scale Init");
    if (!e_scale_init())
@@ -241,6 +271,10 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
      }
    TS("[DEFERRED E_Scale Init Done");
    _e_main_shutdown_push(e_scale_shutdown);
+
+   TS("Efreet Paths");
+   _e_main_efreet_paths_init();
+   TS("Efreet Paths Done");
 
    TS("[DEFERRED] E_Test_Helper Init");
    e_test_helper_init();
@@ -1154,16 +1188,6 @@ main(int argc, char **argv)
      }
    TS("Ecore_Evas Engine Check Done");
 
-   TS("Edje Init");
-   if (!edje_init())
-     {
-        e_error_message_show(_("Enlightenment cannot initialize Edje!\n"));
-        _e_main_shutdown(-1);
-     }
-   TS("Edje Init Done");
-   _e_main_shutdown_push(edje_shutdown);
-   edje_freeze();
-
    /*** Initialize E Subsystems We Need ***/
 
    TS("E Directories Init");
@@ -1213,7 +1237,7 @@ main(int argc, char **argv)
    TS("E Paths Init Done");
    _e_main_shutdown_push(_e_main_path_shutdown);
 
-   edje_frametime_set(1.0 / e_config->framerate);
+   ecore_animator_frametime_set(1.0 / e_config->framerate);
 
    TS("E_Font Init");
    if (!e_font_init())
@@ -1241,17 +1265,6 @@ main(int argc, char **argv)
    e_moveresize_init();
    TS("E_Moveresize Init Done");
    _e_main_shutdown_push(e_moveresize_shutdown);
-
-   TS("Efreet Init");
-   if (!efreet_init())
-     {
-        e_error_message_show(_("Enlightenment cannot initialize the FDO desktop system.\n"
-                               "Perhaps you lack permissions on ~/.cache/efreet or are\n"
-                               "out of memory or disk space?"));
-        _e_main_shutdown(-1);
-     }
-   TS("Efreet Init Done");
-   _e_main_shutdown_push(efreet_shutdown);
 
    e_screensaver_preinit();
 
@@ -1307,22 +1320,6 @@ main(int argc, char **argv)
    TS("Screens Init Done");
    _e_main_shutdown_push(_e_main_screens_shutdown);
    e_screensaver_force_update();
-
-   TS("E_Pointer Init");
-   if (!e_pointer_init())
-     {
-        e_error_message_show(_("Enlightenment cannot set up its pointer system.\n"));
-        _e_main_shutdown(-1);
-     }
-   TS("E_Pointer Init Done");
-   _e_main_shutdown_push(e_pointer_shutdown);
-   e_menu_init();
-
-   if (e_config->show_splash)
-     e_init_status_set(_("Setup Paths"));
-   TS("Efreet Paths");
-   _e_main_efreet_paths_init();
-   TS("Efreet Paths Done");
 
    if (e_config->show_splash)
      e_init_status_set(_("Setup System Controls"));
