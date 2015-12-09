@@ -834,9 +834,11 @@ main(int argc, char **argv)
 
    if (!really_know)
      {
+#ifndef DISABLE_FORMAT_TEST
         TS("Test File Format Support");
         _e_main_test_formats();
         TS("Test File Format Support Done");
+#endif
      }
    else
      {
