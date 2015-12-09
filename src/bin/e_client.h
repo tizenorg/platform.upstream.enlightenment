@@ -163,6 +163,14 @@ typedef enum _E_Client_Rotation_Type
 } E_Client_Rotation_Type;
 #endif
 
+typedef enum _E_Visibility
+{
+   E_VISIBILITY_UNKNOWN = -1,
+   E_VISIBILITY_UNOBSCURED = 0,
+   E_VISIBILITY_PARTIALLY_OBSCURED = 1,
+   E_VISIBILITY_FULLY_OBSCURED = 2
+} E_Visibility;
+
 typedef struct E_Client E_Client;
 
 typedef struct E_Event_Client E_Event_Client;
@@ -205,6 +213,7 @@ typedef enum _E_Client_Hook_Point
 #ifdef _F_E_CLIENT_NEW_CLIENT_POST_HOOK_
    E_CLIENT_HOOK_NEW_CLIENT_POST,
 #endif
+   E_CLIENT_HOOK_EVAL_VISIBILITY,
    E_CLIENT_HOOK_LAST,
 } E_Client_Hook_Point;
 
@@ -658,6 +667,7 @@ struct E_Client
    {
       int opaque;
       int obscured;
+      unsigned char changed : 1;
    } visibility;
 
    struct

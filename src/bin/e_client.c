@@ -92,6 +92,7 @@ static Eina_Inlist *_e_client_hooks[] =
 #ifdef _F_E_CLIENT_NEW_CLIENT_POST_HOOK_
    [E_CLIENT_HOOK_NEW_CLIENT_POST] = NULL,
 #endif
+   [E_CLIENT_HOOK_EVAL_VISIBILITY] = NULL,
 };
 
 ///////////////////////////////////////////
@@ -2786,10 +2787,11 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         if (ec_vis)
           {
              /* unobscured case */
-             if (ec->visibility.obscured != 0)
+             if (ec->visibility.obscured != E_VISIBILITY_UNOBSCURED)
                {
                   /* previous state is obscured: -1 or 1 */
-                  ec->visibility.obscured = 0;
+                  ec->visibility.obscured = E_VISIBILITY_UNOBSCURED;
+                  ec->visibility.changed = 1;
                   changed = EINA_TRUE;
                   ELOG("CLIENT VIS ON", ec->pixmap, ec);
                }
@@ -2819,10 +2821,11 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         else
           {
              /* obscured case */
-             if (ec->visibility.obscured != 1)
+             if (ec->visibility.obscured != E_VISIBILITY_FULLY_OBSCURED)
                {
                   /* previous state is unobscured: -1 or 0 */
-                  ec->visibility.obscured = 1;
+                  ec->visibility.obscured = E_VISIBILITY_FULLY_OBSCURED;
+                  ec->visibility.changed = 1;
                   changed = EINA_TRUE;
                   ELOG("CLIENT VIS OFF", ec->pixmap, ec);
                }
@@ -2841,6 +2844,9 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
 
         if (changed)
           _e_client_event_simple(ec, E_EVENT_CLIENT_VISIBILITY_CHANGE);
+
+        _e_client_hook_call(E_CLIENT_HOOK_EVAL_VISIBILITY, ec);
+        ec->visibility.changed = 0;
      }
 
    eina_tiler_free(t);
@@ -3127,8 +3133,9 @@ e_client_new(E_Comp *c EINA_UNUSED, E_Pixmap *cp, int first_map, int internal)
    ec->netwm.action.close = 0;
    ec->netwm.opacity = 255;
 
-   ec->visibility.obscured = -1;
+   ec->visibility.obscured = E_VISIBILITY_UNKNOWN;
    ec->visibility.opaque = -1;
+   ec->visibility.changed = 0;
 
    ec->transform.zoom = 1.0;
    ec->transform.angle = 0.0;
