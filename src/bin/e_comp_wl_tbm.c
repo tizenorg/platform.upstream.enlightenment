@@ -7,7 +7,7 @@ EINTERN Eina_Bool
 e_comp_wl_tbm_init(void)
 {
    struct wayland_tbm_server *tbm_server = NULL;
-   Eina_List *devs;
+   const Eina_List *devs;
    Ecore_Drm_Device *dev;
    int drm_fd = -1;
    const char *dev_name;

@@ -97,6 +97,7 @@ static Eina_Inlist *_e_client_hooks[] =
 
 ///////////////////////////////////////////
 
+#ifndef ENABLE_QUICK_INIT
 static Eina_Bool
 _e_client_cb_efreet_cache_update(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_UNUSED)
 {
@@ -113,6 +114,7 @@ _e_client_cb_efreet_cache_update(void *data EINA_UNUSED, int type EINA_UNUSED, v
      }
    return ECORE_CALLBACK_RENEW;
 }
+#endif
 
 static Eina_Bool
 _e_client_cb_config_icon_theme(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_UNUSED)

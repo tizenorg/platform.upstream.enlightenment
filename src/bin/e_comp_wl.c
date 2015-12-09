@@ -727,7 +727,6 @@ _e_comp_wl_evas_handle_mouse_move_to_touch(E_Client *ec, uint32_t timestamp, int
 {
    Eina_List *l;
    struct wl_client *wc;
-   uint32_t serial;
    struct wl_resource *res;
    wl_fixed_t x, y;
 
@@ -2464,7 +2463,7 @@ static const struct wl_compositor_interface _e_comp_interface =
 };
 
 static void
-_e_comp_wl_pname_get(pid_t pid, char* name, int size)
+_e_comp_wl_pname_get(pid_t pid, char *name, int size)
 {
    if (!name) return;
 
@@ -2593,7 +2592,7 @@ _e_comp_wl_compositor_cb_bind(struct wl_client *client, void *data, uint32_t ver
 
    _e_comp_wl_pname_print(pid);
 
-   char *name[512];
+   char name[512];
    _e_comp_wl_pname_get(pid, name, sizeof(name));
 
    E_Comp_Connected_Client_Info *cinfo;

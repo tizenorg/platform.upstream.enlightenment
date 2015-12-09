@@ -1690,18 +1690,16 @@ e_hints_window_virtual_keyboard_get(E_Client *ec)
 #endif
 }
 
+#ifndef HAVE_WAYLAND_ONLY
 static void
 e_hints_openoffice_gnome_fake(Ecore_Window root)
 {
-#ifdef HAVE_WAYLAND_ONLY
-   (void)root;
-#else
    const char *string = "ATM_GNOME_SM_PROXY";
 
    ecore_x_window_prop_property_set(root, ATM_GNOME_SM_PROXY, ECORE_X_ATOM_STRING,
                                     8, (void *)string, strlen(string));
-#endif
 }
+#endif
 
 #if 0
 static void

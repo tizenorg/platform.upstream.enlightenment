@@ -2,15 +2,17 @@
 
 /* local subsystem functions */
 
-static void           _e_drag_move(E_Drag *drag, int x, int y);
 static void           _e_drag_coords_update(const E_Drop_Handler *h, int *dx, int *dy);
 static Ecore_X_Window _e_drag_win_get(const E_Drop_Handler *h, int xdnd);
 static int            _e_drag_win_matches(E_Drop_Handler *h, Ecore_X_Window win, int xdnd);
-static void           _e_drag_win_show(E_Drop_Handler *h);
 static void           _e_drag_win_hide(E_Drop_Handler *h);
+#ifndef HAVE_WAYLAND_ONLY
+static void           _e_drag_win_show(E_Drop_Handler *h);
+static void           _e_drag_move(E_Drag *drag, int x, int y);
 static int            _e_drag_update(Ecore_X_Window root, int x, int y, Ecore_X_Atom action);
-static void           _e_drag_end(int x, int y);
 static void           _e_drag_xdnd_end(Ecore_X_Window root, int x, int y);
+#endif
+static void           _e_drag_end(int x, int y);
 static void           _e_drag_free(E_Drag *drag);
 
 static Eina_Bool      _e_dnd_cb_key_down(void *data, int type, void *event);
@@ -50,7 +52,9 @@ static Ecore_X_Window _drag_win_root = 0;
 static Eina_List *_drag_list = NULL;
 static E_Drag *_drag_current = NULL;
 
+#ifndef HAVE_WAYLAND_ONLY
 static XDnd *_xdnd = NULL;
+#endif
 static Ecore_X_Atom _text_atom = 0;
 
 static Eina_Stringshare *_type_text_uri_list = NULL;
@@ -58,6 +62,7 @@ static Eina_Stringshare *_type_xds = NULL;
 static Eina_Stringshare *_type_text_x_moz_url = NULL;
 static Eina_Stringshare *_type_enlightenment_x_file = NULL;
 
+#ifndef HAVE_WAYLAND_ONLY
 static Eina_Stringshare **_e_dnd_types[] =
 {
    &_type_text_uri_list,
@@ -66,6 +71,7 @@ static Eina_Stringshare **_e_dnd_types[] =
    //&_type_enlightenment_x_file,
    NULL
 };
+#endif
 
 static Eina_Hash *_drop_handlers_responsives;
 static Ecore_X_Atom _action;
@@ -634,6 +640,7 @@ e_dnd_util_text_uri_list_convert(char *data, int size)
 
 /* local subsystem functions */
 
+#ifndef HAVE_WAYLAND_ONLY
 static Eina_Stringshare *
 _e_dnd_type_implemented(const char *type)
 {
@@ -661,6 +668,7 @@ _e_drag_move(E_Drag *drag, int x, int y)
    drag->y = y - drag->dy;
    evas_object_move(drag->comp_object, drag->x, drag->y);
 }
+#endif
 
 static void
 _e_drag_coords_update(const E_Drop_Handler *h, int *dx, int *dy)
@@ -773,6 +781,7 @@ _e_drag_win_matches(E_Drop_Handler *h, Ecore_X_Window win, int xdnd)
    return 0;
 }
 
+#ifndef HAVE_WAYLAND_ONLY
 static void
 _e_drag_win_show(E_Drop_Handler *h)
 {
@@ -799,6 +808,7 @@ _e_drag_win_show(E_Drop_Handler *h)
           }
      }
 }
+#endif
 
 static void
 _e_drag_win_hide(E_Drop_Handler *h)
@@ -827,6 +837,7 @@ _e_drag_win_hide(E_Drop_Handler *h)
      }
 }
 
+#ifndef HAVE_WAYLAND_ONLY
 static unsigned int
 _e_dnd_object_layer_get(E_Drop_Handler *h)
 {
@@ -976,6 +987,7 @@ _e_drag_update(Ecore_X_Window root, int x, int y, Ecore_X_Atom action)
 //   double t2 = ecore_time_get() - t1; ////
 //   printf("DND UPDATE %3.7f\n", t2); ////
 }
+#endif
 
 static void
 _e_drag_end(int x, int y)
@@ -1089,6 +1101,7 @@ _e_drag_end(int x, int y)
    e_object_del(E_OBJECT(_drag_current));
 }
 
+#ifndef HAVE_WAYLAND_ONLY
 static void
 _e_drag_xdnd_end(Ecore_X_Window win, int x, int y)
 {
@@ -1118,6 +1131,7 @@ _e_drag_xdnd_end(Ecore_X_Window win, int x, int y)
      }
    if (_drag_current) e_object_del(E_OBJECT(_drag_current));
 }
+#endif
 
 static void
 _e_drag_free(E_Drag *drag)

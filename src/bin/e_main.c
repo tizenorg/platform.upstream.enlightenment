@@ -77,7 +77,9 @@ static int       _e_main_dirs_init(void);
 static int       _e_main_dirs_shutdown(void);
 static int       _e_main_path_init(void);
 static int       _e_main_path_shutdown(void);
+#ifndef DISABLE_FORMAT_TEST
 static void      _e_main_test_formats(void);
+#endif
 static int       _e_main_screens_init(void);
 static int       _e_main_screens_shutdown(void);
 static void      _e_main_desk_save(void);
@@ -311,10 +313,8 @@ _e_main_deferred_job_schedule(void *d EINA_UNUSED, int type EINA_UNUSED, void *e
 int
 main(int argc, char **argv)
 {
-   Eina_Bool nostartup = EINA_FALSE;
    Eina_Bool safe_mode = EINA_FALSE;
    Eina_Bool after_restart = EINA_FALSE;
-   Eina_Bool waslocked = EINA_FALSE;
    double t = 0.0, tstart = 0.0;
    char *s = NULL, buff[32];
    struct sigaction action;
@@ -505,6 +505,9 @@ main(int argc, char **argv)
    _e_main_shutdown_push(ecore_file_shutdown);
 
 #ifndef ENABLE_QUICK_INIT
+   Eina_Bool nostartup = EINA_FALSE;
+   Eina_Bool waslocked = EINA_FALSE;
+
    TS("Ecore_Con Init");
    if (!ecore_con_init())
      {
@@ -1226,9 +1229,6 @@ main(int argc, char **argv)
    ecore_exe_run_priority_set(e_config->priority);
    locked |= e_config->desklock_start_locked;
 
-   s = getenv("E_DESKLOCK_LOCKED");
-   if ((s) && (!strcmp(s, "locked"))) waslocked = EINA_TRUE;
-
    TS("E Paths Init");
    if (!_e_main_path_init())
      {
@@ -1872,6 +1872,7 @@ _e_main_path_shutdown(void)
    return 1;
 }
 
+#ifndef DISABLE_FORMAT_TEST
 static void
 _e_main_test_formats(void)
 {
@@ -1948,6 +1949,7 @@ _e_main_test_formats(void)
    evas_object_del(txt);
    ecore_evas_free(ee);
 }
+#endif
 
 static int
 _e_main_screens_init(void)

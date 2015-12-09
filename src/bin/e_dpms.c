@@ -19,7 +19,9 @@ e_dpms_update(void)
 {
    unsigned int standby = 0, suspend = 0, off = 0;
    int enabled;
+#ifndef HAVE_WAYLAND_ONLY
    Eina_Bool changed = EINA_FALSE;
+#endif
 
    enabled = ((e_config->screensaver_enable) &&
               (!e_config->mode.presentation) &&
@@ -45,17 +47,23 @@ e_dpms_update(void)
    if (_e_dpms_timeout_standby != standby)
      {
         _e_dpms_timeout_standby = standby;
+#ifndef HAVE_WAYLAND_ONLY
         changed = EINA_TRUE;
+#endif
      }
    if (_e_dpms_timeout_suspend != suspend)
      {
         _e_dpms_timeout_suspend = suspend;
+#ifndef HAVE_WAYLAND_ONLY
         changed = EINA_TRUE;
+#endif
      }
    if (_e_dpms_timeout_off != off)
      {
         _e_dpms_timeout_off = off;
+#ifndef HAVE_WAYLAND_ONLY
         changed = EINA_TRUE;
+#endif
      }
 #ifndef HAVE_WAYLAND_ONLY
    if (e_comp->comp_type == E_PIXMAP_TYPE_X)

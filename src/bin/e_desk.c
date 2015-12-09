@@ -223,7 +223,7 @@ e_desk_show(E_Desk *desk)
    Edje_Message_Int_Set *msg;
    Eina_List *l;
    E_Shelf *es;
-   int was_zone = 0, x, y, dx = 0, dy = 0;
+   int x, y, dx = 0, dy = 0;
 
    E_OBJECT_CHECK(desk);
    E_OBJECT_TYPE_CHECK(desk, E_DESK_TYPE);
@@ -286,7 +286,10 @@ e_desk_show(E_Desk *desk)
    if (desk->zone->bg_object)
      edje_object_message_send(desk->zone->bg_object, EDJE_MESSAGE_INT_SET, 0, msg);
 
+#ifndef ENABLE_QUICK_INIT
+   int was_zone = 0;
    if (desk->zone->bg_object) was_zone = 1;
+#endif
    _e_desk_show_begin(desk, dx, dy);
    if (!e_config->desk_flip_animate_type)
      {

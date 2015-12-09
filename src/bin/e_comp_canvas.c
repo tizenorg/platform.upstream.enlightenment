@@ -622,7 +622,6 @@ e_comp_canvas_client_layer_map_nearest(int layer)
 EAPI void
 e_comp_post_update_add(E_Client *ec)
 {
-   Eina_List *l, *ll;
    E_Client *ec2;
 
    if (!e_comp) return;

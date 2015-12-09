@@ -7108,7 +7108,7 @@ _e_fm2_cb_dnd_selection_notify(void *data, const char *type, void *event)
         if (((!mnt) || (!mop)) && (do_lnk || do_copy || do_move))
           free(args);
      }
-end:
+//end:
    _e_fm2_dnd_drop_hide(sd->obj);
    _e_fm2_dnd_drop_all_hide(sd->obj);
    _e_fm2_list_walking++;
