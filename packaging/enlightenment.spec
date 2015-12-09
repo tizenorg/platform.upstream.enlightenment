@@ -103,6 +103,7 @@ export LDFLAGS+=" -pie "
       --enable-quick-init \
 %endif
 %if 0%{?light_e}
+      --enable-light-e \
       --disable-appmenu \
       --disable-backlight \
       --disable-battery \
@@ -175,23 +176,10 @@ rm -f %{buildroot}%{_prefix}/lib/systemd/user/enlightenment.service
 %exclude %{_bindir}/enlightenment_open
 %exclude %{_bindir}/enlightenment_remote
 %exclude %{_bindir}/enlightenment_start
-%exclude %{_libdir}/enlightenment/utils/enlightenment_backlight
-%exclude %{_libdir}/enlightenment/utils/enlightenment_fm
-%exclude %{_libdir}/enlightenment/utils/enlightenment_fm_op
-%exclude %{_libdir}/enlightenment/utils/enlightenment_static_grabber
-%exclude %{_libdir}/enlightenment/utils/enlightenment_thumb
-%exclude %{_datadir}/enlightenment/data/backgrounds/*
-%exclude %{_datadir}/enlightenment/data/backgrounds
-%exclude %{_datadir}/enlightenment/data/config/*
-%exclude %{_datadir}/enlightenment/data/favorites/*
-%exclude %{_datadir}/enlightenment/data/favorites/.order
-%exclude %{_datadir}/enlightenment/data/favorites
-%exclude %{_datadir}/enlightenment/data/flags/*
-%exclude %{_datadir}/enlightenment/data/flags
-%exclude %{_datadir}/enlightenment/data/icons/*
-%exclude %{_datadir}/enlightenment/data/icons
-%exclude %{_datadir}/enlightenment/data/input_methods/*
-%exclude %{_datadir}/enlightenment/data/input_methods
+%exclude %{_libdir}/enlightenment/utils/*
+%exclude %{_libdir}/enlightenment/utils/
+%exclude %{_datadir}/enlightenment/data/*
+%exclude %{_datadir}/enlightenment/data/
 %exclude %{_datadir}/enlightenment/doc/*
 %exclude %{_datadir}/enlightenment/doc
 %exclude %{_datadir}/xsessions/enlightenment.desktop
