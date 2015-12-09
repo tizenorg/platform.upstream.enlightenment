@@ -103,6 +103,7 @@ export LDFLAGS+=" -pie "
       --enable-quick-init \
 %endif
 %if 0%{?light_e}
+      --enable-light-e \
       --disable-appmenu \
       --disable-backlight \
       --disable-battery \
@@ -168,21 +169,22 @@ rm -f %{buildroot}%{_prefix}/lib/systemd/user/enlightenment.service
 %{_sysconfdir}/xdg/menus/e-applications.menu
 %{_datadir}/applications/enlightenment_filemanager.desktop
 %{_sysconfdir}/dbus-1/system.d/org.enlightenment.wm.conf
-%exclude /usr/share/enlightenment/data/config/profile.cfg
 %if 0%{?light_e}
 %exclude %{_bindir}/enlightenment_filemanager
 %exclude %{_bindir}/enlightenment_imc
 %exclude %{_bindir}/enlightenment_open
 %exclude %{_bindir}/enlightenment_remote
 %exclude %{_bindir}/enlightenment_start
-%exclude %{_libdir}/enlightenment/utils/enlightenment_backlight
-%exclude %{_libdir}/enlightenment/utils/enlightenment_fm
-%exclude %{_libdir}/enlightenment/utils/enlightenment_fm_op
-%exclude %{_libdir}/enlightenment/utils/enlightenment_static_grabber
-%exclude %{_libdir}/enlightenment/utils/enlightenment_thumb
+%exclude %{_libdir}/enlightenment/utils/*
+%exclude %{_libdir}/enlightenment/utils/
 %exclude %{_datadir}/enlightenment/data/backgrounds/*
 %exclude %{_datadir}/enlightenment/data/backgrounds
-%exclude %{_datadir}/enlightenment/data/config/*
+%exclude %{_datadir}/enlightenment/data/config/mobile/*
+%exclude %{_datadir}/enlightenment/data/config/mobile/
+%exclude %{_datadir}/enlightenment/data/config/standard/*
+%exclude %{_datadir}/enlightenment/data/config/standard/
+%exclude %{_datadir}/enlightenment/data/config/tiling/*
+%exclude %{_datadir}/enlightenment/data/config/tiling/
 %exclude %{_datadir}/enlightenment/data/favorites/*
 %exclude %{_datadir}/enlightenment/data/favorites/.order
 %exclude %{_datadir}/enlightenment/data/favorites
@@ -190,6 +192,8 @@ rm -f %{buildroot}%{_prefix}/lib/systemd/user/enlightenment.service
 %exclude %{_datadir}/enlightenment/data/flags
 %exclude %{_datadir}/enlightenment/data/icons/*
 %exclude %{_datadir}/enlightenment/data/icons
+%exclude %{_datadir}/enlightenment/data/images/*
+%exclude %{_datadir}/enlightenment/data/images/
 %exclude %{_datadir}/enlightenment/data/input_methods/*
 %exclude %{_datadir}/enlightenment/data/input_methods
 %exclude %{_datadir}/enlightenment/doc/*
