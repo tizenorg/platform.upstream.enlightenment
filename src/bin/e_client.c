@@ -2410,9 +2410,9 @@ _e_client_eval(E_Client *ec)
           _e_client_event_simple(ec, E_EVENT_CLIENT_HIDE);
      }
 
-#ifndef ENABLE_QUICK_INIT
    if (ec->changes.icon)
      {
+#ifndef ENABLE_QUICK_INIT
         if (!ec->new_client)
           E_FREE_FUNC(ec->desktop, efreet_desktop_free);
         if (ec->remember && ec->remember->prop.desktop_file)
@@ -2503,8 +2503,10 @@ _e_client_eval(E_Client *ec)
           e_exec_phony(ec);
         ec->changes.icon = 0;
         prop |= E_CLIENT_PROPERTY_ICON;
-     }
+#else
+        ec->changes.icon = 0;
 #endif
+     }
 
    ec->new_client = 0;
    ec->comp->new_clients--;
