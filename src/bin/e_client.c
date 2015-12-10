@@ -2410,6 +2410,7 @@ _e_client_eval(E_Client *ec)
           _e_client_event_simple(ec, E_EVENT_CLIENT_HIDE);
      }
 
+#ifndef ENABLE_QUICK_INIT
    if (ec->changes.icon)
      {
         if (!ec->new_client)
@@ -2503,6 +2504,7 @@ _e_client_eval(E_Client *ec)
         ec->changes.icon = 0;
         prop |= E_CLIENT_PROPERTY_ICON;
      }
+#endif
 
    ec->new_client = 0;
    ec->comp->new_clients--;
