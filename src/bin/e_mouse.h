@@ -11,6 +11,7 @@ typedef enum _E_Mouse_Hand
 #define E_MOUSE_H
 
 EAPI int e_mouse_update(void);
+EAPI int e_mouse_left_handed_set(E_Mouse_Hand mouse_hand);
 
 #endif
 #endif
