@@ -1,3 +1,9 @@
+%if 0%{?nodebug}
+  %global __debug_install_post %{nil}
+  %global debug_package %{nil}
+%endif
+
+
 %bcond_with x
 %bcond_with wayland
 
