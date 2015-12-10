@@ -1,4 +1,7 @@
 #include "e.h"
+#ifdef HAVE_WAYLAND
+#include <Ecore_Drm.h>
+#endif
 
 EAPI int
 e_mouse_update(void)
@@ -48,3 +51,27 @@ e_mouse_update(void)
    return 1;
 }
 
+EAPI int
+e_mouse_left_handed_set(E_Mouse_Hand mouse_hand)
+{
+#ifdef HAVE_WAYLAND
+   Eina_List *list, *l;
+   Ecore_Drm_Device *dev;
+
+   e_config->mouse_hand = mouse_hand;
+
+   list = ecore_drm_devices_get();
+   EINA_LIST_FOREACH(list, l, dev)
+     {
+        if (!dev) continue;
+
+        ecore_drm_device_left_handed_set(dev, !e_config->mouse_hand);
+     }
+
+   e_config_save_queue();
+#endif
+#ifndef HAVE_WAYLAND_ONLY
+   e_mouse_update();
+#endif
+   return 1;
+}
