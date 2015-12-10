@@ -1215,9 +1215,9 @@ _e_xdg_shell_cb_surface_get(struct wl_client *client, struct wl_resource *resour
                                     "No Client For Pixmap");
              return;
           }
+        ec->netwm.pid = pid;
      }
 
-   ec->netwm.pid = pid;
    ec->netwm.ping = EINA_TRUE;
 
    /* get the client data */
