@@ -94,6 +94,9 @@ _e_mod_drm_cb_input_device_add(void *data, int type, void *event)
              e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
           }
         comp->wl_comp_data->ptr.num_devices++;
+        e_config->mouse_hand = !e_config->mouse_hand;
+        e_mouse_update();
+        e_config_save_queue();
      }
    else if (e->caps & EVDEV_SEAT_KEYBOARD)
      {
