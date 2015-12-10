@@ -593,6 +593,7 @@ _e_shell_cb_shell_surface_get(struct wl_client *client, struct wl_resource *reso
              return;
           }
 
+        ec->netwm.pid = pid;
         ec->netwm.ping = EINA_TRUE;
      }
 
@@ -1216,6 +1217,7 @@ _e_xdg_shell_cb_surface_get(struct wl_client *client, struct wl_resource *resour
           }
      }
 
+   ec->netwm.pid = pid;
    ec->netwm.ping = EINA_TRUE;
 
    /* get the client data */
