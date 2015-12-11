@@ -445,6 +445,14 @@ main(int argc, char **argv)
    TS("Eet Init Done");
    _e_main_shutdown_push(eet_shutdown);
 
+#ifdef ENABLE_QUICK_INIT
+   /* Allow ecore to not load system modules.
+    * Without it ecore_init will block until dbus authentication
+    * and registration are complete.
+    */
+   ecore_app_no_system_modules();
+#endif
+
    TS("Ecore Init");
    if (!ecore_init())
      {
