@@ -90,7 +90,10 @@ _e_mod_drm_cb_input_device_add(void *data, int type, void *event)
      {
         if (comp->wl_comp_data->ptr.num_devices == 0)
           {
-             e_pointer_object_set(comp->pointer, NULL, 0, 0);
+             if (e_config->use_cursor_timer)
+               comp->wl_comp_data->ptr.hidden = EINA_TRUE;
+             else
+               e_pointer_object_set(comp->pointer, NULL, 0, 0);
              e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
           }
         comp->wl_comp_data->ptr.num_devices++;
