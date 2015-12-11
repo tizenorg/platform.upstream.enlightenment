@@ -20,6 +20,9 @@
 static void _e_comp_wl_subsurface_parent_commit(E_Client *ec, Eina_Bool parent_synchronized);
 static void _e_comp_wl_subsurface_restack(E_Client *ec);
 
+static Eina_Bool _e_comp_wl_cursor_timer(void *data);
+static void _e_comp_wl_cursor_reload(E_Client *ec);
+
 /* local variables */
 typedef struct _E_Comp_Wl_Transform_Context
 {
@@ -648,6 +651,7 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    struct wl_client *wc;
    Eina_List *l;
    uint32_t serial;
+   Evas_Object *o = NULL;
 
    ev = event;
    if (!(ec = data)) return;
@@ -672,6 +676,16 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
         wl_pointer_send_enter(res, serial, ec->comp_data->surface,
                               wl_fixed_from_int(ev->canvas.x - ec->client.x),
                               wl_fixed_from_int(ev->canvas.y - ec->client.y));
+     }
+
+   if (e_config->use_cursor_timer)
+     {
+        ecore_evas_cursor_get(ec->comp->pointer->ee, &o, NULL, NULL, NULL);
+        if (o)
+          ec->comp->wl_comp_data->ptr.ec = e_comp_object_client_get(o);
+
+        E_FREE_FUNC(ec->comp->wl_comp_data->ptr.hide_tmr, ecore_timer_del);
+        ec->comp->wl_comp_data->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
      }
 }
 
@@ -744,6 +758,92 @@ _e_comp_wl_evas_handle_mouse_move_to_touch(E_Client *ec, uint32_t timestamp, int
 }
 
 static void
+_e_comp_wl_cursor_reload(E_Client *ec)
+{
+   E_Client *ec_cursor;
+   struct wl_resource *res;
+   struct wl_client *wc;
+   Eina_List *l;
+   uint32_t serial;
+   int cx, cy;
+
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (!ec->comp_data) return;
+
+   if ((ec_cursor = ec->comp->wl_comp_data->ptr.ec))
+     {
+        ec_cursor->visible = 1;
+        ecore_evas_object_cursor_set(ec->comp->pointer->ee, ec_cursor->frame, EVAS_LAYER_MAX, ec_cursor->x, ec_cursor->y);
+     }
+   else if (ec->comp->pointer->o_ptr)
+     evas_object_show(ec->comp->pointer->o_ptr);
+
+   ec->comp->wl_comp_data->ptr.hidden = EINA_FALSE;
+
+   cx = wl_fixed_to_int(e_comp->wl_comp_data->ptr.x) - ec->client.x;
+   cy = wl_fixed_to_int(e_comp->wl_comp_data->ptr.y) - ec->client.y;
+
+   if (!ec->comp_data->surface) return;
+   wc = wl_resource_get_client(ec->comp_data->surface);
+   serial = wl_display_next_serial(ec->comp->wl_comp_data->wl.disp);
+   EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
+     {
+        if (!e_comp_wl_input_pointer_check(res)) continue;
+        if (wl_resource_get_client(res) != wc) continue;
+        wl_pointer_send_enter(res, serial, ec->comp_data->surface,
+                              wl_fixed_from_int(cx), wl_fixed_from_int(cy));
+     }
+}
+
+static Eina_Bool
+_e_comp_wl_cursor_timer(void *data)
+{
+   E_Client *ec = NULL;
+   E_Client *ec_cursor = NULL;
+   Evas_Object *o;
+   struct wl_resource *res;
+   struct wl_client *wc;
+   Eina_List *l;
+   uint32_t serial;
+
+   if (!(ec = data)) return EINA_FALSE;
+   if (e_object_is_del(E_OBJECT(ec))) return EINA_FALSE;
+   if (!ec->comp_data) return EINA_FALSE;
+
+   ecore_evas_cursor_get(ec->comp->pointer->ee, &o, NULL, NULL, NULL);
+   if (o)
+     {
+        ec_cursor = ec->comp->wl_comp_data->ptr.ec = e_comp_object_client_get(o);
+        if (ec_cursor)
+          {
+             ec_cursor->hidden = 1;
+             ec_cursor->x = ec->comp->pointer->hot.x;
+             ec_cursor->y = ec->comp->pointer->hot.y;
+
+          }
+     }
+   if (ec->comp->pointer->o_ptr)
+     evas_object_hide(ec->comp->pointer->o_ptr);
+
+   ecore_evas_cursor_unset(ec->comp->pointer->ee);
+
+   ec->comp->wl_comp_data->ptr.hidden = EINA_TRUE;
+   ec->comp->wl_comp_data->ptr.hide_tmr = NULL;
+
+   if (!ec->comp_data->surface) return EINA_FALSE;
+   wc = wl_resource_get_client(ec->comp_data->surface);
+   serial = wl_display_next_serial(ec->comp->wl_comp_data->wl.disp);
+   EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
+     {
+        if (!e_comp_wl_input_pointer_check(res)) continue;
+        if (wl_resource_get_client(res) != wc) continue;
+        wl_pointer_send_leave(res, serial, ec->comp_data->surface);
+     }
+
+   return ECORE_CALLBACK_CANCEL;
+}
+
+static void
 _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    E_Client *ec;
@@ -787,6 +887,14 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
                                     wl_fixed_from_int(ev->cur.canvas.x - ec->client.x),
                                     wl_fixed_from_int(ev->cur.canvas.y - ec->client.y));
           }
+     }
+   if (e_config->use_cursor_timer)
+     {
+        if (ec->comp->wl_comp_data->ptr.hidden == EINA_TRUE)
+          _e_comp_wl_cursor_reload(ec);
+
+        E_FREE_FUNC(ec->comp->wl_comp_data->ptr.hide_tmr, ecore_timer_del);
+        ec->comp->wl_comp_data->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
      }
 }
 
@@ -892,6 +1000,15 @@ _e_comp_wl_evas_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    else
      _e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
                                        WL_POINTER_BUTTON_STATE_PRESSED);
+
+   if (e_config->use_cursor_timer)
+     {
+        if (ec->comp->wl_comp_data->ptr.hidden == EINA_TRUE)
+          _e_comp_wl_cursor_reload(ec);
+
+        E_FREE_FUNC(ec->comp->wl_comp_data->ptr.hide_tmr, ecore_timer_del);
+        ec->comp->wl_comp_data->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
+     }
 }
 
 static void
