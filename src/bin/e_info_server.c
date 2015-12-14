@@ -27,6 +27,8 @@ struct wl_drm_buffer
    void *driver_buffer;
 };
 
+#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbibs"
+
 static void
 _msg_clients_append(Eldbus_Message_Iter *iter)
 {
@@ -34,7 +36,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
    E_Client *ec;
    Evas_Object *o;
 
-   eldbus_message_iter_arguments_append(iter, "a(uuisiiiiibbs)", &array_of_ec);
+   eldbus_message_iter_arguments_append(iter, "a("VALUE_TYPE_FOR_TOPVWINS")", &array_of_ec);
 
    // append clients.
    for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
@@ -62,16 +64,16 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
                wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
           }
 #endif
-        eldbus_message_iter_arguments_append(array_of_ec, "(uuisiiiiibbs)", &struct_of_ec);
+        eldbus_message_iter_arguments_append(array_of_ec, "("VALUE_TYPE_FOR_TOPVWINS")", &struct_of_ec);
 
         eldbus_message_iter_arguments_append
-           (struct_of_ec, "uuisiiiiibbs",
+           (struct_of_ec, VALUE_TYPE_FOR_TOPVWINS,
             win,
             res_id,
             pid,
             e_client_util_name_get(ec) ?: "NO NAME",
             ec->x, ec->y, ec->w, ec->h, ec->layer,
-            ec->visible, ec->argb, layer_name);
+            ec->visible, ec->argb, ec->visibility.obscured, ec->iconic, layer_name);
 
         eldbus_message_iter_container_close(array_of_ec, struct_of_ec);
      }
@@ -550,7 +552,7 @@ _e_info_server_cb_eina_log_path(const Eldbus_Service_Interface *iface EINA_UNUSE
 }
 
 static const Eldbus_Method methods[] = {
-   { "get_window_info", NULL, ELDBUS_ARGS({"a(uuisiiiiibbs)", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
+   { "get_window_info", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_TOPVWINS")", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, 0 },
    { "eina_log_levels", ELDBUS_ARGS({"s", "eina log levels"}), NULL, _e_info_server_cb_eina_log_levels, 0 },
    { "eina_log_path", ELDBUS_ARGS({"s", "eina log path"}), NULL, _e_info_server_cb_eina_log_path, 0 },
