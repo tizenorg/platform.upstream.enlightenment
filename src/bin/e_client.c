@@ -4564,6 +4564,12 @@ e_client_unfullscreen(E_Client *ec)
 EAPI void
 e_client_iconify(E_Client *ec)
 {
+#ifdef HAVE_WAYLAND_ONLY
+   E_Comp_Wl_Client_Data *cdata;
+   E_Client *subc;
+   Eina_List *l;
+#endif
+
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
 
@@ -4596,6 +4602,15 @@ e_client_iconify(E_Client *ec)
         EINA_LIST_FREE(list, child)
           e_client_iconify(child);
      }
+
+#ifdef HAVE_WAYLAND_ONLY
+   cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+   EINA_LIST_FOREACH(cdata->sub.list, l, subc)
+     e_client_iconify(subc);
+   EINA_LIST_FOREACH(cdata->sub.below_list, l, subc)
+     e_client_iconify(subc);
+#endif
+
    e_remember_update(ec);
 }
 
