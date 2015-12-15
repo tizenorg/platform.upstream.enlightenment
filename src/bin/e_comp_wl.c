@@ -3513,6 +3513,36 @@ _e_comp_wl_client_cb_move_end(void *data EINA_UNUSED, E_Client *ec)
 }
 
 static void
+_e_comp_wl_client_cb_iconify(void *data EINA_UNUSED, E_Client *ec)
+{
+   E_Client *subc;
+   Eina_List *l;
+
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
+
+   EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
+     e_client_iconify(subc);
+   EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
+     e_client_iconify(subc);
+}
+
+static void
+_e_comp_wl_client_cb_uniconify(void *data EINA_UNUSED, E_Client *ec)
+{
+   E_Client *subc;
+   Eina_List *l;
+
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
+
+   EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
+     e_client_uniconify(subc);
+   EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
+     e_client_uniconify(subc);
+}
+
+static void
 _e_comp_wl_cb_output_unbind(struct wl_resource *resource)
 {
    E_Comp_Wl_Output *output;
@@ -3943,6 +3973,8 @@ e_comp_wl_init(void)
    e_client_hook_add(E_CLIENT_HOOK_RESIZE_BEGIN,         _e_comp_wl_client_cb_resize_begin, NULL);
    e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,           _e_comp_wl_client_cb_resize_end,   NULL);
    e_client_hook_add(E_CLIENT_HOOK_MOVE_END,             _e_comp_wl_client_cb_move_end,     NULL);
+   e_client_hook_add(E_CLIENT_HOOK_ICONIFY,              _e_comp_wl_client_cb_iconify,    NULL);
+   e_client_hook_add(E_CLIENT_HOOK_UNICONIFY,            _e_comp_wl_client_cb_uniconify,    NULL);
 
    _last_event_time = ecore_loop_time_get();
 
