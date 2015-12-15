@@ -214,6 +214,8 @@ typedef enum _E_Client_Hook_Point
    E_CLIENT_HOOK_NEW_CLIENT_POST,
 #endif
    E_CLIENT_HOOK_EVAL_VISIBILITY,
+   E_CLIENT_HOOK_ICONIFY,
+   E_CLIENT_HOOK_UNICONIFY,
    E_CLIENT_HOOK_LAST,
 } E_Client_Hook_Point;
 
