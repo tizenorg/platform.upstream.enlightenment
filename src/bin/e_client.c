@@ -93,6 +93,8 @@ static Eina_Inlist *_e_client_hooks[] =
    [E_CLIENT_HOOK_NEW_CLIENT_POST] = NULL,
 #endif
    [E_CLIENT_HOOK_EVAL_VISIBILITY] = NULL,
+   [E_CLIENT_HOOK_ICONIFY] = NULL,
+   [E_CLIENT_HOOK_UNICONIFY] = NULL,
 };
 
 ///////////////////////////////////////////
@@ -4596,6 +4598,9 @@ e_client_iconify(E_Client *ec)
         EINA_LIST_FREE(list, child)
           e_client_iconify(child);
      }
+
+   _e_client_hook_call(E_CLIENT_HOOK_ICONIFY, ec);
+
    e_remember_update(ec);
 }
 
@@ -4636,6 +4641,9 @@ e_client_uniconify(E_Client *ec)
              e_client_uniconify(child);
           }
      }
+
+   _e_client_hook_call(E_CLIENT_HOOK_UNICONIFY, ec);
+
    ec->exp_iconify.not_raise = 0;
    ec->exp_iconify.by_client = 0;
    e_remember_update(ec);
