@@ -2,6 +2,9 @@
 #define E_COMP_WL
 #include "e.h"
 #include <sys/mman.h>
+#ifdef HAVE_WL_DRM
+#include <Ecore_Drm.h>
+#endif
 
 static void
 _e_comp_wl_input_update_seat_caps(E_Comp_Data *cdata)
@@ -707,6 +710,9 @@ e_comp_wl_input_keymap_set(E_Comp_Data *cdata, const char *rules, const char *mo
               names.options ? names.options : "");
 
         file = fopen(keymap_path, "r");
+#ifdef HAVE_WL_DRM
+        ecore_drm_device_keyboard_cached_keymap_set(keymap_path);
+#endif
      }
 
    if (!file)
@@ -731,6 +737,8 @@ e_comp_wl_input_keymap_set(E_Comp_Data *cdata, const char *rules, const char *mo
    free((char *)names.rules);
    free((char *)names.model);
    free((char *)names.layout);
+   if (file) fclose(file);
+   file = NULL;
 }
 
 EAPI void
