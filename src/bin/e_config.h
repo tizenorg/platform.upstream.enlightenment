@@ -453,6 +453,8 @@ struct _E_Config
    unsigned char wm_win_rotation;
 #endif
    Eina_List *client_types;
+
+   unsigned char iconify_if_obscured;
 };
 
 struct E_Config_Bindings

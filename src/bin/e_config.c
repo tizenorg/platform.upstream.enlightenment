@@ -788,6 +788,8 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, wm_win_rotation, UCHAR);
 #endif
    E_CONFIG_LIST(D, T, client_types, _e_config_client_type_edd);
+
+   E_CONFIG_VAL(D, T, iconify_if_obscured, UCHAR);
 }
 
 /* externally accessible functions */
@@ -1551,6 +1553,8 @@ e_config_load(void)
    E_CONFIG_LIMIT(e_config->keyboard.repeat_rate, -1, 1000); // 1 second
 
    E_CONFIG_LIMIT(e_config->xkb.delay_held_key_input_to_focus, 0,5000); // 5000(ms) == 5(s)
+
+   E_CONFIG_LIMIT(e_config->iconify_if_obscured, 0, 1);
 
    if (!e_config->icon_theme)
      e_config->icon_theme = eina_stringshare_add("hicolor");  // FDO default
