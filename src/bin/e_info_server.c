@@ -27,7 +27,7 @@ struct wl_drm_buffer
    void *driver_buffer;
 };
 
-#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbibs"
+#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbibbs"
 
 static void
 _msg_clients_append(Eldbus_Message_Iter *iter)
@@ -73,7 +73,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
             pid,
             e_client_util_name_get(ec) ?: "NO NAME",
             ec->x, ec->y, ec->w, ec->h, ec->layer,
-            ec->visible, ec->argb, ec->visibility.obscured, ec->iconic, layer_name);
+            ec->visible, ec->argb, ec->visibility.obscured, ec->iconic, ec->focused, layer_name);
 
         eldbus_message_iter_container_close(array_of_ec, struct_of_ec);
      }
