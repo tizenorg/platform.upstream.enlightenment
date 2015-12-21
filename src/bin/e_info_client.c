@@ -469,6 +469,60 @@ _e_info_client_proc_connected_clients(int argc, char **argv)
      }
 }
 
+static void
+_cb_disp_res_lists_get(const Eldbus_Message *msg)
+{
+   const char *name = NULL, *text = NULL;
+   Eldbus_Message_Iter *array, *resource;
+   Eina_Bool res;
+
+   res = eldbus_message_error_get(msg, &name, &text);
+   EINA_SAFETY_ON_TRUE_GOTO(res, finish);
+
+   res = eldbus_message_arguments_get(msg, "a(ss)", &array);
+   EINA_SAFETY_ON_FALSE_GOTO(res, finish);
+
+   int cnt = 0;
+   while (eldbus_message_iter_get_and_next(array, 'r', &resource))
+     {
+        const char *item;
+        const char *value;
+        res = eldbus_message_iter_arguments_get(resource,
+                                                "ss",
+                                                &item,
+                                                &value);
+        if (!res)
+          {
+             printf("Failed to get connected clients info\n");
+             continue;
+          }
+        if (!strcmp(item, "[client]"))
+          {
+             printf("[%2d] %s\n", ++cnt, value);
+          }
+        else if (!strcmp(item, "[resource]"))
+          {
+             printf("      |----- %s\n", value);
+          }
+     }
+
+finish:
+   if ((name) || (text))
+     {
+        printf("errname:%s errmsg:%s\n", name, text);
+     }
+}
+
+static void
+_e_info_server_proc_res_lists(int argc, char **argv)
+{
+   if (!_e_info_client_eldbus_message("get_res_lists", _cb_disp_res_lists_get))
+     {
+        printf("_e_info_server_proc_res_lists error");
+        return;
+     }
+}
+
 static struct
 {
    const char *option;
@@ -506,6 +560,11 @@ static struct
       "connected_clients", NULL,
       "print connected clients on Enlightenment",
       _e_info_client_proc_connected_clients
+   },
+   {
+      "res_lists", NULL,
+      "print resource lists on Enlightenment",
+      _e_info_server_proc_res_lists
    },
 };
 

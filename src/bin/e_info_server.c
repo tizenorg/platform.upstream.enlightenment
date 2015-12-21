@@ -1,5 +1,8 @@
+#define E_COMP_WL
 #include "e.h"
 #include <tbm_bufmgr.h>
+#include "e_comp_wl.h"
+#include <wayland-server.h>
 
 #define BUS "org.enlightenment.wm"
 #define PATH "/org/enlightenment/wm"
@@ -156,6 +159,74 @@ _e_info_server_cb_connected_clients_get(const Eldbus_Service_Interface *iface EI
    Eldbus_Message *reply = eldbus_message_method_return_new(msg);
 
    _msg_connected_clients_append(eldbus_message_iter_get(reply));
+
+   return reply;
+}
+
+static void
+_e_info_server_get_resource(void *element, void *data)
+{
+   struct wl_resource *resource = element;
+   Eldbus_Message_Iter* array_of_res= data;
+   Eldbus_Message_Iter* struct_of_res;
+   struct wl_interface *ifc;
+   char rlist[512] = {0,};
+
+   ifc = wl_resource_get_interface(resource);
+   snprintf(rlist, sizeof(rlist), "%s @obj id(%u)",  ifc->name, wl_resource_get_id(resource));
+   eldbus_message_iter_arguments_append(array_of_res, "(ss)", &struct_of_res);
+   eldbus_message_iter_arguments_append(struct_of_res, "ss", "[resource]", rlist);
+   eldbus_message_iter_container_close(array_of_res, struct_of_res);
+}
+
+#define wl_client_for_each(client, list)     \
+   for (client = 0, client = wl_client_from_link((list)->next);   \
+        wl_client_get_link(client) != (list);                     \
+        client = wl_client_from_link(wl_client_get_link(client)->next))
+
+static void
+_msg_clients_res_list_append(Eldbus_Message_Iter *iter)
+{
+   Eldbus_Message_Iter *array_of_res;
+
+   struct wl_list * client_list;
+   struct wl_client *client;
+   struct wl_map *res_objs;
+   E_Comp_Data *cdata;
+   pid_t pid = -1;
+
+   eldbus_message_iter_arguments_append(iter, "a(ss)", &array_of_res);
+
+   if (!e_comp) return;
+   if (!(cdata = e_comp->wl_comp_data)) return;
+   if (!cdata->wl.disp) return;
+
+   client_list = wl_display_get_client_list(cdata->wl.disp);
+
+   wl_client_for_each(client, client_list)
+     {
+        Eldbus_Message_Iter* struct_of_res;
+        char temp[16] = {0,};
+
+        eldbus_message_iter_arguments_append(array_of_res, "(ss)", &struct_of_res);
+        wl_client_get_credentials(client, &pid, NULL, NULL);
+        snprintf(temp, sizeof(temp), "pid(%d)", pid);
+
+        eldbus_message_iter_arguments_append(struct_of_res, "ss", "[client]", temp);
+        eldbus_message_iter_container_close(array_of_res, struct_of_res);
+
+        res_objs = wl_client_get_resources(client);
+        wl_map_for_each(res_objs, _e_info_server_get_resource, array_of_res);
+     }
+   eldbus_message_iter_container_close(iter, array_of_res);
+}
+
+static Eldbus_Message *
+_e_info_server_cb_res_lists_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+
+   _msg_clients_res_list_append(eldbus_message_iter_get(reply));
 
    return reply;
 }
@@ -558,6 +629,7 @@ static const Eldbus_Method methods[] = {
    { "eina_log_path", ELDBUS_ARGS({"s", "eina log path"}), NULL, _e_info_server_cb_eina_log_path, 0 },
    { "get_window_prop", ELDBUS_ARGS({"us", "query_mode_value"}), ELDBUS_ARGS({"a(ss)", "array_of_ec"}), _e_info_server_cb_window_prop_get, 0},
    { "get_connected_clients", NULL, ELDBUS_ARGS({"a(ss)", "array of ec"}), _e_info_server_cb_connected_clients_get, 0 },
+   { "get_res_lists", NULL, ELDBUS_ARGS({"a(ss)", "array of client resources"}), _e_info_server_cb_res_lists_get, 0 },
    { NULL, NULL, NULL, NULL, 0 }
 };
 
