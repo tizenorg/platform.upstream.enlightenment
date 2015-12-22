@@ -57,6 +57,7 @@ EINTERN void e_comp_wl_data_manager_shutdown(E_Comp_Data *cdata);
 EINTERN Eina_Bool e_comp_wl_data_dnd_focus(E_Client *ec);
 EINTERN void e_comp_wl_data_dnd_motion(E_Client *ec, unsigned int time, int x, int y);
 EINTERN void e_comp_wl_data_dnd_drop(E_Client *ec, unsigned int time, uint32_t btn, uint32_t state);
+EINTERN void e_comp_wl_data_dnd_drop_touch(E_Client *ec, unsigned int time, int x, int y, Eina_Bool flag);
 
 # endif
 #endif

@@ -974,6 +974,12 @@ _e_comp_wl_evas_handle_mouse_button_to_touch(E_Client *ec, uint32_t timestamp, i
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (!ec->comp_data->surface) return;
 
+   if (e_comp->wl_comp_data->dnd.enabled)
+     {
+        e_comp_wl_data_dnd_drop_touch(ec, timestamp, canvas_x, canvas_y, flag);
+        return;
+     }
+
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
 

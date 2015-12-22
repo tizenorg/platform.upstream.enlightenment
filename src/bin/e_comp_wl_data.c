@@ -374,8 +374,7 @@ _e_comp_wl_data_device_cb_drag_start(struct wl_client *client, struct wl_resourc
              ec->lock_focus_out = ec->layer_block = ec->visible = ec->override = 1;
              ec->new_client = 0;
              e_comp->new_clients--;
-             ec->icccm.title = eina_stringshare_add("noshadow");
-             ec->icccm.window_role = eina_stringshare_add("wl_pointer-cursor");
+             ec->icccm.title = eina_stringshare_add("drag-win");
              evas_object_pass_events_set(ec->frame, 1);
              ec->client.w = ec->client.h = 1;
              l = e_client_focus_stack_get();
@@ -982,6 +981,57 @@ e_comp_wl_data_dnd_drop(E_Client *ec, unsigned int time, uint32_t btn, uint32_t 
              wl_pointer_send_enter(res, serial, ec->comp_data->surface,
                                    wl_fixed_from_int(ec->client.x),
                                    wl_fixed_from_int(ec->client.y));
+          }
+     }
+}
+
+EINTERN void
+e_comp_wl_data_dnd_drop_touch(E_Client *ec,
+                              unsigned int time,
+                              int x, int y,
+                              Eina_Bool flag)
+{
+   E_Comp_Data *cdata;
+   struct wl_resource *data_device_res, *res;
+   struct wl_client *wc;
+   uint32_t serial;
+   Eina_List *l;
+   wl_fixed_t fx, fy;
+
+   cdata = e_comp->wl_comp_data;
+   if (!cdata->dnd.focus) return;
+
+   data_device_res = _e_comp_wl_data_find_for_client(cdata->mgr.data_resources,
+                                                     wl_resource_get_client(cdata->dnd.focus));
+   if (!data_device_res) return;
+
+
+   if (!flag)
+     {
+        wl_data_device_send_drop(data_device_res);
+        e_comp_wl_data_dnd_focus(NULL);
+        if (cdata->dnd.data_source)
+          wl_list_remove(&cdata->dnd.data_source_listener.link);
+        cdata->dnd.enabled = 0;
+
+        wc = wl_resource_get_client(ec->comp_data->surface);
+        serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
+
+        fx = wl_fixed_from_int(x - ec->client.x);
+        fy = wl_fixed_from_int(y - ec->client.y);
+
+        EINA_LIST_FOREACH(e_comp->wl_comp_data->ptr.resources, l, res)
+          {
+             if (!e_comp_wl_input_pointer_check(res)) continue;
+             if (wl_resource_get_client(res) != wc) continue;
+             wl_pointer_send_enter(res, serial, ec->comp_data->surface, fx, fy);
+          }
+
+        EINA_LIST_FOREACH(e_comp->wl_comp_data->touch.resources, l, res)
+          {
+             if (wl_resource_get_client(res) != wc) continue;
+             if (!e_comp_wl_input_touch_check(res)) continue;
+             wl_touch_send_up(res, serial, time, 0);
           }
      }
 }
