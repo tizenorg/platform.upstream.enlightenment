@@ -23,23 +23,6 @@ packagekit_icon_update(E_PackageKit_Module_Context *ctxt,
      state = "packagekit,state,error";
    else
      {
-        EINA_LIST_FOREACH(ctxt->packages, l, pkg)
-          {
-             switch (pkg->info)
-               {
-                  case PK_INFO_ENUM_LOW:
-                  case PK_INFO_ENUM_ENHANCEMENT:
-                  case PK_INFO_ENUM_NORMAL:
-                  case PK_INFO_ENUM_BUGFIX:
-                  case PK_INFO_ENUM_IMPORTANT:
-                  case PK_INFO_ENUM_SECURITY:
-                     count++;
-                     break;
-                  default:
-                     break;
-               }
-          }
-
         if (count > 0)
           state = "packagekit,state,updates";
         else
@@ -108,23 +91,6 @@ packagekit_popup_update(E_PackageKit_Instance *inst)
 
    EINA_LIST_FOREACH(ctxt->packages, l, pkg)
      {
-        switch (pkg->info)
-          {
-             case PK_INFO_ENUM_LOW:
-               emblem_name = "e/modules/packagekit/icon/low"; break;
-             case PK_INFO_ENUM_ENHANCEMENT:
-               emblem_name = "e/modules/packagekit/icon/enhancement"; break;
-             case PK_INFO_ENUM_NORMAL:
-               emblem_name = "e/modules/packagekit/icon/normal"; break;
-             case PK_INFO_ENUM_BUGFIX:
-               emblem_name = "e/modules/packagekit/icon/bugfix"; break;
-             case PK_INFO_ENUM_IMPORTANT:
-               emblem_name = "e/modules/packagekit/icon/important"; break;
-             case PK_INFO_ENUM_SECURITY:
-               emblem_name = "e/modules/packagekit/icon/security"; break;
-             default:
-               emblem_name = NULL; break;
-          }
         if (emblem_name)
           {
              // try to find a desktop file that match the executable or the name
@@ -309,7 +275,6 @@ _signal_package_cb(void *data, const Eldbus_Message *msg)
 {  /* Package ('u'info, 's'package_id, 's'summary) */
    const char *error, *error_msg, *pkg_id, *summary, *info_str;
    E_PackageKit_Module_Context *ctxt = data;
-   PackageKit_Package_Info info;
    unsigned num_elements = 0;
    char **splitted;
    Eina_Bool ret;
@@ -321,8 +286,6 @@ _signal_package_cb(void *data, const Eldbus_Message *msg)
      }
    if (PKITV07)
      ret = eldbus_message_arguments_get(msg, "sss", &info_str, &pkg_id, &summary);
-   else
-     ret = eldbus_message_arguments_get(msg, "uss", &info, &pkg_id, &summary);
    if (!ret)
      {
         _store_error(ctxt, "could not get package arguments");
@@ -330,8 +293,6 @@ _signal_package_cb(void *data, const Eldbus_Message *msg)
      }
    if (PKITV07)
      { DBG("PKGKIT: Package: (%s) %s [ %s ]", info_str, pkg_id, summary); }
-   else
-     { DBG("PKGKIT: Package: (%d) %s [ %s ]", info, pkg_id, summary); }
 
    splitted = eina_str_split_full(pkg_id, ";", 2, &num_elements);
    if (num_elements == 2)
@@ -340,20 +301,6 @@ _signal_package_cb(void *data, const Eldbus_Message *msg)
         pkg->name = eina_stringshare_add(splitted[0]);
         pkg->version = eina_stringshare_add(splitted[1]);
         pkg->summary = eina_stringshare_add(summary);
-        if (PKITV07)
-          {
-             if (!info_str) pkg->info = PK_INFO_ENUM_NORMAL;
-             else if (!strcmp(info_str, "normal"))      pkg->info = PK_INFO_ENUM_NORMAL;
-             else if (!strcmp(info_str, "security"))    pkg->info = PK_INFO_ENUM_SECURITY;
-             else if (!strcmp(info_str, "blocked"))     pkg->info = PK_INFO_ENUM_BLOCKED;
-             else if (!strcmp(info_str, "low"))         pkg->info = PK_INFO_ENUM_LOW;
-             else if (!strcmp(info_str, "enhancement")) pkg->info = PK_INFO_ENUM_ENHANCEMENT;
-             else if (!strcmp(info_str, "bugfix"))      pkg->info = PK_INFO_ENUM_BUGFIX;
-             else if (!strcmp(info_str, "important"))   pkg->info = PK_INFO_ENUM_IMPORTANT;
-             else pkg->info = PK_INFO_ENUM_UNKNOWN;
-          }
-        else
-          pkg->info = info;
         ctxt->packages = eina_list_append(ctxt->packages, pkg);
      }
    if (splitted)

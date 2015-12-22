@@ -8,35 +8,6 @@
 #define PKITV07 (ctxt->v_maj == 0) && (ctxt->v_min == 7)
 #define PKITV08 (ctxt->v_maj == 0) && (ctxt->v_min == 8)
 
-typedef enum {
-   PK_INFO_ENUM_UNKNOWN,
-   PK_INFO_ENUM_INSTALLED,
-   PK_INFO_ENUM_AVAILABLE,
-   PK_INFO_ENUM_LOW,
-   PK_INFO_ENUM_ENHANCEMENT,
-   PK_INFO_ENUM_NORMAL,
-   PK_INFO_ENUM_BUGFIX,
-   PK_INFO_ENUM_IMPORTANT,
-   PK_INFO_ENUM_SECURITY,
-   PK_INFO_ENUM_BLOCKED,
-   PK_INFO_ENUM_DOWNLOADING,
-   PK_INFO_ENUM_UPDATING,
-   PK_INFO_ENUM_INSTALLING,
-   PK_INFO_ENUM_REMOVING,
-   PK_INFO_ENUM_CLEANUP,
-   PK_INFO_ENUM_OBSOLETING,
-   PK_INFO_ENUM_COLLECTION_INSTALLED,
-   PK_INFO_ENUM_COLLECTION_AVAILABLE,
-   PK_INFO_ENUM_FINISHED,
-   PK_INFO_ENUM_REINSTALLING,
-   PK_INFO_ENUM_DOWNGRADING,
-   PK_INFO_ENUM_PREPARING,
-   PK_INFO_ENUM_DECOMPRESSING,
-   PK_INFO_ENUM_UNTRUSTED,
-   PK_INFO_ENUM_TRUSTED,
-   PK_INFO_ENUM_LAST,
-} PackageKit_Package_Info;
-
 typedef struct _PackageKit_Config
 {
    int update_interval;
@@ -80,7 +51,6 @@ typedef struct _E_PackageKit_Package
    const char *name;
    const char *summary;
    const char *version;
-   PackageKit_Package_Info info;
 } E_PackageKit_Package;
 
 
