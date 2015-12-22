@@ -28,6 +28,12 @@ group "E_Config" struct {
       value "enabled" uchar: 1;
       value "delayed" uchar: 0;
       value "priority" int: 0;
+    },
+    group "E_Config_Module" struct {
+      value "name" string: "e_comp_gestures";
+      value "enabled" uchar: 1;
+      value "delayed" uchar: 0;
+      value "priority" int: 0;
     }
   }
   value "window_placement_policy" int: 0;
