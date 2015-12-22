@@ -603,7 +603,8 @@ static int
 _desklock_auth(char *passwd)
 {
    _lokker_state_set(LOKKER_STATE_CHECKING);
-   _auth_child_pid = e_auth_begin(passwd);
+   // we don't need to use pam
+   //_auth_child_pid = e_auth_begin(passwd);
    if (_auth_child_pid > 0)
      /* parent */
      _auth_child_exit_handler =

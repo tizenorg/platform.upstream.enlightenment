@@ -225,7 +225,6 @@ src/bin/e_about.c \
 src/bin/e_acpi.c \
 src/bin/e_actions.c \
 src/bin/e_atoms.c \
-src/bin/e_auth.c \
 src/bin/e_backlight.c \
 src/bin/e_bg.c \
 src/bin/e_bindings.c \
