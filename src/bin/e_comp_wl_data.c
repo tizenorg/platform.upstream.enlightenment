@@ -553,13 +553,21 @@ _e_comp_wl_data_cb_bind_manager(struct wl_client *client, void *data, uint32_t v
    wl_resource_set_implementation(res, &_e_manager_interface, cdata, NULL);
 }
 
-static void
+static int
+_e_comp_wl_clipboard_source_ref(E_Comp_Wl_Clipboard_Source *source)
+{
+   source->ref ++;
+   return source->ref;
+}
+
+static int
 _e_comp_wl_clipboard_source_unref(E_Comp_Wl_Clipboard_Source *source)
 {
    char* t;
 
    source->ref --;
-   if (source->ref > 0) return;
+   if (source->ref > 0)
+     return source->ref;
 
    if (source->fd_handler)
      {
@@ -574,6 +582,8 @@ _e_comp_wl_clipboard_source_unref(E_Comp_Wl_Clipboard_Source *source)
    wl_signal_emit(&source->data_source.destroy_signal, &source->data_source);
    wl_array_release(&source->contents);
    free(source);
+
+   return 0;
 }
 
 static Eina_Bool
@@ -616,7 +626,9 @@ _e_comp_wl_clipboard_offer_create(E_Comp_Wl_Clipboard_Source* source, int fd)
 
    offer->offset = 0;
    offer->source = source;
-   source->ref++;
+
+   _e_comp_wl_clipboard_source_ref(source);
+
    offer->fd_handler =
       ecore_main_fd_handler_add(fd, ECORE_FD_WRITE,
                                 _e_comp_wl_clipboard_offer_load, offer,
@@ -655,8 +667,8 @@ _e_comp_wl_clipboard_source_save(void *data, Ecore_Fd_Handler *handler)
      }
    else if (len < 0)
      {
-        _e_comp_wl_clipboard_source_unref(source);
-        cdata->clipboard.source = NULL;
+        if (!(_e_comp_wl_clipboard_source_unref(source)))
+          cdata->clipboard.source = NULL;
      }
    else
      {
@@ -755,25 +767,28 @@ _e_comp_wl_clipboard_selection_set(struct wl_listener *listener EINA_UNUSED, voi
    else if (sel_source->target == _e_comp_wl_clipboard_source_target_send)
      return;
 
-   if (clip_source)
-     _e_comp_wl_clipboard_source_unref(clip_source);
-
-   cdata->clipboard.source = NULL;
    mime_type = eina_list_nth(sel_source->mime_types, 0);
 
-   if (pipe2(p, O_CLOEXEC) == -1)
-     return;
-
-   sel_source->send(sel_source, mime_type, p[1]);
-
-   cdata->clipboard.source =
-      _e_comp_wl_clipboard_source_create(cdata, mime_type,
-                                         cdata->selection.serial, p);
-
-   if (!cdata->clipboard.source)
+   if (!clip_source)
      {
-        close(p[0]);
-        close(p[1]);
+        if (pipe2(p, O_CLOEXEC) == -1)
+          return;
+
+        sel_source->send(sel_source, mime_type, p[1]);
+
+        cdata->clipboard.source =
+           _e_comp_wl_clipboard_source_create(cdata, mime_type,
+                                              cdata->selection.serial, p);
+        if (!cdata->clipboard.source)
+          {
+             close(p[0]);
+             close(p[1]);
+          }
+     }
+   else
+     {
+        sel_source->send(sel_source, mime_type, clip_source->fd[1]);
+
      }
 }
 
