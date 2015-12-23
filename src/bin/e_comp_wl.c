@@ -3,6 +3,7 @@
 #include "e_comp_wl_screenshooter_server.h"
 
 #include <wayland-tbm-server.h>
+#include <systemd/sd-daemon.h>
 
 /* handle include for printing uint64_t */
 #define __STDC_FORMAT_MACROS
@@ -4172,7 +4173,72 @@ _e_comp_wl_compositor_create(void)
         goto disp_err;
      }
 
-   /* try to setup wayland socket */
+#ifdef HAVE_SYSTEMD
+   do
+     {
+       int a = sd_listen_fds(1);
+       
+       if (sd_listen_fds() < 0)
+	 {
+	   ERR("Could not receive an open Wayland socket: %m");
+	   goto sock_err;
+	 }
+       else if (a > 1)
+	 {
+	   ERR("Too many open sockets received");
+	   goto sock_err;
+	 }
+       /* Is it posible and desirable to accept more than one socket? */
+       else if (a == 1)
+	 {
+	   int f = SD_LISTEN_FDS_START;
+	   char p[UNIX_PATH_MAX];
+	   int l;
+	   char *b;
+	   const char* runtime_dir;
+
+	   	   
+	   a = sd_is_socket_unix(f, 0, 1, NULL, 0);
+
+	   if (a < 0)
+	     {
+	       ERR("Failed to determine received socket type: %m");
+	       goto sock_err;
+	     }
+	   else if (a == 0)
+	     {
+	       ERR("Received an invalid file descriptor");
+	       goto sock_err;
+	     }
+
+
+	   	   runtime_dir = getenv("XDG_RUNTIME_DIR");
+	   if (!runtime_dir)
+	     {
+	       ERR("XDG_RUNTIME_DIR not set in environment");
+	       goto sock_err;
+	     }
+	   runtime_dir = realpath(runtime_dir);
+
+	   socket_dir = dirname(p);
+	   
+	   l = strlen(runtime_dir);
+	   strncmp(
+	   strrchr(p, runtime_dir);
+	   
+	   wl_display_add_socket_fd(cdata->wl.disp, f);
+	 }
+       else
+	 {
+	   
+	 }
+       
+       /* try to setup wayland socket */
+       /* XXX */
+       /*  */
+       /* wl_display_add_socket_fd() */
+     } while (0);
+#else
    if (!(name = wl_display_add_socket_auto(cdata->wl.disp)))
      {
         ERR("Could not create Wayland display socket: %m");
@@ -4205,6 +4271,8 @@ _e_comp_wl_compositor_create(void)
      chmod(socket_path, e_config->wayland_socket_permissions);
      chown(socket_path, uid, gid);
    }
+#endif
+
    /* set wayland display environment variable */
    e_env_set("WAYLAND_DISPLAY", name);
 
