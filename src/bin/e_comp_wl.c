@@ -683,18 +683,16 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    if (e_config->use_cursor_timer)
      {
         if (e_comp_wl->ptr.hidden == EINA_TRUE)
-          {
-             Evas_Object *o = NULL;
-
-             ecore_evas_cursor_get(e_comp->pointer->ee, &o, NULL, NULL, NULL);
-             if (o)
-               e_comp_wl->ptr.ec = e_comp_object_client_get(o);
-             return;
-          }
+          return;
         else
           {
-             E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
-             e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
+             if (e_comp_wl->ptr.hide_tmr)
+               {
+                  ecore_timer_interval_set(e_comp_wl->ptr.hide_tmr, e_config->cursor_timer_interval);
+                  ecore_timer_reset(e_comp_wl->ptr.hide_tmr);
+               }
+             else
+               e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
           }
      }
 
@@ -743,14 +741,13 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
       ecore_evas_cursor_get(e_comp->ee, &o, NULL, NULL, NULL);
       if ((e_comp->pointer->o_ptr != o) && (e_comp->wl_comp_data->ptr.enabled))
         {
-           if ((e_config->use_cursor_timer) && (e_comp->wl_comp_data->ptr.hidden))
-             e_comp->wl_comp_data->ptr.ec = NULL;
-           else
+           if ((!e_config->use_cursor_timer) || (!e_comp->wl_comp_data->ptr.hidden))
              e_pointer_object_set(e_comp->pointer, NULL, 0, 0);
         }
    }
-   if (e_comp_wl->ptr.ec == ec)
-     e_comp_wl->ptr.ec = NULL;
+   if (e_config->use_cursor_timer)
+     E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
+
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    if (!ec->comp_data->surface) return;
@@ -797,7 +794,6 @@ _e_comp_wl_send_touch_move(E_Client *ec, int canvas_x, int canvas_y, uint32_t ti
 static void
 _e_comp_wl_cursor_reload(E_Client *ec)
 {
-   E_Client *ec_cursor;
    struct wl_resource *res;
    struct wl_client *wc;
    Eina_List *l;
@@ -805,13 +801,9 @@ _e_comp_wl_cursor_reload(E_Client *ec)
    int cx, cy;
 
    if (e_object_is_del(E_OBJECT(ec))) return;
-   if (!ec->comp_data) return;
 
-   if ((ec_cursor = e_comp_wl->ptr.ec))
-     {
-        ec_cursor->visible = 1;
-        ecore_evas_object_cursor_set(e_comp->pointer->ee, ec_cursor->frame, EVAS_LAYER_MAX, ec_cursor->x, ec_cursor->y);
-     }
+   if (e_comp->pointer->o_ptr && (!evas_object_visible_get(e_comp->pointer->o_ptr)))
+     e_pointer_object_set(e_comp->pointer, NULL, 0, 0);
 
    e_comp_wl->ptr.hidden = EINA_FALSE;
 
@@ -833,31 +825,18 @@ _e_comp_wl_cursor_reload(E_Client *ec)
 static Eina_Bool
 _e_comp_wl_cursor_timer(void *data)
 {
-   E_Client *ec = NULL;
-   E_Client *ec_cursor = NULL;
-   Evas_Object *o;
+   E_Client *ec = data;
    struct wl_resource *res;
    struct wl_client *wc;
    Eina_List *l;
    uint32_t serial;
 
-   if (!(ec = data)) return EINA_FALSE;
    if (e_object_is_del(E_OBJECT(ec))) return EINA_FALSE;
-   if (!ec->comp_data) return EINA_FALSE;
-
-   ecore_evas_cursor_get(e_comp->pointer->ee, &o, NULL, NULL, NULL);
-   if (o)
-     {
-        ec_cursor = e_comp_wl->ptr.ec = e_comp_object_client_get(o);
-        if (ec_cursor)
-          {
-             ec_cursor->hidden = 1;
-             ec_cursor->x = e_comp->pointer->hot.x;
-             ec_cursor->y = e_comp->pointer->hot.y;
-          }
-     }
 
    ecore_evas_cursor_unset(e_comp->pointer->ee);
+
+   if (e_comp->pointer->o_ptr)
+     e_pointer_hide(e_comp->pointer);
 
    e_comp_wl->ptr.hidden = EINA_TRUE;
    e_comp_wl->ptr.hide_tmr = NULL;
@@ -928,8 +907,63 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
         if (e_comp_wl->ptr.hidden == EINA_TRUE)
           _e_comp_wl_cursor_reload(ec);
 
-        E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
-        e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
+        if (e_comp_wl->ptr.hide_tmr)
+          {
+             ecore_timer_interval_set(e_comp_wl->ptr.hide_tmr, e_config->cursor_timer_interval);
+             ecore_timer_reset(e_comp_wl->ptr.hide_tmr);
+          }
+        else
+          e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
+     }
+}
+
+static Eina_Bool
+_e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t button_id, uint32_t state)
+{
+   Eina_List *l;
+   struct wl_client *wc;
+   uint32_t serial, btn;
+   struct wl_resource *res;
+
+   if (ec->cur_mouse_action || ec->border_menu) return EINA_FALSE;
+   if (e_object_is_del(E_OBJECT(ec))) return EINA_FALSE;
+   if (e_client_util_ignored_get(ec)) return EINA_FALSE;
+
+   switch (button_id)
+     {
+      case 1:
+        btn = BTN_LEFT;
+        break;
+      case 2:
+        btn = BTN_MIDDLE;
+        break;
+      case 3:
+        btn = BTN_RIGHT;
+        break;
+      default:
+        btn = button_id;
+        break;
+     }
+
+   e_comp_wl->ptr.button = btn;
+
+   if (!ec->comp_data->surface) return EINA_FALSE;
+
+   if ((ec->comp_data->transform.cur_degree != 0) &&
+       (btn == BTN_MIDDLE))
+     {
+        _e_comp_wl_transform_unset(ec);
+        return EINA_TRUE;
+     }
+
+   wc = wl_resource_get_client(ec->comp_data->surface);
+   serial = wl_display_next_serial(e_comp_wl->wl.disp);
+
+   EINA_LIST_FOREACH(e_comp_wl->ptr.resources, l, res)
+     {
+        if (wl_resource_get_client(res) != wc) continue;
+        if (!e_comp_wl_input_pointer_check(res)) continue;
+        wl_pointer_send_button(res, serial, timestamp, btn, state);
      }
 }
 
@@ -986,8 +1020,13 @@ _e_comp_wl_evas_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
         if (e_comp_wl->ptr.hidden == EINA_TRUE)
           _e_comp_wl_cursor_reload(ec);
 
-        E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
-        e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
+        if (e_comp_wl->ptr.hide_tmr)
+          {
+            ecore_timer_interval_set(e_comp_wl->ptr.hide_tmr, e_config->cursor_timer_interval);
+            ecore_timer_reset(e_comp_wl->ptr.hide_tmr);
+          }
+        else
+          e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
      }
 }
 

@@ -1571,7 +1571,6 @@ e_config_load(void)
    E_CONFIG_LIMIT(e_config->xkb.delay_held_key_input_to_focus, 0,5000); // 5000(ms) == 5(s)
 
    E_CONFIG_LIMIT(e_config->use_cursor_timer, 0, 1);
-   E_CONFIG_LIMIT(e_config->cursor_timer_interval, 0.0, 9.9);
 
    if (!e_config->icon_theme)
      e_config->icon_theme = eina_stringshare_add("hicolor");  // FDO default

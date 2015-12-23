@@ -131,9 +131,6 @@ static void
 _e_comp_wl_input_cb_pointer_get(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 {
    struct wl_resource *res;
-   E_Client *ec;
-   uint32_t serial;
-   int cx, cy;
 
    /* try to create pointer resource */
    res = wl_resource_create(client, &wl_pointer_interface,
