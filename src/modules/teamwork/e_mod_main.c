@@ -32,7 +32,6 @@ _sha1_to_string(const unsigned char *hashout)
 const char *
 sha1_encode(const unsigned char *data, size_t len)
 {
-   SHA_CTX2 ctx;
    unsigned char hashout[20];
    unsigned char *buf;
 
@@ -43,9 +42,6 @@ sha1_encode(const unsigned char *data, size_t len)
    EINA_SAFETY_ON_NULL_RETURN_VAL(buf, NULL);
    memcpy(buf, data, len);
 
-   SHA1_Init2(&ctx);
-   SHA1_Update2(&ctx, buf, len);
-   SHA1_Final2(hashout, &ctx);
    if (EINA_UNLIKELY(len > 65000)) free(buf);
    return _sha1_to_string(hashout);
 }
