@@ -684,6 +684,8 @@ e_comp_wl_input_keymap_set(E_Comp_Data *cdata, const char *rules, const char *mo
 
    /* create a new xkb context */
    cdata->xkb.context = xkb_context_new(0);
+   if (!cdata->xkb.context)
+     return;
 
    if (e_config->xkb.use_cache)
      {

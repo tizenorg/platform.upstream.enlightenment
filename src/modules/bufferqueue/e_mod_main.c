@@ -191,14 +191,14 @@ _e_bq_mgr_new(char *sock_name)
        (sock_name != NULL))
      {
         bq_mgr->wdpy = wl_display_create();
-        if (bq_mgr->wdpy)
+        if (!bq_mgr->wdpy)
           {
              free(bq_mgr);
              return NULL;
           }
 
         bq_mgr->loop = wl_display_get_event_loop(bq_mgr->wdpy);
-        if (bq_mgr->loop)
+        if (!bq_mgr->loop)
           {
              free(bq_mgr);
              return NULL;
