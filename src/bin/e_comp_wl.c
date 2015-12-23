@@ -4201,10 +4201,11 @@ _e_comp_wl_compositor_create(void)
 	 }
        else if (a == 0)
 	 {
-	   ERR("Received an invalid file descriptor");
+	   ERR("Received an invalid socket");
 	   goto sock_err;
 	 }
 
+       /* If unset wl_display_add_socket_auto() would fail, let's fail too. */
        runtime_dir = getenv("XDG_RUNTIME_DIR");
        if (!runtime_dir)
 	 {
@@ -4220,7 +4221,11 @@ _e_comp_wl_compositor_create(void)
 	   goto sock_err;
 	 }
 
-       wl_display_add_socket_fd(cdata->wl.disp, f);
+       if (wl_display_add_socket_fd(cdata->wl.disp, f) < 0)
+	 {
+	   ERR("Could not add a file descriptor to a display");
+	   goto sock_err;
+	 }
      }
    else
 #endif
