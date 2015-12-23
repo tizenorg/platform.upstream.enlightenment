@@ -148,9 +148,6 @@ _e_comp_wl_input_cb_pointer_get(struct wl_client *client, struct wl_resource *re
 {
    E_Comp_Data *cdata;
    struct wl_resource *res;
-   E_Client *ec;
-   uint32_t serial;
-   int cx, cy;
 
    /* get compositor data */
    if (!(cdata = wl_resource_get_user_data(resource))) return;
