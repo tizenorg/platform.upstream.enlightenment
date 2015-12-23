@@ -4193,18 +4193,6 @@ _e_comp_wl_compositor_create(void)
        int f = SD_LISTEN_FDS_START;
        const char* runtime_dir;
 
-       a = sd_is_socket_unix(f, AF_UNIX, SOCK_STREAM, 1);
-       if (a < 0)
-	 {
-	   ERR("Failed to determine received socket type: %m");
-	   goto sock_err;
-	 }
-       else if (a == 0)
-	 {
-	   ERR("Received an invalid socket");
-	   goto sock_err;
-	 }
-
        /* If unset wl_display_add_socket_auto() would fail, let's fail too. */
        runtime_dir = getenv("XDG_RUNTIME_DIR");
        if (!runtime_dir)
