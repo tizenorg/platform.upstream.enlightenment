@@ -4148,6 +4148,9 @@ _e_comp_wl_compositor_create(void)
    const char *name;
    int fd = 0;
    const char *runtime_dir;
+#ifdef HAVE_SYSTEMD
+   int a;
+#endif
 
    /* check for existing compositor. create if needed */
    if (e_comp->comp_type == E_PIXMAP_TYPE_NONE)
@@ -4174,71 +4177,54 @@ _e_comp_wl_compositor_create(void)
      }
 
 #ifdef HAVE_SYSTEMD
-   do
+   a = sd_listen_fds(1);
+   if (a < 0)
      {
-       int a = sd_listen_fds(1);
-       
-       if (sd_listen_fds() < 0)
+       ERR("Could not receive an open Wayland socket: %m");
+       goto sock_err;
+     }
+   else if (a > 1)
+     {
+       ERR("Too many open sockets received");
+       goto sock_err;
+     }
+   else if (a == 1) /* Is it posible and desirable to accept more than one socket? */
+     {
+       int f = SD_LISTEN_FDS_START;
+       const char* runtime_dir;
+
+       a = sd_is_socket_unix(f, AF_UNIX, SOCK_STREAM, 1);
+       if (a < 0)
 	 {
-	   ERR("Could not receive an open Wayland socket: %m");
+	   ERR("Failed to determine received socket type: %m");
 	   goto sock_err;
 	 }
-       else if (a > 1)
+       else if (a == 0)
 	 {
-	   ERR("Too many open sockets received");
+	   ERR("Received an invalid file descriptor");
 	   goto sock_err;
 	 }
-       /* Is it posible and desirable to accept more than one socket? */
-       else if (a == 1)
+
+       runtime_dir = getenv("XDG_RUNTIME_DIR");
+       if (!runtime_dir)
 	 {
-	   int f = SD_LISTEN_FDS_START;
-	   char p[UNIX_PATH_MAX];
-	   int l;
-	   char *b;
-	   const char* runtime_dir;
-
-	   	   
-	   a = sd_is_socket_unix(f, 0, 1, NULL, 0);
-
-	   if (a < 0)
-	     {
-	       ERR("Failed to determine received socket type: %m");
-	       goto sock_err;
-	     }
-	   else if (a == 0)
-	     {
-	       ERR("Received an invalid file descriptor");
-	       goto sock_err;
-	     }
-
-
-	   	   runtime_dir = getenv("XDG_RUNTIME_DIR");
-	   if (!runtime_dir)
-	     {
-	       ERR("XDG_RUNTIME_DIR not set in environment");
-	       goto sock_err;
-	     }
-	   runtime_dir = realpath(runtime_dir);
-
-	   socket_dir = dirname(p);
-	   
-	   l = strlen(runtime_dir);
-	   strncmp(
-	   strrchr(p, runtime_dir);
-	   
-	   wl_display_add_socket_fd(cdata->wl.disp, f);
+	   ERR("XDG_RUNTIME_DIR not set in environment");
+	   goto sock_err;
 	 }
-       else
+
+       /* Let's not try to figure out the value from the socket path at the moment. */
+       name = getenv("WAYLAND_DISPLAY");
+       if (!name)
 	 {
-	   
+	   ERR("WAYLAND_DISPLAY not set in environment");
+	   goto sock_err;
 	 }
-       
-       /* try to setup wayland socket */
-       /* XXX */
-       /*  */
-       /* wl_display_add_socket_fd() */
-     } while (0);
-#else
+
+       wl_display_add_socket_fd(cdata->wl.disp, f);
+     }
+   else
+#endif
+   /* try to setup wayland socket */
    if (!(name = wl_display_add_socket_auto(cdata->wl.disp)))
      {
         ERR("Could not create Wayland display socket: %m");
