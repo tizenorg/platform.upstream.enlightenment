@@ -177,6 +177,9 @@ e_modapi_init(E_Module *m)
    if (scr_w <= 0) scr_w = 1;
    if (scr_h <= 0) scr_h = 1;
 
+   if (!e_comp_wl_init()) return NULL;
+   e_comp_wl_input_keymap_set(comp->wl_comp_data, "evdev", "pc105", "us");
+
    DBG("GL available:%d config engine:%d screen size:%dx%d",
        e_comp_gl_get(), e_comp_config_get()->engine, scr_w, scr_h);
 
@@ -257,7 +260,6 @@ e_modapi_init(E_Module *m)
    e_comp_canvas_fake_layers_init(comp);
 
    /* NB: This needs to be called AFTER the comp canvas has been setup */
-   if (!e_comp_wl_init()) return NULL;
 
    evas_event_feed_mouse_in(comp->evas, 0, NULL);
 
@@ -279,7 +281,6 @@ e_modapi_init(E_Module *m)
 
    /* FIXME: This is just for testing at the moment....
     * happens to jive with what drm does */
-   e_comp_wl_input_keymap_set(comp->wl_comp_data, "evdev", "pc105", "us");
 
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,
                          _e_mod_drm_cb_activate, comp);
