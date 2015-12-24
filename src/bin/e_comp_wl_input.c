@@ -2,6 +2,9 @@
 #define E_COMP_WL
 #include "e.h"
 #include <sys/mman.h>
+#ifdef HAVE_WL_DRM
+#include <Ecore_Drm.h>
+#endif
 
 static void
 _e_comp_wl_input_update_seat_caps(E_Comp_Data *cdata)
@@ -689,6 +692,9 @@ e_comp_wl_input_keymap_set(E_Comp_Data *cdata, const char *rules, const char *mo
 
    if (e_config->xkb.use_cache)
      {
+#ifdef HAVE_WL_DRM
+        ecore_drm_device_keyboard_cached_context_set(cdata->xkb.context);
+#endif
         keymap_path = eina_stringshare_printf("/var/lib/xkb/%s-%s-%s-%s-%s.xkb",
               names.rules ? names.rules : "",
               names.model ? names.model : "",
@@ -712,6 +718,10 @@ e_comp_wl_input_keymap_set(E_Comp_Data *cdata, const char *rules, const char *mo
         eina_stringshare_del(keymap_path);
         keymap_path = NULL;
      }
+#ifdef HAVE_WL_DRM
+   if (e_config->xkb.use_cache)
+     ecore_drm_device_keyboard_cached_keymap_set(keymap);
+#endif
 
    /* update compositor keymap */
    _e_comp_wl_input_keymap_update(cdata, keymap, keymap_path);
