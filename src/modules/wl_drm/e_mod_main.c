@@ -60,12 +60,6 @@ _e_mod_drm_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 
    DBG("WL_DRM OUTPUT CHANGE");
 
-<<<<<<< HEAD
-   snprintf(buff, sizeof(buff), "%d", e->id);
-   e_comp_wl_output_init(buff, e->make, e->model, e->x, e->y, e->w, e->h,
-                         e->phys_width, e->phys_height, e->refresh,
-                         e->subpixel_order, e->transform);
-=======
    EINA_LIST_FOREACH(e_randr2->screens, l, screen)
      {
         if ((!strcmp(screen->info.name, e->name)) && 
@@ -88,7 +82,6 @@ _e_mod_drm_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
              break;
           }
      }
->>>>>>> upstream
 
    /* previous calculation of e_scale gave unsuitable value because
     * there were no sufficient information to calculate dpi.
@@ -741,7 +734,6 @@ _drm_read_pixels(E_Comp_Wl_Output *output, void *pixels)
 E_API void *
 e_modapi_init(E_Module *m)
 {
-<<<<<<< HEAD
    E_Comp *comp;
    int w = 0, h = 0, scr_w = 0, scr_h = 0;
    const char *env_w, *env_h;
@@ -825,27 +817,6 @@ e_modapi_init(E_Module *m)
      }
 
    if (!comp->ee)
-=======
-   int w = 0, h = 0;
-
-   printf("LOAD WL_DRM MODULE\n");
-
-   /* try to init ecore_drm */
-   /* if (!ecore_drm_init()) */
-   /*   { */
-   /*      fprintf(stderr, "Could not initialize ecore_drm"); */
-   /*      return NULL; */
-   /*   } */
-
-   if (e_comp_config_get()->engine == E_COMP_ENGINE_GL)
-     {
-        e_comp->ee = ecore_evas_new("gl_drm", 0, 0, 1, 1, NULL);
-        e_comp_gl_set(!!e_comp->ee);
-     }
-
-   /* fallback to framebuffer drm (non-accel) */
-   if (!e_comp->ee)
->>>>>>> upstream
      {
         if ((e_comp->ee = ecore_evas_new("drm", 0, 0, 1, 1, NULL)))
           {
@@ -864,17 +835,15 @@ e_modapi_init(E_Module *m)
 
    ecore_evas_data_set(e_comp->ee, "comp", e_comp);
 
-<<<<<<< HEAD
+   /* get the current screen geometry */
+   ecore_evas_screen_geometry_get(e_comp->ee, NULL, NULL, &w, &h);
+
    /* resize the canvas */
    if (!((scr_w == w) && (scr_h == h)))
      {
         DBG("Change ecore_evas canvas size %dx%d -> %dx%d", scr_w, scr_h, w, h);
         ecore_evas_resize(comp->ee, w, h);
      }
-=======
-   /* get the current screen geometry */
-   ecore_evas_screen_geometry_get(e_comp->ee, NULL, NULL, &w, &h);
->>>>>>> upstream
 
    ecore_evas_callback_resize_set(e_comp->ee, _e_mod_drm_cb_ee_resize);
 
@@ -889,8 +858,9 @@ e_modapi_init(E_Module *m)
                              &e_comp_wl->ptr.y);
    evas_event_feed_mouse_in(e_comp->evas, 0, NULL);
 
-<<<<<<< HEAD
-   evas_event_feed_mouse_in(comp->evas, 0, NULL);
+   e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
+   e_comp_wl_input_keyboard_enabled_set(EINA_TRUE);
+   e_comp_wl_input_touch_enabled_set(EINA_TRUE);
 
    /* comp->pointer =  */
    /*   e_pointer_window_new(ecore_evas_window_get(comp->ee), 1); */
@@ -899,16 +869,6 @@ e_modapi_init(E_Module *m)
         comp->pointer->color = EINA_TRUE;
         e_pointer_hide(comp->pointer);
      }
-=======
-   e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
-   e_comp_wl_input_keyboard_enabled_set(EINA_TRUE);
-   e_comp_wl_input_touch_enabled_set(EINA_TRUE);
-
-   /* comp->pointer =  */
-   /*   e_pointer_window_new(ecore_evas_window_get(comp->ee), 1); */
-   e_comp->pointer = e_pointer_canvas_new(e_comp->ee, EINA_TRUE);
-   e_comp->pointer->color = EINA_TRUE;
->>>>>>> upstream
 
    /* FIXME: We need a way to trap for user changing the keymap inside of E
     *        without the event coming from X11 */
@@ -920,8 +880,7 @@ e_modapi_init(E_Module *m)
 
    /* FIXME: This is just for testing at the moment....
     * happens to jive with what drm does */
-<<<<<<< HEAD
-   e_comp_wl_input_keymap_set(comp->wl_comp_data, "evdev", "pc105", "us");
+   e_comp_wl_input_keymap_set("evdev", "pc105", "us");
 
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,
                          _e_mod_drm_cb_activate, comp);
@@ -931,17 +890,6 @@ e_modapi_init(E_Module *m)
                          _e_mod_drm_cb_input_device_add, comp);
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_DEL,
                          _e_mod_drm_cb_input_device_del, comp);
-=======
-   e_comp_wl_input_keymap_set(NULL, NULL, NULL);
-
-   activate_handler =
-      ecore_event_handler_add(ECORE_DRM_EVENT_ACTIVATE,
-                              _e_mod_drm_cb_activate, NULL);
-
-   output_handler =
-      ecore_event_handler_add(ECORE_DRM_EVENT_OUTPUT,
-                              _e_mod_drm_cb_output, NULL);
->>>>>>> upstream
 
    return m;
 }
@@ -952,15 +900,7 @@ e_modapi_shutdown(E_Module *m EINA_UNUSED)
    /* shutdown ecore_drm */
    /* ecore_drm_shutdown(); */
 
-<<<<<<< HEAD
    E_FREE_LIST(event_handlers, ecore_event_handler_del);
-=======
-   if (output_handler) ecore_event_handler_del(output_handler);
-   output_handler = NULL;
-
-   if (activate_handler) ecore_event_handler_del(activate_handler);
-   activate_handler = NULL;
->>>>>>> upstream
 
    return 1;
 }

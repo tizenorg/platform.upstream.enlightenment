@@ -207,15 +207,11 @@ struct _E_Comp_Wl_Data
         wl_fixed_t x, y;
         wl_fixed_t grab_x, grab_y;
         uint32_t button;
-<<<<<<< HEAD
         Ecore_Timer *hide_tmr;
         E_Client *ec;
         Eina_Bool hidden :1;
-        unsigned int num_devices;
-=======
-        E_Client *ec;
         Eina_Bool enabled : 1;
->>>>>>> upstream
+        unsigned int num_devices;
      } ptr;
 
    struct
@@ -292,7 +288,6 @@ struct _E_Comp_Wl_Data
 
    struct
      {
-<<<<<<< HEAD
         Evas_GL *evasgl;
         Evas_GL_API *api;
         Evas_GL_Surface *sfc;
@@ -309,12 +304,13 @@ struct _E_Comp_Wl_Data
      {
         void *server;
      } tbm;
-=======
+
+   struct
+     {
         struct wl_global *global;
         struct wl_client *client;
         void (*read_pixels)(E_Comp_Wl_Output *output, void *pixels);
      } screenshooter;
->>>>>>> upstream
 
    Eina_List *outputs;
 
@@ -331,11 +327,8 @@ struct _E_Comp_Wl_Data
 
 struct _E_Comp_Wl_Client_Data
 {
-<<<<<<< HEAD
    struct wl_resource *wl_surface;
 
-=======
->>>>>>> upstream
    Ecore_Timer *on_focus_timer;
 
    struct
@@ -384,7 +377,6 @@ struct _E_Comp_Wl_Client_Data
    E_Comp_X_Client_Data *xwayland_data;
 #endif
 
-<<<<<<< HEAD
    struct
      {
         struct wl_resource *viewport;
@@ -414,8 +406,6 @@ struct _E_Comp_Wl_Client_Data
    int width_from_viewport;
    int height_from_viewport;
 
-=======
->>>>>>> upstream
    Eina_Bool keep_buffer : 1;
    Eina_Bool mapped : 1;
    Eina_Bool change_icon : 1;
@@ -425,7 +415,7 @@ struct _E_Comp_Wl_Client_Data
    Eina_Bool first_damage : 1;
    Eina_Bool set_win_type : 1;
    Eina_Bool frame_update : 1;
-<<<<<<< HEAD
+   Eina_Bool maximize_pre : 1;
    Eina_Bool focus_update : 1;
    Eina_Bool opaque_state : 1;
    Eina_Bool video_client : 1;
@@ -439,9 +429,6 @@ struct _E_Comp_Wl_Client_Data
       unsigned char win_type : 1;
       unsigned char layer : 1;
    } fetch;
-=======
-   Eina_Bool maximize_pre : 1;
->>>>>>> upstream
 };
 
 struct _E_Comp_Wl_Output
@@ -465,28 +452,21 @@ struct _E_Comp_Wl_Output
 E_API Eina_Bool e_comp_wl_init(void);
 EINTERN void e_comp_wl_shutdown(void);
 
-EAPI void e_comp_wl_deferred_job(void);
+E_API void e_comp_wl_deferred_job(void);
 
 EINTERN struct wl_resource *e_comp_wl_surface_create(struct wl_client *client, int version, uint32_t id);
 EINTERN void e_comp_wl_surface_destroy(struct wl_resource *resource);
 EINTERN void e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer);
 EINTERN Eina_Bool e_comp_wl_surface_commit(E_Client *ec);
 EINTERN Eina_Bool e_comp_wl_subsurface_commit(E_Client *ec);
-<<<<<<< HEAD
-EAPI void e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer);
-EAPI E_Comp_Wl_Buffer *e_comp_wl_buffer_get(struct wl_resource *resource, struct wl_resource *surface);
-=======
-EINTERN void e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer);
+E_API void e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer);
 E_API E_Comp_Wl_Buffer *e_comp_wl_buffer_get(struct wl_resource *resource);
->>>>>>> upstream
 
 E_API struct wl_signal e_comp_wl_surface_create_signal_get(void);
 E_API double e_comp_wl_idle_time_get(void);
 E_API Eina_Bool e_comp_wl_output_init(const char *id, const char *make, const char *model, int x, int y, int w, int h, int pw, int ph, unsigned int refresh, unsigned int subpixel, unsigned int transform);
 E_API void e_comp_wl_output_remove(const char *id);
 
-<<<<<<< HEAD
-=======
 EINTERN Eina_Bool e_comp_wl_key_down(Ecore_Event_Key *ev);
 EINTERN Eina_Bool e_comp_wl_key_up(Ecore_Event_Key *ev);
 E_API Eina_Bool e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t button_id, uint32_t state);
@@ -519,6 +499,5 @@ e_comp_wl_client_xwayland_setup(E_Client *ec, E_Comp_X_Client_Data *cd, E_Pixmap
      e_comp_wl->xwl_pending = eina_list_remove(e_comp_wl->xwl_pending, ec);
 }
 #  endif
->>>>>>> upstream
 # endif
 #endif

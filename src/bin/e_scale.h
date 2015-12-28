@@ -5,12 +5,8 @@
 
 EINTERN int  e_scale_init(void);
 EINTERN int  e_scale_shutdown(void);
-<<<<<<< HEAD
-EAPI void e_scale_update(void);
-EAPI void e_scale_manual_update(int dpi);
-=======
 E_API void e_scale_update(void);
->>>>>>> upstream
+E_API void e_scale_manual_update(int dpi);
 
 extern E_API double e_scale;
 

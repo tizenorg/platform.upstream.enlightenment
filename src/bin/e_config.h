@@ -434,11 +434,7 @@ struct _E_Config
       const char *selected_layout; // whatever teh current layout that the user has selected is
       const char *desklock_layout;
    } xkb;
-<<<<<<< HEAD
-   
-=======
 
->>>>>>> upstream
    struct
    {
       int repeat_delay;//delay in milliseconds since key down until repeating starts

@@ -86,15 +86,9 @@ static void      _e_main_desk_save(void);
 static void      _e_main_desk_restore(void);
 static void      _e_main_efreet_paths_init(void);
 static void      _e_main_modules_load(Eina_Bool safe_mode);
-<<<<<<< HEAD
-static Eina_Bool _e_main_cb_idle_before(void *data __UNUSED__);
-static Eina_Bool _e_main_cb_idle_after(void *data __UNUSED__);
-static Eina_Bool _e_main_cb_startup_fake_end(void *data __UNUSED__);
-=======
 static Eina_Bool _e_main_cb_idle_before(void *data EINA_UNUSED);
 static Eina_Bool _e_main_cb_idle_after(void *data EINA_UNUSED);
 static Eina_Bool _e_main_cb_startup_fake_end(void *data EINA_UNUSED);
->>>>>>> upstream
 
 /* local variables */
 static Eina_Bool really_know = EINA_FALSE;
@@ -1112,15 +1106,9 @@ main(int argc, char **argv)
    TS("E_Order Init Done");
    _e_main_shutdown_push(e_order_shutdown);
 
-<<<<<<< HEAD
-   TS("E_Manager Keys Grab");
-   e_managers_keys_grab();
-   TS("E_Manager Keys Grab Done");
-=======
    TS("E_Comp_Canvas Keys Grab");
    e_comp_canvas_keys_grab();
    TS("E_Comp_Canvas Keys Grab Done");
->>>>>>> upstream
 
    if (e_config->show_splash)
      e_init_status_set(_("Load Modules"));
@@ -1344,7 +1332,6 @@ main(int argc, char **argv)
      }
    TS("Screens Init Done");
    _e_main_shutdown_push(_e_main_screens_shutdown);
-   e_screensaver_force_update();
 
    if (e_config->show_splash)
      e_init_status_set(_("Setup System Controls"));
@@ -1425,10 +1412,6 @@ main(int argc, char **argv)
      }
    TS("E_Icon Init Done");
    _e_main_shutdown_push(e_icon_shutdown);
-
-   TS("E_Manager Keys Grab");
-   e_managers_keys_grab();
-   TS("E_Manager Keys Grab Done");
 
    if (e_config->show_splash)
      e_init_status_set(_("Load Modules"));
@@ -2062,12 +2045,8 @@ _e_main_desk_restore(void)
 {
    const Eina_List *l;
    E_Zone *zone;
-<<<<<<< HEAD
-   const char *env;
-=======
    E_Client *ec;
    char *env;
->>>>>>> upstream
    char name[1024];
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
@@ -2207,11 +2186,7 @@ _e_main_cb_idle_after(void *data EINA_UNUSED)
 }
 
 static Eina_Bool
-<<<<<<< HEAD
-_e_main_cb_startup_fake_end(void *data __UNUSED__)
-=======
 _e_main_cb_startup_fake_end(void *data EINA_UNUSED)
->>>>>>> upstream
 {
    e_init_hide();
    return ECORE_CALLBACK_CANCEL;

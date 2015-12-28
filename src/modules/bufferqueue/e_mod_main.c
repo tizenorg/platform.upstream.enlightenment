@@ -172,7 +172,6 @@ _e_bq_mgr_new(char *sock_name)
 {
    E_Comp *comp;
    E_Bq_Mgr *bq_mgr;
-   E_Comp_Data *cdata;
    int fd;
    static char *default_sock_name = "e_bq_mgr_daemon";
 
@@ -232,14 +231,7 @@ _e_bq_mgr_new(char *sock_name)
    else
      {
         /* try to get the compositor data */
-        cdata = comp->wl_comp_data;
-        if (!cdata)
-          {
-             free(bq_mgr);
-             return NULL;
-          }
-
-        bq_mgr->wdpy = cdata->wl.disp;
+        bq_mgr->wdpy = e_comp_wl->wl.disp;
         bq_mgr->loop = wl_display_get_event_loop(bq_mgr->wdpy);
         bq_mgr->self_dpy = 0;
      }
@@ -904,12 +896,12 @@ _e_bq_mgr_init(E_Bq_Mgr *bq_mgr)
  * the .desktop file) but more specifically the api version it was compiled
  * for so E can skip modules that are compiled for an incorrect API version
  * safely) */
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION, "Buffer queue manager"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    E_Bq_Mgr *bq_mgr = NULL;
@@ -929,7 +921,7 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
+E_API int
 e_modapi_shutdown(E_Module *m)
 {
    E_Bq_Mgr *bq_mgr = m->data;
@@ -939,7 +931,7 @@ e_modapi_shutdown(E_Module *m)
    return 1;
 }
 
-EAPI int
+E_API int
 e_modapi_save(E_Module *m)
 {
    /* Do Something */

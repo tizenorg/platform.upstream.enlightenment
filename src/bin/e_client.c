@@ -3,37 +3,6 @@
 static int _e_client_hooks_delete = 0;
 static int _e_client_hooks_walking = 0;
 
-<<<<<<< HEAD
-EAPI int E_EVENT_CLIENT_ADD = -1;
-EAPI int E_EVENT_CLIENT_REMOVE = -1;
-EAPI int E_EVENT_CLIENT_ZONE_SET = -1;
-EAPI int E_EVENT_CLIENT_DESK_SET = -1;
-EAPI int E_EVENT_CLIENT_RESIZE = -1;
-EAPI int E_EVENT_CLIENT_MOVE = -1;
-EAPI int E_EVENT_CLIENT_SHOW = -1;
-EAPI int E_EVENT_CLIENT_HIDE = -1;
-EAPI int E_EVENT_CLIENT_ICONIFY = -1;
-EAPI int E_EVENT_CLIENT_UNICONIFY = -1;
-EAPI int E_EVENT_CLIENT_STACK = -1;
-EAPI int E_EVENT_CLIENT_FOCUS_IN = -1;
-EAPI int E_EVENT_CLIENT_FOCUS_OUT = -1;
-EAPI int E_EVENT_CLIENT_PROPERTY = -1;
-EAPI int E_EVENT_CLIENT_FULLSCREEN = -1;
-EAPI int E_EVENT_CLIENT_UNFULLSCREEN = -1;
-#ifdef _F_ZONE_WINDOW_ROTATION_
-EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_BEGIN = -1;
-EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL = -1;
-EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_END = -1;
-#endif
-EAPI int E_EVENT_CLIENT_VISIBILITY_CHANGE = -1;
-#ifdef HAVE_WAYLAND_ONLY
-EAPI int E_EVENT_CLIENT_BUFFER_CHANGE = -1;
-#endif
-
-static Eina_Hash *clients_hash = NULL; // pixmap->client
-
-static int focus_track_frozen = 0;
-=======
 E_API int E_EVENT_CLIENT_ADD = -1;
 E_API int E_EVENT_CLIENT_REMOVE = -1;
 E_API int E_EVENT_CLIENT_ZONE_SET = -1;
@@ -50,11 +19,19 @@ E_API int E_EVENT_CLIENT_FOCUS_OUT = -1;
 E_API int E_EVENT_CLIENT_PROPERTY = -1;
 E_API int E_EVENT_CLIENT_FULLSCREEN = -1;
 E_API int E_EVENT_CLIENT_UNFULLSCREEN = -1;
+#ifdef _F_ZONE_WINDOW_ROTATION_
+E_API int E_EVENT_CLIENT_ROTATION_CHANGE_BEGIN = -1;
+E_API int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL = -1;
+E_API int E_EVENT_CLIENT_ROTATION_CHANGE_END = -1;
+#endif
+E_API int E_EVENT_CLIENT_VISIBILITY_CHANGE = -1;
+#ifdef HAVE_WAYLAND_ONLY
+E_API int E_EVENT_CLIENT_BUFFER_CHANGE = -1;
+#endif
 
 static Eina_Hash *clients_hash[2] = {NULL}; // pixmap->client
 
 static unsigned int focus_track_frozen = 0;
->>>>>>> upstream
 
 static int warp_to = 0;
 static int warp_to_x = 0;
@@ -902,15 +879,12 @@ _e_client_free(E_Client *ec)
    ec->e.state.profile.wait_desk = NULL;
    evas_object_del(ec->frame);
    E_OBJECT(ec)->references--;
-<<<<<<< HEAD
    ELOG("CLIENT FREE", ec->pixmap, ec);
-=======
 
 #ifdef HAVE_WAYLAND
    e_uuid_store_entry_del(ec->uuid);
 #endif
 
->>>>>>> upstream
    free(ec);
 }
 
@@ -2823,7 +2797,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
    EINA_RECTANGLE_SET(&r, zone->x, zone->y, zone->w, zone->h);
    eina_tiler_rect_add(t, &r);
 
-   o = evas_object_top_get(zone->comp->evas);
+   o = evas_object_top_get(e_comp->evas);
    for (; o; o = evas_object_below_get(o))
      {
         ec = evas_object_data_get(o, "E_Client");
@@ -2952,7 +2926,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
      }
 }
 
-EAPI void
+E_API void
 e_client_visibility_calculate(void)
 {
    E_Zone *zone;
@@ -3255,13 +3229,9 @@ e_client_new(E_Pixmap *cp, int first_map, int internal)
    e_comp->clients = eina_list_append(e_comp->clients, ec);
    eina_hash_add(clients_hash[e_pixmap_type_get(cp)], &ec->pixmap, ec);
 
-<<<<<<< HEAD
    ELOG("CLIENT ADD", ec->pixmap, ec);
-   _e_client_event_simple(ec, E_EVENT_CLIENT_ADD);
-=======
    if (!ec->ignored)
      _e_client_event_simple(ec, E_EVENT_CLIENT_ADD);
->>>>>>> upstream
    e_comp_object_client_add(ec);
    if (ec->frame)
      {
@@ -3402,23 +3372,15 @@ e_client_desk_set(E_Client *ec, E_Desk *desk)
    if (old_desk)
      {
         ev = E_NEW(E_Event_Client_Desk_Set, 1);
-<<<<<<< HEAD
         if (ev)
           {
              ev->ec = ec;
+             UNREFD(ec, 4);
              e_object_ref(E_OBJECT(ec));
              ev->desk = old_desk;
              e_object_ref(E_OBJECT(old_desk));
              ecore_event_add(E_EVENT_CLIENT_DESK_SET, ev, (Ecore_End_Cb)_e_client_event_desk_set_free, NULL);
           }
-=======
-        ev->ec = ec;
-        UNREFD(ec, 4);
-        e_object_ref(E_OBJECT(ec));
-        ev->desk = old_desk;
-        e_object_ref(E_OBJECT(old_desk));
-        ecore_event_add(E_EVENT_CLIENT_DESK_SET, ev, (Ecore_End_Cb)_e_client_event_desk_set_free, NULL);
->>>>>>> upstream
 
         if (old_desk->zone == ec->zone)
           {
@@ -3953,16 +3915,11 @@ e_client_below_get(const E_Client *ec)
      }
 
    /* go down the layers until we find one */
-<<<<<<< HEAD
-   if (e_comp_canvas_layer_map(ec->layer) == 9999) return NULL;
-   if (e_comp_canvas_layer_map(ec->layer) <= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP)) return NULL;
-   for (x = e_comp_canvas_layer_map(ec->layer) - 1; x >= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x--)
-=======
+   if (e_comp_canvas_layer_map(ec->layer) > e_comp_canvas_layer_map(E_LAYER_MAX)) return NULL;
    x = e_comp_canvas_layer_map(ec->layer);
    if (x > 0) x--;
 
    for (; x >= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x--)
->>>>>>> upstream
      {
         if (!e_comp->layers[x].clients) continue;
         EINA_INLIST_REVERSE_FOREACH(e_comp->layers[x].clients, ec2)
@@ -3977,13 +3934,7 @@ e_client_bottom_get(void)
 {
    unsigned int x;
 
-<<<<<<< HEAD
-   EINA_SAFETY_ON_NULL_RETURN_VAL(c, NULL);
-
    for (x = e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x <= e_comp_canvas_layer_map(E_LAYER_CLIENT_ALERT); x++)
-=======
-   for (x = e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x <= e_comp_canvas_layer_map(E_LAYER_CLIENT_PRIO); x++)
->>>>>>> upstream
      {
         E_Client *ec2;
 
@@ -4000,13 +3951,7 @@ e_client_top_get(void)
 {
    unsigned int x;
 
-<<<<<<< HEAD
-   EINA_SAFETY_ON_NULL_RETURN_VAL(c, NULL);
-
    for (x = e_comp_canvas_layer_map(E_LAYER_CLIENT_ALERT); x >= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x--)
-=======
-   for (x = e_comp_canvas_layer_map(E_LAYER_CLIENT_PRIO); x >= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x--)
->>>>>>> upstream
      {
         E_Client *ec2;
 
@@ -4619,17 +4564,12 @@ e_client_fullscreen(E_Client *ec, E_Fullscreen policy)
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
    if (!ec->zone) return;
 
-<<<<<<< HEAD
    if ((ec->shaded) || (ec->shading) || (ec->fullscreen)) return;
 
    _e_client_hook_call(E_CLIENT_HOOK_FULLSCREEN_PRE, ec);
 
    if (ec->skip_fullscreen) return;
-
-=======
-   if ((ec->shaded) || (ec->shading) || ec->fullscreen) return;
    if ((!e_config->allow_above_fullscreen) && (!ec->desk->visible)) return;
->>>>>>> upstream
    if (ec->new_client)
      {
         ec->need_fullscreen = 1;
@@ -4748,15 +4688,12 @@ e_client_iconify(E_Client *ec)
 {
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
-<<<<<<< HEAD
 
    ELOGF("TZVIS", "ICONIFY  |not_raise:%d       |by_client:%d",
          ec->pixmap, ec, (unsigned int)ec->exp_iconify.not_raise,
          ec->exp_iconify.by_client);
 
-=======
    if (!ec->zone) return;
->>>>>>> upstream
    if (ec->shading || ec->iconic) return;
    ec->iconic = 1;
    ec->want_focus = ec->take_focus = 0;
@@ -4795,15 +4732,12 @@ e_client_uniconify(E_Client *ec)
 
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
-<<<<<<< HEAD
 
    ELOGF("TZVIS", "UNICONIFY|not_raise:%d       |by_client:%d",
          ec->pixmap, ec, (unsigned int)ec->exp_iconify.not_raise,
          ec->exp_iconify.by_client);
 
-=======
    if (!ec->zone) return;
->>>>>>> upstream
    if (ec->shading || (!ec->iconic)) return;
    desk = e_desk_current_get(ec->desk->zone);
    e_client_desk_set(ec, desk);
@@ -5760,7 +5694,7 @@ e_client_layout_cb_set(E_Client_Layout_Cb cb)
 
 ////////////////////////////////////////////
 
-EAPI void e_client_transform_update(E_Client *ec)
+E_API void e_client_transform_update(E_Client *ec)
 {
    if (e_client_util_resizing_get(ec))
      _e_client_transform_resize(ec);
@@ -5768,7 +5702,7 @@ EAPI void e_client_transform_update(E_Client *ec)
 
 ////////////////////////////////////////////
 
-EAPI void e_client_transform_apply(E_Client *ec, double angle, double zoom, int cx, int cy)
+E_API void e_client_transform_apply(E_Client *ec, double angle, double zoom, int cx, int cy)
 {
    Evas_Map *map;
 #ifdef HAVE_WAYLAND_ONLY
@@ -5842,7 +5776,7 @@ EAPI void e_client_transform_apply(E_Client *ec, double angle, double zoom, int 
 
 ////////////////////////////////////////////
 
-EAPI void e_client_transform_clear(E_Client *ec)
+E_API void e_client_transform_clear(E_Client *ec)
 {
  #ifdef HAVE_WAYLAND_ONLY
    E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;

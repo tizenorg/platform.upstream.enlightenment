@@ -814,11 +814,8 @@ struct E_Client
    Eina_Bool ignored : 1; // client is comp-ignored
    Eina_Bool no_shape_cut : 1; // client shape should not be cut
    Eina_Bool maximize_override : 1; // client is doing crazy stuff and should "just do it" when moving/resizing
-<<<<<<< HEAD
    Eina_Bool transformed : 1;
-=======
    Eina_Bool keyboard_resizing : 1;
->>>>>>> upstream
 
 #ifdef HAVE_WAYLAND
    uuid_t uuid;
@@ -857,33 +854,6 @@ struct E_Client
   for (EC = e_client_top_get(); EC; EC = e_client_below_get(EC))
 
 
-<<<<<<< HEAD
-EAPI extern int E_EVENT_CLIENT_ADD;
-EAPI extern int E_EVENT_CLIENT_REMOVE;
-EAPI extern int E_EVENT_CLIENT_ZONE_SET;
-EAPI extern int E_EVENT_CLIENT_DESK_SET;
-EAPI extern int E_EVENT_CLIENT_RESIZE;
-EAPI extern int E_EVENT_CLIENT_MOVE;
-EAPI extern int E_EVENT_CLIENT_SHOW;
-EAPI extern int E_EVENT_CLIENT_HIDE;
-EAPI extern int E_EVENT_CLIENT_ICONIFY;
-EAPI extern int E_EVENT_CLIENT_UNICONIFY;
-EAPI extern int E_EVENT_CLIENT_STACK;
-EAPI extern int E_EVENT_CLIENT_FOCUS_IN;
-EAPI extern int E_EVENT_CLIENT_FOCUS_OUT;
-EAPI extern int E_EVENT_CLIENT_PROPERTY;
-EAPI extern int E_EVENT_CLIENT_FULLSCREEN;
-EAPI extern int E_EVENT_CLIENT_UNFULLSCREEN;
-#ifdef _F_ZONE_WINDOW_ROTATION_
-EAPI extern int E_EVENT_CLIENT_ROTATION_CHANGE_BEGIN;
-EAPI extern int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL;
-EAPI extern int E_EVENT_CLIENT_ROTATION_CHANGE_END;
-#endif
-EAPI extern int E_EVENT_CLIENT_VISIBILITY_CHANGE;
-#ifdef HAVE_WAYLAND_ONLY
-EAPI extern int E_EVENT_CLIENT_BUFFER_CHANGE;
-#endif
-=======
 E_API extern int E_EVENT_CLIENT_ADD;
 E_API extern int E_EVENT_CLIENT_REMOVE;
 E_API extern int E_EVENT_CLIENT_ZONE_SET;
@@ -900,99 +870,19 @@ E_API extern int E_EVENT_CLIENT_FOCUS_OUT;
 E_API extern int E_EVENT_CLIENT_PROPERTY;
 E_API extern int E_EVENT_CLIENT_FULLSCREEN;
 E_API extern int E_EVENT_CLIENT_UNFULLSCREEN;
-
->>>>>>> upstream
+#ifdef _F_ZONE_WINDOW_ROTATION_
+E_API extern int E_EVENT_CLIENT_ROTATION_CHANGE_BEGIN;
+E_API extern int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL;
+E_API extern int E_EVENT_CLIENT_ROTATION_CHANGE_END;
+#endif
+E_API extern int E_EVENT_CLIENT_VISIBILITY_CHANGE;
+#ifdef HAVE_WAYLAND_ONLY
+E_API extern int E_EVENT_CLIENT_BUFFER_CHANGE;
+#endif
 
 EINTERN void e_client_idler_before(void);
 EINTERN Eina_Bool e_client_init(void);
 EINTERN void e_client_shutdown(void);
-<<<<<<< HEAD
-EAPI E_Client *e_client_new(E_Comp *c, E_Pixmap *cp, int first_map, int internal);
-EAPI void e_client_desk_set(E_Client *ec, E_Desk *desk);
-EAPI Eina_Bool e_client_comp_grabbed_get(void);
-EAPI E_Client *e_client_action_get(void);
-EAPI E_Client *e_client_warping_get(void);
-EAPI Eina_List *e_clients_immortal_list(void);
-EAPI void e_client_mouse_in(E_Client *ec, int x, int y);
-EAPI void e_client_mouse_out(E_Client *ec, int x, int y);
-EAPI void e_client_mouse_wheel(E_Client *ec, Evas_Point *output, E_Binding_Event_Wheel *ev);
-EAPI void e_client_mouse_down(E_Client *ec, int button, Evas_Point *output, E_Binding_Event_Mouse_Button *ev);
-EAPI void e_client_mouse_up(E_Client *ec, int button, Evas_Point *output, E_Binding_Event_Mouse_Button* ev);
-EAPI void e_client_mouse_move(E_Client *ec, Evas_Point *output);
-EAPI void e_client_res_change_geometry_save(E_Client *bd);
-EAPI void e_client_res_change_geometry_restore(E_Client *ec);
-EAPI void e_client_zone_set(E_Client *ec, E_Zone *zone);
-EAPI void e_client_geometry_get(E_Client *ec, int *x, int *y, int *w, int *h);
-EAPI E_Client *e_client_above_get(const E_Client *ec);
-EAPI E_Client *e_client_below_get(const E_Client *ec);
-EAPI E_Client *e_client_bottom_get(const E_Comp *c);
-EAPI E_Client *e_client_top_get(const E_Comp *c);
-EAPI unsigned int e_clients_count(E_Comp *c);
-EAPI void e_client_move_intercept_cb_set(E_Client *ec, E_Client_Move_Intercept_Cb cb);
-EAPI E_Client_Hook *e_client_hook_add(E_Client_Hook_Point hookpoint, E_Client_Hook_Cb func, const void *data);
-EAPI void e_client_hook_del(E_Client_Hook *ch);
-EAPI void e_client_focus_latest_set(E_Client *ec);
-EAPI void e_client_raise_latest_set(E_Client *ec);
-EAPI Eina_Bool e_client_focus_track_enabled(void);
-EAPI void e_client_focus_track_freeze(void);
-EAPI void e_client_focus_track_thaw(void);
-EAPI void e_client_refocus(void);
-EAPI void e_client_focus_set_with_pointer(E_Client *ec);
-EAPI void e_client_activate(E_Client *ec, Eina_Bool just_do_it);
-EAPI E_Client *e_client_focused_get(void);
-EAPI Eina_List *e_client_focus_stack_get(void);
-EAPI Eina_List *e_client_raise_stack_get(void);
-EAPI Eina_List *e_client_lost_windows_get(E_Zone *zone);
-EAPI void e_client_shade(E_Client *ec, E_Direction dir);
-EAPI void e_client_unshade(E_Client *ec, E_Direction dir);
-EAPI void e_client_maximize(E_Client *ec, E_Maximize max);
-EAPI void e_client_unmaximize(E_Client *ec, E_Maximize max);
-EAPI void e_client_fullscreen(E_Client *ec, E_Fullscreen policy);
-EAPI void e_client_unfullscreen(E_Client *ec);
-EAPI void e_client_iconify(E_Client *ec);
-EAPI void e_client_uniconify(E_Client *ec);
-EAPI void e_client_urgent_set(E_Client *ec, Eina_Bool urgent);
-EAPI void e_client_stick(E_Client *ec);
-EAPI void e_client_unstick(E_Client *ec);
-EAPI void e_client_pinned_set(E_Client *ec, Eina_Bool set);
-EAPI void e_client_comp_hidden_set(E_Client *ec, Eina_Bool hidden);
-EAPI Eina_Bool e_client_border_set(E_Client *ec, const char *name);
-EAPI void e_client_act_move_keyboard(E_Client *ec);
-EAPI void e_client_act_resize_keyboard(E_Client *ec);
-EAPI void e_client_act_move_begin(E_Client *ec, E_Binding_Event_Mouse_Button *ev);
-EAPI void e_client_act_move_end(E_Client *ec, E_Binding_Event_Mouse_Button *ev EINA_UNUSED);
-EAPI void e_client_act_resize_begin(E_Client *ec, E_Binding_Event_Mouse_Button *ev);
-EAPI void e_client_act_resize_end(E_Client *ec, E_Binding_Event_Mouse_Button *ev EINA_UNUSED);
-EAPI void e_client_act_menu_begin(E_Client *ec, E_Binding_Event_Mouse_Button *ev, int key);
-EAPI void e_client_act_close_begin(E_Client *ec);
-EAPI void e_client_act_kill_begin(E_Client *ec);
-EAPI Evas_Object *e_client_icon_add(E_Client *ec, Evas *evas);
-EAPI void e_client_ping(E_Client *cw);
-EAPI void e_client_move_cancel(void);
-EAPI void e_client_resize_cancel(void);
-EAPI Eina_Bool e_client_resize_begin(E_Client *ec);
-EAPI void e_client_frame_recalc(E_Client *ec);
-EAPI void e_client_signal_move_begin(E_Client *ec, const char *sig, const char *src EINA_UNUSED);
-EAPI void e_client_signal_move_end(E_Client *ec, const char *sig EINA_UNUSED, const char *src EINA_UNUSED);
-EAPI void e_client_signal_resize_begin(E_Client *ec, const char *dir, const char *sig, const char *src EINA_UNUSED);
-EAPI void e_client_signal_resize_end(E_Client *ec, const char *dir EINA_UNUSED, const char *sig EINA_UNUSED, const char *src EINA_UNUSED);
-EAPI void e_client_resize_limit(E_Client *ec, int *w, int *h);
-EAPI E_Client *e_client_under_pointer_get(E_Desk *desk, E_Client *exclude);
-EAPI int e_client_pointer_warp_to_center_now(E_Client *ec);
-EAPI int e_client_pointer_warp_to_center(E_Client *ec);
-EAPI void e_client_redirected_set(E_Client *ec, Eina_Bool set);
-EAPI Eina_Bool e_client_is_stacking(const E_Client *ec);
-EAPI Eina_Bool e_client_desk_window_profile_available_check(E_Client *ec, const char *profile);
-EAPI void      e_client_desk_window_profile_wait_desk_set(E_Client *ec, E_Desk *desk);
-EAPI void      e_client_layout_cb_set(E_Client_Layout_Cb cb);
-EAPI void      e_client_visibility_calculate(void);
-
-EAPI void e_client_transform_update(E_Client *ec);
-EAPI void e_client_transform_apply(E_Client *ec, double degree, double zoom, int cx, int cy);
-EAPI void e_client_transform_clear(E_Client *ec);
-
-YOLO EAPI void e_client_focus_stack_set(Eina_List *l);
-=======
 E_API E_Client *e_client_new(E_Pixmap *cp, int first_map, int internal);
 E_API void e_client_unignore(E_Client *ec);
 E_API void e_client_desk_set(E_Client *ec, E_Desk *desk);
@@ -1073,9 +963,13 @@ E_API Eina_Bool e_client_has_xwindow(const E_Client *ec);
 E_API Eina_Bool e_client_desk_window_profile_available_check(E_Client *ec, const char *profile);
 E_API void      e_client_desk_window_profile_wait_desk_set(E_Client *ec, E_Desk *desk);
 E_API void      e_client_layout_cb_set(E_Client_Layout_Cb cb);
+E_API void      e_client_visibility_calculate(void);
+
+E_API void e_client_transform_update(E_Client *ec);
+E_API void e_client_transform_apply(E_Client *ec, double degree, double zoom, int cx, int cy);
+E_API void e_client_transform_clear(E_Client *ec);
 
 YOLO E_API void e_client_focus_stack_set(Eina_List *l);
->>>>>>> upstream
 
 #include "e_client.x"
 #endif

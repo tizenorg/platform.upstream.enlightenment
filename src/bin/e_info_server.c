@@ -5,7 +5,7 @@
 #define PATH "/org/enlightenment/wm"
 #define IFACE "org.enlightenment.wm.info"
 
-EAPI int E_EVENT_INFO_ROTATION_MESSAGE = -1;
+E_API int E_EVENT_INFO_ROTATION_MESSAGE = -1;
 
 typedef struct _E_Info_Server
 {
@@ -604,7 +604,7 @@ _e_info_server_cb_rotation_message(const Eldbus_Service_Interface *iface EINA_UN
      }
 
    if (zone_num == -1)
-     ev->zone = e_zone_current_get(e_comp);
+     ev->zone = e_zone_current_get();
    else
      {
         EINA_LIST_FOREACH(e_comp->zones, l, z)

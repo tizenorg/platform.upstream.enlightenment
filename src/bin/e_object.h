@@ -123,11 +123,11 @@ E_API void            e_object_delfn_clear(E_Object *obj);
 E_API void e_object_ref_debug_set(E_Object *obj, Eina_Bool set);
 
 #ifdef OBJECT_HASH_CHECK
-extern EAPI Eina_Bool e_obj_hash_check;
-extern EAPI Eina_Hash *e_obj_hash;
+extern E_API Eina_Bool e_obj_hash_check;
+extern E_API Eina_Hash *e_obj_hash;
 
-EAPI void      e_object_hash_init       (void);
-EAPI void      e_object_hash_shutdown   (void);
+E_API void      e_object_hash_init       (void);
+E_API void      e_object_hash_shutdown   (void);
 
 static inline E_Object *
 e_object_hash_find(E_Object *obj)

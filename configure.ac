@@ -579,35 +579,6 @@ e_requires="\
   $udisks_mount \
   $device_libs"
 
-<<<<<<< HEAD
-PKG_CHECK_MODULES(E, [$e_requires])
-requirements_e="\
-evas >= ${efl_version} \
-ecore >= ${efl_version} \
-ecore-evas >= ${efl_version} \
-ecore-con >= ${efl_version} \
-ecore-ipc >= ${efl_version} \
-ecore-file >= ${efl_version} \
-eet >= ${efl_version} \
-edje >= ${efl_version} \
-efreet >= ${efl_version} \
-efreet-mime >= ${efl_version} \
-efreet-trash >= ${efl_version} \
-eina >= ${efl_version} \
-eldbus >= ${efl_version} \
-eio >= ${efl_version} \
-eo >= ${efl_version} \
-elementary >= ${efl_version} \
-emotion >= ${efl_version} \
-$udisks_mount \
-$eeze_mount \
-$device_libs"
-if test "x${e_cv_want_wayland_only}" != "xyes"; then
-  requirements_e="$requirements_e ecore-x >= $efl_version"
-fi
-=======
->>>>>>> upstream
-
 PKG_CHECK_MODULES(E_OPEN, [
   eina >= ${efl_version}
   ecore >= ${efl_version}
@@ -615,24 +586,12 @@ PKG_CHECK_MODULES(E_OPEN, [
   efreet-mime >= ${efl_version}
 ])
 
-<<<<<<< HEAD
 PKG_CHECK_MODULES(E_INFO, [
   eina >= ${efl_version}
   ecore >= ${efl_version}
   eldbus >= ${efl_version}
 ])
 
-e_libs="$E_LIBS $LIBINTL $fnmatch_libs $execinfo_libs"
-e_cflags="-DUSE_E_CONFIG_H $E_CFLAGS -D_F_ZONE_WINDOW_ROTATION_ -D_F_E_VIRTUAL_KEYBOARD_TYPE_ -D_F_E_CLIENT_NEW_CLIENT_POST_HOOK_ -D_F_E_COMP_OBJECT_INTERCEPT_HOOK_ -D_F_TRANSIENT_FOR_PATCH -D_F_DISABLE_BACKLIGHT_MOD_SUPPORT"
-e_configflags="-DUSE_E_CONFIG_H -D_F_ZONE_WINDOW_ROTATION_ -D_F_E_VIRTUAL_KEYBOARD_TYPE_ -D_F_E_CLIENT_NEW_CLIENT_POST_HOOK_ -D_F_E_COMP_OBJECT_INTERCEPT_HOOK_ -D_F_TRANSIENT_FOR_PATCH -D_F_DISABLE_BACKLIGHT_MOD_SUPPORT"
-
-AC_SUBST([e_libs])
-AC_SUBST([e_cflags])
-AC_SUBST([e_configflags])
-AC_SUBST([requirements_e])
-
-=======
->>>>>>> upstream
 PKG_CHECK_EXISTS([xkeyboard-config],[
   xkb_base=`$PKG_CONFIG --variable=xkb_base xkeyboard-config 2>/dev/null`
   AC_DEFINE_UNQUOTED([XKB_BASE],["$xkb_base"],[Define to the base directory for X keyboard configuration data])
@@ -810,13 +769,8 @@ AC_ARG_ENABLE([wayland-egl],
 AC_MSG_CHECKING([whether wayland EGL support is enabled])
 AC_MSG_RESULT([${e_cv_want_wayland_egl}])
 
-<<<<<<< HEAD
 if test "x${e_cv_want_wayland_only}" != "xno" || test "x${e_cv_want_wayland_clients}" != "xno";then
-  PKG_CHECK_MODULES([WAYLAND], [ecore-wayland wayland-server >= 1.7.0 xkbcommon uuid xdg-shell-server scaler-server transform-server screenshooter-server screenshooter-client tizen-extension-server],
-=======
-if test "x${e_cv_want_wayland_only}" != "xno" ;then
-  PKG_CHECK_MODULES([WAYLAND], [ecore-wayland >= 1.16 wayland-server >= 1.8.0 wayland-client >= 1.8.0 xkbcommon uuid],
->>>>>>> upstream
+  PKG_CHECK_MODULES([WAYLAND], [ecore-wayland >= 1.16 wayland-server >= 1.8.0 wayland-client >= 1.8.0 xkbcommon uuid xdg-shell-server scaler-server transform-server screenshooter-server screenshooter-client tizen-extension-server],
     [
       have_wayland=yes
       AC_DEFINE_UNQUOTED([HAVE_WAYLAND],[1],[enable wayland support])
@@ -836,7 +790,6 @@ if test "x${have_wayland}" = "xyes"; then
   else
     have_wayland_egl=no
   fi
-<<<<<<< HEAD
   if test "x${e_cv_want_wayland_only}" != "xno"; then
     have_wayland_only=yes
     AC_DEFINE_UNQUOTED([HAVE_WAYLAND_ONLY],[1],[enable wayland-only version of enlightenment])
@@ -861,8 +814,6 @@ if test "x${have_wayland}" = "xyes"; then
   else
     have_wayland_tbm=no
   fi
-=======
->>>>>>> upstream
 fi
 
 AM_CONDITIONAL([HAVE_WAYLAND], [test "x${have_wayland}" = "xyes"])
@@ -924,20 +875,7 @@ define([CHECK_MODULE_WL_FB],
 ])
 AM_CONDITIONAL([HAVE_WL_FB], [test "x${WL_FB}" = "xtrue"])
 
-<<<<<<< HEAD
-define([CHECK_MODULE_WL_SCREENSHOT],
-[
-  if test "x${have_wayland_clients}" = "xyes" || test "x${e_cv_want_wayland_only}" = "xyes"; then
-    AC_E_CHECK_PKG(WL_SCREENSHOT, [ ecore >= $efl_version eina >= $efl_version ], [WL_SCREENSHOT=true], [WL_SCREENSHOT=false])
-  else
-    WL_SCREENSHOT=false
-  fi
-])
-AM_CONDITIONAL([HAVE_WL_SCREENSHOT], [test "x${WL_SCREENSHOT}" = "xtrue"])
-
-=======
 WL_DRM=false
->>>>>>> upstream
 define([CHECK_MODULE_WL_DRM],
 [
   if test "x${have_wayland}" = "xyes" ; then
@@ -948,7 +886,6 @@ define([CHECK_MODULE_WL_DRM],
 ])
 AM_CONDITIONAL([HAVE_WL_DRM], [test "x${WL_DRM}" = "xtrue"])
 
-<<<<<<< HEAD
 define([CHECK_MODULE_BUFFERQUEUE],
 [
   if test "x${have_wayland_clients}" = "xyes" || test "x${e_cv_want_wayland_only}" = "xyes"; then
@@ -958,7 +895,7 @@ define([CHECK_MODULE_BUFFERQUEUE],
   fi
 ])
 AM_CONDITIONAL([HAVE_BUFFERQUEUE], [test "x${BUFFERQUEUE}" = "xtrue"])
-=======
+
 HAVE_XWAYLAND_DEPS=false
 define([CHECK_MODULE_XWAYLAND],
 [
@@ -991,7 +928,6 @@ define([CHECK_MODULE_WL_WEEKEYBOARD],
    fi
 ])
 AM_CONDITIONAL([HAVE_WL_WEEKEYBOARD], [test "x${WL_WEEKEYBOARD}" = "xtrue"])
->>>>>>> upstream
 
 AC_E_OPTIONAL_MODULE([ibar], true)
 AC_E_OPTIONAL_MODULE([clock], true)
@@ -1046,11 +982,8 @@ AC_E_OPTIONAL_MODULE([wl_x11], $have_wayland, [CHECK_MODULE_WL_X11])
 AC_E_OPTIONAL_MODULE([wl_wl], $have_wayland, [CHECK_MODULE_WL_WL])
 #AC_E_OPTIONAL_MODULE([wl_fb], $have_wayland, [CHECK_MODULE_WL_FB])
 AC_E_OPTIONAL_MODULE([wl_drm], $have_wayland, [CHECK_MODULE_WL_DRM])
-<<<<<<< HEAD
-AC_E_OPTIONAL_MODULE([wl_screenshot], $have_wayland, [CHECK_MODULE_WL_SCREENSHOT])
 AC_E_OPTIONAL_MODULE([policy_mobile], true)
 AC_E_OPTIONAL_MODULE([bufferqueue], $have_wayland, [CHECK_MODULE_BUFFERQUEUE])
-=======
 AC_E_OPTIONAL_MODULE([wl_text_input], $have_wayland, [CHECK_MODULE_WL_TEXT_INPUT])
 AC_E_OPTIONAL_MODULE([wl_weekeyboard], $have_wayland, [CHECK_MODULE_WL_WEEKEYBOARD])
 AC_E_OPTIONAL_MODULE([policy_mobile], true)
@@ -1109,14 +1042,13 @@ if test "x${have_wayland_only}" != "xyes"; then
 fi
 
 e_libs="$E_LIBS $LIBINTL $fnmatch_libs $execinfo_libs"
-e_cflags="-DUSE_E_CONFIG_H $E_CFLAGS"
-e_configflags="-DUSE_E_CONFIG_H"
+e_cflags="-DUSE_E_CONFIG_H $E_CFLAGS -D_F_ZONE_WINDOW_ROTATION_ -D_F_E_VIRTUAL_KEYBOARD_TYPE_ -D_F_E_CLIENT_NEW_CLIENT_POST_HOOK_ -D_F_E_COMP_OBJECT_INTERCEPT_HOOK_ -D_F_TRANSIENT_FOR_PATCH -D_F_DISABLE_BACKLIGHT_MOD_SUPPORT"
+e_configflags="-DUSE_E_CONFIG_H -D_F_ZONE_WINDOW_ROTATION_ -D_F_E_VIRTUAL_KEYBOARD_TYPE_ -D_F_E_CLIENT_NEW_CLIENT_POST_HOOK_ -D_F_E_COMP_OBJECT_INTERCEPT_HOOK_ -D_F_TRANSIENT_FOR_PATCH -D_F_DISABLE_BACKLIGHT_MOD_SUPPORT"
 
 AC_SUBST([e_libs])
 AC_SUBST([e_cflags])
 AC_SUBST([e_configflags])
 AC_SUBST([requirements_e])
->>>>>>> upstream
 
 HALT="/sbin/shutdown -h now"
 REBOOT="/sbin/shutdown -r now"

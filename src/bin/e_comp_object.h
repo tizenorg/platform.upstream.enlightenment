@@ -110,13 +110,13 @@ E_API E_Comp_Object_Mover *e_comp_object_effect_mover_add(int pri, const char *s
 E_API void e_comp_object_effect_mover_del(E_Comp_Object_Mover *prov);
 
 #ifdef _F_E_COMP_OBJECT_INTERCEPT_HOOK_
-EAPI E_Comp_Object_Intercept_Hook *e_comp_object_intercept_hook_add(E_Comp_Object_Intercept_Hook_Point hookpoint, E_Comp_Object_Intercept_Hook_Cb func, const void *data);
-EAPI void e_comp_object_intercept_hook_del(E_Comp_Object_Intercept_Hook *ch);
+E_API E_Comp_Object_Intercept_Hook *e_comp_object_intercept_hook_add(E_Comp_Object_Intercept_Hook_Point hookpoint, E_Comp_Object_Intercept_Hook_Cb func, const void *data);
+E_API void e_comp_object_intercept_hook_del(E_Comp_Object_Intercept_Hook *ch);
 #endif
-EAPI unsigned int e_comp_object_is_animating(Evas_Object *obj);
-EAPI void e_comp_object_alpha_set(Evas_Object *obj, Eina_Bool alpha);
-EAPI void e_comp_object_mask_set(Evas_Object *obj, Eina_Bool set);
-EAPI void e_comp_object_size_update(Evas_Object *obj, int w, int h);
+E_API unsigned int e_comp_object_is_animating(Evas_Object *obj);
+E_API void e_comp_object_alpha_set(Evas_Object *obj, Eina_Bool alpha);
+E_API void e_comp_object_mask_set(Evas_Object *obj, Eina_Bool set);
+E_API void e_comp_object_size_update(Evas_Object *obj, int w, int h);
 
 #endif
 #endif

@@ -3,26 +3,16 @@
 /* local subsystem functions */
 
 static void           _e_drag_coords_update(const E_Drop_Handler *h, int *dx, int *dy);
-<<<<<<< HEAD
-static Ecore_X_Window _e_drag_win_get(const E_Drop_Handler *h, int xdnd);
-static int            _e_drag_win_matches(E_Drop_Handler *h, Ecore_X_Window win, int xdnd);
+static Ecore_Window _e_drag_win_get(const E_Drop_Handler *h, int xdnd);
+static int            _e_drag_win_matches(E_Drop_Handler *h, Ecore_Window win, int xdnd);
 static void           _e_drag_win_hide(E_Drop_Handler *h);
 #ifndef HAVE_WAYLAND_ONLY
 static void           _e_drag_win_show(E_Drop_Handler *h);
 static void           _e_drag_move(E_Drag *drag, int x, int y);
-static int            _e_drag_update(Ecore_X_Window root, int x, int y, Ecore_X_Atom action);
-static void           _e_drag_xdnd_end(Ecore_X_Window root, int x, int y);
+static int            _e_drag_update(Ecore_Window root, int x, int y, Ecore_X_Atom action);
+static void           _e_drag_xdnd_end(Ecore_Window root, int x, int y);
 #endif
 static void           _e_drag_end(int x, int y);
-=======
-static Ecore_Window _e_drag_win_get(const E_Drop_Handler *h, int xdnd);
-static int            _e_drag_win_matches(E_Drop_Handler *h, Ecore_Window win, int xdnd);
-static void           _e_drag_win_show(E_Drop_Handler *h);
-static void           _e_drag_win_hide(E_Drop_Handler *h);
-static int            _e_drag_update(Ecore_Window root, int x, int y, Ecore_X_Atom action);
-static void           _e_drag_end(int x, int y);
-static void           _e_drag_xdnd_end(Ecore_Window root, int x, int y);
->>>>>>> upstream
 static void           _e_drag_free(E_Drag *drag);
 
 static Eina_Bool      _e_dnd_cb_key_down(void *data, int type, void *event);

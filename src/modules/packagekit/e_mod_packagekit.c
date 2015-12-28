@@ -291,15 +291,10 @@ _signal_package_cb(void *data, const Eldbus_Message *msg)
         _store_error(ctxt, "could not get package arguments");
         return;
      }
-<<<<<<< HEAD
-   if (PKITV07)
-     { DBG("PKGKIT: Package: (%s) %s [ %s ]", info_str, pkg_id, summary); }
-=======
    //if (PKITV07)
      //{ DBG("PKGKIT: Package: (%s) %s [ %s ]", info_str, pkg_id, summary); }
    //else
      //{ DBG("PKGKIT: Package: (%d) %s [ %s ]", info, pkg_id, summary); }
->>>>>>> upstream
 
    splitted = eina_str_split_full(pkg_id, ";", 2, &num_elements);
    if (num_elements == 2)

@@ -9,12 +9,8 @@
 
 /* local subsystem functions */
 static void      _e_module_free(E_Module *m);
-<<<<<<< HEAD
 static void      _e_module_dialog_disable_defer(const char *title, const char *body, E_Module *m);
-static void      _e_module_dialog_disable_show(const char *title, const char *body, E_Module *m);
-=======
 static void      _e_module_dialog_disable_create(const char *title, const char *body, E_Module *m);
->>>>>>> upstream
 static void      _e_module_cb_dialog_disable(void *data, E_Dialog *dia);
 static void      _e_module_event_update_free(void *data, void *event);
 static Eina_Bool _e_module_cb_idler(void *data);
@@ -751,8 +747,30 @@ e_module_desktop_list(void)
    return l;
 }
 
-<<<<<<< HEAD
-EAPI void
+static void
+_e_module_dialog_disable_show(const char *title, const char *body, E_Module *m)
+{
+   E_Dialog *dia;
+   char buf[4096];
+
+   printf("MODULE ERR:\n%s\n", body);
+
+   dia = e_dialog_new(NULL, "E", "_module_unload_dialog");
+
+   snprintf(buf, sizeof(buf), "%s<br>%s", body,
+            _("What action should be taken with this module?<br>"));
+
+   e_dialog_title_set(dia, title);
+   e_dialog_icon_set(dia, "enlightenment", 64);
+   e_dialog_text_set(dia, buf);
+   e_dialog_button_add(dia, _("Unload"), NULL, _e_module_cb_dialog_disable, m);
+   e_dialog_button_add(dia, _("Keep"), NULL, NULL, NULL);
+   elm_win_center(dia->win, 1, 1);
+   e_win_no_remember_set(dia->win, 1);
+   e_dialog_show(dia);
+}
+
+E_API void
 e_module_deferred_job(void)
 {
    Defer_Dialog *dd;
@@ -767,10 +785,7 @@ e_module_deferred_job(void)
      }
 }
 
-EAPI void
-=======
 E_API void
->>>>>>> upstream
 e_module_desktop_free(E_Module_Desktop *md)
 {
    if (!md) return;
@@ -862,37 +877,6 @@ _e_module_dialog_disable_defer(const char *title, const char *body, E_Module *m)
    deferred_dialogs = eina_list_append(deferred_dialogs, dd);
 }
 
-static void
-_e_module_dialog_disable_show(const char *title, const char *body, E_Module *m)
-{
-   E_Dialog *dia;
-   char buf[4096];
-
-#ifdef ENABLE_QUICK_INIT
-   if (!_e_modules_init_end)
-     {
-        _e_module_dialog_disable_defer(title, body, m);
-        return;
-     }
-#endif
-
-   printf("MODULE ERR:\n%s\n", body);
-
-   dia = e_dialog_new(NULL, "E", "_module_unload_dialog");
-
-   snprintf(buf, sizeof(buf), "%s<br>%s", body,
-            _("What action should be taken with this module?<br>"));
-
-   e_dialog_title_set(dia, title);
-   e_dialog_icon_set(dia, "enlightenment", 64);
-   e_dialog_text_set(dia, buf);
-   e_dialog_button_add(dia, _("Unload"), NULL, _e_module_cb_dialog_disable, m);
-   e_dialog_button_add(dia, _("Keep"), NULL, NULL, NULL);
-   elm_win_center(dia->win, 1, 1);
-   e_win_no_remember_set(dia->win, 1);
-   e_dialog_show(dia);
-}
-
 static Eina_Bool
 _e_module_dialog_disable_timer(Disable_Dialog *dd)
 {
@@ -907,6 +891,14 @@ static void
 _e_module_dialog_disable_create(const char *title, const char *body, E_Module *m)
 {
    Disable_Dialog *dd;
+
+#ifdef ENABLE_QUICK_INIT
+   if (!_e_modules_init_end)
+     {
+        _e_module_dialog_disable_defer(title, body, m);
+        return;
+     }
+#endif
 
    dd = E_NEW(Disable_Dialog, 1);
    dd->title = strdup(title);

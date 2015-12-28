@@ -668,7 +668,7 @@ _fill_sink(void)
 
 //////////////////////////////////////////////////////////////////////////////
 
-EAPI_MAIN int
+E_API_MAIN int
 elm_main(int argc, char **argv)
 {
    Evas_Object *tb, *tbar, *sc, *rect, *bx;

@@ -37,29 +37,18 @@ E_API void e_hints_window_desktop_set(E_Client *ec);
 E_API void e_hints_window_e_state_set(E_Client *ec);
 E_API void e_hints_window_e_state_get(E_Client *ec);
 
-<<<<<<< HEAD
-EAPI void e_hints_window_e_opaque_get(E_Client *ec);
+E_API void e_hints_window_e_opaque_get(E_Client *ec);
 
-EAPI void e_hints_window_qtopia_soft_menu_get(E_Client *ec);
-EAPI void e_hints_window_qtopia_soft_menus_get(E_Client *ec);
-=======
 E_API void e_hints_window_qtopia_soft_menu_get(E_Client *ec);
 E_API void e_hints_window_qtopia_soft_menus_get(E_Client *ec);
->>>>>>> upstream
 
 E_API void e_hints_window_virtual_keyboard_state_get(E_Client *ec);
 E_API void e_hints_window_virtual_keyboard_get(E_Client *ec);
 
-<<<<<<< HEAD
-EAPI void e_hints_scale_update(void);
-EAPI const Eina_List * e_hints_aux_hint_supported_add(const char *hint);
-EAPI const Eina_List * e_hints_aux_hint_supported_del(const char *hint);
-EAPI const Eina_List * e_hints_aux_hint_supported_get(void);
-=======
-
 E_API void e_hints_scale_update(void);
-
->>>>>>> upstream
+E_API const Eina_List * e_hints_aux_hint_supported_add(const char *hint);
+E_API const Eina_List * e_hints_aux_hint_supported_del(const char *hint);
+E_API const Eina_List * e_hints_aux_hint_supported_get(void);
 
 #ifdef E_COMP_X_H
 E_API void e_hints_window_state_update(E_Client *ec, int state, int action);

@@ -38,16 +38,10 @@ static double ecore_frametime = 0;
 
 static int _e_comp_log_dom = -1;
 
-<<<<<<< HEAD
-EAPI int E_EVENT_COMPOSITOR_RESIZE = -1;
-EAPI int E_EVENT_COMPOSITOR_DISABLE = -1;
-EAPI int E_EVENT_COMPOSITOR_ENABLE = -1;
-EAPI int E_EVENT_COMPOSITOR_FPS_UPDATE = -1;
-=======
 E_API int E_EVENT_COMPOSITOR_RESIZE = -1;
 E_API int E_EVENT_COMPOSITOR_DISABLE = -1;
 E_API int E_EVENT_COMPOSITOR_ENABLE = -1;
->>>>>>> upstream
+E_API int E_EVENT_COMPOSITOR_FPS_UPDATE = -1;
 
 //////////////////////////////////////////////////////////////////////////
 #undef DBG
@@ -404,12 +398,7 @@ _e_comp_cb_update(void)
      {
         /* clear update flag */
         e_comp_object_render_update_del(ec->frame);
-<<<<<<< HEAD
-        if (_e_comp_client_update(ec))
-          e_comp_post_update_add(ec);
-=======
         _e_comp_client_update(ec);
->>>>>>> upstream
      }
    _e_comp_fps_update();
    if (conf->fps_show)
@@ -473,13 +462,13 @@ _e_comp_cb_update(void)
      }
    else
      {
-        if (c->calc_fps)
+        if (e_comp->calc_fps)
           {
              double fps = 0.0, dt;
              double t = ecore_time_get();
              int i, avg_range = 60;
 
-             dt = t - c->frametimes[avg_range - 1];
+             dt = t - e_comp->frametimes[avg_range - 1];
 
              if (dt > 0.0) fps = (double)avg_range / dt;
              else fps = 0.0;
@@ -488,15 +477,15 @@ _e_comp_cb_update(void)
              if (fps < 0.0) fps = 0.0;
 
              for (i = avg_range; i >= 1; i--)
-               c->frametimes[i] = c->frametimes[i - 1];
+               e_comp->frametimes[i] = e_comp->frametimes[i - 1];
 
-             c->frametimes[0] = t;
-             c->frameskip++;
-             if (c->frameskip >= avg_range)
+             e_comp->frametimes[0] = t;
+             e_comp->frameskip++;
+             if (e_comp->frameskip >= avg_range)
                {
-                  c->frameskip = 0;
-				  c->fps = fps;
-				  ecore_event_add(E_EVENT_COMPOSITOR_FPS_UPDATE, NULL, NULL, NULL);
+                  e_comp->frameskip = 0;
+                  e_comp->fps = fps;
+                  ecore_event_add(E_EVENT_COMPOSITOR_FPS_UPDATE, NULL, NULL, NULL);
                }
           }
      }
@@ -769,19 +758,14 @@ _e_comp_shapes_update_job(void *d EINA_UNUSED)
    INF("---------------------");
 #endif
 
-<<<<<<< HEAD
-   E_FREE_LIST(c->debug_rects, evas_object_del);
-   tb = eina_tiler_new(c->man->w, c->man->h);
-   EINA_SAFETY_ON_NULL_GOTO(tb, tb_fail);
-
-=======
    if (e_comp->comp_type == E_PIXMAP_TYPE_X)
      win = e_comp->win;
    else
      win = e_comp->cm_selection;
    E_FREE_LIST(e_comp->debug_rects, evas_object_del);
    tb = eina_tiler_new(e_comp->w, e_comp->h);
->>>>>>> upstream
+   EINA_SAFETY_ON_NULL_GOTO(tb, tb_fail);
+
    eina_tiler_tile_size_set(tb, 1, 1);
    /* background */
    eina_tiler_rect_add(tb, &(Eina_Rectangle){0, 0, e_comp->w, e_comp->h});
@@ -1179,33 +1163,25 @@ e_comp_init(void)
         e_util_env_set("HYBRIS_EGLPLATFORM", "wayland");
         for (test = eng; *test; test++)
           {
-<<<<<<< HEAD
-             if (!e_module_enable(e_module_new(*test)))
-               return EINA_FALSE;
-=======
              if (e_module_enable(e_module_new(*test)))
                {
                   e_comp->comp_type = E_PIXMAP_TYPE_WL;
                   goto out;
                }
->>>>>>> upstream
           }
-        goto out;
+        return EINA_FALSE;
      }
 //#ifdef HAVE_WAYLAND_CLIENTS
    //e_comp_wl_init();
 //#endif
    if (e_comp->comp_type == E_PIXMAP_TYPE_NONE) return EINA_FALSE;
 out:
-<<<<<<< HEAD
-#ifndef ENABLE_QUICK_INIT
-=======
    if (e_comp->comp_type == E_PIXMAP_TYPE_WL)
      {
         e_comp_canvas_fake_layers_init();
         e_screensaver_update();
      }
->>>>>>> upstream
+#ifndef ENABLE_QUICK_INIT
    e_comp->elm = elm_win_fake_add(e_comp->ee);
    elm_win_fullscreen_set(e_comp->elm, 1);
    evas_object_show(e_comp->elm);
@@ -1432,32 +1408,21 @@ e_comp_shutdown(void)
    E_Pixmap_Type type = e_comp->comp_type;
 #endif
    E_FREE_FUNC(action_timeout, ecore_timer_del);
-<<<<<<< HEAD
-   while (e_comp->clients)
-     e_object_del(eina_list_data_get(e_comp->clients));
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-   e_comp_wl_shutdown();
-#endif
-=======
    EINA_LIST_FOREACH_SAFE(e_comp->clients, l, ll, ec)
      {
         DELD(ec, 99999);
         e_object_del(E_OBJECT(ec));
      }
->>>>>>> upstream
+
+#ifdef HAVE_WAYLAND
+   e_comp_wl_shutdown();
+#endif
+
    e_object_del(E_OBJECT(e_comp));
    E_FREE_LIST(handlers, ecore_event_handler_del);
    E_FREE_LIST(actions, e_object_del);
    E_FREE_LIST(hooks, e_client_hook_del);
 
-<<<<<<< HEAD
-=======
-#ifdef HAVE_WAYLAND
-   if (type == E_PIXMAP_TYPE_WL)
-     e_comp_wl_shutdown();
-#endif
-
->>>>>>> upstream
    gl_avail = EINA_FALSE;
    e_comp_cfdata_config_free(conf);
    E_CONFIG_DD_FREE(conf_match_edd);
@@ -1471,8 +1436,7 @@ e_comp_shutdown(void)
    return 1;
 }
 
-<<<<<<< HEAD
-EAPI void
+E_API void
 e_comp_deferred_job(void)
 {
    /* Add elm fake win */
@@ -1480,10 +1444,10 @@ e_comp_deferred_job(void)
    evas_object_show(e_comp->elm);
 
    /* Bg update */
-   if (e_zone_current_get(e_comp)->bg_object)
-     e_bg_zone_update(e_zone_current_get(e_comp), E_BG_TRANSITION_DESK);
+   if (e_zone_current_get()->bg_object)
+     e_bg_zone_update(e_zone_current_get(), E_BG_TRANSITION_DESK);
    else
-     e_bg_zone_update(e_zone_current_get(e_comp), E_BG_TRANSITION_START);
+     e_bg_zone_update(e_zone_current_get(), E_BG_TRANSITION_START);
 
    /* Pointer setting */
    if (!e_comp->pointer)
@@ -1497,12 +1461,8 @@ e_comp_deferred_job(void)
 #endif
 }
 
-EAPI void
-e_comp_render_queue(E_Comp *c)
-=======
 E_API void
 e_comp_render_queue(void)
->>>>>>> upstream
 {
    if (conf->lock_fps)
      {
@@ -1726,8 +1686,7 @@ e_comp_e_object_layer_get(const E_Object *obj)
    return 0;
 }
 
-<<<<<<< HEAD
-EAPI void
+E_API void
 e_comp_layer_name_get(unsigned int layer, char *buff, int buff_size)
 {
    if (!buff) return;
@@ -1762,12 +1721,8 @@ e_comp_layer_name_get(unsigned int layer, char *buff, int buff_size)
      }
 }
 
-EAPI Eina_Bool
-e_comp_grab_input(E_Comp *c, Eina_Bool mouse, Eina_Bool kbd)
-=======
 E_API Eina_Bool
 e_comp_grab_input(Eina_Bool mouse, Eina_Bool kbd)
->>>>>>> upstream
 {
    Eina_Bool ret = EINA_FALSE;
    Ecore_Window mwin = 0, kwin = 0;
@@ -1872,14 +1827,8 @@ e_comp_util_object_is_above_nocomp(Evas_Object *obj)
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(obj, EINA_FALSE);
    if (!evas_object_visible_get(obj)) return EINA_FALSE;
-<<<<<<< HEAD
-   comp = e_comp_util_evas_object_comp_get(obj);
-   if ((!comp) || (!comp->nocomp_ec)) return EINA_FALSE;
-   cl = evas_object_layer_get(comp->nocomp_ec->frame);
-=======
    if (!e_comp->nocomp_ec) return EINA_FALSE;
    cl = evas_object_layer_get(e_comp->nocomp_ec->frame);
->>>>>>> upstream
    ol = evas_object_layer_get(obj);
    if (cl > ol) return EINA_FALSE;
    o = evas_object_above_get(e_comp->nocomp_ec->frame);

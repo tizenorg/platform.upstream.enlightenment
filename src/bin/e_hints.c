@@ -1606,8 +1606,7 @@ e_hints_window_e_state_set(E_Client *ec EINA_UNUSED)
    /* TODO */
 }
 
-<<<<<<< HEAD
-EAPI void
+E_API void
 e_hints_window_e_opaque_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1628,10 +1627,7 @@ e_hints_window_e_opaque_get(E_Client *ec)
 #endif
 }
 
-EAPI void
-=======
 E_API void
->>>>>>> upstream
 e_hints_window_qtopia_soft_menu_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1737,7 +1733,7 @@ e_hints_scale_update(void)
 #endif
 }
 
-EAPI const Eina_List *
+E_API const Eina_List *
 e_hints_aux_hint_supported_add(const char *hint)
 {
    Eina_List *l;
@@ -1754,7 +1750,7 @@ e_hints_aux_hint_supported_add(const char *hint)
    return aux_hints_supported;
 }
 
-EAPI const Eina_List *
+E_API const Eina_List *
 e_hints_aux_hint_supported_del(const char *hint)
 {
    Eina_List *l;
@@ -1772,7 +1768,7 @@ e_hints_aux_hint_supported_del(const char *hint)
    return aux_hints_supported;
 }
 
-EAPI const Eina_List *
+E_API const Eina_List *
 e_hints_aux_hint_supported_get(void)
 {
    return aux_hints_supported;

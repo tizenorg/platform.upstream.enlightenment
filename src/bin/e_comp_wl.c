@@ -49,7 +49,6 @@ static double _last_event_time = 0.0;
 
 /* local functions */
 static void
-<<<<<<< HEAD
 _e_comp_wl_transform_stay_within_canvas(E_Client *ec, int x, int y, int *new_x, int *new_y)
 {
    int new_x_max, new_y_max;
@@ -283,7 +282,9 @@ _e_comp_wl_transform_set(E_Client *ec,
    elm_transit_go(trans);
 
    return EINA_TRUE;
-=======
+}
+
+static void
 _e_comp_wl_configure_send(E_Client *ec, Eina_Bool edges)
 {
    int w, h;
@@ -295,7 +296,6 @@ _e_comp_wl_configure_send(E_Client *ec, Eina_Bool edges)
    ec->comp_data->shell.configure_send(ec->comp_data->shell.surface,
                                        edges * e_comp_wl->resize.edges,
                                        w, h);
->>>>>>> upstream
 }
 
 static void
@@ -554,11 +554,7 @@ _e_comp_wl_evas_cb_show(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EIN
    Eina_List *l;
 
    if (!(ec = data)) return;
-<<<<<<< HEAD
-   if (e_object_is_del(E_OBJECT(ec))) return;
-=======
    if (e_object_is_del(data)) return;
->>>>>>> upstream
 
    if (!ec->override) e_hints_window_visible_set(ec);
 
@@ -603,7 +599,6 @@ _e_comp_wl_evas_cb_hide(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EIN
 
    EINA_LIST_FOREACH(ec->e.state.video_child, l, tmp)
      evas_object_hide(tmp->frame);
-<<<<<<< HEAD
 
    if (ec->comp_data->sub.below_obj)
      evas_object_hide(ec->comp_data->sub.below_obj);
@@ -665,8 +660,6 @@ _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
    if (parent->comp_data->sub.restacking) return;
 
    _e_comp_wl_subsurface_restack(parent);
-=======
->>>>>>> upstream
 }
 
 static void
@@ -686,27 +679,21 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    if (!ec->comp_data->surface) return;
    if (ec->comp_data->transform.start) return;
 
-   if (e_comp->wl_comp_data->dnd.enabled)
-     {
-        e_comp_wl_data_dnd_focus(ec);
-        return;
-     }
-
    if (e_config->use_cursor_timer)
      {
-        if (ec->comp->wl_comp_data->ptr.hidden == EINA_TRUE)
+        if (e_comp_wl->ptr.hidden == EINA_TRUE)
           {
              Evas_Object *o = NULL;
 
-             ecore_evas_cursor_get(ec->comp->pointer->ee, &o, NULL, NULL, NULL);
+             ecore_evas_cursor_get(e_comp->pointer->ee, &o, NULL, NULL, NULL);
              if (o)
-               ec->comp->wl_comp_data->ptr.ec = e_comp_object_client_get(o);
+               e_comp_wl->ptr.ec = e_comp_object_client_get(o);
              return;
           }
         else
           {
-             E_FREE_FUNC(ec->comp->wl_comp_data->ptr.hide_tmr, ecore_timer_del);
-             ec->comp->wl_comp_data->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
+             E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
+             e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
           }
      }
 
@@ -766,22 +753,14 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    if (!ec->comp_data->surface) return;
-<<<<<<< HEAD
    if (ec->comp_data->transform.start) return;
 
-   if (e_comp->wl_comp_data->dnd.enabled)
-     {
-        if (e_comp->wl_comp_data->dnd.focus == ec->comp_data->surface)
-          e_comp_wl_data_dnd_focus(NULL);
-     }
-=======
    if (e_comp_wl->drag)
      {
         e_comp_wl_data_device_send_leave(ec);
         return;
      }
    if (!eina_list_count(e_comp_wl->ptr.resources)) return;
->>>>>>> upstream
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
@@ -794,8 +773,7 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
 }
 
 static void
-<<<<<<< HEAD
-_e_comp_wl_evas_handle_mouse_move_to_touch(E_Client *ec, uint32_t timestamp, int canvas_x, int canvas_y)
+_e_comp_wl_send_touch_move(E_Client *ec, int canvas_x, int canvas_y, uint32_t timestamp)
 {
    Eina_List *l;
    struct wl_client *wc;
@@ -828,21 +806,21 @@ _e_comp_wl_cursor_reload(E_Client *ec)
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (!ec->comp_data) return;
 
-   if ((ec_cursor = ec->comp->wl_comp_data->ptr.ec))
+   if ((ec_cursor = e_comp_wl->ptr.ec))
      {
         ec_cursor->visible = 1;
-        ecore_evas_object_cursor_set(ec->comp->pointer->ee, ec_cursor->frame, EVAS_LAYER_MAX, ec_cursor->x, ec_cursor->y);
+        ecore_evas_object_cursor_set(e_comp->pointer->ee, ec_cursor->frame, EVAS_LAYER_MAX, ec_cursor->x, ec_cursor->y);
      }
 
-   ec->comp->wl_comp_data->ptr.hidden = EINA_FALSE;
+   e_comp_wl->ptr.hidden = EINA_FALSE;
 
    cx = wl_fixed_to_int(e_comp->wl_comp_data->ptr.x) - ec->client.x;
    cy = wl_fixed_to_int(e_comp->wl_comp_data->ptr.y) - ec->client.y;
 
    if (!ec->comp_data->surface) return;
    wc = wl_resource_get_client(ec->comp_data->surface);
-   serial = wl_display_next_serial(ec->comp->wl_comp_data->wl.disp);
-   EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
+   serial = wl_display_next_serial(e_comp_wl->wl.disp);
+   EINA_LIST_FOREACH(e_comp_wl->ptr.resources, l, res)
      {
         if (!e_comp_wl_input_pointer_check(res)) continue;
         if (wl_resource_get_client(res) != wc) continue;
@@ -866,27 +844,27 @@ _e_comp_wl_cursor_timer(void *data)
    if (e_object_is_del(E_OBJECT(ec))) return EINA_FALSE;
    if (!ec->comp_data) return EINA_FALSE;
 
-   ecore_evas_cursor_get(ec->comp->pointer->ee, &o, NULL, NULL, NULL);
+   ecore_evas_cursor_get(e_comp->pointer->ee, &o, NULL, NULL, NULL);
    if (o)
      {
-        ec_cursor = ec->comp->wl_comp_data->ptr.ec = e_comp_object_client_get(o);
+        ec_cursor = e_comp_wl->ptr.ec = e_comp_object_client_get(o);
         if (ec_cursor)
           {
              ec_cursor->hidden = 1;
-             ec_cursor->x = ec->comp->pointer->hot.x;
-             ec_cursor->y = ec->comp->pointer->hot.y;
+             ec_cursor->x = e_comp->pointer->hot.x;
+             ec_cursor->y = e_comp->pointer->hot.y;
           }
      }
 
-   ecore_evas_cursor_unset(ec->comp->pointer->ee);
+   ecore_evas_cursor_unset(e_comp->pointer->ee);
 
-   ec->comp->wl_comp_data->ptr.hidden = EINA_TRUE;
-   ec->comp->wl_comp_data->ptr.hide_tmr = NULL;
+   e_comp_wl->ptr.hidden = EINA_TRUE;
+   e_comp_wl->ptr.hide_tmr = NULL;
 
    if (!ec->comp_data->surface) return EINA_FALSE;
    wc = wl_resource_get_client(ec->comp_data->surface);
-   serial = wl_display_next_serial(ec->comp->wl_comp_data->wl.disp);
-   EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
+   serial = wl_display_next_serial(e_comp_wl->wl.disp);
+   EINA_LIST_FOREACH(e_comp_wl->ptr.resources, l, res)
      {
         if (!e_comp_wl_input_pointer_check(res)) continue;
         if (wl_resource_get_client(res) != wc) continue;
@@ -897,17 +875,32 @@ _e_comp_wl_cursor_timer(void *data)
 }
 
 static void
-_e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
-=======
 _e_comp_wl_send_mouse_move(E_Client *ec, int x, int y, unsigned int timestamp)
->>>>>>> upstream
 {
    struct wl_resource *res;
    struct wl_client *wc;
    Eina_List *l;
+
+   wc = wl_resource_get_client(ec->comp_data->surface);
+   EINA_LIST_FOREACH(e_comp_wl->ptr.resources, l, res)
+     {
+        if (!e_comp_wl_input_pointer_check(res)) continue;
+        if (wl_resource_get_client(res) != wc) continue;
+        wl_pointer_send_motion(res, timestamp,
+                               wl_fixed_from_int(x - ec->client.x),
+                               wl_fixed_from_int(y - ec->client.y));
+     }
+}
+
+static void
+_e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
+{
+   E_Client *ec;
+   Evas_Event_Mouse_Move *ev;
+   struct wl_resource *res;
+   Eina_List *l;
    Evas_Device *dev = NULL;
 
-<<<<<<< HEAD
    ev = event;
 
    e_comp->wl_comp_data->ptr.x = wl_fixed_from_int(ev->cur.canvas.x);
@@ -917,108 +910,26 @@ _e_comp_wl_send_mouse_move(E_Client *ec, int x, int y, unsigned int timestamp)
 
    if (ec->cur_mouse_action) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
-   if (e_client_util_ignored_get(ec)) return;
+   if (ec->ignored) return;
    if (!ec->comp_data->surface) return;
 
-   if (e_comp->wl_comp_data->dnd.enabled)
+   if ((!e_comp_wl->drag_client) ||
+       (!e_client_has_xwindow(e_comp_wl->drag_client)))
      {
-        e_comp_wl_data_dnd_motion(ec, ev->timestamp,
-                                  ev->cur.canvas.x - ec->client.x,
-                                  ev->cur.canvas.y - ec->client.y);
-        return;
-     }
-
-   dev = ev->dev;
-   if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
-     _e_comp_wl_evas_handle_mouse_move_to_touch(ec, ev->timestamp, ev->cur.canvas.x, ev->cur.canvas.y);
-   else
-     {
-        wc = wl_resource_get_client(ec->comp_data->surface);
-        EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
-          {
-             if (!e_comp_wl_input_pointer_check(res)) continue;
-             if (wl_resource_get_client(res) != wc) continue;
-             wl_pointer_send_motion(res, ev->timestamp,
-                                    wl_fixed_from_int(ev->cur.canvas.x - ec->client.x),
-                                    wl_fixed_from_int(ev->cur.canvas.y - ec->client.y));
-          }
+        dev = ev->dev;
+        if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
+          _e_comp_wl_send_touch_move(ec, ev->cur.canvas.x, ev->cur.canvas.y, ev->timestamp);
+        else
+          _e_comp_wl_send_mouse_move(ec, ev->cur.canvas.x, ev->cur.canvas.y, ev->timestamp);
      }
    if (e_config->use_cursor_timer)
      {
-        if (ec->comp->wl_comp_data->ptr.hidden == EINA_TRUE)
+        if (e_comp_wl->ptr.hidden == EINA_TRUE)
           _e_comp_wl_cursor_reload(ec);
 
-        E_FREE_FUNC(ec->comp->wl_comp_data->ptr.hide_tmr, ecore_timer_del);
-        ec->comp->wl_comp_data->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
-=======
-   wc = wl_resource_get_client(ec->comp_data->surface);
-   EINA_LIST_FOREACH(e_comp_wl->ptr.resources, l, res)
-     {
-        if (!e_comp_wl_input_pointer_check(res)) continue;
-        if (wl_resource_get_client(res) != wc) continue;
-        wl_pointer_send_motion(res, timestamp,
-                               wl_fixed_from_int(x - ec->client.x),
-                               wl_fixed_from_int(y - ec->client.y));
->>>>>>> upstream
+        E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
+        e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
      }
-}
-
-static void
-_e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
-{
-<<<<<<< HEAD
-   Eina_List *l;
-   struct wl_client *wc;
-   uint32_t serial, btn;
-   struct wl_resource *res;
-
-   if (ec->cur_mouse_action || ec->border_menu) return EINA_FALSE;
-   if (e_object_is_del(E_OBJECT(ec))) return EINA_FALSE;
-   if (e_client_util_ignored_get(ec)) return EINA_FALSE;
-
-   switch (button_id)
-     {
-      case 1:
-        btn = BTN_LEFT;
-        break;
-      case 2:
-        btn = BTN_MIDDLE;
-        break;
-      case 3:
-        btn = BTN_RIGHT;
-        break;
-      default:
-        btn = button_id;
-        break;
-     }
-
-   ec->comp->wl_comp_data->ptr.button = btn;
-
-   if (!ec->comp_data->surface) return EINA_FALSE;
-
-   if ((ec->comp_data->transform.cur_degree != 0) &&
-       (btn == BTN_MIDDLE))
-     {
-        _e_comp_wl_transform_unset(ec);
-        return EINA_TRUE;
-     }
-
-   if (e_comp->wl_comp_data->dnd.enabled)
-     {
-        e_comp_wl_data_dnd_drop(ec, timestamp, btn, state);
-        return EINA_FALSE;
-     }
-
-   wc = wl_resource_get_client(ec->comp_data->surface);
-   serial = wl_display_next_serial(ec->comp->wl_comp_data->wl.disp);
-
-   EINA_LIST_FOREACH(ec->comp->wl_comp_data->ptr.resources, l, res)
-     {
-        if (wl_resource_get_client(res) != wc) continue;
-        if (!e_comp_wl_input_pointer_check(res)) continue;
-        wl_pointer_send_button(res, serial, timestamp, btn, state);
-     }
-   return EINA_TRUE;
 }
 
 static void
@@ -1030,14 +941,10 @@ _e_comp_wl_evas_handle_mouse_button_to_touch(E_Client *ec, uint32_t timestamp, i
    struct wl_resource *res;
    wl_fixed_t x, y;
 
+   if (ec->cur_mouse_action || ec->border_menu || e_comp_wl->drag) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (!ec->comp_data->surface) return;
-
-   if (e_comp->wl_comp_data->dnd.enabled)
-     {
-        e_comp_wl_data_dnd_drop_touch(ec, timestamp, canvas_x, canvas_y, flag);
-        return;
-     }
+   if (ec->ignored) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
@@ -1054,19 +961,6 @@ _e_comp_wl_evas_handle_mouse_button_to_touch(E_Client *ec, uint32_t timestamp, i
         else
           wl_touch_send_up(res, serial, timestamp, 0);
      }
-=======
-   E_Client *ec = data;
-   Evas_Event_Mouse_Move *ev = event;
-
-   if (ec->cur_mouse_action) return;
-   if (e_object_is_del(E_OBJECT(ec))) return;
-   if (ec->ignored) return;
-   if (!ec->comp_data->surface) return;
-
-   if ((!e_comp_wl->drag_client) ||
-       (!e_client_has_xwindow(e_comp_wl->drag_client)))
-     _e_comp_wl_send_mouse_move(ec, ev->cur.canvas.x, ev->cur.canvas.y, ev->timestamp);
->>>>>>> upstream
 }
 
 static void
@@ -1079,26 +973,21 @@ _e_comp_wl_evas_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
-<<<<<<< HEAD
    dev = ev->dev;
    if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
      _e_comp_wl_evas_handle_mouse_button_to_touch(ec, ev->timestamp, ev->canvas.x, ev->canvas.y, EINA_TRUE);
    else
-     _e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
-                                       WL_POINTER_BUTTON_STATE_PRESSED);
+     e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
+                                        WL_POINTER_BUTTON_STATE_PRESSED);
 
    if (e_config->use_cursor_timer)
      {
-        if (ec->comp->wl_comp_data->ptr.hidden == EINA_TRUE)
+        if (e_comp_wl->ptr.hidden == EINA_TRUE)
           _e_comp_wl_cursor_reload(ec);
 
-        E_FREE_FUNC(ec->comp->wl_comp_data->ptr.hide_tmr, ecore_timer_del);
-        ec->comp->wl_comp_data->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
+        E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
+        e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
      }
-=======
-   e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
-                                      WL_POINTER_BUTTON_STATE_PRESSED);
->>>>>>> upstream
 }
 
 static void
@@ -1111,17 +1000,12 @@ _e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
-<<<<<<< HEAD
    dev = ev->dev;
    if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
      _e_comp_wl_evas_handle_mouse_button_to_touch(ec, ev->timestamp, ev->canvas.x, ev->canvas.y, EINA_FALSE);
    else
-     _e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
-                                       WL_POINTER_BUTTON_STATE_RELEASED);
-=======
-   e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
-                                      WL_POINTER_BUTTON_STATE_RELEASED);
->>>>>>> upstream
+     e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
+                                        WL_POINTER_BUTTON_STATE_RELEASED);
 }
 
 static void
@@ -1193,37 +1077,22 @@ _e_comp_wl_evas_cb_multi_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    Evas_Event_Multi_Down *ev = event;
    wl_fixed_t x, y;
 
-<<<<<<< HEAD
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (!ec->comp_data->surface) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
-   serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
-=======
-   if (!ec->comp_data->surface) return;
-
-   wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
->>>>>>> upstream
 
    x = wl_fixed_from_int(ev->canvas.x - ec->client.x);
    y = wl_fixed_from_int(ev->canvas.y - ec->client.y);
 
-<<<<<<< HEAD
-   EINA_LIST_FOREACH(e_comp->wl_comp_data->touch.resources, l, res)
-     {
-        if (wl_resource_get_client(res) != wc) continue;
-        if (!e_comp_wl_input_touch_check(res)) continue;
-        wl_touch_send_down(res, serial, ev->timestamp, ec->comp_data->surface, ev->device, x, y);
-=======
    EINA_LIST_FOREACH(e_comp_wl->touch.resources, l, res)
      {
         if (wl_resource_get_client(res) != wc) continue;
         if (!e_comp_wl_input_touch_check(res)) continue;
         wl_touch_send_down(res, serial, ev->timestamp,
                            ec->comp_data->surface, ev->device, x, y);
->>>>>>> upstream
      }
 }
 
@@ -1237,23 +1106,14 @@ _e_comp_wl_evas_cb_multi_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    E_Client *ec = data;
    Evas_Event_Multi_Up *ev = event;
 
-<<<<<<< HEAD
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
-   if (!ec->comp_data->surface) return;
-
-   wc = wl_resource_get_client(ec->comp_data->surface);
-   serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
-
-   EINA_LIST_FOREACH(e_comp->wl_comp_data->touch.resources, l, res)
-=======
    if (!ec->comp_data->surface) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
 
    EINA_LIST_FOREACH(e_comp_wl->touch.resources, l, res)
->>>>>>> upstream
      {
         if (wl_resource_get_client(res) != wc) continue;
         if (!e_comp_wl_input_touch_check(res)) continue;
@@ -1271,11 +1131,8 @@ _e_comp_wl_evas_cb_multi_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    Evas_Event_Multi_Move *ev = event;
    wl_fixed_t x, y;
 
-<<<<<<< HEAD
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
-=======
->>>>>>> upstream
    if (!ec->comp_data->surface) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
@@ -1283,11 +1140,7 @@ _e_comp_wl_evas_cb_multi_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    x = wl_fixed_from_int(ev->cur.canvas.x - ec->client.x);
    y = wl_fixed_from_int(ev->cur.canvas.y - ec->client.y);
 
-<<<<<<< HEAD
-   EINA_LIST_FOREACH(e_comp->wl_comp_data->touch.resources, l, res)
-=======
    EINA_LIST_FOREACH(e_comp_wl->touch.resources, l, res)
->>>>>>> upstream
      {
         if (wl_resource_get_client(res) != wc) continue;
         if (!e_comp_wl_input_touch_check(res)) continue;
@@ -1295,10 +1148,6 @@ _e_comp_wl_evas_cb_multi_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
      }
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> upstream
 static void
 _e_comp_wl_client_priority_adjust(int pid, int set, int adj, Eina_Bool use_adj, Eina_Bool adj_child, Eina_Bool do_child)
 {
@@ -1366,42 +1215,6 @@ _e_comp_wl_client_priority_normal(E_Client *ec)
 static Eina_Bool
 _e_comp_wl_evas_cb_focus_in_timer(E_Client *ec)
 {
-<<<<<<< HEAD
-   struct wl_resource *res;
-=======
->>>>>>> upstream
-   uint32_t serial, *k;
-   struct wl_resource *res;
-   Eina_List *l;
-   double t;
-
-   ec->comp_data->on_focus_timer = NULL;
-
-<<<<<<< HEAD
-   /* send keyboard_enter to all keyboard resources */
-   serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
-   EINA_LIST_FOREACH(e_comp->wl_comp_data->kbd.focused, l, res)
-     {
-        wl_keyboard_send_enter(res, serial, ec->comp_data->surface,
-                               &e_comp->wl_comp_data->kbd.keys);
-        ec->comp_data->focus_update = 0;
-     }
-=======
-   if (!e_comp_wl->kbd.focused) return EINA_FALSE;
-   serial = wl_display_next_serial(e_comp_wl->wl.disp);
-   t = ecore_time_unix_get();
-   EINA_LIST_FOREACH(e_comp_wl->kbd.focused, l, res)
-     wl_array_for_each(k, &e_comp_wl->kbd.keys)
-       wl_keyboard_send_key(res, serial, t,
-                            *k, WL_KEYBOARD_KEY_STATE_PRESSED);
-   return EINA_FALSE;
->>>>>>> upstream
-}
-
-static Eina_Bool
-_e_comp_wl_evas_cb_focus_in_timer(E_Client *ec)
-{
-   E_Comp_Data *cdata;
    uint32_t serial, *k;
    struct wl_resource *res;
    Eina_List *l;
@@ -1410,15 +1223,14 @@ _e_comp_wl_evas_cb_focus_in_timer(E_Client *ec)
    if (e_object_is_del(E_OBJECT(ec))) return EINA_FALSE;
 
    ec->comp_data->on_focus_timer = NULL;
-   cdata = ec->comp->wl_comp_data;
 
-   if (!cdata->kbd.focused) return EINA_FALSE;
-   serial = wl_display_next_serial(cdata->wl.disp);
+   if (!e_comp_wl->kbd.focused) return EINA_FALSE;
+   serial = wl_display_next_serial(e_comp_wl->wl.disp);
    t = ecore_time_unix_get();
-   EINA_LIST_FOREACH(cdata->kbd.focused, l, res)
-     wl_array_for_each(k, &cdata->kbd.keys)
-       wl_keyboard_send_key(res, serial, t,
-                            *k, WL_KEYBOARD_KEY_STATE_PRESSED);
+   EINA_LIST_FOREACH(e_comp_wl->kbd.focused, l, res)
+      wl_array_for_each(k, &e_comp_wl->kbd.keys)
+      wl_keyboard_send_key(res, serial, t,
+                           *k, WL_KEYBOARD_KEY_STATE_PRESSED);
    return EINA_FALSE;
 }
 
@@ -1426,10 +1238,6 @@ static void
 _e_comp_wl_evas_cb_focus_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
    E_Client *ec, *focused;
-<<<<<<< HEAD
-   E_Comp_Data *cdata;
-=======
->>>>>>> upstream
    struct wl_resource *res;
    struct wl_client *wc;
    Eina_List *l;
@@ -1437,8 +1245,6 @@ _e_comp_wl_evas_cb_focus_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    if (!(ec = data)) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (ec->iconic) return;
-
-   cdata = ec->comp->wl_comp_data;
 
    /* block spurious focus events */
    focused = e_client_focused_get();
@@ -1448,26 +1254,15 @@ _e_comp_wl_evas_cb_focus_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    _e_comp_wl_client_priority_raise(ec);
 
    wc = wl_resource_get_client(ec->comp_data->surface);
-<<<<<<< HEAD
-   EINA_LIST_FOREACH(cdata->kbd.resources, l, res)
-     if (wl_resource_get_client(res) == wc)
-       cdata->kbd.focused = eina_list_append(cdata->kbd.focused, res);
-
-   _e_comp_wl_client_focus(ec);
-
-   ec->comp_data->on_focus_timer =
-     ecore_timer_add(((e_config->xkb.delay_held_key_input_to_focus)/1000.0),
-                          (Ecore_Task_Cb)_e_comp_wl_evas_cb_focus_in_timer, ec);
-=======
    EINA_LIST_FOREACH(e_comp_wl->kbd.resources, l, res)
-     if (wl_resource_get_client(res) == wc)
-       e_comp_wl->kbd.focused = eina_list_append(e_comp_wl->kbd.focused, res);
+      if (wl_resource_get_client(res) == wc)
+        e_comp_wl->kbd.focused = eina_list_append(e_comp_wl->kbd.focused, res);
    if (!e_comp_wl->kbd.focused) return;
    e_comp_wl_input_keyboard_enter_send(ec);
    e_comp_wl_data_device_keyboard_focus_set();
    ec->comp_data->on_focus_timer =
-     ecore_timer_add(0.8, (Ecore_Task_Cb)_e_comp_wl_evas_cb_focus_in_timer, ec);
->>>>>>> upstream
+      ecore_timer_add(((e_config->xkb.delay_held_key_input_to_focus)/1000.0),
+                      (Ecore_Task_Cb)_e_comp_wl_evas_cb_focus_in_timer, ec);
 }
 
 static void
@@ -1481,14 +1276,7 @@ _e_comp_wl_evas_cb_focus_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
 
    if (!(ec = data)) return;
 
-<<<<<<< HEAD
-   E_FREE_FUNC(ec->comp_data->on_focus_timer, ecore_timer_del);
-
-   /* lower client priority */
-   _e_comp_wl_client_priority_normal(ec);
-=======
    if (!ec->comp_data) return;
->>>>>>> upstream
 
    E_FREE_FUNC(ec->comp_data->on_focus_timer, ecore_timer_del);
 
@@ -1496,21 +1284,13 @@ _e_comp_wl_evas_cb_focus_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
    if (!e_object_is_del(data))
      _e_comp_wl_client_priority_normal(ec);
 
+
+   /* update keyboard modifier state */
+   wl_array_for_each(k, &e_comp_wl->kbd.keys)
+      e_comp_wl_input_keyboard_state_update(*k, EINA_FALSE);
+
    if (!ec->comp_data->surface) return;
 
-<<<<<<< HEAD
-   /* send key release and keyboard_leave to all focused resources */
-   serial = wl_display_next_serial(cdata->wl.disp);
-   t = ecore_time_unix_get();
-   EINA_LIST_FOREACH_SAFE(cdata->kbd.focused, l, ll, res)
-     {
-        wl_array_for_each(k, &cdata->kbd.keys)
-          wl_keyboard_send_key(res, serial, t,
-                               *k, WL_KEYBOARD_KEY_STATE_RELEASED);
-        wl_keyboard_send_leave(res, serial, ec->comp_data->surface);
-        cdata->kbd.focused =
-          eina_list_remove_list(cdata->kbd.focused, l);
-=======
    if (!eina_list_count(e_comp_wl->kbd.resources)) return;
 
    /* send keyboard_leave to all keyboard resources */
@@ -1519,12 +1299,11 @@ _e_comp_wl_evas_cb_focus_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
    EINA_LIST_FOREACH_SAFE(e_comp_wl->kbd.focused, l, ll, res)
      {
         wl_array_for_each(k, &e_comp_wl->kbd.keys)
-          wl_keyboard_send_key(res, serial, t,
-                               *k, WL_KEYBOARD_KEY_STATE_RELEASED);
+           wl_keyboard_send_key(res, serial, t,
+                                *k, WL_KEYBOARD_KEY_STATE_RELEASED);
         wl_keyboard_send_leave(res, serial, ec->comp_data->surface);
         e_comp_wl->kbd.focused =
-          eina_list_remove_list(e_comp_wl->kbd.focused, l);
->>>>>>> upstream
+           eina_list_remove_list(e_comp_wl->kbd.focused, l);
      }
 }
 
@@ -1537,13 +1316,9 @@ _e_comp_wl_evas_cb_resize(void *data, Evas_Object *obj EINA_UNUSED, void *event 
 
    if ((ec->shading) || (ec->shaded)) return;
    if (!ec->comp_data->shell.configure_send) return;
-<<<<<<< HEAD
 
    /* TODO: calculate x, y with transfrom object */
-   if ((e_client_util_resizing_get(ec)) && (!ec->transformed))
-=======
-   if (e_client_util_resizing_get(ec) && e_comp_wl->resize.edges)
->>>>>>> upstream
+   if ((e_client_util_resizing_get(ec)) && (!ec->transformed) && (e_comp_wl->resize.edges))
      {
         int x, y;
 
@@ -1584,29 +1359,18 @@ _e_comp_wl_evas_cb_resize(void *data, Evas_Object *obj EINA_UNUSED, void *event 
            default:
              break;
           }
-<<<<<<< HEAD
-
-=======
         x = E_CLAMP(x, 1, x);
         y = E_CLAMP(y, 1, y);
->>>>>>> upstream
         ec->comp_data->shell.configure_send(ec->comp_data->shell.surface,
                                             e_comp_wl->resize.edges,
                                             x, y);
      }
-<<<<<<< HEAD
-   else
-     ec->comp_data->shell.configure_send(ec->comp_data->shell.surface,
-                                 ec->comp->wl_comp_data->resize.edges,
-                                 ec->client.w, ec->client.h);
-
-   if (ec->comp_data->sub.below_obj)
-     evas_object_resize(ec->comp_data->sub.below_obj, ec->w, ec->h);
-=======
    else if ((!ec->fullscreen) && (!ec->maximized) &&
             (!ec->comp_data->maximize_pre))
      _e_comp_wl_configure_send(ec, 1);
->>>>>>> upstream
+
+   if (ec->comp_data->sub.below_obj)
+     evas_object_resize(ec->comp_data->sub.below_obj, ec->w, ec->h);
 }
 
 static void
@@ -1735,94 +1499,36 @@ static void
 _e_comp_wl_client_evas_init(E_Client *ec)
 {
    if (ec->comp_data->evas_init) return;
-<<<<<<< HEAD
 
    evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_SHOW,        _e_comp_wl_evas_cb_show,        ec);
    evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_HIDE,        _e_comp_wl_evas_cb_hide,        ec);
    evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOVE,        _e_comp_wl_evas_cb_move,        ec);
    evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_RESTACK,     _e_comp_wl_evas_cb_restack,     ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_IN,    _e_comp_wl_evas_cb_mouse_in,    ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_OUT,   _e_comp_wl_evas_cb_mouse_out,   ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_MOVE,  _e_comp_wl_evas_cb_mouse_move,  ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_DOWN,  _e_comp_wl_evas_cb_mouse_down,  ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_UP,    _e_comp_wl_evas_cb_mouse_up,    ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOUSE_WHEEL, _e_comp_wl_evas_cb_mouse_wheel, ec);
+
+
+   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_IN,    EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_mouse_in,    ec);
+   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_OUT,   EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_mouse_out,   ec);
+   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_MOVE,  EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_mouse_move,  ec);
+   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_DOWN,  EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_mouse_down,  ec);
+   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_UP,    EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_mouse_up,    ec);
+   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_WHEEL, EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_mouse_wheel, ec);
 
    evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MULTI_DOWN, EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_multi_down, ec);
    evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MULTI_UP,   EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_multi_up,   ec);
    evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MULTI_MOVE, EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_multi_move, ec);
 
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_FOCUS_IN,    _e_comp_wl_evas_cb_focus_in,    ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_FOCUS_OUT,   _e_comp_wl_evas_cb_focus_out,   ec);
+   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_FOCUS_IN,    EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_focus_in,    ec);
+   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_FOCUS_OUT,   EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_focus_out,   ec);
 
    if (!ec->override)
      {
         evas_object_smart_callback_add(ec->frame, "client_resize",   _e_comp_wl_evas_cb_resize,       ec);
         evas_object_smart_callback_add(ec->frame, "maximize_done",   _e_comp_wl_evas_cb_state_update, ec);
         evas_object_smart_callback_add(ec->frame, "unmaximize_done", _e_comp_wl_evas_cb_state_update, ec);
+        evas_object_smart_callback_add(ec->frame, "maximize_pre",    _e_comp_wl_evas_cb_maximize_pre, ec);
+        evas_object_smart_callback_add(ec->frame, "unmaximize_pre",  _e_comp_wl_evas_cb_maximize_pre, ec);
         evas_object_smart_callback_add(ec->frame, "fullscreen",      _e_comp_wl_evas_cb_state_update, ec);
         evas_object_smart_callback_add(ec->frame, "unfullscreen",    _e_comp_wl_evas_cb_state_update, ec);
-=======
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_SHOW,
-                                  _e_comp_wl_evas_cb_show, ec);
-   evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_HIDE,
-                                  _e_comp_wl_evas_cb_hide, ec);
-
-   /* setup input callbacks */
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_IN,
-                                           EVAS_CALLBACK_PRIORITY_AFTER,
-                                           _e_comp_wl_evas_cb_mouse_in, ec);
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_OUT,
-                                           EVAS_CALLBACK_PRIORITY_AFTER,
-                                           _e_comp_wl_evas_cb_mouse_out, ec);
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_MOVE,
-                                           EVAS_CALLBACK_PRIORITY_AFTER,
-                                           _e_comp_wl_evas_cb_mouse_move, ec);
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_DOWN,
-                                           EVAS_CALLBACK_PRIORITY_AFTER,
-                                           _e_comp_wl_evas_cb_mouse_down, ec);
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_UP,
-                                           EVAS_CALLBACK_PRIORITY_AFTER,
-                                           _e_comp_wl_evas_cb_mouse_up, ec);
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_WHEEL,
-                                           EVAS_CALLBACK_PRIORITY_AFTER,
-                                           _e_comp_wl_evas_cb_mouse_wheel, ec);
-
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MULTI_DOWN,
-                                           EVAS_CALLBACK_PRIORITY_AFTER,
-                                           _e_comp_wl_evas_cb_multi_down, ec);
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MULTI_UP,
-                                           EVAS_CALLBACK_PRIORITY_AFTER,
-                                           _e_comp_wl_evas_cb_multi_up, ec);
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MULTI_MOVE,
-                                           EVAS_CALLBACK_PRIORITY_AFTER,
-                                           _e_comp_wl_evas_cb_multi_move, ec);
-
-
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_FOCUS_IN,
-                                           EVAS_CALLBACK_PRIORITY_AFTER,
-                                           _e_comp_wl_evas_cb_focus_in, ec);
-   evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_FOCUS_OUT,
-                                           EVAS_CALLBACK_PRIORITY_AFTER,
-                                           _e_comp_wl_evas_cb_focus_out, ec);
-
-   if (!ec->override)
-     {
-        evas_object_smart_callback_add(ec->frame, "client_resize",
-                                       _e_comp_wl_evas_cb_resize, ec);
-        evas_object_smart_callback_add(ec->frame, "maximize_done",
-                                       _e_comp_wl_evas_cb_state_update, ec);
-        evas_object_smart_callback_add(ec->frame, "unmaximize_done",
-                                       _e_comp_wl_evas_cb_state_update, ec);
-        evas_object_smart_callback_add(ec->frame, "maximize_pre",
-                                       _e_comp_wl_evas_cb_maximize_pre, ec);
-        evas_object_smart_callback_add(ec->frame, "unmaximize_pre",
-                                       _e_comp_wl_evas_cb_maximize_pre, ec);
-        evas_object_smart_callback_add(ec->frame, "fullscreen",
-                                       _e_comp_wl_evas_cb_state_update, ec);
-        evas_object_smart_callback_add(ec->frame, "unfullscreen",
-                                       _e_comp_wl_evas_cb_state_update, ec);
->>>>>>> upstream
      }
 
    /* setup delete/kill callbacks */
@@ -1904,118 +1610,6 @@ _e_comp_wl_cb_comp_object_add(void *data EINA_UNUSED, int type EINA_UNUSED, E_Ev
    return ECORE_CALLBACK_RENEW;
 }
 
-<<<<<<< HEAD
-static void
-_e_comp_wl_cb_key_down(void *event)
-{
-   E_Comp_Data *cdata;
-   E_Client *ec;
-   Ecore_Event_Key *ev;
-   uint32_t serial, *end, *k, keycode;
-
-   ev = event;
-   keycode = (ev->keycode - 8);
-   if (!(cdata = e_comp->wl_comp_data)) return;
-
-#ifdef HAVE_WAYLAND_ONLY
- #ifndef E_RELEASE_BUILD
-   if ((ev->modifiers & ECORE_EVENT_MODIFIER_CTRL) &&
-       ((ev->modifiers & ECORE_EVENT_MODIFIER_ALT) ||
-       (ev->modifiers & ECORE_EVENT_MODIFIER_ALTGR)) &&
-       eina_streq(ev->key, "BackSpace"))
-     exit(0);
- #endif
-#endif
-
-   end = (uint32_t *)cdata->kbd.keys.data + (cdata->kbd.keys.size / sizeof(*k));
-
-   for (k = cdata->kbd.keys.data; k < end; k++)
-     {
-        /* ignore server-generated key repeats */
-        if (*k == keycode) return;
-     }
-
-   /* update modifier state */
-   e_comp_wl_input_keyboard_state_update(cdata, keycode, EINA_TRUE);
-
-   if ((!e_client_action_get()) && (!e_comp->input_key_grabs) && (!e_menu_grab_window_get()))
-     {
-        if ((ec = e_client_focused_get()))
-          {
-             if (ec->comp_data->surface)
-               {
-                  struct wl_resource *res;
-                  Eina_List *l;
-
-                  serial = wl_display_next_serial(cdata->wl.disp);
-                  EINA_LIST_FOREACH(cdata->kbd.focused, l, res)
-                    wl_keyboard_send_key(res, serial, ev->timestamp,
-                                    keycode, WL_KEYBOARD_KEY_STATE_PRESSED);
-
-                  /* A key only sent to clients is added to the list */
-                  cdata->kbd.keys.size = (const char *)end - (const char *)cdata->kbd.keys.data;
-                  k = wl_array_add(&cdata->kbd.keys, sizeof(*k));
-                  *k = keycode;
-               }
-          }
-     }
-
-   if (cdata->kbd.mod_changed)
-     {
-        e_comp_wl_input_keyboard_modifiers_update(cdata);
-        cdata->kbd.mod_changed = 0;
-     }
-}
-
-static void
-_e_comp_wl_cb_key_up(void *event)
-{
-   E_Comp_Data *cdata;
-   Ecore_Event_Key *ev;
-   uint32_t serial, *end, *k, keycode;
-   uint32_t delivered_key;
-
-   ev = event;
-   keycode = (ev->keycode - 8);
-   delivered_key = 0;
-   if (!(cdata = e_comp->wl_comp_data)) return;
-
-   end = (uint32_t *)cdata->kbd.keys.data + (cdata->kbd.keys.size / sizeof(*k));
-   for (k = cdata->kbd.keys.data; k < end; k++)
-     {
-        if (*k == keycode)
-          {
-             *k = *--end;
-             delivered_key = 1;
-          }
-     }
-
-   cdata->kbd.keys.size = (const char *)end - (const char *)cdata->kbd.keys.data;
-
-   /* update modifier state */
-   e_comp_wl_input_keyboard_state_update(cdata, keycode, EINA_FALSE);
-
-   /* If a key down event have been sent to clients, send a key up event to client for garantee key event sequence pair. (down/up) */
-   if (delivered_key || ((!e_client_action_get()) && (!e_comp->input_key_grabs) && (!e_menu_grab_window_get())))
-     {
-        struct wl_resource *res;
-        Eina_List *l;
-
-        serial = wl_display_next_serial(cdata->wl.disp);
-        EINA_LIST_FOREACH(cdata->kbd.focused, l, res)
-          wl_keyboard_send_key(res, serial, ev->timestamp,
-                               keycode, WL_KEYBOARD_KEY_STATE_RELEASED);
-     }
-
-   if (cdata->kbd.mod_changed)
-     {
-        e_comp_wl_input_keyboard_modifiers_update(cdata);
-        cdata->kbd.mod_changed = 0;
-     }
-}
-
-=======
->>>>>>> upstream
 static Eina_Bool
 _e_comp_wl_cb_mouse_move(void *d EINA_UNUSED, int t EINA_UNUSED, Ecore_Event_Mouse_Move *ev)
 {
@@ -2219,12 +1813,9 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
 
    if (state->new_attach || state->buffer_viewport.changed)
      {
-<<<<<<< HEAD
         _e_comp_wl_surface_state_size_update(ec, state);
         _e_comp_wl_map_size_cal_from_viewport(ec);
 
-=======
->>>>>>> upstream
         if (ec->changes.pos)
           e_comp_object_frame_xy_unadjust(ec->frame, ec->x, ec->y, &x, &y);
         else
@@ -2232,13 +1823,12 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
 
         if (ec->new_client) placed = ec->placed;
 
-<<<<<<< HEAD
         if (!ec->lock_client_size)
           {
              ec->w = ec->client.w = state->bw;
              ec->h = ec->client.h = state->bh;
           }
-=======
+
         if (first && e_client_has_xwindow(ec))
           /* use client geometry to avoid race condition from x11 configure request */
           x = ec->x, y = ec->y;
@@ -2250,7 +1840,6 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
           }
         w = ec->client.w;
         h = ec->client.h;
->>>>>>> upstream
      }
    else
      w = state->bw, h = state->bh;
@@ -2264,11 +1853,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
                {
                   ec->visible = EINA_FALSE;
                   evas_object_hide(ec->frame);
-<<<<<<< HEAD
-                  ec->comp_data->mapped = EINA_FALSE;
-=======
                   ec->comp_data->mapped = 0;
->>>>>>> upstream
                }
           }
 
@@ -2286,11 +1871,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
                   ec->visible = EINA_TRUE;
                   ec->ignored = 0;
                   evas_object_show(ec->frame);
-<<<<<<< HEAD
-                  ec->comp_data->mapped = EINA_TRUE;
-=======
                   ec->comp_data->mapped = 1;
->>>>>>> upstream
                }
           }
 
@@ -2304,9 +1885,6 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
           ec->comp_data->shell.configure(ec->comp_data->shell.surface,
                                          x, y, ec->w, ec->h);
         else
-<<<<<<< HEAD
-          e_client_util_move_resize_without_frame(ec, x, y, ec->w, ec->h);
-=======
           {
              if (ec->netwm.sync.wait)
                {
@@ -2344,9 +1922,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
                   e_drag_resize(e_comp_wl->drag, state->bw, state->bh);
                }
              else
-               e_client_util_move_resize_without_frame(ec, x, y, w, h);
+               e_client_util_move_resize_without_frame(ec, x, y, ec->w, ec->h);
           }
->>>>>>> upstream
 
         if (ec->new_client)
           ec->placed = placed;
@@ -2385,7 +1962,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
         /* FIXME: workaround for bad wayland egl driver which doesn't send damage request */
         if (!eina_list_count(state->damages))
           {
-             if (ec->comp_data->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
+             if ((ec->comp_data->buffer_ref.buffer) &&
+                 (ec->comp_data->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE))
                {
                   e_comp_object_damage(ec->frame,
                                        0, 0,
@@ -2398,8 +1976,9 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
              EINA_LIST_FREE(state->damages, dmg)
                {
                   /* not creating damage for ec that shows a underlay video */
-                  if (ec->comp_data->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_VIDEO ||
-                      !e_comp->wl_comp_data->available_hw_accel.underlay)
+                  if (!ec->comp_data->buffer_ref.buffer ||
+                      !e_comp->wl_comp_data->available_hw_accel.underlay ||
+                      ec->comp_data->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_VIDEO)
                     e_comp_object_damage(ec->frame, dmg->x, dmg->y, dmg->w, dmg->h);
 
                   eina_rectangle_free(dmg);
@@ -2460,8 +2039,9 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
         eina_tiler_clear(state->input);
      }
 
-   if (ec->comp_data->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO &&
-       e_comp->wl_comp_data->available_hw_accel.underlay)
+   if (((ec->comp_data->buffer_ref.buffer) &&
+        (ec->comp_data->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO)) &&
+       (e_comp->wl_comp_data->available_hw_accel.underlay))
      e_pixmap_image_clear(ec->pixmap, 1);
 
    return;
@@ -2490,7 +2070,7 @@ _e_comp_wl_surface_cb_attach(struct wl_client *client EINA_UNUSED, struct wl_res
 
    if (buffer_resource)
      {
-        if (!(buffer = e_comp_wl_buffer_get(buffer_resource, resource)))
+        if (!(buffer = e_comp_wl_buffer_get(buffer_resource)))
           {
              ERR("Could not get buffer from resource");
              wl_client_post_no_memory(client);
@@ -2591,22 +2171,14 @@ _e_comp_wl_surface_cb_opaque_region_set(struct wl_client *client EINA_UNUSED, st
                }
           }
      }
-<<<<<<< HEAD
    else
      {
-        if (ec->comp_data->pending.opaque)
-          {
-             eina_tiler_clear(ec->comp_data->pending.opaque);
-             /* eina_tiler_free(ec->comp_data->pending.opaque); */
-          }
         if (!ec->argb)
           {
              ec->argb = EINA_TRUE;
              e_comp_object_alpha_set(ec->frame, EINA_TRUE);
           }
      }
-=======
->>>>>>> upstream
 }
 
 static void
@@ -2664,11 +2236,9 @@ _e_comp_wl_surface_cb_commit(struct wl_client *client EINA_UNUSED, struct wl_res
 static void
 _e_comp_wl_surface_cb_buffer_transform_set(struct wl_client *client EINA_UNUSED, struct wl_resource *resource, int32_t transform)
 {
-   E_Pixmap *ep;
    E_Client *ec;
 
-   if (!(ep = wl_resource_get_user_data(resource))) return;
-   if (!(ec = e_pixmap_client_get(ep))) return;
+   if (!(ec = wl_resource_get_user_data(resource))) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    if (transform < 0 || transform > WL_OUTPUT_TRANSFORM_FLIPPED_270)
@@ -2687,15 +2257,13 @@ _e_comp_wl_surface_cb_buffer_transform_set(struct wl_client *client EINA_UNUSED,
 static void
 _e_comp_wl_surface_cb_buffer_scale_set(struct wl_client *client EINA_UNUSED, struct wl_resource *resource, int32_t scale)
 {
-   E_Pixmap *ep;
    E_Client *ec;
 
-   if (!(ep = wl_resource_get_user_data(resource))) return;
-   if (!(ec = e_pixmap_client_get(ep))) return;
+   if (!(ec = wl_resource_get_user_data(resource))) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    if (scale < 1)
-{
+     {
         wl_resource_post_error(resource,
                                WL_SURFACE_ERROR_INVALID_SCALE,
                                "buffer scale must be at least one "
@@ -2734,24 +2302,11 @@ _e_comp_wl_surface_destroy(struct wl_resource *resource)
 {
    E_Client *ec;
 
-<<<<<<< HEAD
-   if (!(ep = wl_resource_get_user_data(resource))) return;
-
-   /* try to get the e_client from this pixmap */
-   if (!(ec = e_pixmap_client_get(ep)))
-     {
-        e_pixmap_free(ep);
-        return;
-     }
-   else
-     e_pixmap_del(ep);
-
-   evas_object_hide(ec->frame);
-=======
    if (!(ec = wl_resource_get_user_data(resource))) return;
 
+   e_pixmap_del(ec->pixmap);
+
    _e_comp_wl_surface_render_stop(ec);
->>>>>>> upstream
    e_object_del(E_OBJECT(ec));
 }
 
@@ -2759,13 +2314,11 @@ static void
 _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 {
    struct wl_resource *res;
-<<<<<<< HEAD
    E_Pixmap *ep = NULL;
-=======
    E_Client *wc, *ec = NULL;
    Eina_List *l;
->>>>>>> upstream
    pid_t pid;
+   int internal = 0;
 
    DBG("Compositor Cb Surface Create: %d", id);
 
@@ -2785,11 +2338,11 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
                                   _e_comp_wl_surface_destroy);
 
    wl_client_get_credentials(client, &pid, NULL, NULL);
-<<<<<<< HEAD
    if (pid == getpid())
      {
         /* pixmap of internal win was supposed to be created at trap show */
-        ep = e_pixmap_find(E_PIXMAP_TYPE_WL, (uintptr_t)id);
+        internal = 1;
+        ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, (uintptr_t)id);
      }
    else
      {
@@ -2801,15 +2354,8 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
           }
      }
 
-   if (!ep)
-=======
-   if (pid == getpid()) //internal!
-     ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, (uintptr_t)id);
    if (!ec)
->>>>>>> upstream
      {
-        E_Pixmap *ep;
-
         /* try to create new pixmap */
         if (!(ep = e_pixmap_new(E_PIXMAP_TYPE_WL, res)))
           {
@@ -2818,21 +2364,14 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
              wl_client_post_no_memory(client);
              return;
           }
-<<<<<<< HEAD
-     }
-   DBG("\tUsing Pixmap: %p", ep);
 
-   /* set reference to pixmap so we can fetch it later */
-   wl_resource_set_user_data(res, ep);
+        E_Comp_Wl_Client_Data *cdata = e_pixmap_cdata_get(ep);
+        if (cdata)
+          cdata->wl_surface = res;
 
-   E_Comp_Wl_Client_Data *cdata = e_pixmap_cdata_get(ep);
-   if (cdata)
-     cdata->wl_surface = res;
-
-=======
         DBG("\tUsing Pixmap: %p", ep);
 
-        ec = e_client_new(ep, 0, 0);
+        ec = e_client_new(ep, 0, internal);
      }
    if (ec)
      {
@@ -2857,7 +2396,6 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
         break;
      }
 #endif
->>>>>>> upstream
    /* emit surface create signal */
    wl_signal_emit(&e_comp_wl->signals.surface.create, res);
 }
@@ -2951,7 +2489,6 @@ static const struct wl_compositor_interface _e_comp_interface =
 };
 
 static void
-<<<<<<< HEAD
 _e_comp_wl_pname_get(pid_t pid, char *name, int size)
 {
    if (!name) return;
@@ -3046,10 +2583,7 @@ _e_comp_wl_compositor_cb_unbind(struct wl_resource *res_comp)
 }
 
 static void
-_e_comp_wl_compositor_cb_bind(struct wl_client *client, void *data, uint32_t version, uint32_t id)
-=======
 _e_comp_wl_compositor_cb_bind(struct wl_client *client, void *data EINA_UNUSED, uint32_t version, uint32_t id)
->>>>>>> upstream
 {
    struct wl_resource *res;
    pid_t pid = 0;
@@ -3065,11 +2599,7 @@ _e_comp_wl_compositor_cb_bind(struct wl_client *client, void *data EINA_UNUSED, 
         return;
      }
 
-<<<<<<< HEAD
-   wl_resource_set_implementation(res,
-                                  &_e_comp_interface,
-                                  comp,
-                                  _e_comp_wl_compositor_cb_unbind);
+   wl_resource_set_implementation(res, &_e_comp_interface, e_comp, NULL);
 
    wl_client_get_credentials(client, &pid, &uid, &gid);
 
@@ -3093,11 +2623,8 @@ _e_comp_wl_compositor_cb_bind(struct wl_client *client, void *data EINA_UNUSED, 
         cinfo->pid = pid;
         cinfo->uid = uid;
         cinfo->gid = gid;
-        comp->connected_clients= eina_list_append(comp->connected_clients, cinfo);
+        e_comp->connected_clients= eina_list_append(e_comp->connected_clients, cinfo);
      }
-=======
-   wl_resource_set_implementation(res, &_e_comp_interface, e_comp, NULL);
->>>>>>> upstream
 }
 
 static void
@@ -3119,7 +2646,7 @@ _e_comp_wl_compositor_cb_del(void *data EINA_UNUSED)
    /* delete fd handler */
    if (e_comp_wl->fd_hdlr) ecore_main_fd_handler_del(e_comp_wl->fd_hdlr);
 
-   E_FREE_FUNC(cdata->ptr.hide_tmr, ecore_timer_del);
+   E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
 
    /* free allocated data structure */
    free(e_comp_wl);
@@ -3196,7 +2723,7 @@ _e_comp_wl_subsurface_create_below_bg_rectangle(E_Client *ec)
 
    if (ec->comp_data->sub.below_obj) return;
 
-   ec->comp_data->sub.below_obj = evas_object_rectangle_add(ec->comp->evas);
+   ec->comp_data->sub.below_obj = evas_object_rectangle_add(e_comp->evas);
    EINA_SAFETY_ON_NULL_RETURN(ec->comp_data->sub.below_obj);
 
    layer = evas_object_layer_get(ec->frame);
@@ -3288,15 +2815,8 @@ _e_comp_wl_subsurface_commit_from_cache(E_Client *ec)
    _e_comp_wl_surface_state_commit(ec, &sdata->cached);
 
    e_comp_wl_buffer_reference(&sdata->cached_buffer_ref, NULL);
-<<<<<<< HEAD
 
    _e_comp_wl_surface_subsurface_order_commit(ec);
-
-   /* schedule repaint */
-   if (e_pixmap_refresh(ec->pixmap))
-     e_comp_post_update_add(ec);
-=======
->>>>>>> upstream
 }
 
 static void
@@ -3534,7 +3054,6 @@ _e_comp_wl_subsurface_create(E_Client *ec, E_Client *epc, uint32_t id, struct wl
    ec->comp_data->surface = surface_resource;
    ec->comp_data->sub.data = sdata;
 
-<<<<<<< HEAD
    ec->lock_user_location = 0;
    ec->lock_client_location = 0;
    ec->lock_user_size = 0;
@@ -3548,8 +3067,6 @@ _e_comp_wl_subsurface_create(E_Client *ec, E_Client *epc, uint32_t id, struct wl
    ec->maximized = E_MAXIMIZE_NONE;
    EC_CHANGED(ec);
 
-   return EINA_TRUE;
-=======
    return EINA_TRUE;
 
 res_err:
@@ -3624,7 +3141,6 @@ _e_comp_wl_subcompositor_cb_bind(struct wl_client *client, void *data EINA_UNUSE
 
    /* TODO: add handlers for client iconify/uniconify */
 }
->>>>>>> upstream
 
 static void
 _e_comp_wl_sr_cb_provide_uuid(struct wl_client *client EINA_UNUSED, struct wl_resource *resource EINA_UNUSED, const char *uuid)
@@ -3799,12 +3315,9 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
 
    /* add this client to the hash */
    /* eina_hash_add(clients_win_hash, &win, ec); */
-<<<<<<< HEAD
    e_hints_client_list_set();
 
    e_pixmap_cdata_set(ec->pixmap, ec->comp_data);
-=======
->>>>>>> upstream
 }
 
 static void
@@ -3827,7 +3340,6 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
         e_pixmap_parent_window_set(ec->pixmap, 0);
      }
 
-<<<<<<< HEAD
    if (ec->comp_data->sub.data)
      {
         E_Comp_Wl_Subsurf_Data *sdata = ec->comp_data->sub.data;
@@ -3854,11 +3366,6 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
      if (subc->comp_data && subc->comp_data->sub.data) subc->comp_data->sub.data->parent = NULL;
    EINA_LIST_FREE(ec->comp_data->sub.below_list_pending, subc)
      if (subc->comp_data && subc->comp_data->sub.data) subc->comp_data->sub.data->parent = NULL;
-=======
-   /* remove sub list */
-   EINA_LIST_FREE(ec->comp_data->sub.list, subc)
-     subc->comp_data->sub.data->parent = NULL;
->>>>>>> upstream
 
    if ((ec->parent) && (ec->parent->modal == ec))
      {
@@ -3876,7 +3383,10 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
    if (ec->comp_data->surface)
      wl_resource_set_user_data(ec->comp_data->surface, NULL);
 
-<<<<<<< HEAD
+   if (ec->internal_elm_win)
+     _e_comp_wl_surface_render_stop(ec);
+   _e_comp_wl_focus_check();
+
    if (ec->comp_data->aux_hint.hints)
      {
         E_Comp_Wl_Aux_Hint *hint;
@@ -3892,7 +3402,7 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
 
    E_FREE(ec->comp_data);
 
-   _e_comp_wl_focus_check(ec->comp);
+   _e_comp_wl_focus_check();
 }
 
 static void
@@ -3906,17 +3416,12 @@ _e_comp_wl_client_cb_post_new(void *data EINA_UNUSED, E_Client *ec)
    if (ec->need_shape_export)
      {
 //        ec->shape_changed = EINA_TRUE;
-        e_comp_shape_queue(ec->comp);
+        e_comp_shape_queue();
         ec->need_shape_export = EINA_FALSE;
      }
 
    if (ec->argb && ec->frame && !e_util_strcmp("video", ec->icccm.window_role))
      _e_comp_wl_subsurface_create_below_bg_rectangle(ec);
-=======
-   if (ec->internal_elm_win)
-     _e_comp_wl_surface_render_stop(ec);
-   _e_comp_wl_focus_check();
->>>>>>> upstream
 }
 
 #if 0
@@ -4190,7 +3695,7 @@ _e_comp_wl_cb_output_bind(struct wl_client *client, void *data, uint32_t version
 }
 
 static void
-_e_comp_wl_gl_init(E_Comp_Data *cdata)
+_e_comp_wl_gl_init(void)
 {
    Evas_GL *evasgl = NULL;
    Evas_GL_API *glapi = NULL;
@@ -4226,15 +3731,15 @@ _e_comp_wl_gl_init(E_Comp_Data *cdata)
    res = evas_gl_make_current(evasgl, sfc, ctx);
    EINA_SAFETY_ON_FALSE_GOTO(res, err);
 
-   res = glapi->evasglBindWaylandDisplay(evasgl, cdata->wl.disp);
+   res = glapi->evasglBindWaylandDisplay(evasgl, e_comp_wl->wl.disp);
    EINA_SAFETY_ON_FALSE_GOTO(res, err);
 
    evas_gl_config_free(cfg);
 
-   cdata->gl.evasgl = evasgl;
-   cdata->gl.api = glapi;
-   cdata->gl.sfc = sfc;
-   cdata->gl.ctx = ctx;
+   e_comp_wl->gl.evasgl = evasgl;
+   e_comp_wl->gl.api = glapi;
+   e_comp_wl->gl.sfc = sfc;
+   e_comp_wl->gl.ctx = ctx;
 
    /* for native surface */
    e_comp->gl = 1;
@@ -4247,24 +3752,6 @@ err:
    evas_gl_context_destroy(evasgl, ctx);
    evas_gl_surface_destroy(evasgl, sfc);
    evas_gl_free(evasgl);
-}
-
-static void
-_e_comp_wl_gl_shutdown(E_Comp_Data *cdata)
-{
-   if (!cdata->gl.evasgl) return;
-
-   cdata->gl.api->evasglUnbindWaylandDisplay(cdata->gl.evasgl, cdata->wl.disp);
-
-   evas_gl_make_current(cdata->gl.evasgl, NULL, NULL);
-   evas_gl_context_destroy(cdata->gl.evasgl, cdata->gl.ctx);
-   evas_gl_surface_destroy(cdata->gl.evasgl, cdata->gl.sfc);
-   evas_gl_free(cdata->gl.evasgl);
-
-   cdata->gl.sfc = NULL;
-   cdata->gl.ctx = NULL;
-   cdata->gl.api = NULL;
-   cdata->gl.evasgl = NULL;
 }
 
 static void
@@ -4393,14 +3880,6 @@ _e_comp_wl_compositor_create(void)
         goto comp_global_err;
      }
 
-<<<<<<< HEAD
-   /* initialize shm mechanism */
-   wl_display_init_shm(cdata->wl.disp);
-
-#ifndef HAVE_WAYLAND_ONLY
-   _e_comp_wl_cb_randr_change(NULL, 0, NULL);
-#endif
-=======
    /* try to add session_recovery to wayland globals */
    if (!wl_global_create(cdata->wl.disp, &session_recovery_interface, 1,
                          e_comp, _e_comp_wl_session_recovery_cb_bind))
@@ -4422,7 +3901,6 @@ _e_comp_wl_compositor_create(void)
      }
 
    /* _e_comp_wl_cb_randr_change(NULL, 0, NULL); */
->>>>>>> upstream
 
    /* try to init data manager */
    if (!e_comp_wl_data_manager_init())
@@ -4438,7 +3916,7 @@ _e_comp_wl_compositor_create(void)
         goto input_err;
      }
 
-   _e_comp_wl_gl_init(cdata);
+   _e_comp_wl_gl_init();
 
 #ifndef HAVE_WAYLAND_ONLY
    if (e_comp_util_has_x())
@@ -4495,16 +3973,12 @@ _e_comp_wl_compositor_create(void)
    /* setup module idler to load shell mmodule */
    ecore_idler_add(_e_comp_wl_cb_module_idle, cdata);
 
-<<<<<<< HEAD
 #ifndef ENABLE_QUICK_INIT
    /* check if gl init succeded */
    ecore_idler_add(_e_comp_wl_gl_idle, cdata);
 
 #endif
-   if (comp->comp_type == E_PIXMAP_TYPE_X)
-=======
    if (e_comp->comp_type == E_PIXMAP_TYPE_X)
->>>>>>> upstream
      {
         e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
         e_comp_wl_input_keyboard_enabled_set(EINA_TRUE);
@@ -4540,29 +4014,19 @@ _e_comp_wl_desklock_hide(void)
 static void
 _e_comp_wl_gl_shutdown(void)
 {
-   if (!e_comp->gl) return;
-   if (e_comp_wl->wl.glapi->evasglUnbindWaylandDisplay)
-     e_comp_wl->wl.glapi->evasglUnbindWaylandDisplay(e_comp_wl->wl.gl, e_comp_wl->wl.disp);
-   evas_gl_surface_destroy(e_comp_wl->wl.gl, e_comp_wl->wl.glsfc);
-   evas_gl_context_destroy(e_comp_wl->wl.gl, e_comp_wl->wl.glctx);
-   evas_gl_free(e_comp_wl->wl.gl);
-   evas_gl_config_free(e_comp_wl->wl.glcfg);
-}
+   if (!e_comp_wl->gl.evasgl) return;
 
-static void
-_e_comp_wl_gl_init(void *d EINA_UNUSED)
-{
-   e_comp_wl->wl.gl = evas_gl_new(e_comp->evas);
-   if (!e_comp_wl->wl.gl) return;
-   e_comp_wl->wl.glctx = evas_gl_context_create(e_comp_wl->wl.gl, NULL);
-   e_comp_wl->wl.glcfg = evas_gl_config_new();
-   e_comp_wl->wl.glsfc = evas_gl_surface_create(e_comp_wl->wl.gl, e_comp_wl->wl.glcfg, 1, 1);
-   evas_gl_make_current(e_comp_wl->wl.gl, e_comp_wl->wl.glsfc, e_comp_wl->wl.glctx);
-   e_comp_wl->wl.glapi = evas_gl_context_api_get(e_comp_wl->wl.gl, e_comp_wl->wl.glctx);
-   if (e_comp_wl->wl.glapi->evasglBindWaylandDisplay)
-     e_comp->gl = e_comp_wl->wl.glapi->evasglBindWaylandDisplay(e_comp_wl->wl.gl, e_comp_wl->wl.disp);
-   else
-     _e_comp_wl_gl_shutdown();
+   e_comp_wl->gl.api->evasglUnbindWaylandDisplay(e_comp_wl->gl.evasgl, e_comp_wl->wl.disp);
+
+   evas_gl_make_current(e_comp_wl->gl.evasgl, NULL, NULL);
+   evas_gl_context_destroy(e_comp_wl->gl.evasgl, e_comp_wl->gl.ctx);
+   evas_gl_surface_destroy(e_comp_wl->gl.evasgl, e_comp_wl->gl.sfc);
+   evas_gl_free(e_comp_wl->gl.evasgl);
+
+   e_comp_wl->gl.sfc = NULL;
+   e_comp_wl->gl.ctx = NULL;
+   e_comp_wl->gl.api = NULL;
+   e_comp_wl->gl.evasgl = NULL;
 }
 
 /* public functions */
@@ -4618,30 +4082,6 @@ e_comp_wl_init(void)
 #endif
 
    /* add event handlers to catch E events */
-<<<<<<< HEAD
-#ifndef HAVE_WAYLAND_ONLY
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_RANDR_CHANGE,          _e_comp_wl_cb_randr_change,    NULL);
-#endif
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD,       _e_comp_wl_cb_comp_object_add, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN,          _e_comp_wl_cb_input_event,     NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_UP,            _e_comp_wl_cb_input_event,     NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_DOWN, _e_comp_wl_cb_input_event,     NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_UP,   _e_comp_wl_cb_input_event,     NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_MOVE,        _e_comp_wl_cb_input_event,     NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_WHEEL,       _e_comp_wl_cb_input_event,     NULL);
-
-   /* add hooks to catch e_client events */
-   e_client_hook_add(E_CLIENT_HOOK_NEW_CLIENT,           _e_comp_wl_client_cb_new,          NULL);
-   e_client_hook_add(E_CLIENT_HOOK_DEL,                  _e_comp_wl_client_cb_del,          NULL);
-   e_client_hook_add(E_CLIENT_HOOK_EVAL_POST_NEW_CLIENT, _e_comp_wl_client_cb_post_new,     NULL);
-   e_client_hook_add(E_CLIENT_HOOK_FOCUS_SET,            _e_comp_wl_client_cb_focus_set,    NULL);
-   e_client_hook_add(E_CLIENT_HOOK_FOCUS_UNSET,          _e_comp_wl_client_cb_focus_unset,  NULL);
-   e_client_hook_add(E_CLIENT_HOOK_RESIZE_BEGIN,         _e_comp_wl_client_cb_resize_begin, NULL);
-   e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,           _e_comp_wl_client_cb_resize_end,   NULL);
-   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,             _e_comp_wl_client_cb_move_end,     NULL);
-   e_client_hook_add(E_CLIENT_HOOK_ICONIFY,              _e_comp_wl_client_cb_iconify,    NULL);
-   e_client_hook_add(E_CLIENT_HOOK_UNICONIFY,            _e_comp_wl_client_cb_uniconify,    NULL);
-=======
    if (e_comp->comp_type != E_PIXMAP_TYPE_X)
      {
         if (e_randr2_init())
@@ -4677,7 +4117,10 @@ e_comp_wl_init(void)
                      _e_comp_wl_client_cb_resize_begin, NULL);
    e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,
                      _e_comp_wl_client_cb_resize_end, NULL);
->>>>>>> upstream
+
+   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,             _e_comp_wl_client_cb_move_end,     NULL);
+   e_client_hook_add(E_CLIENT_HOOK_ICONIFY,              _e_comp_wl_client_cb_iconify,    NULL);
+   e_client_hook_add(E_CLIENT_HOOK_UNICONIFY,            _e_comp_wl_client_cb_uniconify,    NULL);
 
    e_desklock_show_hook_add(_e_comp_wl_desklock_show);
    e_desklock_hide_hook_add(_e_comp_wl_desklock_hide);
@@ -4689,7 +4132,7 @@ e_comp_wl_init(void)
    return EINA_TRUE;
 }
 
-EAPI void
+E_API void
 e_comp_wl_deferred_job(void)
 {
    ecore_idle_enterer_add(_e_comp_wl_gl_idle, NULL);
@@ -4710,25 +4153,9 @@ e_comp_wl_surface_create_signal_get(void)
 EINTERN void
 e_comp_wl_shutdown(void)
 {
-<<<<<<< HEAD
-   /* free evas gl */
-   E_Comp_Data *cdata;
-   if ((cdata = e_comp->wl_comp_data))
-     _e_comp_wl_gl_shutdown(cdata);
-
-#ifndef HAVE_WAYLAND_ONLY
-   _e_comp_wl_compositor_cb_del(e_comp);
-#endif
    /* free buffer hash */
    E_FREE_FUNC(clients_buffer_hash, eina_hash_free);
 
-   /* free handlers */
-   E_FREE_LIST(handlers, ecore_event_handler_del);
-
-#ifdef HAVE_WAYLAND_TBM
-   e_comp_wl_tbm_shutdown();
-#endif
-=======
    /* free handlers */
    E_FREE_LIST(handlers, ecore_event_handler_del);
 
@@ -4747,10 +4174,13 @@ e_comp_wl_shutdown(void)
      }
    if (e_comp_wl->wl.shm) wl_shm_destroy(e_comp_wl->wl.shm);
    _e_comp_wl_gl_shutdown();
->>>>>>> upstream
 
    /* shutdown ecore_wayland */
    ecore_wl_shutdown();
+
+#ifdef HAVE_WAYLAND_TBM
+   e_comp_wl_tbm_shutdown();
+#endif
 }
 
 EINTERN struct wl_resource *
@@ -4774,15 +4204,10 @@ e_comp_wl_surface_event_simple_free(void *d EINA_UNUSED, E_Event_Client *ev)
 EINTERN void
 e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer)
 {
-<<<<<<< HEAD
    E_Event_Client *ev;
    ev = E_NEW(E_Event_Client, 1);
    if (!ev) return;
 
-   e_comp_wl_buffer_reference(&ec->comp_data->buffer_ref, buffer);
-
-=======
->>>>>>> upstream
    /* set usable early because shell module checks this */
    e_pixmap_usable_set(ec->pixmap, (buffer != NULL));
    e_pixmap_resource_set(ec->pixmap, buffer);
@@ -4807,21 +4232,14 @@ e_comp_wl_surface_commit(E_Client *ec)
    if (!e_comp_object_damage_exists(ec->frame))
      e_pixmap_image_clear(ec->pixmap, 1);
 
-<<<<<<< HEAD
    if (ec->comp_data->sub.below_list || ec->comp_data->sub.below_list_pending)
      {
         if (!ec->comp_data->sub.below_obj)
           _e_comp_wl_subsurface_create_below_bg_rectangle(ec);
      }
-=======
    ignored = ec->ignored;
->>>>>>> upstream
 
    _e_comp_wl_surface_subsurface_order_commit(ec);
-
-   /* schedule repaint */
-   if (e_pixmap_refresh(ec->pixmap))
-     e_comp_post_update_add(ec);
 
    if (!e_pixmap_usable_get(ec->pixmap))
      {
@@ -4833,11 +4251,7 @@ e_comp_wl_surface_commit(E_Client *ec)
                {
                   ec->visible = EINA_FALSE;
                   evas_object_hide(ec->frame);
-<<<<<<< HEAD
-                  ec->comp_data->mapped = EINA_FALSE;
-=======
                   ec->comp_data->mapped = 0;
->>>>>>> upstream
                }
           }
 
@@ -4855,11 +4269,7 @@ e_comp_wl_surface_commit(E_Client *ec)
                   ec->visible = EINA_TRUE;
                   ec->ignored = 0;
                   evas_object_show(ec->frame);
-<<<<<<< HEAD
-                  ec->comp_data->mapped = EINA_TRUE;
-=======
                   ec->comp_data->mapped = 1;
->>>>>>> upstream
                }
           }
 
@@ -4908,7 +4318,7 @@ e_comp_wl_subsurface_commit(E_Client *ec)
    return EINA_TRUE;
 }
 
-EAPI void
+E_API void
 e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
 {
    if ((ref->buffer) && (buffer != ref->buffer))
@@ -4942,18 +4352,12 @@ e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
  * @param resource that owns the desired buffer
  * @returns a new E_Comp_Wl_Buffer object
  */
-<<<<<<< HEAD
-EAPI E_Comp_Wl_Buffer *
-e_comp_wl_buffer_get(struct wl_resource *resource, struct wl_resource *surface)
-=======
 E_API E_Comp_Wl_Buffer *
 e_comp_wl_buffer_get(struct wl_resource *resource)
->>>>>>> upstream
 {
    E_Comp_Wl_Buffer *buffer = NULL;
    struct wl_listener *listener;
    struct wl_shm_buffer *shmbuff;
-   E_Comp_Data *cdata;
    Eina_Bool res;
    tbm_surface_h tbm_surf;
 
@@ -4963,7 +4367,6 @@ e_comp_wl_buffer_get(struct wl_resource *resource)
      return container_of(listener, E_Comp_Wl_Buffer, destroy_listener);
 
    if (!(buffer = E_NEW(E_Comp_Wl_Buffer, 1))) return NULL;
-<<<<<<< HEAD
 
    shmbuff = wl_shm_buffer_get(resource);
 
@@ -4976,28 +4379,26 @@ e_comp_wl_buffer_get(struct wl_resource *resource)
      }
    else
      {
-        E_Pixmap *ep = wl_resource_get_user_data(surface);
-        E_Comp_Wl_Client_Data *p_cdata = e_pixmap_cdata_get(ep);
+        E_Client *ec = eina_hash_find(clients_buffer_hash, &resource);
 
-        cdata = e_comp->wl_comp_data;
-        if (p_cdata && p_cdata->video_client)
+        if ((ec) && (ec->e.state.video))
           {
-             tbm_surf = wayland_tbm_server_get_surface(cdata->tbm.server, resource);
+             tbm_surf = wayland_tbm_server_get_surface(e_comp_wl->tbm.server, resource);
              buffer->type = E_COMP_WL_BUFFER_TYPE_VIDEO;
              buffer->w = tbm_surface_get_width(tbm_surf);
              buffer->h = tbm_surface_get_height(tbm_surf);
           }
-        else if (cdata->gl.api)
+        else if (e_comp->gl)
           {
              buffer->type = E_COMP_WL_BUFFER_TYPE_NATIVE;
 
-             res = cdata->gl.api->evasglQueryWaylandBuffer(cdata->gl.evasgl,
+             res = e_comp_wl->gl.api->evasglQueryWaylandBuffer(e_comp_wl->wl.gl,
                                                            resource,
                                                            EVAS_GL_WIDTH,
                                                            &buffer->w);
              EINA_SAFETY_ON_FALSE_GOTO(res, err);
 
-             res = cdata->gl.api->evasglQueryWaylandBuffer(cdata->gl.evasgl,
+             res = e_comp_wl->gl.api->evasglQueryWaylandBuffer(e_comp_wl->wl.gl,
                                                            resource,
                                                            EVAS_GL_HEIGHT,
                                                            &buffer->h);
@@ -5006,20 +4407,7 @@ e_comp_wl_buffer_get(struct wl_resource *resource)
         else
           goto err;
      }
-=======
-   shmbuff = wl_shm_buffer_get(resource);
-   if (shmbuff)
-     {
-        buffer->w = wl_shm_buffer_get_width(shmbuff);
-        buffer->h = wl_shm_buffer_get_height(shmbuff);
-     }
-   else if (e_comp->gl)
-     {
-        e_comp_wl->wl.glapi->evasglQueryWaylandBuffer(e_comp_wl->wl.gl, resource, EGL_WIDTH, &buffer->w);
-        e_comp_wl->wl.glapi->evasglQueryWaylandBuffer(e_comp_wl->wl.gl, resource, EGL_HEIGHT, &buffer->h);
-     }
    buffer->shm_buffer = shmbuff;
->>>>>>> upstream
 
    buffer->resource = resource;
    wl_signal_init(&buffer->destroy_signal);
@@ -5095,12 +4483,8 @@ e_comp_wl_output_init(const char *id, const char *make, const char *model,
    output = _e_comp_wl_output_get(e_comp_wl->outputs, id);
    if (!output)
      {
-<<<<<<< HEAD
-        if (!(output = E_NEW(E_Comp_Wl_Output, 1))) return;
-=======
         if (!(output = E_NEW(E_Comp_Wl_Output, 1))) return EINA_FALSE;
 
->>>>>>> upstream
         if (id) output->id = eina_stringshare_add(id);
         if (make)
           output->make = eina_stringshare_add(make);
@@ -5310,6 +4694,13 @@ e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t bu
    e_comp_wl->ptr.button = btn;
 
    if (!ec->comp_data->surface) return EINA_FALSE;
+
+   if ((ec->comp_data->transform.cur_degree != 0) &&
+       (btn == BTN_MIDDLE))
+     {
+        _e_comp_wl_transform_unset(ec);
+        return EINA_TRUE;
+     }
 
    if (!eina_list_count(e_comp_wl->ptr.resources))
      return EINA_TRUE;

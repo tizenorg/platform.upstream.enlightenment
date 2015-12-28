@@ -551,18 +551,8 @@ e_comp_canvas_update(void)
    if (!changed) return;
    if (!starting)
      {
-<<<<<<< HEAD
-        ev = calloc(1, sizeof(E_Event_Compositor_Resize));
-        if (ev)
-          {
-             ev->comp = e_comp;
-             e_object_ref(E_OBJECT(e_comp));
-             ecore_event_add(E_EVENT_COMPOSITOR_RESIZE, ev, _e_comp_canvas_event_compositor_resize_free, NULL);
-          }
-=======
         e_object_ref(E_OBJECT(e_comp));
         ecore_event_add(E_EVENT_COMPOSITOR_RESIZE, NULL, _e_comp_canvas_event_compositor_resize_free, NULL);
->>>>>>> upstream
      }
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
@@ -747,7 +737,7 @@ e_comp_canvas_client_layer_map_nearest(int layer)
    return E_LAYER_CLIENT_ALERT;
 }
 
-EAPI void
+E_API void
 e_comp_post_update_add(E_Client *ec)
 {
    E_Client *ec2;
@@ -761,7 +751,7 @@ e_comp_post_update_add(E_Client *ec)
    e_object_ref(E_OBJECT(ec));
 }
 
-EAPI void
+E_API void
 e_comp_post_update_purge(E_Client *ec)
 {
    Eina_List *l, *ll;

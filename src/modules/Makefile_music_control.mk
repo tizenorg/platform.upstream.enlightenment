@@ -1,11 +1,7 @@
 EXTRA_DIST += src/modules/music-control/module.desktop.in \
-<<<<<<< HEAD
-src/modules/music-control/e-module-music-control.edj
-=======
 src/modules/music-control/e-module-music-control.edj \
 src/modules/music-control/introspect.xml
 
->>>>>>> upstream
 if USE_MODULE_MUSIC_CONTROL
 music_controldir = $(MDIR)/music-control
 music_control_DATA = src/modules/music-control/module.desktop \

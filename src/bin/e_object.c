@@ -12,8 +12,8 @@ static sigjmp_buf _e_object_segv_buf;
 #endif
 
 #ifdef OBJECT_HASH_CHECK
-EAPI Eina_Bool e_obj_hash_check = EINA_FALSE;
-EAPI Eina_Hash *e_obj_hash = NULL;
+E_API Eina_Bool e_obj_hash_check = EINA_FALSE;
+E_API Eina_Hash *e_obj_hash = NULL;
 #endif
 
 /* externally accessible functions */
@@ -438,7 +438,7 @@ e_object_delfn_del(E_Object *obj, E_Object_Delfn *dfn)
  */
 
 #ifdef OBJECT_HASH_CHECK
-EAPI void
+E_API void
 e_object_hash_init(void)
 {
    char *val;
@@ -453,7 +453,7 @@ e_object_hash_init(void)
      }
 }
 
-EAPI void
+E_API void
 e_object_hash_shutdown(void)
 {
    E_FREE_FUNC(e_obj_hash, eina_hash_free);

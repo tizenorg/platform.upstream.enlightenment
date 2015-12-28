@@ -70,22 +70,13 @@ _e_elm_win_trap_show(void *data, Evas_Object *o)
      {
         E_Client *ec;
         Ecore_Window win;
-<<<<<<< HEAD
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-        uintptr_t wl_win_id = NULL;
-=======
 #ifdef HAVE_WAYLAND
-        uintptr_t wl_win_id;
->>>>>>> upstream
+        uintptr_t wl_win_id = NULL;
 #endif
         E_Pixmap_Type type = E_PIXMAP_TYPE_X;
 
         win = elm_win_window_id_get(o);
-<<<<<<< HEAD
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-=======
 #ifdef HAVE_WAYLAND
->>>>>>> upstream
         if (!strncmp(ecore_evas_engine_name_get(ee), "wayland", 7))
           {
              type = E_PIXMAP_TYPE_WL;
@@ -102,18 +93,10 @@ _e_elm_win_trap_show(void *data, Evas_Object *o)
           }
 
 #ifdef HAVE_WAYLAND
-        if (type == E_PIXMAP_TYPE_WL)
-          ec = e_pixmap_find_client(type, wl_win_id);
-        else
-#endif
-<<<<<<< HEAD
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
         if ((type == E_PIXMAP_TYPE_WL) && (wl_win_id))
           ec = e_pixmap_find_client(type, wl_win_id);
         else
 #endif
-=======
->>>>>>> upstream
           ec = e_pixmap_find_client(type, win);
         if (ec)
           ctx->client = ec;
@@ -130,8 +113,7 @@ _e_elm_win_trap_show(void *data, Evas_Object *o)
              if ((!title) || (!title[0]))
                title = "E";
              ecore_evas_title_set(ee, title);
-<<<<<<< HEAD
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND
              if (type == E_PIXMAP_TYPE_WL)
                {
                   if ((cp = e_pixmap_find(type, wl_win_id)))
@@ -144,12 +126,6 @@ _e_elm_win_trap_show(void *data, Evas_Object *o)
                   if (!cp)
                     cp = e_pixmap_new(type, wl_win_id);
                }
-=======
-
-#ifdef HAVE_WAYLAND
-             if (type == E_PIXMAP_TYPE_WL)
-               cp = e_pixmap_new(type, wl_win_id);
->>>>>>> upstream
              else
 #endif
                cp = e_pixmap_new(type, win);
