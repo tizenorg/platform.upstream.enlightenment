@@ -4564,17 +4564,12 @@ e_client_fullscreen(E_Client *ec, E_Fullscreen policy)
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
    if (!ec->zone) return;
 
-<<<<<<< HEAD
    if ((ec->shaded) || (ec->shading) || (ec->fullscreen)) return;
 
    _e_client_hook_call(E_CLIENT_HOOK_FULLSCREEN_PRE, ec);
 
    if (ec->skip_fullscreen) return;
-
-=======
-   if ((ec->shaded) || (ec->shading) || ec->fullscreen) return;
    if ((!e_config->allow_above_fullscreen) && (!ec->desk->visible)) return;
->>>>>>> upstream
    if (ec->new_client)
      {
         ec->need_fullscreen = 1;
