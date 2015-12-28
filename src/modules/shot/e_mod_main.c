@@ -9,7 +9,12 @@
  * @}
  */
 #include "e.h"
+#ifdef HAVE_WAYLAND
+# include "screenshooter-client-protocol.h"
+#endif
 #include <time.h>
+#include <sys/mman.h>
+
 static E_Module *shot_module = NULL;
 
 static E_Action *border_act = NULL, *act = NULL;
@@ -19,8 +24,6 @@ static Evas_Object *win = NULL;
 E_Confirm_Dialog *cd = NULL;
 static Evas_Object *o_bg = NULL, *o_box = NULL, *o_content = NULL;
 static Evas_Object *o_event = NULL, *o_img = NULL, *o_hlist = NULL;
-static E_Manager *sman = NULL;
-static E_Comp *scomp = NULL;
 static int quality = 90;
 static int screen = -1;
 #define MAXZONES 64
@@ -38,14 +41,88 @@ static char *url_ret = NULL;
 static E_Dialog *fsel_dia = NULL;
 static E_Client_Menu_Hook *border_hook = NULL;
 
-static void _file_select_ok_cb(void *data __UNUSED__, E_Dialog *dia);
-static void _file_select_cancel_cb(void *data __UNUSED__, E_Dialog *dia);
+#ifdef HAVE_WAYLAND
+Eina_Bool copy_done = EINA_FALSE;
+static struct screenshooter *_wl_screenshooter;
+static Eina_List *_outputs;
+struct screenshooter_output
+{
+   struct wl_output *output;
+   struct wl_buffer *buffer;
+   int x, y, w, h;
+   uint32_t id;
+   void *data;
+};
+#endif
+
+static void _file_select_ok_cb(void *data EINA_UNUSED, E_Dialog *dia);
+static void _file_select_cancel_cb(void *data EINA_UNUSED, E_Dialog *dia);
 
 static void
-_win_cancel_cb(void *data __UNUSED__, void *data2 __UNUSED__)
+_win_cancel_cb(void *data EINA_UNUSED, void *data2 EINA_UNUSED)
 {
    E_FREE_FUNC(win, evas_object_del);
 }
+
+#ifdef HAVE_WAYLAND
+static void
+_wl_cb_screenshot_done(void *data EINA_UNUSED, struct screenshooter *screenshooter EINA_UNUSED)
+{
+   copy_done = EINA_TRUE;
+}
+
+static const struct screenshooter_listener _screenshooter_listener =
+{
+   _wl_cb_screenshot_done
+};
+
+static void
+_wl_output_cb_handle_geometry(void *data EINA_UNUSED, struct wl_output *wl_output, int x, int y, int pw EINA_UNUSED, int ph EINA_UNUSED, int subpixel EINA_UNUSED, const char *make EINA_UNUSED, const char *model EINA_UNUSED, int transform EINA_UNUSED)
+{
+   struct screenshooter_output *output;
+
+   output = wl_output_get_user_data(wl_output);
+   if ((output) && (wl_output == output->output))
+     {
+        output->x = x;
+        output->y = y;
+     }
+}
+
+static void
+_wl_output_cb_handle_mode(void *data EINA_UNUSED, struct wl_output *wl_output, uint32_t flags, int w, int h, int refresh EINA_UNUSED)
+{
+   struct screenshooter_output *output;
+
+   output = wl_output_get_user_data(wl_output);
+   if ((output) &&
+       ((wl_output == output->output) && (flags & WL_OUTPUT_MODE_CURRENT)))
+     {
+        output->w = w;
+        output->h = h;
+     }
+}
+
+static void
+_wl_output_cb_handle_done(void *data EINA_UNUSED, struct wl_output *output EINA_UNUSED)
+{
+
+}
+
+static void
+_wl_output_cb_handle_scale(void *data EINA_UNUSED, struct wl_output *output EINA_UNUSED, int32_t scale EINA_UNUSED)
+{
+
+}
+
+static const struct wl_output_listener _output_listener =
+{
+   _wl_output_cb_handle_geometry,
+   _wl_output_cb_handle_mode,
+   _wl_output_cb_handle_done,
+   _wl_output_cb_handle_scale
+};
+#endif
 
 static void
 _win_delete_cb()
@@ -54,14 +131,14 @@ _win_delete_cb()
 }
 
 static void
-_on_focus_cb(void *data __UNUSED__, Evas_Object *obj)
+_on_focus_cb(void *data EINA_UNUSED, Evas_Object *obj)
 {
    if (obj == o_content) e_widget_focused_object_clear(o_box);
    else if (o_content) e_widget_focused_object_clear(o_content);
 }
 
 static void
-_key_down_cb(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event)
+_key_down_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    Evas_Event_Key_Down *ev = event;
 
@@ -119,9 +196,10 @@ _key_down_cb(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj __UNUSE
 }
 
 static void
-_save_key_down_cb(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event)
+_save_key_down_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    Evas_Event_Key_Down *ev = event;
+
    if ((!strcmp(ev->key, "Return")) || (!strcmp(ev->key, "KP_Enter")))
      _file_select_ok_cb(NULL, fsel_dia);
    else if (!strcmp(ev->key, "Escape"))
@@ -129,12 +207,12 @@ _save_key_down_cb(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj __
 }
 
 static void
-_screen_change_cb(void *data __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_screen_change_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Eina_List *l;
    E_Zone *z;
 
-   EINA_LIST_FOREACH(scomp->zones, l, z)
+   EINA_LIST_FOREACH(e_comp->zones, l, z)
      {
         if (screen == -1)
           evas_object_color_set(o_rectdim[z->num], 0, 0, 0, 0);
@@ -169,7 +247,7 @@ _save_to(const char *file)
         Eina_List *l;
         E_Zone *z = NULL;
 
-        EINA_LIST_FOREACH(scomp->zones, l, z)
+        EINA_LIST_FOREACH(e_comp->zones, l, z)
           {
              if (screen == (int)z->num) break;
              z = NULL;
@@ -207,13 +285,15 @@ _save_to(const char *file)
 }
 
 static void
-_file_select_ok_cb(void *data __UNUSED__, E_Dialog *dia)
+_file_select_ok_cb(void *data EINA_UNUSED, E_Dialog *dia)
 {
    const char *file;
 
    dia = fsel_dia;
    file = e_widget_fsel_selection_path_get(o_fsel);
-   if ((!file) || (!file[0]) || ((!eina_str_has_extension(file, ".jpg")) && (!eina_str_has_extension(file, ".png"))))
+   if ((!file) || (!file[0]) ||
+       ((!eina_str_has_extension(file, ".jpg")) &&
+           (!eina_str_has_extension(file, ".png"))))
      {
         e_util_dialog_show
         (_("Error - Unknown format"),
@@ -230,20 +310,20 @@ _file_select_ok_cb(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_file_select_cancel_cb(void *data __UNUSED__, E_Dialog *dia)
+_file_select_cancel_cb(void *data EINA_UNUSED, E_Dialog *dia)
 {
    if (dia) e_util_defer_object_del(E_OBJECT(dia));
    fsel_dia = NULL;
 }
 
 static void
-_file_select_del_cb(void *d __UNUSED__)
+_file_select_del_cb(void *d EINA_UNUSED)
 {
    fsel_dia = NULL;
 }
 
 static void
-_win_save_cb(void *data __UNUSED__, void *data2 __UNUSED__)
+_win_save_cb(void *data EINA_UNUSED, void *data2 EINA_UNUSED)
 { 
    E_Dialog *dia;
    Evas_Object *o;
@@ -263,12 +343,9 @@ _win_save_cb(void *data __UNUSED__, void *data2 __UNUSED__)
    e_dialog_resizable_set(dia, EINA_TRUE);
    e_dialog_title_set(dia, _("Select screenshot save location"));
    o = e_widget_fsel_add(evas_object_evas_get(dia->win), "desktop", "/", 
-                         buf,
-                         NULL,
-                         NULL, NULL,
-                         NULL, NULL, 1);
+                         buf, NULL, NULL, NULL, NULL, NULL, 1);
    e_object_del_attach_func_set(E_OBJECT(dia), _file_select_del_cb);
-   e_widget_fsel_window_object_set(o, E_OBJECT(dia->win));
+   e_widget_fsel_window_set(o, dia->win);
    o_fsel = o;
    evas_object_show(o);
    e_widget_size_min_get(o, &mw, &mh);
@@ -279,12 +356,16 @@ _win_save_cb(void *data __UNUSED__, void *data2 __UNUSED__)
                        _file_select_cancel_cb, NULL);
    elm_win_center(dia->win, 1, 1);
    o = evas_object_rectangle_add(evas_object_evas_get(dia->win));
-   if (!evas_object_key_grab(o, "Return", mask, ~mask, 0)) printf("grab err\n");
+   if (!evas_object_key_grab(o, "Return", mask, ~mask, 0))
+     printf("grab err\n");
    mask = 0;
-   if (!evas_object_key_grab(o, "KP_Enter", mask, ~mask, 0)) printf("grab err\n");
+   if (!evas_object_key_grab(o, "KP_Enter", mask, ~mask, 0))
+     printf("grab err\n");
    mask = 0;
-   if (!evas_object_key_grab(o, "Escape", mask, ~mask, 0)) printf("grab err\n");
-   evas_object_event_callback_add(o, EVAS_CALLBACK_KEY_DOWN, _save_key_down_cb, NULL);
+   if (!evas_object_key_grab(o, "Escape", mask, ~mask, 0))
+     printf("grab err\n");
+   evas_object_event_callback_add(o, EVAS_CALLBACK_KEY_DOWN,
+                                  _save_key_down_cb, NULL);
    e_dialog_show(dia);
 }
 
@@ -299,7 +380,7 @@ _share_done(void)
 }
 
 static void
-_upload_ok_cb(void *data __UNUSED__, E_Dialog *dia)
+_upload_ok_cb(void *data EINA_UNUSED, E_Dialog *dia)
 {
    // ok just hides dialog and does background upload
    o_label = NULL;
@@ -309,7 +390,7 @@ _upload_ok_cb(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_upload_cancel_cb(void *data __UNUSED__, E_Dialog *dia)
+_upload_cancel_cb(void *data EINA_UNUSED, E_Dialog *dia)
 {
    o_label = NULL;
    if (dia) e_util_defer_object_del(E_OBJECT(dia));
@@ -318,9 +399,10 @@ _upload_cancel_cb(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static Eina_Bool
-_upload_data_cb(void *data __UNUSED__, int ev_type __UNUSED__, void *event)
+_upload_data_cb(void *data EINA_UNUSED, int ev_type EINA_UNUSED, void *event)
 {
    Ecore_Con_Event_Url_Data *ev = event;
+
    if (ev->url_con != url_up) return EINA_TRUE;
    if ((o_label) && (ev->size < 1024))
      {
@@ -353,10 +435,11 @@ _upload_data_cb(void *data __UNUSED__, int ev_type __UNUSED__, void *event)
 }
 
 static Eina_Bool
-_upload_progress_cb(void *data __UNUSED__, int ev_type __UNUSED__, void *event)
+_upload_progress_cb(void *data EINA_UNUSED, int ev_type EINA_UNUSED, void *event)
 {
    size_t total, current;
    Ecore_Con_Event_Url_Progress *ev = event;
+
    if (ev->url_con != url_up) return ECORE_CALLBACK_RENEW;
    total = ev->up.total;
    current = ev->up.now;
@@ -367,9 +450,7 @@ _upload_progress_cb(void *data __UNUSED__, int ev_type __UNUSED__, void *event)
 
         buf_now = e_util_size_string_get(current);
         buf_total = e_util_size_string_get(total);
-        snprintf(buf, sizeof(buf),
-                 _("Uploaded %s / %s"),
-                 buf_now, buf_total);
+        snprintf(buf, sizeof(buf), _("Uploaded %s / %s"), buf_now, buf_total);
         E_FREE(buf_now);
         E_FREE(buf_total);
         e_widget_label_text_set(o_label, buf);
@@ -378,10 +459,11 @@ _upload_progress_cb(void *data __UNUSED__, int ev_type __UNUSED__, void *event)
 }
 
 static Eina_Bool
-_upload_complete_cb(void *data, int ev_type __UNUSED__, void *event)
+_upload_complete_cb(void *data, int ev_type EINA_UNUSED, void *event)
 {
    int status;
    Ecore_Con_Event_Url_Complete *ev = event;
+
    if (ev->url_con != url_up) return ECORE_CALLBACK_RENEW;
    status = ev->status;
 
@@ -402,15 +484,16 @@ _upload_complete_cb(void *data, int ev_type __UNUSED__, void *event)
 }
 
 static void
-_win_share_del(void *data __UNUSED__)
+_win_share_del(void *data EINA_UNUSED)
 {
-   if (handlers) ecore_event_handler_data_set(eina_list_last_data_get(handlers), NULL);
+   if (handlers)
+     ecore_event_handler_data_set(eina_list_last_data_get(handlers), NULL);
    _upload_cancel_cb(NULL, NULL);
    if (cd) e_object_del(E_OBJECT(cd));
 }
 
 static void
-_win_share_cb(void *data __UNUSED__, void *data2 __UNUSED__)
+_win_share_cb(void *data EINA_UNUSED, void *data2 EINA_UNUSED)
 {
    E_Dialog *dia;
    Evas_Object *o, *ol;
@@ -483,10 +566,12 @@ _win_share_cb(void *data __UNUSED__, void *data2 __UNUSED__)
 
    _share_done();
 
-   E_LIST_HANDLER_APPEND(handlers, ECORE_CON_EVENT_URL_DATA, _upload_data_cb, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_CON_EVENT_URL_PROGRESS, _upload_progress_cb, NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_CON_EVENT_URL_DATA,
+                         _upload_data_cb, NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_CON_EVENT_URL_PROGRESS,
+                         _upload_progress_cb, NULL);
 
-   url_up = ecore_con_url_new("http://www.enlightenment.org/shot.php");
+   url_up = ecore_con_url_new("https://www.enlightenment.org/shot.php");
    // why use http 1.1? proxies like squid don't handle 1.1 posts with expect
    // like curl uses by default, so go to 1.0 and this all works dandily
    // out of the box
@@ -516,7 +601,9 @@ _win_share_cb(void *data __UNUSED__, void *data2 __UNUSED__)
    e_dialog_button_add(dia, _("Hide"), NULL, _upload_ok_cb, NULL);
    e_dialog_button_add(dia, _("Cancel"), NULL, _upload_cancel_cb, NULL);
    e_object_del_attach_func_set(E_OBJECT(dia), _win_share_del);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_CON_EVENT_URL_COMPLETE, _upload_complete_cb, eina_list_last_data_get(dia->buttons));
+   E_LIST_HANDLER_APPEND(handlers, ECORE_CON_EVENT_URL_COMPLETE,
+                         _upload_complete_cb,
+                         eina_list_last_data_get(dia->buttons));
    elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
 }
@@ -540,12 +627,13 @@ _win_share_confirm_cb(void *d EINA_UNUSED, void *d2 EINA_UNUSED)
    cd = e_confirm_dialog_show(_("Confirm Share"), NULL,
                               _("This image will be uploaded<br>"
                                 "to enlightenment.org. It will be publicly visible."),
-                              _("Confirm"), _("Cancel"), _win_share_confirm_yes, NULL,
+                              _("Confirm"), _("Cancel"),
+                              _win_share_confirm_yes, NULL,
                               NULL, NULL, _win_share_confirm_del, NULL);
 }
 
 static void
-_rect_down_cb(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
+_rect_down_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evas_Event_Mouse_Down *ev = event_info;
    Eina_List *l;
@@ -554,7 +642,7 @@ _rect_down_cb(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj __UNUS
    if (ev->button != 1) return;
 
    e_widget_radio_toggle_set(o_radio_all, 0);
-   EINA_LIST_FOREACH(scomp->zones, l, z)
+   EINA_LIST_FOREACH(e_comp->zones, l, z)
      {
         if (obj == o_rectdim[z->num])
           {
@@ -565,7 +653,7 @@ _rect_down_cb(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj __UNUS
            e_widget_radio_toggle_set(o_radio[z->num], 0);
      }
 
-   EINA_LIST_FOREACH(scomp->zones, l, z)
+   EINA_LIST_FOREACH(e_comp->zones, l, z)
      {
         if (screen == -1)
            evas_object_color_set(o_rectdim[z->num], 0, 0, 0, 0);
@@ -577,18 +665,372 @@ _rect_down_cb(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj __UNUS
 }
 
 static void
-_shot_now(E_Zone *zone, E_Client *ec, const char *params)
+_save_dialog_show(E_Zone *zone, E_Client *ec, const char *params, void *dst, int sw, int sh)
 {
+   Evas *evas, *evas2;
+   Evas_Object *o, *oa, *op, *ol;
+   Evas_Modifier_Mask mask;
+   E_Radio_Group *rg;
+   int w, h;
+
+   win = elm_win_add(NULL, NULL, ELM_WIN_BASIC);
+
+   evas = evas_object_evas_get(win);
+   elm_win_title_set(win, _("Where to put Screenshot..."));
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_delete_cb, NULL);
+   elm_win_center(win, 1, 1);
+   ecore_evas_name_class_set(e_win_ee_get(win), "E", "_shot_dialog");
+
+   o = elm_layout_add(e_win_evas_win_get(evas));
+   elm_win_resize_object_add(win, o);
+   o_bg = o;;
+   e_theme_edje_object_set(o, "base/theme/dialog", "e/widgets/dialog/main");
+   evas_object_show(o);
+
+   o = e_widget_list_add(evas, 0, 0);
+   o_content = o;
+   elm_object_part_content_set(o_bg, "e.swallow.content", o);
+   evas_object_show(o);
+
+   w = sw / 4;
+   if (w < 220) w = 220;
+   h = (w * sh) / sw;
+
+   o = e_widget_aspect_add(evas, w, h);
+   oa = o;
+   o = e_widget_preview_add(evas, w, h);
+   op = o;
+
+   evas2 = e_widget_preview_evas_get(op);
+
+   o = evas_object_image_filled_add(evas2);
+   o_img = o;
+   evas_object_image_colorspace_set(o, EVAS_COLORSPACE_ARGB8888);
+   evas_object_image_alpha_set(o, EINA_FALSE);
+   evas_object_image_size_set(o, sw, sh);
+   evas_object_image_data_copy_set(o, dst);
+
+   evas_object_image_data_update_add(o, 0, 0, sw, sh);
+   e_widget_preview_extern_object_set(op, o);
+   evas_object_show(o);
+
+   evas_object_show(op);
+   evas_object_show(oa);
+
+   e_widget_aspect_child_set(oa, op);
+   e_widget_list_object_append(o_content, oa, 0, 0, 0.5);
+
+   o = e_widget_list_add(evas, 1, 1);
+   o_hlist = o;
+
+   o = e_widget_framelist_add(evas, _("Quality"), 0);
+   ol = o;
+
+   rg = e_widget_radio_group_new(&quality);
+   o = e_widget_radio_add(evas, _("Perfect"), 100, rg);
+   e_widget_framelist_object_append(ol, o);
+   o = e_widget_radio_add(evas, _("High"), 90, rg);
+   e_widget_framelist_object_append(ol, o);
+   o = e_widget_radio_add(evas, _("Medium"), 70, rg);
+   e_widget_framelist_object_append(ol, o);
+   o = e_widget_radio_add(evas, _("Low"), 50, rg);
+   e_widget_framelist_object_append(ol, o);
+
+   e_widget_list_object_append(o_hlist, ol, 1, 0, 0.5);
+
+   if (zone)
+     {
+        screen = -1;
+        if (eina_list_count(e_comp->zones) > 1)
+          {
+             Eina_List *l;
+             E_Zone *z;
+             int i;
+
+             o = e_widget_framelist_add(evas, _("Screen"), 0);
+             ol = o;
+
+             rg = e_widget_radio_group_new(&screen);
+             o = e_widget_radio_add(evas, _("All"), -1, rg);
+             o_radio_all = o;
+             evas_object_smart_callback_add(o, "changed",
+                                            _screen_change_cb, NULL);
+             e_widget_framelist_object_append(ol, o);
+             i = 0;
+             EINA_LIST_FOREACH(e_comp->zones, l, z)
+               {
+                  char buf[32];
+
+                  if (z->num >= MAXZONES) continue;
+                  snprintf(buf, sizeof(buf), "%i", z->num);
+                  o = e_widget_radio_add(evas, buf, z->num, rg);
+                  o_radio[z->num] = o;
+                  evas_object_smart_callback_add(o, "changed",
+                                                 _screen_change_cb, NULL);
+                  e_widget_framelist_object_append(ol, o);
+
+                  o = evas_object_rectangle_add(evas2);
+                  evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN,
+                                                 _rect_down_cb, NULL);
+                  o_rectdim[z->num] = o;
+                  evas_object_color_set(o, 0, 0, 0, 0);
+                  evas_object_show(o);
+                  evas_object_geometry_get(o_img, NULL, NULL, &w, &h);
+                  evas_object_move(o, (z->x * w) / sw, (z->y * h) / sh);
+                  evas_object_resize(o, (z->w * w) / sw, (z->h * h) / sh);
+                  i++;
+               }
+
+             e_widget_list_object_append(o_hlist, ol, 1, 0, 0.5);
+          }
+
+     }
+   e_widget_list_object_append(o_content, o_hlist, 0, 0, 0.5);
+
+   o = o_content;
+   e_widget_size_min_get(o, &w, &h);
+   evas_object_size_hint_min_set(o, w, h);
+   elm_object_part_content_set(o_bg, "e.swallow.content", o);
+   evas_object_show(o);
+
+   ///////////////////////////////////////////////////////////////////////
+
+   o = e_widget_list_add(evas, 1, 1);
+   o_box = o;
+   e_widget_on_focus_hook_set(o, _on_focus_cb, NULL);
+   elm_object_part_content_set(o_bg, "e.swallow.buttons", o);
+
+   o = e_widget_button_add(evas, _("Save"), NULL, _win_save_cb, win, NULL);
+   e_widget_list_object_append(o_box, o, 1, 0, 0.5);
+   o = e_widget_button_add(evas, _("Share"), NULL,
+                           _win_share_confirm_cb, win, NULL);
+   e_widget_list_object_append(o_box, o, 1, 0, 0.5);
+   o = e_widget_button_add(evas, _("Cancel"), NULL, _win_cancel_cb, win, NULL);
+   e_widget_list_object_append(o_box, o, 1, 0, 0.5);
+
+   o = o_box;
+   e_widget_size_min_get(o, &w, &h);
+   evas_object_size_hint_min_set(o, w, h);
+   elm_object_part_content_set(o_bg, "e.swallow.buttons", o);
+
+   o = evas_object_rectangle_add(evas);
+   o_event = o;
+   mask = 0;
+   if (!evas_object_key_grab(o, "Tab", mask, ~mask, 0)) printf("grab err\n");
+   mask = evas_key_modifier_mask_get(evas, "Shift");
+   if (!evas_object_key_grab(o, "Tab", mask, ~mask, 0)) printf("grab err\n");
+   mask = 0;
+   if (!evas_object_key_grab(o, "Return", mask, ~mask, 0)) printf("grab err\n");
+   mask = 0;
+   if (!evas_object_key_grab(o, "KP_Enter", mask, ~mask, 0)) printf("grab err\n");
+   mask = 0;
+   if (!evas_object_key_grab(o, "space", mask, ~mask, 0)) printf("grab err\n");
+   mask = 0;
+   if (!evas_object_key_grab(o, "Escape", mask, ~mask, 0)) printf("grab err\n");
+   evas_object_event_callback_add(o, EVAS_CALLBACK_KEY_DOWN, _key_down_cb, NULL);
+
+   evas_object_size_hint_min_get(o_bg, &w, &h);
+   evas_object_resize(o_bg, w, h);
+   evas_object_resize(win, w, h);
+   evas_object_size_hint_min_set(win, w, h);
+   evas_object_size_hint_max_set(win, 99999, 99999);
+
+   if (params)
+     {
+        char smode[128], squal[128], sscreen[128];
+
+        if (sscanf(params, "%100s %100s %100s", smode, squal, sscreen) == 3)
+          {
+             screen = -1;
+             if ((zone) && (!strcmp(sscreen, "current"))) screen = zone->num;
+             else if (!strcmp(sscreen, "all")) screen = -1;
+             else screen = atoi(sscreen);
+
+             quality = 90;
+             if (!strcmp(squal, "perfect")) quality = 100;
+             else if (!strcmp(squal, "high")) quality = 90;
+             else if (!strcmp(squal, "medium")) quality = 70;
+             else if (!strcmp(squal, "low")) quality = 50;
+             else quality = atoi(squal);
+
+             if (!strcmp(smode, "save")) _win_save_cb(NULL, NULL);
+             else if (!strcmp(smode, "share"))  _win_share_cb(NULL, NULL);
+          }
+     }
+   else
+     {
+        evas_object_show(win);
+        e_win_client_icon_set(win, "screenshot");
+
+        if (!e_widget_focus_get(o_bg)) e_widget_focus_set(o_box, 1);
+        if (ec)
+          {
+             E_Client *c = e_win_client_get(win);
+
+             if (c) evas_object_layer_set(c->frame, ec->layer);
+          }
+     }
+}
+
+#ifdef HAVE_WAYLAND
+static struct wl_buffer *
+_create_shm_buffer(struct wl_shm *_shm, int width, int height, void **data_out)
+{
+   char filename[] = "wayland-shm-XXXXXX";
+   Eina_Tmpstr *tmpfile = NULL;
+   struct wl_shm_pool *pool;
+   struct wl_buffer *buffer;
+   int fd, size, stride;
+   void *data;
+
+   fd = eina_file_mkstemp(filename, &tmpfile);
+   if (fd < 0) 
+     {
+        fprintf(stderr, "open %s failed: %m\n", tmpfile);
+        return NULL;
+     }
+
+   stride = width * 4;
+   size = stride * height;
+   if (ftruncate(fd, size) < 0) 
+     {
+        fprintf(stderr, "ftruncate failed: %m\n");
+        close(fd);
+        return NULL;
+     }
+
+   data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+   unlink(tmpfile);
+   eina_tmpstr_del(tmpfile);
+
+   if (data == MAP_FAILED) 
+     {
+        fprintf(stderr, "mmap failed: %m\n");
+        close(fd);
+        return NULL;
+     }
+
+   pool = wl_shm_create_pool(_shm, fd, size);
+   close(fd);
+
+   buffer = 
+     wl_shm_pool_create_buffer(pool, 0, width, height, stride,
+                               WL_SHM_FORMAT_ARGB8888);
+   wl_shm_pool_destroy(pool);
+
+   *data_out = data;
+
+   return buffer;
+}
+#endif
+
+static void
+_wl_shot_now(E_Zone *zone, E_Client *ec, const char *params)
+{
+#ifdef HAVE_WAYLAND
+   Eina_List *l;
+   struct screenshooter_output *output;
+   struct wl_shm *shm;
+   int x, y, sw, sh, i;
+   int ostride, bstride;
+   unsigned char *dst, *d, *s;
+
+   if ((win) || (url_up)) return;
+   if ((!zone) && (!ec)) return;
+
+   if (zone)
+     {
+        sw = e_comp->w;
+        sh = e_comp->h;
+        x = y = 0;
+     }
+   else
+     {
+        x = ec->x, y = ec->y, sw = ec->w, sh = ec->h;
+        x = E_CLAMP(x, ec->zone->x, ec->zone->x + ec->zone->w);
+        y = E_CLAMP(y, ec->zone->y, ec->zone->y + ec->zone->h);
+        sw = E_CLAMP(sw, 1, ec->zone->x + ec->zone->w - x);
+        sh = E_CLAMP(sh, 1, ec->zone->y + ec->zone->h - y);
+     }
+
+   shm = e_comp_wl->wl.shm ?: ecore_wl_shm_get();
+
+   EINA_LIST_FOREACH(_outputs, l, output)
+     {
+        if ((!zone) &&
+            (!E_CONTAINS(output->x, output->y, output->w, output->h,
+                         x, y, sw, sh)))
+          continue;
+
+        output->buffer =
+          _create_shm_buffer(shm, output->w, output->h, &output->data);
+
+        screenshooter_shoot(_wl_screenshooter, output->output, output->buffer);
+
+        copy_done = EINA_FALSE;
+        while (!copy_done)
+          ecore_main_loop_iterate();
+     }
+
+   bstride = sw * sizeof(int);
+   dst = malloc(bstride * sh);
+
+   EINA_LIST_FOREACH(_outputs, l, output)
+     {
+        if ((!zone) &&
+            (!E_CONTAINS(output->x, output->y, output->w, output->h,
+                         x, y, sw, sh)))
+          continue;
+
+        ostride = output->w * sizeof(int);
+        s = output->data;
+        if (zone)
+          {
+             d = dst + (output->y * bstride + output->x * sizeof(int));
+             for (i = 0; i < output->h; i++)
+               {
+                  memcpy(d, s, ostride);
+                  d += bstride;
+                  s += ostride;
+               }
+          }
+        else
+          {
+             d = dst;
+             for (i = y; i < (y + sh); i++)
+               {
+                  s = output->data;
+                  s += (i * ostride) + (x * sizeof(int));
+                  memcpy(d, s, bstride);
+                  d += bstride;
+               }
+          }
+     }
+
+   _save_dialog_show(zone, ec, params, dst, sw, sh);
+
+   free(dst);
+#else
+   (void)zone;
+   (void)ec;
+   (void)params;
+#endif
+}
+
+static void
+_x_shot_now(E_Zone *zone, E_Client *ec, const char *params)
+{
+#ifdef HAVE_WAYLAND_ONLY
+   (void)zone;
+   (void)ec;
+   (void)params;
+#else
    Ecore_X_Image *img;
    unsigned char *src;
    unsigned int *dst;
    int bpl = 0, rows = 0, bpp = 0, sw, sh;
-   Evas *evas, *evas2;
-   Evas_Object *o, *oa, *op, *ol;
    int x, y, w, h;
-   Evas_Modifier_Mask mask;
    Ecore_X_Window xwin;
-   E_Radio_Group *rg;
    Ecore_X_Visual visual;
    Ecore_X_Display *display;
    Ecore_X_Screen *scr;
@@ -600,11 +1042,9 @@ _shot_now(E_Zone *zone, E_Client *ec, const char *params)
    if ((!zone) && (!ec)) return;
    if (zone)
      {
-        sman = zone->comp->man;
-        scomp = zone->comp;
-        xwin = sman->root;
-        w = sw = sman->w;
-        h = sh = sman->h;
+        xwin = e_comp->root;
+        w = sw = e_comp->w;
+        h = sh = e_comp->h;
         x = y = 0;
         if (!ecore_x_window_attributes_get(xwin, &watt)) return;
         visual = watt.visual;
@@ -612,7 +1052,7 @@ _shot_now(E_Zone *zone, E_Client *ec, const char *params)
      }
    else
      {
-        xwin = e_comp_get(ec)->ee_win;
+        xwin = e_comp->ee_win;
         x = ec->x, y = ec->y, sw = ec->w, sh = ec->h;
         w = sw;
         h = sh;
@@ -678,207 +1118,22 @@ _shot_now(E_Zone *zone, E_Client *ec, const char *params)
                                  0, 0, sw, sh,
                                  dst, (sw * sizeof(int)), 0, 0);
 
-   win = elm_win_add(NULL, NULL, ELM_WIN_BASIC);
+   _save_dialog_show(zone, ec, params, dst, sw, sh);
 
-   evas = evas_object_evas_get(win);
-   elm_win_title_set(win, _("Where to put Screenshot..."));
-   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_delete_cb, NULL);
-   elm_win_center(win, 1, 1);
-   ecore_evas_name_class_set(e_win_ee_get(win), "E", "_shot_dialog");
-
-   o = elm_layout_add(e_win_evas_win_get(evas));
-   elm_win_resize_object_add(win, o);
-   o_bg = o;;
-   e_theme_edje_object_set(o, "base/theme/dialog", "e/widgets/dialog/main");
-   evas_object_show(o);
-
-   o = e_widget_list_add(evas, 0, 0);
-   o_content = o;
-   elm_object_part_content_set(o_bg, "e.swallow.content", o);
-   evas_object_show(o);
-
-   w = sw / 4;
-   if (w < 220) w = 220;
-   h = (w * sh) / sw;
-
-   o = e_widget_aspect_add(evas, w, h);
-   oa = o;
-   o = e_widget_preview_add(evas, w, h);
-   op = o;
-
-   evas2 = e_widget_preview_evas_get(op);
-
-   o = evas_object_image_filled_add(evas2);
-   o_img = o;
-   evas_object_image_colorspace_set(o, EVAS_COLORSPACE_ARGB8888);
-   evas_object_image_alpha_set(o, EINA_FALSE);
-   evas_object_image_size_set(o, sw, sh);
-   evas_object_image_data_copy_set(o, dst);
    free(dst);
    ecore_x_image_free(img);
-   evas_object_image_data_update_add(o, 0, 0, sw, sh);
-   e_widget_preview_extern_object_set(op, o);
-   evas_object_show(o);
-
-   evas_object_show(op);
-   evas_object_show(oa);
-
-   e_widget_aspect_child_set(oa, op);
-   e_widget_list_object_append(o_content, oa, 0, 0, 0.5);
-
-   o = e_widget_list_add(evas, 1, 1);
-   o_hlist = o;
-
-   o = e_widget_framelist_add(evas, _("Quality"), 0);
-   ol = o;
-
-   rg = e_widget_radio_group_new(&quality);
-   o = e_widget_radio_add(evas, _("Perfect"), 100, rg);
-   e_widget_framelist_object_append(ol, o);
-   o = e_widget_radio_add(evas, _("High"), 90, rg);
-   e_widget_framelist_object_append(ol, o);
-   o = e_widget_radio_add(evas, _("Medium"), 70, rg);
-   e_widget_framelist_object_append(ol, o);
-   o = e_widget_radio_add(evas, _("Low"), 50, rg);
-   e_widget_framelist_object_append(ol, o);
-
-   e_widget_list_object_append(o_hlist, ol, 1, 0, 0.5);
-
-   if (zone)
-     {
-        screen = -1;
-        if (eina_list_count(scomp->zones) > 1)
-          {
-             Eina_List *l;
-             E_Zone *z;
-             int i;
-
-             o = e_widget_framelist_add(evas, _("Screen"), 0);
-             ol = o;
-
-             rg = e_widget_radio_group_new(&screen);
-             o = e_widget_radio_add(evas, _("All"), -1, rg);
-             o_radio_all = o;
-             evas_object_smart_callback_add(o, "changed", _screen_change_cb, NULL);
-             e_widget_framelist_object_append(ol, o);
-             i = 0;
-             EINA_LIST_FOREACH(scomp->zones, l, z)
-               {
-                  char buf[32];
-
-                  if (z->num >= MAXZONES) continue;
-                  snprintf(buf, sizeof(buf), "%i", z->num);
-                  o = e_widget_radio_add(evas, buf, z->num, rg);
-                  o_radio[z->num] = o;
-                  evas_object_smart_callback_add(o, "changed", _screen_change_cb, NULL);
-                  e_widget_framelist_object_append(ol, o);
-
-                  o = evas_object_rectangle_add(evas2);
-                  evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN,
-                                                 _rect_down_cb, NULL);
-                  o_rectdim[z->num] = o;
-                  evas_object_color_set(o, 0, 0, 0, 0);
-                  evas_object_show(o);
-                  evas_object_geometry_get(o_img, NULL, NULL, &w, &h);
-                  evas_object_move(o,
-                                   (z->x * w) / sw,
-                                   (z->y * h) / sh);
-                  evas_object_resize(o,
-                                     (z->w * w) / sw,
-                                     (z->h * h) / sh);
-                  i++;
-               }
-
-             e_widget_list_object_append(o_hlist, ol, 1, 0, 0.5);
-          }
-
-     }
-   e_widget_list_object_append(o_content, o_hlist, 0, 0, 0.5);
-
-   o = o_content;
-   e_widget_size_min_get(o, &w, &h);
-   evas_object_size_hint_min_set(o, w, h);
-   elm_object_part_content_set(o_bg, "e.swallow.content", o);
-   evas_object_show(o);
-
-   ///////////////////////////////////////////////////////////////////////
-
-   o = e_widget_list_add(evas, 1, 1);
-   o_box = o;
-   e_widget_on_focus_hook_set(o, _on_focus_cb, NULL);
-   elm_object_part_content_set(o_bg, "e.swallow.buttons", o);
-
-   o = e_widget_button_add(evas, _("Save"), NULL, _win_save_cb, win, NULL);
-   e_widget_list_object_append(o_box, o, 1, 0, 0.5);
-   o = e_widget_button_add(evas, _("Share"), NULL, _win_share_confirm_cb, win, NULL);
-   e_widget_list_object_append(o_box, o, 1, 0, 0.5);
-   o = e_widget_button_add(evas, _("Cancel"), NULL, _win_cancel_cb, win, NULL);
-   e_widget_list_object_append(o_box, o, 1, 0, 0.5);
-
-   o = o_box;
-   e_widget_size_min_get(o, &w, &h);
-   evas_object_size_hint_min_set(o, w, h);
-   elm_object_part_content_set(o_bg, "e.swallow.buttons", o);
-
-   o = evas_object_rectangle_add(evas);
-   o_event = o;
-   mask = 0;
-   if (!evas_object_key_grab(o, "Tab", mask, ~mask, 0)) printf("grab err\n");
-   mask = evas_key_modifier_mask_get(evas, "Shift");
-   if (!evas_object_key_grab(o, "Tab", mask, ~mask, 0)) printf("grab err\n");
-   mask = 0;
-   if (!evas_object_key_grab(o, "Return", mask, ~mask, 0)) printf("grab err\n");
-   mask = 0;
-   if (!evas_object_key_grab(o, "KP_Enter", mask, ~mask, 0)) printf("grab err\n");
-   mask = 0;
-   if (!evas_object_key_grab(o, "space", mask, ~mask, 0)) printf("grab err\n");
-   mask = 0;
-   if (!evas_object_key_grab(o, "Escape", mask, ~mask, 0)) printf("grab err\n");
-   evas_object_event_callback_add(o, EVAS_CALLBACK_KEY_DOWN, _key_down_cb, NULL);
-
-   evas_object_size_hint_min_get(o_bg, &w, &h);
-   evas_object_resize(o_bg, w, h);
-   evas_object_resize(win, w, h);
-   evas_object_size_hint_min_set(win, w, h);
-   evas_object_size_hint_max_set(win, 99999, 99999);
-
-   if (params)
-     {
-        char smode[128], squal[128], sscreen[128];
-
-        if (sscanf(params, "%100s %100s %100s", smode, squal, sscreen) == 3)
-          {
-             screen = -1;
-             if ((zone) && (!strcmp(sscreen, "current"))) screen = zone->num;
-             else if (!strcmp(sscreen, "all")) screen = -1;
-             else screen = atoi(sscreen);
-
-             quality = 90;
-             if (!strcmp(squal, "perfect")) quality = 100;
-             else if (!strcmp(squal, "high")) quality = 90;
-             else if (!strcmp(squal, "medium")) quality = 70;
-             else if (!strcmp(squal, "low")) quality = 50;
-             else quality = atoi(squal);
-
-             if (!strcmp(smode, "save")) _win_save_cb(NULL, NULL);
-             else if (!strcmp(smode, "share"))  _win_share_cb(NULL, NULL);
-             return;
-          }
-     }
-   else
-     {
-        evas_object_show(win);
-        e_win_client_icon_set(win, "screenshot");
-
-        if (!e_widget_focus_get(o_bg)) e_widget_focus_set(o_box, 1);
-     }
+#endif
 }
 
 static Eina_Bool
 _shot_delay(void *data)
 {
    timer = NULL;
-   _shot_now(data, NULL, NULL);
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
+     _x_shot_now(data, NULL, NULL);
+   else
+     _wl_shot_now(data, NULL, NULL);
+
    return EINA_FALSE;
 }
 
@@ -886,7 +1141,11 @@ static Eina_Bool
 _shot_delay_border(void *data)
 {
    border_timer = NULL;
-   _shot_now(NULL, data, NULL);
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
+     _x_shot_now(NULL, data, NULL);
+   else
+     _wl_shot_now(NULL, data, NULL);
+
    return EINA_FALSE;
 }
 
@@ -905,21 +1164,22 @@ _shot(E_Zone *zone)
 }
 
 static void
-_e_mod_menu_border_cb(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_mod_menu_border_cb(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    _shot_border(data);
 }
 
 static void
-_e_mod_menu_cb(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
+_e_mod_menu_cb(void *data EINA_UNUSED, E_Menu *m, E_Menu_Item *mi EINA_UNUSED)
 {
    if (m->zone) _shot(m->zone);
 }
 
 static void
-_e_mod_action_border_cb(E_Object *obj __UNUSED__, const char *params __UNUSED__)
+_e_mod_action_border_cb(E_Object *obj EINA_UNUSED, const char *params EINA_UNUSED)
 {
    E_Client *ec;
+
    ec = e_client_focused_get();
    if (!ec) return;
    if (border_timer)
@@ -927,7 +1187,10 @@ _e_mod_action_border_cb(E_Object *obj __UNUSED__, const char *params __UNUSED__)
         ecore_timer_del(border_timer);
         border_timer = NULL;
      }
-   _shot_now(NULL, ec, NULL);
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
+     _x_shot_now(NULL, ec, NULL);
+   else
+     _wl_shot_now(NULL, ec, NULL);
 }
 
 static void
@@ -937,27 +1200,29 @@ _e_mod_action_cb(E_Object *obj, const char *params)
 
    if (obj)
      {
-        if (obj->type == E_MANAGER_TYPE)
-          zone = e_util_zone_current_get((E_Manager *)obj);
-        else if (obj->type == E_COMP_TYPE)
-          zone = e_zone_current_get((E_Comp *)obj);
+        if (obj->type == E_COMP_TYPE)
+          zone = e_zone_current_get();
         else if (obj->type == E_ZONE_TYPE)
           zone = ((E_Zone *)obj);
         else
-          zone = e_util_zone_current_get(e_manager_current_get());
+          zone = e_zone_current_get();
      }
-   if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
+   if (!zone) zone = e_zone_current_get();
    if (!zone) return;
    E_FREE_FUNC(timer, ecore_timer_del);
-   _shot_now(zone, NULL, params);
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
+     _x_shot_now(zone, NULL, params);
+   else
+     _wl_shot_now(zone, NULL, params);
 }
 
 static void
-_bd_hook(void *d __UNUSED__, E_Client *ec)
+_bd_hook(void *d EINA_UNUSED, E_Client *ec)
 {
    E_Menu_Item *mi;
    E_Menu *m;
    Eina_List *l;
+
    if (!ec->border_menu) return;
    if (ec->iconic || (ec->desk != e_desk_current_get(ec->zone))) return;
    m = ec->border_menu;
@@ -977,7 +1242,7 @@ _bd_hook(void *d __UNUSED__, E_Client *ec)
 }
 
 static void
-_e_mod_menu_add(void *data __UNUSED__, E_Menu *m)
+_e_mod_menu_add(void *data EINA_UNUSED, E_Menu *m)
 {
    E_Menu_Item *mi;
 
@@ -987,14 +1252,78 @@ _e_mod_menu_add(void *data __UNUSED__, E_Menu *m)
    e_menu_item_callback_set(mi, _e_mod_menu_cb, NULL);
 }
 
+#ifdef HAVE_WAYLAND
+static Ecore_Event_Handler *wl_global_handler;
+
+static Eina_Bool
+_wl_init()
+{
+   Eina_Inlist *globals;
+   Ecore_Wl_Global *global;
+   struct wl_registry *reg;
+
+   reg = e_comp_wl->wl.registry ?: ecore_wl_registry_get();
+   if (e_comp_wl->wl.registry)
+     globals = e_comp_wl->wl.globals;
+   else
+     globals = ecore_wl_globals_get();
+   if (!globals)
+     {
+        if (!wl_global_handler)
+          {
+             if (e_comp_wl->wl.registry)
+               wl_global_handler = ecore_event_handler_add(E_EVENT_WAYLAND_GLOBAL_ADD,
+                 (Ecore_Event_Handler_Cb)_wl_init, NULL);
+             else
+               wl_global_handler = ecore_event_handler_add(ECORE_WL_EVENT_INTERFACES_BOUND,
+                 (Ecore_Event_Handler_Cb)_wl_init, NULL);
+          }
+        return ECORE_CALLBACK_RENEW;
+     }
+   EINA_INLIST_FOREACH(globals, global)
+     {
+        if ((!_wl_screenshooter) && (!strcmp(global->interface, "screenshooter")))
+          {
+             _wl_screenshooter =
+               wl_registry_bind(reg, global->id,
+                                &screenshooter_interface, global->version);
+
+             if (_wl_screenshooter)
+               screenshooter_add_listener(_wl_screenshooter,
+                                          &_screenshooter_listener,
+                                          _wl_screenshooter);
+          }
+        else if (!strcmp(global->interface, "wl_output"))
+          {
+             struct screenshooter_output *output;
+             Eina_List *l;
+
+             EINA_LIST_FOREACH(_outputs, l, output)
+               if (output->id == global->id) return ECORE_CALLBACK_RENEW;
+             output = calloc(1, sizeof(*output));
+             if (output)
+               {
+                  output->output =
+                    wl_registry_bind(reg, global->id,
+                                     &wl_output_interface, global->version);
+                  _outputs = eina_list_append(_outputs, output);
+                  wl_output_add_listener(output->output,
+                                         &_output_listener, output);
+               }
+          }
+     }
+   return ECORE_CALLBACK_RENEW;
+}
+#endif
+
 /* module setup */
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION,
      "Shot"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    if (!ecore_con_url_init())
@@ -1026,11 +1355,17 @@ e_modapi_init(E_Module *m)
    maug = e_int_menus_menu_augmentation_add_sorted
      ("main/2",  _("Take Screenshot"), _e_mod_menu_add, NULL, NULL, NULL);
    border_hook = e_int_client_menu_hook_add(_bd_hook, NULL);
+
+#ifdef HAVE_WAYLAND
+   if (e_comp->comp_type != E_PIXMAP_TYPE_X)
+     _wl_init();
+#endif
+
    return m;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    _share_done();
    E_FREE_FUNC(win, evas_object_del);
@@ -1051,14 +1386,17 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
         e_action_del("shot");
         act = NULL;
      }
+#ifdef HAVE_WAYLAND
+   E_FREE_FUNC(wl_global_handler, ecore_event_handler_del);
+#endif
    shot_module = NULL;
    e_int_client_menu_hook_del(border_hook);
    ecore_con_url_shutdown();
    return 1;
 }
 
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    return 1;
 }

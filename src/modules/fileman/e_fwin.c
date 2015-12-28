@@ -100,11 +100,11 @@ typedef enum
 } E_Fwin_Exec_Type;
 
 /* local subsystem prototypes */
-static int _e_fwin_cb_dir_handler_test(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const char *path);
-static void _e_fwin_cb_dir_handler(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const char *path);
+static int _e_fwin_cb_dir_handler_test(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, const char *path);
+static void _e_fwin_cb_dir_handler(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, const char *path);
 static void _e_fwin_page_favorites_add(E_Fwin_Page *page);
-static void _e_fwin_icon_mouse_out(void *data, Evas_Object *obj __UNUSED__, void *event_info);
-static void _e_fwin_icon_mouse_in(void *data, Evas_Object *obj __UNUSED__, void *event_info);
+static void _e_fwin_icon_mouse_out(void *data, Evas_Object *obj EINA_UNUSED, void *event_info);
+static void _e_fwin_icon_mouse_in(void *data, Evas_Object *obj EINA_UNUSED, void *event_info);
 static E_Fwin *_e_fwin_open(E_Fwin_Page *page, E_Fm2_Icon_Info *ici, Eina_Bool force, int *need_dia);
 static E_Fwin          *_e_fwin_new(const char *dev, const char *path);
 static void             _e_fwin_free(E_Fwin *fwin);
@@ -291,8 +291,7 @@ e_fwin_shutdown(void)
  * "fwin" window
  */
 void
-e_fwin_new(E_Comp *comp EINA_UNUSED,
-           const char *dev,
+e_fwin_new(const char *dev,
            const char *path)
 {
    _e_fwin_new(dev, path);
@@ -326,7 +325,7 @@ _e_fwin_spring_cb(E_Fwin *fwin)
 
 /* called on the drop source */
 static void
-_e_fwin_dnd_end_cb(E_Fwin *fwin, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_fwin_dnd_end_cb(E_Fwin *fwin, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    if (fwin->spring_timer) ecore_timer_del(fwin->spring_timer);
    fwin->spring_timer = NULL;
@@ -357,7 +356,7 @@ _e_fwin_dnd_end_cb(E_Fwin *fwin, Evas_Object *obj __UNUSED__, void *event_info _
 }
 
 static void
-_e_fwin_dnd_change_cb(E_Fwin *fwin, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_fwin_dnd_change_cb(E_Fwin *fwin, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    drag_fwin = fwin;
    if (fwin->spring_timer)
@@ -367,7 +366,7 @@ _e_fwin_dnd_change_cb(E_Fwin *fwin, Evas_Object *obj __UNUSED__, void *event_inf
 }
 
 static void
-_e_fwin_dnd_enter_cb(E_Fwin *fwin, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_fwin_dnd_enter_cb(E_Fwin *fwin, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    if (drag_fwin == fwin) return;
    if (fwin->spring_timer) ecore_timer_del(fwin->spring_timer);
@@ -386,7 +385,7 @@ _e_fwin_dnd_close_cb(E_Fwin *fwin)
 }
 
 static void
-_e_fwin_dnd_leave_cb(E_Fwin *fwin, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_fwin_dnd_leave_cb(E_Fwin *fwin, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    if (fwin->spring_timer) ecore_timer_del(fwin->spring_timer);
    fwin->spring_timer = NULL;
@@ -399,7 +398,7 @@ _e_fwin_dnd_leave_cb(E_Fwin *fwin, Evas_Object *obj __UNUSED__, void *event_info
 }
 
 static void
-_e_fwin_dnd_begin_cb(E_Fwin *fwin __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_fwin_dnd_begin_cb(E_Fwin *fwin EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    drag_fwin = NULL;
 }
@@ -449,7 +448,7 @@ e_fwin_zone_new(E_Zone *zone, void *p)
 
    fwins = eina_list_append(fwins, fwin);
 
-   o = e_fm2_add(zone->comp->evas);
+   o = e_fm2_add(e_comp->evas);
    evas_object_event_callback_add(o, EVAS_CALLBACK_DEL, _e_fwin_zone_shutdown, fwin);
    page->fm_obj = o;
    _e_fwin_config_set(page);
@@ -480,7 +479,7 @@ e_fwin_zone_new(E_Zone *zone, void *p)
    evas_object_focus_set(o, !e_client_focused_get());
    evas_object_show(o);
 
-   o = e_scrollframe_add(zone->comp->evas);
+   o = e_scrollframe_add(e_comp->evas);
    e_scrollframe_custom_theme_set(o, "base/theme/fileman",
                                   "e/fileman/desktop/scrollframe");
    /* FIXME: this theme object will have more versions and options later
@@ -641,7 +640,7 @@ e_fwin_zone_find(E_Zone *zone)
 
 /* local subsystem functions */
 static void
-_e_fwin_bg_mouse_down(E_Fwin *fwin, Evas_Object *obj __UNUSED__, void *event __UNUSED__)
+_e_fwin_bg_mouse_down(E_Fwin *fwin, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
    int x, y, w, h, zx, zy, zw, zh, cx, cy, cw, ch;
    E_Client *ec;
@@ -663,6 +662,15 @@ _e_fwin_bg_mouse_down(E_Fwin *fwin, Evas_Object *obj __UNUSED__, void *event __U
    evas_object_resize(fwin->win, MAX(w, MINIMUM_WIDTH), MAX(h, MINIMUM_HEIGHT));
 }
 
+static void
+_e_fwin_cb_focus(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   E_Fwin *fwin = data;
+
+   if (!e_fm2_icon_editing_get(fwin->cur_page->fm_obj))
+     evas_object_focus_set(fwin->cur_page->fm_obj, 1);
+}
+
 static E_Fwin *
 _e_fwin_new(const char *dev,
             const char *path)
@@ -681,6 +689,7 @@ _e_fwin_new(const char *dev,
         return NULL;
      }
    fwins = eina_list_append(fwins, fwin);
+   evas_object_event_callback_add(fwin->win, EVAS_CALLBACK_FOCUS_IN, _e_fwin_cb_focus, fwin);
    evas_object_event_callback_add(fwin->win, EVAS_CALLBACK_DEL, _e_fwin_cb_delete, fwin);
    evas_object_event_callback_add(fwin->win, EVAS_CALLBACK_RESIZE, _e_fwin_cb_resize, fwin);
 
@@ -718,7 +727,7 @@ _e_fwin_new(const char *dev,
 
    evas_object_size_hint_min_set(fwin->win, MINIMUM_WIDTH, MINIMUM_HEIGHT);
 
-   zone = e_util_zone_current_get(e_manager_current_get());
+   zone = e_zone_current_get();
    if ((zone) && (zone->w < DEFAULT_WIDTH))
      {
         int w, h;
@@ -734,6 +743,24 @@ _e_fwin_new(const char *dev,
    e_win_client_icon_set(fwin->win, "system-file-manager");
 
    return fwin;
+}
+
+static Eina_Bool
+_e_fwin_icon_popup_handler(void *data, ...)
+{
+   E_Fwin *fwin = data;
+
+   E_FREE_FUNC(fwin->popup_timer, ecore_timer_del);
+   if (fwin->popup)
+     {
+        evas_object_hide(fwin->popup);
+        E_FREE_FUNC(fwin->popup, evas_object_del);
+     }
+   evas_object_event_callback_del(fwin->win, EVAS_CALLBACK_MOUSE_IN, (Evas_Object_Event_Cb)_e_fwin_icon_popup_handler);
+   evas_object_event_callback_del(fwin->win, EVAS_CALLBACK_MOUSE_OUT, (Evas_Object_Event_Cb)_e_fwin_icon_popup_handler);
+   E_FREE_LIST(fwin->popup_handlers, ecore_event_handler_del);
+   fwin->popup_icon = NULL;
+   return ECORE_CALLBACK_RENEW;
 }
 
 static void
@@ -773,6 +800,8 @@ _e_fwin_free(E_Fwin *fwin)
      }
    if (fwin->popup_timer) ecore_timer_del(fwin->popup_timer);
    fwin->popup_timer = NULL;
+   evas_object_event_callback_del(fwin->win, EVAS_CALLBACK_MOUSE_IN, (Evas_Object_Event_Cb)_e_fwin_icon_popup_handler);
+   evas_object_event_callback_del(fwin->win, EVAS_CALLBACK_MOUSE_OUT, (Evas_Object_Event_Cb)_e_fwin_icon_popup_handler);
    E_FREE_LIST(fwin->popup_handlers, ecore_event_handler_del);
    if (fwin->spring_parent) fwin->spring_parent->spring_child = NULL;
    if (fwin->win)
@@ -781,34 +810,6 @@ _e_fwin_free(E_Fwin *fwin)
         evas_object_del(fwin->win);
      }
    free(fwin);
-}
-
-static Eina_Bool
-_e_fwin_icon_popup_handler(void *data, int type, void *event)
-{
-   E_Fwin *fwin = data;
-   Ecore_Event_Mouse_IO *ev = event;
-
-   if (type == ECORE_EVENT_MOUSE_IN)
-     {
-        if (fwin->zone)
-          {
-             if (ev->event_window == fwin->zone->comp->ee_win) return ECORE_CALLBACK_RENEW;
-          }
-        else
-          {
-             if (ev->event_window == elm_win_window_id_get(fwin->win)) return ECORE_CALLBACK_RENEW;
-          }
-     }
-   E_FREE_FUNC(fwin->popup_timer, ecore_timer_del);
-   if (fwin->popup)
-     {
-        evas_object_hide(fwin->popup);
-        E_FREE_FUNC(fwin->popup, evas_object_del);
-     }
-   E_FREE_LIST(fwin->popup_handlers, ecore_event_handler_del);
-   fwin->popup_icon = NULL;
-   return ECORE_CALLBACK_RENEW;
 }
 
 static void
@@ -856,6 +857,12 @@ _e_fwin_icon_hints(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *even
    evas_object_geometry_set(fwin->popup, px, py, mw, mh);
 }
 
+static void
+_e_fwin_popup_del(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   evas_object_event_callback_del(data, EVAS_CALLBACK_CHANGED_SIZE_HINTS, _e_fwin_icon_hints);
+}
+
 static Eina_Bool
 _e_fwin_icon_popup(void *data)
 {
@@ -887,6 +894,8 @@ _e_fwin_icon_popup(void *data)
                              fwin->popup_icon->label : fwin->popup_icon->file);
    
    list = e_widget_list_add(e_comp->evas, 0, 0);
+   if (fwin->win)
+     evas_object_event_callback_add(fwin->win, EVAS_CALLBACK_DEL, _e_fwin_popup_del, list);
    
    o = e_widget_filepreview_add(e_comp->evas, mw, mh, 0);
    e_widget_filepreview_clamp_video_set(o, fileman_config->tooltip.clamp_size);
@@ -904,11 +913,11 @@ _e_fwin_icon_popup(void *data)
 #ifndef HAVE_WAYLAND_ONLY
    if (!fwin->popup_handlers)
      {
-        E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_X_EVENT_XDND_ENTER, _e_fwin_icon_popup_handler, fwin);
-        E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_X_EVENT_XDND_POSITION, _e_fwin_icon_popup_handler, fwin);
-        E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_X_EVENT_MOUSE_IN, _e_fwin_icon_popup_handler, fwin);
-        E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_EVENT_MOUSE_BUTTON_DOWN, _e_fwin_icon_popup_handler, fwin);
-        E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_X_EVENT_MOUSE_OUT, _e_fwin_icon_popup_handler, fwin);
+        evas_object_event_callback_add(fwin->win, EVAS_CALLBACK_MOUSE_IN, (Evas_Object_Event_Cb)_e_fwin_icon_popup_handler, fwin);
+        evas_object_event_callback_add(fwin->win, EVAS_CALLBACK_MOUSE_OUT, (Evas_Object_Event_Cb)_e_fwin_icon_popup_handler, fwin);
+        if (e_comp_util_has_x())
+          E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_X_EVENT_XDND_POSITION, (Ecore_Event_Handler_Cb)_e_fwin_icon_popup_handler, fwin);
+        E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_EVENT_MOUSE_BUTTON_DOWN, (Ecore_Event_Handler_Cb)_e_fwin_icon_popup_handler, fwin);
      }
 #endif
    evas_object_show(fwin->popup);
@@ -924,7 +933,7 @@ _e_fwin_icon_popup_del(E_Fwin *fwin)
 }
 
 static void
-_e_fwin_icon_mouse_out(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_fwin_icon_mouse_out(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Fwin *fwin = data;
 
@@ -933,7 +942,7 @@ _e_fwin_icon_mouse_out(void *data, Evas_Object *obj __UNUSED__, void *event_info
 }
 
 static void
-_e_fwin_icon_mouse_in(void *data, Evas_Object *obj __UNUSED__, void *event_info)
+_e_fwin_icon_mouse_in(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    E_Fwin *fwin = data;
    E_Fm2_Icon_Info *ici = event_info;
@@ -941,20 +950,16 @@ _e_fwin_icon_mouse_in(void *data, Evas_Object *obj __UNUSED__, void *event_info)
    if (fwin->popup_timer) ecore_timer_del(fwin->popup_timer);
    fwin->popup_timer = NULL;
    if (!fileman_config->tooltip.enable) return;
-#ifdef HAVE_WAYLAND_ONLY
-   return;
-#warning REMOVE FOR WL RELEASE
-#endif
    fwin->popup_timer = ecore_timer_add(fileman_config->tooltip.delay, _e_fwin_icon_popup, fwin);
    fwin->popup_icon = ici;
 #ifndef HAVE_WAYLAND_ONLY
    if (!fwin->popup_handlers)
      {
-        E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_X_EVENT_XDND_ENTER, _e_fwin_icon_popup_handler, fwin);
-        E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_X_EVENT_XDND_POSITION, _e_fwin_icon_popup_handler, fwin);
-        E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_X_EVENT_MOUSE_IN, _e_fwin_icon_popup_handler, fwin);
-        E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_EVENT_MOUSE_BUTTON_DOWN, _e_fwin_icon_popup_handler, fwin);
-        E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_X_EVENT_MOUSE_OUT, _e_fwin_icon_popup_handler, fwin);
+        evas_object_event_callback_add(fwin->win, EVAS_CALLBACK_MOUSE_IN, (Evas_Object_Event_Cb)_e_fwin_icon_popup_handler, fwin);
+        evas_object_event_callback_add(fwin->win, EVAS_CALLBACK_MOUSE_OUT, (Evas_Object_Event_Cb)_e_fwin_icon_popup_handler, fwin);
+        if (e_comp_util_has_x())
+          E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_X_EVENT_XDND_POSITION, (Ecore_Event_Handler_Cb)_e_fwin_icon_popup_handler, fwin);
+        E_LIST_HANDLER_APPEND(fwin->popup_handlers, ECORE_EVENT_MOUSE_BUTTON_DOWN, (Ecore_Event_Handler_Cb)_e_fwin_icon_popup_handler, fwin);
      }
 #endif
 }
@@ -1008,7 +1013,7 @@ _e_fwin_page_favorites_add(E_Fwin_Page *page)
                                   "e/fileman/default/scrollframe");
    evas_object_propagate_events_set(page->flist, 0);
    e_widget_can_focus_set(o, EINA_FALSE);
-   e_fm2_window_object_set(page->flist, E_OBJECT(page->fwin->win));
+   e_fm2_window_set(page->flist, page->fwin->win);
    e_widget_scrollframe_focus_object_set(o, page->flist);
 
    page->flist_frame = o;
@@ -1059,7 +1064,7 @@ _e_fwin_page_create(E_Fwin *fwin)
    evas_object_smart_callback_add(o, "icon_mouse_in", (Evas_Smart_Cb)_e_fwin_icon_mouse_in, fwin);
    evas_object_smart_callback_add(o, "icon_mouse_out", (Evas_Smart_Cb)_e_fwin_icon_mouse_out, fwin);
    e_fm2_icon_menu_start_extend_callback_set(o, _e_fwin_cb_menu_extend_start, page);
-   e_fm2_window_object_set(o, E_OBJECT(fwin->win));
+   e_fm2_window_set(o, fwin->win);
    evas_object_focus_set(o, 1);
    _e_fwin_config_set(page);
 
@@ -1678,8 +1683,8 @@ _e_fwin_cb_resize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 
 static void
 _e_fwin_deleted(void *data,
-                Evas_Object *obj __UNUSED__,
-                void *event_info __UNUSED__)
+                Evas_Object *obj EINA_UNUSED,
+                void *event_info EINA_UNUSED)
 {
    E_Fwin_Page *page;
 
@@ -1690,7 +1695,7 @@ _e_fwin_deleted(void *data,
 static void
 _e_fwin_changed(void *data,
                 Evas_Object *obj,
-                void *event_info __UNUSED__)
+                void *event_info EINA_UNUSED)
 {
    E_Fwin *fwin;
    E_Fwin_Page *page;
@@ -1835,8 +1840,8 @@ _e_fwin_changed(void *data,
 
 static void
 _e_fwin_favorite_selected(void *data,
-                 Evas_Object *obj __UNUSED__,
-                 void *event_info __UNUSED__)
+                 Evas_Object *obj EINA_UNUSED,
+                 void *event_info EINA_UNUSED)
 {
    E_Fwin_Page *page;
    Eina_List *selected;
@@ -1852,8 +1857,8 @@ _e_fwin_favorite_selected(void *data,
 
 static void
 _e_fwin_selected(void *data,
-                 Evas_Object *obj __UNUSED__,
-                 void *event_info __UNUSED__)
+                 Evas_Object *obj EINA_UNUSED,
+                 void *event_info EINA_UNUSED)
 {
    E_Fwin_Page *page;
    Eina_List *selected;
@@ -1868,7 +1873,7 @@ _e_fwin_selected(void *data,
 static void
 _e_fwin_selection_change(void *data,
                          Evas_Object *obj,
-                         void *event_info __UNUSED__)
+                         void *event_info EINA_UNUSED)
 {
    Eina_List *l;
    E_Fwin_Page *page;
@@ -1884,7 +1889,7 @@ _e_fwin_selection_change(void *data,
 
 static void
 _e_fwin_cb_all_change(void *data,
-                      Evas_Object *obj __UNUSED__)
+                      Evas_Object *obj EINA_UNUSED)
 {
    E_Fwin_Apps_Dialog *fad;
    Efreet_Desktop *desktop = NULL;
@@ -1901,8 +1906,8 @@ _e_fwin_cb_all_change(void *data,
 
 static void
 _e_fwin_cb_key_down(void *data,
-                    Evas *e          __UNUSED__,
-                    Evas_Object *obj __UNUSED__,
+                    Evas *e          EINA_UNUSED,
+                    Evas_Object *obj EINA_UNUSED,
                     void *event_info)
 {
    Evas_Event_Key_Down *ev;
@@ -1917,12 +1922,10 @@ _e_fwin_cb_key_down(void *data,
      {
         if (!strcmp(ev->key, "n"))
           {
-             E_Comp *comp;
              const char *dev, *path;
 
-             comp = e_util_comp_current_get();
              e_fm2_path_get(page->fm_obj, &dev, &path);
-             e_fwin_new(comp, dev, path);
+             e_fwin_new(dev, path);
              return;
           }
         if (!strcmp(ev->key, "w"))
@@ -1939,33 +1942,29 @@ _e_fwin_cb_key_down(void *data,
 }
 
 static void
-_e_fwin_cb_page_obj_del(void *data,
-                        Evas *evas       __UNUSED__,
-                        Evas_Object *obj __UNUSED__,
-                        void *event_info __UNUSED__)
+_e_fwin_cb_page_obj_del(void *data EINA_UNUSED,
+                        Evas *evas       EINA_UNUSED,
+                        Evas_Object *obj,
+                        void *event_info EINA_UNUSED)
 {
-   E_Fwin_Page *page;
-
-   page = data;
-
-   evas_object_smart_callback_del(page->fm_obj, "dir_changed",
+   evas_object_smart_callback_del(obj, "dir_changed",
                                   _e_fwin_changed);
-   evas_object_smart_callback_del(page->fm_obj, "dir_deleted",
+   evas_object_smart_callback_del(obj, "dir_deleted",
                                   _e_fwin_deleted);
-   evas_object_smart_callback_del(page->fm_obj, "selected",
+   evas_object_smart_callback_del(obj, "selected",
                                   _e_fwin_selected);
-   evas_object_smart_callback_del(page->fm_obj, "selection_change",
+   evas_object_smart_callback_del(obj, "selection_change",
                                   _e_fwin_selection_change);
-   evas_object_event_callback_del(page->fm_obj, EVAS_CALLBACK_DEL,
+   evas_object_event_callback_del(obj, EVAS_CALLBACK_DEL,
                                   _e_fwin_cb_page_obj_del);
 }
 
 /* fwin zone callbacks */
 static void
 _e_fwin_zone_cb_mouse_down(void *data,
-                           Evas *evas       __UNUSED__,
-                           Evas_Object *obj __UNUSED__,
-                           void *event_info __UNUSED__)
+                           Evas *evas       EINA_UNUSED,
+                           Evas_Object *obj EINA_UNUSED,
+                           void *event_info EINA_UNUSED)
 {
    E_Fwin *fwin;
 
@@ -1976,7 +1975,7 @@ _e_fwin_zone_cb_mouse_down(void *data,
 }
 
 static Eina_Bool
-_e_fwin_zone_move_resize(void *data, int type __UNUSED__, void *event)
+_e_fwin_zone_move_resize(void *data, int type EINA_UNUSED, void *event)
 {
    E_Event_Zone_Move_Resize *ev = event;
    E_Fwin *fwin = data;
@@ -2012,7 +2011,7 @@ _e_fwin_zone_del(void *data,
 }
 
 static int
-_e_fwin_cb_dir_handler_test(void *data __UNUSED__, Evas_Object *obj, const char *path)
+_e_fwin_cb_dir_handler_test(void *data EINA_UNUSED, Evas_Object *obj, const char *path)
 {
    if (ecore_file_is_dir(path)) return 1;
    if (e_fm2_real_path_get(obj))
@@ -2024,7 +2023,7 @@ _e_fwin_cb_dir_handler_test(void *data __UNUSED__, Evas_Object *obj, const char 
 }
 
 static void
-_e_fwin_cb_dir_handler(void *data __UNUSED__, Evas_Object *obj, const char *path)
+_e_fwin_cb_dir_handler(void *data EINA_UNUSED, Evas_Object *obj, const char *path)
 {
    char buf[PATH_MAX];
    Eina_Stringshare *rp;
@@ -2034,7 +2033,7 @@ _e_fwin_cb_dir_handler(void *data __UNUSED__, Evas_Object *obj, const char *path
    if (rp && (rp != path) && (evas_object_data_del(obj, "fileman_terminal_realpath"))) //icon menu; use rp
      path = rp;
    if (chdir(path) < 0) perror("chdir");
-   e_exec(e_util_zone_current_get(e_manager_current_get()), tdesktop, NULL, NULL, "fileman");
+   e_exec(e_zone_current_get(), tdesktop, NULL, NULL, "fileman");
    if (chdir(buf) < 0) perror("chdir");
    /* FIXME: if info != null then check mime type and offer options based
     * on that
@@ -2043,15 +2042,15 @@ _e_fwin_cb_dir_handler(void *data __UNUSED__, Evas_Object *obj, const char *path
 
 static void
 _e_fwin_parent(void *data,
-               E_Menu *m       __UNUSED__,
-               E_Menu_Item *mi __UNUSED__)
+               E_Menu *m       EINA_UNUSED,
+               E_Menu_Item *mi EINA_UNUSED)
 {
    e_fm2_parent_go(data);
 }
 
 static void
 _e_fwin_cb_menu_open_fast(void *data,
-                          E_Menu *m    __UNUSED__,
+                          E_Menu *m    EINA_UNUSED,
                           E_Menu_Item *mi)
 {
    E_Fwin_Page *page;
@@ -2107,7 +2106,7 @@ _e_fwin_cb_menu_extend_open_with(void *data,
 }
 
 static void
-_e_fwin_path(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_fwin_path(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    const char *path;
    E_Fwin_Page *page;
@@ -2118,14 +2117,14 @@ _e_fwin_path(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
    if (page->fwin->win)
      xwin = elm_win_window_id_get(page->fwin->win);
    else
-     xwin = page->fwin->zone->comp->ee_win;
+     xwin = e_comp->ee_win;
 #ifndef HAVE_WAYLAND_ONLY
    ecore_x_selection_clipboard_set(xwin, path, strlen(path) + 1);
 #endif
 }
 
 static void
-_e_fwin_clone(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_fwin_clone(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Fwin *fwin = data;
    E_Action *act_fm;
@@ -2221,8 +2220,8 @@ _e_fwin_cb_menu_extend_start(void *data,
 
 static void
 _e_fwin_cb_menu_open(void *data,
-                     E_Menu *m       __UNUSED__,
-                     E_Menu_Item *mi __UNUSED__)
+                     E_Menu *m       EINA_UNUSED,
+                     E_Menu_Item *mi EINA_UNUSED)
 {
    E_Fwin_Page *page;
    Eina_List *selected;
@@ -2236,8 +2235,8 @@ _e_fwin_cb_menu_open(void *data,
 
 static void
 _e_fwin_cb_menu_open_with(void *data,
-                          E_Menu *m       __UNUSED__,
-                          E_Menu_Item *mi __UNUSED__)
+                          E_Menu *m       EINA_UNUSED,
+                          E_Menu_Item *mi EINA_UNUSED)
 {
    E_Fwin_Page *page;
    Eina_List *selected = NULL;
@@ -2736,8 +2735,8 @@ _e_fwin_file_open_dialog_preview_set(void *data1, void *data2)
 
 static void
 _e_fwin_file_open_dialog_cb_key_down(void *data,
-                                     Evas *e        __UNUSED__,
-                                     Evas_Object *o __UNUSED__,
+                                     Evas *e        EINA_UNUSED,
+                                     Evas_Object *o EINA_UNUSED,
                                      void *event_info)
 {
    Evas_Event_Key_Down *ev = event_info;
@@ -2778,7 +2777,7 @@ _e_fwin_dlg_cb_desk_list_sort(const void *data1,
 
 static void
 _e_fwin_cb_exec_cmd_changed(void *data,
-                            void *data2 __UNUSED__)
+                            void *data2 EINA_UNUSED)
 {
    E_Fwin_Apps_Dialog *fad = NULL;
    Efreet_Desktop *desktop = NULL;
@@ -2800,7 +2799,7 @@ _e_fwin_cb_exec_cmd_changed(void *data,
 
 static void
 _e_fwin_cb_open(void *data,
-                E_Dialog *dia __UNUSED__)
+                E_Dialog *dia EINA_UNUSED)
 {
    E_Fwin_Apps_Dialog *fad;
    Efreet_Desktop *desktop = NULL;
@@ -2837,7 +2836,7 @@ _e_fwin_cb_open(void *data,
 
 static void
 _e_fwin_cb_close(void *data,
-                 E_Dialog *dia __UNUSED__)
+                 E_Dialog *dia EINA_UNUSED)
 {
    E_Fwin_Apps_Dialog *fad;
 
@@ -3100,7 +3099,7 @@ _e_fwin_op_registry_listener_cb(void *data,
 }
 
 static void
-_e_fwin_op_registry_free_check(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj, void *event_info __UNUSED__)
+_e_fwin_op_registry_free_check(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
    Ecore_Timer *t;
 
@@ -3128,7 +3127,7 @@ _e_fwin_op_registry_free_data(void *data)
 
 static Eina_Bool
 _e_fwin_op_registry_entry_add_cb(void *data,
-                                 __UNUSED__ int type,
+                                 EINA_UNUSED int type,
                                  void *event)
 {
    E_Fm2_Op_Registry_Entry *ere = (E_Fm2_Op_Registry_Entry *)event;
@@ -3173,9 +3172,9 @@ _e_fwin_op_registry_entry_iter(E_Fwin_Page *page)
 
 static void
 _e_fwin_op_registry_abort_cb(void *data,
-                             Evas_Object *obj     __UNUSED__,
-                             const char *emission __UNUSED__,
-                             const char *source   __UNUSED__)
+                             Evas_Object *obj     EINA_UNUSED,
+                             const char *emission EINA_UNUSED,
+                             const char *source   EINA_UNUSED)
 {
    int id;
 

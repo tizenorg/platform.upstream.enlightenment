@@ -19,7 +19,7 @@ _import_edj_gen(E_Import_Config_Dialog *import)
    int fd, num = 1;
    int w = 0, h = 0;
    const char *file, *locale;
-   char buf[PATH_MAX], cmd[PATH_MAX], tmpn[PATH_MAX], ipart[PATH_MAX], enc[128];
+   char buf[PATH_MAX], fbuf[PATH_MAX], cmd[PATH_MAX], tmpn[PATH_MAX], ipart[PATH_MAX], enc[128];
    Eina_Tmpstr *path = NULL;
    char *imgdir = NULL, *fstrip;
    int cr, cg, cb, ca;
@@ -82,12 +82,14 @@ _import_edj_gen(E_Import_Config_Dialog *import)
 
    if (import->external)
      {
-        fstrip = strdupa(e_util_filename_escape(import->file));
+        const char *esc = e_util_filename_escape(import->file);
+        fstrip = memcpy(fbuf, esc, strlen(esc) + 1);
         snprintf(enc, sizeof(enc), "USER");
      }
    else
      {
-        fstrip = strdupa(e_util_filename_escape(file));
+        const char *esc = e_util_filename_escape(file);
+        fstrip = memcpy(fbuf, esc, strlen(esc) + 1);
         if (import->quality == 100)
           snprintf(enc, sizeof(enc), "COMP");
         else
@@ -276,7 +278,7 @@ _import_edj_gen(E_Import_Config_Dialog *import)
 }
 
 static Eina_Bool
-_import_cb_edje_cc_exit(void *data, __UNUSED__ int type, void *event)
+_import_cb_edje_cc_exit(void *data, EINA_UNUSED int type, void *event)
 {
    E_Import_Config_Dialog *import;
    Ecore_Exe_Event_Del *ev;
@@ -308,7 +310,7 @@ _import_cb_edje_cc_exit(void *data, __UNUSED__ int type, void *event)
 }
 
 static void
-_import_cb_close(void *data, E_Dialog *dia __UNUSED__)
+_import_cb_close(void *data, E_Dialog *dia EINA_UNUSED)
 {
    E_Import_Config_Dialog *import = data;
 
@@ -319,7 +321,7 @@ _import_cb_close(void *data, E_Dialog *dia __UNUSED__)
 }
 
 static void
-_import_cb_ok(void *data, E_Dialog *dia __UNUSED__)
+_import_cb_ok(void *data, E_Dialog *dia EINA_UNUSED)
 {
    E_Import_Config_Dialog *import = data;
    const char *file;
@@ -433,7 +435,7 @@ _e_import_config_dialog_win_del(void *data, Evas *e EINA_UNUSED, Evas_Object *ob
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-EAPI E_Import_Config_Dialog *
+E_API E_Import_Config_Dialog *
 e_import_config_dialog_show(Evas_Object *parent, const char *path, Ecore_End_Cb ok, Ecore_Cb cancel)
 {
    Evas *evas;

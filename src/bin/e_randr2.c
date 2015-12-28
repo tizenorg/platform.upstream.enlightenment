@@ -15,14 +15,10 @@ static void                    _config_free(E_Config_Randr2 *cfg);
 static Eina_Bool               _config_save(E_Randr2 *r, E_Config_Randr2 *cfg);
 static void                    _config_update(E_Randr2 *r, E_Config_Randr2 *cfg);
 static void                    _config_apply(E_Randr2 *r, E_Config_Randr2 *cfg);
-static E_Config_Randr2_Screen *_config_screen_find(E_Randr2_Screen *s, E_Config_Randr2 *cfg);
 static int                     _config_screen_match_count(E_Randr2 *r, E_Config_Randr2 *cfg);
 static char                   *_screens_fingerprint(E_Randr2 *r);
 static Eina_Bool               _screens_differ(E_Randr2 *r1, E_Randr2 *r2);
-static void                    _cb_acpi_handler_add(void *data);
 static Eina_Bool               _cb_screen_change_delay(void *data);
-static void                    _screen_change_delay(void);
-static Eina_Bool               _cb_acpi(void *data, int type, void *event);
 static E_Randr2_Screen        *_screen_output_find(const char *out);
 static E_Randr2_Screen        *_screen_id_find(const char *id);
 static void                    _screen_config_takeover(void);
@@ -34,43 +30,22 @@ static void                    _screen_config_maxsize(void);
 static E_Config_DD   *_e_randr2_cfg_edd = NULL;
 static E_Config_DD   *_e_randr2_cfg_screen_edd = NULL;
 static Eina_List     *_ev_handlers = NULL;
-static Eina_Bool      _lid_is_closed = EINA_FALSE;
-static Ecore_Job     *_acpi_handler_add_job = NULL;
 static Ecore_Timer   *_screen_delay_timer = NULL;
 static Eina_Bool      event_screen = EINA_FALSE;
 static Eina_Bool      event_ignore = EINA_FALSE;
 
 /////////////////////////////////////////////////////////////////////////
-EAPI E_Config_Randr2 *e_randr2_cfg = NULL;
-EAPI E_Randr2        *e_randr2 = NULL;
+E_API E_Config_Randr2 *e_randr2_cfg = NULL;
+E_API E_Randr2        *e_randr2 = NULL;
 
-EAPI int              E_EVENT_RANDR_CHANGE = 0;
-
-/////////////////////////////////////////////////////////////////////////
-// X11 backend
-static Eina_Bool _output_init(void);
-static void _output_shutdown(void);
-static void _output_events_listen(void);
-static void _output_events_unlisten(void);
-static char *_output_screen_get(Ecore_X_Window root, Ecore_X_Randr_Output o);
-static Ecore_X_Randr_Edid_Display_Interface_Type _output_conn_type_get(Ecore_X_Window root, Ecore_X_Randr_Output o);
-static char *_output_name_get(Ecore_X_Window root, Ecore_X_Randr_Output o);
-static Eina_Bool _is_lid_name(const char *name);
-static E_Randr2 *_info_get(void);
-static Eina_Bool _cb_screen_change(void *data, int type, void *event);
-static Eina_Bool _cb_crtc_change(void *data, int type, void *event);
-static Eina_Bool _cb_output_change(void *data, int type, void *event);
-static Eina_Bool _output_name_find(Ecore_X_Window root, const char *name, Ecore_X_Randr_Output *outputs, int outputs_num, Ecore_X_Randr_Output *out_ret);
-static Eina_Bool _output_exists(Ecore_X_Randr_Output out, Ecore_X_Randr_Crtc_Info *info);
-static Eina_Bool _rotation_exists(int rot, Ecore_X_Randr_Crtc_Info *info);
-static Ecore_X_Randr_Mode _mode_screen_find(Ecore_X_Window root, E_Randr2_Screen *s, Ecore_X_Randr_Output out);
-static void _screen_config_apply(void);
+E_API int              E_EVENT_RANDR_CHANGE = 0;
 
 /////////////////////////////////////////////////////////////////////////
 EINTERN Eina_Bool
 e_randr2_init(void)
 {
-   if (!_output_init()) return EINA_FALSE;
+   if (!E_EVENT_RANDR_CHANGE) E_EVENT_RANDR_CHANGE = ecore_event_type_new();
+   if ((!e_comp->screen) || (!e_comp->screen->available) || (!e_comp->screen->available())) return EINA_FALSE;
    // create data descriptors for config storage
    _e_randr2_cfg_screen_edd =
      E_CONFIG_DD_NEW("E_Config_Randr2_Screen", E_Config_Randr2_Screen);
@@ -97,16 +72,14 @@ e_randr2_init(void)
    E_CONFIG_VAL(D, T, version, INT);
    E_CONFIG_LIST(D, T, screens, _e_randr2_cfg_screen_edd);
    E_CONFIG_VAL(D, T, restore, UCHAR);
+   E_CONFIG_VAL(D, T, ignore_hotplug_events, UCHAR);
+   E_CONFIG_VAL(D, T, ignore_acpi_events, UCHAR);
 
-   if (!E_EVENT_RANDR_CHANGE) E_EVENT_RANDR_CHANGE = ecore_event_type_new();
-   // delay setting up acpi handler, as acpi is init'ed after randr
-   _acpi_handler_add_job = ecore_job_add(_cb_acpi_handler_add, NULL);
-   // get current lid status of a laptop
-   _lid_is_closed = (e_acpi_lid_status_get() == E_ACPI_LID_CLOSED);
    // set up events from the driver
-   _output_events_listen();
+   if (e_comp->screen->init)
+     e_comp->screen->init();
    // get current screen info
-   e_randr2 = _info_get();
+   e_randr2 = e_comp->screen->create();
    // from screen info calculate screen max dimensions
    _screen_config_maxsize();
    // load config and apply it
@@ -123,6 +96,7 @@ e_randr2_init(void)
         _config_update(e_randr2, e_randr2_cfg);
         e_randr2_config_save();
      }
+   ecore_event_add(E_EVENT_RANDR_CHANGE, NULL, NULL, NULL);
    return EINA_TRUE;
 }
 
@@ -134,10 +108,8 @@ e_randr2_shutdown(void)
    if (_screen_delay_timer) ecore_timer_del(_screen_delay_timer);
    _screen_delay_timer = NULL;
    // stop listening to driver info
-   _output_events_unlisten();
-   // clean up acpi stuff
-   if (_acpi_handler_add_job) ecore_job_del(_acpi_handler_add_job);
-   _acpi_handler_add_job = NULL;
+   if (e_comp->screen->shutdown)
+     e_comp->screen->shutdown();
    // clear up all event handlers
    E_FREE_LIST(_ev_handlers, ecore_event_handler_del);
    // free up screen info
@@ -148,29 +120,28 @@ e_randr2_shutdown(void)
    // free up data descriptors
    E_CONFIG_DD_FREE(_e_randr2_cfg_edd);
    E_CONFIG_DD_FREE(_e_randr2_cfg_screen_edd)
-   _output_shutdown();
    return 1;
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_randr2_config_save(void)
 {
    // save our config
    return _config_save(e_randr2, e_randr2_cfg);
 }
 
-EAPI void
+E_API void
 e_randr2_config_apply(void)
 {
    _animated_apply();
 }
 
-EAPI void
+E_API void
 e_randr2_screeninfo_update(void)
 {
    // re-fetch/update current screen info
    _info_free(e_randr2);
-   e_randr2 = _info_get();
+   e_randr2 = e_comp->screen->create();
    _screen_config_maxsize();
 }
 
@@ -187,7 +158,7 @@ static Eina_Bool
 _screen_closed(E_Randr2_Screen *s)
 {
    printf("RRR: check lid for %s...\n", s->info.name);
-   if (!_lid_is_closed) return EINA_FALSE;
+   if (!e_acpi_lid_is_closed()) return EINA_FALSE;
    if (s->info.is_lid)
      {
         printf("RRR:   is closed lid\n");
@@ -276,7 +247,7 @@ _do_apply(void)
    // take current screen config and apply it to the driver
    printf("RRR: re-get info before applying..\n");
    _info_free(e_randr2);
-   e_randr2 = _info_get();
+   e_randr2 = e_comp->screen->create();
    _screen_config_maxsize();
    printf("RRR: apply config...\n");
    _config_apply(e_randr2, e_randr2_cfg);
@@ -285,7 +256,7 @@ _do_apply(void)
    printf("RRR: eval config...\n");
    _screen_config_eval();
    printf("RRR: really apply config...\n");
-   _screen_config_apply();
+   e_comp->screen->apply();
    printf("RRR: done config...\n");
 }
 
@@ -336,6 +307,8 @@ _config_load(void)
    cfg->version = E_RANDR_CONFIG_VERSION;
    cfg->screens = NULL;
    cfg->restore = 1;
+   cfg->ignore_hotplug_events = 0;
+   cfg->ignore_acpi_events = 0;
    printf("RRR: fresh config\n");
    return cfg;
 }
@@ -371,7 +344,7 @@ _config_update(E_Randr2 *r, E_Config_Randr2 *cfg)
      {
         printf("RRR: out id=%s:  connected=%i\n", s->id, s->info.connected);
         if ((!s->id) || (!s->info.connected) || (_screen_closed(s))) continue;
-        cs = _config_screen_find(s, cfg);
+        cs = e_randr2_config_screen_find(s, cfg);
         if (!cs)
           {
              cs = calloc(1, sizeof(E_Config_Randr2_Screen));
@@ -399,11 +372,49 @@ _config_update(E_Randr2 *r, E_Config_Randr2 *cfg)
 }
 
 static void
+_config_really_apply(E_Randr2_Screen *s, E_Config_Randr2_Screen *cs)
+{
+   if (cs)
+     {
+        s->config.enabled = EINA_TRUE;
+        s->config.mode.w = cs->mode_w;
+        s->config.mode.h = cs->mode_h;
+        s->config.mode.refresh = cs->mode_refresh;
+        s->config.mode.preferred = EINA_FALSE;
+        s->config.rotation = cs->rotation;
+        s->config.priority = cs->priority;
+        free(s->config.relative.to);
+        if (cs->rel_to) s->config.relative.to = strdup(cs->rel_to);
+        else s->config.relative.to = NULL;
+        s->config.relative.mode = cs->rel_mode;
+        s->config.relative.align = cs->rel_align;
+     }
+   else
+     {
+        s->config.enabled = EINA_FALSE;
+        s->config.geom.x = 0;
+        s->config.geom.y = 0;
+        s->config.geom.w = 0;
+        s->config.geom.h = 0;
+        s->config.mode.w = 0;
+        s->config.mode.h = 0;
+        s->config.mode.refresh = 0.0;
+        s->config.mode.preferred = EINA_FALSE;
+        s->config.rotation = 0;
+        s->config.priority = 0;
+        free(s->config.relative.to);
+        s->config.relative.to = NULL;
+        s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
+        s->config.relative.align = 0.0;
+     }
+}
+
+static void
 _config_apply(E_Randr2 *r, E_Config_Randr2 *cfg)
 {
-   Eina_List *l;
-   E_Randr2_Screen *s;
-   E_Config_Randr2_Screen *cs;
+   Eina_List *l, *l2;
+   E_Randr2_Screen *s, *s2;
+   E_Config_Randr2_Screen *cs, *cs2;
 
    if ((!r) || (!cfg)) return;
    EINA_LIST_FOREACH(r->screens, l, s)
@@ -411,62 +422,65 @@ _config_apply(E_Randr2 *r, E_Config_Randr2 *cfg)
         printf("RRR: apply '%s'...\n", s->info.name);
         cs = NULL;
         if ((!_screen_closed(s)) && (s->info.connected))
-          cs = _config_screen_find(s, cfg);
+          cs = e_randr2_config_screen_find(s, cfg);
         printf("RRR: connected =  %i\n", s->info.connected);
         if ((cs) && (cs->enabled))
           {
              printf("RRR: ... enabled\n");
-             s->config.enabled = EINA_TRUE;
-             s->config.mode.w = cs->mode_w;
-             s->config.mode.h = cs->mode_h;
-             s->config.mode.refresh = cs->mode_refresh;
-             s->config.mode.preferred = EINA_FALSE;
-             s->config.rotation = cs->rotation;
-             s->config.priority = cs->priority;
              printf("RRR: ... priority = %i\n", cs->priority);
-             free(s->config.relative.to);
-             if (cs->rel_to) s->config.relative.to = strdup(cs->rel_to);
-             else s->config.relative.to = NULL;
-             s->config.relative.mode = cs->rel_mode;
-             s->config.relative.align = cs->rel_align;
+             _config_really_apply(s, cs);
+          }
+        else if ((!cs) && (!_screen_closed(s)))
+          {
+             printf("RRR: ... no config found...\n");
+             cs2 = NULL;
+             if (s->info.connected)
+               {
+                  EINA_LIST_FOREACH(r->screens, l2, s2)
+                    {
+                       if (s2 == s) continue;
+                       if (s2->info.is_lid)
+                         {
+                            cs2 = e_randr2_config_screen_find(s2, cfg);
+                            if (cs2) break;
+                         }
+                    }
+                  if (!cs2)
+                    {
+                       EINA_LIST_FOREACH(r->screens, l2, s2)
+                         {
+                            if (s2 == s) continue;
+                            if (s2->info.connected)
+                              {
+                                 cs2 = e_randr2_config_screen_find(s2, cfg);
+                                 if (cs2) break;
+                              }
+                         }
+                    }
+               }
+             if (cs2)
+               {
+                  printf("RRR: ... enabled - fallback clone\n");
+                  _config_really_apply(s, cs2);
+                  free(s->config.relative.to);
+                  s->config.relative.to = strdup(cs2->id);
+                  printf("RRR: ... clone = %s\n", s->config.relative.to);
+                  s->config.relative.mode = E_RANDR2_RELATIVE_CLONE;
+                  s->config.relative.align = 0.0;
+               }
+             else
+               {
+                  printf("RRR: ... disabled\n");
+                  _config_really_apply(s, NULL);
+               }
           }
         else
           {
              printf("RRR: ... disabled\n");
-             s->config.enabled = EINA_FALSE;
-             s->config.geom.x = 0;
-             s->config.geom.y = 0;
-             s->config.geom.w = 0;
-             s->config.geom.h = 0;
-             s->config.mode.w = 0;
-             s->config.mode.h = 0;
-             s->config.mode.refresh = 0.0;
-             s->config.mode.preferred = EINA_FALSE;
-             s->config.rotation = 0;
-             s->config.priority = 0;
-             free(s->config.relative.to);
-             s->config.relative.to = NULL;
-             s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
-             s->config.relative.align = 0.0;
+             _config_really_apply(s, NULL);
           }
         s->config.configured = EINA_TRUE;
      }
-}
-
-static E_Config_Randr2_Screen *
-_config_screen_find(E_Randr2_Screen *s, E_Config_Randr2 *cfg)
-{
-   Eina_List *l;
-   E_Config_Randr2_Screen *cs;
-
-   if ((!s) || (!cfg)) return NULL;
-   if (!s->id) return NULL;
-   EINA_LIST_FOREACH(cfg->screens, l, cs)
-     {
-        if (!cs->id) continue;
-        if (!strcmp(cs->id, s->id)) return cs;
-     }
-   return NULL;
 }
 
 static int
@@ -488,14 +502,6 @@ _config_screen_match_count(E_Randr2 *r, E_Config_Randr2 *cfg)
           }
      }
    return count;
-}
-
-static void
-_cb_acpi_handler_add(void *data EINA_UNUSED)
-{
-   // add acpi handler in delayed job
-   E_LIST_HANDLER_APPEND(_ev_handlers, E_EVENT_ACPI, _cb_acpi, NULL);
-   _acpi_handler_add_job = NULL;
 }
 
 static char *
@@ -579,7 +585,7 @@ _cb_screen_change_delay(void *data EINA_UNUSED)
         Eina_Bool change = EINA_FALSE;
 
         printf("RRR: reconfigure screens due to event...\n");
-        rtemp = _info_get();
+        rtemp = e_comp->screen->create();
         if (rtemp)
           {
              if (_screens_differ(e_randr2, rtemp)) change = EINA_TRUE;
@@ -587,42 +593,19 @@ _cb_screen_change_delay(void *data EINA_UNUSED)
           }
         printf("RRR: change = %i\n", change);
         // we plugged or unplugged some monitor - re-apply config so
-        // known screens can be coonfigured
+        // known screens can be configured
         if (change) e_randr2_config_apply();
      }
    // update screen info after the above apply or due to external changes
    e_randr2_screeninfo_update();
+   e_comp_canvas_resize(e_randr2->w, e_randr2->h);
+   e_randr2_screens_setup(e_comp->w, e_comp->h);
+   e_comp_canvas_update();
    // tell the rest of e some screen reconfigure thing happened
    ecore_event_add(E_EVENT_RANDR_CHANGE, NULL, NULL, NULL);
    event_screen = EINA_FALSE;
    event_ignore = EINA_FALSE;
    return EINA_FALSE;
-}
-
-static void
-_screen_change_delay(void)
-{
-   // delay handling of screen shances as they can come in in a series over
-   // time and thus we can batch up responding to them by waiting 1.0 sec
-   if (_screen_delay_timer) ecore_timer_del(_screen_delay_timer);
-   _screen_delay_timer = ecore_timer_add(1.0, _cb_screen_change_delay, NULL);
-}
-
-static Eina_Bool
-_cb_acpi(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
-{
-   E_Event_Acpi *ev = event;
-   Eina_Bool lid_closed;
-
-   printf("RRR: acpi event\n");
-   if (ev->type != E_ACPI_TYPE_LID) return EINA_TRUE;
-   lid_closed = (ev->status == E_ACPI_LID_CLOSED);
-   if (lid_closed == _lid_is_closed) return EINA_TRUE;
-   printf("RRR: lid event for lid %i\n", lid_closed);
-   _lid_is_closed = lid_closed;
-   event_screen = EINA_TRUE;
-   _screen_change_delay();
-   return EINA_TRUE;
 }
 
 static E_Randr2_Screen *
@@ -731,20 +714,181 @@ _config_screen_clone_resolve(E_Config_Randr2 *cfg, const char *id, int *x, int *
    return cs;
 }
 
+static Eina_List *
+_screen_clones_find(Eina_List *screens, E_Randr2_Screen *s)
+{
+   Eina_List *clones = NULL, *l;
+   E_Randr2_Screen *s2, *sclone;
+   Eina_Bool added;
+
+   // go over all screens and as long as we have found another screen that is
+   // cloned from something in the clone set, then keep looking.
+   clones = eina_list_append(clones, s);
+   added = EINA_TRUE;
+   while (added)
+     {
+        added = EINA_FALSE;
+        // og over all screens
+        EINA_LIST_FOREACH(screens, l, s2)
+          {
+             // skip looking at screens we already have in our set
+             if (eina_list_data_find(clones, s2)) continue;
+             // if this clones another screen... get that as sclone
+             if ((s2->config.relative.to) &&
+                 (s2->config.relative.mode == E_RANDR2_RELATIVE_CLONE))
+               {
+                  sclone = _screen_fuzzy_fallback_find(e_randr2_cfg,
+                                                       s2->config.relative.to);
+                  if (!sclone) continue;
+                  // if the screen s2 is relative to is not in our list, add
+                  // s2 to our clones list as well
+                  if (!eina_list_data_find(clones, sclone))
+                    {
+                       clones = eina_list_append(clones, sclone);
+                       added = EINA_TRUE;
+                    }
+                  if (!eina_list_data_find(clones, s2))
+                    {
+                       clones = eina_list_append(clones, s2);
+                       added = EINA_TRUE;
+                    }
+                  if (added)
+                    {
+                       // break our list walk, and iterate while again
+                       break;
+                    }
+              }
+          }
+     }
+   return clones;
+}
+
+static void
+_screen_clones_common_sync(Eina_List *clones)
+{
+   E_Randr2_Screen *s, *sbase = NULL;
+   E_Randr2_Mode *m, *m2, *mcommon = NULL;
+   Eina_List *modes = NULL, *l, *l2, *l3;
+   Eina_Bool common;
+   int d, diff = 0x7fffffff;
+
+   // find the base/root/master screen for clones
+   EINA_LIST_FOREACH(clones, l, s)
+     {
+        // simple check - if it doesn't clone something else - then it's
+        // the master (doesn't handle missing screens)
+        if (s->config.relative.mode != E_RANDR2_RELATIVE_CLONE)
+          {
+             sbase = s;
+             break;
+          }
+     }
+   if (!sbase) return;
+   // store all modes that master/base screen has and we'll "weed them out"
+   EINA_LIST_FOREACH(sbase->info.modes, l, m)
+     {
+        modes = eina_list_append(modes, m);
+     }
+   // ensure it's configured
+   _screen_config_do(sbase);
+again:
+   // we took all modes in the "master"
+   EINA_LIST_FOREACH(modes, l, m)
+     {
+        // find all other screens in the clone list and...
+        EINA_LIST_FOREACH(clones, l2, s)
+          {
+             if (s == sbase) continue; // skip if its the base/master
+             // see if mode "m" is common to other clones
+             common = EINA_FALSE;
+             EINA_LIST_FOREACH(s->info.modes, l3, m2)
+               {
+                  /// only check res, not refresh
+                  if ((m->w == m2->w) && (m->h == m2->h))
+                    {
+                       common = EINA_TRUE;
+                       break;
+                    }
+               }
+             // m is not common with modes in screen s - so removed it
+             if (!common)
+               {
+                  modes = eina_list_remove_list(modes, l);
+                  // the list is no longer save to walk - so let's just
+                  // walk it again from scratch
+                  goto again;
+               }
+          }
+     }
+   // no modes in common :(
+   if (!modes) return;
+   common = EINA_FALSE;
+   EINA_LIST_FOREACH(modes, l, m)
+     {
+        // one of the common modes matches the base config - we are ok
+        if ((m->w == sbase->config.mode.w) && (m->h == sbase->config.mode.h))
+          return;
+     }
+   // find a common mode since current config doesn't match
+   EINA_LIST_FOREACH(modes, l, m)
+     {
+        // calculate a "difference" based on a combo of diff in area pixels
+        // actual resolutin pixels (squared) and refresh delta * 10 squared
+        d = abs((sbase->config.mode.w * sbase->config.mode.h) - (m->w * m->h));
+        d += (sbase->config.mode.w - m->w) * (sbase->config.mode.w - m->w);
+        d += (sbase->config.mode.h - m->h) * (sbase->config.mode.h - m->h);
+        d += ((sbase->config.mode.refresh - m->refresh) * 10) *
+             ((sbase->config.mode.refresh - m->refresh) * 10);
+        if ((m->w > sbase->config.mode.w) || (m->h > sbase->config.mode.h))
+          continue;
+        if (d < diff)
+          {
+             diff = d;
+             mcommon = m;
+          }
+     }
+   modes = eina_list_free(modes);
+   // no common mode with least difference found
+   if (!mcommon) return;
+   // we have a common mode - apply it to the base screen
+   s = sbase;
+   s->config.mode.w = mcommon->w;
+   s->config.mode.h = mcommon->h;
+   s->config.mode.refresh = mcommon->refresh;
+   if ((s->config.rotation == 0) || (s->config.rotation == 180))
+     {
+        s->config.geom.w = s->config.mode.w;
+        s->config.geom.h = s->config.mode.h;
+     }
+   else
+     {
+        s->config.geom.w = s->config.mode.h;
+        s->config.geom.h = s->config.mode.w;
+     }
+}
+
 static int _config_do_recurse = 0;
 
 static void
 _screen_config_do(E_Randr2_Screen *s)
 {
    E_Randr2_Screen *s2 = NULL;
+   Eina_List *cloneset;
 
    printf("RRR: screen do '%s'\n", s->info.name);
-   if (_config_do_recurse > 10)
+   if (_config_do_recurse > 5)
      {
         ERR("screen config loop!");
         return;
      }
    _config_do_recurse++;
+   // find dependent clones and find a common config res
+   cloneset = _screen_clones_find(e_randr2->screens, s);
+   if (cloneset)
+     {
+        _screen_clones_common_sync(cloneset);
+        eina_list_free(cloneset);
+     }
    // if screen has a dependency...
    if ((s->config.relative.mode != E_RANDR2_RELATIVE_UNKNOWN) &&
        (s->config.relative.mode != E_RANDR2_RELATIVE_NONE) &&
@@ -921,788 +1065,164 @@ _screen_config_maxsize(void)
    e_randr2->h = maxy;
 }
 
-/////////////////////////////////////////////////////////////////////////
-// X11 backend
-static Eina_Bool
-_output_init(void)
+static int
+_screen_sort_cb(const void *data1, const void *data2)
 {
-   // is randr extn there?
-   return ecore_x_randr_query();
-}
+   const E_Randr2_Screen *s1 = data1, *s2 = data2;
+   int dif;
 
-static void
-_output_shutdown(void)
-{
-}
-
-static void
-_output_events_listen(void)
-{
-   // add handler for randr screen change events
-   E_LIST_HANDLER_APPEND(_ev_handlers, ECORE_X_EVENT_SCREEN_CHANGE,
-                         _cb_screen_change, NULL);
-   E_LIST_HANDLER_APPEND(_ev_handlers, ECORE_X_EVENT_RANDR_CRTC_CHANGE,
-                         _cb_crtc_change, NULL);
-   E_LIST_HANDLER_APPEND(_ev_handlers, ECORE_X_EVENT_RANDR_OUTPUT_CHANGE,
-                         _cb_output_change, NULL);
-   // if it's 1.2 or better then we can select for these events
-   if (ecore_x_randr_version_get() >= E_RANDR_VERSION_1_2)
+   dif = -(s1->config.priority - s2->config.priority);
+   if (dif == 0)
      {
-        Ecore_X_Window root = ecore_x_window_root_first_get();
-        ecore_x_randr_events_select(root, EINA_TRUE);
+        dif = s1->config.geom.x - s2->config.geom.x;
+        if (dif == 0)
+          dif = s1->config.geom.y - s2->config.geom.y;
      }
+   return dif;
 }
 
-static void
-_output_events_unlisten(void)
+E_API void
+e_randr2_screen_refresh_queue(Eina_Bool lid_event)
 {
-   // clear up event listening
-   if (ecore_x_randr_version_get() >= E_RANDR_VERSION_1_2)
-     {
-        Ecore_X_Window root = ecore_x_window_root_first_get();
-        ecore_x_randr_events_select(root, EINA_FALSE);
-     }
-}
-
-static char *
-_output_screen_get(Ecore_X_Window root, Ecore_X_Randr_Output o)
-{
-   // get the name of the screen - likely a model name or manufacturer name
-   char *name;
-   unsigned long len = 0;
-   unsigned char *edid = ecore_x_randr_output_edid_get(root, o, &len);
-   if (!edid) return NULL;
-   name = ecore_x_randr_edid_display_name_get(edid, len);
-   free(edid);
-   return name;
-}
-
-static Ecore_X_Randr_Edid_Display_Interface_Type
-_output_conn_type_get(Ecore_X_Window root, Ecore_X_Randr_Output o)
-{
-   // get what kind of connector (hdmi, dvi, displayport etc.) - vga is 
-   Ecore_X_Randr_Edid_Display_Interface_Type type;
-   unsigned long len = 0;
-   unsigned char *edid = ecore_x_randr_output_edid_get(root, o, &len);
-   if (!edid) return ECORE_X_RANDR_EDID_DISPLAY_INTERFACE_UNDEFINED;
-   type = ecore_x_randr_edid_display_interface_type_get(edid, len);
-   free(edid);
-   return type;
-}
-
-static char *
-_output_name_get(Ecore_X_Window root, Ecore_X_Randr_Output o)
-{
-   // get the output name - like connector (hdmi-0, dp1, dvi-0-1 etc.)
-   char *name = ecore_x_randr_output_name_get(root, o, NULL);
-   if (name) return name;
-   return _output_screen_get(root, o);
-}
-
-static Eina_Bool
-_is_lid_name(const char *name)
-{
-   // a fixed list of possible built in connector names - likely a laptop
-   // or device internal display
-   if (!name) return EINA_FALSE;
-   if      (strstr(name, "LVDS")) return EINA_TRUE;
-   else if (strstr(name, "lvds")) return EINA_TRUE;
-   else if (strstr(name, "Lvds")) return EINA_TRUE;
-   else if (strstr(name, "LCD"))  return EINA_TRUE;
-   else if (strstr(name, "eDP"))  return EINA_TRUE;
-   else if (strstr(name, "edp"))  return EINA_TRUE;
-   else if (strstr(name, "EDP"))  return EINA_TRUE;
-   return EINA_FALSE;
-}
-
-static char *
-_edid_string_get(Ecore_X_Window root, Ecore_X_Randr_Output o)
-{
-   // convert the edid binary data into a hex string so we can use it as
-   // part of a name
-   unsigned char *edid = NULL;
-   unsigned long len = 0;
-   char *edid_str = NULL;
-
-   edid = ecore_x_randr_output_edid_get(root, o, &len);
-   if (edid)
-     {
-        unsigned int k, kk;
-
-        edid_str = malloc((len * 2) + 1);
-        if (edid_str)
-          {
-             const char *hexch = "0123456789abcdef";
-
-             for (kk = 0, k = 0; k < len; k++)
-               {
-                  edid_str[kk    ] = hexch[(edid[k] >> 4) & 0xf];
-                  edid_str[kk + 1] = hexch[ edid[k]       & 0xf];
-                  kk += 2;
-               }
-             edid_str[kk] = 0;
-          }
-        free(edid);
-     }
-   return edid_str;
-}
-
-static E_Randr2_Screen *
-_info_unconf_primary_find(E_Randr2 *r)
-{
-   Eina_List *l;
-   E_Randr2_Screen *s, *s_primary = NULL;
-   int priority = 0;
-
-   EINA_LIST_FOREACH(r->screens, l, s)
-     {
-        if (!((s->config.enabled) &&
-              (s->config.mode.w > 0) && (s->config.mode.h > 0) &&
-              (s->config.geom.w > 0) && (s->config.geom.h > 0)))
-          continue;
-        if (s->config.priority > priority)
-          {
-             s_primary = s;
-             priority = s->config.priority;
-          }
-     }
-   return s_primary;
-}
-
-static E_Randr2_Screen *
-_info_unconf_left_find(E_Randr2 *r)
-{
-   Eina_List *l;
-   E_Randr2_Screen *s, *s_left = NULL;
-   int left_x = 0x7fffffff;
-   int left_size = 0;
-
-   EINA_LIST_FOREACH(r->screens, l, s)
-     {
-        if (!((s->config.enabled) &&
-              (s->config.mode.w > 0) && (s->config.mode.h > 0) &&
-              (s->config.geom.w > 0) && (s->config.geom.h > 0)))
-          continue;
-        if ((s->config.geom.x <= left_x) &&
-            ((s->config.geom.w * s->config.geom.h) > left_size))
-          {
-             left_size = s->config.geom.w * s->config.geom.h;
-             left_x = s->config.geom.x;
-             s_left = s;
-          }
-     }
-   return s_left;
-}
-
-static E_Randr2_Screen *
-_info_unconf_closest_find(E_Randr2 *r, E_Randr2_Screen *s2, Eina_Bool configured)
-{
-   Eina_List *l;
-   E_Randr2_Screen *s, *s_sel = NULL;
-   int dist = 0x7fffffff;
-   int dx, dy;
-
-   EINA_LIST_FOREACH(r->screens, l, s)
-     {
-        if (s == s2) continue;
-        if (!((s->config.enabled) &&
-              (s->config.mode.w > 0) && (s->config.mode.h > 0) &&
-              (s->config.geom.w > 0) && (s->config.geom.h > 0)))
-          continue;
-        if ((!configured) &&
-            (s->config.relative.mode != E_RANDR2_RELATIVE_UNKNOWN))
-          continue;
-        else if ((configured) &&
-                 (s->config.relative.mode == E_RANDR2_RELATIVE_UNKNOWN))
-          continue;
-        dx = (s->config.geom.x + (s->config.geom.w / 2)) -
-          (s2->config.geom.x + (s2->config.geom.w / 2));
-        dy = (s->config.geom.y + (s->config.geom.h / 2)) -
-          (s2->config.geom.y + (s2->config.geom.h / 2));
-        dx = sqrt((dx * dx) + (dy * dy));
-        if (dx < dist)
-          {
-             s_sel = s;
-             dist = dx;
-          }
-     }
-   return s_sel;
-}
-
-static void
-_info_relative_fixup(E_Randr2 *r)
-{
-   E_Randr2_Screen *s, *s2;
-   int d, dx, dy;
-
-   s = _info_unconf_primary_find(r);
-   if (s) s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
+   // delay handling of screen shances as they can come in in a series over
+   // time and thus we can batch up responding to them by waiting 1.0 sec
+   if (_screen_delay_timer)
+     ecore_timer_reset(_screen_delay_timer);
    else
-     {
-        s = _info_unconf_left_find(r);
-        if (!s) return;
-        s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
-     }
-   for (;;)
-     {
-        // find the next screen that is closest to the last one we configured
-        /// that is still not configured yet
-        s = _info_unconf_closest_find(r, s, EINA_FALSE);
-        if (!s) break;
-        s2 = _info_unconf_closest_find(r, s, EINA_TRUE);
-        // fix up s->config.relative.mode, s->config.relative.to and
-        // s->config.relative.align to match (as closely as possible)
-        // the geometry given - config s relative to s2
-        if (!s2) s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
-        else
-          {
-             s->config.relative.to = strdup(s2->id);
-             s->config.relative.align = 0.0;
-             s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
-             if ((s->config.geom.x + s->config.geom.w) <=
-                 s2->config.geom.x)
-               {
-                  s->config.relative.mode = E_RANDR2_RELATIVE_TO_LEFT;
-                  d = s->config.geom.h - s2->config.geom.h;
-                  dy = s2->config.geom.y - s->config.geom.y;
-                  if (d != 0)
-                    s->config.relative.align = ((double)dy) / ((double)d);
-               }
-             else if (s->config.geom.x >=
-                      (s2->config.geom.x + s2->config.geom.w))
-               {
-                  s->config.relative.mode = E_RANDR2_RELATIVE_TO_RIGHT;
-                  d = s->config.geom.h - s2->config.geom.h;
-                  dy = s2->config.geom.y - s->config.geom.y;
-                  if (d != 0)
-                    s->config.relative.align = ((double)dy) / ((double)d);
-               }
-             else if ((s->config.geom.y + s->config.geom.h) <=
-                      s2->config.geom.y)
-               {
-                  s->config.relative.mode = E_RANDR2_RELATIVE_TO_ABOVE;
-                  d = s->config.geom.w - s2->config.geom.w;
-                  dx = s2->config.geom.x - s->config.geom.x;
-                  if (d != 0)
-                    s->config.relative.align = ((double)dx) / ((double)d);
-               }
-             else if (s->config.geom.y >=
-                      (s2->config.geom.y + s2->config.geom.h))
-               {
-                  s->config.relative.mode = E_RANDR2_RELATIVE_TO_BELOW;
-                  d = s->config.geom.w - s2->config.geom.w;
-                  dx = s2->config.geom.x - s->config.geom.x;
-                  if (d != 0)
-                    s->config.relative.align = ((double)dx) / ((double)d);
-               }
-             else if ((s->config.geom.x == s2->config.geom.x) &&
-                      (s->config.geom.y == s2->config.geom.y) &&
-                      (s->config.geom.w == s2->config.geom.w) &&
-                      (s->config.geom.h == s2->config.geom.h))
-               {
-                  s->config.relative.mode = E_RANDR2_RELATIVE_CLONE;
-               }
-             if (s->config.relative.align < 0.0)
-               s->config.relative.align = 0.0;
-             else if (s->config.relative.align > 1.0)
-               s->config.relative.align = 1.0;
-          }
-     }
+     _screen_delay_timer = ecore_timer_add(1.0, _cb_screen_change_delay, NULL);
+   event_screen |= !!lid_event;
 }
 
-static E_Randr2 *
-_info_get(void)
-{
-   Ecore_X_Randr_Crtc *crtcs = NULL;
-   Ecore_X_Randr_Output *outputs = NULL;
-   int crtcs_num = 0, outputs_num = 0, i, j, k;
-   Ecore_X_Window root = ecore_x_window_root_first_get();
-   E_Randr2 *r = calloc(1, sizeof(E_Randr2));
-   if (!r) return NULL;
-
-   printf("RRR: ................. info get!\n");
-   // do this to force xrandr to update its content
-   ecore_x_randr_config_timestamp_get(root);
-   ecore_x_randr_screen_size_range_get(root, NULL, NULL, NULL, NULL);
-   ecore_x_sync();
-
-   crtcs = ecore_x_randr_crtcs_get(root, &crtcs_num);
-   outputs = ecore_x_randr_outputs_get(root, &outputs_num);
-
-   for (i = 0; i < outputs_num; i++)
-     {
-        Ecore_X_Randr_Mode *modes;
-        Ecore_X_Randr_Edid_Display_Interface_Type conn;
-        int modes_num = 0, modes_pref = 0, priority;
-        E_Config_Randr2_Screen *cs;
-        E_Randr2_Screen *s = calloc(1, sizeof(E_Randr2_Screen));
-        if (!s) continue;
-
-        s->info.name = _output_name_get(root, outputs[i]);
-        printf("RRR: .... out %s\n", s->info.name);
-        if (!s->info.name)
-          {
-             free(s);
-             continue;
-          }
-        s->info.screen = _output_screen_get(root, outputs[i]);
-        s->info.edid = _edid_string_get(root, outputs[i]);
-        if (s->info.edid)
-        s->id = malloc(strlen(s->info.name) + 1 + strlen(s->info.edid) + 1);
-        else
-        s->id = malloc(strlen(s->info.name) + 1 + 1);
-        if (!s->id)
-          {
-             free(s->info.screen);
-             free(s->info.edid);
-             free(s);
-             continue;
-          }
-        strcpy(s->id, s->info.name);
-        strcat(s->id, "/");
-        if (s->info.edid) strcat(s->id, s->info.edid);
-        conn = _output_conn_type_get(root, outputs[i]);
-        if (conn == ECORE_X_RANDR_EDID_DISPLAY_INTERFACE_UNDEFINED)
-          s->info.connector = E_RANDR2_CONNECTOR_UNDEFINED;
-        else if (conn == ECORE_X_RANDR_EDID_DISPLAY_INTERFACE_DVI)
-          s->info.connector = E_RANDR2_CONNECTOR_DVI;
-        else if (conn == ECORE_X_RANDR_EDID_DISPLAY_INTERFACE_HDMI_A)
-          s->info.connector = E_RANDR2_CONNECTOR_HDMI_A;
-        else if (conn == ECORE_X_RANDR_EDID_DISPLAY_INTERFACE_HDMI_B)
-          s->info.connector = E_RANDR2_CONNECTOR_HDMI_B;
-        else if (conn == ECORE_X_RANDR_EDID_DISPLAY_INTERFACE_MDDI)
-          s->info.connector = E_RANDR2_CONNECTOR_MDDI;
-        else if (conn == ECORE_X_RANDR_EDID_DISPLAY_INTERFACE_DISPLAY_PORT)
-          s->info.connector = E_RANDR2_CONNECTOR_DISPLAY_PORT;
-        s->info.is_lid = _is_lid_name(s->info.name);
-        s->info.lid_closed = s->info.is_lid && _lid_is_closed;
-        printf("RRR: ...... lid_closed = %i (%i && %i)\n", s->info.lid_closed, s->info.is_lid, _lid_is_closed);
-        if (ecore_x_randr_output_connection_status_get(root, outputs[i]) ==
-            ECORE_X_RANDR_CONNECTION_STATUS_CONNECTED)
-          s->info.connected = EINA_TRUE;
-        printf("RRR: ...... connected %i\n", s->info.connected);
-        if (ecore_x_randr_output_backlight_level_get(root, outputs[i]) >= 0.0)
-          s->info.backlight = EINA_TRUE;
-        ecore_x_randr_output_size_mm_get(root, outputs[i],
-                                         &(s->info.size.w), &(s->info.size.h));
-        modes = ecore_x_randr_output_modes_get(root, outputs[i],
-                                               &modes_num, &modes_pref);
-        printf("RRR: ...... modes %p\n", modes);
-        if (modes)
-          {
-             for (j = 0; j < modes_num; j++)
-               {
-                  Ecore_X_Randr_Mode_Info *minfo =
-                    ecore_x_randr_mode_info_get(root, modes[j]);
-                  if (minfo)
-                    {
-                       E_Randr2_Mode *m = calloc(1, sizeof(E_Randr2_Mode));
-                       if (m)
-                         {
-                            m->w = minfo->width;
-                            m->h = minfo->height;
-                            m->refresh =
-                            (double)minfo->dotClock /
-                            (double)(minfo->hTotal * minfo->vTotal);
-                            if (j == (modes_pref - 1))
-                              m->preferred = EINA_TRUE;
-                            s->info.modes = eina_list_append(s->info.modes, m);
-                         }
-                       ecore_x_randr_mode_info_free(minfo);
-                    }
-               }
-             free(modes);
-          }
-        cs = NULL;
-        priority = 0;
-        if (e_randr2_cfg) cs = _config_screen_find(s, e_randr2_cfg);
-        if (cs)
-          priority = cs->priority;
-        else if (ecore_x_randr_primary_output_get(root) == outputs[i])
-          priority = 100;
-        s->config.priority = priority;
-        for (j = 0; j < crtcs_num; j++)
-          {
-             Eina_Bool ok, possible;
-             Ecore_X_Randr_Crtc_Info *info =
-               ecore_x_randr_crtc_info_get(root, crtcs[j]);
-             if (info)
-               {
-                  ok = EINA_FALSE;
-                  possible = EINA_FALSE;
-                  for (k = 0; k < info->noutput; k++)
-                    {
-                       if (info->outputs[k] == outputs[i])
-                         {
-                            ok = EINA_TRUE;
-                            break;
-                         }
-                    }
-                  if (!ok)
-                    {
-                       for (k = 0; k < info->npossible; k++)
-                         {
-                            if (info->possible[k] == outputs[i])
-                              {
-                                 ok = EINA_TRUE;
-                                 possible = EINA_TRUE;
-                                 break;
-                              }
-                         }
-                    }
-                  if (ok)
-                    {
-                       if (!possible)
-                         {
-                            Ecore_X_Randr_Mode_Info *minfo;
-
-                            s->config.geom.x = info->x;
-                            s->config.geom.y = info->y;
-                            s->config.geom.w = info->width;
-                            s->config.geom.h = info->height;
-                            if (info->rotation & ECORE_X_RANDR_ORIENTATION_ROT_0)
-                              s->config.rotation = 0;
-                            else if (info->rotation & ECORE_X_RANDR_ORIENTATION_ROT_90)
-                              s->config.rotation = 90;
-                            else if (info->rotation & ECORE_X_RANDR_ORIENTATION_ROT_180)
-                              s->config.rotation = 180;
-                            else if (info->rotation & ECORE_X_RANDR_ORIENTATION_ROT_270)
-                              s->config.rotation = 270;
-                            minfo = ecore_x_randr_mode_info_get(root,
-                                                                info->mode);
-                            if (minfo)
-                              {
-                                 s->config.enabled = EINA_TRUE;
-                                 s->config.mode.w = minfo->width;
-                                 s->config.mode.h = minfo->height;
-                                 s->config.mode.refresh =
-                                   (double)minfo->dotClock /
-                                   (double)(minfo->hTotal * minfo->vTotal);
-                                 ecore_x_randr_mode_info_free(minfo);
-                              }
-                            printf("RRR: '%s' %i %i %ix%i\n",
-                                   s->info.name,
-                                   s->config.geom.x, s->config.geom.y,
-                                   s->config.geom.w, s->config.geom.h);
-                         }
-                       if (info->rotations & ECORE_X_RANDR_ORIENTATION_ROT_0)
-                         s->info.can_rot_0 = EINA_TRUE;
-                       if (info->rotations & ECORE_X_RANDR_ORIENTATION_ROT_90)
-                         s->info.can_rot_90 = EINA_TRUE;
-                       if (info->rotations & ECORE_X_RANDR_ORIENTATION_ROT_180)
-                         s->info.can_rot_180 = EINA_TRUE;
-                       if (info->rotations & ECORE_X_RANDR_ORIENTATION_ROT_270)
-                         s->info.can_rot_270 = EINA_TRUE;
-                    }
-                  ecore_x_randr_crtc_info_free(info);
-               }
-          }
-        r->screens = eina_list_append(r->screens, s);
-     }
-
-   free(outputs);
-   free(crtcs);
-
-   _info_relative_fixup(r);
-   return r;
-}
-
-static Eina_Bool
-_cb_screen_change(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
-{
-   Ecore_X_Event_Screen_Change *ev = event;
-   printf("RRR: CB screen change...\n");
-   event_screen = EINA_TRUE;
-   ecore_x_randr_config_timestamp_get(ev->root);
-   ecore_x_randr_screen_current_size_get(ev->root, NULL, NULL, NULL, NULL);
-   ecore_x_sync();
-   _screen_change_delay();
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-_cb_crtc_change(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
-{
-   Ecore_X_Event_Randr_Crtc_Change *ev = event;
-   printf("RRR: CB crtc change...\n");
-   ecore_x_randr_config_timestamp_get(ev->win);
-   ecore_x_randr_screen_current_size_get(ev->win, NULL, NULL, NULL, NULL);
-   ecore_x_sync();
-   _screen_change_delay();
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-_cb_output_change(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
-{
-   Ecore_X_Event_Randr_Output_Change *ev = event;
-   printf("RRR: CB output change...\n");
-   event_screen = EINA_TRUE;
-   ecore_x_randr_config_timestamp_get(ev->win);
-   ecore_x_randr_screen_current_size_get(ev->win, NULL, NULL, NULL, NULL);
-   ecore_x_sync();
-   _screen_change_delay();
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-_output_name_find(Ecore_X_Window root, const char *name, Ecore_X_Randr_Output *outputs, int outputs_num, Ecore_X_Randr_Output *out_ret)
-{
-   int i;
-   char *n;
-
-   for (i = 0; i < outputs_num; i++)
-     {
-        n = _output_name_get(root, outputs[i]);
-        if ((n) && (!strcmp(n, name)))
-          {
-             free(n);
-             *out_ret = outputs[i];
-             return EINA_TRUE;
-          }
-        free(n);
-     }
-   return EINA_FALSE;
-}
-
-static Eina_Bool
-_output_exists(Ecore_X_Randr_Output out, Ecore_X_Randr_Crtc_Info *info)
-{
-   int i;
-
-   for (i = 0; i < info->npossible; i++)
-     {
-        if (out == info->possible[i]) return EINA_TRUE;
-     }
-   return EINA_FALSE;
-}
-
-static Eina_Bool
-_rotation_exists(int rot, Ecore_X_Randr_Crtc_Info *info)
-{
-   if ((rot == 0) && (info->rotations & ECORE_X_RANDR_ORIENTATION_ROT_0))
-     return EINA_TRUE;
-   if ((rot == 90) && (info->rotations & ECORE_X_RANDR_ORIENTATION_ROT_90))
-     return EINA_TRUE;
-   if ((rot == 180) && (info->rotations & ECORE_X_RANDR_ORIENTATION_ROT_180))
-     return EINA_TRUE;
-   if ((rot == 270) && (info->rotations & ECORE_X_RANDR_ORIENTATION_ROT_270))
-     return EINA_TRUE;
-   return EINA_FALSE;
-}
-
-static Ecore_X_Randr_Mode
-_mode_screen_find(Ecore_X_Window root, E_Randr2_Screen *s, Ecore_X_Randr_Output out)
-{
-   Ecore_X_Randr_Mode_Info *minfo;
-   Ecore_X_Randr_Mode mode = 0, *modes;
-   int modes_num = 0, modes_pref = 0, distance = 0x7fffffff;
-   int diff, i;
-   double refresh;
-
-   modes = ecore_x_randr_output_modes_get(root, out, &modes_num, &modes_pref);
-   if (!modes) printf("RRR: modes for '%s' FETCH FAILED!!!\n", s->info.name);
-   printf("RRR: modes for '%s' are %p [%i]\n", s->info.name, modes, modes_num);
-   if (modes)
-     {
-        for (i = 0; i < modes_num; i++)
-          {
-             minfo = ecore_x_randr_mode_info_get(root, modes[i]);
-             if (!minfo) continue;
-             refresh = (double)minfo->dotClock /
-               (double)(minfo->hTotal * minfo->vTotal);
-             diff =
-               (100 * abs(s->config.mode.w - minfo->width)) +
-               (100 * abs(s->config.mode.h - minfo->height)) +
-               abs((100 * s->config.mode.refresh) - (100 * refresh));
-             if (diff < distance)
-               {
-                  mode = modes[i];
-                  distance = diff;
-               }
-             ecore_x_randr_mode_info_free(minfo);
-          }
-        free(modes);
-     }
-   return mode;
-}
-
-static void
-_screen_config_apply(void)
+E_API E_Config_Randr2_Screen *
+e_randr2_config_screen_find(E_Randr2_Screen *s, E_Config_Randr2 *cfg)
 {
    Eina_List *l;
-   E_Randr2_Screen *s;
-   Ecore_X_Window root = ecore_x_window_root_first_get();
-   int minw, minh, maxw, maxh, nw, nh, pw, ph, ww, hh;
-   Ecore_X_Randr_Crtc *crtcs = NULL;
-   Ecore_X_Randr_Output *outputs = NULL, out, *outconf;
-   E_Randr2_Screen **screenconf;
-   int crtcs_num = 0, outputs_num = 0, i, numout;
-   Ecore_X_Randr_Crtc_Info *info;
-   int top_priority = 0;
+   E_Config_Randr2_Screen *cs;
 
-   ecore_x_grab();
-   // set virtual resolution
-   nw = e_randr2->w;
-   nh = e_randr2->h;
-   ecore_x_randr_screen_size_range_get(root, &minw, &minh, &maxw, &maxh);
-   ecore_x_randr_screen_current_size_get(root, &pw, &ph, NULL, NULL);
+   if ((!s) || (!cfg)) return NULL;
+   if (!s->id) return NULL;
+   EINA_LIST_FOREACH(cfg->screens, l, cs)
      {
-        int dww = 0, dhh = 0, dww2 = 0, dhh2 = 0;
-        ecore_x_randr_screen_current_size_get(root, &dww, &dhh, &dww2, &dhh2);
-        printf("RRR: cur size: %ix%i\n", dww, dhh);
+        if (!cs->id) continue;
+        if (!strcmp(cs->id, s->id)) return cs;
      }
-   printf("RRR: size range: %ix%i -> %ix%i\n", minw, minh, maxw, maxh);
-   if (nw > maxw) nw = maxw;
-   if (nh > maxh) nh = maxh;
-   if (nw < minw) nw = minw;
-   if (nh < minh) nh = minh;
-   ww = nw; if (nw < pw) ww = pw;
-   hh = nh; if (nh < ph) hh = ph;
-   ecore_x_randr_screen_current_size_set(root, ww, hh, -1, -1);
+   return NULL;
+}
+
+E_API void
+e_randr2_screens_setup(int rw, int rh)
+{
+   int i;
+   E_Screen *screen;
+   Eina_List *screens = NULL, *screens_rem;
+   Eina_List *all_screens = NULL;
+   Eina_List *l, *ll;
+   E_Randr2_Screen *s, *s2, *s_chosen;
+   Eina_Bool removed;
+
+   if ((!e_randr2) || (!e_randr2->screens)) goto out;
+   // put screens in tmp list
+   EINA_LIST_FOREACH(e_randr2->screens, l, s)
      {
-        int dww = 0, dhh = 0, dww2 = 0, dhh2 = 0;
-        ecore_x_randr_screen_current_size_get(root, &dww, &dhh, &dww2, &dhh2);
-        printf("RRR: cur size: %ix%i\n", dww, dhh);
-     }
-   printf("RRR: set vsize: %ix%i\n", nw, nh);
-
-   crtcs = ecore_x_randr_crtcs_get(root, &crtcs_num);
-   outputs = ecore_x_randr_outputs_get(root, &outputs_num);
-
-   if ((crtcs) && (outputs))
-     {
-        outconf = alloca(crtcs_num * sizeof(Ecore_X_Randr_Output));
-        screenconf = alloca(crtcs_num * sizeof(E_Randr2_Screen *));
-        memset(outconf, 0, crtcs_num * sizeof(Ecore_X_Randr_Output));
-        memset(screenconf, 0, crtcs_num * sizeof(E_Randr2_Screen *));
-
-        // decide which outputs get which crtcs
-        EINA_LIST_FOREACH(e_randr2->screens, l, s)
+        if ((s->config.enabled) &&
+            (s->config.geom.w > 0) &&
+            (s->config.geom.h > 0))
           {
-             printf("RRR: find output for '%s'\n", s->info.name);
-             // XXX: find clones and set them as outputs in an array
-             if ((s->config.configured) &&
-                 (_output_name_find(root, s->info.name, outputs,
-                                    outputs_num, &out)))
+             screens = eina_list_append(screens, s);
+          }
+     }
+   // remove overlapping screens - if a set of screens overlap, keep the
+   // smallest/lowest res
+   do
+     {
+        removed = EINA_FALSE;
+
+        EINA_LIST_FOREACH(screens, l, s)
+          {
+             screens_rem = NULL;
+
+             EINA_LIST_FOREACH(l->next, ll, s2)
                {
-                  printf("RRR:   enabled: %i\n", s->config.enabled);
-                  if (s->config.enabled)
+                  if (E_INTERSECTS(s->config.geom.x, s->config.geom.y,
+                                   s->config.geom.w, s->config.geom.h,
+                                   s2->config.geom.x, s2->config.geom.y,
+                                   s2->config.geom.w, s2->config.geom.h))
                     {
-                       if (s->config.priority > top_priority)
-                         top_priority = s->config.priority;
-                       for (i = 0; i < crtcs_num; i++)
+                       if (!screens_rem)
+                         screens_rem = eina_list_append(screens_rem, s);
+                       screens_rem = eina_list_append(screens_rem, s2);
+                    }
+               }
+             // we have intersecting screens - choose the lowest res one
+             if (screens_rem)
+               {
+                  removed = EINA_TRUE;
+                  // find the smallest screen (chosen one)
+                  s_chosen = NULL;
+                  EINA_LIST_FOREACH(screens_rem, ll, s2)
+                    {
+                       if (!s_chosen) s_chosen = s2;
+                       else
                          {
-                            if (!outconf[i])
-                              {
-                                 printf("RRR:     crtc slot empty: %i\n", i);
-                                 info = ecore_x_randr_crtc_info_get(root,
-                                                                    crtcs[i]);
-                                 if (info)
-                                   {
-                                      if (_output_exists(out, info) &&
-                                          _rotation_exists(s->config.rotation,
-                                                           info))
-                                        {
-                                           printf("RRR:       assign slot out: %x\n", out);
-                                           outconf[i] = out;
-                                           screenconf[i] = s;
-                                           ecore_x_randr_crtc_info_free(info);
-                                           break;
-                                        }
-                                   }
-                              }
+                            if ((s_chosen->config.geom.w *
+                                 s_chosen->config.geom.h) >
+                                (s2->config.geom.w *
+                                 s2->config.geom.h))
+                              s_chosen = s2;
                          }
                     }
-               }
-          }
-        numout = 0;
-        for (i = 0; i < crtcs_num; i++)
-          {
-             if (outconf[i]) numout++;
-          }
-        if (numout)
-          {
-        // set up a crtc to drive each output (or not)
-        for (i = 0; i < crtcs_num; i++)
-          {
-             // XXX: find clones and set them as outputs in an array
-             if (outconf[i])
-               {
-                  Ecore_X_Randr_Orientation orient =
-                    ECORE_X_RANDR_ORIENTATION_ROT_0;
-                  Ecore_X_Randr_Mode mode;
-
-                  mode = _mode_screen_find(root, screenconf[i], outconf[i]);
-                  if (screenconf[i]->config.rotation == 0)
-                    orient = ECORE_X_RANDR_ORIENTATION_ROT_0;
-                  else if (screenconf[i]->config.rotation == 90)
-                    orient = ECORE_X_RANDR_ORIENTATION_ROT_90;
-                  else if (screenconf[i]->config.rotation == 180)
-                    orient = ECORE_X_RANDR_ORIENTATION_ROT_180;
-                  else if (screenconf[i]->config.rotation == 270)
-                    orient = ECORE_X_RANDR_ORIENTATION_ROT_270;
-                  printf("RRR: crtc on: %i = '%s'     @ %i %i    - %ix%i orient %i mode %x out %x\n",
-                         i, screenconf[i]->info.name,
-                         screenconf[i]->config.geom.x,
-                         screenconf[i]->config.geom.y,
-                         screenconf[i]->config.geom.w,
-                         screenconf[i]->config.geom.h,
-                         orient, mode, outconf[i]);
-                  if (!ecore_x_randr_crtc_settings_set
-                      (root, crtcs[i], &(outconf[i]), 1,
-                       screenconf[i]->config.geom.x,
-                       screenconf[i]->config.geom.y,
-                       mode, orient))
-                    printf("RRR:   failed to set crtc!!!!!!\n");
-                  ecore_x_randr_crtc_panning_area_set
-                    (root, crtcs[i],
-                     screenconf[i]->config.geom.x,
-                     screenconf[i]->config.geom.y,
-                     screenconf[i]->config.geom.w,
-                     screenconf[i]->config.geom.h);
-                  if (screenconf[i]->config.priority == top_priority)
+                  // remove all from screens but the chosen one
+                  EINA_LIST_FREE(screens_rem, s2)
                     {
-                       ecore_x_randr_primary_output_set(root, outconf[i]);
-                       top_priority = -1;
+                       if (s2 != s_chosen)
+                         screens = eina_list_remove_list(screens, l);
                     }
+                  // break our list walk and try again
+                  break;
                }
-             else
-               {
-                  printf("RRR: crtc off: %i\n", i);
-                  ecore_x_randr_crtc_settings_set
-                    (root, crtcs[i], NULL, 0, 0, 0, 0,
-                     ECORE_X_RANDR_ORIENTATION_ROT_0);
-               }
-          }
-          }
-        else
-          {
-             printf("RRR: EERRRRRROOOORRRRRRR no outputs to configure!\n");
           }
      }
-   free(outputs);
-   free(crtcs);
-
-   printf("RRR: set vsize: %ix%i\n", nw, nh);
-   ecore_x_randr_screen_current_size_set(root, nw, nh, -1, -1);
+   while (removed);
+   // sort screens by priority etc.
+   screens = eina_list_sort(screens, 0, _screen_sort_cb);
+   i = 0;
+   EINA_LIST_FOREACH(screens, l, s)
      {
-        int dww = 0, dhh = 0, dww2 = 0, dhh2 = 0;
-        ecore_x_randr_screen_current_size_get(root, &dww, &dhh, &dww2, &dhh2);
-        printf("RRR: cur size: %ix%i\n", dww, dhh);
-//        ecore_x_randr_screen_reset(root);
-//        ecore_x_randr_screen_current_size_set(root, nw, nh, -1, -1);
-//        ecore_x_sync();
-//        ecore_x_randr_screen_current_size_get(root, &dww, &dhh, &dww2, &dhh2);
-//        printf("RRR: cur size: %ix%i\n", dww,d hh);
-     }
-   ecore_x_randr_screen_size_range_get(root, NULL, NULL, NULL, NULL);
-   ecore_x_ungrab();
-   ecore_x_sync();
+        screen = E_NEW(E_Screen, 1);
+        screen->escreen = screen->screen = i;
+        screen->x = s->config.geom.x;
+        screen->y = s->config.geom.y;
+        screen->w = s->config.geom.w;
+        screen->h = s->config.geom.h;
+        if (s->id) screen->id = strdup(s->id);
 
-   // ignore the next batch of randr events - we caused them ourselves
-   // XXX: a problem. thew first time we configure the screen we may not
-   // get any events back to clear the ignore flag below, so only apply
-   // here if the randr config now doesnt match what we want to set up.
-//   event_ignore = EINA_TRUE;
+        all_screens = eina_list_append(all_screens, screen);
+        printf("xinerama screen %i %i %ix%i\n", screen->x, screen->y, screen->w, screen->h);
+        INF("E INIT: XINERAMA SCREEN: [%i][%i], %ix%i+%i+%i",
+            i, i, screen->w, screen->h, screen->x, screen->y);
+        i++;
+     }
+   eina_list_free(screens);
+   // if we have NO screens at all (above - i will be 0) AND we have no
+   // existing screens set up in xinerama - then just say root window size
+   // is the entire screen. this should handle the case where you unplug ALL
+   // screens from an existing setup (unplug external monitors and/or close
+   // laptop lid), in which case as long as at least one screen is configured
+   // in xinerama, it will be left-as is until next time we re-eval screen
+   // setup and have at least one screen
+   printf("xinerama setup............... %i %p\n", i, e_xinerama_screens_all_get());
+   if ((i == 0) && (!e_xinerama_screens_all_get()))
+     {
+out:
+        screen = E_NEW(E_Screen, 1);
+        screen->escreen = screen->screen = 0;
+        screen->x = 0;
+        screen->y = 0;
+        if ((rw > 0) && (rh > 0))
+          screen->w = rw, screen->h = rh;
+        else
+          ecore_evas_screen_geometry_get(e_comp->ee, NULL, NULL, &screen->w, &screen->h);
+        all_screens = eina_list_append(all_screens, screen);
+     }
+   e_xinerama_screens_set(all_screens);
 }

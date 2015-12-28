@@ -57,6 +57,7 @@ EINTERN int e_log_shutdown(void);
 #undef WRN
 #undef ERR
 #undef CRI
+<<<<<<< HEAD
 #undef ELOG
 #undef ELOGF
 #define DBG(...)            printf(__VA_ARGS__); putc('\n', stdout)
@@ -66,6 +67,13 @@ EINTERN int e_log_shutdown(void);
 #define CRI(...)            printf(__VA_ARGS__); putc('\n', stdout)
 #define ELOG(...)           ;
 #define ELOGF(...)          ;
+=======
+#define DBG(...)            do { printf(__VA_ARGS__); putc('\n', stdout); } while(0)
+#define INF(...)            do { printf(__VA_ARGS__); putc('\n', stdout); } while(0)
+#define WRN(...)            do { printf(__VA_ARGS__); putc('\n', stdout); } while(0)
+#define ERR(...)            do { printf(__VA_ARGS__); putc('\n', stdout); } while(0)
+#define CRI(...)            do { printf(__VA_ARGS__); putc('\n', stdout); } while(0)
+>>>>>>> upstream
 #endif
 
 #endif

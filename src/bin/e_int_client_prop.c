@@ -64,7 +64,7 @@ struct _E_Config_Dialog_Data
    } netwm;
 };
 
-EAPI void
+E_API void
 e_int_client_prop(E_Client *ec)
 {
    E_Dialog *dia;
@@ -82,6 +82,7 @@ e_int_client_prop(E_Client *ec)
    elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
    e_dialog_border_icon_set(dia, "preferences-system-windows");
+   evas_object_layer_set(e_win_client_get(dia->win)->frame, ec->layer);
 }
 
 static void
@@ -361,7 +362,7 @@ _ec_cb_dialog_del(void *obj)
 }
 
 static void
-_ec_cb_dialog_close(void *data __UNUSED__, E_Dialog *dia)
+_ec_cb_dialog_close(void *data EINA_UNUSED, E_Dialog *dia)
 {
    if (dia->data)
      _free_data(dia, dia->data);
@@ -429,7 +430,7 @@ _ec_go(void *data, void *data2)
   }
 
 static Evas_Object *
-_ec_icccm_create(E_Dialog *dia, void *data __UNUSED__)
+_ec_icccm_create(E_Dialog *dia, void *data EINA_UNUSED)
 {
    Evas *evas;
    Evas_Object *o, *ob, *otb;
@@ -485,7 +486,7 @@ _ec_icccm_create(E_Dialog *dia, void *data __UNUSED__)
 }
 
 static Evas_Object *
-_ec_netwm_create(E_Dialog *dia, void *data __UNUSED__)
+_ec_netwm_create(E_Dialog *dia, void *data EINA_UNUSED)
 {
    Evas *evas;
    Evas_Object *o, *ob, *otb;

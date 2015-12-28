@@ -1,6 +1,6 @@
 #include "e.h"
 
-EAPI void
+E_API void
 e_place_zone_region_smart_cleanup(E_Zone *zone)
 {
    E_Desk *desk;
@@ -9,7 +9,7 @@ e_place_zone_region_smart_cleanup(E_Zone *zone)
 
    E_OBJECT_CHECK(zone);
    desk = e_desk_current_get(zone);
-   E_CLIENT_FOREACH(zone->comp, ec)
+   E_CLIENT_FOREACH(ec)
      {
         /* Build a list of windows on this desktop and not iconified. */
         if ((ec->desk == desk) && (!ec->iconic) &&
@@ -63,7 +63,7 @@ _e_place_coverage_client_add(E_Desk *desk, Eina_List *skiplist, int ar, int x, i
    int iw, ih;
    int x0, x00, yy0, y00;
 
-   E_CLIENT_FOREACH(desk->zone->comp, ec)
+   E_CLIENT_FOREACH(ec)
      {
         if (eina_list_data_find(skiplist, ec)) continue;
         if (e_client_util_ignored_get(ec)) continue;
@@ -122,7 +122,7 @@ _e_place_coverage_shelf_add(E_Desk *desk, int ar, int x, int y, int w, int h)
    return ar;
 }
 
-EAPI int
+E_API int
 e_place_desk_region_smart(E_Desk *desk, Eina_List *skiplist, int x, int y, int w, int h, int *rx, int *ry)
 {
    int a_w = 0, a_h = 0, a_alloc_w = 0, a_alloc_h = 0;
@@ -247,7 +247,7 @@ e_place_desk_region_smart(E_Desk *desk, Eina_List *skiplist, int x, int y, int w
           }
      }
 
-   E_CLIENT_FOREACH(desk->zone->comp, ec)
+   E_CLIENT_FOREACH(ec)
      {
         int bx, by, bw, bh;
 
@@ -433,22 +433,22 @@ done:
    return 1;
 }
 
-EAPI int
+E_API int
 e_place_zone_region_smart(E_Zone *zone, Eina_List *skiplist, int x, int y, int w, int h, int *rx, int *ry)
 {
    return e_place_desk_region_smart(e_desk_current_get(zone), skiplist,
                                     x, y, w, h, rx, ry);
 }
 
-EAPI int
-e_place_zone_cursor(E_Zone *zone, int x __UNUSED__, int y __UNUSED__, int w, int h, int it, int *rx, int *ry)
+E_API int
+e_place_zone_cursor(E_Zone *zone, int x EINA_UNUSED, int y EINA_UNUSED, int w, int h, int it, int *rx, int *ry)
 {
    int cursor_x = 0, cursor_y = 0;
    int zone_right, zone_bottom;
 
    E_OBJECT_CHECK_RETURN(zone, 0);
 
-   ecore_evas_pointer_xy_get(zone->comp->ee, &cursor_x, &cursor_y);
+   ecore_evas_pointer_xy_get(e_comp->ee, &cursor_x, &cursor_y);
    *rx = cursor_x - (w >> 1);
    *ry = cursor_y - (it >> 1);
 
@@ -470,14 +470,14 @@ e_place_zone_cursor(E_Zone *zone, int x __UNUSED__, int y __UNUSED__, int w, int
    return 1;
 }
 
-EAPI int
+E_API int
 e_place_zone_manual(E_Zone *zone, int w, int h, int *rx, int *ry)
 {
    int cursor_x = 0, cursor_y = 0;
 
    E_OBJECT_CHECK_RETURN(zone, 0);
 
-   ecore_evas_pointer_xy_get(zone->comp->ee, &cursor_x, &cursor_y);
+   ecore_evas_pointer_xy_get(e_comp->ee, &cursor_x, &cursor_y);
    if (rx) *rx = cursor_x - (w >> 1);
    if (ry) *ry = cursor_y - (h >> 1);
 

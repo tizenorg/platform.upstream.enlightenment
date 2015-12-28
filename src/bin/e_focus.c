@@ -6,9 +6,10 @@ static Eina_Bool _e_focus_raise_timer(void *data);
 /* local subsystem globals */
 
 /* externally accessible functions */
-EAPI void
+E_API void
 e_focus_event_mouse_in(E_Client *ec)
 {
+   
    if ((e_config->focus_policy == E_FOCUS_MOUSE) ||
        (e_config->focus_policy == E_FOCUS_SLOPPY))
      {
@@ -27,7 +28,7 @@ e_focus_event_mouse_in(E_Client *ec)
      }
 }
 
-EAPI void
+E_API void
 e_focus_event_mouse_out(E_Client *ec)
 {
    if (e_config->focus_policy == E_FOCUS_MOUSE)
@@ -41,7 +42,7 @@ e_focus_event_mouse_out(E_Client *ec)
    E_FREE_FUNC(ec->raise_timer, ecore_timer_del);
 }
 
-EAPI void
+E_API void
 e_focus_event_mouse_down(E_Client *ec)
 {
    if (e_client_focus_policy_click(ec) ||
@@ -54,56 +55,19 @@ e_focus_event_mouse_down(E_Client *ec)
      }
 }
 
-EAPI void
-e_focus_event_mouse_up(E_Client *ec __UNUSED__)
+E_API void
+e_focus_event_mouse_up(E_Client *ec EINA_UNUSED)
 {
 }
 
-EAPI void
-e_focus_event_focus_in(E_Client *ec)
+E_API void
+e_focus_event_focus_in(E_Client *ec EINA_UNUSED)
 {
-   if ((e_client_focus_policy_click(ec)) &&
-       (!e_config->always_click_to_raise) &&
-       (!e_config->always_click_to_focus))
-     {
-        if (!ec->button_grabbed) return;
-        e_bindings_mouse_ungrab(E_BINDING_CONTEXT_WINDOW, e_client_util_pwin_get(ec));
-        e_bindings_wheel_ungrab(E_BINDING_CONTEXT_WINDOW, e_client_util_pwin_get(ec));
-#ifndef HAVE_WAYLAND_ONLY
-        ecore_x_window_button_ungrab(e_client_util_pwin_get(ec), 1, 0, 1);
-        ecore_x_window_button_ungrab(e_client_util_pwin_get(ec), 2, 0, 1);
-        ecore_x_window_button_ungrab(e_client_util_pwin_get(ec), 3, 0, 1);
-#endif
-        e_bindings_mouse_grab(E_BINDING_CONTEXT_WINDOW, e_client_util_pwin_get(ec));
-        e_bindings_wheel_grab(E_BINDING_CONTEXT_WINDOW, e_client_util_pwin_get(ec));
-        ec->button_grabbed = 0;
-     }
 }
 
-EAPI void
-e_focus_event_focus_out(E_Client *ec)
+E_API void
+e_focus_event_focus_out(E_Client *ec EINA_UNUSED)
 {
-   if ((e_client_focus_policy_click(ec)) &&
-       (!e_config->always_click_to_raise) &&
-       (!e_config->always_click_to_focus))
-     {
-        if (ec->button_grabbed) return;
-#ifndef HAVE_WAYLAND_ONLY
-        ecore_x_window_button_grab(e_client_util_pwin_get(ec), 1,
-                                   ECORE_X_EVENT_MASK_MOUSE_DOWN |
-                                   ECORE_X_EVENT_MASK_MOUSE_UP |
-                                   ECORE_X_EVENT_MASK_MOUSE_MOVE, 0, 1);
-        ecore_x_window_button_grab(e_client_util_pwin_get(ec), 2,
-                                   ECORE_X_EVENT_MASK_MOUSE_DOWN |
-                                   ECORE_X_EVENT_MASK_MOUSE_UP |
-                                   ECORE_X_EVENT_MASK_MOUSE_MOVE, 0, 1);
-        ecore_x_window_button_grab(e_client_util_pwin_get(ec), 3,
-                                   ECORE_X_EVENT_MASK_MOUSE_DOWN |
-                                   ECORE_X_EVENT_MASK_MOUSE_UP |
-                                   ECORE_X_EVENT_MASK_MOUSE_MOVE, 0, 1);
-#endif
-        ec->button_grabbed = 1;
-     }
 }
 
 /* local subsystem functions */

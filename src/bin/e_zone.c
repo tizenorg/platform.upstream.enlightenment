@@ -19,6 +19,7 @@ static void        _e_zone_object_del_attach(void *o);
 static E_Zone_Edge _e_zone_detect_edge(E_Zone *zone, Evas_Object *obj);
 static void        _e_zone_edge_move_resize(E_Zone *zone);
 
+<<<<<<< HEAD
 EAPI int E_EVENT_ZONE_DESK_COUNT_SET = 0;
 EAPI int E_EVENT_POINTER_WARP = 0;
 EAPI int E_EVENT_ZONE_MOVE_RESIZE = 0;
@@ -35,6 +36,18 @@ EAPI int E_EVENT_ZONE_ROTATION_CHANGE_CANCEL = 0;
 EAPI int E_EVENT_ZONE_ROTATION_CHANGE_END = 0;
 #endif
 EAPI int E_EVENT_ZONE_DISPLAY_STATE_CHANGE = 0;
+=======
+E_API int E_EVENT_ZONE_DESK_COUNT_SET = 0;
+E_API int E_EVENT_POINTER_WARP = 0;
+E_API int E_EVENT_ZONE_MOVE_RESIZE = 0;
+E_API int E_EVENT_ZONE_ADD = 0;
+E_API int E_EVENT_ZONE_DEL = 0;
+E_API int E_EVENT_ZONE_EDGE_IN = 0;
+E_API int E_EVENT_ZONE_EDGE_OUT = 0;
+E_API int E_EVENT_ZONE_EDGE_MOVE = 0;
+E_API int E_EVENT_ZONE_STOW = 0;
+E_API int E_EVENT_ZONE_UNSTOW = 0;
+>>>>>>> upstream
 
 #define E_ZONE_FLIP_LEFT(zone)  (((e_config->desk_flip_wrap && ((zone)->desk_x_count > 1)) || ((zone)->desk_x_current > 0)) && (zone)->edge.left)
 #define E_ZONE_FLIP_RIGHT(zone) (((e_config->desk_flip_wrap && ((zone)->desk_x_count > 1)) || (((zone)->desk_x_current + 1) < (zone)->desk_x_count)) && (zone)->edge.right)
@@ -72,7 +85,7 @@ e_zone_shutdown(void)
    return 1;
 }
 
-EAPI void
+E_API void
 e_zone_all_edge_flip_eval(void)
 {
    const Eina_List *l;
@@ -192,8 +205,8 @@ _e_zone_cb_mouse_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *e
    ecore_event_add(E_EVENT_ZONE_EDGE_MOVE, zev, NULL, NULL);
 }
 
-EAPI E_Zone *
-e_zone_new(E_Comp *c, int num, int id, int x, int y, int w, int h)
+E_API E_Zone *
+e_zone_new(int num, int id, int x, int y, int w, int h)
 {
    E_Zone *zone;
    Evas_Object *o;
@@ -202,8 +215,6 @@ e_zone_new(E_Comp *c, int num, int id, int x, int y, int w, int h)
 
    zone = E_OBJECT_ALLOC(E_Zone, E_ZONE_TYPE, _e_zone_free);
    if (!zone) return NULL;
-
-   zone->comp = c;
 
    zone->x = x;
    zone->y = y;
@@ -225,9 +236,9 @@ e_zone_new(E_Comp *c, int num, int id, int x, int y, int w, int h)
    snprintf(name, sizeof(name), "Zone %d", zone->num);
    zone->name = eina_stringshare_add(name);
 
-   c->zones = eina_list_append(c->zones, zone);
+   e_comp->zones = eina_list_append(e_comp->zones, zone);
 
-   o = evas_object_rectangle_add(c->evas);
+   o = evas_object_rectangle_add(e_comp->evas);
    zone->bg_clip_object = o;
    evas_object_repeat_events_set(o, 1);
    evas_object_layer_set(o, E_LAYER_BG);
@@ -237,7 +248,7 @@ e_zone_new(E_Comp *c, int num, int id, int x, int y, int w, int h)
    evas_object_color_set(o, 255, 255, 255, 255);
    evas_object_show(o);
 
-   o = evas_object_rectangle_add(c->evas);
+   o = evas_object_rectangle_add(e_comp->evas);
    zone->bg_event_object = o;
    evas_object_name_set(o, "zone->bg_event_object");
    evas_object_clip_set(o, zone->bg_clip_object);
@@ -274,7 +285,7 @@ e_zone_new(E_Comp *c, int num, int id, int x, int y, int w, int h)
    return zone;
 }
 
-EAPI void
+E_API void
 e_zone_name_set(E_Zone *zone,
                 const char *name)
 {
@@ -290,7 +301,7 @@ e_zone_reconfigure_clients(E_Zone *zone, int dx, int dy, int dw, int dh)
 {
    E_Client *ec;
 
-   E_CLIENT_FOREACH(zone->comp, ec)
+   E_CLIENT_FOREACH(ec)
      {
         if (ec->zone != zone) continue;
 
@@ -305,7 +316,7 @@ e_zone_reconfigure_clients(E_Zone *zone, int dx, int dy, int dw, int dh)
      }
 }
 
-EAPI void
+E_API void
 e_zone_move(E_Zone *zone,
             int x,
             int y)
@@ -335,7 +346,7 @@ e_zone_move(E_Zone *zone,
    e_zone_reconfigure_clients(zone, dx, dy, 0, 0);
 }
 
-EAPI void
+E_API void
 e_zone_resize(E_Zone *zone,
               int w,
               int h)
@@ -367,7 +378,7 @@ e_zone_resize(E_Zone *zone,
    e_zone_reconfigure_clients(zone, 0, 0, dw, dh);
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_zone_move_resize(E_Zone *zone,
                    int x,
                    int y,
@@ -411,29 +422,28 @@ e_zone_move_resize(E_Zone *zone,
    return EINA_TRUE;
 }
 
-EAPI E_Zone *
-e_zone_current_get(E_Comp *c)
+E_API E_Zone *
+e_zone_current_get(void)
 {
    Eina_List *l = NULL;
    E_Zone *zone;
 
-   E_OBJECT_CHECK_RETURN(c, NULL);
    if (!starting)
      {
         int x, y;
 
-        ecore_evas_pointer_xy_get(c->ee, &x, &y);
-        EINA_LIST_FOREACH(c->zones, l, zone)
+        ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
+        EINA_LIST_FOREACH(e_comp->zones, l, zone)
           {
              if (E_INSIDE(x, y, zone->x, zone->y, zone->w, zone->h))
                return zone;
           }
      }
-   if (!c->zones) return NULL;
-   return eina_list_data_get(c->zones);
+   if (!e_comp->zones) return NULL;
+   return eina_list_data_get(e_comp->zones);
 }
 
-EAPI void
+E_API void
 e_zone_bg_reconfigure(E_Zone *zone)
 {
    E_OBJECT_CHECK(zone);
@@ -442,7 +452,7 @@ e_zone_bg_reconfigure(E_Zone *zone)
    e_bg_zone_update(zone, E_BG_TRANSITION_CHANGE);
 }
 
-EAPI void
+E_API void
 e_zone_flip_coords_handle(E_Zone *zone,
                           int x,
                           int y)
@@ -529,13 +539,13 @@ e_zone_flip_coords_handle(E_Zone *zone,
 
    if (!e_config->edge_flip_dragging) return;
    /* if we have only 1 row we can flip up/down even if we have xinerama */
-   if (eina_list_count(zone->comp->zones) > 1)
+   if (eina_list_count(e_comp->zones) > 1)
      {
         Eina_List *zones;
         E_Zone *next_zone;
         int cx, cy;
 
-        zones = zone->comp->zones;
+        zones = e_comp->zones;
         next_zone = (E_Zone *)eina_list_data_get(zones);
         cx = next_zone->x;
         cy = next_zone->y;
@@ -648,7 +658,7 @@ noflip:
      }
 }
 
-EAPI void
+E_API void
 e_zone_desk_count_set(E_Zone *zone,
                       int x_count,
                       int y_count)
@@ -693,7 +703,7 @@ e_zone_desk_count_set(E_Zone *zone,
           }
      }
 
-   /* catch windoes that have fallen off the end if we got smaller */
+   /* catch windows that have fallen off the end if we got smaller */
    if (xx < zone->desk_x_count)
      {
         for (y = 0; y < zone->desk_y_count; y++)
@@ -703,7 +713,7 @@ e_zone_desk_count_set(E_Zone *zone,
                {
                   desk = zone->desks[x + (y * zone->desk_x_count)];
 
-                  E_CLIENT_FOREACH(zone->comp, ec)
+                  E_CLIENT_FOREACH(ec)
                     {
                        if (ec->desk == desk)
                          e_client_desk_set(ec, new_desk);
@@ -721,7 +731,7 @@ e_zone_desk_count_set(E_Zone *zone,
                {
                   desk = zone->desks[x + (y * zone->desk_x_count)];
 
-                  E_CLIENT_FOREACH(zone->comp, ec)
+                  E_CLIENT_FOREACH(ec)
                     {
                        if (ec->desk == desk)
                          e_client_desk_set(ec, new_desk);
@@ -746,8 +756,12 @@ e_zone_desk_count_set(E_Zone *zone,
    desk = e_desk_current_get(zone);
    if (desk)
      {
+        /* need to simulate "startup" conditions to force desk show to reevaluate here */
+        int s = starting;
         desk->visible = 0;
+        starting = 1;
         e_desk_show(desk);
+        starting = s;
      }
 
    e_zone_edge_flip_eval(zone);
@@ -760,7 +774,7 @@ e_zone_desk_count_set(E_Zone *zone,
                    _e_zone_event_generic_free, NULL);
 }
 
-EAPI void
+E_API void
 e_zone_desk_count_get(E_Zone *zone,
                       int *x_count,
                       int *y_count)
@@ -772,7 +786,7 @@ e_zone_desk_count_get(E_Zone *zone,
    if (y_count) *y_count = zone->desk_y_count;
 }
 
-EAPI void
+E_API void
 e_zone_desk_flip_by(E_Zone *zone,
                     int dx,
                     int dy)
@@ -786,7 +800,7 @@ e_zone_desk_flip_by(E_Zone *zone,
    e_zone_edge_flip_eval(zone);
 }
 
-EAPI void
+E_API void
 e_zone_desk_flip_to(E_Zone *zone,
                     int x,
                     int y)
@@ -818,7 +832,7 @@ e_zone_desk_flip_to(E_Zone *zone,
    e_zone_edge_flip_eval(zone);
 }
 
-EAPI void
+E_API void
 e_zone_desk_linear_flip_by(E_Zone *zone,
                            int dx)
 {
@@ -835,7 +849,7 @@ e_zone_desk_linear_flip_by(E_Zone *zone,
    e_zone_desk_linear_flip_to(zone, dx);
 }
 
-EAPI void
+E_API void
 e_zone_desk_linear_flip_to(E_Zone *zone,
                            int x)
 {
@@ -849,7 +863,7 @@ e_zone_desk_linear_flip_to(E_Zone *zone,
    e_zone_desk_flip_to(zone, x, y);
 }
 
-EAPI void
+E_API void
 e_zone_edge_enable(void)
 {
    const Eina_List *l;
@@ -873,7 +887,7 @@ e_zone_edge_enable(void)
      }
 }
 
-EAPI void
+E_API void
 e_zone_edge_disable(void)
 {
    const Eina_List *l;
@@ -897,7 +911,7 @@ e_zone_edge_disable(void)
      }
 }
 
-EAPI void
+E_API void
 e_zone_edges_desk_flip_capable(E_Zone *zone, Eina_Bool l, Eina_Bool r, Eina_Bool t, Eina_Bool b)
 {
 #define NEED_FLIP_EDGE(x) \
@@ -951,13 +965,13 @@ e_zone_edges_desk_flip_capable(E_Zone *zone, Eina_Bool l, Eina_Bool r, Eina_Bool
    CHECK_CORNER(r, b, E_ZONE_EDGE_BOTTOM_RIGHT, right_bottom, bottom_right);
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_zone_exists_direction(E_Zone *zone, E_Zone_Edge edge)
 {
    Eina_List *l;
    E_Zone *z2;
 
-   EINA_LIST_FOREACH(zone->comp->zones, l, z2)
+   EINA_LIST_FOREACH(e_comp->zones, l, z2)
      {
         if (zone == z2) continue;
 
@@ -1027,7 +1041,7 @@ e_zone_exists_direction(E_Zone *zone, E_Zone_Edge edge)
    return EINA_FALSE;
 }
 
-EAPI void
+E_API void
 e_zone_edge_flip_eval(E_Zone *zone)
 {
    Eina_Bool lf, rf, tf, bf;
@@ -1048,7 +1062,7 @@ e_zone_edge_flip_eval(E_Zone *zone)
    e_zone_edges_desk_flip_capable(zone, lf, rf, tf, bf);
 }
 
-EAPI void
+E_API void
 e_zone_edge_new(E_Zone_Edge edge)
 {
    const Eina_List *l;
@@ -1120,7 +1134,7 @@ e_zone_edge_new(E_Zone_Edge edge)
      }
 }
 
-EAPI void
+E_API void
 e_zone_edge_free(E_Zone_Edge edge)
 {
    const Eina_List *l;
@@ -1176,14 +1190,14 @@ e_zone_edge_free(E_Zone_Edge edge)
      }
 }
 
-EAPI void
+E_API void
 e_zone_edge_win_layer_set(E_Zone *zone, E_Layer layer)
 {
 #define EDGE_STACK(EDGE) do { \
    if (zone->EDGE) \
      { \
        evas_object_layer_set(zone->EDGE, layer); \
-       evas_object_stack_below(zone->EDGE, zone->comp->layers[e_comp_canvas_layer_map(layer)].obj); \
+       evas_object_stack_below(zone->EDGE, e_comp->layers[e_comp_canvas_layer_map(layer)].obj); \
      } \
    } while (0)
 
@@ -1202,7 +1216,7 @@ e_zone_edge_win_layer_set(E_Zone *zone, E_Layer layer)
    EDGE_STACK(edge.bottom);
 }
 
-EAPI void
+E_API void
 e_zone_fade_handle(E_Zone *zone, int out, double tim)
 {
    EINA_SAFETY_ON_NULL_RETURN(zone);
@@ -1330,7 +1344,7 @@ _e_zone_useful_geometry_calc(const E_Zone *zone, int dx, int dy, int *x, int *y,
 /**
  * Get (or calculate) the useful (or free, without any shelves) area.
  */
-EAPI void
+E_API void
 e_zone_useful_geometry_get(E_Zone *zone,
                            int *x,
                            int *y,
@@ -1377,7 +1391,7 @@ e_zone_useful_geometry_get(E_Zone *zone,
    if (h) *h = zone->useful_geometry.h;
 }
 
-EAPI void
+E_API void
 e_zone_desk_useful_geometry_get(const E_Zone *zone, const E_Desk *desk, int *x, int *y, int *w, int *h)
 {
    E_OBJECT_CHECK(zone);
@@ -1393,7 +1407,7 @@ e_zone_desk_useful_geometry_get(const E_Zone *zone, const E_Desk *desk, int *x, 
  *
  * Call this function when shelves are added or important properties changed.
  */
-EAPI void
+E_API void
 e_zone_useful_geometry_dirty(E_Zone *zone)
 {
    E_Event_Zone_Move_Resize *ev;
@@ -1413,7 +1427,7 @@ e_zone_useful_geometry_dirty(E_Zone *zone)
    zone->useful_geometry.h = -1;
 }
 
-EAPI void
+E_API void
 e_zone_stow(E_Zone *zone)
 {
    E_Event_Zone_Stow *ev;
@@ -1429,7 +1443,7 @@ e_zone_stow(E_Zone *zone)
    zone->stowed = EINA_TRUE;
 }
 
-EAPI void
+E_API void
 e_zone_unstow(E_Zone *zone)
 {
    E_Event_Zone_Unstow *ev;
@@ -1507,7 +1521,7 @@ _e_zone_free(E_Zone *zone)
    E_FREE_LIST(zone->handlers, ecore_event_handler_del);
 
    if (zone->name) eina_stringshare_del(zone->name);
-   zone->comp->zones = eina_list_remove(zone->comp->zones, zone);
+   e_comp->zones = eina_list_remove(e_comp->zones, zone);
    evas_object_del(zone->bg_event_object);
    evas_object_del(zone->bg_clip_object);
    evas_object_del(zone->bg_object);
@@ -1533,20 +1547,20 @@ _e_zone_free(E_Zone *zone)
           e_object_del(E_OBJECT(zone->desks[x + (y * zone->desk_x_count)]));
      }
    free(zone->desks);
-
+   free(zone->randr2_id);
    free(zone);
 }
 
 static void
 _e_zone_cb_bg_mouse_down(void *data,
-                         Evas *evas       __UNUSED__,
-                         Evas_Object *obj __UNUSED__,
+                         Evas *evas       EINA_UNUSED,
+                         Evas_Object *obj EINA_UNUSED,
                          void *event_info)
 {
    E_Zone *zone;
 
    zone = data;
-   if (e_menu_grab_window_get()) return;
+   if (e_comp_util_mouse_grabbed()) return;
 
    if (!zone->cur_mouse_action)
      {
@@ -1566,8 +1580,8 @@ _e_zone_cb_bg_mouse_down(void *data,
 
 static void
 _e_zone_cb_bg_mouse_up(void *data,
-                       Evas *evas       __UNUSED__,
-                       Evas_Object *obj __UNUSED__,
+                       Evas *evas       EINA_UNUSED,
+                       Evas_Object *obj EINA_UNUSED,
                        void *event_info)
 {
    E_Zone *zone;
@@ -1622,7 +1636,7 @@ _e_zone_cb_edge_timer(void *data)
 }
 
 static void
-_e_zone_event_generic_free(void *data __UNUSED__, void *ev)
+_e_zone_event_generic_free(void *data EINA_UNUSED, void *ev)
 {
    struct _E_Event_Zone_Generic *e;
    // also handes E_Event_Zone_Add, E_Event_Zone_Del, E_Event_Zone_Stow,

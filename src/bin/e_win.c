@@ -12,8 +12,11 @@ typedef struct _Elm_Win_Trap_Ctx
    Eina_Bool      internal_no_remember : 1;
    Eina_Bool      internal_no_reopen : 1;
    Eina_Bool      visible : 1;
+   Eina_Bool      override : 1;
 } Elm_Win_Trap_Ctx;
 
+
+static Elm_Win_Trap_Ctx *current_win = NULL;
 
 static void *
 _e_elm_win_trap_add(Evas_Object *o)
@@ -31,9 +34,9 @@ _e_elm_win_trap_del(void *data, Evas_Object *o)
    EINA_SAFETY_ON_NULL_RETURN(ctx);
    if (ctx->client)
      {
+        ctx->client->internal_elm_win = NULL;
         e_object_del(E_OBJECT(ctx->client));
         evas_object_data_set(o, "E_Client", NULL);
-        ctx->client->internal_elm_win = NULL;
      }
    free(ctx);
 }
@@ -67,35 +70,50 @@ _e_elm_win_trap_show(void *data, Evas_Object *o)
      {
         E_Client *ec;
         Ecore_Window win;
+<<<<<<< HEAD
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
         uintptr_t wl_win_id = NULL;
+=======
+#ifdef HAVE_WAYLAND
+        uintptr_t wl_win_id;
+>>>>>>> upstream
 #endif
         E_Pixmap_Type type = E_PIXMAP_TYPE_X;
 
         win = elm_win_window_id_get(o);
+<<<<<<< HEAD
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+=======
+#ifdef HAVE_WAYLAND
+>>>>>>> upstream
         if (!strncmp(ecore_evas_engine_name_get(ee), "wayland", 7))
           {
              type = E_PIXMAP_TYPE_WL;
+             ecore_evas_object_cursor_set(ee, NULL, 0, 0, 0);
              ctx->pointer = e_comp->pointer;
              elm_win_borderless_set(o, 1);
              wl_win_id = win;
           }
-#endif
-#ifndef HAVE_WAYLAND_ONLY
-# ifdef HAVE_WAYLAND_CLIENT
         else
-# endif
+#endif
           {
              type = E_PIXMAP_TYPE_X;
              ctx->pointer = e_pointer_window_new(win, EINA_TRUE);
           }
+
+#ifdef HAVE_WAYLAND
+        if (type == E_PIXMAP_TYPE_WL)
+          ec = e_pixmap_find_client(type, wl_win_id);
+        else
 #endif
+<<<<<<< HEAD
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
         if ((type == E_PIXMAP_TYPE_WL) && (wl_win_id))
           ec = e_pixmap_find_client(type, wl_win_id);
         else
 #endif
+=======
+>>>>>>> upstream
           ec = e_pixmap_find_client(type, win);
         if (ec)
           ctx->client = ec;
@@ -112,6 +130,7 @@ _e_elm_win_trap_show(void *data, Evas_Object *o)
              if ((!title) || (!title[0]))
                title = "E";
              ecore_evas_title_set(ee, title);
+<<<<<<< HEAD
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
              if (type == E_PIXMAP_TYPE_WL)
                {
@@ -125,13 +144,24 @@ _e_elm_win_trap_show(void *data, Evas_Object *o)
                   if (!cp)
                     cp = e_pixmap_new(type, wl_win_id);
                }
+=======
+
+#ifdef HAVE_WAYLAND
+             if (type == E_PIXMAP_TYPE_WL)
+               cp = e_pixmap_new(type, wl_win_id);
+>>>>>>> upstream
              else
 #endif
                cp = e_pixmap_new(type, win);
              EINA_SAFETY_ON_NULL_RETURN_VAL(cp, EINA_TRUE);
 
-             ctx->client = e_client_new(e_comp, cp, 0, 1);
+             current_win = ctx;
+             ctx->client = e_client_new(cp, 0, 1);
+             current_win = NULL;
              EINA_SAFETY_ON_NULL_RETURN_VAL(ctx->client, EINA_TRUE);
+             eina_stringshare_replace(&ctx->client->icccm.name, name);
+             eina_stringshare_replace(&ctx->client->icccm.class, clas);
+             eina_stringshare_replace(&ctx->client->icccm.title, title);
           }
         ctx->client->placed = ctx->placed | ctx->centered;
         ctx->client->internal_no_remember = ctx->internal_no_remember;
@@ -159,10 +189,21 @@ _e_elm_win_trap_show(void *data, Evas_Object *o)
 }
 
 static Eina_Bool
-_e_elm_win_trap_move(void *data, Evas_Object *o __UNUSED__, int x, int y)
+_e_elm_win_trap_move(void *data, Evas_Object *o, int x, int y)
 {
    Elm_Win_Trap_Ctx *ctx = data;
    EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, EINA_TRUE);
+   if (e_comp->comp_type == E_PIXMAP_TYPE_WL)
+     {
+        int ex, ey;
+
+        /* if the ee coords match the requested coords, this is coming from
+         * a configure event which the compositor sent. failing to reject this
+         * move will result in bad window positioning
+         */
+        ecore_evas_geometry_get(e_win_ee_get(o), &ex, &ey, NULL, NULL);
+        if ((x == ex) && (y == ey)) return EINA_FALSE;
+     }
    ctx->placed = 1;
    if (!ctx->client) return EINA_TRUE;
    if ((ctx->client->client.x != x) || (ctx->client->client.y != y))
@@ -171,7 +212,7 @@ _e_elm_win_trap_move(void *data, Evas_Object *o __UNUSED__, int x, int y)
 }
 
 static Eina_Bool
-_e_elm_win_trap_resize(void *data, Evas_Object *o __UNUSED__, int w, int h)
+_e_elm_win_trap_resize(void *data, Evas_Object *o EINA_UNUSED, int w, int h)
 {
    Elm_Win_Trap_Ctx *ctx = data;
    EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, EINA_TRUE);
@@ -183,7 +224,7 @@ _e_elm_win_trap_resize(void *data, Evas_Object *o __UNUSED__, int w, int h)
 }
 
 static Eina_Bool
-_e_elm_win_trap_center(void *data, Evas_Object *o __UNUSED__, Eina_Bool h, Eina_Bool v)
+_e_elm_win_trap_center(void *data, Evas_Object *o EINA_UNUSED, Eina_Bool h, Eina_Bool v)
 {
    Elm_Win_Trap_Ctx *ctx = data;
    EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, EINA_TRUE);
@@ -195,7 +236,7 @@ _e_elm_win_trap_center(void *data, Evas_Object *o __UNUSED__, Eina_Bool h, Eina_
 }
 
 static Eina_Bool
-_e_elm_win_trap_lower(void *data, Evas_Object *o __UNUSED__)
+_e_elm_win_trap_lower(void *data, Evas_Object *o EINA_UNUSED)
 {
    Elm_Win_Trap_Ctx *ctx = data;
    EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, EINA_TRUE);
@@ -205,7 +246,7 @@ _e_elm_win_trap_lower(void *data, Evas_Object *o __UNUSED__)
 }
 
 static Eina_Bool
-_e_elm_win_trap_raise(void *data, Evas_Object *o __UNUSED__)
+_e_elm_win_trap_raise(void *data, Evas_Object *o EINA_UNUSED)
 {
    Elm_Win_Trap_Ctx *ctx = data;
    EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, EINA_TRUE);
@@ -215,7 +256,7 @@ _e_elm_win_trap_raise(void *data, Evas_Object *o __UNUSED__)
 }
 
 static Eina_Bool
-_e_elm_win_trap_activate(void *data, Evas_Object *o __UNUSED__)
+_e_elm_win_trap_activate(void *data, Evas_Object *o EINA_UNUSED)
 {
    Elm_Win_Trap_Ctx *ctx = data;
    EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, EINA_TRUE);
@@ -227,7 +268,7 @@ _e_elm_win_trap_activate(void *data, Evas_Object *o __UNUSED__)
 }
 
 static Eina_Bool
-_e_elm_win_trap_size_min_set(void *data, Evas_Object *o __UNUSED__, int w, int h)
+_e_elm_win_trap_size_min_set(void *data, Evas_Object *o EINA_UNUSED, int w, int h)
 {
    Elm_Win_Trap_Ctx *ctx = data;
    int mw = 0, mh = 0;
@@ -246,7 +287,7 @@ _e_elm_win_trap_size_min_set(void *data, Evas_Object *o __UNUSED__, int w, int h
 }
 
 static Eina_Bool
-_e_elm_win_trap_size_max_set(void *data, Evas_Object *o __UNUSED__, int w, int h)
+_e_elm_win_trap_size_max_set(void *data, Evas_Object *o EINA_UNUSED, int w, int h)
 {
    Elm_Win_Trap_Ctx *ctx = data;
    int mw = 0, mh = 0;
@@ -265,7 +306,7 @@ _e_elm_win_trap_size_max_set(void *data, Evas_Object *o __UNUSED__, int w, int h
 }
 
 static Eina_Bool
-_e_elm_win_trap_size_base_set(void *data, Evas_Object *o __UNUSED__, int w, int h)
+_e_elm_win_trap_size_base_set(void *data, Evas_Object *o EINA_UNUSED, int w, int h)
 {
    Elm_Win_Trap_Ctx *ctx = data;
    int mw = 0, mh = 0;
@@ -298,6 +339,18 @@ _e_elm_win_trap_borderless_set(void *data, Evas_Object *o EINA_UNUSED, Eina_Bool
    return EINA_TRUE;
 }
 
+static Eina_Bool
+_e_elm_win_trap_override_set(void *data, Evas_Object *o EINA_UNUSED, Eina_Bool override)
+{
+   Elm_Win_Trap_Ctx *ctx = data;
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, EINA_TRUE);
+
+   if (ctx->client)
+     CRI("Override being set too late on internal client!");
+   ctx->override = !!override;
+   return EINA_TRUE;
+}
+
 static const Elm_Win_Trap _e_elm_win_trap = {
    ELM_WIN_TRAP_VERSION,
    _e_elm_win_trap_add,
@@ -324,7 +377,7 @@ static const Elm_Win_Trap _e_elm_win_trap = {
    /* modal_set */ NULL,
    /* name_class_set */ NULL,
    /* object_cursor_set */ NULL,
-   /* override_set */ NULL,
+   _e_elm_win_trap_override_set,
    /* rotation_set */ NULL,
    /* rotation_with_resize_set */ NULL,
    /* shaped_set */ NULL,
@@ -338,11 +391,20 @@ static const Elm_Win_Trap _e_elm_win_trap = {
    /* withdrawn_set */ NULL
 };
 
+static void
+_e_win_client_hook_new(void *d EINA_UNUSED, E_Client *ec)
+{
+   if (!ec->internal) return;
+   if (current_win)
+     ec->override = current_win->override;
+}
+
 /* externally accessible functions */
 EINTERN int
 e_win_init(void)
 {
    if (!elm_win_trap_set(&_e_elm_win_trap)) return 0;
+   e_client_hook_add(E_CLIENT_HOOK_NEW_CLIENT, _e_win_client_hook_new, NULL);
    return 1;
 }
 
@@ -352,7 +414,7 @@ e_win_shutdown(void)
    return 1;
 }
 
-EAPI E_Client *
+E_API E_Client *
 e_win_client_get(Evas_Object *obj)
 {
    Elm_Win_Trap_Ctx *ctx;
@@ -363,13 +425,13 @@ e_win_client_get(Evas_Object *obj)
    return ctx ? ctx->client : NULL;
 }
 
-EAPI Ecore_Evas *
+E_API Ecore_Evas *
 e_win_ee_get(Evas_Object *obj)
 {
    return ecore_evas_ecore_evas_get(evas_object_evas_get(obj));
 }
 
-EAPI E_Pointer *
+E_API E_Pointer *
 e_win_pointer_get(Evas_Object *obj)
 {
    Elm_Win_Trap_Ctx *ctx = elm_win_trap_data_get(obj);
@@ -377,7 +439,7 @@ e_win_pointer_get(Evas_Object *obj)
    return ctx ? ctx->pointer : NULL;
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_win_centered_get(Evas_Object *obj)
 {
    Elm_Win_Trap_Ctx *ctx = elm_win_trap_data_get(obj);
@@ -385,7 +447,7 @@ e_win_centered_get(Evas_Object *obj)
    return ctx ? ctx->centered : EINA_FALSE;
 }
 
-EAPI void
+E_API void
 e_win_client_icon_set(Evas_Object *obj, const char *icon)
 {
    Elm_Win_Trap_Ctx *ctx = elm_win_trap_data_get(obj);
@@ -394,7 +456,7 @@ e_win_client_icon_set(Evas_Object *obj, const char *icon)
      eina_stringshare_replace(&ctx->client->internal_icon, icon);
 }
 
-EAPI void
+E_API void
 e_win_client_icon_key_set(Evas_Object *obj, const char *key)
 {
    Elm_Win_Trap_Ctx *ctx = elm_win_trap_data_get(obj);
@@ -403,7 +465,7 @@ e_win_client_icon_key_set(Evas_Object *obj, const char *key)
      eina_stringshare_replace(&ctx->client->internal_icon_key, key);
 }
 
-EAPI void
+E_API void
 e_win_placed_set(Evas_Object *obj, Eina_Bool placed)
 {
    Elm_Win_Trap_Ctx *ctx = elm_win_trap_data_get(obj);
@@ -417,7 +479,7 @@ e_win_placed_set(Evas_Object *obj, Eina_Bool placed)
      }
 }
 
-EAPI void
+E_API void
 e_win_no_remember_set(Evas_Object *obj, Eina_Bool no_rem)
 {
    Elm_Win_Trap_Ctx *ctx = elm_win_trap_data_get(obj);
@@ -428,7 +490,7 @@ e_win_no_remember_set(Evas_Object *obj, Eina_Bool no_rem)
      ctx->client->internal_no_remember = !!no_rem;
 }
 
-EAPI void
+E_API void
 e_win_no_reopen_set(Evas_Object *obj, Eina_Bool no_reopen)
 {
    Elm_Win_Trap_Ctx *ctx = elm_win_trap_data_get(obj);
@@ -439,7 +501,7 @@ e_win_no_reopen_set(Evas_Object *obj, Eina_Bool no_reopen)
      ctx->client->internal_no_reopen = !!no_reopen;
 }
 
-EAPI Evas_Object *
+E_API Evas_Object *
 e_elm_win_add(Evas_Object *parent, const char *name, Elm_Win_Type type)
 {
    char *eng;
@@ -450,6 +512,7 @@ e_elm_win_add(Evas_Object *parent, const char *name, Elm_Win_Type type)
    e_util_env_set("ELM_ACCEL", "none");
    o = elm_win_add(parent, name, type);
    e_util_env_set("ELM_ACCEL", eng);
+   elm_win_alpha_set(o, 1);
    free(eng);
    return o;
 }

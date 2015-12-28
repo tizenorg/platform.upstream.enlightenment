@@ -17,6 +17,47 @@ static void        _notification_popdown(Popup_Data                  *popup,
  * happily, it was decided that the function would not be external so that it could
  * be duplicated into the module in full.
  */
+
+static int
+_text_escape(Eina_Strbuf *txt, const char *text)
+{
+   const char *escaped;
+   int advance;
+
+   escaped = evas_textblock_string_escape_get(text, &advance);
+   if (!escaped)
+     {
+        eina_strbuf_append_char(txt, text[0]);
+        advance = 1;
+     }
+   else
+     eina_strbuf_append(txt, escaped);
+   return advance;
+}
+
+/* hardcoded list of allowed tags based on
+ * https://people.gnome.org/~mccann/docs/notification-spec/notification-spec-latest.html#markup
+ */
+static const char *tags[] =
+{
+   "<b",
+   "<i",
+   "<u",
+   //"<a", FIXME: we can't actually display these right now
+   //"<img",
+};
+
+static const char *
+_get_tag(const char *c)
+{
+   unsigned int i;
+
+   if (c[1] != '>') return NULL;
+   for (i = 0; i < EINA_C_ARRAY_LENGTH(tags); i++)
+     if (tags[i][1] == c[0]) return tags[i];
+   return NULL;
+}
+
 char *
 _nedje_text_escape(const char *text)
 {
@@ -24,28 +65,103 @@ _nedje_text_escape(const char *text)
    char *ret;
    const char *text_end;
    size_t text_len;
+   Eina_Array *arr;
+   const char *cur_tag = NULL;
 
    if (!text) return NULL;
 
    txt = eina_strbuf_new();
    text_len = strlen(text);
+   arr = eina_array_new(3);
 
    text_end = text + text_len;
    while (text < text_end)
      {
         int advance;
-        const char *escaped = evas_textblock_string_escape_get(text, &advance);
-        if (!escaped)
+
+        if ((text[0] == '<') && text[1])
           {
-             eina_strbuf_append_char(txt, text[0]);
-             advance = 1;
+             const char *tag, *popped;
+             Eina_Bool closing = EINA_FALSE;
+
+             if (text[1] == '/') //closing tag
+               {
+                  closing = EINA_TRUE;
+                  tag = _get_tag(text + 2);
+               }
+             else
+               tag = _get_tag(text + 1);
+             if (closing)
+               {
+                  if (cur_tag && (tag != cur_tag))
+                    {
+                       /* tag mismatch: autoclose all failure tags
+                        * not technically required by the spec,
+                        * but it makes me feel better about myself
+                        */
+                       do
+                         {
+                            popped = eina_array_pop(arr);
+                            if (eina_array_count(arr))
+                              cur_tag = eina_array_data_get(arr, eina_array_count(arr) - 1);
+                            else
+                              cur_tag = NULL;
+                            eina_strbuf_append_printf(txt, "</%c>", popped[1]);
+                         } while (cur_tag && (popped != tag));
+                       advance = 4;
+                    }
+                  else if (cur_tag)
+                    {
+                       /* tag match: just pop */
+                       popped = eina_array_pop(arr);
+                       if (eina_array_count(arr))
+                         cur_tag = eina_array_data_get(arr, eina_array_count(arr) - 1);
+                       else
+                         cur_tag = NULL;
+                       eina_strbuf_append_printf(txt, "</%c>", popped[1]);
+                       advance = 4;
+                    }
+                  else
+                    {
+                       /* no current tag: escape */
+                       advance = _text_escape(txt, text);
+                    }
+               }
+             else
+               {
+                  if (tag)
+                    {
+                       cur_tag = tag;
+                       eina_array_push(arr, tag);
+                       eina_strbuf_append_printf(txt, "<%c>", tag[1]);
+                       advance = 3;
+                    }
+                  else
+                    advance = _text_escape(txt, text);
+               }
+          }
+        else if (text[0] == '&')
+          {
+             const char *s;
+
+             s = strchr(text, ';');
+             if (s)
+               s = evas_textblock_escape_string_range_get(text, s + 1);
+             if (s)
+               {
+                  eina_strbuf_append_char(txt, text[0]);
+                  advance = 1;
+               }
+             else
+               advance = _text_escape(txt, text);
           }
         else
-          eina_strbuf_append(txt, escaped);
+          advance = _text_escape(txt, text);
 
         text += advance;
      }
 
+   eina_array_free(arr);
    ret = eina_strbuf_string_steal(txt);
    eina_strbuf_free(txt);
    return ret;
@@ -129,9 +245,11 @@ notification_popup_notify(E_Notification_Notify *n,
      {
       case E_NOTIFICATION_NOTIFY_URGENCY_LOW:
         if (!notification_cfg->show_low) return;
+        if (e_config->mode.presentation) return;
         break;
       case E_NOTIFICATION_NOTIFY_URGENCY_NORMAL:
         if (!notification_cfg->show_normal) return;
+        if (e_config->mode.presentation) return;
         break;
       case E_NOTIFICATION_NOTIFY_URGENCY_CRITICAL:
         if (!notification_cfg->show_critical) return;
@@ -202,9 +320,9 @@ notification_popup_close(unsigned int id)
 
 static void
 _notification_theme_cb_deleted(Popup_Data *popup,
-                               Evas_Object *obj __UNUSED__,
-                               const char  *emission __UNUSED__,
-                               const char  *source __UNUSED__)
+                               Evas_Object *obj EINA_UNUSED,
+                               const char  *emission EINA_UNUSED,
+                               const char  *source EINA_UNUSED)
 {
    _notification_popup_refresh(popup);
    edje_object_signal_emit(popup->theme, "notification,new", "notification");
@@ -212,18 +330,18 @@ _notification_theme_cb_deleted(Popup_Data *popup,
 
 static void
 _notification_theme_cb_close(Popup_Data *popup,
-                             Evas_Object *obj __UNUSED__,
-                             const char  *emission __UNUSED__,
-                             const char  *source __UNUSED__)
+                             Evas_Object *obj EINA_UNUSED,
+                             const char  *emission EINA_UNUSED,
+                             const char  *source EINA_UNUSED)
 {
    _notification_popup_del(popup->id, E_NOTIFICATION_NOTIFY_CLOSED_REASON_DISMISSED);
 }
 
 static void
 _notification_theme_cb_find(Popup_Data *popup,
-                            Evas_Object *obj __UNUSED__,
-                            const char  *emission __UNUSED__,
-                            const char  *source __UNUSED__)
+                            Evas_Object *obj EINA_UNUSED,
+                            const char  *emission EINA_UNUSED,
+                            const char  *source EINA_UNUSED)
 {
    const Eina_List *l;
    E_Client *ec;
@@ -289,7 +407,6 @@ _notification_popup_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
 static Popup_Data *
 _notification_popup_new(E_Notification_Notify *n, unsigned id)
 {
-   E_Comp *comp;
    Popup_Data *popup;
    char buf[PATH_MAX];
    Eina_List *l;
@@ -299,19 +416,18 @@ _notification_popup_new(E_Notification_Notify *n, unsigned id)
    switch (notification_cfg->dual_screen)
      {
       case POPUP_DISPLAY_POLICY_FIRST:
-        comp = e_comp_get(NULL);
-        zone = eina_list_data_get(comp->zones);
+        zone = eina_list_data_get(e_comp->zones);
         break;
       case POPUP_DISPLAY_POLICY_CURRENT:
       case POPUP_DISPLAY_POLICY_ALL:
-        zone = e_util_zone_current_get(e_manager_current_get());
+        zone = e_zone_current_get();
         break;
       case POPUP_DISPLAY_POLICY_MULTI:
         if ((notification_cfg->corner == CORNER_BR) ||
             (notification_cfg->corner == CORNER_TR))
-          zone = eina_list_last_data_get(e_util_comp_current_get()->zones);
+          zone = eina_list_last_data_get(e_comp->zones);
         else
-          zone = eina_list_data_get(e_util_comp_current_get()->zones);
+          zone = eina_list_data_get(e_comp->zones);
         break;
      }
 
@@ -323,7 +439,7 @@ _notification_popup_new(E_Notification_Notify *n, unsigned id)
    EINA_SAFETY_ON_NULL_RETURN_VAL(popup, NULL);
    popup->notif = n;
    popup->id = id;
-   popup->e = e_comp_get(zone)->evas;
+   popup->e = e_comp->evas;
 
    /* Setup the theme */
    snprintf(buf, sizeof(buf), "%s/e-module-notification.edj",
@@ -355,13 +471,14 @@ _notification_popup_new(E_Notification_Notify *n, unsigned id)
    evas_object_show(popup->win);
    if (notification_cfg->dual_screen == POPUP_DISPLAY_POLICY_ALL)
      {
-        EINA_LIST_FOREACH(e_comp_evas_find(evas_object_evas_get(popup->win))->zones, l, zone)
+        EINA_LIST_FOREACH(e_comp->zones, l, zone)
           {
              Evas_Object *o;
              int x, y, w, h;
 
              if (zone == e_comp_object_util_zone_get(popup->win)) continue;
-             o = e_comp_object_util_mirror_add(popup->win);
+             o = e_comp_object_util_mirror_add(popup->theme);
+             o = e_comp_object_util_add(o, E_COMP_OBJECT_TYPE_POPUP);
              evas_object_name_set(o, "notification_mirror");
              evas_object_data_set(o, "zone", zone);
              evas_object_geometry_get(popup->win, NULL, NULL, &w, &h);
@@ -404,7 +521,6 @@ _notification_popup_place(Popup_Data *popup, int pos)
 static void
 _notification_popup_refresh(Popup_Data *popup)
 {
-   const char *icon_path;
    const char *app_icon_max;
    int w, h, width = 80, height = 80;
    E_Zone *zone;
@@ -451,13 +567,18 @@ _notification_popup_refresh(Popup_Data *popup)
    /* Check if the app specify an icon either by a path or by a hint */
    if (!popup->notif->icon.raw.data)
      {
+        const char *icon_path;
+
         icon_path = popup->notif->icon.icon_path;
         if ((!icon_path) || (!icon_path[0]))
           icon_path = popup->notif->icon.icon;
-        if (icon_path)
+        if (icon_path && icon_path[0])
           {
-             if (!strncmp(icon_path, "file://", 7)) icon_path += 7;
-             if (!ecore_file_exists(icon_path))
+             Efreet_Uri *uri = NULL;
+
+             if (icon_path[0] == '/')
+               uri = efreet_uri_decode(icon_path);
+             if ((!uri) || strcmp(uri->protocol, "file") || (uri->path[0] != '/'))
                {
                   const char *new_path;
                   unsigned int size;
@@ -484,13 +605,14 @@ _notification_popup_refresh(Popup_Data *popup)
              if (!popup->app_icon)
                {
                   popup->app_icon = e_icon_add(popup->e);
-                  if (!e_icon_file_set(popup->app_icon, icon_path))
+                  if (!e_icon_file_set(popup->app_icon, uri ? uri->path : icon_path))
                     {
                        evas_object_del(popup->app_icon);
                        popup->app_icon = NULL;
                     }
                   else e_icon_size_get(popup->app_icon, &w, &h);
                }
+             efreet_uri_free(uri);
           }
      }
    else
@@ -608,9 +730,10 @@ _notification_popdown(Popup_Data                  *popup,
                       E_Notification_Notify_Closed_Reason reason)
 {
    E_FREE_FUNC(popup->timer, ecore_timer_del);
-   popup->mirrors = eina_list_free(popup->mirrors);
+   E_FREE_LIST(popup->mirrors, evas_object_del);
    if (popup->win)
      {
+        evas_object_event_callback_del_full(popup->win, EVAS_CALLBACK_DEL, _notification_popup_del_cb, popup);
         evas_object_hide(popup->win);
         evas_object_del(popup->win);
      }
@@ -623,7 +746,7 @@ _notification_popdown(Popup_Data                  *popup,
    if (popup->pending) return;
    popups_displayed--;
    free(popup);
-   e_comp_shape_queue(e_comp_get(NULL));
+   e_comp_shape_queue();
 }
 
 static void

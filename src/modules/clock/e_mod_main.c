@@ -98,6 +98,8 @@ _todaystr_eval(Instance *inst, char *buf, int bufsz)
                strftime(buf, bufsz, _("%a, %x"), (const struct tm *)tm);
              else if (inst->cfg->show_date == 3)
                strftime(buf, bufsz, "%x", (const struct tm *)tm);
+             else if (inst->cfg->show_date == 4)
+               strftime(buf, bufsz, "%F", (const struct tm *)tm);
           }
         else
           buf[0] = 0;
@@ -261,7 +263,7 @@ _clock_month_update(Instance *inst)
 }
 
 static void
-_clock_month_prev_cb(void *data, Evas_Object *obj __UNUSED__, const char *emission __UNUSED__, const char *source __UNUSED__)
+_clock_month_prev_cb(void *data, Evas_Object *obj EINA_UNUSED, const char *emission EINA_UNUSED, const char *source EINA_UNUSED)
 {
    Instance *inst = data;
    inst->madj--;
@@ -270,7 +272,7 @@ _clock_month_prev_cb(void *data, Evas_Object *obj __UNUSED__, const char *emissi
 }
 
 static void
-_clock_month_next_cb(void *data, Evas_Object *obj __UNUSED__, const char *emission __UNUSED__, const char *source __UNUSED__)
+_clock_month_next_cb(void *data, Evas_Object *obj EINA_UNUSED, const char *emission EINA_UNUSED, const char *source EINA_UNUSED)
 {
    Instance *inst = data;
    inst->madj++;
@@ -279,7 +281,7 @@ _clock_month_next_cb(void *data, Evas_Object *obj __UNUSED__, const char *emissi
 }
 
 static void
-_clock_settings_cb(void *d1, void *d2 __UNUSED__)
+_clock_settings_cb(void *d1, void *d2 EINA_UNUSED)
 {
    Instance *inst = d1;
    e_int_config_clock_module(NULL, inst->cfg);
@@ -289,7 +291,7 @@ _clock_settings_cb(void *d1, void *d2 __UNUSED__)
 }
 
 static void
-_popclock_del_cb(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *info __UNUSED__)
+_popclock_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *info EINA_UNUSED)
 {
    Instance *inst = data;
    if (inst->o_popclock == obj)
@@ -314,11 +316,11 @@ _clock_popup_new(Instance *inst)
    _time_eval(inst);
 
    inst->popup = e_gadcon_popup_new(inst->gcc, 0);
-   evas = e_comp_get(inst->popup)->evas;
+   evas = e_comp->evas;
 
-   inst->o_table = elm_table_add(inst->popup->comp_object);
+   inst->o_table = elm_table_add(e_comp->elm);
 
-   oi = elm_layout_add(inst->popup->comp_object);
+   oi = elm_layout_add(inst->o_table);
    inst->o_popclock = oi;
    evas_object_size_hint_weight_set(oi, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(oi, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -358,7 +360,7 @@ _clock_popup_new(Instance *inst)
    elm_table_pack(inst->o_table, o, 0, 2, 1, 1);
    evas_object_show(o);
 
-   oi = elm_layout_add(inst->popup->comp_object);
+   oi = elm_layout_add(inst->o_table);
    inst->o_cal = oi;
    e_theme_edje_object_set(oi, "base/theme/modules/clock",
                            "e/modules/clock/calendar");
@@ -516,7 +518,7 @@ e_int_clock_instances_redo(Eina_Bool all)
 }
 
 static Eina_Bool
-_update_today_timer(void *data __UNUSED__)
+_update_today_timer(void *data EINA_UNUSED)
 {
    time_t t, t_tomorrow;
    const struct tm *now;
@@ -551,7 +553,7 @@ _clock_popup_free(Instance *inst)
 }
 
 static void
-_clock_menu_cb_cfg(void *data, E_Menu *menu __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_clock_menu_cb_cfg(void *data, E_Menu *menu EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    Instance *inst = data;
 
@@ -560,7 +562,7 @@ _clock_menu_cb_cfg(void *data, E_Menu *menu __UNUSED__, E_Menu_Item *mi __UNUSED
 }
 
 static void
-_clock_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSED__, void *event)
+_clock_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    Instance *inst = data;
    Evas_Event_Mouse_Down *ev = event;
@@ -577,7 +579,7 @@ _clock_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSE
         E_Menu_Item *mi;
         int x, y;
 
-        zone = e_util_zone_current_get(e_manager_current_get());
+        zone = e_zone_current_get();
 
         m = e_menu_new();
 
@@ -597,7 +599,7 @@ _clock_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSE
 }
 
 static void
-_clock_sizing_changed_cb(void *data, Evas_Object *obj __UNUSED__, const char *emission __UNUSED__, const char *source __UNUSED__)
+_clock_sizing_changed_cb(void *data, Evas_Object *obj EINA_UNUSED, const char *emission EINA_UNUSED, const char *source EINA_UNUSED)
 {
    _eval_instance_size(data);
 }
@@ -679,19 +681,19 @@ _gc_shutdown(E_Gadcon_Client *gcc)
 }
 
 static void
-_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient __UNUSED__)
+_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient EINA_UNUSED)
 {
    _eval_instance_size(gcc->data);
 }
 
 static const char *
-_gc_label(const E_Gadcon_Client_Class *client_class __UNUSED__)
+_gc_label(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    return _("Clock");
 }
 
 static Evas_Object *
-_gc_icon(const E_Gadcon_Client_Class *client_class __UNUSED__, Evas *evas)
+_gc_icon(const E_Gadcon_Client_Class *client_class EINA_UNUSED, Evas *evas)
 {
    Evas_Object *o;
    char buf[4096];
@@ -704,7 +706,7 @@ _gc_icon(const E_Gadcon_Client_Class *client_class __UNUSED__, Evas *evas)
 }
 
 static const char *
-_gc_id_new(const E_Gadcon_Client_Class *client_class __UNUSED__)
+_gc_id_new(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    Config_Item *ci = NULL;
 
@@ -752,31 +754,31 @@ _e_mod_action(const char *params)
 }
 
 static void
-_e_mod_action_cb_edge(E_Object *obj __UNUSED__, const char *params, E_Event_Zone_Edge *ev __UNUSED__)
+_e_mod_action_cb_edge(E_Object *obj EINA_UNUSED, const char *params, E_Event_Zone_Edge *ev EINA_UNUSED)
 {
    _e_mod_action(params);
 }
 
 static void
-_e_mod_action_cb(E_Object *obj __UNUSED__, const char *params)
+_e_mod_action_cb(E_Object *obj EINA_UNUSED, const char *params)
 {
    _e_mod_action(params);
 }
 
 static void
-_e_mod_action_cb_key(E_Object *obj __UNUSED__, const char *params, Ecore_Event_Key *ev __UNUSED__)
+_e_mod_action_cb_key(E_Object *obj EINA_UNUSED, const char *params, Ecore_Event_Key *ev EINA_UNUSED)
 {
    _e_mod_action(params);
 }
 
 static void
-_e_mod_action_cb_mouse(E_Object *obj __UNUSED__, const char *params, E_Binding_Event_Mouse_Button *ev __UNUSED__)
+_e_mod_action_cb_mouse(E_Object *obj EINA_UNUSED, const char *params, E_Binding_Event_Mouse_Button *ev EINA_UNUSED)
 {
    _e_mod_action(params);
 }
 
 static Eina_Bool
-_clock_eio_update(void *d __UNUSED__, int type __UNUSED__, void *event)
+_clock_eio_update(void *d EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Eio_Monitor_Event *ev = event;
 
@@ -795,7 +797,7 @@ _clock_eio_update(void *d __UNUSED__, int type __UNUSED__, void *event)
 }
 
 static Eina_Bool
-_clock_eio_error(void *d __UNUSED__, int type __UNUSED__, void *event)
+_clock_eio_error(void *d EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Eio_Monitor_Event *ev = event;
 
@@ -830,20 +832,20 @@ _clock_eio_error(void *d __UNUSED__, int type __UNUSED__, void *event)
 }
 
 static Eina_Bool
-_clock_time_update(void *d __UNUSED__, int type __UNUSED__, void *event __UNUSED__)
+_clock_time_update(void *d EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
    e_int_clock_instances_redo(EINA_TRUE);
    return ECORE_CALLBACK_PASS_ON;
 }
 
 /* module setup */
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION,
    "Clock"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    conf_item_edd = E_CONFIG_DD_NEW("Config_Item", Config_Item);
@@ -904,8 +906,8 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    if (act)
      {
@@ -951,8 +953,8 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    return 1;
 }
 
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    e_config_domain_save("module.clock", conf_edd, clock_config);
    return 1;

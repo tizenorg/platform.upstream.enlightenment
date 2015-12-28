@@ -66,7 +66,9 @@ e_int_config_theme_import(E_Config_Dialog *parent)
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _theme_import_cb_delete, NULL);
    ecore_evas_name_class_set(ecore_evas_ecore_evas_get(evas_object_evas_get(win)), "E", "_theme_import_dialog");
 
-   o = edje_object_add(evas);
+   o = elm_layout_add(win);
+   E_EXPAND(o);
+   E_FILL(o);
    import->bg_obj = o;
    e_theme_edje_object_set(o, "base/theme/dialog", "e/widgets/dialog/main");
    elm_win_resize_object_add(win, o);
@@ -75,7 +77,7 @@ e_int_config_theme_import(E_Config_Dialog *parent)
    o = e_widget_list_add(evas, 1, 1);
    e_widget_on_focus_hook_set(o, _theme_import_cb_wid_focus, import);
    import->box_obj = o;
-   edje_object_part_swallow(import->bg_obj, "e.swallow.buttons", o);
+   elm_object_part_content_set(import->bg_obj, "e.swallow.buttons", o);
 
    o = evas_object_rectangle_add(evas);
    import->event_obj = o;
@@ -110,7 +112,7 @@ e_int_config_theme_import(E_Config_Dialog *parent)
 
    e_widget_size_min_get(o, &w, &h);
    evas_object_size_hint_min_set(o, w, h);
-   edje_object_part_swallow(import->bg_obj, "e.swallow.content", o);
+   elm_object_part_content_set(import->bg_obj, "e.swallow.content", o);
    evas_object_show(o);
 
    import->ok_obj = e_widget_button_add(evas, _("OK"), NULL,
@@ -129,13 +131,8 @@ e_int_config_theme_import(E_Config_Dialog *parent)
    o = import->box_obj;
    e_widget_size_min_get(o, &w, &h);
    evas_object_size_hint_min_set(o, w, h);
-   edje_object_part_swallow(import->bg_obj, "e.swallow.buttons", o);
+   elm_object_part_content_set(import->bg_obj, "e.swallow.buttons", o);
 
-   edje_object_size_min_calc(import->bg_obj, &w, &h);
-   evas_object_resize(import->bg_obj, w, h);
-   evas_object_resize(win, w, h);
-   evas_object_size_hint_min_set(win, w, h);
-   evas_object_size_hint_max_set(win, 99999, 99999);
    evas_object_show(win);
    e_win_client_icon_set(win, "preferences-desktop-theme");
 
@@ -174,7 +171,7 @@ _theme_import_cb_wid_focus(void *data, Evas_Object *obj)
 }
 
 static void
-_theme_import_cb_selected(void *data, Evas_Object *obj __UNUSED__)
+_theme_import_cb_selected(void *data, Evas_Object *obj EINA_UNUSED)
 {
    Import *import;
 
@@ -183,7 +180,7 @@ _theme_import_cb_selected(void *data, Evas_Object *obj __UNUSED__)
 }
 
 static void
-_theme_import_cb_changed(void *data, Evas_Object *obj __UNUSED__)
+_theme_import_cb_changed(void *data, Evas_Object *obj EINA_UNUSED)
 {
    Import *import;
    const char *path;
@@ -224,7 +221,7 @@ _theme_import_cb_changed(void *data, Evas_Object *obj __UNUSED__)
 }
 
 static void
-_theme_import_cb_ok(void *data, void *data2 __UNUSED__)
+_theme_import_cb_ok(void *data, void *data2 EINA_UNUSED)
 {
    Import *import;
    Evas_Object *win;
@@ -284,13 +281,13 @@ _theme_import_cb_ok(void *data, void *data2 __UNUSED__)
 }
 
 static void
-_theme_import_cb_close(void *data, void *data2 __UNUSED__)
+_theme_import_cb_close(void *data, void *data2 EINA_UNUSED)
 {
    evas_object_del(data);
 }
 
 static void
-_theme_import_cb_key_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event)
+_theme_import_cb_key_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    Evas_Event_Key_Down *ev;
    Import *import;

@@ -122,7 +122,7 @@ _gc_shutdown(E_Gadcon_Client *gcc)
 }
 
 static void
-_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient __UNUSED__)
+_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient EINA_UNUSED)
 {
    Instance *inst;
    Evas_Coord mw, mh, mxw, mxh;
@@ -141,13 +141,13 @@ _gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient __UNUSED__)
 }
 
 static const char *
-_gc_label(const E_Gadcon_Client_Class *client_class __UNUSED__)
+_gc_label(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    return _("Battery");
 }
 
 static Evas_Object *
-_gc_icon(const E_Gadcon_Client_Class *client_class __UNUSED__, Evas *evas)
+_gc_icon(const E_Gadcon_Client_Class *client_class EINA_UNUSED, Evas *evas)
 {
    Evas_Object *o;
    char buf[4096];
@@ -201,7 +201,7 @@ _button_cb_mouse_down(void *data, Evas *e, Evas_Object *obj, void *event_info)
         e_gadcon_canvas_zone_geometry_get(inst->gcc->gadcon,
                                           &cx, &cy, NULL, NULL);
         e_menu_activate_mouse(m,
-                              e_util_zone_current_get(e_manager_current_get()),
+                              e_zone_current_get(),
                               cx + ev->output.x, cy + ev->output.y, 1, 1,
                               E_MENU_POP_DIRECTION_DOWN, ev->timestamp);
         evas_event_feed_mouse_up(inst->gcc->gadcon->evas, ev->button,
@@ -243,13 +243,13 @@ _battery_face_time_set(Evas_Object *battery, int t)
 }
 
 static void
-_battery_face_cb_menu_powermanagement(void *data __UNUSED__, E_Menu *m EINA_UNUSED, E_Menu_Item *mi __UNUSED__)
+_battery_face_cb_menu_powermanagement(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    e_configure_registry_call("advanced/powermanagement", NULL, NULL);
 }
 
 static void
-_battery_face_cb_menu_configure(void *data __UNUSED__, E_Menu *m EINA_UNUSED, E_Menu_Item *mi __UNUSED__)
+_battery_face_cb_menu_configure(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    if (!battery_config) return;
    if (battery_config->config_dialog) return;
@@ -388,7 +388,8 @@ _battery_config_updated(void)
         battery_config->batget_exe =
           ecore_exe_pipe_run(buf, ECORE_EXE_PIPE_READ |
                              ECORE_EXE_PIPE_READ_LINE_BUFFERED |
-                             ECORE_EXE_NOT_LEADER, NULL);
+                             ECORE_EXE_NOT_LEADER |
+                             ECORE_EXE_TERM_WITH_PARENT, NULL);
      }
 }
 
@@ -404,7 +405,7 @@ _battery_cb_warning_popup_timeout(void *data)
 }
 
 static void
-_battery_cb_warning_popup_hide(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event __UNUSED__)
+_battery_cb_warning_popup_hide(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
    Instance *inst = NULL;
 
@@ -463,7 +464,7 @@ _battery_warning_popup(Instance *inst, int t, double percent)
    inst->warning = e_gadcon_popup_new(inst->gcc, 0);
    if (!inst->warning) return;
 
-   e = e_comp_get(inst->warning)->evas;
+   e = e_comp->evas;
 
    popup_bg = edje_object_add(e);
    inst->popup_battery = edje_object_add(e);
@@ -510,7 +511,7 @@ _battery_warning_popup(Instance *inst, int t, double percent)
 }
 
 static Eina_Bool
-_powersave_cb_config_update(void *data __UNUSED__, int type __UNUSED__, void *event __UNUSED__)
+_powersave_cb_config_update(void *data EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
    if (!battery_config->have_battery)
      e_powersave_mode_set(E_POWERSAVE_MODE_LOW);
@@ -656,7 +657,7 @@ _battery_update(int full, int time_left, int time_full, Eina_Bool have_battery, 
 }
 
 static Eina_Bool
-_battery_cb_exe_data(void *data __UNUSED__, int type __UNUSED__, void *event)
+_battery_cb_exe_data(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Exe_Event_Data *ev;
    Instance *inst;
@@ -710,7 +711,7 @@ _battery_cb_exe_data(void *data __UNUSED__, int type __UNUSED__, void *event)
 }
 
 static Eina_Bool
-_battery_cb_exe_del(void *data __UNUSED__, int type __UNUSED__, void *event)
+_battery_cb_exe_del(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Exe_Event_Del *ev;
 
@@ -721,12 +722,12 @@ _battery_cb_exe_del(void *data __UNUSED__, int type __UNUSED__, void *event)
 }
 
 /* module setup */
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION, "Battery"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    char buf[4096];
@@ -803,8 +804,8 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    e_configure_registry_item_del("advanced/battery");
    e_configure_registry_category_del("advanced");
@@ -848,8 +849,8 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    return 1;
 }
 
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    e_config_domain_save("module.battery", conf_edd, battery_config);
    return 1;

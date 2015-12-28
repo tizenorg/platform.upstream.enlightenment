@@ -70,9 +70,9 @@ static double t0, t1, t2;
 static void      _e_main_shutdown(int errcode);
 static void      _e_main_shutdown_push(int (*func)(void));
 static void      _e_main_parse_arguments(int argc, char **argv);
-static Eina_Bool _e_main_cb_signal_exit(void *data __UNUSED__, int ev_type __UNUSED__, void *ev __UNUSED__);
-static Eina_Bool _e_main_cb_signal_hup(void *data __UNUSED__, int ev_type __UNUSED__, void *ev __UNUSED__);
-static Eina_Bool _e_main_cb_signal_user(void *data __UNUSED__, int ev_type __UNUSED__, void *ev);
+static Eina_Bool _e_main_cb_signal_exit(void *data EINA_UNUSED, int ev_type EINA_UNUSED, void *ev EINA_UNUSED);
+static Eina_Bool _e_main_cb_signal_hup(void *data EINA_UNUSED, int ev_type EINA_UNUSED, void *ev EINA_UNUSED);
+static Eina_Bool _e_main_cb_signal_user(void *data EINA_UNUSED, int ev_type EINA_UNUSED, void *ev);
 static int       _e_main_dirs_init(void);
 static int       _e_main_dirs_shutdown(void);
 static int       _e_main_path_init(void);
@@ -86,9 +86,15 @@ static void      _e_main_desk_save(void);
 static void      _e_main_desk_restore(void);
 static void      _e_main_efreet_paths_init(void);
 static void      _e_main_modules_load(Eina_Bool safe_mode);
+<<<<<<< HEAD
 static Eina_Bool _e_main_cb_idle_before(void *data __UNUSED__);
 static Eina_Bool _e_main_cb_idle_after(void *data __UNUSED__);
 static Eina_Bool _e_main_cb_startup_fake_end(void *data __UNUSED__);
+=======
+static Eina_Bool _e_main_cb_idle_before(void *data EINA_UNUSED);
+static Eina_Bool _e_main_cb_idle_after(void *data EINA_UNUSED);
+static Eina_Bool _e_main_cb_startup_fake_end(void *data EINA_UNUSED);
+>>>>>>> upstream
 
 /* local variables */
 static Eina_Bool really_know = EINA_FALSE;
@@ -105,14 +111,14 @@ static Ecore_Idle_Enterer *_idle_after = NULL;
 static Ecore_Event_Handler *mod_init_end = NULL;
 
 /* external variables */
-EAPI Eina_Bool e_precache_end = EINA_FALSE;
-EAPI Eina_Bool x_fatal = EINA_FALSE;
-EAPI Eina_Bool good = EINA_FALSE;
-EAPI Eina_Bool evil = EINA_FALSE;
-EAPI Eina_Bool starting = EINA_TRUE;
-EAPI Eina_Bool stopping = EINA_FALSE;
-EAPI Eina_Bool restart = EINA_FALSE;
-EAPI Eina_Bool e_nopause = EINA_FALSE;
+E_API Eina_Bool e_precache_end = EINA_FALSE;
+E_API Eina_Bool x_fatal = EINA_FALSE;
+E_API Eina_Bool good = EINA_FALSE;
+E_API Eina_Bool evil = EINA_FALSE;
+E_API Eina_Bool starting = EINA_TRUE;
+E_API Eina_Bool stopping = EINA_FALSE;
+E_API Eina_Bool restart = EINA_FALSE;
+E_API Eina_Bool e_nopause = EINA_FALSE;
 EINTERN const char *e_first_frame = NULL;
 EINTERN double e_first_frame_start_time = -1;
 
@@ -427,7 +433,7 @@ main(int argc, char **argv)
      e_util_env_set("DESKTOP_STARTUP_ID", NULL);
    e_util_env_set("E_RESTART_OK", NULL);
    e_util_env_set("PANTS", "ON");
-   e_util_env_set("DESKTOP", "Enlightenment-0.17.0");
+   e_util_env_set("DESKTOP", "Enlightenment");
    TS("Environment Variables Done");
 
    TS("Parse Arguments");
@@ -463,10 +469,10 @@ main(int argc, char **argv)
    _e_main_shutdown_push(ecore_shutdown);
 
    e_first_frame = getenv("E_FIRST_FRAME");
-   if (e_first_frame && (!e_first_frame[0]))
-     e_first_frame = NULL;
-   else
+   if (e_first_frame && e_first_frame[0])
      e_first_frame_start_time = ecore_time_get();
+   else
+     e_first_frame = NULL;
 
    TS("EIO Init");
    if (!eio_init())
@@ -553,6 +559,8 @@ main(int argc, char **argv)
         e_error_message_show(_("Enlightenment cannot initialize Elementary!\n"));
         _e_main_shutdown(-1);
      }
+   if (!eina_streq(elm_theme_get(NULL), "default"))
+     elm_theme_extension_add(NULL, "default");
    TS("Elementary Init Done");
    //_e_main_shutdown_push(elm_shutdown);
 
@@ -632,9 +640,18 @@ main(int argc, char **argv)
    _e_main_shutdown_push(e_alert_shutdown);
 #endif
 
-   TS("E_Configure Init");
-   e_configure_init();
-   TS("E_Configure Init Done");
+#if 0
+//#ifdef HAVE_WAYLAND
+   /* init uuid store for window/surface properties */
+   TS("E_UUID_Store Init");
+   if (!e_uuid_store_init())
+     {
+        e_error_message_show(_("Enlightenment cannot initialize its UUID store.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_UUID_Store Init Done");
+   _e_main_shutdown_push(e_uuid_store_shutdown);
+#endif
 
    TS("E Directories Init");
    /* setup directories we will be using for configurations storage etc. */
@@ -755,6 +772,10 @@ main(int argc, char **argv)
    TS("E_Intl Post Init Done");
    _e_main_shutdown_push(e_intl_post_shutdown);
 
+   TS("E_Configure Init");
+   e_configure_init();
+   TS("E_Configure Init Done");
+
    e_screensaver_preinit();
 
    if (e_config->show_splash)
@@ -808,7 +829,6 @@ main(int argc, char **argv)
      }
    TS("Screens Init Done");
    _e_main_shutdown_push(_e_main_screens_shutdown);
-   e_screensaver_force_update();
 
    TS("E_Pointer Init");
    if (!e_pointer_init())
@@ -988,17 +1008,6 @@ main(int argc, char **argv)
    _e_main_shutdown_push(e_remember_shutdown);
 
    if (e_config->show_splash)
-     e_init_status_set(_("Setup Color Classes"));
-   TS("E_Color_Class Init");
-   if (!e_color_class_init())
-     {
-        e_error_message_show(_("Enlightenment cannot set up its color class system.\n"));
-        _e_main_shutdown(-1);
-     }
-   TS("E_Color_Class Init Done");
-   _e_main_shutdown_push(e_color_class_shutdown);
-
-   if (e_config->show_splash)
      e_init_status_set(_("Setup Gadcon"));
    TS("E_Gadcon Init");
    if (!e_gadcon_init())
@@ -1103,9 +1112,15 @@ main(int argc, char **argv)
    TS("E_Order Init Done");
    _e_main_shutdown_push(e_order_shutdown);
 
+<<<<<<< HEAD
    TS("E_Manager Keys Grab");
    e_managers_keys_grab();
    TS("E_Manager Keys Grab Done");
+=======
+   TS("E_Comp_Canvas Keys Grab");
+   e_comp_canvas_keys_grab();
+   TS("E_Comp_Canvas Keys Grab Done");
+>>>>>>> upstream
 
    if (e_config->show_splash)
      e_init_status_set(_("Load Modules"));
@@ -1470,7 +1485,7 @@ main(int argc, char **argv)
    return 0;
 }
 
-EAPI double
+E_API double
 e_main_ts(const char *str)
 {
    double ret;
@@ -1578,6 +1593,12 @@ _e_main_parse_arguments(int argc, char **argv)
           locked = EINA_TRUE;
         else if (!strcmp(argv[i], "-nopause"))
           e_nopause = EINA_TRUE;
+        else if ((!strcmp(argv[i], "-version")) ||
+                 (!strcmp(argv[i], "--version")))
+          {
+             printf(_("Version: %s\n"), PACKAGE_VERSION);
+             _e_main_shutdown(-1);
+          }
         else if ((!strcmp(argv[i], "-h")) ||
                  (!strcmp(argv[i], "-help")) ||
                  (!strcmp(argv[i], "--help")))
@@ -1606,6 +1627,7 @@ _e_main_parse_arguments(int argc, char **argv)
                  "\t\tStart with desklock on, so password will be asked.\n"
                  "\t-i-really-know-what-i-am-doing-and-accept-full-responsibility-for-it\n"
                  "\t\tIf you need this help, you don't need this option.\n"
+                 "\t-version\n"
                  )
                );
              _e_main_shutdown(-1);
@@ -1648,7 +1670,7 @@ _e_main_parse_arguments(int argc, char **argv)
 }
 
 EINTERN void
-_e_main_cb_x_fatal(void *data __UNUSED__)
+_e_main_cb_x_fatal(void *data EINA_UNUSED)
 {
    e_error_message_show("Lost X Connection.\n");
    ecore_main_loop_quit();
@@ -1660,7 +1682,7 @@ _e_main_cb_x_fatal(void *data __UNUSED__)
 }
 
 static Eina_Bool
-_e_main_cb_signal_exit(void *data __UNUSED__, int ev_type __UNUSED__, void *ev __UNUSED__)
+_e_main_cb_signal_exit(void *data EINA_UNUSED, int ev_type EINA_UNUSED, void *ev EINA_UNUSED)
 {
    /* called on ctrl-c, kill (pid) (also SIGINT, SIGTERM and SIGQIT) */
    e_sys_action_do(E_SYS_EXIT, NULL);
@@ -1668,14 +1690,14 @@ _e_main_cb_signal_exit(void *data __UNUSED__, int ev_type __UNUSED__, void *ev _
 }
 
 static Eina_Bool
-_e_main_cb_signal_hup(void *data __UNUSED__, int ev_type __UNUSED__, void *ev __UNUSED__)
+_e_main_cb_signal_hup(void *data EINA_UNUSED, int ev_type EINA_UNUSED, void *ev EINA_UNUSED)
 {
    e_sys_action_do(E_SYS_RESTART, NULL);
    return ECORE_CALLBACK_RENEW;
 }
 
 static Eina_Bool
-_e_main_cb_signal_user(void *data __UNUSED__, int ev_type __UNUSED__, void *ev)
+_e_main_cb_signal_user(void *data EINA_UNUSED, int ev_type EINA_UNUSED, void *ev)
 {
    Ecore_Event_Signal_User *e = ev;
 
@@ -1962,9 +1984,6 @@ _e_main_test_formats(void)
 static int
 _e_main_screens_init(void)
 {
-   TS("\tscreens: manager");
-   if (!e_manager_init()) return 0;
-
    TS("\tscreens: client");
    if (!e_client_init()) return 0;
 #ifndef ENABLE_QUICK_INIT
@@ -2020,7 +2039,6 @@ _e_main_screens_shutdown(void)
 
    e_desk_shutdown();
    e_zone_shutdown();
-   e_manager_shutdown();
    return 1;
 }
 
@@ -2033,7 +2051,7 @@ _e_main_desk_save(void)
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        snprintf(name, sizeof(name), "DESK_%d_%d", e_comp->num, zone->num);
+        snprintf(name, sizeof(name), "DESK_%d_%d", 0, zone->num);
         snprintf(env, sizeof(env), "%d,%d", zone->desk_x_current, zone->desk_y_current);
         e_util_env_set(name, env);
      }
@@ -2044,7 +2062,12 @@ _e_main_desk_restore(void)
 {
    const Eina_List *l;
    E_Zone *zone;
+<<<<<<< HEAD
    const char *env;
+=======
+   E_Client *ec;
+   char *env;
+>>>>>>> upstream
    char name[1024];
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
@@ -2053,7 +2076,7 @@ _e_main_desk_restore(void)
         int desk_x, desk_y;
         char buf_e[64];
 
-        snprintf(name, sizeof(name), "DESK_%d_%d", e_comp->num, zone->num);
+        snprintf(name, sizeof(name), "DESK_%d_%d", 0, zone->num);
         env = getenv(name);
         if (!env) continue;
         snprintf(buf_e, sizeof(buf_e), "%s", env);
@@ -2062,6 +2085,13 @@ _e_main_desk_restore(void)
         if (!desk) continue;
         e_desk_show(desk);
      }
+
+   E_CLIENT_REVERSE_FOREACH(ec)
+     if ((!e_client_util_ignored_get(ec)) && e_client_util_desk_visible(ec, e_desk_current_get(ec->zone)))
+       {
+          ec->want_focus = ec->take_focus = 1;
+          break;
+       }
 }
 
 static void
@@ -2140,7 +2170,7 @@ _e_main_modules_load(Eina_Bool safe_mode)
 }
 
 static Eina_Bool
-_e_main_cb_idle_before(void *data __UNUSED__)
+_e_main_cb_idle_before(void *data EINA_UNUSED)
 {
    e_menu_idler_before();
    e_client_idler_before();
@@ -2150,7 +2180,7 @@ _e_main_cb_idle_before(void *data __UNUSED__)
 }
 
 static Eina_Bool
-_e_main_cb_idle_after(void *data __UNUSED__)
+_e_main_cb_idle_after(void *data EINA_UNUSED)
 {
    static int first_idle = 1;
 
@@ -2177,7 +2207,11 @@ _e_main_cb_idle_after(void *data __UNUSED__)
 }
 
 static Eina_Bool
+<<<<<<< HEAD
 _e_main_cb_startup_fake_end(void *data __UNUSED__)
+=======
+_e_main_cb_startup_fake_end(void *data EINA_UNUSED)
+>>>>>>> upstream
 {
    e_init_hide();
    return ECORE_CALLBACK_CANCEL;

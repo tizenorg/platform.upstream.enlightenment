@@ -4,9 +4,9 @@ EINTERN char *e_ipc_socket = NULL;
 
 #ifdef USE_IPC
 /* local subsystem functions */
-static Eina_Bool _e_ipc_cb_client_add(void *data __UNUSED__, int type __UNUSED__, void *event);
-static Eina_Bool _e_ipc_cb_client_del(void *data __UNUSED__, int type __UNUSED__, void *event);
-static Eina_Bool _e_ipc_cb_client_data(void *data __UNUSED__, int type __UNUSED__, void *event);
+static Eina_Bool _e_ipc_cb_client_add(void *data EINA_UNUSED, int type EINA_UNUSED, void *event);
+static Eina_Bool _e_ipc_cb_client_del(void *data EINA_UNUSED, int type EINA_UNUSED, void *event);
+static Eina_Bool _e_ipc_cb_client_data(void *data EINA_UNUSED, int type EINA_UNUSED, void *event);
 
 /* local subsystem globals */
 static Ecore_Ipc_Server *_e_ipc_server = NULL;
@@ -17,7 +17,7 @@ EINTERN int
 e_ipc_init(void)
 {
    char buf[4096], buf2[128], buf3[4096];
-   char *tmp, *user, *disp, *base;
+   char *tmp, *user, *disp, *disp2, *base;
    int pid, trynum = 0, id1 = 0;
    struct stat st;
 
@@ -73,6 +73,12 @@ e_ipc_init(void)
 
    disp = getenv("DISPLAY");
    if (!disp) disp = ":0";
+   else
+     {
+        /* $DISPLAY may be a path (e.g. Xquartz), keep the basename. */
+        disp2 = strrchr(disp, '/');
+        if (disp2) disp = disp2 + 1;
+     }
 
    e_util_env_set("E_IPC_SOCKET", "");
 
@@ -143,7 +149,7 @@ e_ipc_shutdown(void)
 #ifdef USE_IPC
 /* local subsystem globals */
 static Eina_Bool
-_e_ipc_cb_client_add(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_ipc_cb_client_add(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Ipc_Event_Client_Add *e;
 
@@ -154,7 +160,7 @@ _e_ipc_cb_client_add(void *data __UNUSED__, int type __UNUSED__, void *event)
 }
 
 static Eina_Bool
-_e_ipc_cb_client_del(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_ipc_cb_client_del(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Ipc_Event_Client_Del *e;
 
@@ -169,7 +175,7 @@ _e_ipc_cb_client_del(void *data __UNUSED__, int type __UNUSED__, void *event)
 }
 
 static Eina_Bool
-_e_ipc_cb_client_data(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_ipc_cb_client_data(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Ipc_Event_Client_Data *e;
 
@@ -190,24 +196,15 @@ _e_ipc_cb_client_data(void *data __UNUSED__, int type __UNUSED__, void *event)
 
               if (e_ipc_codec_2str_dec(e->data, e->size, &req))
                 {
-                   Eina_List *m = e_manager_list();
                    int len, ok = 0;
                    void *d;
 
-                   if (m)
+                   E_Action *act = e_action_find(req->str1);
+
+                   if ((act) && (act->func.go))
                      {
-                        E_Manager *man = eina_list_data_get(m);
-
-                        if (man)
-                          {
-                             E_Action *act = e_action_find(req->str1);
-
-                             if ((act) && (act->func.go))
-                               {
-                                  act->func.go(E_OBJECT(man), req->str2);
-                                  ok = 1;
-                               }
-                          }
+                        act->func.go(E_OBJECT(e_comp), req->str2);
+                        ok = 1;
                      }
 
                    d = e_ipc_codec_int_enc(ok, &len);

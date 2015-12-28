@@ -156,7 +156,7 @@ _backlight_win_key_down_cb(void *data, Ecore_Event_Key *ev)
 }
 
 static void
-_backlight_settings_cb(void *d1, void *d2 __UNUSED__)
+_backlight_settings_cb(void *d1, void *d2 EINA_UNUSED)
 {
    Instance *inst = d1;
    e_configure_registry_call("screen/power_management", NULL, NULL);
@@ -164,7 +164,7 @@ _backlight_settings_cb(void *d1, void *d2 __UNUSED__)
 }
 
 static void
-_slider_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_slider_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Instance *inst = data;
    _backlight_level_set(inst, inst->val, EINA_FALSE);
@@ -190,17 +190,16 @@ _backlight_popup_new(Instance *inst)
    
    if (inst->popup) return;
 
-   e_backlight_update();
    e_backlight_mode_set(inst->gcc->gadcon->zone, E_BACKLIGHT_MODE_NORMAL);
    inst->val = e_backlight_level_get(inst->gcc->gadcon->zone);
    _backlight_gadget_update(inst);
    
    inst->popup = e_gadcon_popup_new(inst->gcc, 0);
-   evas = e_comp_get(inst->popup)->evas;
+   evas = e_comp->evas;
    
    inst->o_table = e_widget_table_add(e_win_evas_win_get(evas), 0);
 
-   o = e_widget_slider_add(evas, 0, 0, NULL, 0.1, 1.0, 0.05, 0, &(inst->val), NULL, 100);
+   o = e_widget_slider_add(evas, 0, 0, NULL, 0.05, 1.0, 0.05, 0, &(inst->val), NULL, 100);
    evas_object_smart_callback_add(o, "changed", _slider_cb, inst);
    inst->o_slider = o;
    e_widget_table_object_align_append(inst->o_table, o, 
@@ -226,7 +225,7 @@ _backlight_popup_free(Instance *inst)
 }
 
 static void
-_backlight_menu_cb_cfg(void *data, E_Menu *menu __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_backlight_menu_cb_cfg(void *data, E_Menu *menu EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    Instance *inst = data;
 
@@ -235,7 +234,7 @@ _backlight_menu_cb_cfg(void *data, E_Menu *menu __UNUSED__, E_Menu_Item *mi __UN
 }
 
 static void
-_backlight_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSED__, void *event)
+_backlight_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    Instance *inst = data;
    Evas_Event_Mouse_Down *ev = event;
@@ -252,7 +251,7 @@ _backlight_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __U
         E_Menu_Item *mi;
         int x, y;
         
-        zone = e_util_zone_current_get(e_manager_current_get());
+        zone = e_zone_current_get();
         
         m = e_menu_new();
         
@@ -272,7 +271,7 @@ _backlight_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __U
 }
 
 static void
-_backlight_cb_mouse_wheel(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSED__, void *event)
+_backlight_cb_mouse_wheel(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    Evas_Event_Mouse_Wheel *ev = event;
    Instance *inst = data;
@@ -304,7 +303,6 @@ _gc_init(E_Gadcon *gc, const char *name, const char *id, const char *style)
    inst->gcc = gcc;
    inst->o_backlight = o;
 
-   e_backlight_update();
    inst->val = e_backlight_level_get(inst->gcc->gadcon->zone);
    _backlight_gadget_update(inst);
    
@@ -334,7 +332,7 @@ _gc_shutdown(E_Gadcon_Client *gcc)
 }
 
 static void
-_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient __UNUSED__)
+_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient EINA_UNUSED)
 {
    Instance *inst;
    Evas_Coord mw, mh;
@@ -351,13 +349,13 @@ _gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient __UNUSED__)
 }
 
 static const char *
-_gc_label(const E_Gadcon_Client_Class *client_class __UNUSED__)
+_gc_label(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    return _("Backlight");
 }
 
 static Evas_Object *
-_gc_icon(const E_Gadcon_Client_Class *client_class __UNUSED__, Evas *evas)
+_gc_icon(const E_Gadcon_Client_Class *client_class EINA_UNUSED, Evas *evas)
 {
    Evas_Object *o;
    char buf[4096];
@@ -412,7 +410,7 @@ _backlight_popup_timer_new(Instance *inst)
 }
 
 static void
-_e_mod_action_cb(E_Object *obj __UNUSED__,
+_e_mod_action_cb(E_Object *obj EINA_UNUSED,
                  const char *params)
 {
    Eina_List *l;
@@ -439,7 +437,6 @@ _backlight_cb_mod_init_end(void *d EINA_UNUSED, int type EINA_UNUSED, void *ev E
    Eina_List *l;
    Instance *inst;
 
-   e_backlight_update();
    EINA_LIST_FOREACH(backlight_instances, l, inst)
      {
         inst->val = e_backlight_level_get(inst->gcc->gadcon->zone);
@@ -463,13 +460,13 @@ _backlight_cb_changed(void *d EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_U
 }
 
 /* module setup */
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION,
      "Backlight"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    backlight_module = m;
@@ -486,8 +483,8 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    if (act)
      {
@@ -500,8 +497,8 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    return 1;
 }
 
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    return 1;
 }

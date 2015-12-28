@@ -11,22 +11,37 @@ typedef struct _E_Widget_Desk_Data E_Widget_Desk_Data;
 struct _E_Widget_Desk_Data
 {
    Evas_Object         *icon, *thumb, *live;
-   int                  zone, manager, x, y;
+   int                  zone, x, y;
    Ecore_Event_Handler *bg_upd_hdl;
    Ecore_Job           *resize_job;
    Eina_Bool            configurable : 1;
 };
 
 /* local function prototypes */
-static void      _e_wid_data_del(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__);
-static void      _e_wid_livethumb_resize(void *data, Evas *e __UNUSED__, Evas_Object *obj EINA_UNUSED, void *event_info __UNUSED__);
+static void      _e_wid_data_del(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED);
+static void      _e_wid_livethumb_resize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED);
 static void      _e_wid_del_hook(Evas_Object *obj);
 static void      _e_wid_reconfigure(E_Widget_Data *wd);
 static void      _e_wid_desk_cb_config(void *data, Evas *evas, Evas_Object *obj, void *event);
 static void      _e_wid_cb_resize(void *data, Evas *evas, Evas_Object *obj, void *event);
 static Eina_Bool _e_wid_cb_bg_update(void *data, int type, void *event);
 
-EAPI Evas_Object *
+static void
+_bgpreview_viewport_update(Evas_Object *o, const E_Zone *zone, int x, int y)
+{
+   Edje_Message_Float_Set *msg;
+
+   msg = alloca(sizeof(Edje_Message_Float_Set) + (4 * sizeof(double)));
+   msg->count = 5;
+   msg->val[0] = 0.2 * (!!e_config->desk_flip_animate_mode);//e_config->desk_flip_animate_time;
+   msg->val[1] = x;
+   msg->val[2] = zone->desk_x_count;
+   msg->val[3] = y;
+   msg->val[4] = zone->desk_y_count;
+   edje_object_message_send(o, EDJE_MESSAGE_FLOAT_SET, 0, msg);
+}
+
+E_API Evas_Object *
 e_widget_bgpreview_add(Evas *evas, int nx, int ny)
 {
    Evas_Object *obj;
@@ -54,7 +69,7 @@ e_widget_bgpreview_add(Evas *evas, int nx, int ny)
    return obj;
 }
 
-EAPI void
+E_API void
 e_widget_bgpreview_num_desks_set(Evas_Object *obj, int nx, int ny)
 {
    E_Widget_Data *wd;
@@ -65,16 +80,15 @@ e_widget_bgpreview_num_desks_set(Evas_Object *obj, int nx, int ny)
    _e_wid_reconfigure(wd);
 }
 
-EAPI Evas_Object *
+E_API Evas_Object *
 e_widget_bgpreview_desk_add(Evas *e, E_Zone *zone, int x, int y)
 {
    E_Widget_Desk_Data *dd;
    const char *bgfile;
 
-   bgfile = e_bg_file_get(zone->comp->num, zone->num, x, y);
+   bgfile = e_bg_file_get(zone->num, x, y);
 
    dd = E_NEW(E_Widget_Desk_Data, 1);
-   dd->manager = zone->comp->num;
    dd->zone = zone->num;
    dd->x = x;
    dd->y = y;
@@ -83,6 +97,7 @@ e_widget_bgpreview_desk_add(Evas *e, E_Zone *zone, int x, int y)
 
    dd->thumb = edje_object_add(e_livethumb_evas_get(dd->live));
    edje_object_file_set(dd->thumb, bgfile, "e/desktop/background");
+   _bgpreview_viewport_update(dd->thumb, zone, x, y);
    e_livethumb_thumb_set(dd->live, dd->thumb);
    evas_object_show(dd->thumb);
    eina_stringshare_del(bgfile);
@@ -97,7 +112,7 @@ e_widget_bgpreview_desk_add(Evas *e, E_Zone *zone, int x, int y)
    return dd->live;
 }
 
-EAPI void
+E_API void
 e_widget_bgpreview_desk_configurable_set(Evas_Object *obj, Eina_Bool enable)
 {
    E_Widget_Desk_Data *dd;
@@ -147,7 +162,7 @@ _e_wid_livethumb_resize_job(void *data)
 }
 
 static void
-_e_wid_livethumb_resize(void *data, Evas *e __UNUSED__, Evas_Object *obj EINA_UNUSED, void *event_info __UNUSED__)
+_e_wid_livethumb_resize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Widget_Desk_Data *dd = data;
 
@@ -156,7 +171,7 @@ _e_wid_livethumb_resize(void *data, Evas *e __UNUSED__, Evas_Object *obj EINA_UN
 }
 
 static void
-_e_wid_data_del(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_wid_data_del(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Widget_Desk_Data *dd;
    dd = data;
@@ -191,7 +206,7 @@ _e_wid_reconfigure(E_Widget_Data *wd)
    E_Widget_Desk_Data *dd;
    double zone_ratio, desk_ratio;
 
-   zone = e_util_zone_current_get(e_manager_current_get());
+   zone = e_zone_current_get();
 
    evas_object_geometry_get(wd->table, NULL, NULL, &tw, &th);
    if ((tw == 0) || (th == 0))
@@ -269,7 +284,7 @@ _e_wid_reconfigure(E_Widget_Data *wd)
 }
 
 static void
-_e_wid_desk_cb_config(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSED__, void *event)
+_e_wid_desk_cb_config(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    E_Widget_Desk_Data *dd;
    Evas_Event_Mouse_Down *ev;
@@ -280,14 +295,14 @@ _e_wid_desk_cb_config(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUS
      {
         char buff[256];
 
-        snprintf(buff, sizeof(buff), "%i %i %i %i",
-                 dd->manager, dd->zone, dd->x, dd->y);
+        snprintf(buff, sizeof(buff), "%i %i %i",
+                 dd->zone, dd->x, dd->y);
         e_configure_registry_call("internal/desk", NULL, buff);
      }
 }
 
 static void
-_e_wid_cb_resize(void *data __UNUSED__, Evas *evas __UNUSED__, Evas_Object *obj, void *event __UNUSED__)
+_e_wid_cb_resize(void *data EINA_UNUSED, Evas *evas EINA_UNUSED, Evas_Object *obj, void *event EINA_UNUSED)
 {
    E_Widget_Data *wd;
 
@@ -305,15 +320,17 @@ _e_wid_cb_bg_update(void *data, int type, void *event)
    if (!(dd = data)) return ECORE_CALLBACK_PASS_ON;
    ev = event;
 
-   if (((ev->manager < 0) || (dd->manager == ev->manager)) &&
-       ((ev->zone < 0) || (dd->zone == ev->zone)) &&
+   if (((ev->zone < 0) || (dd->zone == ev->zone)) &&
        ((ev->desk_x < 0) || (dd->x == ev->desk_x)) &&
        ((ev->desk_y < 0) || (dd->y == ev->desk_y)))
      {
+        E_Zone *zone;
         const char *bgfile;
 
-        bgfile = e_bg_file_get(dd->manager, dd->zone, dd->x, dd->y);
+        zone = e_comp_zone_number_get(dd->zone);
+        bgfile = e_bg_file_get(dd->zone, dd->x, dd->y);
         edje_object_file_set(dd->thumb, bgfile, "e/desktop/background");
+        if (zone) _bgpreview_viewport_update(dd->thumb, zone, dd->x, dd->y);
         eina_stringshare_del(bgfile);
      }
 

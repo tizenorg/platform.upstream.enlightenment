@@ -44,10 +44,6 @@ void *alloca(size_t);
 #undef E_TYPEDEFS
 #include "e_fm_op.h"
 
-#ifndef strdupa
-# define strdupa(str) strcpy(alloca(strlen(str) + 1), str)
-#endif
-
 #define READBUFSIZE     65536
 #define COPYBUFSIZE     16384
 #define REMOVECHUNKSIZE 4096
@@ -78,12 +74,12 @@ void *alloca(size_t);
 typedef struct _E_Fm_Op_Task      E_Fm_Op_Task;
 typedef struct _E_Fm_Op_Copy_Data E_Fm_Op_Copy_Data;
 
-static E_Fm_Op_Task *_e_fm_op_task_new();
+static E_Fm_Op_Task *_e_fm_op_task_new(void);
 static void          _e_fm_op_task_free(void *t);
 
 static void          _e_fm_op_remove_link_task(E_Fm_Op_Task *task);
 static Eina_Bool     _e_fm_op_stdin_data(void *data, Ecore_Fd_Handler *fd_handler);
-static void          _e_fm_op_set_up_idlers();
+static void          _e_fm_op_set_up_idlers(void);
 static void          _e_fm_op_delete_idler(int *mark);
 static int           _e_fm_op_idler_handle_error(int *mark, Eina_List **queue, Eina_List **node, E_Fm_Op_Task *task);
 
@@ -521,7 +517,7 @@ _e_fm_op_remove_link_task(E_Fm_Op_Task *task)
  * did not actually read enough data.
  */
 static Eina_Bool
-_e_fm_op_stdin_data(void *data __UNUSED__, Ecore_Fd_Handler *fd_handler)
+_e_fm_op_stdin_data(void *data EINA_UNUSED, Ecore_Fd_Handler *fd_handler)
 {
    int fd;
    static char *buf = NULL;
@@ -712,7 +708,7 @@ _e_fm_op_idler_handle_error(int *mark, Eina_List **queue, Eina_List **node, E_Fm
                   *node = NULL;
                   *mark = 0;
                   /* Do not clean out _e_fm_op_error_response. This way when another error
-                   * occures, it would be handled automatically. */
+                   * occurs, it would be handled automatically. */
                   return 1;
                }
           }
@@ -722,7 +718,7 @@ _e_fm_op_idler_handle_error(int *mark, Eina_List **queue, Eina_List **node, E_Fm
    return 0;
 }
 
-/* This works very simple. Take a task from queue and run appropriate _atom() on it.
+/* This works in a simple way. Take a task from queue and run appropriate _atom() on it.
  * If after _atom() is done, task->finished is 1 remove the task from queue. Otherwise,
  * run _atom() on the same task on next call.
  *
@@ -730,7 +726,7 @@ _e_fm_op_idler_handle_error(int *mark, Eina_List **queue, Eina_List **node, E_Fm
  * After this, just finish everything.
  */
 static Eina_Bool
-_e_fm_op_work_idler(void *data __UNUSED__)
+_e_fm_op_work_idler(void *data EINA_UNUSED)
 {
    /* E_Fm_Op_Task is marked static here because _e_fm_op_work_queue can be populated with another
     * tasks between calls. So it is possible when a part of file is copied and then
@@ -820,7 +816,7 @@ _e_fm_op_work_idler(void *data __UNUSED__)
  * for those files. And we don't have _e_fm_op_separator here.
  */
 Eina_Bool
-_e_fm_op_scan_idler(void *data __UNUSED__)
+_e_fm_op_scan_idler(void *data EINA_UNUSED)
 {
    static Eina_List *node = NULL;
    E_Fm_Op_Task *task = NULL;
@@ -1282,12 +1278,15 @@ static int
 _e_fm_op_copy_link(E_Fm_Op_Task *task)
 {
    char *lnk_path;
+   size_t lnk_len;
 
    lnk_path = ecore_file_readlink(task->src.name);
    if (!lnk_path)
      {
         _E_FM_OP_ERROR_SEND_WORK(task, E_FM_OP_ERROR, "Cannot read link '%s'.", task->src.name);
      }
+
+   lnk_len = strlen(lnk_path);
 
    E_FM_OP_DEBUG("Creating link from '%s' to '%s'\n", lnk_path, task->dst.name);
    _e_fm_op_update_progress_report_simple(0, lnk_path, task->dst.name);
@@ -1305,14 +1304,14 @@ _e_fm_op_copy_link(E_Fm_Op_Task *task)
                }
              if (symlink(lnk_path, task->dst.name) == -1)
                {
-                  buf = strdupa(lnk_path);
+                  buf = memcpy(alloca(lnk_len + 1), lnk_path, lnk_len + 1);
                   free(lnk_path);
                   _E_FM_OP_ERROR_SEND_WORK(task, E_FM_OP_ERROR, "Cannot create link from '%s' to '%s': %s.", buf, task->dst.name);
                }
           }
         else
           {
-             buf = strdupa(lnk_path);
+             buf = memcpy(alloca(lnk_len + 1), lnk_path, lnk_len + 1);
              free(lnk_path);
              _E_FM_OP_ERROR_SEND_WORK(task, E_FM_OP_ERROR, "Cannot create link from '%s' to '%s': %s.", buf, task->dst.name);
           }
@@ -1879,7 +1878,7 @@ _e_fm_op_make_copy_name(const char *abs, char *buf, size_t buf_size)
    file_len = strlen(buf);
 
    /* TODO: need to make a policy regarding copy postfix:
-    * currently attach " (copy)" continuasly
+    * currently attach " (copy)" continuously.
     *
     * TODO: i18n */
    copy_str = "(copy)";

@@ -57,6 +57,42 @@ id_find(const char *s, const char *names[])
 }
 
 static void
+icon_pixmap_deserialize(Eldbus_Message_Iter *variant, uint32_t **data, int *w, int *h)
+{
+   Eldbus_Message_Iter *iter, *struc;
+   int tmpw, tmph;
+
+   *data = NULL;
+   *w = *h = 0;
+   eldbus_message_iter_arguments_get(variant, "a(iiay)", &iter);
+   while (eldbus_message_iter_get_and_next(iter, 'r', &struc))
+     {
+        Eldbus_Message_Iter *imgdata;
+
+        if (eldbus_message_iter_arguments_get(struc, "iiay", &tmpw, &tmph, &imgdata))
+          {
+             uint32_t *img;
+             int len;
+
+             //only take this img if it has a higher resolution
+             if (tmpw > *w || tmph > *h)
+               {
+                  *w = tmpw;
+                  *h = tmph;
+                  if (eldbus_message_iter_fixed_array_get(imgdata, 'y', &img, &len))
+                    {
+                       unsigned int pos;
+
+                       *data = malloc(len * sizeof(int));
+                       for (pos = 0; pos < (unsigned int)len; pos++)
+                         (*data)[pos] = eina_swap32(img[pos]);
+                    }
+               }
+          }
+     }
+}
+
+static void
 item_prop_get(void *data, const void *key, Eldbus_Message_Iter *var)
 {
    Notifier_Item *item = data;
@@ -72,6 +108,16 @@ item_prop_get(void *data, const void *key, Eldbus_Message_Iter *var)
         const char *name;
         eldbus_message_iter_arguments_get(var, "s", &name);
         eina_stringshare_replace(&item->icon_name, name);
+     }
+   else if (!strcmp(key, "IconPixmap"))
+     {
+        free(item->imgdata);
+        icon_pixmap_deserialize(var, &item->imgdata, &item->imgw, &item->imgh);
+     }
+   else if (!strcmp(key, "AttentionIconPixmap"))
+     {
+        free(item->attnimgdata);
+        icon_pixmap_deserialize(var, &item->attnimgdata, &item->attnimgw, &item->attnimgh);
      }
    else if (!strcmp(key, "AttentionIconName"))
      {
@@ -191,12 +237,27 @@ basic_prop_get(const char *propname, void *data, const Eldbus_Message *msg)
 }
 
 static void
+attention_icon_pixmap_get_cb(void *data, const Eldbus_Message *msg, Eldbus_Pending *pending EINA_UNUSED)
+{
+   Notifier_Item *item = data;
+   Eldbus_Message_Iter *variant;
+
+   if (!eldbus_message_arguments_get(msg, "v", &variant)) return;
+   free(item->attnimgdata);
+   icon_pixmap_deserialize(variant, &item->attnimgdata, &item->attnimgw, &item->attnimgh);
+   systray_notifier_item_update(item);
+}
+
+static void
 attention_icon_get_cb(void *data, const Eldbus_Message *msg, Eldbus_Pending *pending EINA_UNUSED)
 {
    Notifier_Item *item = data;
    const char *propname = "AttentionIconName";
    basic_prop_get(propname, item, msg);
-   systray_notifier_item_update(item);
+   if ((!item->attention_icon_name) || (!item->attention_icon_name[0]))
+     eldbus_proxy_property_get(item->proxy, "AttentionIconPixmap", attention_icon_pixmap_get_cb, item);
+   else
+     systray_notifier_item_update(item);
 }
 
 static void
@@ -207,12 +268,27 @@ new_attention_icon_cb(void *data, const Eldbus_Message *msg EINA_UNUSED)
 }
 
 static void
+icon_pixmap_get_cb(void *data, const Eldbus_Message *msg, Eldbus_Pending *pending EINA_UNUSED)
+{
+   Notifier_Item *item = data;
+   Eldbus_Message_Iter *variant;
+
+   if (!eldbus_message_arguments_get(msg, "v", &variant)) return;
+   free(item->imgdata);
+   icon_pixmap_deserialize(variant, &item->imgdata, &item->imgw, &item->imgh);
+   systray_notifier_item_update(item);
+}
+
+static void
 icon_get_cb(void *data, const Eldbus_Message *msg, Eldbus_Pending *pending EINA_UNUSED)
 {
    Notifier_Item *item = data;
    const char *propname = "IconName";
    basic_prop_get(propname, item, msg);
-   systray_notifier_item_update(item);
+   if ((!item->icon_name) || (!item->icon_name[0]))
+     eldbus_proxy_property_get(item->proxy, "IconPixmap", icon_pixmap_get_cb, item);
+   else
+     systray_notifier_item_update(item);
 }
 
 static void
@@ -270,6 +346,7 @@ static void
 notifier_item_add(const char *path, const char *bus_id, Context_Notifier_Host *ctx)
 {
    Eldbus_Proxy *proxy;
+   Notifier_Item_Cache *nic;
    Notifier_Item *item = calloc(1, sizeof(Notifier_Item));
    Eldbus_Signal_Handler *s;
    EINA_SAFETY_ON_NULL_RETURN(item);
@@ -298,6 +375,11 @@ notifier_item_add(const char *path, const char *bus_id, Context_Notifier_Host *c
    item->signals = eina_list_append(item->signals, s);
    s = eldbus_proxy_signal_handler_add(proxy, "NewTitle", new_title_cb, item);
    item->signals = eina_list_append(item->signals, s);
+   if (eina_hash_find(systray_ctx_get()->config->items, bus_id)) return;
+   nic = malloc(sizeof(Notifier_Item_Cache));
+   nic->path = eina_stringshare_ref(path);
+   eina_hash_add(systray_ctx_get()->config->items, bus_id, nic);
+   e_config_save_queue();
 }
 
 static void
@@ -373,28 +455,26 @@ notifier_items_get_cb(void *data, const Eldbus_Message *msg, Eldbus_Pending *pen
 }
 
 static void
-item_registered_local_cb(void *data, const char *service)
+item_registered_local_cb(void *data, const char *bus, const char *path)
 {
-   const char *bus, *path;
    Context_Notifier_Host *ctx = data;
-   if (service_string_parse(service, &path, &bus))
-     notifier_item_add(path, bus, ctx);
+   notifier_item_add(eina_stringshare_add(path), eina_stringshare_add(bus), ctx);
 }
 
 static void
-item_unregistered_local_cb(void *data, const char *service)
+item_unregistered_local_cb(void *data, const char *bus, const char *path)
 {
-   const char *bus, *path;
    Context_Notifier_Host *ctx = data;
    Notifier_Item *item;
+   Eina_Stringshare *s, *p;
 
-   if (!service_string_parse(service, &path, &bus))
-     return;
-   item = notifier_item_find(path, bus, ctx);
+   s = eina_stringshare_add(bus);
+   p = eina_stringshare_add(path);
+   item = notifier_item_find(p, s, ctx);
    if (item)
      systray_notifier_item_free(item);
-   eina_stringshare_del(path);
-   eina_stringshare_del(bus);
+   eina_stringshare_del(s);
+   eina_stringshare_del(p);
 }
 
 static void

@@ -2,7 +2,7 @@
 
 #define E_TOK_STYLE ":style="
 
-static Eina_Bool          _font_hash_free_cb(const Eina_Hash *hash __UNUSED__, const void *key __UNUSED__, void *data, void *fdata __UNUSED__);
+static Eina_Bool          _font_hash_free_cb(const Eina_Hash *hash EINA_UNUSED, const void *key EINA_UNUSED, void *data, void *fdata EINA_UNUSED);
 static Eina_Hash         *_e_font_available_hash_add(Eina_Hash *font_hash, const char *full_name);
 static E_Font_Properties *_e_font_fontconfig_name_parse(Eina_Hash **font_hash, E_Font_Properties *efp, const char *font);
 static char _fn_buf[1024];
@@ -21,7 +21,7 @@ e_font_shutdown(void)
    return 1;
 }
 
-EAPI void
+E_API void
 e_font_apply(void)
 {
    char buf[1024];
@@ -77,18 +77,15 @@ e_font_apply(void)
      e_client_frame_recalc(ec);
 }
 
-EAPI Eina_List *
+E_API Eina_List *
 e_font_available_list(void)
 {
    Eina_List *evas_fonts;
    Eina_List *e_fonts;
    Eina_List *l;
    const char *evas_font;
-   E_Comp *c;
 
-   c = e_util_comp_current_get();
-
-   evas_fonts = evas_font_available_list(c->evas);
+   evas_fonts = evas_font_available_list(e_comp->evas);
 
    e_fonts = NULL;
    EINA_LIST_FOREACH(evas_fonts, l, evas_font)
@@ -100,12 +97,12 @@ e_font_available_list(void)
         e_fonts = eina_list_append(e_fonts, efa);
      }
 
-   evas_font_available_list_free(c->evas, evas_fonts);
+   evas_font_available_list_free(e_comp->evas, evas_fonts);
 
    return e_fonts;
 }
 
-EAPI void
+E_API void
 e_font_available_list_free(Eina_List *available)
 {
    E_Font_Available *efa;
@@ -117,7 +114,7 @@ e_font_available_list_free(Eina_List *available)
      }
 }
 
-EAPI void
+E_API void
 e_font_properties_free(E_Font_Properties *efp)
 {
    const char *str;
@@ -131,7 +128,7 @@ e_font_properties_free(E_Font_Properties *efp)
 }
 
 static Eina_Bool
-_font_hash_free_cb(const Eina_Hash *hash __UNUSED__, const void *key __UNUSED__, void *data, void *fdata __UNUSED__)
+_font_hash_free_cb(const Eina_Hash *hash EINA_UNUSED, const void *key EINA_UNUSED, void *data, void *fdata EINA_UNUSED)
 {
    E_Font_Properties *efp;
 
@@ -140,14 +137,14 @@ _font_hash_free_cb(const Eina_Hash *hash __UNUSED__, const void *key __UNUSED__,
    return 1;
 }
 
-EAPI void
+E_API void
 e_font_available_hash_free(Eina_Hash *hash)
 {
    eina_hash_foreach(hash, _font_hash_free_cb, NULL);
    eina_hash_free(hash);
 }
 
-EAPI E_Font_Properties *
+E_API E_Font_Properties *
 e_font_fontconfig_name_parse(const char *font)
 {
    if (!font) return NULL;
@@ -162,7 +159,7 @@ _e_font_fontconfig_name_parse(Eina_Hash **font_hash, E_Font_Properties *efp, con
    s1 = strchr(font, ':');
    if (s1)
      {
-        char *s2, *name, *style;
+        char *s2, *name, *style, *temp;
         int len;
 
         len = s1 - font;
@@ -174,7 +171,13 @@ _e_font_fontconfig_name_parse(Eina_Hash **font_hash, E_Font_Properties *efp, con
         if (s2)
           {
              len = s2 - name;
+             temp = name;
              name = realloc(name, sizeof(char) * len + 1);
+             if (!name)
+               {
+                  free(temp);
+                  return NULL;
+               }
              memset(name, 0, sizeof(char) * len + 1);
              strncpy(name, font, len);
           }
@@ -235,7 +238,7 @@ _e_font_available_hash_add(Eina_Hash *font_hash, const char *full_name)
    return font_hash;
 }
 
-EAPI Eina_Hash *
+E_API Eina_Hash *
 e_font_available_list_parse(Eina_List *list)
 {
    Eina_Hash *font_hash;
@@ -266,7 +269,7 @@ e_font_available_list_parse(Eina_List *list)
    return font_hash;
 }
 
-EAPI const char *
+E_API const char *
 e_font_fontconfig_name_get(const char *name, const char *style)
 {
    char buf[256];
@@ -277,7 +280,7 @@ e_font_fontconfig_name_get(const char *name, const char *style)
    return eina_stringshare_add(buf);
 }
 
-EAPI void
+E_API void
 e_font_fallback_clear(void)
 {
    E_Font_Fallback *eff;
@@ -289,7 +292,7 @@ e_font_fallback_clear(void)
      }
 }
 
-EAPI void
+E_API void
 e_font_fallback_append(const char *font)
 {
    E_Font_Fallback *eff;
@@ -301,7 +304,7 @@ e_font_fallback_append(const char *font)
    e_config->font_fallbacks = eina_list_append(e_config->font_fallbacks, eff);
 }
 
-EAPI void
+E_API void
 e_font_fallback_prepend(const char *font)
 {
    E_Font_Fallback *eff;
@@ -313,7 +316,7 @@ e_font_fallback_prepend(const char *font)
    e_config->font_fallbacks = eina_list_prepend(e_config->font_fallbacks, eff);
 }
 
-EAPI void
+E_API void
 e_font_fallback_remove(const char *font)
 {
    Eina_List *next;
@@ -332,13 +335,13 @@ e_font_fallback_remove(const char *font)
      }
 }
 
-EAPI Eina_List *
+E_API Eina_List *
 e_font_fallback_list(void)
 {
    return e_config->font_fallbacks;
 }
 
-EAPI void
+E_API void
 e_font_default_set(const char *text_class, const char *font, Evas_Font_Size size)
 {
    E_Font_Default *efd;
@@ -373,7 +376,7 @@ e_font_default_set(const char *text_class, const char *font, Evas_Font_Size size
 /*
  * returns a pointer to the data, return null if nothing if found.
  */
-EAPI E_Font_Default *
+E_API E_Font_Default *
 e_font_default_get(const char *text_class)
 {
    E_Font_Default *efd = NULL, *defd = NULL;
@@ -397,7 +400,7 @@ e_font_default_get(const char *text_class)
    return defd;
 }
 
-EAPI void
+E_API void
 e_font_default_remove(const char *text_class)
 {
    E_Font_Default *efd;
@@ -419,7 +422,7 @@ e_font_default_remove(const char *text_class)
      }
 }
 
-EAPI Eina_List *
+E_API Eina_List *
 e_font_default_list(void)
 {
    return e_config->font_defaults;
@@ -429,7 +432,7 @@ e_font_default_list(void)
  * in size_ret. This function is needed when all hell breaks loose and
  * we need a font name and size.
  */
-EAPI const char *
+E_API const char *
 e_font_default_string_get(const char *text_class, Evas_Font_Size *size_ret)
 {
    E_Font_Default *efd;

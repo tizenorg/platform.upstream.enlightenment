@@ -37,8 +37,8 @@ static void _temperature_face_cb_mouse_down(void *data, Evas *e, Evas_Object *ob
 
 static void _temperature_face_cb_menu_configure(void *data, E_Menu *m, E_Menu_Item *mi);
 
-static Eina_Bool _temperature_face_shutdown(const Eina_Hash *hash __UNUSED__, const void *key __UNUSED__, void *hdata, void *fdata __UNUSED__);
-static Eina_Bool _temperature_face_id_max(const Eina_Hash *hash __UNUSED__, const void *key, void *hdata __UNUSED__, void *fdata);
+static Eina_Bool _temperature_face_shutdown(const Eina_Hash *hash EINA_UNUSED, const void *key EINA_UNUSED, void *hdata, void *fdata EINA_UNUSED);
+static Eina_Bool _temperature_face_id_max(const Eina_Hash *hash EINA_UNUSED, const void *key, void *hdata EINA_UNUSED, void *fdata);
 
 static E_Config_DD *conf_edd = NULL;
 static E_Config_DD *conf_face_edd = NULL;
@@ -161,20 +161,20 @@ _gc_shutdown(E_Gadcon_Client *gcc)
 }
 
 static void
-_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient __UNUSED__)
+_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient EINA_UNUSED)
 {
    e_gadcon_client_aspect_set(gcc, 16, 16);
    e_gadcon_client_min_size_set(gcc, 16, 16);
 }
 
 static const char *
-_gc_label(const E_Gadcon_Client_Class *client_class __UNUSED__)
+_gc_label(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    return _("Temperature");
 }
 
 static Evas_Object *
-_gc_icon(const E_Gadcon_Client_Class *client_class __UNUSED__, Evas *evas)
+_gc_icon(const E_Gadcon_Client_Class *client_class EINA_UNUSED, Evas *evas)
 {
    Evas_Object *o;
    char buf[PATH_MAX];
@@ -187,7 +187,7 @@ _gc_icon(const E_Gadcon_Client_Class *client_class __UNUSED__, Evas *evas)
 }
 
 static const char *
-_gc_id_new(const E_Gadcon_Client_Class *client_class __UNUSED__)
+_gc_id_new(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    Config_Face *inst;
    char id[128];
@@ -212,7 +212,7 @@ _gc_id_new(const E_Gadcon_Client_Class *client_class __UNUSED__)
 }
 
 static void
-_temperature_face_cb_mouse_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
+_temperature_face_cb_mouse_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Config_Face *inst;
    Evas_Event_Mouse_Down *ev;
@@ -234,7 +234,7 @@ _temperature_face_cb_mouse_down(void *data, Evas *e __UNUSED__, Evas_Object *obj
         m = e_gadcon_client_util_menu_items_append(inst->gcc, m, 0);
 
         e_gadcon_canvas_zone_geometry_get(inst->gcc->gadcon, &cx, &cy, NULL, NULL);
-        e_menu_activate_mouse(m, e_util_zone_current_get(e_manager_current_get()),
+        e_menu_activate_mouse(m, e_zone_current_get(),
                               cx + ev->output.x, cy + ev->output.y, 1, 1,
                               E_MENU_POP_DIRECTION_AUTO, ev->timestamp);
         evas_event_feed_mouse_up(inst->gcc->gadcon->evas, ev->button,
@@ -254,7 +254,7 @@ _temperature_face_level_set(Config_Face *inst, double level)
 }
 
 static void
-_temperature_face_cb_menu_configure(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_temperature_face_cb_menu_configure(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    Config_Face *inst;
 
@@ -264,7 +264,7 @@ _temperature_face_cb_menu_configure(void *data, E_Menu *m __UNUSED__, E_Menu_Ite
 }
 
 static Eina_Bool
-_temperature_face_shutdown(const Eina_Hash *hash __UNUSED__, const void *key __UNUSED__, void *hdata, void *fdata __UNUSED__)
+_temperature_face_shutdown(const Eina_Hash *hash EINA_UNUSED, const void *key EINA_UNUSED, void *hdata, void *fdata EINA_UNUSED)
 {
    Config_Face *inst;
 
@@ -285,7 +285,7 @@ _temperature_face_shutdown(const Eina_Hash *hash __UNUSED__, const void *key __U
 }
 
 static Eina_Bool
-_temperature_face_id_max(const Eina_Hash *hash __UNUSED__, const void *key, void *hdata __UNUSED__, void *fdata)
+_temperature_face_id_max(const Eina_Hash *hash EINA_UNUSED, const void *key, void *hdata EINA_UNUSED, void *fdata)
 {
    const char *p;
    int *max;
@@ -326,10 +326,11 @@ temperature_face_update_config(Config_Face *inst)
 		      inst->sensor_type,
 		      (inst->sensor_name ? inst->sensor_name : "(null)"),
 		      inst->poll_interval);
-	     inst->tempget_exe = 
-	       ecore_exe_pipe_run(buf, ECORE_EXE_PIPE_READ | 
-				  ECORE_EXE_PIPE_READ_LINE_BUFFERED |
-				  ECORE_EXE_NOT_LEADER, inst);
+             inst->tempget_exe =
+               ecore_exe_pipe_run(buf, ECORE_EXE_PIPE_READ |
+                                  ECORE_EXE_PIPE_READ_LINE_BUFFERED |
+                                  ECORE_EXE_NOT_LEADER |
+                                  ECORE_EXE_TERM_WITH_PARENT, inst);
 	  }
      }
    else if (inst->backend == UDEV)
@@ -354,10 +355,11 @@ temperature_face_update_config(Config_Face *inst)
 		 inst->sensor_type,
 		 (inst->sensor_name ? inst->sensor_name : "(null)"),
 		 inst->poll_interval);
-	inst->tempget_exe = 
-	  ecore_exe_pipe_run(buf, ECORE_EXE_PIPE_READ | 
-			     ECORE_EXE_PIPE_READ_LINE_BUFFERED |
-			     ECORE_EXE_NOT_LEADER, inst);
+        inst->tempget_exe =
+          ecore_exe_pipe_run(buf, ECORE_EXE_PIPE_READ |
+                             ECORE_EXE_PIPE_READ_LINE_BUFFERED |
+                             ECORE_EXE_NOT_LEADER |
+                             ECORE_EXE_TERM_WITH_PARENT, inst);
      }
 #endif
 }
@@ -406,13 +408,13 @@ temperature_get_bus_files(const char *bus)
 }
 
 /* module setup */
-EAPI E_Module_Api e_modapi = 
+E_API E_Module_Api e_modapi = 
 {
    E_MODULE_API_VERSION,
      "Temperature"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    conf_face_edd = E_CONFIG_DD_NEW("Temperature_Config_Face", Config_Face);
@@ -449,8 +451,8 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    e_gadcon_provider_unregister(&_gadcon_class);
    if (temperature_config->faces)
@@ -463,8 +465,8 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    return 1;
 }
 
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    e_config_domain_save("module.temperature", conf_edd, temperature_config);
    return 1;

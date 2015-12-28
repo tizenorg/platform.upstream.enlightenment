@@ -25,7 +25,7 @@ static void _e_wid_focus_steal(void *data, Evas *e, Evas_Object *obj, void *even
 /* local subsystem functions */
 
 /* externally accessible functions */
-EAPI E_Radio_Group *
+E_API E_Radio_Group *
 e_widget_radio_group_new(int *val)
 {
    E_Radio_Group *group;
@@ -35,7 +35,7 @@ e_widget_radio_group_new(int *val)
    return group;
 }
 
-EAPI Evas_Object *
+E_API Evas_Object *
 e_widget_radio_add(Evas *evas, const char *label, int valnum, E_Radio_Group *group)
 {
    Evas_Object *obj, *o;
@@ -82,7 +82,7 @@ e_widget_radio_add(Evas *evas, const char *label, int valnum, E_Radio_Group *gro
    return obj;
 }
 
-EAPI Evas_Object *
+E_API Evas_Object *
 e_widget_radio_icon_add(Evas *evas, const char *label, const char *icon, int icon_w, int icon_h, int valnum, E_Radio_Group *group)
 {
    Evas_Object *obj, *o, *o2;
@@ -145,7 +145,7 @@ e_widget_radio_icon_add(Evas *evas, const char *label, const char *icon, int ico
    return obj;
 }
 
-EAPI void
+E_API void
 e_widget_radio_toggle_set(Evas_Object *obj, int toggle)
 {
    E_Widget_Data *wd;
@@ -267,14 +267,14 @@ _e_wid_disable_hook(Evas_Object *obj)
 }
 
 static void
-_e_wid_signal_cb1(void *data, Evas_Object *obj __UNUSED__, const char *emission __UNUSED__, const char *source __UNUSED__)
+_e_wid_signal_cb1(void *data, Evas_Object *obj EINA_UNUSED, const char *emission EINA_UNUSED, const char *source EINA_UNUSED)
 {
    _e_wid_do(data);
    e_widget_change(data);
 }
 
 static void
-_e_wid_focus_steal(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_wid_focus_steal(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    e_widget_focus_steal(data);
 }

@@ -35,7 +35,7 @@ static void         _add_edge_binding_cb(void *data, void *data2);
 static void         _modify_edge_binding_cb(void *data, void *data2);
 
 /********* Helper *************************/
-static char        *_edge_binding_text_get(E_Zone_Edge edge, float delay, int mod);
+static char        *_edge_binding_text_get(E_Zone_Edge edge, float delay, int mod, int drag_only);
 static void         _auto_apply_changes(E_Config_Dialog_Data *cfdata);
 static void         _find_edge_binding_action(const char *action, const char *params, int *g, int *a, int *n);
 
@@ -164,7 +164,7 @@ _create_data(E_Config_Dialog *cfd)
 }
 
 static void
-_free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_free_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    E_Config_Binding_Edge *bi;
 
@@ -185,7 +185,7 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static int
-_basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_basic_apply_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    const Eina_List *l;
    E_Zone *zone;
@@ -352,7 +352,7 @@ _fill_actions_list(E_Config_Dialog_Data *cfdata)
 /**************** Callbacks *********/
 
 static void
-_add_edge_binding_cb(void *data, void *data2 __UNUSED__)
+_add_edge_binding_cb(void *data, void *data2 EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -365,7 +365,7 @@ _add_edge_binding_cb(void *data, void *data2 __UNUSED__)
 }
 
 static void
-_modify_edge_binding_cb(void *data, void *data2 __UNUSED__)
+_modify_edge_binding_cb(void *data, void *data2 EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -423,7 +423,7 @@ _action_change_cb(void *data)
 }
 
 static void
-_delete_all_edge_binding_cb(void *data, void *data2 __UNUSED__)
+_delete_all_edge_binding_cb(void *data, void *data2 EINA_UNUSED)
 {
    E_Config_Binding_Edge *bi;
    E_Config_Dialog_Data *cfdata;
@@ -451,7 +451,7 @@ _delete_all_edge_binding_cb(void *data, void *data2 __UNUSED__)
 }
 
 static void
-_delete_edge_binding_cb(void *data, void *data2 __UNUSED__)
+_delete_edge_binding_cb(void *data, void *data2 EINA_UNUSED)
 {
    Eina_List *l = NULL;
    int sel, n;
@@ -499,7 +499,7 @@ _delete_edge_binding_cb(void *data, void *data2 __UNUSED__)
 }
 
 static void
-_restore_edge_binding_defaults_cb(void *data, void *data2 __UNUSED__)
+_restore_edge_binding_defaults_cb(void *data, void *data2 EINA_UNUSED)
 {
    E_Config_Bindings *ecb;
    Eina_Stringshare *prof;
@@ -765,7 +765,7 @@ _update_edge_binding_list(E_Config_Dialog_Data *cfdata)
 
         bi = l->data;
 
-        b = _edge_binding_text_get(bi->edge, bi->delay, bi->modifiers);
+        b = _edge_binding_text_get(bi->edge, bi->delay, bi->modifiers, bi->drag_only);
         if (!b) continue;
 
         ic = edje_object_add(cfdata->evas);
@@ -916,7 +916,7 @@ _edge_grab_wnd_show(E_Config_Dialog_Data *cfdata)
 
    e_dialog_content_set(cfdata->locals.dia, o, minw, minh);
 
-   bgfile = e_bg_file_get(0, 0, 0, 0);
+   bgfile = e_bg_file_get(0, 0, 0);
    obg = e_thumb_icon_add(evas);
    e_icon_fill_inside_set(obg, 0);
    e_thumb_icon_file_set(obg, bgfile, "e/desktop/background");
@@ -930,7 +930,7 @@ _edge_grab_wnd_show(E_Config_Dialog_Data *cfdata)
 
    if (cfdata->locals.edge)
      {
-        label = _edge_binding_text_get(cfdata->locals.edge, ((float)cfdata->locals.delay), cfdata->locals.modifiers);
+       label = _edge_binding_text_get(cfdata->locals.edge, ((float)cfdata->locals.delay), cfdata->locals.modifiers, cfdata->locals.drag_only);
         edje_object_part_text_set(cfdata->gui.o_selector, "e.text.selection", label);
         E_FREE(label);
      }
@@ -950,7 +950,7 @@ _edge_grab_wnd_hide(E_Config_Dialog_Data *cfdata)
 }
 
 static void
-_edge_grab_wnd_cb_apply(void *data, E_Dialog *dia __UNUSED__)
+_edge_grab_wnd_cb_apply(void *data, E_Dialog *dia EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -961,7 +961,7 @@ _edge_grab_wnd_cb_apply(void *data, E_Dialog *dia __UNUSED__)
 }
 
 static void
-_edge_grab_wnd_cb_close(void *data, E_Dialog *dia __UNUSED__)
+_edge_grab_wnd_cb_close(void *data, E_Dialog *dia EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -970,7 +970,7 @@ _edge_grab_wnd_cb_close(void *data, E_Dialog *dia __UNUSED__)
 }
 
 static void
-_edge_grab_wnd_slider_changed_cb(void *data, Evas_Object *obj __UNUSED__)
+_edge_grab_wnd_slider_changed_cb(void *data, Evas_Object *obj EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata = data;
    char *label = NULL;
@@ -978,13 +978,14 @@ _edge_grab_wnd_slider_changed_cb(void *data, Evas_Object *obj __UNUSED__)
    if (!cfdata->locals.edge) return;
    label = _edge_binding_text_get(cfdata->locals.edge,
                                   ((float)cfdata->locals.delay),
-                                  cfdata->locals.modifiers);
+                                  cfdata->locals.modifiers,
+                                  cfdata->locals.drag_only);
    edje_object_part_text_set(cfdata->gui.o_selector, "e.text.selection", label);
    E_FREE(label);
 }
 
 static void
-_edge_grab_wnd_check_changed_cb(void *data, Evas_Object *obj __UNUSED__)
+_edge_grab_wnd_check_changed_cb(void *data, Evas_Object *obj EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata = data;
    char *label = NULL;
@@ -992,12 +993,12 @@ _edge_grab_wnd_check_changed_cb(void *data, Evas_Object *obj __UNUSED__)
    if (cfdata->locals.click)
      {
         if (cfdata->locals.edge && cfdata->locals.button)
-          label = _edge_binding_text_get(cfdata->locals.edge, -1.0 * cfdata->locals.button, cfdata->locals.modifiers);
+          label = _edge_binding_text_get(cfdata->locals.edge, -1.0 * cfdata->locals.button, cfdata->locals.modifiers, cfdata->locals.drag_only);
      }
    else
      {
         if (cfdata->locals.edge)
-          label = _edge_binding_text_get(cfdata->locals.edge, ((float)cfdata->locals.delay), cfdata->locals.modifiers);
+          label = _edge_binding_text_get(cfdata->locals.edge, ((float)cfdata->locals.delay), cfdata->locals.modifiers, cfdata->locals.drag_only);
         e_widget_disabled_set(cfdata->gui.o_slider, 0);
      }
    e_widget_disabled_set(cfdata->gui.o_slider, cfdata->locals.click);
@@ -1009,7 +1010,7 @@ _edge_grab_wnd_check_changed_cb(void *data, Evas_Object *obj __UNUSED__)
 }
 
 static void
-_edge_grab_wnd_selected_edge_cb(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
+_edge_grab_wnd_selected_edge_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evas_Event_Mouse_Down *event;
    E_Config_Dialog_Data *cfdata;
@@ -1087,7 +1088,8 @@ stop:
 
    label = _edge_binding_text_get(cfdata->locals.edge,
                                   cfdata->locals.click ? (-1.0 * cfdata->locals.button) : ((float)cfdata->locals.delay),
-                                  cfdata->locals.modifiers);
+                                  cfdata->locals.modifiers,
+                                  cfdata->locals.drag_only);
    edje_object_part_text_set(cfdata->gui.o_selector, "e.text.selection", label);
    E_FREE(label);
 }
@@ -1204,7 +1206,7 @@ _edge_grab_wnd_selection_apply(E_Config_Dialog_Data *cfdata)
           {
              char *label;
 
-             label = _edge_binding_text_get(bi->edge, bi->delay, bi->modifiers);
+             label = _edge_binding_text_get(bi->edge, bi->delay, bi->modifiers, bi->drag_only);
              e_widget_ilist_nth_label_set(cfdata->gui.o_binding_list, n, label);
              free(label);
           }
@@ -1357,7 +1359,7 @@ _find_edge_binding_action(const char *action, const char *params, int *g, int *a
 }
 
 static char *
-_edge_binding_text_get(E_Zone_Edge edge, float delay, int mod)
+_edge_binding_text_get(E_Zone_Edge edge, float delay, int mod, int drag_only)
 {
    char b[256] = "";
 
@@ -1437,6 +1439,12 @@ _edge_binding_text_get(E_Zone_Edge edge, float delay, int mod)
         else
           snprintf(buf, 20, "%.2fs", delay);
         strcat(b, buf);
+     }
+
+   if (drag_only)
+     {
+        if (b[0]) strcat(b, " ");
+        strcat(b, _("(drag only)"));
      }
 
    if (!b[0]) return strdup(TEXT_NONE_ACTION_EDGE);

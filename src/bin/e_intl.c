@@ -133,7 +133,7 @@ e_intl_post_shutdown(void)
  * - Add support of compound locales i.e. (en_US;zh_CN;C) ==Defer==
  * - Add Configuration for to-be-set environment variables
  */
-EAPI void
+E_API void
 e_intl_language_set(const char *lang)
 {
    int set_envars;
@@ -253,19 +253,19 @@ e_intl_language_set(const char *lang)
      }
 }
 
-EAPI const char *
+E_API const char *
 e_intl_language_get(void)
 {
    return _e_intl_language;
 }
 
-EAPI const char *
+E_API const char *
 e_intl_language_alias_get(void)
 {
    return _e_intl_language_alias;
 }
 
-EAPI Eina_List *
+E_API Eina_List *
 e_intl_language_list(void)
 {
    Eina_List *next;
@@ -311,7 +311,7 @@ _e_intl_language_list_find(Eina_List *language_list, char *language)
    return 0;
 }
 
-EAPI void
+E_API void
 e_intl_input_method_set(const char *imc_path)
 {
    if (!imc_path)
@@ -365,7 +365,7 @@ e_intl_input_method_set(const char *imc_path)
      }
 }
 
-EAPI Eina_List *
+E_API Eina_List *
 e_intl_input_method_list(void)
 {
    Eina_List *input_methods;
@@ -410,7 +410,7 @@ e_intl_imc_system_path_get(void)
 }
 
 static Eina_Bool
-_e_intl_cb_exit(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_intl_cb_exit(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Exe_Event_Del *ev;
 
@@ -430,7 +430,7 @@ _e_intl_locale_hash_free(Eina_Hash *locale_hash)
 }
 
 static Eina_Bool
-_e_intl_locale_hash_free_cb(const Eina_Hash *hash __UNUSED__, const void *key __UNUSED__, void *data, void *fdata __UNUSED__)
+_e_intl_locale_hash_free_cb(const Eina_Hash *hash EINA_UNUSED, const void *key EINA_UNUSED, void *data, void *fdata EINA_UNUSED)
 {
    free(data);
    return 1;
@@ -536,7 +536,8 @@ _e_intl_locale_alias_get(const char *language)
 {
    Eina_Hash *alias_hash;
    char *alias;
-   char *lower_language;
+   char llbuf[256];
+   char *lower_language = llbuf;
 
    if ((!language) || (!strncmp(language, "POSIX", strlen("POSIX"))))
      return strdup("C");
@@ -545,9 +546,9 @@ _e_intl_locale_alias_get(const char *language)
    if (!alias_hash) /* No alias file available */
      return strdup(language);
 
-   lower_language = strdupa(language);
+   strncpy(lower_language, language, sizeof(lower_language) - 1);
+   lower_language[sizeof(lower_language) - 1] = '\0';
    eina_str_tolower(&lower_language);
-
    alias = eina_hash_find(alias_hash, lower_language);
 
    if (alias)
@@ -613,7 +614,7 @@ _e_intl_locale_alias_hash_get(void)
 /*
  * Not canonic, just gets the parts
  */
-EAPI E_Locale_Parts *
+E_API E_Locale_Parts *
 e_intl_locale_parts_get(const char *locale)
 {
    /* Parse Results */
@@ -756,7 +757,7 @@ e_intl_locale_parts_get(const char *locale)
    return locale_parts;
 }
 
-EAPI void
+E_API void
 e_intl_locale_parts_free(E_Locale_Parts *locale_parts)
 {
    if (locale_parts)
@@ -769,7 +770,7 @@ e_intl_locale_parts_free(E_Locale_Parts *locale_parts)
      }
 }
 
-EAPI char *
+E_API char *
 e_intl_locale_parts_combine(E_Locale_Parts *locale_parts, int mask)
 {
    int locale_size;
@@ -825,7 +826,7 @@ e_intl_locale_parts_combine(E_Locale_Parts *locale_parts, int mask)
    return locale;
 }
 
-EAPI char *
+E_API char *
 e_intl_locale_charset_canonic_get(const char *charset)
 {
    char charset_canonic[32];

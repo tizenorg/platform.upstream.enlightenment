@@ -5,8 +5,8 @@ static void         _free_data(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdat
 static int          _basic_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
 static int          _basic_check_changed(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata);
 static Evas_Object *_basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata);
-static void         _width_limits_changed(void *data, Evas_Object *obj __UNUSED__);
-static void         _height_limits_changed(void *data, Evas_Object *obj __UNUSED__);
+static void         _width_limits_changed(void *data, Evas_Object *obj EINA_UNUSED);
+static void         _height_limits_changed(void *data, Evas_Object *obj EINA_UNUSED);
 
 struct _E_Config_Dialog_Data
 {
@@ -36,7 +36,7 @@ struct _E_Config_Dialog_Data
 };
 
 E_Config_Dialog *
-e_int_config_winlist(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
+e_int_config_winlist(Evas_Object *parent EINA_UNUSED, const char *params EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -92,7 +92,7 @@ _fill_data(E_Config_Dialog_Data *cfdata)
 }
 
 static void *
-_create_data(E_Config_Dialog *cfd __UNUSED__)
+_create_data(E_Config_Dialog *cfd EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -103,13 +103,13 @@ _create_data(E_Config_Dialog *cfd __UNUSED__)
 }
 
 static void
-_free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_free_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    free(cfdata);
 }
 
 static int
-_basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_basic_apply(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
 #define DO(_e_config, _cfdata) \
   e_config->winlist_##_e_config = cfdata->_cfdata
@@ -143,7 +143,7 @@ _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static int
-_basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_basic_check_changed(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
 #define DO(_e_config, _cfdata) \
   if (e_config->winlist_##_e_config != cfdata->_cfdata) return 1;
@@ -175,7 +175,7 @@ _basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfda
 }
 
 static Evas_Object *
-_basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *otb, *ol, *ob, *iconified, *scroll_animate, *ck;
 
@@ -200,7 +200,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
    e_widget_check_widget_disable_on_unchecked_add(iconified, ob);
    e_widget_toolbook_page_append(otb, NULL, _("Display"), ol,
-                                 0, 0, 1, 0, 0.5, 0.0);
+                                 1, 0, 1, 0, 0.5, 0.0);
 
    ol = e_widget_list_add(evas, 0, 0);
    ob = e_widget_check_add(evas, _("Focus"), &(cfdata->focus));
@@ -228,7 +228,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    e_widget_check_widget_disable_on_checked_add(ob, ck);
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
    e_widget_toolbook_page_append(otb, NULL, _("Selecting"), ol,
-                                 0, 0, 1, 0, 0.5, 0.0);
+                                 1, 0, 1, 0, 0.5, 0.0);
 
    ol = e_widget_list_add(evas, 0, 0);
    scroll_animate = ob = e_widget_check_add(evas, _("Scroll Animation"),
@@ -242,7 +242,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    e_widget_check_widget_disable_on_unchecked_add(scroll_animate, ob);
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
    e_widget_toolbook_page_append(otb, NULL, _("Animations"), ol,
-                                 0, 0, 1, 0, 0.5, 0.0);
+                                 1, 0, 1, 0, 0.5, 0.0);
 
    ol = e_widget_list_add(evas, 0, 0);
    ob = e_widget_label_add(evas, _("Minimum width"));
@@ -272,7 +272,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    e_widget_on_change_hook_set(ob, _height_limits_changed, cfdata);
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
    e_widget_toolbook_page_append(otb, NULL, _("Geometry"), ol,
-                                 0, 0, 1, 0, 0.5, 0.0);
+                                 1, 0, 1, 0, 0.5, 0.0);
 
    ol = e_widget_list_add(evas, 0, 0);
    ob = e_widget_label_add(evas, _("Horizontal alignment"));
@@ -286,7 +286,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
                             &(cfdata->align_y), NULL, 100);
    e_widget_list_object_append(ol, ob, 1, 0, 0.0);
    e_widget_toolbook_page_append(otb, NULL, _("Alignment"), ol,
-                                 0, 0, 1, 0, 0.5, 0.0);
+                                 1, 0, 1, 0, 0.5, 0.0);
 
    e_widget_toolbook_page_show(otb, 0);
 
@@ -326,7 +326,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
 }
 
 static void
-_width_limits_changed(void *data, Evas_Object *obj __UNUSED__)
+_width_limits_changed(void *data, Evas_Object *obj EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata = data;
 
@@ -335,7 +335,7 @@ _width_limits_changed(void *data, Evas_Object *obj __UNUSED__)
 }
 
 static void
-_height_limits_changed(void *data, Evas_Object *obj __UNUSED__)
+_height_limits_changed(void *data, Evas_Object *obj EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata = data;
 

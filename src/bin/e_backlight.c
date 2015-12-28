@@ -2,6 +2,12 @@
 #ifdef HAVE_EEZE
 # include <Eeze.h>
 #endif
+#include <sys/param.h>
+#ifdef __FreeBSD_kernel__
+# include <sys/sysctl.h>
+# include <errno.h>
+# include <string.h>
+#endif
 
 // FIXME: backlight should be tied per zone but this implementation is just
 // a signleton right now as thats 99% of use cases. but api supports
@@ -18,14 +24,14 @@ static int sysmode = MODE_NONE;
 static Ecore_Animator *bl_anim = NULL;
 static Eina_List *bl_devs = NULL;
 
-static void      _e_backlight_update(E_Zone *zone);
-static void      _e_backlight_set(E_Zone *zone, double val);
+static void      _e_backlight_update(void);
+static void      _e_backlight_set(double val);
 static Eina_Bool _bl_anim(void *data, double pos);
 static Eina_Bool bl_avail = EINA_TRUE;
 #ifndef HAVE_WAYLAND_ONLY
 static Eina_Bool xbl_avail = EINA_FALSE;
 #endif
-#ifdef HAVE_EEZE
+#if defined(HAVE_EEZE) || defined(__FreeBSD_kernel__)
 static double bl_delayval = 1.0;
 static const char *bl_sysval = NULL;
 static Ecore_Event_Handler *bl_sys_exit_handler = NULL;
@@ -35,11 +41,16 @@ static Eina_Bool bl_sys_set_exe_ready = EINA_TRUE;
 
 static void      _bl_sys_find(void);
 static void      _bl_sys_level_get(void);
-static Eina_Bool _e_bl_cb_exit(void *data __UNUSED__, int type __UNUSED__, void *event);
+static Eina_Bool _e_bl_cb_exit(void *data EINA_UNUSED, int type EINA_UNUSED, void *event);
 static void      _bl_sys_level_set(double val);
 #endif
+#ifdef __FreeBSD_kernel__
+static const char *bl_acpi_sysctl = "hw.acpi.video.lcd0.brightness";
+static int bl_mib[CTL_MAXNAME];
+static int bl_mib_len = -1;
+#endif
 
-EAPI int E_EVENT_BACKLIGHT_CHANGE = -1;
+E_API int E_EVENT_BACKLIGHT_CHANGE = -1;
 
 EINTERN int
 e_backlight_init(void)
@@ -54,10 +65,7 @@ e_backlight_init(void)
 #endif
    e_backlight_update();
    if (!getenv("E_RESTART"))
-     {
-        e_backlight_level_set(NULL, 0.1, 0.0);
-        e_backlight_level_set(NULL, e_config->backlight.normal, 0.0);
-     }
+     e_backlight_level_set(NULL, e_config->backlight.normal, 0.0);
 
    E_EVENT_BACKLIGHT_CHANGE = ecore_event_type_new();
 
@@ -90,26 +98,22 @@ e_backlight_shutdown(void)
    return 1;
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_backlight_exists(void)
 {
    if (sysmode == MODE_NONE) return EINA_FALSE;
    return EINA_TRUE;
 }
 
-EAPI void
+E_API void
 e_backlight_update(void)
 {
-   const Eina_List *l;
-   E_Zone *zone;
-
    if (bl_avail == EINA_FALSE) return;
 
-   EINA_LIST_FOREACH(e_comp->zones, l, zone)
-     _e_backlight_update(zone);
+   _e_backlight_update();
 }
 
-EAPI void
+E_API void
 e_backlight_level_set(E_Zone *zone, double val, double tim)
 {
    double bl_now;
@@ -121,7 +125,7 @@ e_backlight_level_set(E_Zone *zone, double val, double tim)
    else if (val > 1.0)
      val = 1.0;
    if ((fabs(val - e_bl_val) < DBL_EPSILON) && (!bl_anim)) return;
-   if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
+   if (!zone) zone = e_zone_current_get();
    ecore_event_add(E_EVENT_BACKLIGHT_CHANGE, NULL, NULL, NULL);
    bl_now = e_bl_val;
 
@@ -130,7 +134,7 @@ e_backlight_level_set(E_Zone *zone, double val, double tim)
 
    if (fabs(tim) < DBL_EPSILON)
      {
-        _e_backlight_set(zone, val);
+        _e_backlight_set(val);
         e_backlight_update();
         return;
      }
@@ -147,14 +151,14 @@ e_backlight_level_set(E_Zone *zone, double val, double tim)
    bl_anim_toval = val;
 }
 
-EAPI double
-e_backlight_level_get(E_Zone *zone __UNUSED__)
+E_API double
+e_backlight_level_get(E_Zone *zone EINA_UNUSED)
 {
    // zone == NULL == everything
    return e_bl_val;
 }
 
-EAPI void
+E_API void
 e_backlight_mode_set(E_Zone *zone, E_Backlight_Mode mode)
 {
    E_Backlight_Mode pmode;
@@ -182,14 +186,14 @@ e_backlight_mode_set(E_Zone *zone, E_Backlight_Mode mode)
      e_backlight_level_set(zone, 1.0, -1.0);
 }
 
-EAPI E_Backlight_Mode
-e_backlight_mode_get(E_Zone *zone __UNUSED__)
+E_API E_Backlight_Mode
+e_backlight_mode_get(E_Zone *zone EINA_UNUSED)
 {
    // zone == NULL == everything
    return e_config->backlight.mode;
 }
 
-EAPI const Eina_List *
+E_API const Eina_List *
 e_backlight_devices_get(void)
 {
    return bl_devs;
@@ -198,7 +202,7 @@ e_backlight_devices_get(void)
 /* local subsystem functions */
 
 static void
-_e_backlight_update(E_Zone *zone)
+_e_backlight_update(void)
 {
 #ifdef _F_DISABLE_BACKLIGHT_MOD_SUPPORT
    /* MODE_SYS makes e possible to change nodes in /sys/class/leds.
@@ -215,7 +219,7 @@ _e_backlight_update(E_Zone *zone)
    Ecore_X_Randr_Output *out;
    int i, num = 0;
 
-   root = zone->comp->man->root;
+   root = e_comp->root;
    // try randr
    if (root && xbl_avail)
      {
@@ -252,14 +256,13 @@ _e_backlight_update(E_Zone *zone)
         sysmode = MODE_RANDR;
         return;
      }
-#else
-   (void)zone;
 #endif
-#ifdef HAVE_EEZE
+#if defined(HAVE_EEZE) || defined(__FreeBSD_kernel__)
    _bl_sys_find();
    if (bl_sysval)
      {
         sysmode = MODE_SYS;
+        xbl_avail = EINA_FALSE;
         _bl_sys_level_get();
         return;
      }
@@ -267,12 +270,11 @@ _e_backlight_update(E_Zone *zone)
 }
 
 static void
-_e_backlight_set(E_Zone *zone, double val)
+_e_backlight_set(double val)
 {
 #ifdef HAVE_WAYLAND_ONLY
    if (0)
      {
-        (void)zone;
         (void)val;
         return;
      }
@@ -285,7 +287,7 @@ _e_backlight_set(E_Zone *zone, double val)
         int num = 0, i;
         char *name;
 
-        root = zone->comp->man->root;
+        root = e_comp->root;
         out = ecore_x_randr_window_outputs_get(root, &num);
         if ((out) && (num > 0))
           {
@@ -315,7 +317,7 @@ _e_backlight_set(E_Zone *zone, double val)
         free(out);
      }
 #endif
-#ifdef HAVE_EEZE
+#if defined(HAVE_EEZE) || defined(__FreeBSD_kernel__)
    else if (sysmode == MODE_SYS)
      {
         if (bl_sysval)
@@ -327,15 +329,14 @@ _e_backlight_set(E_Zone *zone, double val)
 }
 
 static Eina_Bool
-_bl_anim(void *data, double pos)
+_bl_anim(void *data EINA_UNUSED, double pos)
 {
-   E_Zone *zone = data;
    double v;
 
    // FIXME: if zone is deleted while anim going... bad things.
    pos = ecore_animator_pos_map(pos, ECORE_POS_MAP_DECELERATE, 0.0, 0.0);
    v = (bl_animval * (1.0 - pos)) + (bl_anim_toval * pos);
-   _e_backlight_set(zone, v);
+   _e_backlight_set(v);
    if (pos >= 1.0)
      {
         bl_anim = NULL;
@@ -346,6 +347,17 @@ _bl_anim(void *data, double pos)
 }
 
 #ifdef HAVE_EEZE
+static void
+_bl_sys_change(const char *device, Eeze_Udev_Event event EINA_UNUSED, void *data EINA_UNUSED, Eeze_Udev_Watch *watch EINA_UNUSED)
+{
+   if (device == bl_sysval)
+     {
+        _bl_sys_level_get();
+        ecore_event_add(E_EVENT_BACKLIGHT_CHANGE, NULL, NULL, NULL);
+     }
+   eina_stringshare_del(device);
+}
+
 static void
 _bl_sys_find(void)
 {
@@ -430,6 +442,7 @@ _bl_sys_find(void)
      }
    /* clear out preferred devs list */
    E_FREE_LIST(pdevs, eina_stringshare_del);
+   eeze_udev_watch_add(EEZE_UDEV_TYPE_BACKLIGHT, EEZE_UDEV_EVENT_CHANGE, _bl_sys_change, NULL);
 }
 
 static void
@@ -462,9 +475,11 @@ _bl_sys_level_get(void)
      e_bl_val = (double)val / (double)maxval;
 //   fprintf(stderr, "GET: %i/%i (%1.3f)\n", val, maxval, e_bl_val);
 }
+#endif  // HAVE_EEZE
 
+#if defined(HAVE_EEZE) || defined(__FreeBSD_kernel__)
 static Eina_Bool
-_e_bl_cb_ext_delay(void *data __UNUSED__)
+_e_bl_cb_ext_delay(void *data EINA_UNUSED)
 {
    bl_sys_set_exe_ready = EINA_TRUE;
    if (bl_sys_pending_set)
@@ -477,7 +492,7 @@ _e_bl_cb_ext_delay(void *data __UNUSED__)
 }
 
 static Eina_Bool
-_e_bl_cb_exit(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_bl_cb_exit(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Exe_Event_Del *ev;
 
@@ -511,5 +526,64 @@ _bl_sys_level_set(double val)
             e_prefix_lib_get(), (int)(val * 1000.0), bl_sysval);
    bl_sys_set_exe = ecore_exe_run(buf, NULL);
 }
+#endif  // HAVE_EEZE || __FreeBSD_kernel__
 
-#endif
+#ifdef __FreeBSD_kernel__
+static void
+_bl_sys_find(void)
+{
+   int rc;
+   size_t mlen;
+
+   if (!bl_avail) return;
+   if (bl_mib_len >= 0) return;
+
+   mlen = sizeof(bl_mib) / sizeof(bl_mib[0]);
+   rc = sysctlnametomib(bl_acpi_sysctl, bl_mib, &mlen);
+   if (rc < 0)
+     {
+        if (errno == ENOENT) ERR("ACPI brightness sysctl '%s' not found, consider 'kldload acpi_video'", bl_acpi_sysctl);
+        else ERR("sysctlnametomib(%s): %s(%d)", bl_acpi_sysctl, strerror(errno), errno);
+
+        bl_avail = EINA_FALSE;
+        return;
+     }
+   bl_mib_len = (int)mlen;
+   sysmode = MODE_SYS;
+   eina_stringshare_replace(&bl_sysval, bl_acpi_sysctl);
+}
+
+static void
+_bl_sys_level_get(void)
+{
+   int rc, brightness;
+   size_t oldlen;
+
+   if (!bl_avail) return;
+   if (bl_mib_len < 0) return;
+
+   oldlen = sizeof(brightness);
+   rc = sysctl(bl_mib, bl_mib_len, &brightness, &oldlen, NULL, 0);
+   if (rc < 0)
+     {
+        ERR("Could not retrieve ACPI brightness: %s(%d)", strerror(errno), errno);
+        bl_avail = EINA_FALSE;
+        return;
+     }
+   if (oldlen != sizeof(brightness))
+     {
+        // This really should not happen.
+        ERR("!!! Brightness sysctl changed size !!!");
+        bl_avail = EINA_FALSE;
+        return;
+     }
+   if (brightness < 0 || brightness > 100)
+     {
+        // This really should not happen either.
+        ERR("!!! Brightness sysctl out of range !!!");
+        bl_avail = EINA_FALSE;
+        return;
+     }
+   e_bl_val = (double)brightness / 100.;
+}
+#endif  // __FreeBSD_kernel__

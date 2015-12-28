@@ -29,6 +29,7 @@ src/bin/enlightenment_info
 
 internal_bindir = $(libdir)/enlightenment/utils
 internal_bin_PROGRAMS = \
+src/bin/enlightenment_backlight \
 src/bin/enlightenment_fm_op \
 src/bin/enlightenment_sys \
 src/bin/enlightenment_thumb \
@@ -37,9 +38,8 @@ src/bin/enlightenment_static_grabber
 if ! HAVE_WAYLAND_ONLY
 internal_bin_PROGRAMS += src/bin/enlightenment_alert
 endif
-
-if HAVE_EEZE
-internal_bin_PROGRAMS += src/bin/enlightenment_backlight
+if HAVE_FREEBSD
+internal_bin_PROGRAMS += src/bin/enlightenment_ckpasswd
 endif
 
 ENLIGHTENMENTHEADERS = \
@@ -54,7 +54,6 @@ src/bin/e_bg.h \
 src/bin/e_bindings.h \
 src/bin/e_client.h \
 src/bin/e_client.x \
-src/bin/e_color_class.h \
 src/bin/e_color_dialog.h  \
 src/bin/e_color.h \
 src/bin/e_comp.h \
@@ -62,6 +61,7 @@ src/bin/e_comp_canvas.h \
 src/bin/e_comp_cfdata.h \
 src/bin/e_comp_object.h \
 src/bin/e_comp_x.h \
+src/bin/e_comp_x_randr.h \
 src/bin/e_config_data.h \
 src/bin/e_config_dialog.h \
 src/bin/e_config.h \
@@ -125,7 +125,6 @@ src/bin/e_ipc.h \
 src/bin/e_layout.h \
 src/bin/e_livethumb.h \
 src/bin/e_log.h \
-src/bin/e_manager.h \
 src/bin/e_maximize.h \
 src/bin/e_menu.h \
 src/bin/e_mmx.h \
@@ -174,8 +173,6 @@ src/bin/e_widget_button.h \
 src/bin/e_widget_check.h \
 src/bin/e_widget_color_well.h \
 src/bin/e_widget_config_list.h \
-src/bin/e_widget_csel.h \
-src/bin/e_widget_cslider.h \
 src/bin/e_widget_bgpreview.h \
 src/bin/e_widget_entry.h \
 src/bin/e_widget_filepreview.h \
@@ -230,7 +227,6 @@ src/bin/e_bg.c \
 src/bin/e_bindings.c \
 src/bin/e_client.c \
 src/bin/e_color.c \
-src/bin/e_color_class.c \
 src/bin/e_color_dialog.c \
 src/bin/e_comp.c \
 src/bin/e_comp_canvas.c \
@@ -297,7 +293,6 @@ src/bin/e_ipc_codec.c \
 src/bin/e_layout.c \
 src/bin/e_livethumb.c \
 src/bin/e_log.c \
-src/bin/e_manager.c \
 src/bin/e_maximize.c \
 src/bin/e_menu.c \
 src/bin/e_module.c \
@@ -316,6 +311,7 @@ src/bin/e_place.c \
 src/bin/e_pointer.c \
 src/bin/e_powersave.c \
 src/bin/e_prefix.c \
+src/bin/e_randr2.c \
 src/bin/e_remember.c \
 src/bin/e_resist.c \
 src/bin/e_scale.c \
@@ -345,8 +341,6 @@ src/bin/e_widget.c \
 src/bin/e_widget_check.c \
 src/bin/e_widget_color_well.c \
 src/bin/e_widget_config_list.c \
-src/bin/e_widget_csel.c \
-src/bin/e_widget_cslider.c \
 src/bin/e_widget_bgpreview.c \
 src/bin/e_widget_entry.c \
 src/bin/e_widget_filepreview.c \
@@ -378,14 +372,18 @@ $(ENLIGHTENMENTHEADERS)
 if ! HAVE_WAYLAND_ONLY
 enlightenment_src += \
 src/bin/e_comp_x.c \
+src/bin/e_comp_x_randr.c \
 src/bin/e_alert.c \
-src/bin/e_randr2.c \
 src/bin/e_xsettings.c
 endif
 
 if HAVE_WAYLAND
 enlightenment_src += \
 src/bin/e_uuid_store.c \
+src/bin/session-recovery-protocol.c \
+src/bin/session-recovery-server-protocol.h \
+src/bin/e_comp_wl_screenshooter_server.c \
+src/bin/e_comp_wl_screenshooter_server.h \
 src/bin/e_comp_wl_data.c \
 src/bin/e_comp_wl_input.c \
 src/bin/e_comp_wl.c
@@ -397,6 +395,7 @@ endif
 
 endif
 
+<<<<<<< HEAD
 src_bin_enlightenment_CPPFLAGS = $(E_CPPFLAGS) -DEFL_BETA_API_SUPPORT -DEFL_EO_API_SUPPORT -DE_LOGGING=1 @WAYLAND_CFLAGS@ @WAYLAND_EGL_CFLAGS@ -DNEED_WL
 if ! HAVE_WAYLAND_ONLY
 src_bin_enlightenment_CPPFLAGS += @ECORE_X_CFLAGS@ -DNEED_X=1
@@ -404,11 +403,15 @@ endif
 if HAVE_WAYLAND_TBM
 src_bin_enlightenment_CPPFLAGS += @WAYLAND_TBM_CFLAGS@ @ECORE_DRM_CFLAGS@
 endif
+=======
+src_bin_enlightenment_CPPFLAGS = $(E_CPPFLAGS) -DEFL_BETA_API_SUPPORT -DEFL_EO_API_SUPPORT -DE_LOGGING=1 @WAYLAND_CFLAGS@ @WAYLAND_EGL_CFLAGS@ @ECORE_X_CFLAGS@
+>>>>>>> upstream
 src_bin_enlightenment_SOURCES = \
 src/bin/e_main.c \
 $(enlightenment_src)
 
 src_bin_enlightenment_LDFLAGS = -export-dynamic
+<<<<<<< HEAD
 src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ @WL_DRM_LIBS@ @WAYLAND_EGL_LIBS@ -lm @SHM_OPEN_LIBS@
 if ! HAVE_WAYLAND_ONLY
 src_bin_enlightenment_LDADD += @ECORE_X_LIBS@
@@ -416,6 +419,9 @@ endif
 if HAVE_WAYLAND_TBM
 src_bin_enlightenment_LDADD += @WAYLAND_TBM_LIBS@ @ECORE_DRM_LIBS@
 endif
+=======
+src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ @WL_DRM_LIBS@ @WAYLAND_EGL_LIBS@ -lm @SHM_OPEN_LIBS@ @ECORE_X_LIBS@
+>>>>>>> upstream
 
 src_bin_enlightenment_imc_SOURCES = \
 src/bin/e.h \
@@ -452,12 +458,18 @@ src/bin/e_sys_l2ping.c
 src_bin_enlightenment_sys_LDADD = @SUID_LDFLAGS@ @E_SYS_LIBS@ @BLUEZ_LIBS@
 src_bin_enlightenment_sys_CPPFLAGS = @SUID_CFLAGS@ @E_SYS_CFLAGS@ @BLUEZ_CFLAGS@ -DPACKAGE_SYSCONF_DIR=\"@PACKAGE_SYSCONF_DIR@\"
 
-if HAVE_EEZE
 src_bin_enlightenment_backlight_SOURCES = \
 src/bin/e_backlight_main.c
 
 src_bin_enlightenment_backlight_CPPFLAGS = @SUID_CFLAGS@ @EEZE_CFLAGS@
 src_bin_enlightenment_backlight_LDADD = @SUID_LDFLAGS@ @EEZE_LIBS@
+
+if HAVE_FREEBSD
+src_bin_enlightenment_ckpasswd_SOURCES = \
+src/bin/e_ckpasswd_main.c
+
+src_bin_enlightenment_ckpasswd_CPPFLAGS = @SUID_CFLAGS@
+src_bin_enlightenment_ckpasswd_LDADD = @SUID_LDFLAGS@ -lcrypt
 endif
 
 src_bin_enlightenment_alert_SOURCES = \
@@ -493,13 +505,11 @@ include src/bin/e_fm/Makefile.mk
 # and before internal_bin_PROGRAMS are installed. install-data-hook is
 # run after both
 setuid_root_mode = a=rx,u+xs
-if HAVE_EEZE
 enlightenment-sys-install-data-hook:
 	@chmod $(setuid_root_mode) $(DESTDIR)$(libdir)/enlightenment/utils/enlightenment_sys$(EXEEXT) || true
 	@chmod $(setuid_root_mode) $(DESTDIR)$(libdir)/enlightenment/utils/enlightenment_backlight$(EXEEXT) || true
-else
-enlightenment-sys-install-data-hook:
-	@chmod $(setuid_root_mode) $(DESTDIR)$(libdir)/enlightenment/utils/enlightenment_sys$(EXEEXT) || true
+if HAVE_FREEBSD
+	@chmod $(setuid_root_mode) $(DESTDIR)$(libdir)/enlightenment/utils/enlightenment_ckpasswd$(EXEEXT) || true
 endif
 installed_headersdir = $(prefix)/include/enlightenment
 installed_headers_DATA = $(ENLIGHTENMENTHEADERS) src/bin/e_fm_shared_types.h

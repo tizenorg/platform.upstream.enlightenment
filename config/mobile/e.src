@@ -149,7 +149,7 @@ group "E_Config" struct {
     value "border_raise_on_mouse_action" int: 1;
     value "desk_flip_wrap" int: 0;
     value "fullscreen_flip" int: 1;
-    value "icon_theme" string: "Tango";
+    value "icon_theme" string: "hicolor";
     value "icon_theme_overrides" uchar: 0;
     value "desk_flip_animate_mode" int: 1;
     value "desk_flip_animate_interpolation" int: 0;
@@ -865,6 +865,8 @@ group "E_Config" struct {
     }
     value "xkb.only_label" int: 0;
     value "xkb.default_model" string: "default";
+    value "keyboard.repeat_delay" int: 400;
+    value "keyboard.repeat_rate" int: 25;
     value "exe_always_single_instance" uchar: 1;
     value "use_desktop_window_profile" int: 0;
     value "wm_win_rotation" uchar: 0;

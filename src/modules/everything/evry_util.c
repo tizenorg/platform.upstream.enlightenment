@@ -568,7 +568,7 @@ evry_util_exec_app(const Evry_Item *it_app, const Evry_Item *it_file)
    GET_APP(app, it_app);
    GET_FILE(file, it_file);
 
-   zone = e_util_zone_current_get(e_manager_current_get());
+   zone = e_zone_current_get();
 
    if (app->desktop)
      {
@@ -893,7 +893,7 @@ evry_file_url_get(Evry_Item_File *file)
 }
 
 static void
-_cb_free_item_changed(void *data __UNUSED__, void *event)
+_cb_free_item_changed(void *data EINA_UNUSED, void *event)
 {
    Evry_Event_Item_Changed *ev = event;
 

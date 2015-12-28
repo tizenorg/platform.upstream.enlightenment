@@ -1,16 +1,15 @@
 #include "e_mmx.h"
 #include "e_object.h"
 #include "e_user.h"
-#include "e_manager.h"
 #include "e_path.h"
 #include "e_ipc.h"
 #include "e_error.h"
 #include "e_zone.h"
 #include "e_desk.h"
 #include "e_auth.h"
-#ifdef NEED_X
+#include "e_randr2.h"
+#ifndef HAVE_WAYLAND_ONLY
 # include "e_comp_x.h"
-# include "e_randr2.h"
 #endif
 #include "e_pixmap.h"
 #include "e_comp_object.h"
@@ -88,7 +87,6 @@
 #include "e_dpms.h"
 #include "e_int_config_modules.h"
 #include "e_exehist.h"
-#include "e_color_class.h"
 #include "e_widget_textblock.h"
 #include "e_gadcon.h"
 #include "e_shelf.h"
@@ -108,9 +106,7 @@
 #include "e_color.h"
 #include "e_spectrum.h"
 #include "e_widget_spectrum.h"
-#include "e_widget_cslider.h"
 #include "e_widget_color_well.h"
-#include "e_widget_csel.h"
 #include "e_color_dialog.h"
 #include "e_sys.h"
 #include "e_obj_dialog.h"
@@ -154,8 +150,9 @@
 #include "e_comp_canvas.h"
 #include "e_utils.h"
 #include "e_hints.h"
+#include "e_comp_x_randr.h"
 
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND
 # include "e_comp_wl.h"
 # include "e_comp_wl_data.h"
 # include "e_comp_wl_input.h"

@@ -15,6 +15,7 @@ typedef struct E_Smart_Data
    Evas_Object *clip;
    Evas_Object *bgpreview;
    Evas_Object *layout;
+   Evas_Object *events;
    Eina_Inlist *mirrors;
    Eina_Hash *mirror_hash;
 
@@ -40,6 +41,7 @@ typedef struct Mirror
    Evas_Object *comp_object;
    Evas_Object *mirror;
    int x, y, w, h;
+   int ref;
    Eina_Bool added : 1;
 } Mirror;
 
@@ -55,6 +57,7 @@ static Evas_Smart *_e_deskmirror_smart = NULL;
 static Evas_Smart *_mirror_client_smart = NULL;
 
 static void _e_deskmirror_mirror_setup(Mirror *m);
+static void _comp_object_dirty(void *data, Evas_Object *obj, void *event_info EINA_UNUSED);
 static void _comp_object_hide(Mirror *m, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED);
 static void _comp_object_show(Mirror *m, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED);
 static void _comp_object_stack(Mirror *m, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED);
@@ -64,7 +67,7 @@ static Eina_Bool
 _e_deskmirror_visible_get(E_Smart_Data *sd, Mirror *m)
 {
    Eina_Bool visible = evas_object_visible_get(m->comp_object);
-   if (m->ec)
+   if (m->ec && (!e_object_is_del(E_OBJECT(m->ec))))
      {
         visible = m->ec->visible;
         /* all iconic visibility changes occur with iconic flag set:
@@ -108,12 +111,28 @@ _mirror_scale_set(Mirror *m, float sc)
 }
 
 static void
+_mirror_ref(Mirror *m)
+{
+   m->ref++;
+}
+
+static void
+_mirror_unref(Mirror *m)
+{
+   m->ref--;
+   if (m->ref > 0) return;
+   free(m);
+}
+
+static void
 _e_deskmirror_smart_reconfigure(E_Smart_Data *sd)
 {
    e_layout_freeze(sd->layout);
    evas_object_move(sd->clip, sd->x, sd->y);
    evas_object_move(sd->bgpreview, sd->x, sd->y);
    evas_object_move(sd->layout, sd->x, sd->y);
+   if (sd->events)
+     evas_object_move(sd->events, sd->x, sd->y);
 
    if (sd->resize)
      {
@@ -122,6 +141,8 @@ _e_deskmirror_smart_reconfigure(E_Smart_Data *sd)
         evas_object_resize(sd->clip, sd->w, sd->h);
         evas_object_resize(sd->bgpreview, sd->w, sd->h);
         evas_object_resize(sd->layout, sd->w, sd->h);
+        if (sd->events)
+          evas_object_resize(sd->events, sd->w, sd->h);
         EINA_INLIST_FOREACH(sd->mirrors, m)
           _mirror_scale_set(m, (float)sd->h / (float)sd->desk->zone->h);
      }
@@ -162,6 +183,7 @@ _e_deskmirror_smart_del(Evas_Object *obj)
    evas_object_del(sd->clip);
    evas_object_del(sd->bgpreview);
    evas_object_del(sd->layout);
+   evas_object_del(sd->events);
    free(sd);
 }
 
@@ -187,14 +209,40 @@ _e_deskmirror_smart_resize(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
 static void
 _e_deskmirror_smart_show(Evas_Object *obj)
 {
+   Mirror *m;
+
    INTERNAL_ENTRY;
+   EINA_INLIST_FOREACH(sd->mirrors, m)
+     {
+        Mirror_Border *mb;
+
+        if ((!m->ec) || (!m->mirror)) continue;
+        mb = evas_object_smart_data_get(m->mirror);
+        if (!mb) continue;
+        edje_object_thaw(mb->frame);
+        edje_object_play_set(mb->frame, 1);
+        evas_object_show(mb->mirror);
+     }
    evas_object_show(sd->clip);
 }
 
 static void
 _e_deskmirror_smart_hide(Evas_Object *obj)
 {
+   Mirror *m;
+
    INTERNAL_ENTRY;
+   EINA_INLIST_FOREACH(sd->mirrors, m)
+     {
+        Mirror_Border *mb;
+
+        if ((!m->ec) || (!m->mirror)) continue;
+        mb = evas_object_smart_data_get(m->mirror);
+        if (!mb) continue;
+        edje_object_freeze(mb->frame);
+        edje_object_play_set(mb->frame, 0);
+        evas_object_hide(mb->mirror);
+     }
    evas_object_hide(sd->clip);
 }
 
@@ -304,7 +352,10 @@ _mirror_client_smart_del(Evas_Object *obj)
         evas_object_smart_callback_del_full(mb->m->ec->frame, "shadow_change", _mirror_client_shadow_change, mb->frame);
      }
    evas_object_del(mb->frame);
+   mb->frame = NULL;
    evas_object_del(mb->mirror);
+   mb->mirror = NULL;
+   _mirror_unref(mb->m);
    free(mb);
 }
 
@@ -437,15 +488,17 @@ static void
 _e_deskmirror_mirror_del_hash(Mirror *m)
 {
    m->sd->mirrors = eina_inlist_remove(m->sd->mirrors, EINA_INLIST_GET(m));
+   evas_object_smart_callback_del_full(m->comp_object, "dirty", _comp_object_dirty, m);
    evas_object_smart_callback_del_full(m->comp_object, "frame_recalc_done", _e_deskmirror_mirror_frame_recalc_cb, m);
    evas_object_event_callback_del_full(m->comp_object, EVAS_CALLBACK_DEL, _e_deskmirror_mirror_del_cb, m);
    evas_object_del(m->mirror);
+   m->mirror = NULL;
    evas_object_event_callback_del_full(m->comp_object, EVAS_CALLBACK_SHOW, (Evas_Object_Event_Cb)_comp_object_show, m);
    evas_object_event_callback_del_full(m->comp_object, EVAS_CALLBACK_HIDE, (Evas_Object_Event_Cb)_comp_object_hide, m);
    evas_object_event_callback_del_full(m->comp_object, EVAS_CALLBACK_RESTACK, (Evas_Object_Event_Cb)_comp_object_stack, m);
    evas_object_event_callback_del_full(m->comp_object, EVAS_CALLBACK_RESIZE, (Evas_Object_Event_Cb)_comp_object_configure, m);
    evas_object_event_callback_del_full(m->comp_object, EVAS_CALLBACK_MOVE, (Evas_Object_Event_Cb)_comp_object_configure, m);
-   free(m);
+   _mirror_unref(m);
 }
 
 static Evas_Object *
@@ -458,6 +511,7 @@ _mirror_client_new(Mirror *m)
    o = evas_object_smart_add(m->sd->e, _mirror_client_smart);
    mb = evas_object_smart_data_get(o);
    mb->m = m;
+   _mirror_ref(m);
    mb->frame = edje_object_add(m->sd->e);
    evas_object_name_set(mb->frame, "mirror_border");
    _mirror_client_theme_setup(mb, mb->frame);
@@ -501,6 +555,8 @@ _e_deskmirror_mirror_setup(Mirror *m)
         if (!m->added)
           evas_object_smart_callback_call(m->sd->obj, "mirror_add", m->mirror);
      }
+   else
+     e_layout_child_raise(m->mirror);
    m->added = 1;
 }
 
@@ -511,9 +567,14 @@ _comp_object_check(Mirror *m)
 
    evas_object_geometry_get(m->comp_object, NULL, NULL, &w, &h);
    if ((w < 2) || (h < 2)) return EINA_FALSE;
-   m->mirror = e_comp_object_util_mirror_add(m->comp_object);
+   if (!m->mirror)
+     {
+        m->mirror = e_comp_object_util_mirror_add(m->comp_object);
+        if (!m->mirror) return EINA_FALSE;
+     }
+   evas_object_smart_callback_del(m->comp_object, "dirty", _comp_object_dirty);
+   if (m->added) return EINA_TRUE;
    evas_object_name_set(m->mirror, "m->mirror");
-   if (m->mirror) evas_object_layer_set(m->mirror, evas_object_layer_get(m->comp_object));
    _e_deskmirror_mirror_setup(m);
    return EINA_TRUE;
 }
@@ -538,8 +599,6 @@ static void
 _comp_object_stack(Mirror *m, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
    Evas_Object *comp_object;
-
-   if (m->ec && m->ec->layer_block) return; //ignore layer blockers
 
    if (!m->mirror)
      {
@@ -569,6 +628,12 @@ _comp_object_configure(Mirror *m, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNU
         if (!_comp_object_check(m)) return;
      }
    _e_deskmirror_mirror_reconfigure(m);
+}
+
+static void
+_comp_object_dirty(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   _comp_object_check(data);
 }
 
 static Mirror *
@@ -615,13 +680,15 @@ _e_deskmirror_mirror_add(E_Smart_Data *sd, Evas_Object *obj)
    m->ec = ec;
    m->sd = sd;
    m->mirror = o;
-   if (o) evas_object_layer_set(o, evas_object_layer_get(obj));
+   m->ref = 1;
    evas_object_event_callback_add(obj, EVAS_CALLBACK_SHOW, (Evas_Object_Event_Cb)_comp_object_show, m);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_HIDE, (Evas_Object_Event_Cb)_comp_object_hide, m);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_RESTACK, (Evas_Object_Event_Cb)_comp_object_stack, m);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_RESIZE, (Evas_Object_Event_Cb)_comp_object_configure, m);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_MOVE, (Evas_Object_Event_Cb)_comp_object_configure, m);
    evas_object_smart_callback_add(obj, "frame_recalc_done", _e_deskmirror_mirror_frame_recalc_cb, m);
+   if (ec && (!ec->redirected) && (!ec->new_client) && e_pixmap_usable_get(ec->pixmap))
+     evas_object_smart_callback_add(obj, "dirty", _comp_object_dirty, m);
    sd->mirrors = eina_inlist_append(sd->mirrors, EINA_INLIST_GET(m));
    eina_hash_add(sd->mirror_hash, &obj, m);
    _e_deskmirror_mirror_setup(m);
@@ -637,6 +704,14 @@ _comp_object_add(E_Smart_Data *sd, int type EINA_UNUSED, E_Event_Comp_Object *ev
 }
 
 static Eina_Bool
+_client_add(E_Smart_Data *sd, int type EINA_UNUSED, E_Event_Client *ev)
+{
+   if (!eina_hash_find(sd->mirror_hash, &ev->ec->frame))
+     _e_deskmirror_mirror_add(sd, ev->ec->frame);
+   return ECORE_CALLBACK_RENEW;
+}
+
+static Eina_Bool
 _client_desk_set(E_Smart_Data *sd, int type EINA_UNUSED, E_Event_Client_Desk_Set *ev)
 {
    Mirror *m;
@@ -645,10 +720,10 @@ _client_desk_set(E_Smart_Data *sd, int type EINA_UNUSED, E_Event_Client_Desk_Set
    if (m)
      {
         /* ev->desk is previous desk */
-        if ((ev->desk == sd->desk) && (!ev->ec->sticky))
+        if (!e_client_util_desk_visible(ev->ec, sd->desk))
           eina_hash_del_by_key(sd->mirror_hash, &ev->ec->frame);
      }
-   if (sd->desk == ev->ec->desk)
+   if ((!m) && (sd->desk == ev->ec->desk))
      _e_deskmirror_mirror_add(sd, ev->ec->frame);
    return ECORE_CALLBACK_RENEW;
 }
@@ -678,7 +753,7 @@ _client_property(E_Smart_Data *sd, int type EINA_UNUSED, E_Event_Client_Property
 }
 
 /* externally accessible functions */
-EAPI Evas_Object *
+E_API Evas_Object *
 e_deskmirror_add(E_Desk *desk, Eina_Bool pager, Eina_Bool taskbar)
 {
    E_Smart_Data *sd;
@@ -695,6 +770,14 @@ e_deskmirror_add(E_Desk *desk, Eina_Bool pager, Eina_Bool taskbar)
    sd->desk = desk;
    sd->mirror_hash = eina_hash_pointer_new((Eina_Free_Cb)_e_deskmirror_mirror_del_hash);
    sd->desk_delfn = e_object_delfn_add(E_OBJECT(desk), (Ecore_End_Cb)_e_deskmirror_delfn, sd);
+   if (pager || taskbar)
+     {
+        sd->events = evas_object_rectangle_add(e);
+        evas_object_color_set(sd->events, 0, 0, 0, 0);
+        evas_object_clip_set(sd->events, sd->clip);
+        evas_object_smart_member_add(sd->events, o);
+        evas_object_show(sd->events);
+     }
    sd->bgpreview = e_widget_bgpreview_desk_add(e, desk->zone, desk->x, desk->y);
    evas_object_pass_events_set(sd->bgpreview, 1);
    evas_object_clip_set(sd->bgpreview, sd->clip);
@@ -721,12 +804,13 @@ e_deskmirror_add(E_Desk *desk, Eina_Bool pager, Eina_Bool taskbar)
    e_layout_thaw(sd->layout);
 
    E_LIST_HANDLER_APPEND(sd->handlers, E_EVENT_COMP_OBJECT_ADD, (Ecore_Event_Handler_Cb)_comp_object_add, sd);
+   E_LIST_HANDLER_APPEND(sd->handlers, E_EVENT_CLIENT_ADD, (Ecore_Event_Handler_Cb)_client_add, sd);
    E_LIST_HANDLER_APPEND(sd->handlers, E_EVENT_CLIENT_PROPERTY, (Ecore_Event_Handler_Cb)_client_property, sd);
    E_LIST_HANDLER_APPEND(sd->handlers, E_EVENT_CLIENT_DESK_SET, (Ecore_Event_Handler_Cb)_client_desk_set, sd);
    return o;
 }
 
-EAPI Evas_Object *
+E_API Evas_Object *
 e_deskmirror_mirror_find(Evas_Object *deskmirror, Evas_Object *comp_object)
 {
    Mirror *m;
@@ -738,7 +822,7 @@ e_deskmirror_mirror_find(Evas_Object *deskmirror, Evas_Object *comp_object)
    return m ? m->mirror : NULL;
 }
 
-EAPI Eina_List *
+E_API Eina_List *
 e_deskmirror_mirror_list(Evas_Object *deskmirror)
 {
    Eina_List *l = NULL;
@@ -762,7 +846,7 @@ _mirror_copy_del(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_
    evas_object_smart_callback_del_full(data, "shadow_change", _mirror_client_shadow_change, obj);
 }
 
-EAPI Evas_Object *
+E_API Evas_Object *
 e_deskmirror_mirror_copy(Evas_Object *obj)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(obj, NULL);
@@ -798,7 +882,7 @@ e_deskmirror_mirror_copy(Evas_Object *obj)
    return NULL;
 }
 
-EAPI void
+E_API void
 e_deskmirror_coord_canvas_to_virtual(Evas_Object *obj, Evas_Coord cx, Evas_Coord cy, Evas_Coord *vx, Evas_Coord *vy)
 {
    API_ENTRY(obj);
@@ -806,7 +890,7 @@ e_deskmirror_coord_canvas_to_virtual(Evas_Object *obj, Evas_Coord cx, Evas_Coord
    e_layout_coord_canvas_to_virtual(sd->layout, cx, cy, vx, vy);
 }
 
-EAPI void
+E_API void
 e_deskmirror_coord_virtual_to_canvas(Evas_Object *obj, Evas_Coord vx, Evas_Coord vy, Evas_Coord *cx, Evas_Coord *cy)
 {
    API_ENTRY(obj);
@@ -814,14 +898,14 @@ e_deskmirror_coord_virtual_to_canvas(Evas_Object *obj, Evas_Coord vx, Evas_Coord
    e_layout_coord_virtual_to_canvas(sd->layout, vx, vy, cx, cy);
 }
 
-EAPI E_Desk *
+E_API E_Desk *
 e_deskmirror_desk_get(Evas_Object *obj)
 {
    API_ENTRY(obj) NULL;
    return sd->desk;
 }
 
-EAPI void
+E_API void
 e_deskmirror_util_wins_print(Evas_Object *obj)
 {
    E_Smart_Data *sd;

@@ -34,12 +34,37 @@
 #include <Eina.h>
 #include <Evas.h>
 
+# ifdef E_API
+#  undef E_API
+# endif
+# ifdef WIN32
+#  ifdef BUILDING_DLL
+#   define E_API __declspec(dllexport)
+#  else
+#   define E_API __declspec(dllimport)
+#  endif
+# else
+#  ifdef __GNUC__
+#   if __GNUC__ >= 4
+/* BROKEN in gcc 4 on amd64 */
+#    if 0
+#     pragma GCC visibility push(hidden)
+#    endif
+#    define E_API __attribute__ ((visibility("default")))
+#   else
+#    define E_API
+#   endif
+#  else
+#   define E_API
+#  endif
+# endif
+
 # define E_CSERVE
 
 static Eina_Bool stop_ptrace = EINA_FALSE;
 
 static void env_set(const char *var, const char *val);
-EAPI int    prefix_determine(char *argv0);
+E_API int    prefix_determine(char *argv0);
 
 static void
 env_set(const char *var, const char *val)
@@ -72,7 +97,7 @@ env_set(const char *var, const char *val)
 static Eina_Prefix *pfx = NULL;
 
 /* externally accessible functions */
-EAPI int
+E_API int
 prefix_determine(char *argv0)
 {
    pfx = eina_prefix_new(argv0, prefix_determine,
@@ -176,7 +201,7 @@ _env_path_prepend(const char *env, const char *path)
    if (p)
      {
         len = strlen(p);
-        // path already there at the start. dont prepend. :)
+        // path already there at the start. don't prepend. :)
         if ((!strcmp(p, p2)) ||
             ((len > len2) &&
              (!strncmp(p, p2, len2)) &&
@@ -190,7 +215,7 @@ _env_path_prepend(const char *env, const char *path)
         strcat(s, p2);
         if (p)
           {
-             strcat(s, ":");
+             if (p[0] != ':') strcat(s, ":");
              strcat(s, p);
           }
         env_set(env, s);
@@ -213,7 +238,7 @@ _env_path_append(const char *env, const char *path)
    if (p)
      {
         len = strlen(p);
-        // path already there at the end. dont append. :)
+        // path already there at the end. don't append. :)
         if ((!strcmp(p, p2)) ||
             ((len > len2) &&
              (!strcmp((p + len - len2), p2)) &&
@@ -227,7 +252,10 @@ _env_path_append(const char *env, const char *path)
         if (p)
           {
              strcat(s, p);
-             strcat(s, ":");
+             if (len > 0)
+               {
+                  if (s[len - 1] != ':') strcat(s, ":");
+               }
           }
         strcat(s, p2);
         env_set(env, s);
@@ -236,7 +264,7 @@ _env_path_append(const char *env, const char *path)
 }
 
 static void
-_sigusr1(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__)
+_sigusr1(int x EINA_UNUSED, siginfo_t *info EINA_UNUSED, void *data EINA_UNUSED)
 {
    struct sigaction action;
 
@@ -398,7 +426,7 @@ _e_start_child(char **args, Eina_Bool really_know)
 {
    _e_ptrace_traceme(really_know);
    execv(args[0], args);
-   /* We failed, 0 mean normal exit from E with no restart or crash so let exit */
+   /* We failed, 0 mean normal exit from E with no restart or crash so let's exit */
    return 0;
 }
 

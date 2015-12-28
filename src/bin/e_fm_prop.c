@@ -93,8 +93,8 @@ struct _E_Config_Dialog_Data
 };
 
 /* a nice easy setup function that does the dirty work */
-EAPI E_Config_Dialog *
-e_fm_prop_file(E_Comp *c EINA_UNUSED, E_Fm2_Icon *ic)
+E_API E_Config_Dialog *
+e_fm_prop_file(E_Fm2_Icon *ic)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -171,7 +171,7 @@ _create_data(E_Config_Dialog *cfd)
 }
 
 static void
-_free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_free_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    if (cfdata->gui.fsel)
      e_object_del(E_OBJECT(cfdata->gui.fsel));
@@ -192,7 +192,7 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 
 /**--APPLY--**/
 static int
-_basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_basic_apply_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    char buf[PATH_MAX];
    Eina_Bool fperm = EINA_FALSE;
@@ -380,6 +380,7 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
    E_Radio_Group *rg;
    char buf[PATH_MAX];
    const char *itype = NULL;
+   int mh;
 
    win = cfd->dia->win;
    snprintf(buf, sizeof(buf), "%s/%s",
@@ -391,56 +392,64 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
    ob = e_widget_label_add(evas, _("Name:"));
    e_widget_table_object_append(ot, ob, 0, 0, 1, 1, 1, 0, 1, 0);
    ob = e_widget_entry_add(win, &(cfdata->file), NULL, NULL, NULL);
-   e_widget_size_min_set(ob, 140, -1);
+   e_widget_size_min_get(ob, NULL, &mh);
+   e_widget_size_min_set(ob, 140, mh);
    e_widget_entry_readonly_set(ob, 1);
    e_widget_table_object_append(ot, ob, 1, 0, 1, 1, 1, 0, 1, 0);
 
    ob = e_widget_label_add(evas, _("Location:"));
    e_widget_table_object_append(ot, ob, 0, 1, 1, 1, 1, 0, 1, 0);
    ob = e_widget_entry_add(win, &(cfdata->location), NULL, NULL, NULL);
-   e_widget_size_min_set(ob, 140, -1);
+   e_widget_size_min_get(ob, NULL, &mh);
+   e_widget_size_min_set(ob, 140, mh);
    e_widget_entry_readonly_set(ob, 1);
    e_widget_table_object_append(ot, ob, 1, 1, 1, 1, 1, 0, 1, 0);
 
    ob = e_widget_label_add(evas, _("Size:"));
    e_widget_table_object_append(ot, ob, 0, 2, 1, 1, 1, 0, 1, 0);
    ob = e_widget_entry_add(win, &(cfdata->size), NULL, NULL, NULL);
-   e_widget_size_min_set(ob, 140, -1);
+   e_widget_size_min_get(ob, NULL, &mh);
+   e_widget_size_min_set(ob, 140, mh);
    e_widget_entry_readonly_set(ob, 1);
    e_widget_table_object_append(ot, ob, 1, 2, 1, 1, 1, 0, 1, 0);
 
    ob = e_widget_label_add(evas, _("Occupied blocks on disk:"));
    e_widget_table_object_append(ot, ob, 0, 3, 1, 1, 1, 0, 1, 0);
    ob = e_widget_entry_add(win, &(cfdata->blocks), NULL, NULL, NULL);
-   e_widget_size_min_set(ob, 140, -1);
+   e_widget_size_min_get(ob, NULL, &mh);
+   e_widget_size_min_set(ob, 140, mh);
    e_widget_entry_readonly_set(ob, 1);
    e_widget_table_object_append(ot, ob, 1, 3, 1, 1, 1, 0, 1, 0);
 
    ob = e_widget_label_add(evas, _("Last Accessed:"));
    e_widget_table_object_append(ot, ob, 0, 4, 1, 1, 1, 0, 1, 0);
    ob = e_widget_entry_add(win, &(cfdata->acc_date), NULL, NULL, NULL);
-   e_widget_size_min_set(ob, 140, -1);
+   e_widget_size_min_get(ob, NULL, &mh);
+   e_widget_size_min_set(ob, 140, mh);
    e_widget_entry_readonly_set(ob, 1);
    e_widget_table_object_append(ot, ob, 1, 4, 1, 1, 1, 0, 1, 0);
 
    ob = e_widget_label_add(evas, _("Last Modified:"));
    e_widget_table_object_append(ot, ob, 0, 5, 1, 1, 1, 0, 1, 0);
    ob = e_widget_entry_add(win, &(cfdata->mod_date), NULL, NULL, NULL);
-   e_widget_size_min_set(ob, 140, -1);
+   e_widget_size_min_get(ob, NULL, &mh);
+   e_widget_size_min_set(ob, 140, mh);
    e_widget_entry_readonly_set(ob, 1);
    e_widget_table_object_append(ot, ob, 1, 5, 1, 1, 1, 0, 1, 0);
 
    ob = e_widget_label_add(evas, _("Last Modified Permissions:"));
    e_widget_table_object_append(ot, ob, 0, 6, 1, 1, 1, 0, 1, 0);
    ob = e_widget_entry_add(win, &(cfdata->pms_date), NULL, NULL, NULL);
-   e_widget_size_min_set(ob, 140, -1);
+   e_widget_size_min_get(ob, NULL, &mh);
+   e_widget_size_min_set(ob, 140, mh);
    e_widget_entry_readonly_set(ob, 1);
    e_widget_table_object_append(ot, ob, 1, 6, 1, 1, 1, 0, 1, 0);
 
    ob = e_widget_label_add(evas, _("File Type:"));
    e_widget_table_object_append(ot, ob, 0, 7, 1, 1, 1, 0, 1, 0);
    ob = e_widget_entry_add(win, &(cfdata->mime), NULL, NULL, NULL);
-   e_widget_size_min_set(ob, 140, -1);
+   e_widget_size_min_get(ob, NULL, &mh);
+   e_widget_size_min_set(ob, 140, mh);
    e_widget_entry_readonly_set(ob, 1);
    e_widget_table_object_append(ot, ob, 1, 7, 1, 1, 1, 0, 1, 0);
 
@@ -633,7 +642,7 @@ _cb_icon_sel(void *data, void *data2)
 }
 
 static void
-_cb_type(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_cb_type(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -645,7 +654,7 @@ _cb_type(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
 }
 
 static void
-_cb_preview_update(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_cb_preview_update(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -656,7 +665,7 @@ _cb_preview_update(void *data, Evas_Object *obj __UNUSED__, void *event_info __U
 }
 
 static void
-_cb_fsel_sel(void *data, Evas_Object *obj __UNUSED__)
+_cb_fsel_sel(void *data, Evas_Object *obj EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 

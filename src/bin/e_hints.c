@@ -1,4 +1,3 @@
-#define E_COMP_WL
 #include "e.h"
 
 #ifndef HAVE_WAYLAND_ONLY
@@ -6,15 +5,16 @@ static void e_hints_e16_comms_pretend(Ecore_X_Window root, Ecore_X_Window propwi
 static void e_hints_openoffice_gnome_fake(Ecore_Window root);
 //static void e_hints_openoffice_kde_fake(Ecore_Window root);
 
-EAPI Ecore_X_Atom ATM__QTOPIA_SOFT_MENU = 0;
-EAPI Ecore_X_Atom ATM__QTOPIA_SOFT_MENUS = 0;
-EAPI Ecore_X_Atom ATM_GNOME_SM_PROXY = 0;
-EAPI Ecore_X_Atom ATM_ENLIGHTENMENT_COMMS = 0;
-EAPI Ecore_X_Atom ATM_ENLIGHTENMENT_VERSION = 0;
-EAPI Ecore_X_Atom ATM_ENLIGHTENMENT_SCALE = 0;
+E_API Ecore_X_Atom ATM__QTOPIA_SOFT_MENU = 0;
+E_API Ecore_X_Atom ATM__QTOPIA_SOFT_MENUS = 0;
+E_API Ecore_X_Atom ATM_GNOME_SM_PROXY = 0;
+E_API Ecore_X_Atom ATM_ENLIGHTENMENT_COMMS = 0;
+E_API Ecore_X_Atom ATM_ENLIGHTENMENT_VERSION = 0;
+E_API Ecore_X_Atom ATM_ENLIGHTENMENT_SCALE = 0;
 
-EAPI Ecore_X_Atom ATM_NETWM_SHOW_WINDOW_MENU = 0;
-EAPI Ecore_X_Atom ATM_NETWM_PERFORM_BUTTON_ACTION = 0;
+E_API Ecore_X_Atom ATM_NETWM_SHOW_WINDOW_MENU = 0;
+E_API Ecore_X_Atom ATM_NETWM_PERFORM_BUTTON_ACTION = 0;
+E_API Ecore_X_Atom ATM_GTK_FRAME_EXTENTS = 0;
 #endif
 
 static Eina_List *aux_hints_supported = NULL;
@@ -35,9 +35,10 @@ e_hints_init(Ecore_Window root, Ecore_Window propwin)
       "ENLIGHTENMENT_SCALE",
       "_NET_WM_SHOW_WINDOW_MENU",
       "_NET_WM_PERFORM_BUTTON_ACTION",
+      "_GTK_FRAME_EXTENTS",
    };
    Ecore_X_Atom atoms[EINA_C_ARRAY_LENGTH(atom_names)];
-   Ecore_X_Atom supported[45];
+   Ecore_X_Atom supported[46];
    int supported_num;
    Ecore_X_Window win, twin;
    int nwins;
@@ -53,6 +54,7 @@ e_hints_init(Ecore_Window root, Ecore_Window propwin)
    ATM_ENLIGHTENMENT_SCALE = atoms[5];
    ATM_NETWM_SHOW_WINDOW_MENU = atoms[6];
    ATM_NETWM_PERFORM_BUTTON_ACTION = atoms[7];
+   ATM_GTK_FRAME_EXTENTS = atoms[8];
 
    supported_num = 0;
    /* Set what hints we support */
@@ -133,6 +135,7 @@ e_hints_init(Ecore_Window root, Ecore_Window propwin)
 
    supported[supported_num++] = ATM_NETWM_SHOW_WINDOW_MENU;
    supported[supported_num++] = ATM_NETWM_PERFORM_BUTTON_ACTION;
+   supported[supported_num++] = ATM_GTK_FRAME_EXTENTS;
 
 
 
@@ -296,42 +299,36 @@ e_hints_manager_init(E_Manager *man)
 }
 #endif
 
-EAPI void
+E_API void
 e_hints_client_list_set(void)
 {
 #ifdef HAVE_WAYLAND_ONLY
 #else
-   E_Manager *man;
-   const Eina_List *l;
-
    /* Get client count by adding client lists on all containers */
-   EINA_LIST_FOREACH(e_manager_list(), l, man)
+   unsigned int i = 0;
+   Ecore_X_Window *clients = NULL;
+
+   if (!e_comp_util_has_x()) return;
+   if (e_comp->clients)
      {
-        unsigned int i = 0;
-        Ecore_X_Window *clients = NULL;
+        E_Client *ec;
+        const Eina_List *ll;
 
-        if (man->comp->comp_type != E_PIXMAP_TYPE_X) continue;
-        if (man->comp->clients)
+        clients = calloc(e_clients_count(), sizeof(Ecore_X_Window));
+        EINA_LIST_FOREACH(e_comp->clients, ll, ec)
           {
-             E_Client *ec;
-             const Eina_List *ll;
-
-             clients = calloc(e_clients_count(man->comp), sizeof(Ecore_X_Window));
-             EINA_LIST_FOREACH(man->comp->clients, ll, ec)
-               {
-                  if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_X) continue;
-                  clients[i++] = e_client_util_win_get(ec);
-               }
+             if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_X) continue;
+             clients[i++] = e_client_util_win_get(ec);
           }
-        ecore_x_netwm_client_list_set(man->root, clients, i);
-        free(clients);
      }
+   ecore_x_netwm_client_list_set(e_comp->root, clients, i);
+   free(clients);
 #endif
 }
 
 /* Client list is already in stacking order, so this function is nearly
  * identical to the previous one */
-EAPI void
+E_API void
 e_hints_client_stacking_set(void)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -341,7 +338,7 @@ e_hints_client_stacking_set(void)
 
 //#define CLIENT_STACK_DEBUG
    /* Get client count */
-   c = e_clients_count(e_comp);
+   c = e_clients_count();
    if (c)
      {
         E_Client *ec;
@@ -349,7 +346,7 @@ e_hints_client_stacking_set(void)
         Eina_List *ll = NULL;
 #endif
         clients = calloc(c, sizeof(Ecore_X_Window));
-        E_CLIENT_FOREACH(e_comp, ec)
+        E_CLIENT_FOREACH(ec)
           {
              if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_X)
                {
@@ -385,25 +382,22 @@ e_hints_client_stacking_set(void)
     * to be returned in the list
     */
    if (i <= c)
-     ecore_x_netwm_client_list_stacking_set(e_comp->man->root, clients, c);
+     ecore_x_netwm_client_list_stacking_set(e_comp->root, clients, c);
    free(clients);
 #endif
 }
 
-EAPI void
-e_hints_active_window_set(E_Manager *man,
-                          E_Client *ec)
+E_API void
+e_hints_active_window_set(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
-   (void)man;
    (void)ec;
 #else
-   E_OBJECT_CHECK(man);
-   if (e_comp->comp_type != E_PIXMAP_TYPE_X) return;
+   if (!e_comp_util_has_x()) return;
    if (ec && (e_pixmap_type_get(ec->pixmap) == E_PIXMAP_TYPE_X))
-     ecore_x_netwm_client_active_set(man->root, e_client_util_win_get(ec));
+     ecore_x_netwm_client_active_set(e_comp->root, e_client_util_win_get(ec));
    else
-     ecore_x_netwm_client_active_set(man->root, 0);
+     ecore_x_netwm_client_active_set(e_comp->root, 0);
 #endif
 }
 
@@ -415,11 +409,11 @@ e_hints_window_init(E_Client *ec)
 #else
    E_Remember *rem = NULL;
 
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    if (ec->remember)
      rem = ec->remember;
 
-   if (ec->icccm.state == ECORE_X_WINDOW_STATE_HINT_NONE)
+   if (ec->icccm.initial_state == ECORE_X_WINDOW_STATE_HINT_NONE)
      {
         if (ec->netwm.state.hidden)
           ec->icccm.state = ECORE_X_WINDOW_STATE_HINT_ICONIC;
@@ -602,7 +596,7 @@ e_hints_window_init(E_Client *ec)
    else if (ec->desk == e_desk_current_get(ec->zone))
      {
         /* ...but only if it's supposed to be shown */
-        if (ec->re_manage)
+        if (ec->re_manage && (ec->icccm.state != ECORE_X_WINDOW_STATE_HINT_WITHDRAWN))
           {
              ec->changes.visible = 1;
              ec->visible = 1;
@@ -618,7 +612,7 @@ e_hints_window_init(E_Client *ec)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_state_set(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -627,7 +621,7 @@ e_hints_window_state_set(E_Client *ec)
    Ecore_X_Window_State state[10];
    int num = 0;
 
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    if (ec->netwm.state.modal)
      state[num++] = ECORE_X_WINDOW_STATE_MODAL;
    if (ec->netwm.state.sticky)
@@ -678,7 +672,7 @@ e_hints_window_state_set(E_Client *ec)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_allowed_action_set(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -687,7 +681,7 @@ e_hints_allowed_action_set(E_Client *ec)
    Ecore_X_Action action[10];
    int num = 0;
 
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    if (ec->netwm.action.move)
      action[num++] = ECORE_X_ACTION_MOVE;
    if (ec->netwm.action.resize)
@@ -713,18 +707,18 @@ e_hints_allowed_action_set(E_Client *ec)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_type_set(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
    (void)ec;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    ecore_x_netwm_window_type_set(e_client_util_win_get(ec), ec->netwm.type);
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_type_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -733,7 +727,7 @@ e_hints_window_type_get(E_Client *ec)
    Ecore_X_Window_Type *types = NULL;
    int num, i, j;
 
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    num = ecore_x_netwm_window_types_get(e_client_util_win_get(ec), &types);
    if (ec->netwm.extra_types)
      {
@@ -766,6 +760,7 @@ e_hints_window_type_get(E_Client *ec)
                }
           }
         free(types);
+        evas_object_pass_events_set(ec->frame, ec->netwm.type == E_WINDOW_TYPE_DND);
      }
    ec->dialog = (ec->netwm.type == E_WINDOW_TYPE_DIALOG);
    if (!ec->dialog)
@@ -774,10 +769,10 @@ e_hints_window_type_get(E_Client *ec)
 }
 
 #ifdef E_COMP_X_H
-EAPI void
+E_API void
 e_hints_window_state_update(E_Client *ec, int state, int action)
 {
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    switch (state)
      {
       case ECORE_X_WINDOW_STATE_ICONIFIED:
@@ -851,12 +846,12 @@ e_hints_window_state_update(E_Client *ec, int state, int action)
          switch (action)
            {
             case ECORE_X_WINDOW_STATE_ACTION_REMOVE:
-              if (ec->maximized & max[state])
-                e_client_unmaximize(ec, E_MAXIMIZE_VERTICAL);
+              if ((ec->maximized & max[state]) == max[state])
+                e_client_unmaximize(ec, max[state]);
               break;
 
             case ECORE_X_WINDOW_STATE_ACTION_ADD:
-              if (ec->maximized & max[state]) break;
+              if ((ec->maximized & max[state]) == max[state]) break;
               ec->changes.need_maximize = 1;
               ec->maximized &= ~E_MAXIMIZE_TYPE;
               ec->maximized |= (e_config->maximize_policy & E_MAXIMIZE_TYPE) | max[state];
@@ -864,7 +859,7 @@ e_hints_window_state_update(E_Client *ec, int state, int action)
               break;
 
             case ECORE_X_WINDOW_STATE_ACTION_TOGGLE:
-              if (ec->maximized & max[state])
+              if ((ec->maximized & max[state]) == max[state])
                 {
                    e_client_unmaximize(ec, max[state]);
                    break;
@@ -1039,7 +1034,7 @@ e_hints_window_state_update(E_Client *ec, int state, int action)
 }
 #endif
 
-EAPI void
+E_API void
 e_hints_window_state_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1048,7 +1043,7 @@ e_hints_window_state_get(E_Client *ec)
    unsigned int i, num;
    Ecore_X_Window_State *state;
 
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    ec->netwm.state.modal = 0;
    ec->netwm.state.sticky = 0;
    ec->netwm.state.maximized_v = 0;
@@ -1129,14 +1124,14 @@ e_hints_window_state_get(E_Client *ec)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_allowed_action_update(E_Client *ec, int action)
 {
 #ifdef HAVE_WAYLAND_ONLY
    (void)ec;
    (void)action;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    switch (action)
      {
       case ECORE_X_ACTION_MOVE:
@@ -1178,7 +1173,7 @@ e_hints_allowed_action_update(E_Client *ec, int action)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_allowed_action_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1188,7 +1183,7 @@ e_hints_allowed_action_get(E_Client *ec)
    unsigned int i;
    unsigned int num;
 
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    ec->netwm.action.move = 0;
    ec->netwm.action.resize = 0;
    ec->netwm.action.minimize = 0;
@@ -1273,16 +1268,18 @@ _e_hints_process_wakeup(E_Client *ec)
 }
 #endif
 
-EAPI void
+E_API void
 e_hints_window_visible_set(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
    (void)ec;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
-   if (ec->icccm.state != ECORE_X_WINDOW_STATE_HINT_NORMAL)
-     ec->icccm.state = ECORE_X_WINDOW_STATE_HINT_NORMAL;
-   ecore_x_icccm_state_set(e_client_util_win_get(ec), ECORE_X_WINDOW_STATE_HINT_NORMAL);
+   if (!e_client_has_xwindow(ec)) return;
+   if (ec->icccm.state != ECORE_X_WINDOW_STATE_HINT_WITHDRAWN)
+     {
+        ec->icccm.state = ECORE_X_WINDOW_STATE_HINT_NORMAL;
+        ecore_x_icccm_state_set(e_client_util_win_get(ec), ECORE_X_WINDOW_STATE_HINT_NORMAL);
+     }
    if (ec->netwm.state.hidden)
      {
         ec->netwm.update.state = 1;
@@ -1293,16 +1290,18 @@ e_hints_window_visible_set(E_Client *ec)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_iconic_set(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
    (void)ec;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
-   if (ec->icccm.state != ECORE_X_WINDOW_STATE_HINT_ICONIC)
-     ec->icccm.state = ECORE_X_WINDOW_STATE_HINT_ICONIC;
-   ecore_x_icccm_state_set(e_client_util_win_get(ec), ECORE_X_WINDOW_STATE_HINT_ICONIC);
+   if (!e_client_has_xwindow(ec)) return;
+   if (ec->icccm.state != ECORE_X_WINDOW_STATE_HINT_WITHDRAWN)
+     {
+        ec->icccm.state = ECORE_X_WINDOW_STATE_HINT_ICONIC;
+        ecore_x_icccm_state_set(e_client_util_win_get(ec), ECORE_X_WINDOW_STATE_HINT_ICONIC);
+     }
    if (!ec->netwm.state.hidden)
      {
         ec->netwm.update.state = 1;
@@ -1313,13 +1312,13 @@ e_hints_window_iconic_set(E_Client *ec)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_hidden_set(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
    (void)ec;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    if (ec->icccm.state != ECORE_X_WINDOW_STATE_HINT_WITHDRAWN)
      ec->icccm.state = ECORE_X_WINDOW_STATE_HINT_WITHDRAWN;
    ecore_x_icccm_state_set(e_client_util_win_get(ec), ECORE_X_WINDOW_STATE_HINT_WITHDRAWN);
@@ -1333,14 +1332,14 @@ e_hints_window_hidden_set(E_Client *ec)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_shaded_set(E_Client *ec, int on)
 {
 #ifdef HAVE_WAYLAND_ONLY
    (void)ec;
    (void)on;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    if ((!ec->netwm.state.shaded) && (on))
      {
         ec->netwm.update.state = 1;
@@ -1361,19 +1360,19 @@ e_hints_window_shaded_set(E_Client *ec, int on)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_shade_direction_set(E_Client *ec, E_Direction dir)
 {
 #ifdef HAVE_WAYLAND_ONLY
    (void)ec;
    (void)dir;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    ecore_x_window_prop_card32_set(e_client_util_win_get(ec), E_ATOM_SHADE_DIRECTION, &dir, 1);
 #endif
 }
 
-EAPI E_Direction
+E_API E_Direction
 e_hints_window_shade_direction_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1382,7 +1381,7 @@ e_hints_window_shade_direction_get(E_Client *ec)
    int ret;
    E_Direction dir;
 
-   if (!e_pixmap_is_x(ec->pixmap)) return E_DIRECTION_UP;
+   if (!e_client_has_xwindow(ec)) return E_DIRECTION_UP;
    ret = ecore_x_window_prop_card32_get(e_client_util_win_get(ec),
                                         E_ATOM_SHADE_DIRECTION,
                                         &dir, 1);
@@ -1392,7 +1391,7 @@ e_hints_window_shade_direction_get(E_Client *ec)
    return E_DIRECTION_UP;
 }
 
-EAPI void
+E_API void
 e_hints_window_size_set(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1400,7 +1399,7 @@ e_hints_window_size_set(E_Client *ec)
 #else
    unsigned int sizes[4];
 
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    sizes[0] = ec->x;
    sizes[1] = ec->y;
    sizes[2] = ec->w;
@@ -1409,18 +1408,18 @@ e_hints_window_size_set(E_Client *ec)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_size_unset(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
    (void)ec;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    ecore_x_window_prop_property_del(e_client_util_win_get(ec), E_ATOM_BORDER_SIZE);
 #endif
 }
 
-EAPI int
+E_API int
 e_hints_window_size_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1429,7 +1428,7 @@ e_hints_window_size_get(E_Client *ec)
    int ret;
    unsigned int sizes[4];
 
-   if (!e_pixmap_is_x(ec->pixmap)) return 0;
+   if (!e_client_has_xwindow(ec)) return 0;
    memset(sizes, 0, sizeof(sizes));
    ret = ecore_x_window_prop_card32_get(e_client_util_win_get(ec), E_ATOM_BORDER_SIZE,
                                         sizes, 4);
@@ -1445,7 +1444,7 @@ e_hints_window_size_get(E_Client *ec)
    return 1;
 }
 
-EAPI void
+E_API void
 e_hints_window_maximized_set(E_Client *ec, int horizontal, int vertical)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1453,7 +1452,7 @@ e_hints_window_maximized_set(E_Client *ec, int horizontal, int vertical)
    (void)horizontal;
    (void)vertical;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    if ((horizontal) && (!ec->netwm.state.maximized_h))
      {
         ec->netwm.update.state = 1;
@@ -1481,7 +1480,7 @@ e_hints_window_maximized_set(E_Client *ec, int horizontal, int vertical)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_fullscreen_set(E_Client *ec,
                               int on)
 {
@@ -1489,7 +1488,7 @@ e_hints_window_fullscreen_set(E_Client *ec,
    (void)ec;
    (void)on;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    if ((!ec->netwm.state.fullscreen) && (on))
      {
         ec->netwm.update.state = 1;
@@ -1505,14 +1504,14 @@ e_hints_window_fullscreen_set(E_Client *ec,
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_sticky_set(E_Client *ec, int on)
 {
 #ifdef HAVE_WAYLAND_ONLY
    (void)ec;
    (void)on;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    if ((!ec->netwm.state.sticky) && (on))
      {
         ec->netwm.update.state = 1;
@@ -1528,14 +1527,14 @@ e_hints_window_sticky_set(E_Client *ec, int on)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_stacking_set(E_Client *ec, E_Stacking stacking)
 {
 #ifdef HAVE_WAYLAND_ONLY
    (void)ec;
    (void)stacking;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    if (ec->netwm.state.stacking == stacking) return;
    ec->netwm.update.state = 1;
    ec->netwm.state.stacking = stacking;
@@ -1543,7 +1542,7 @@ e_hints_window_stacking_set(E_Client *ec, E_Stacking stacking)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_desktop_set(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1559,7 +1558,7 @@ e_hints_window_desktop_set(E_Client *ec)
     * a calloc()'d struct and thus has to have been set to 0. hell even
     * e_client.c explicitly sets it to 0 on creation of the border object.
     */
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    deskpos[0] = ec->desk->x;
    deskpos[1] = ec->desk->y;
    ecore_x_window_prop_card32_set(e_client_util_win_get(ec), E_ATOM_DESK, deskpos, 2);
@@ -1571,7 +1570,7 @@ e_hints_window_desktop_set(E_Client *ec)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_e_state_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1582,7 +1581,7 @@ e_hints_window_e_state_get(E_Client *ec)
    int num = 0, i = 0;
    int size = 0;
 
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    memset(state, 0, sizeof(state));
 
    /* ugly, but avoids possible future overflow if more states are added */
@@ -1601,12 +1600,13 @@ e_hints_window_e_state_get(E_Client *ec)
 #endif
 }
 
-EAPI void
-e_hints_window_e_state_set(E_Client *ec __UNUSED__)
+E_API void
+e_hints_window_e_state_set(E_Client *ec EINA_UNUSED)
 {
    /* TODO */
 }
 
+<<<<<<< HEAD
 EAPI void
 e_hints_window_e_opaque_get(E_Client *ec)
 {
@@ -1629,6 +1629,9 @@ e_hints_window_e_opaque_get(E_Client *ec)
 }
 
 EAPI void
+=======
+E_API void
+>>>>>>> upstream
 e_hints_window_qtopia_soft_menu_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1636,7 +1639,7 @@ e_hints_window_qtopia_soft_menu_get(E_Client *ec)
 #else
    unsigned int val;
 
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    if (ecore_x_window_prop_card32_get(e_client_util_win_get(ec), ATM__QTOPIA_SOFT_MENU, &val, 1))
      ec->qtopia.soft_menu = val;
    else
@@ -1644,7 +1647,7 @@ e_hints_window_qtopia_soft_menu_get(E_Client *ec)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_qtopia_soft_menus_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1652,7 +1655,7 @@ e_hints_window_qtopia_soft_menus_get(E_Client *ec)
 #else
    unsigned int val;
 
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    if (ecore_x_window_prop_card32_get(e_client_util_win_get(ec), ATM__QTOPIA_SOFT_MENUS, &val, 1))
      ec->qtopia.soft_menus = val;
    else
@@ -1660,7 +1663,7 @@ e_hints_window_qtopia_soft_menus_get(E_Client *ec)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_virtual_keyboard_state_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1668,7 +1671,7 @@ e_hints_window_virtual_keyboard_state_get(E_Client *ec)
 #else
    Ecore_X_Atom atom = 0;
 
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    ec->vkbd.state = ecore_x_e_virtual_keyboard_state_get(e_client_util_win_get(ec));
    if (ecore_x_window_prop_atom_get(e_client_util_win_get(ec),
                                     ECORE_X_ATOM_E_VIRTUAL_KEYBOARD_STATE,
@@ -1679,13 +1682,13 @@ e_hints_window_virtual_keyboard_state_get(E_Client *ec)
 #endif
 }
 
-EAPI void
+E_API void
 e_hints_window_virtual_keyboard_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
    (void)ec;
 #else
-   if (!e_pixmap_is_x(ec->pixmap)) return;
+   if (!e_client_has_xwindow(ec)) return;
    ec->vkbd.vkbd = ecore_x_e_virtual_keyboard_get(e_client_util_win_get(ec));
 #endif
 }
@@ -1716,21 +1719,21 @@ e_hints_openoffice_kde_fake(Ecore_Window root)
 }
 #endif
 
-EAPI void
+E_API void
 e_hints_scale_update(void)
 {
 #ifdef HAVE_WAYLAND_ONLY
    Eina_List *l;
    E_Comp_Wl_Output *output;
 
-   EINA_LIST_FOREACH(e_comp->wl_comp_data->outputs, l, output)
+   EINA_LIST_FOREACH(e_comp_wl->outputs, l, output)
      output->scale = e_scale;
 
 #else
    unsigned int scale = e_scale * 1000;
 
-   if (e_comp->man->root)
-     ecore_x_window_prop_card32_set(e_comp->man->root, ATM_ENLIGHTENMENT_SCALE, &scale, 1);
+   if (e_comp->root)
+     ecore_x_window_prop_card32_set(e_comp->root, ATM_ENLIGHTENMENT_SCALE, &scale, 1);
 #endif
 }
 

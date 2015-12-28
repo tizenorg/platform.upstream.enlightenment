@@ -24,13 +24,13 @@ int _evry_events[NUM_EVRY_EVENTS];
 E_Module *_mod_evry = NULL;
 
 /* module setup */
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION,
    "Everything"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    Eina_List *l;
@@ -147,8 +147,8 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
    const char *t;
@@ -228,8 +228,8 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    return 1;
 }
 
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    e_config_domain_save("module.everything", conf_edd, evry_conf);
 
@@ -331,7 +331,7 @@ evry_view_unregister(Evry_View *view)
 /***************************************************************************/
 
 static Eina_Bool
-_cleanup_history(void *data __UNUSED__)
+_cleanup_history(void *data EINA_UNUSED)
 {
    /* evrything is active */
    if (evry_hist)
@@ -541,23 +541,11 @@ _e_mod_run_defer_cb(void *data)
 }
 
 static void
-_e_mod_action_cb(E_Object *obj, const char *params)
+_e_mod_action_cb(E_Object *obj EINA_UNUSED, const char *params)
 {
    E_Zone *zone = NULL;
 
-   if (obj)
-     {
-        if (obj->type == E_MANAGER_TYPE)
-          zone = e_util_zone_current_get((E_Manager *)obj);
-        else if (obj->type == E_COMP_TYPE)
-          zone = e_zone_current_get((E_Comp *)obj);
-        else if (obj->type == E_ZONE_TYPE)
-          zone = e_zone_current_get(((E_Zone *)obj)->comp);
-        else
-          zone = e_util_zone_current_get(e_manager_current_get());
-     }
-   if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
-
+   zone = e_zone_current_get();
    if (!zone) return;
 
    IF_RELEASE(_params);
@@ -570,7 +558,7 @@ _e_mod_action_cb(E_Object *obj, const char *params)
 }
 
 static void
-_e_mod_action_cb_edge(E_Object *obj  __UNUSED__, const char *params, E_Event_Zone_Edge *ev)
+_e_mod_action_cb_edge(E_Object *obj  EINA_UNUSED, const char *params, E_Event_Zone_Edge *ev)
 {
    IF_RELEASE(_params);
    if (params && params[0])
@@ -583,7 +571,7 @@ _e_mod_action_cb_edge(E_Object *obj  __UNUSED__, const char *params, E_Event_Zon
 
 /* menu item callback(s) */
 static void
-_e_mod_run_cb(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
+_e_mod_run_cb(void *data EINA_UNUSED, E_Menu *m, E_Menu_Item *mi EINA_UNUSED)
 {
    IF_RELEASE(_params);
    ecore_idle_enterer_add(_e_mod_run_defer_cb, m->zone);
@@ -591,7 +579,7 @@ _e_mod_run_cb(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
 
 /* menu item add hook */
 static void
-_e_mod_menu_add(void *data __UNUSED__, E_Menu *m)
+_e_mod_menu_add(void *data EINA_UNUSED, E_Menu *m)
 {
    E_Menu_Item *mi;
 

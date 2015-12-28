@@ -5,13 +5,13 @@
 static E_Module *conf_module = NULL;
 
 /* module setup */
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION,
      "Settings - Screen"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    e_configure_registry_category_add("screen", 30, _("Screen"), NULL, 
@@ -50,8 +50,8 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
 
@@ -84,8 +84,8 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    return 1;
 }
 
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    return 1;
 }

@@ -31,7 +31,7 @@ static Eina_List *_e_config_dialog_list = NULL;
  * @param data additional data to attach to the dialog, will be passed to the callbacks
  * @return returns the created dialog. Null on failure
  */
-EAPI E_Config_Dialog *
+E_API E_Config_Dialog *
 e_config_dialog_new(Evas_Object *parent, const char *title, const char *name, const char *class, const char *icon, int icon_size, E_Config_Dialog_View *view, void *data)
 {
    E_Config_Dialog *cfd;
@@ -92,7 +92,7 @@ e_config_dialog_new(Evas_Object *parent, const char *title, const char *name, co
    return cfd;
 }
 
-EAPI int
+E_API int
 e_config_dialog_find(const char *name, const char *class)
 {
    Eina_List *l;
@@ -106,18 +106,12 @@ e_config_dialog_find(const char *name, const char *class)
              E_Zone *z;
              E_Client *ec;
 
-             z = e_util_zone_current_get(e_manager_current_get());
+             z = e_zone_current_get();
              ec = e_win_client_get(cfd->dia->win);
              e_client_uniconify(ec);
              elm_win_raise(cfd->dia->win);
-             if (z->comp == ec->zone->comp)
-               e_client_desk_set(ec, e_desk_current_get(z));
-             else
-               {
-                  if (!ec->sticky)
-                    e_desk_show(ec->desk);
-                  e_util_pointer_center(ec);
-               }
+             ec->hidden = 0;
+             e_client_desk_set(ec, e_desk_current_get(z));
              if (ec->shaded || ec->shading)
                e_client_unshade(ec, ec->shade_dir);
              if ((e_config->focus_setting == E_FOCUS_NEW_DIALOG) ||
@@ -129,7 +123,7 @@ e_config_dialog_find(const char *name, const char *class)
    return 0;
 }
 
-EAPI E_Config_Dialog *
+E_API E_Config_Dialog *
 e_config_dialog_get(const char *name, const char *class)
 {
    Eina_List *l;
@@ -195,7 +189,13 @@ _e_config_dialog_go(E_Config_Dialog *cfd, E_Config_Dialog_CFData_Type type)
         if ((cfd->view->normal_win) || (e_config->cfgdlg_normal_wins))
           cfd->dia = e_dialog_normal_win_new(cfd->parent, cfd->name, buf);
         else
-          cfd->dia = e_dialog_new(cfd->parent, cfd->name, buf);
+          {
+             /* FIXME: REMOVE HACK FOR WAYLAND BEFORE RELEASE */
+             if (e_comp && e_comp->comp_type != E_PIXMAP_TYPE_WL)
+               cfd->dia = e_dialog_new(cfd->parent, cfd->name, buf);
+             else
+               cfd->dia = e_dialog_normal_win_new(cfd->parent, cfd->name, buf);
+          }
         e_object_del_attach_func_set(E_OBJECT(cfd->dia),
                                      _e_config_dialog_cb_dialog_del);
      } /* window was created before - deleting content only */
@@ -340,7 +340,7 @@ _e_config_dialog_cb_dialog_del(void *obj)
 }
 
 static void
-_e_config_dialog_cb_ok(void *data __UNUSED__, E_Dialog *dia)
+_e_config_dialog_cb_ok(void *data EINA_UNUSED, E_Dialog *dia)
 {
    E_Config_Dialog *cfd;
    int ok = 0;
@@ -361,7 +361,7 @@ _e_config_dialog_cb_ok(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_e_config_dialog_cb_apply(void *data __UNUSED__, E_Dialog *dia)
+_e_config_dialog_cb_apply(void *data EINA_UNUSED, E_Dialog *dia)
 {
    E_Config_Dialog *cfd;
    int ok = 0;
@@ -386,7 +386,7 @@ _e_config_dialog_cb_apply(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_e_config_dialog_cb_advanced(void *data, void *data2 __UNUSED__)
+_e_config_dialog_cb_advanced(void *data, void *data2 EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
 
@@ -396,7 +396,7 @@ _e_config_dialog_cb_advanced(void *data, void *data2 __UNUSED__)
 }
 
 static void
-_e_config_dialog_cb_basic(void *data, void *data2 __UNUSED__)
+_e_config_dialog_cb_basic(void *data, void *data2 EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
 
@@ -465,7 +465,7 @@ _e_config_dialog_check_changed(E_Config_Dialog *cfd, unsigned char def)
 }
 
 static void
-_e_config_dialog_cb_changed(void *data, Evas_Object *obj __UNUSED__)
+_e_config_dialog_cb_changed(void *data, Evas_Object *obj EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
    int changed;
@@ -478,7 +478,7 @@ _e_config_dialog_cb_changed(void *data, Evas_Object *obj __UNUSED__)
 }
 
 static void
-_e_config_dialog_cb_close(void *data __UNUSED__, E_Dialog *dia)
+_e_config_dialog_cb_close(void *data EINA_UNUSED, E_Dialog *dia)
 {
    E_Config_Dialog *cfd;
    int ok = 1;
@@ -490,14 +490,14 @@ _e_config_dialog_cb_close(void *data __UNUSED__, E_Dialog *dia)
    if (ok) e_util_defer_object_del(E_OBJECT(cfd));
 }
 
-EAPI void
+E_API void
 e_config_dialog_changed_auto_set(E_Config_Dialog *cfd, unsigned char value)
 {
    if (!cfd) return;
    cfd->cfg_changed_auto = !!value;
 }
 
-EAPI void
+E_API void
 e_config_dialog_changed_set(E_Config_Dialog *cfd, unsigned char value)
 {
    if (!cfd) return;

@@ -13,7 +13,7 @@ static void _e_wid_del_hook(Evas_Object *obj);
 /* local subsystem functions */
 
 /* externally accessible functions */
-EAPI Evas_Object *
+E_API Evas_Object *
 e_widget_font_preview_add(Evas *evas, const char *text)
 {
    Evas_Object *obj, *o;
@@ -52,7 +52,7 @@ e_widget_font_preview_add(Evas *evas, const char *text)
    return obj;
 }
 
-EAPI void
+E_API void
 e_widget_font_preview_font_set(Evas_Object *obj, const char *font, Evas_Font_Size size)
 {
    E_Widget_Data *wd;
@@ -77,7 +77,7 @@ _e_wid_del_hook(Evas_Object *obj)
 }
 
 static void
-_e_wid_cb_scrollframe_resize(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *event_info __UNUSED__)
+_e_wid_cb_scrollframe_resize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
    E_Widget_Data *wd;
    Evas_Coord mw, mh, vw, vh;
@@ -92,7 +92,7 @@ _e_wid_cb_scrollframe_resize(void *data, Evas *e __UNUSED__, Evas_Object *obj, v
 }
 
 static void
-_e_wid_focus_steal(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_wid_focus_steal(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    e_widget_focus_steal(data);
 }

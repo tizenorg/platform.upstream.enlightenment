@@ -10,7 +10,7 @@ deskmirror_test(void *d EINA_UNUSED)
    E_Zone *zone;
    Evas_Object *o;
 
-   zone = e_util_zone_current_get(e_manager_current_get());
+   zone = e_zone_current_get();
    o = e_deskmirror_add(e_desk_current_get(zone), 0, 0);
    evas_object_move(o, zone->x + zone->w - (zone->w / 4), zone->y + zone->h / 2);
    evas_object_resize(o, zone->w / 4, zone->h / 4);
@@ -27,7 +27,7 @@ deskmirror_test(void *d EINA_UNUSED)
 
 #endif
 
-EAPI void
+E_API void
 e_test(void)
 {
    _e_test_internal();
@@ -42,8 +42,6 @@ static int
 _e_test_timer(void *data)
 {
    E_Menu *m;
-   Eina_List *managers, *l;
-   E_Manager *man;
 
    m = data;
    if (m)
@@ -53,16 +51,11 @@ _e_test_timer(void *data)
         ecore_timer_add(0.05, _e_test_timer, NULL);
         return 0;
      }
-   managers = e_manager_list();
-   EINA_LIST_FOREACH(managers, l, man)
-     {
-        m = e_int_menus_main_new();
-        e_menu_activate_mouse(m,
-                              eina_list_data_get(man->comp->zones),
-                              0, 0, 1, 1, E_MENU_POP_DIRECTION_DOWN, 0);
-        ecore_timer_add(0.05, _e_test_timer, m);
-        return 0;
-     }
+   m = e_int_menus_main_new();
+   e_menu_activate_mouse(m,
+                         eina_list_data_get(e_comp->zones),
+                         0, 0, 1, 1, E_MENU_POP_DIRECTION_DOWN, 0);
+   ecore_timer_add(0.05, _e_test_timer, m);
    return 0;
 }
 
@@ -133,17 +126,12 @@ static void
 _e_test_internal(void)
 {
    E_Menu *m;
-   Eina_List *l;
-   E_Manager *man;
 
-   EINA_LIST_FOREACH(e_manager_list(), l, man)
-     {
-        m = e_int_menus_main_new();
-        e_menu_activate_mouse(m,
-                              eina_list_data_get(man->comp->zones),
-                              0, 0, 1, 1, E_MENU_POP_DIRECTION_DOWN, 0);
-        ecore_timer_add(0.02, _e_test_timer, m);
-     }
+   m = e_int_menus_main_new();
+   e_menu_activate_mouse(m,
+                         eina_list_data_get(e_comp->zones),
+                         0, 0, 1, 1, E_MENU_POP_DIRECTION_DOWN, 0);
+   ecore_timer_add(0.02, _e_test_timer, m);
 }
 
 #elif 0
@@ -678,7 +666,7 @@ _e_test_internal(void)
 {
    E_Color_Dialog *d;
 
-   d = e_color_dialog_new(c, NULL, EINA_FALSE);
+   d = e_color_dialog_new(NULL, EINA_FALSE);
    e_color_dialog_show(d);
    e_color_dialog_select_callback_set(d, _e_test_cb_ok, NULL);
 }

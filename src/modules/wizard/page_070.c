@@ -1,21 +1,21 @@
 /* Setup of default icon theme */
 #include "e_wizard.h"
 
-EAPI int
-wizard_page_init(E_Wizard_Page *pg __UNUSED__, Eina_Bool *need_xdg_desktops __UNUSED__, Eina_Bool *need_xdg_icons)
+E_API int
+wizard_page_init(E_Wizard_Page *pg EINA_UNUSED, Eina_Bool *need_xdg_desktops EINA_UNUSED, Eina_Bool *need_xdg_icons)
 {
    *need_xdg_icons = EINA_TRUE;
    return 1;
 }
 /*
-EAPI int
-wizard_page_shutdown(E_Wizard_Page *pg __UNUSED__)
+E_API int
+wizard_page_shutdown(E_Wizard_Page *pg EINA_UNUSED)
 {
    return 1;
 }
 */
-EAPI int
-wizard_page_show(E_Wizard_Page *pg __UNUSED__)
+E_API int
+wizard_page_show(E_Wizard_Page *pg EINA_UNUSED)
 {
    Eina_List *l, *themes = efreet_icon_theme_list_get();
    Efreet_Icon_Theme *th;
@@ -30,6 +30,10 @@ wizard_page_show(E_Wizard_Page *pg __UNUSED__)
       "ubuntu-mono-dark",
       "ubuntu-mono-light",
       "unity-icon-theme",
+      "Oxygen",            /* KDE 4 */
+      "Adwaita",           /* Gnome 3 */
+      "Breeze",            /* KDE 5 */
+      "HighContrast",
       NULL
    };
 
@@ -55,14 +59,14 @@ done:
    return 0; /* 1 == show ui, and wait for user, 0 == just continue */
 }
 /*
-EAPI int
-wizard_page_hide(E_Wizard_Page *pg __UNUSED__)
+E_API int
+wizard_page_hide(E_Wizard_Page *pg EINA_UNUSED)
 {
    return 1;
 }
 
-EAPI int
-wizard_page_apply(E_Wizard_Page *pg __UNUSED__)
+E_API int
+wizard_page_apply(E_Wizard_Page *pg EINA_UNUSED)
 {
    return 1;
 }

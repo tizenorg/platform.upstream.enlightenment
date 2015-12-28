@@ -3,13 +3,13 @@
 /* local function prototypes */
 static void        *_create_data(E_Config_Dialog *cfd);
 static void         _fill_data(E_Config_Dialog_Data *cfdata);
-static void         _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata);
-static Evas_Object *_basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata);
-static int          _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata);
-static Evas_Object *_adv_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata);
-static int          _adv_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata);
-static int          _adv_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata);
-static void         _adv_policy_changed(void *data, Evas_Object *obj __UNUSED__);
+static void         _free_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata);
+static Evas_Object *_basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata);
+static int          _basic_apply(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata);
+static Evas_Object *_adv_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata);
+static int          _adv_apply(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata);
+static int          _adv_changed(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata);
+static void         _adv_policy_changed(void *data, Evas_Object *obj EINA_UNUSED);
 
 struct _E_Config_Dialog_Data
 {
@@ -77,7 +77,7 @@ _scale_preview_sel_set(Evas_Object *ob, int sel)
 }
 
 static void
-_scale_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_scale_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Evas_Object *ob = data;
    
@@ -98,7 +98,7 @@ _scale_preview_new(E_Config_Dialog_Data *cfdata, Evas *e, double sc, double *scp
    e_widget_preview_vsize_set(ob, SZW, SZH);
    
    bg = edje_object_add(e_widget_preview_evas_get(ob));
-   file = e_bg_file_get(0, 0, 0, 0);
+   file = e_bg_file_get(0, 0, 0);
    edje_object_file_set(bg, file, "e/desktop/background");
    eina_stringshare_del(file);
    evas_object_move(bg, 0, 0);
@@ -161,7 +161,7 @@ _scale_preview_new(E_Config_Dialog_Data *cfdata, Evas *e, double sc, double *scp
 }
 
 E_Config_Dialog *
-e_int_config_scale(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
+e_int_config_scale(Evas_Object *parent EINA_UNUSED, const char *params EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -209,14 +209,14 @@ _fill_data(E_Config_Dialog_Data *cfdata)
 }
 
 static void
-_free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_free_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    eina_list_free(cfdata->obs);
    E_FREE(cfdata);
 }
 
 static Evas_Object *
-_basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *o, *ob;
    double sc = 1.0;
@@ -226,7 +226,8 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
    o = e_widget_table_add(e_win_evas_win_get(evas), 1);
 
 #ifndef HAVE_WAYLAND_ONLY
-   dpi = ecore_x_dpi_get();
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
+     dpi = ecore_x_dpi_get();
 #endif
    if ((dpi > 0) && (cfdata->base_dpi > 0))
      sc = (double)dpi / (double)cfdata->base_dpi;
@@ -258,7 +259,7 @@ _basic_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data 
 }
 
 static int
-_basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_basic_apply(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    E_Action *a;
    
@@ -288,11 +289,11 @@ _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static Evas_Object *
-_adv_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata)
+_adv_create(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *o, *otb, *ow;
    E_Radio_Group *rg;
-   char buff[256];
+   char buff[256] = {0};
 
    _fill_data(cfdata);
    if (cfdata->obs) cfdata->obs = eina_list_free(cfdata->obs);
@@ -309,8 +310,9 @@ _adv_create(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *c
    e_widget_list_object_append(o, ow, 1, 1, 0.5);
 
 #ifndef HAVE_WAYLAND_ONLY
-   snprintf(buff, sizeof(buff),
-            _("Base DPI (Currently %i DPI)"), ecore_x_dpi_get());
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
+     snprintf(buff, sizeof(buff),
+              _("Base DPI (Currently %i DPI)"), ecore_x_dpi_get());
 #endif
    ow = e_widget_label_add(evas, buff);
    cfdata->gui.adv.dpi_lbl = ow;
@@ -383,7 +385,7 @@ _adv_apply(E_Config_Dialog *cfd, E_Config_Dialog_Data *cfdata)
 }
 
 static int
-_adv_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_adv_changed(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    int use_dpi = 0, use_custom = 0;
 
@@ -401,7 +403,7 @@ _adv_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static void
-_adv_policy_changed(void *data, Evas_Object *obj __UNUSED__)
+_adv_policy_changed(void *data, Evas_Object *obj EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 

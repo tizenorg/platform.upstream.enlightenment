@@ -55,9 +55,9 @@ static Ecore_Timer *action_timeout = NULL;
 
 static Eldbus_Proxy *login1_manger_proxy = NULL;
 
-EAPI int E_EVENT_SYS_SUSPEND = -1;
-EAPI int E_EVENT_SYS_HIBERNATE = -1;
-EAPI int E_EVENT_SYS_RESUME = -1;
+E_API int E_EVENT_SYS_SUSPEND = -1;
+E_API int E_EVENT_SYS_HIBERNATE = -1;
+E_API int E_EVENT_SYS_RESUME = -1;
 
 static void
 _e_sys_comp_done_cb(void *data, Evas_Object *obj, const char *sig, const char *src)
@@ -112,8 +112,8 @@ _e_sys_comp_emit_cb_wait(E_Sys_Action a, const char *sig, const char *rep, Eina_
    E_Zone *zone;
    Eina_Bool first = EINA_TRUE;
 
-   if (nocomp_push) e_comp_override_add(e_comp);
-   else e_comp_override_timed_pop(e_comp);
+   if (nocomp_push) e_comp_override_add();
+   else e_comp_override_timed_pop();
    printf("_e_sys_comp_emit_cb_wait - [%x] %s %s\n", a, sig, rep);
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
@@ -164,7 +164,7 @@ _e_sys_comp_logout(void)
 static void
 _e_sys_comp_resume(void)
 {
-   evas_damage_rectangle_add(e_comp->evas, 0, 0, e_comp->man->w, e_comp->man->h);
+   evas_damage_rectangle_add(e_comp->evas, 0, 0, e_comp->w, e_comp->h);
    _e_sys_comp_emit_cb_wait(E_SYS_SUSPEND, "e,state,sys,resume", NULL, EINA_FALSE);
    e_screensaver_deactivate();
 }
@@ -226,7 +226,7 @@ e_sys_shutdown(void)
    return 1;
 }
 
-EAPI int
+E_API int
 e_sys_action_possible_get(E_Sys_Action a)
 {
    switch (a)
@@ -258,7 +258,7 @@ e_sys_action_possible_get(E_Sys_Action a)
    return 0;
 }
 
-EAPI int
+E_API int
 e_sys_action_do(E_Sys_Action a, char *param)
 {
    int ret = 0;
@@ -297,7 +297,7 @@ e_sys_action_do(E_Sys_Action a, char *param)
    return ret;
 }
 
-EAPI int
+E_API int
 e_sys_action_raw_do(E_Sys_Action a, char *param)
 {
    int ret = 0;
@@ -318,7 +318,7 @@ e_sys_action_raw_do(E_Sys_Action a, char *param)
 
 static Eina_List *extra_actions = NULL;
 
-EAPI E_Sys_Con_Action *
+E_API E_Sys_Con_Action *
 e_sys_con_extra_action_register(const char *label,
                                 const char *icon_group,
                                 const char *button_name,
@@ -340,7 +340,7 @@ e_sys_con_extra_action_register(const char *label,
    return sca;
 }
 
-EAPI void
+E_API void
 e_sys_con_extra_action_unregister(E_Sys_Con_Action *sca)
 {
    extra_actions = eina_list_remove(extra_actions, sca);
@@ -350,14 +350,14 @@ e_sys_con_extra_action_unregister(E_Sys_Con_Action *sca)
    free(sca);
 }
 
-EAPI const Eina_List *
+E_API const Eina_List *
 e_sys_con_extra_action_list_get(void)
 {
    return extra_actions;
 }
 
 static void
-_e_sys_systemd_inhibit_cb(void *data __UNUSED__, const Eldbus_Message *m, Eldbus_Pending *p __UNUSED__)
+_e_sys_systemd_inhibit_cb(void *data EINA_UNUSED, const Eldbus_Message *m, Eldbus_Pending *p EINA_UNUSED)
 {
    int fd = -1;
    if (eldbus_message_error_get(m, NULL, NULL)) return;
@@ -386,7 +386,7 @@ _e_sys_systemd_handle_inhibit(void)
 }
 
 static void
-_e_sys_systemd_check_cb(void *data, const Eldbus_Message *m, Eldbus_Pending *p __UNUSED__)
+_e_sys_systemd_check_cb(void *data, const Eldbus_Message *m, Eldbus_Pending *p EINA_UNUSED)
 {
    int *dest = data;
    char *s = NULL;
@@ -415,7 +415,7 @@ _e_sys_systemd_check(void)
 }
 
 static void
-_e_sys_systemd_exists_cb(void *data __UNUSED__, const Eldbus_Message *m, Eldbus_Pending *p __UNUSED__)
+_e_sys_systemd_exists_cb(void *data EINA_UNUSED, const Eldbus_Message *m, Eldbus_Pending *p EINA_UNUSED)
 {
    const char *id = NULL;
    
@@ -463,7 +463,7 @@ _e_sys_resume_job(void *d EINA_UNUSED)
 }
 
 static Eina_Bool
-_e_sys_susp_hib_check_timer_cb(void *data __UNUSED__)
+_e_sys_susp_hib_check_timer_cb(void *data EINA_UNUSED)
 {
    double t = ecore_time_unix_get();
 
@@ -494,7 +494,7 @@ _e_sys_susp_hib_check(void)
 
 /* local subsystem functions */
 static Eina_Bool
-_e_sys_cb_timer(void *data __UNUSED__)
+_e_sys_cb_timer(void *data EINA_UNUSED)
 {
    /* exec out sys helper and ask it to test if we are allowed to do these
     * things
@@ -522,7 +522,7 @@ _e_sys_cb_timer(void *data __UNUSED__)
 }
 
 static Eina_Bool
-_e_sys_cb_exit(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_sys_cb_exit(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Exe_Event_Del *ev;
 
@@ -587,7 +587,7 @@ _e_sys_cb_exit(void *data __UNUSED__, int type __UNUSED__, void *event)
 }
 
 static void
-_e_sys_cb_logout_logout(void *data __UNUSED__, E_Dialog *dia)
+_e_sys_cb_logout_logout(void *data EINA_UNUSED, E_Dialog *dia)
 {
    if (_e_sys_logout_timer)
      {
@@ -601,7 +601,7 @@ _e_sys_cb_logout_logout(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_e_sys_cb_logout_wait(void *data __UNUSED__, E_Dialog *dia)
+_e_sys_cb_logout_wait(void *data EINA_UNUSED, E_Dialog *dia)
 {
    if (_e_sys_logout_timer) ecore_timer_del(_e_sys_logout_timer);
    _e_sys_logout_timer = ecore_timer_add(0.5, _e_sys_cb_logout_timer, NULL);
@@ -611,7 +611,7 @@ _e_sys_cb_logout_wait(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_e_sys_cb_logout_abort(void *data __UNUSED__, E_Dialog *dia)
+_e_sys_cb_logout_abort(void *data EINA_UNUSED, E_Dialog *dia)
 {
    if (_e_sys_logout_timer)
      {
@@ -655,12 +655,12 @@ _e_sys_logout_confirm_dialog_update(int remaining)
 }
 
 static Eina_Bool
-_e_sys_cb_logout_timer(void *data __UNUSED__)
+_e_sys_cb_logout_timer(void *data EINA_UNUSED)
 {
    E_Client *ec;
    int pending = 0;
 
-   E_CLIENT_FOREACH(e_comp, ec)
+   E_CLIENT_FOREACH(ec)
      {
         if (e_client_util_ignored_get(ec)) continue;
         if (!ec->internal) pending++;
@@ -763,11 +763,11 @@ _e_sys_logout_begin(E_Sys_Action a_after, Eina_Bool raw)
    E_Client *ec;
    E_Obj_Dialog *od;
 
+   stopping = 1;
    /* start logout - at end do the a_after action */
    if (!raw)
      {
-        od = e_obj_dialog_new(e_util_comp_current_get(),
-                              _("Logout in progress"), "E", "_sys_logout");
+        od = e_obj_dialog_new(_("Logout in progress"), "E", "_sys_logout");
         e_obj_dialog_obj_theme_set(od, "base/theme/sys", "e/sys/logout");
         e_obj_dialog_obj_part_text_set(od, "e.textblock.message",
                                        _("Logout in progress.<br>"
@@ -812,26 +812,26 @@ _e_sys_current_action(void)
       case E_SYS_HALT:
       case E_SYS_HALT_NOW:
         e_dialog_text_set(dia, _("Powering off.<br>"
-                                 "You cannot do any other system actions<br>"
+                                 "You cannot perform any other system actions<br>"
                                  "once a shutdown has been started."));
         break;
 
       case E_SYS_REBOOT:
         e_dialog_text_set(dia, _("Resetting.<br>"
-                                 "You cannot do any other system actions<br>"
+                                 "You cannot perform any other system actions<br>"
                                  "once a reboot has begun."));
         break;
 
       case E_SYS_SUSPEND:
         e_dialog_text_set(dia, _("Suspending.<br>"
-                                 "Until suspend is complete you cannot perform<br>"
-                                 "any other system actions."));
+                                 "You cannot perform any other system actions<br>"
+                                 "until suspend is complete."));
         break;
 
       case E_SYS_HIBERNATE:
         e_dialog_text_set(dia, _("Hibernating.<br>"
                                  "You cannot perform any other system actions<br>"
-                                 "until this is complete."));
+                                 "until hibernation is complete."));
         break;
 
       default:
@@ -886,7 +886,7 @@ _e_sys_action_failed(void)
 }
 
 static int
-_e_sys_action_do(E_Sys_Action a, char *param __UNUSED__, Eina_Bool raw)
+_e_sys_action_do(E_Sys_Action a, char *param EINA_UNUSED, Eina_Bool raw)
 {
    char buf[PATH_MAX];
    E_Obj_Dialog *od;
@@ -904,7 +904,7 @@ _e_sys_action_do(E_Sys_Action a, char *param __UNUSED__, Eina_Bool raw)
 
       case E_SYS_RESTART:
         // XXX TODO: check for e_fm_op_registry entries and confirm
-        // FIXME: we dont   share out immortal info to restarted e. :(
+        // FIXME: we don't share out immortal info to restarted e. :(
 //	if (!e_util_immortal_check())
       {
          restart = 1;
@@ -961,8 +961,7 @@ _e_sys_action_do(E_Sys_Action a, char *param __UNUSED__, Eina_Bool raw)
                   ret = 0;
                   _e_sys_begin_time = ecore_time_get();
 
-                  od = e_obj_dialog_new(NULL,
-                                        _("Power off"), "E", "_sys_halt");
+                  od = e_obj_dialog_new(_("Power off"), "E", "_sys_halt");
                   e_obj_dialog_obj_theme_set(od, "base/theme/sys", "e/sys/halt");
                   e_obj_dialog_obj_part_text_set(od, "e.textblock.message",
                                                  _("Power off.<br>"
@@ -1007,8 +1006,7 @@ _e_sys_action_do(E_Sys_Action a, char *param __UNUSED__, Eina_Bool raw)
                {
                   ret = 0;
                   _e_sys_begin_time = ecore_time_get();
-                  od = e_obj_dialog_new(NULL,
-                                        _("Resetting"), "E", "_sys_reboot");
+                  od = e_obj_dialog_new(_("Resetting"), "E", "_sys_reboot");
                   e_obj_dialog_obj_theme_set(od, "base/theme/sys", "e/sys/reboot");
                   e_obj_dialog_obj_part_text_set(od, "e.textblock.message",
                                                  _("Resetting.<br>"
@@ -1105,7 +1103,7 @@ _e_sys_action_do(E_Sys_Action a, char *param __UNUSED__, Eina_Bool raw)
 }
 
 static void
-_e_sys_dialog_cb_delete(E_Obj_Dialog *od __UNUSED__)
+_e_sys_dialog_cb_delete(E_Obj_Dialog *od EINA_UNUSED)
 {
    /* If we don't NULL out the _e_sys_dialog, then the
     * ECORE_EXE_EVENT_DEL callback will trigger and segv if the window

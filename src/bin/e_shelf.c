@@ -21,7 +21,7 @@ static Eina_Bool    _e_shelf_cb_mouse_in(void *data, int type, void *event);
 //static Eina_Bool    _e_shelf_cb_mouse_out(void *data, int type, void *event);
 //static void          _e_shelf_cb_mouse_out2(E_Shelf *es, Evas *e, Evas_Object *obj, Evas_Event_Mouse_Out *ev);
 static int          _e_shelf_cb_id_sort(const void *data1, const void *data2);
-static void         _e_shelf_cb_menu_rename(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__);
+static void         _e_shelf_cb_menu_rename(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED);
 static Eina_Bool    _e_shelf_cb_hide_animator(void *data);
 static Eina_Bool    _e_shelf_cb_hide_animator_timer(void *data);
 static Eina_Bool    _e_shelf_cb_hide_urgent_timer(void *data);
@@ -79,12 +79,30 @@ static const char *orient_names[] =
    [E_GADCON_ORIENT_CORNER_RB] = N_("Right-bottom Corner")
 };
 
-EAPI int E_EVENT_SHELF_RENAME = -1;
-EAPI int E_EVENT_SHELF_ADD = -1;
-EAPI int E_EVENT_SHELF_DEL = -1;
+E_API int E_EVENT_SHELF_RENAME = -1;
+E_API int E_EVENT_SHELF_ADD = -1;
+E_API int E_EVENT_SHELF_DEL = -1;
 static Ecore_Event_Handler *_e_shelf_gadcon_populate_handler = NULL;
 static Ecore_Event_Handler *_e_shelf_module_init_end_handler = NULL;
 static Ecore_Event_Handler *_e_shelf_zone_moveresize_handler = NULL;
+
+static void
+_e_shelf_remaximize(E_Shelf *es)
+{
+   E_Client *ec;
+
+   if (es->cfg->overlap) return;
+   E_CLIENT_FOREACH(ec)
+     {
+        E_Maximize max = ec->maximized;
+
+        if (!ec->maximized) continue;
+        if ((!ec->sticky) && (!e_shelf_desk_visible(es, ec->desk ?: e_desk_current_get(es->zone))))
+          continue;
+        e_client_unmaximize(ec, ec->maximized);
+        e_client_maximize(ec, max);
+     }
+}
 
 /* externally accessible functions */
 EINTERN int
@@ -118,7 +136,7 @@ e_shelf_shutdown(void)
    return 1;
 }
 
-EAPI void
+E_API void
 e_shelf_config_update(void)
 {
    Eina_List *l;
@@ -138,14 +156,14 @@ e_shelf_config_update(void)
         E_Zone *zone;
 
         if (cf_es->id <= 0) cf_es->id = id + 1;
-        zone = e_util_comp_zone_number_get(cf_es->manager, cf_es->zone);
+        zone = e_comp_zone_number_get(cf_es->zone);
         if (zone)
           e_shelf_config_new(zone, cf_es);
         id = cf_es->id;
      }
 }
 
-EAPI Eina_List *
+E_API Eina_List *
 e_shelf_list_all(void)
 {
    Eina_List *d = NULL, *s = NULL, *ret = NULL;
@@ -161,14 +179,14 @@ e_shelf_list_all(void)
    return ret;
 }
 
-EAPI Eina_List *
+E_API Eina_List *
 e_shelf_list(void)
 {
    shelves = eina_list_sort(shelves, -1, _e_shelf_cb_id_sort);
    return shelves;
 }
 
-EAPI E_Shelf *
+E_API E_Shelf *
 e_shelf_zone_dummy_new(E_Zone *zone, Evas_Object *obj, int id)
 {
    E_Shelf *es;
@@ -194,7 +212,7 @@ e_shelf_zone_dummy_new(E_Zone *zone, Evas_Object *obj, int id)
    return es;
 }
 
-EAPI E_Shelf *
+E_API E_Shelf *
 e_shelf_zone_new(E_Zone *zone, const char *name, const char *style, E_Layer layer, int id)
 {
    E_Shelf *es;
@@ -213,8 +231,8 @@ e_shelf_zone_new(E_Zone *zone, const char *name, const char *style, E_Layer laye
    e_zone_useful_geometry_dirty(zone);
 
 
-   es->ee = zone->comp->ee;
-   es->evas = zone->comp->evas;
+   es->ee = e_comp->ee;
+   es->evas = e_comp->evas;
    es->fit_along = 1;
    es->layer = layer;
 
@@ -295,7 +313,7 @@ e_shelf_zone_new(E_Zone *zone, const char *name, const char *style, E_Layer laye
    return es;
 }
 
-EAPI void
+E_API void
 e_shelf_rename_dialog(E_Shelf *es)
 {
    if (!es) return;
@@ -303,7 +321,7 @@ e_shelf_rename_dialog(E_Shelf *es)
    _e_shelf_cb_menu_rename(es, NULL, NULL);
 }
 
-EAPI void
+E_API void
 e_shelf_zone_move_resize_handle(E_Zone *zone)
 {
    Eina_List *l;
@@ -334,7 +352,7 @@ e_shelf_zone_move_resize_handle(E_Zone *zone)
      }
 }
 
-EAPI void
+E_API void
 e_shelf_populate(E_Shelf *es)
 {
    E_OBJECT_CHECK(es);
@@ -342,7 +360,7 @@ e_shelf_populate(E_Shelf *es)
    e_gadcon_populate(es->gadcon);
 }
 
-EAPI void
+E_API void
 e_shelf_show(E_Shelf *es)
 {
    E_OBJECT_CHECK(es);
@@ -350,7 +368,7 @@ e_shelf_show(E_Shelf *es)
    evas_object_show(es->comp_object);
 }
 
-EAPI void
+E_API void
 e_shelf_hide(E_Shelf *es)
 {
    E_OBJECT_CHECK(es);
@@ -358,7 +376,7 @@ e_shelf_hide(E_Shelf *es)
    evas_object_hide(es->comp_object);
 }
 
-EAPI void
+E_API void
 e_shelf_locked_set(E_Shelf *es, int lock)
 {
    if (lock)
@@ -375,7 +393,7 @@ e_shelf_locked_set(E_Shelf *es, int lock)
      }
 }
 
-EAPI void
+E_API void
 e_shelf_name_set(E_Shelf *es, const char *name)
 {
    E_Event_Shelf *ev;
@@ -393,7 +411,7 @@ e_shelf_name_set(E_Shelf *es, const char *name)
    e_gadcon_name_set(es->gadcon, name);
 }
 
-EAPI void
+E_API void
 e_shelf_toggle(E_Shelf *es, int show)
 {
    E_OBJECT_CHECK(es);
@@ -431,7 +449,6 @@ e_shelf_toggle(E_Shelf *es, int show)
    else if ((!show) && (!es->hidden) && ((!es->gadcon) || (!es->gadcon->editing)) &&
             (es->cfg->autohide))
      {
-        edje_object_signal_emit(es->o_base, "e,state,hidden", "e");
         if (es->instant_delay >= 0.0)
           {
              if (es->hide_timer)
@@ -461,47 +478,53 @@ e_shelf_toggle(E_Shelf *es, int show)
      }
 }
 
-EAPI void
+E_API void
 e_shelf_urgent_show(E_Shelf *es)
 {
    e_shelf_toggle(es, 1);
    es->urgent_show = 1;
 }
 
-EAPI void
+E_API void
 e_shelf_move(E_Shelf *es, int x, int y)
 {
    E_OBJECT_CHECK(es);
    E_OBJECT_TYPE_CHECK(es, E_SHELF_TYPE);
+   if ((es->x == x) && (es->y == y)) return;
    es->x = x;
    es->y = y;
    evas_object_move(es->comp_object, es->zone->x + es->x, es->zone->y + es->y);
+   _e_shelf_remaximize(es);
 }
 
-EAPI void
+E_API void
 e_shelf_resize(E_Shelf *es, int w, int h)
 {
    E_OBJECT_CHECK(es);
    E_OBJECT_TYPE_CHECK(es, E_SHELF_TYPE);
+   if ((es->w == w) && (es->h == h)) return;
    es->w = w;
    es->h = h;
    evas_object_resize(es->comp_object, es->w, es->h);
+   _e_shelf_remaximize(es);
 }
 
-EAPI void
+E_API void
 e_shelf_move_resize(E_Shelf *es, int x, int y, int w, int h)
 {
    E_OBJECT_CHECK(es);
    E_OBJECT_TYPE_CHECK(es, E_SHELF_TYPE);
+   if ((es->x == x) && (es->y == y) && (es->w == w) && (es->h == h)) return;
    es->x = x;
    es->y = y;
    es->w = w;
    es->h = h;
    evas_object_move(es->comp_object, es->zone->x + es->x, es->zone->y + es->y);
    evas_object_resize(es->comp_object, es->w, es->h);
+   _e_shelf_remaximize(es);
 }
 
-EAPI void
+E_API void
 e_shelf_save(E_Shelf *es)
 {
    E_OBJECT_CHECK(es);
@@ -518,7 +541,6 @@ e_shelf_save(E_Shelf *es)
 
         cf_es = E_NEW(E_Config_Shelf, 1);
         cf_es->name = eina_stringshare_add(es->name);
-        cf_es->manager = es->zone->comp->num;
         cf_es->zone = es->zone->num;
         cf_es->layer = es->layer;
         e_config->shelves = eina_list_append(e_config->shelves, cf_es);
@@ -535,7 +557,7 @@ e_shelf_save(E_Shelf *es)
    e_config_save_queue();
 }
 
-EAPI void
+E_API void
 e_shelf_unsave(E_Shelf *es)
 {
    E_OBJECT_CHECK(es);
@@ -543,7 +565,7 @@ e_shelf_unsave(E_Shelf *es)
    es->cfg_delete = 1;
 }
 
-EAPI void
+E_API void
 e_shelf_orient(E_Shelf *es, E_Gadcon_Orient orient)
 {
    char buf[4096];
@@ -567,7 +589,7 @@ e_shelf_orient(E_Shelf *es, E_Gadcon_Orient orient)
    e_zone_useful_geometry_dirty(es->zone);
 }
 
-EAPI const char *
+E_API const char *
 e_shelf_orient_string_get(E_Shelf *es)
 {
    const char *sig = "";
@@ -640,7 +662,7 @@ e_shelf_orient_string_get(E_Shelf *es)
    return sig;
 }
 
-EAPI void
+E_API void
 e_shelf_position_calc(E_Shelf *es)
 {
    E_Gadcon_Orient orient = E_GADCON_ORIENT_FLOAT;
@@ -658,104 +680,104 @@ e_shelf_position_calc(E_Shelf *es)
    switch (orient)
      {
       case E_GADCON_ORIENT_FLOAT:
-        if (!es->fit_along) es->w = es->zone->w;
-        if (!es->fit_size) es->h = size;
+        if (!es->fit_along) w = es->zone->w;
+        if (!es->fit_size) h = size;
         break;
 
       case E_GADCON_ORIENT_HORIZ:
-        if (!es->fit_along) es->w = es->zone->w;
-        if (!es->fit_size) es->h = size;
-        es->x = (es->zone->w - es->w) / 2;
+        if (!es->fit_along) w = es->zone->w;
+        if (!es->fit_size) h = size;
+        x = (es->zone->w - w) / 2;
         break;
 
       case E_GADCON_ORIENT_VERT:
-        if (!es->fit_along) es->h = es->zone->h;
-        if (!es->fit_size) es->w = size;
-        es->y = (es->zone->h - es->h) / 2;
+        if (!es->fit_along) h = es->zone->h;
+        if (!es->fit_size) w = size;
+        y = (es->zone->h - h) / 2;
         break;
 
       case E_GADCON_ORIENT_LEFT:
-        if (!es->fit_along) es->h = es->zone->h;
-        if (!es->fit_size) es->w = size;
-        es->x = 0;
-        es->y = (es->zone->h - es->h) / 2;
+        if (!es->fit_along) h = es->zone->h;
+        if (!es->fit_size) w = size;
+        x = 0;
+        y = (es->zone->h - h) / 2;
         break;
 
       case E_GADCON_ORIENT_RIGHT:
-        if (!es->fit_along) es->h = es->zone->h;
-        if (!es->fit_size) es->w = size;
-        es->x = es->zone->w - es->w;
-        es->y = (es->zone->h - es->h) / 2;
+        if (!es->fit_along) h = es->zone->h;
+        if (!es->fit_size) w = size;
+        x = es->zone->w - w;
+        y = (es->zone->h - h) / 2;
         break;
 
       case E_GADCON_ORIENT_TOP:
-        if (!es->fit_along) es->w = es->zone->w;
-        if (!es->fit_size) es->h = size;
-        es->x = (es->zone->w - es->w) / 2;
-        es->y = 0;
+        if (!es->fit_along) w = es->zone->w;
+        if (!es->fit_size) h = size;
+        x = (es->zone->w - w) / 2;
+        y = 0;
         break;
 
       case E_GADCON_ORIENT_BOTTOM:
-        if (!es->fit_along) es->w = es->zone->w;
-        if (!es->fit_size) es->h = size;
-        es->x = (es->zone->w - es->w) / 2;
-        es->y = es->zone->h - es->h;
+        if (!es->fit_along) w = es->zone->w;
+        if (!es->fit_size) h = size;
+        x = (es->zone->w - w) / 2;
+        y = es->zone->h - h;
         break;
 
       case E_GADCON_ORIENT_CORNER_TL:
-        if (!es->fit_along) es->w = es->zone->w;
-        if (!es->fit_size) es->h = size;
-        es->x = 0;
-        es->y = 0;
+        if (!es->fit_along) w = es->zone->w;
+        if (!es->fit_size) h = size;
+        x = 0;
+        y = 0;
         break;
 
       case E_GADCON_ORIENT_CORNER_TR:
-        if (!es->fit_along) es->w = es->zone->w;
-        if (!es->fit_size) es->h = size;
-        es->x = es->zone->w - es->w;
-        es->y = 0;
+        if (!es->fit_along) w = es->zone->w;
+        if (!es->fit_size) h = size;
+        x = es->zone->w - w;
+        y = 0;
         break;
 
       case E_GADCON_ORIENT_CORNER_BL:
-        if (!es->fit_along) es->w = es->zone->w;
-        if (!es->fit_size) es->h = size;
-        es->x = 0;
-        es->y = es->zone->h - es->h;
+        if (!es->fit_along) w = es->zone->w;
+        if (!es->fit_size) h = size;
+        x = 0;
+        y = es->zone->h - h;
         break;
 
       case E_GADCON_ORIENT_CORNER_BR:
-        if (!es->fit_along) es->w = es->zone->w;
-        if (!es->fit_size) es->h = size;
-        es->x = es->zone->w - es->w;
-        es->y = es->zone->h - es->h;
+        if (!es->fit_along) w = es->zone->w;
+        if (!es->fit_size) h = size;
+        x = es->zone->w - w;
+        y = es->zone->h - h;
         break;
 
       case E_GADCON_ORIENT_CORNER_LT:
-        if (!es->fit_along) es->h = es->zone->h;
-        if (!es->fit_size) es->w = size;
-        es->x = 0;
-        es->y = 0;
+        if (!es->fit_along) h = es->zone->h;
+        if (!es->fit_size) w = size;
+        x = 0;
+        y = 0;
         break;
 
       case E_GADCON_ORIENT_CORNER_RT:
-        if (!es->fit_along) es->h = es->zone->h;
-        if (!es->fit_size) es->w = size;
-        es->x = es->zone->w - es->w;
-        es->y = 0;
+        if (!es->fit_along) h = es->zone->h;
+        if (!es->fit_size) w = size;
+        x = es->zone->w - w;
+        y = 0;
         break;
 
       case E_GADCON_ORIENT_CORNER_LB:
-        if (!es->fit_along) es->h = es->zone->h;
-        if (!es->fit_size) es->w = size;
-        es->x = 0;
-        es->y = es->zone->h - es->h;
+        if (!es->fit_along) h = es->zone->h;
+        if (!es->fit_size) w = size;
+        x = 0;
+        y = es->zone->h - h;
         break;
 
       case E_GADCON_ORIENT_CORNER_RB:
-        if (!es->fit_along) es->h = es->zone->h;
-        if (!es->fit_size) es->w = size;
-        es->x = es->zone->w - es->w;
-        es->y = es->zone->h - es->h;
+        if (!es->fit_along) h = es->zone->h;
+        if (!es->fit_size) w = size;
+        x = es->zone->w - w;
+        y = es->zone->h - h;
         break;
 
       default:
@@ -766,7 +788,7 @@ e_shelf_position_calc(E_Shelf *es)
 
    if ((es->x == x) && (es->y == y) && (es->w == w) && (es->h == h)) return;
 
-   e_shelf_move_resize(es, es->x, es->y, es->w, es->h);
+   e_shelf_move_resize(es, x, y, w, h);
    if (es->hidden)
      {
         es->hidden = 0;
@@ -820,7 +842,7 @@ e_shelf_position_calc(E_Shelf *es)
      } while (0);
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_shelf_desk_visible(const E_Shelf *es, const E_Desk *desk)
 {
    Eina_List *ll;
@@ -831,19 +853,19 @@ e_shelf_desk_visible(const E_Shelf *es, const E_Desk *desk)
    EINA_SAFETY_ON_NULL_RETURN_VAL(es, EINA_FALSE);
    if (!desk)
      {
-        EINA_LIST_FOREACH(e_util_comp_current_get()->zones, ll, zone)
+        EINA_LIST_FOREACH(e_comp->zones, ll, zone)
           {
              desk = e_desk_current_get(zone);
              if (e_shelf_desk_visible(es, desk)) return EINA_TRUE;
           }
         return EINA_FALSE;
      }
-   if (!es->cfg->desk_show_mode) return EINA_TRUE;
    cf_es = es->cfg;
    if (!cf_es) return EINA_FALSE;
 
    zone = desk->zone;
    if (cf_es->zone != (int)zone->num) return EINA_FALSE;
+   if (!es->cfg->desk_show_mode) return EINA_TRUE;
 
    EINA_LIST_FOREACH(es->cfg->desk_list, ll, sd)
      {
@@ -854,7 +876,7 @@ e_shelf_desk_visible(const E_Shelf *es, const E_Desk *desk)
    return EINA_FALSE;
 }
 
-EAPI void
+E_API void
 e_shelf_style_set(E_Shelf *es, const char *style)
 {
    const char *option;
@@ -888,7 +910,7 @@ e_shelf_style_set(E_Shelf *es, const char *style)
      es->instant_delay = -1.0;
 }
 
-EAPI void
+E_API void
 e_shelf_autohide_set(E_Shelf *es, int autohide_type)
 {
    E_OBJECT_CHECK(es);
@@ -931,7 +953,7 @@ e_shelf_autohide_set(E_Shelf *es, int autohide_type)
  */
 }
 
-EAPI E_Shelf *
+E_API E_Shelf *
 e_shelf_config_new(E_Zone *zone, E_Config_Shelf *cf_es)
 {
    E_Shelf *es;
@@ -964,7 +986,7 @@ e_shelf_config_new(E_Zone *zone, E_Config_Shelf *cf_es)
    return es;
 }
 
-EAPI E_Entry_Dialog *
+E_API E_Entry_Dialog *
 e_shelf_new_dialog(E_Zone *zone)
 {
    char buf[256];
@@ -997,7 +1019,6 @@ _e_shelf_new_dialog_ok(void *data, char *text)
 
    cfg = E_NEW(E_Config_Shelf, 1);
    cfg->name = eina_stringshare_add(text);
-   cfg->manager = zone->comp->num;
    cfg->zone = zone->num;
    cfg->layer = E_LAYER_CLIENT_ABOVE;
    EINA_LIST_FOREACH(e_config->shelves, l, es_cf)
@@ -1040,14 +1061,14 @@ _e_shelf_del_cb(void *d)
 }
 
 static void
-_e_shelf_event_rename_end_cb(void *data __UNUSED__, E_Event_Shelf *ev)
+_e_shelf_event_rename_end_cb(void *data EINA_UNUSED, E_Event_Shelf *ev)
 {
    e_object_unref(E_OBJECT(ev->shelf));
    free(ev);
 }
 
 static void
-_e_shelf_free_cb(void *data __UNUSED__, void *event)
+_e_shelf_free_cb(void *data EINA_UNUSED, void *event)
 {
    E_Event_Shelf *ev = event;
    E_Shelf *es = ev->shelf;
@@ -1126,7 +1147,7 @@ _e_shelf_free(E_Shelf *es)
 }
 
 static void
-_e_shelf_gadcon_min_size_request(void *data __UNUSED__, E_Gadcon *gc __UNUSED__, Evas_Coord w __UNUSED__, Evas_Coord h __UNUSED__)
+_e_shelf_gadcon_min_size_request(void *data EINA_UNUSED, E_Gadcon *gc EINA_UNUSED, Evas_Coord w EINA_UNUSED, Evas_Coord h EINA_UNUSED)
 {
    return;
 }
@@ -1484,7 +1505,7 @@ _e_shelf_menu_append(E_Shelf *es, E_Menu *mn)
 }
 
 static void
-_e_shelf_cb_menu_items_append(void *data, E_Gadcon_Client *gcc __UNUSED__, E_Menu *mn)
+_e_shelf_cb_menu_items_append(void *data, E_Gadcon_Client *gcc EINA_UNUSED, E_Menu *mn)
 {
    E_Shelf *es;
 
@@ -1511,7 +1532,7 @@ _e_shelf_cb_urgent_show(void *data)
 }
 
 static void
-_e_shelf_cb_menu_autohide(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_shelf_cb_menu_autohide(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Shelf *es = data;
 
@@ -1525,7 +1546,7 @@ _e_shelf_cb_menu_autohide(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UN
 }
 
 static void
-_e_shelf_cb_menu_refresh(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_shelf_cb_menu_refresh(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Shelf *es = data;
 
@@ -1534,7 +1555,7 @@ _e_shelf_cb_menu_refresh(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNU
 }
 
 static void
-_e_shelf_cb_menu_config(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_shelf_cb_menu_config(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Shelf *es;
 
@@ -1543,7 +1564,7 @@ _e_shelf_cb_menu_config(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUS
 }
 
 static void
-_e_shelf_cb_menu_edit(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_shelf_cb_menu_edit(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Shelf *es;
 
@@ -1561,7 +1582,7 @@ _e_shelf_cb_menu_edit(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED
 }
 
 static void
-_e_shelf_cb_menu_contents(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_shelf_cb_menu_contents(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Shelf *es;
 
@@ -1590,7 +1611,7 @@ _e_shelf_cb_confirm_dialog_yes(void *data)
 }
 
 static void
-_e_shelf_cb_menu_delete(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_shelf_cb_menu_delete(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Shelf *es;
 
@@ -1617,18 +1638,18 @@ _e_shelf_cb_menu_delete(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUS
 }
 
 static void
-_e_shelf_cb_menu_post(void *data, E_Menu *m __UNUSED__)
+_e_shelf_cb_menu_post(void *data, E_Menu *m)
 {
    E_Shelf *es;
 
    es = data;
-   if (!es->menu) return;
-   e_object_del(E_OBJECT(es->menu));
+   e_object_del(E_OBJECT(m));
+   if (m != es->menu) return;
    es->menu = NULL;
 }
 
 static void
-_e_shelf_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
+_e_shelf_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evas_Event_Mouse_Down *ev;
    E_Shelf *es;
@@ -1653,7 +1674,7 @@ _e_shelf_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNU
 
         e_gadcon_canvas_zone_geometry_get(es->gadcon, &cx, &cy, NULL, NULL);
         e_menu_activate_mouse(mn,
-                              e_util_zone_current_get(e_manager_current_get()),
+                              e_zone_current_get(),
                               cx + ev->output.x,
                               cy + ev->output.y, 1, 1,
                               E_MENU_POP_DIRECTION_AUTO, ev->timestamp);
@@ -1668,9 +1689,9 @@ _e_shelf_cb_mouse_move_autohide_fuck_systray(E_Shelf *es)
    Ecore_Event_Mouse_Move ev;
 
    memset(&ev, 0, sizeof(Ecore_Event_Mouse_Move));
-   ecore_evas_pointer_xy_get(es->zone->comp->ee, &x, &y);
-   ev.root.x = e_comp_canvas_x_root_unadjust(es->zone->comp, x);
-   ev.root.y = e_comp_canvas_y_root_unadjust(es->zone->comp, y);
+   ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
+   ev.root.x = e_comp_canvas_x_root_unadjust(x);
+   ev.root.y = e_comp_canvas_y_root_unadjust(y);
    _e_shelf_cb_mouse_in(es, ECORE_EVENT_MOUSE_MOVE, &ev);
    return EINA_TRUE;
 }
@@ -1793,11 +1814,11 @@ _e_shelf_cb_mouse_in(void *data, int type, void *event)
          * mouse in/out events. in the future, when we remove systray, we should go
          * back to mouse in/out events
          */
-        inside = E_INSIDE(e_comp_canvas_x_root_adjust(e_comp, ev->root.x),
-                          e_comp_canvas_x_root_adjust(e_comp, ev->root.y),
+        inside = E_INSIDE(e_comp_canvas_x_root_adjust(ev->root.x),
+                          e_comp_canvas_x_root_adjust(ev->root.y),
                           es->zone->x, es->zone->y, es->zone->w + 4, es->zone->h + 4);
-        x = e_comp_canvas_x_root_adjust(e_comp, ev->root.x) - es->zone->x;
-        y = e_comp_canvas_x_root_adjust(e_comp, ev->root.y) - es->zone->y;
+        x = e_comp_canvas_x_root_adjust(ev->root.x) - es->zone->x;
+        y = e_comp_canvas_x_root_adjust(ev->root.y) - es->zone->y;
         if (inside)
           inside = (
               ((E_INSIDE(x, y, es->x, es->y, es->w, es->h)) ||
@@ -1830,7 +1851,7 @@ _e_shelf_cb_mouse_in(void *data, int type, void *event)
 
 #if 0
 static void
-_e_shelf_cb_mouse_out2(E_Shelf *es, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, Evas_Event_Mouse_Out *ev)
+_e_shelf_cb_mouse_out2(E_Shelf *es, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, Evas_Event_Mouse_Out *ev)
 {
    int x, y, w, h;
 
@@ -1881,7 +1902,7 @@ _e_shelf_cb_mouse_out(void *data, int type, void *event)
 
 #endif
 static void
-_e_shelf_cb_dummy_moveresize(E_Shelf *es, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_shelf_cb_dummy_moveresize(E_Shelf *es, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    int x, y, w, h;
 
@@ -1894,7 +1915,7 @@ _e_shelf_cb_dummy_moveresize(E_Shelf *es, Evas *e __UNUSED__, Evas_Object *obj _
 }
 
 static void
-_e_shelf_cb_dummy_del(E_Shelf *es, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_shelf_cb_dummy_del(E_Shelf *es, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    e_object_free(E_OBJECT(es));
 }
@@ -2024,11 +2045,12 @@ end:
      _e_shelf_toggle_client_fix(es);
    if ((!es->hidden) && es->cfg->autohide_show_action)
      {
-        edje_object_signal_emit(es->o_base, "e,state,hidden", "e");
         es->hidden = 1;
         if (!es->hide_timer)
           es->hide_timer = ecore_timer_add(es->cfg->hide_timeout, _e_shelf_cb_hide_animator_timer, es);
      }
+   if (es->hidden && (!es->hide_timer))
+     edje_object_signal_emit(es->o_base, "e,state,hidden", "e");
    return ECORE_CALLBACK_CANCEL;
 }
 
@@ -2108,7 +2130,7 @@ _e_shelf_cb_instant_hide_timer(void *data)
 }
 
 static Eina_Bool
-_e_shelf_gadcon_populate_handler_cb(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_shelf_gadcon_populate_handler_cb(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    E_Event_Gadcon_Populate *ev = event;
    Eina_List *l;
@@ -2154,7 +2176,7 @@ _e_shelf_cb_menu_rename_cb(void *data)
 }
 
 static void
-_e_shelf_cb_menu_rename(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_shelf_cb_menu_rename(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Shelf *es = data;
    if (es->rename_dialog) return;

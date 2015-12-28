@@ -178,13 +178,13 @@ _gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient)
 }
 
 static const char *
-_gc_label(const E_Gadcon_Client_Class *client_class __UNUSED__)
+_gc_label(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    return _("Start");
 }
 
 static Evas_Object *
-_gc_icon(const E_Gadcon_Client_Class *client_class __UNUSED__, Evas *evas)
+_gc_icon(const E_Gadcon_Client_Class *client_class EINA_UNUSED, Evas *evas)
 {
    Evas_Object *o;
    char buf[PATH_MAX];
@@ -197,13 +197,13 @@ _gc_icon(const E_Gadcon_Client_Class *client_class __UNUSED__, Evas *evas)
 }
 
 static const char *
-_gc_id_new(const E_Gadcon_Client_Class *client_class __UNUSED__)
+_gc_id_new(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    return _gadcon_class.name;
 }
 
 static void
-_button_cb_mouse_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
+_button_cb_mouse_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Instance *inst;
    Evas_Event_Mouse_Down *ev;
@@ -288,7 +288,7 @@ _button_cb_mouse_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED_
 
              e_gadcon_locked_set(inst->gcc->gadcon, 1);
              e_menu_activate_mouse(inst->main_menu,
-                                   e_util_zone_current_get(e_manager_current_get()),
+                                   e_zone_current_get(),
                                    x, y, w, h, dir, ev->timestamp);
              edje_object_signal_emit(inst->o_button, "e,state,focused", "e");
           }
@@ -311,13 +311,13 @@ _menu_cb_post(void *data, E_Menu *m)
 }
 
 /* module setup */
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION,
    "Start"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    start_module = m;
@@ -325,16 +325,16 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    start_module = NULL;
    e_gadcon_provider_unregister(&_gadcon_class);
    return 1;
 }
 
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    return 1;
 }

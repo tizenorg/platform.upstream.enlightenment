@@ -75,7 +75,7 @@ _client_item_add(Plugin *p, E_Client *ec)
 }
 
 static Eina_Bool
-_cb_border_remove(void *data, __UNUSED__ int type, void *event)
+_cb_border_remove(void *data, EINA_UNUSED int type, void *event)
 {
    E_Event_Client *ev = event;
    Client_Item *bi;
@@ -101,7 +101,7 @@ _cb_border_remove(void *data, __UNUSED__ int type, void *event)
 }
 
 static Eina_Bool
-_cb_client_add(void *data, __UNUSED__ int type, void *event)
+_cb_client_add(void *data, EINA_UNUSED int type, void *event)
 {
    E_Event_Client *ev = event;
    Plugin *p = data;
@@ -120,7 +120,7 @@ _cb_client_add(void *data, __UNUSED__ int type, void *event)
 }
 
 static Evry_Plugin *
-_begin(Evry_Plugin *plugin, const Evry_Item *item __UNUSED__)
+_begin(Evry_Plugin *plugin, const Evry_Item *item EINA_UNUSED)
 {
    Plugin *p;
    E_Client *ec;
@@ -287,7 +287,7 @@ _check_border(Evry_Action *act, const Evry_Item *it)
 
    int action = EVRY_ITEM_DATA_INT_GET(act);
    E_Client *ec = bi->client;
-   E_Zone *zone = e_util_zone_current_get(e_manager_current_get());
+   E_Zone *zone = e_zone_current_get();
 
    if (!ec)
      {
@@ -333,7 +333,7 @@ _act_border(Evry_Action *act)
 
    int action = EVRY_ITEM_DATA_INT_GET(act);
    E_Client *ec = bi->client;
-   E_Zone *zone = e_util_zone_current_get(e_manager_current_get());
+   E_Zone *zone = e_zone_current_get();
    int focus = 0;
 
    if (!ec)
@@ -407,7 +407,7 @@ _act_border(Evry_Action *act)
              else if (warp_to_y >= (ec->zone->y + ec->zone->h - 1))
                warp_to_y = (ec->zone->y + ec->zone->h + ec->y) / 2;
 
-             ecore_evas_pointer_warp(ec->zone->comp->ee, warp_to_x, warp_to_y);
+             ecore_evas_pointer_warp(e_comp->ee, warp_to_x, warp_to_y);
           }
         /* e_client_focus_set_with_pointer(ec); */
      }
@@ -483,7 +483,7 @@ _plugins_shutdown(void)
 /***************************************************************************/
 
 Eina_Bool
-evry_plug_windows_init(E_Module *m __UNUSED__)
+evry_plug_windows_init(E_Module *m EINA_UNUSED)
 {
    EVRY_MODULE_NEW(evry_module, evry, _plugins_init, _plugins_shutdown);
 

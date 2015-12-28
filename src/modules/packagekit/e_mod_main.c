@@ -37,7 +37,7 @@ _mouse_down_cb(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
      {
         E_Menu *m;
         E_Menu_Item *mi;
-        E_Zone *zone = e_util_zone_current_get(e_manager_current_get());
+        E_Zone *zone = e_zone_current_get();
         int x, y;
 
         if (inst->popup)
@@ -159,9 +159,9 @@ static const E_Gadcon_Client_Class _gc_class =
 
 
 /* E Module Api Functions */
-EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, "PackageKit" };
+E_API E_Module_Api e_modapi = { E_MODULE_API_VERSION, "PackageKit" };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    E_PackageKit_Module_Context *ctxt;
@@ -191,7 +191,7 @@ e_modapi_init(E_Module *m)
    return ctxt;
 }
 
-EAPI int
+E_API int
 e_modapi_shutdown(E_Module *m)
 {
    E_PackageKit_Module_Context *ctxt = m->data;
@@ -221,7 +221,7 @@ e_modapi_shutdown(E_Module *m)
    return 1;
 }
 
-EAPI int
+E_API int
 e_modapi_save(E_Module *m)
 {
    E_PackageKit_Module_Context *ctxt = m->data;

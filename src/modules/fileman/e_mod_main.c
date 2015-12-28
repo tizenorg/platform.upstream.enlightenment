@@ -21,13 +21,13 @@ static E_Config_DD *paths_edd = NULL, *conf_edd = NULL;
 Config *fileman_config = NULL;
 
 /* module setup */
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION,
    "Fileman"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    const Eina_List *l;
@@ -82,8 +82,8 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    const Eina_List *l;
    E_Zone *zone;
@@ -142,8 +142,8 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    return 1;
 }
 
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    e_config_domain_save("module.fileman", conf_edd, fileman_config);
    return 1;
@@ -157,46 +157,35 @@ _e_mod_action_fileman_reset_cb(E_Object *obj EINA_UNUSED, const char *params EIN
 }
 
 static void
-_e_mod_action_fileman_cb(E_Object   *obj,
+_e_mod_action_fileman_cb(E_Object   *obj EINA_UNUSED,
                          const char *params)
 {
    E_Zone *zone = NULL;
 
-   if (obj)
-     {
-        if (obj->type == E_MANAGER_TYPE)
-          zone = e_util_zone_current_get((E_Manager *)obj);
-        else if (obj->type == E_COMP_TYPE)
-          zone = e_zone_current_get((E_Comp *)obj);
-        else if (obj->type == E_ZONE_TYPE)
-          zone = e_zone_current_get(((E_Zone *)obj)->comp);
-        else
-          zone = e_zone_current_get(e_comp_get(NULL));
-     }
-   if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
+   zone = e_zone_current_get();
    if (zone)
      {
         if (params && params[0] == '/')
-          e_fwin_new(zone->comp, "/", params);
+          e_fwin_new("/", params);
         else if (params && params[0] == '~')
-          e_fwin_new(zone->comp, "~/", params + 1);
+          e_fwin_new("~/", params + 1);
         else if (params && strcmp(params, "(none)")) /* avoid matching paths that no longer exist */
           {
              char *path;
              path = e_util_shell_env_path_eval(params);
              if (path)
                {
-                  e_fwin_new(zone->comp, path, "/");
+                  e_fwin_new(path, "/");
                   free(path);
                }
           }
         else
-          e_fwin_new(zone->comp, "favorites", "/");
+          e_fwin_new("favorites", "/");
      }
 }
 
 void
-_e_mod_menu_add(void *data __UNUSED__, E_Menu *m)
+_e_mod_menu_add(void *data EINA_UNUSED, E_Menu *m)
 {
    e_mod_menu_add(m, NULL);
 }
@@ -328,7 +317,7 @@ _e_mod_fileman_config_free(void)
 }
 
 static Eina_Bool
-_e_mod_zone_add(__UNUSED__ void *data,
+_e_mod_zone_add(EINA_UNUSED void *data,
                 int              type,
                 void            *event)
 {
@@ -351,7 +340,7 @@ e_mod_fileman_path_find(E_Zone *zone)
    Fileman_Path *path;
 
    EINA_LIST_FOREACH(fileman_config->paths, l, path)
-     if (path->zone == zone->comp->num + zone->num) break;
+     if (path->zone == zone->num) break;
    if (l && fileman_config->view.desktop_navigation) return path;
    if (l)
      {
@@ -361,14 +350,14 @@ e_mod_fileman_path_find(E_Zone *zone)
    else
      {
         path = E_NEW(Fileman_Path, 1);
-        path->zone = zone->comp->num + zone->num;
+        path->zone = zone->num;
         path->dev = eina_stringshare_add("desktop");
         fileman_config->paths = eina_list_append(fileman_config->paths, path);
         path->desktop_mode = E_FM2_VIEW_MODE_CUSTOM_ICONS;
      }
-   if ((zone->comp->num == 0) && (zone->num == 0))
+   if (zone->num == 0)
      path->path = eina_stringshare_add("/");
    else
-     path->path = eina_stringshare_printf("%d", (zone->comp->num + zone->num));
+     path->path = eina_stringshare_printf("%d", zone->num);
    return path;
 }

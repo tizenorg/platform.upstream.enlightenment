@@ -57,10 +57,14 @@ struct _Notifier_Item
    const char *menu_path;
    E_DBusMenu_Ctx *menu_data;
    Eina_List *signals;
+   uint32_t *imgdata;
+   int imgw, imgh;
+   uint32_t *attnimgdata;
+   int attnimgw, attnimgh;
 };
 
-typedef void (*E_Notifier_Watcher_Item_Registered_Cb)(void *data, const char *service);
-typedef void (*E_Notifier_Watcher_Item_Unregistered_Cb)(void *data, const char *service);
+typedef void (*E_Notifier_Watcher_Item_Registered_Cb)(void *data, const char *service, const char *path);
+typedef void (*E_Notifier_Watcher_Item_Unregistered_Cb)(void *data, const char *service, const char *path);
 
 void systray_notifier_update_menu(void *data, E_DBusMenu_Item *new_root_item);
 void systray_notifier_item_update(Notifier_Item *item);

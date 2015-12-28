@@ -26,29 +26,51 @@ enum
 static void
 item_name_monitor_cb(void *data, const char *bus, const char *old_id EINA_UNUSED, const char *new_id)
 {
-   const char *service = data;
+   const char *svc, *service = data;
+   Eina_List *l;
 
+   l = eina_list_data_find_list(items, service);
    if (strcmp(new_id, ""))
-     return;
+     {
+        if (l) return;
+        items = eina_list_append(items, service);
+        svc = strchr(service, '/') + 1;
+        registered_cb(user_data, bus, svc);
+        return;
+     }
 
-   eldbus_service_signal_emit(iface, ITEM_UNREGISTERED, service);
-   items = eina_list_remove(items, service);
-   if (unregistered_cb)
-     unregistered_cb(user_data, service);
-   eina_stringshare_del(service);
+   svc = strchr(service, '/') + 1;
+
+   eldbus_service_signal_emit(iface, ITEM_UNREGISTERED, svc);
+   if (l)
+     {
+        items = eina_list_remove_list(items, l);
+        if (unregistered_cb)
+          unregistered_cb(user_data, bus, svc);
+     }
+   bus = eina_stringshare_add(bus);
+   if (eina_hash_del_by_key(systray_ctx_get()->config->items, bus))
+     e_config_save_queue();
+   eina_stringshare_del(bus);
    eldbus_name_owner_changed_callback_del(conn, bus, item_name_monitor_cb, service);
+   eina_stringshare_del(service);
 }
 
 static Eldbus_Message *
 register_item_cb(const Eldbus_Service_Interface *s_iface, const Eldbus_Message *msg)
 {
-   const char *service;
+   const char *service, *svc;
    char buf[1024];
+   Eina_Bool stupid;
 
    if (!eldbus_message_arguments_get(msg, "s", &service))
      return NULL;
+   svc = service;
+   /* if stupid, this app does not conform to http://www.freedesktop.org/wiki/Specifications/StatusNotifierItem/
+    * and is expecting to have its send id watched as it is not providing a real bus name here */
+   stupid = !!strncmp(svc, "org.", 4);
 
-   snprintf(buf, sizeof(buf), "%s%s", eldbus_message_sender_get(msg), service);
+   snprintf(buf, sizeof(buf), "%s/%s", stupid ? eldbus_message_sender_get(msg) : svc, stupid ? svc : "/StatusNotifierItem");
    service = eina_stringshare_add(buf);
    if (eina_list_data_find(items, service))
      {
@@ -57,13 +79,13 @@ register_item_cb(const Eldbus_Service_Interface *s_iface, const Eldbus_Message *
      }
 
    items = eina_list_append(items, service);
-   eldbus_service_signal_emit(s_iface, ITEM_REGISTERED, service);
-   eldbus_name_owner_changed_callback_add(conn, eldbus_message_sender_get(msg),
+   eldbus_service_signal_emit(s_iface, ITEM_REGISTERED, svc);
+   eldbus_name_owner_changed_callback_add(conn, stupid ? eldbus_message_sender_get(msg) : svc,
                                          item_name_monitor_cb, service,
                                          EINA_FALSE);
 
    if (registered_cb)
-     registered_cb(user_data, service);
+     registered_cb(user_data, stupid ? eldbus_message_sender_get(msg) : svc, stupid ? svc : "/StatusNotifierItem");
    return eldbus_message_method_return_new(msg);
 }
 
@@ -145,9 +167,19 @@ static const Eldbus_Service_Interface_Desc iface_desc = {
    IFACE, methods, signals, properties, properties_get, NULL
 };
 
+
+static void
+systray_notifier_item_hash_del(Notifier_Item_Cache *item)
+{
+   eina_stringshare_del(item->path);
+   free(item);
+}
+
 void
 systray_notifier_dbus_watcher_start(Eldbus_Connection *connection, E_Notifier_Watcher_Item_Registered_Cb registered, E_Notifier_Watcher_Item_Unregistered_Cb unregistered, const void *data)
 {
+   const char *dbus;
+
    EINA_SAFETY_ON_TRUE_RETURN(!!conn);
    conn = connection;
    iface = eldbus_service_interface_register(conn, PATH, &iface_desc);
@@ -155,6 +187,37 @@ systray_notifier_dbus_watcher_start(Eldbus_Connection *connection, E_Notifier_Wa
    unregistered_cb = unregistered;
    user_data = (void *)data;
    host_service = eina_stringshare_add("internal");
+   dbus = eldbus_connection_unique_name_get(conn);
+   if (systray_ctx_get()->config->items)
+     eina_hash_free_cb_set(systray_ctx_get()->config->items, (Eina_Free_Cb)systray_notifier_item_hash_del);
+   if (dbus && systray_ctx_get()->config->dbus && systray_ctx_get()->config->items)
+     {
+        if (!strcmp(systray_ctx_get()->config->dbus, dbus))
+          {
+             Eina_Iterator *it;
+             Eina_Hash_Tuple *t;
+
+             it = eina_hash_iterator_tuple_new(systray_ctx_get()->config->items);
+             EINA_ITERATOR_FOREACH(it, t)
+               {
+                  char buf[1024];
+                  Notifier_Item_Cache *nic = t->data;
+
+                  snprintf(buf, sizeof(buf), "%s/%s", (char*)t->key, nic->path);
+                  eldbus_name_owner_changed_callback_add(conn, t->key,
+                                      item_name_monitor_cb, eina_stringshare_add(buf),
+                                      EINA_TRUE);
+               }
+             eina_iterator_free(it);
+             return;
+          }
+     }
+   eina_stringshare_replace(&systray_ctx_get()->config->dbus, dbus);
+   if (systray_ctx_get()->config->items)
+     eina_hash_free_buckets(systray_ctx_get()->config->items);
+   else
+     systray_ctx_get()->config->items = eina_hash_stringshared_new((Eina_Free_Cb)systray_notifier_item_hash_del);
+   e_config_save_queue();
 }
 
 void
@@ -179,4 +242,6 @@ systray_notifier_dbus_watcher_stop(void)
    if (host_service)
      eina_stringshare_del(host_service);
    conn = NULL;
+   E_FREE_FUNC(systray_ctx_get()->config->items, eina_hash_free);
+   eina_stringshare_replace(&systray_ctx_get()->config->dbus, NULL);
 }

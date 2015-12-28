@@ -42,17 +42,18 @@ struct _E_ACPI_Device_Multiplexed
 };
 
 /* local function prototypes */
-static Eina_Bool _e_acpi_cb_server_del(void *data __UNUSED__, int type __UNUSED__, void *event);
-static Eina_Bool _e_acpi_cb_server_data(void *data __UNUSED__, int type __UNUSED__, void *event);
-static void      _e_acpi_cb_event_free(void *data __UNUSED__, void *event);
+static Eina_Bool _e_acpi_cb_server_del(void *data EINA_UNUSED, int type EINA_UNUSED, void *event);
+static Eina_Bool _e_acpi_cb_server_data(void *data EINA_UNUSED, int type EINA_UNUSED, void *event);
+static void      _e_acpi_cb_event_free(void *data EINA_UNUSED, void *event);
 static int       _e_acpi_lid_status_get(const char *device, const char *bus);
-static Eina_Bool _e_acpi_cb_event(void *data __UNUSED__, int type __UNUSED__, void *event);
+static Eina_Bool _e_acpi_cb_event(void *data EINA_UNUSED, int type EINA_UNUSED, void *event);
 
 /* local variables */
 static int _e_acpi_events_frozen = 0;
 static Ecore_Con_Server *_e_acpid = NULL;
 static Eina_List *_e_acpid_hdls = NULL;
 static Eina_Strbuf *acpibuf = NULL;
+static int lid_is_closed = -1;
 
 static E_ACPI_Device_Simple _devices_simple[] =
 {
@@ -122,7 +123,7 @@ static E_ACPI_Device_Multiplexed _devices_multiplexed[] =
 };
 
 /* public variables */
-EAPI int E_EVENT_ACPI = 0;
+E_API int E_EVENT_ACPI = 0;
 
 /* public functions */
 EINTERN int
@@ -191,13 +192,21 @@ e_acpi_lid_status_get(void)
    return E_ACPI_LID_UNKNOWN;
 }
 
-EAPI void
+E_API Eina_Bool
+e_acpi_lid_is_closed(void)
+{
+   if (lid_is_closed == -1)
+     lid_is_closed = (e_acpi_lid_status_get() == E_ACPI_LID_CLOSED);
+   return lid_is_closed;
+}
+
+E_API void
 e_acpi_events_freeze(void)
 {
    _e_acpi_events_frozen++;
 }
 
-EAPI void
+E_API void
 e_acpi_events_thaw(void)
 {
    _e_acpi_events_frozen--;
@@ -206,7 +215,7 @@ e_acpi_events_thaw(void)
 
 /* local functions */
 static Eina_Bool
-_e_acpi_cb_server_del(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_acpi_cb_server_del(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Con_Event_Server_Del *ev;
    Ecore_Event_Handler *hdl;
@@ -228,7 +237,7 @@ _e_acpi_cb_server_del(void *data __UNUSED__, int type __UNUSED__, void *event)
 }
 
 static Eina_Bool
-_e_acpi_cb_server_data(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_acpi_cb_server_data(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Con_Event_Server_Data *ev;
    E_Event_Acpi *acpi_event;
@@ -243,7 +252,7 @@ _e_acpi_cb_server_data(void *data __UNUSED__, int type __UNUSED__, void *event)
    /* write out actual acpi received data to stdout for debugging
       res = fwrite(ev->data, ev->size, 1, stdout);
     */
-   /* data from a server isnt a string - its not 0 byte terminated. it's just
+   /* data from a server isn't a string - its not 0 byte terminated. it's just
     * a blob of data. copy to string and 0 byte terminate it so it can be
     * string-swizzled/parsed etc. */
    if (!acpibuf) acpibuf = eina_strbuf_new();
@@ -335,6 +344,13 @@ _e_acpi_cb_server_data(void *data __UNUSED__, int type __UNUSED__, void *event)
                 case E_ACPI_TYPE_LID:
                   acpi_event->status =
                     _e_acpi_lid_status_get(device, bus);
+                  printf("RRR: acpi event\n");
+                  /* no change in lid state */
+                  if (lid_is_closed == (acpi_event->status == E_ACPI_LID_CLOSED)) break;
+                  lid_is_closed = (acpi_event->status == E_ACPI_LID_CLOSED);
+                  printf("RRR: lid event for lid %i\n", lid_is_closed);
+                  if (!e_randr2_cfg->ignore_acpi_events)
+                    e_randr2_screen_refresh_queue(EINA_TRUE);
                   break;
 
                 default:
@@ -366,7 +382,7 @@ done_event:
 }
 
 static void
-_e_acpi_cb_event_free(void *data __UNUSED__, void *event)
+_e_acpi_cb_event_free(void *data EINA_UNUSED, void *event)
 {
    E_Event_Acpi *ev;
 
@@ -437,7 +453,7 @@ _e_acpi_lid_status_get(const char *device, const char *bus)
 }
 
 static Eina_Bool
-_e_acpi_cb_event(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_acpi_cb_event(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    E_Event_Acpi *ev;
 

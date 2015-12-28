@@ -2,7 +2,7 @@
 #include "e_mod_main.h"
 
 /* local subsystem functions */
-static Eina_Bool _cb_key_down(__UNUSED__ void *data, Ecore_Event_Key *ev);
+static Eina_Bool _cb_key_down(EINA_UNUSED void *data, Ecore_Event_Key *ev);
 static void      _cb_signal_close(void *data, Evas_Object *obj, const char *emission, const char *source);
 static void      _cb_signal_syscon(void *data, Evas_Object *obj, const char *emission, const char *source);
 static void      _cb_signal_action(void *data, Evas_Object *obj, const char *emission, const char *source);
@@ -80,8 +80,8 @@ e_syscon_show(E_Zone *zone, const char *defact)
         return 0;
      }
 
-   if (!e_comp_grab_input(e_comp_get(zone), 1, 1)) return 0;
-   evas = e_comp_get(zone)->evas;
+   if (!e_comp_grab_input(1, 1)) return 0;
+   evas = e_comp->evas;
    evas_event_freeze(evas);
 
    o = edje_object_add(evas);
@@ -292,7 +292,7 @@ e_syscon_hide(void)
    E_FREE_FUNC(deftimer, ecore_timer_del);
    eina_stringshare_replace(&do_defact, NULL);
    E_FREE_LIST(handlers, ecore_event_handler_del);
-   e_comp_ungrab_input(e_comp_util_evas_object_comp_get(popup), 1, 1);
+   e_comp_ungrab_input(1, 1);
    evas_object_hide(popup);
    E_FREE_FUNC(popup, evas_object_del);
    o_selected_flow = o_selected = o_flow_extra = o_flow_main = o_flow_secondary = NULL;
@@ -300,7 +300,7 @@ e_syscon_hide(void)
 
 /* local subsystem functions */
 static Eina_Bool
-_cb_key_down(__UNUSED__ void *data, Ecore_Event_Key *ev)
+_cb_key_down(EINA_UNUSED void *data, Ecore_Event_Key *ev)
 {
    if (!strcmp(ev->key, "Escape"))
      e_syscon_hide();
@@ -430,7 +430,7 @@ _cb_key_down(__UNUSED__ void *data, Ecore_Event_Key *ev)
 }
 
 static void
-_cb_signal_close(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const char *emission __UNUSED__, const char *source __UNUSED__)
+_cb_signal_close(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, const char *emission EINA_UNUSED, const char *source EINA_UNUSED)
 {
    e_syscon_hide();
 }
@@ -458,14 +458,14 @@ _do_action_name(const char *action)
 }
 
 static void
-_cb_signal_syscon(void *data __UNUSED__, Evas_Object *obj __UNUSED__, const char *emission __UNUSED__, const char *source)
+_cb_signal_syscon(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, const char *emission EINA_UNUSED, const char *source)
 {
    e_syscon_hide();
    _do_action_name(source);
 }
 
 static void
-_cb_signal_action(void *data, Evas_Object *obj __UNUSED__, const char *emission __UNUSED__, const char *source __UNUSED__)
+_cb_signal_action(void *data, Evas_Object *obj EINA_UNUSED, const char *emission EINA_UNUSED, const char *source EINA_UNUSED)
 {
    E_Config_Syscon_Action *sca;
    E_Action *a;
@@ -479,7 +479,7 @@ _cb_signal_action(void *data, Evas_Object *obj __UNUSED__, const char *emission 
 }
 
 static void
-_cb_signal_action_extra(void *data, Evas_Object *obj __UNUSED__, const char *emission __UNUSED__, const char *source __UNUSED__)
+_cb_signal_action_extra(void *data, Evas_Object *obj EINA_UNUSED, const char *emission EINA_UNUSED, const char *source EINA_UNUSED)
 {
    E_Sys_Con_Action *sca;
 
@@ -490,7 +490,7 @@ _cb_signal_action_extra(void *data, Evas_Object *obj __UNUSED__, const char *emi
 }
 
 static Eina_Bool
-_cb_timeout_defaction(void *data __UNUSED__)
+_cb_timeout_defaction(void *data EINA_UNUSED)
 {
    const char *defact = NULL;
    deftimer = NULL;

@@ -11,8 +11,8 @@ struct _E_Resist_Rect
 
 static void _e_resist_rects(Eina_List *rects, int px, int py, int pw, int ph, int x, int y, int w, int h, int *rx, int *ry, int *rw, int *rh);
 
-EAPI int
-e_resist_client_position(E_Comp *c, Eina_List *skiplist,
+E_API int
+e_resist_client_position(Eina_List *skiplist,
                                    int px, int py, int pw, int ph,
                                    int x, int y, int w, int h,
                                    int *rx, int *ry, int *rw, int *rh)
@@ -49,14 +49,14 @@ e_resist_client_position(E_Comp *c, Eina_List *skiplist,
      rects = eina_list_append(rects, r);                          \
   }
 
-   EINA_LIST_FOREACH(c->zones, l, zone)
+   EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
         HOLDER(zone->x, zone->y, zone->w, zone->h, e_config->desk_resist);
      }
    /* FIXME: need to add resist or complete BLOCKS for things like ibar */
    /* can add code here to add more fake obstacles with custom resist values */
    /* here if need be - ie xinerama middle between screens and panels etc. */
-   E_CLIENT_FOREACH(c, ec)
+   E_CLIENT_FOREACH(ec)
      {
         if (e_client_util_ignored_get(ec) || (!evas_object_visible_get(ec->frame))) continue;
         if (ec->offer_resistance && (!eina_list_data_find(skiplist, ec)))
@@ -65,7 +65,7 @@ e_resist_client_position(E_Comp *c, Eina_List *skiplist,
           }
      }
 
-   desk = e_desk_current_get(e_zone_current_get(c));
+   desk = e_desk_current_get(e_zone_current_get());
    l = e_shelf_list_all();
    EINA_LIST_FREE(l, es)
      {
@@ -87,8 +87,8 @@ e_resist_client_position(E_Comp *c, Eina_List *skiplist,
    return 1;
 }
 
-EAPI int
-e_resist_gadman_position(E_Comp *c EINA_UNUSED, Eina_List *skiplist __UNUSED__,
+E_API int
+e_resist_gadman_position(Eina_List *skiplist EINA_UNUSED,
                                    int px, int py, int pw, int ph,
                                    int x, int y, int w, int h,
                                    int *rx, int *ry)

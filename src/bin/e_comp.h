@@ -3,16 +3,15 @@ typedef struct _E_Comp E_Comp;
 
 #ifdef E_COMP_WL
 typedef struct _E_Comp_Wl_Client_Data E_Comp_Client_Data;
-typedef struct _E_Comp_Wl_Data E_Comp_Data;
 #endif
+typedef struct _E_Comp_Wl_Data E_Comp_Wl_Data;
 
 #ifdef E_COMP_X
 typedef struct _E_Comp_X_Client_Data E_Comp_Client_Data;
-typedef struct _E_Comp_X_Data E_Comp_Data;
 #endif
+typedef struct _E_Comp_X_Data E_Comp_X_Data;
 
 #if !defined(E_COMP_WL) && !defined(E_COMP_X)
-typedef struct _E_Comp_Data E_Comp_Data;
 typedef struct _E_Comp_Client_Data E_Comp_Client_Data;
 #endif
 
@@ -58,32 +57,57 @@ typedef enum _E_Layer
 
 # include "e_comp_cfdata.h"
 
+<<<<<<< HEAD
 extern EAPI int E_EVENT_COMPOSITOR_DISABLE;
 extern EAPI int E_EVENT_COMPOSITOR_ENABLE;
 extern EAPI int E_EVENT_COMPOSITOR_FPS_UPDATE;
+=======
+extern E_API int E_EVENT_COMPOSITOR_DISABLE;
+extern E_API int E_EVENT_COMPOSITOR_ENABLE;
+
+typedef void (*E_Comp_Cb)(void);
+
+typedef struct E_Comp_Screen_Iface
+{
+   /* can screen changes be made at all */
+   Eina_Bool (*available)(void);
+   /* begin listening for screen events */
+   void (*init)(void);
+   /* stop listening for screen events */
+   void (*shutdown)(void);
+   /* gather screen info */
+   E_Randr2 *(*create)(void);
+   /* apply current config */
+   void (*apply)(void);
+   /* set dpms (on, standby, suspend, off) */
+   void (*dpms)(int);
+} E_Comp_Screen_Iface;
+>>>>>>> upstream
 
 struct _E_Comp
 {
    E_Object e_obj_inherit;
+   int w, h;
 
    Ecore_Window  win; // input overlay
+   Ecore_Window  root;
    Ecore_Evas     *ee;
    Ecore_Window  ee_win;
    Evas_Object    *elm;
    Evas           *evas;
    Evas_Object    *bg_blank_object;
    Eina_List      *zones;
-   E_Manager      *man;
    E_Pointer      *pointer;
    Eina_List *clients;
    unsigned int new_clients;
 
-   E_Comp_Data *x_comp_data;
-   E_Comp_Data *wl_comp_data;
+   Eina_List *pre_render_cbs; /* E_Comp_Cb */
+
+   E_Comp_X_Data *x_comp_data;
+   E_Comp_Wl_Data *wl_comp_data;
 
    E_Pixmap_Type comp_type; //for determining X/Wayland/
 
-   unsigned int num;
    Eina_Stringshare *name;
    struct {
       Ecore_Window win;
@@ -102,6 +126,8 @@ struct _E_Comp
       E_Comp_Object_Key_Cb key_cb;
       void *data;
    } autoclose;
+
+   E_Comp_Screen_Iface *screen;
 
    Eina_List *debug_rects;
    Eina_List *ignore_wins;
@@ -132,9 +158,9 @@ struct _E_Comp
    unsigned int    input_key_grabs;
    unsigned int    input_mouse_grabs;
 
-   Ecore_Cb        grab_cb;
-   Ecore_Cb        bindings_grab_cb;
-   Ecore_Cb        bindings_ungrab_cb;
+   E_Comp_Cb        grab_cb;
+   E_Comp_Cb        bindings_grab_cb;
+   E_Comp_Cb        bindings_ungrab_cb;
 
    Eina_Bool       gl : 1;
    Eina_Bool       grabbed : 1;
@@ -173,10 +199,15 @@ typedef enum
    E_COMP_ENGINE_GL = 2
 } E_Comp_Engine;
 
+extern E_API E_Comp *e_comp;
+extern E_API E_Comp_X_Data *e_comp_x;
+extern E_API E_Comp_Wl_Data *e_comp_wl;
+
 EINTERN Eina_Bool e_comp_init(void);
-EAPI E_Comp *e_comp_new(void);
-EAPI int e_comp_internal_save(void);
+E_API E_Comp *e_comp_new(void);
+E_API int e_comp_internal_save(void);
 EINTERN int e_comp_shutdown(void);
+<<<<<<< HEAD
 EAPI void e_comp_deferred_job(void);
 EAPI void e_comp_render_queue(E_Comp *c);
 EAPI void e_comp_shape_queue(E_Comp *c);
@@ -208,16 +239,43 @@ EAPI void e_comp_button_bindings_grab_all(void);
 EAPI void e_comp_button_bindings_ungrab_all(void);
 EAPI void e_comp_client_redirect_toggle(E_Client *ec);
 EAPI Eina_Bool e_comp_util_object_is_above_nocomp(Evas_Object *obj);
+=======
+E_API void e_comp_render_queue(void);
+E_API void e_comp_shape_queue(void);
+E_API void e_comp_shape_queue_block(Eina_Bool block);
+E_API E_Comp_Config *e_comp_config_get(void);
+E_API const Eina_List *e_comp_list(void);
+E_API void e_comp_shadows_reset(void);
+E_API Ecore_Window e_comp_top_window_at_xy_get(Evas_Coord x, Evas_Coord y);
+E_API void e_comp_util_wins_print(void);
+E_API void e_comp_ignore_win_add(E_Pixmap_Type type, Ecore_Window win);
+E_API void e_comp_ignore_win_del(E_Pixmap_Type type, Ecore_Window win);
+E_API Eina_Bool e_comp_ignore_win_find(Ecore_Window win);
+E_API void e_comp_override_del(void);
+E_API void e_comp_override_add(void);
+E_API void e_comp_block_window_add(void);
+E_API void e_comp_block_window_del(void);
+E_API E_Comp *e_comp_find_by_window(Ecore_Window win);
+E_API void e_comp_override_timed_pop(void);
+E_API unsigned int e_comp_e_object_layer_get(const E_Object *obj);
+E_API Eina_Bool e_comp_grab_input(Eina_Bool mouse, Eina_Bool kbd);
+E_API void e_comp_ungrab_input(Eina_Bool mouse, Eina_Bool kbd);
+E_API void e_comp_gl_set(Eina_Bool set);
+E_API Eina_Bool e_comp_gl_get(void);
+
+E_API void e_comp_button_bindings_grab_all(void);
+E_API void e_comp_button_bindings_ungrab_all(void);
+E_API void e_comp_client_redirect_toggle(E_Client *ec);
+E_API Eina_Bool e_comp_util_object_is_above_nocomp(Evas_Object *obj);
+>>>>>>> upstream
 
 EINTERN Evas_Object *e_comp_style_selector_create(Evas *evas, const char **source);
-EAPI E_Config_Dialog *e_int_config_comp(Evas_Object *parent, const char *params);
-EAPI E_Config_Dialog *e_int_config_comp_match(Evas_Object *parent, const char *params);
+E_API E_Config_Dialog *e_int_config_comp(Evas_Object *parent, const char *params);
+E_API E_Config_Dialog *e_int_config_comp_match(Evas_Object *parent, const char *params);
 
-EINA_DEPRECATED static inline E_Comp *
-e_comp_util_evas_object_comp_get(Evas_Object *obj)
-{
-   return ecore_evas_data_get(ecore_evas_ecore_evas_get(evas_object_evas_get(obj)), "comp");
-}
+
+E_API Eina_Bool e_comp_util_kbd_grabbed(void);
+E_API Eina_Bool e_comp_util_mouse_grabbed(void);
 
 static inline Eina_Bool
 e_comp_util_client_is_fullscreen(const E_Client *ec)
@@ -225,13 +283,23 @@ e_comp_util_client_is_fullscreen(const E_Client *ec)
    if ((!ec->visible) || (ec->input_only))
      return EINA_FALSE;
    return ((ec->client.x == 0) && (ec->client.y == 0) &&
-       ((ec->client.w) >= ec->comp->man->w) &&
-       ((ec->client.h) >= ec->comp->man->h) &&
+       ((ec->client.w) >= e_comp->w) &&
+       ((ec->client.h) >= e_comp->h) &&
        (!ec->argb) && (!ec->shaped)
        );
 }
 
-extern EAPI E_Comp *e_comp;
+static inline Eina_Bool
+e_comp_util_has_x(void)
+{
+   return !!e_comp->root;
+}
+
+static inline Eina_Bool
+e_comp_util_has_xwayland(void)
+{
+   return (e_comp->comp_type != E_PIXMAP_TYPE_X) && e_comp_util_has_x();
+}
 
 EAPI void e_comp_post_update_add(E_Client *ec);
 EAPI void e_comp_post_update_purge(E_Client *ec);

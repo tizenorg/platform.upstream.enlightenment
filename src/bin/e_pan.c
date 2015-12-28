@@ -32,14 +32,14 @@ static void _e_smart_init(void);
 static Evas_Smart *_e_smart = NULL;
 
 /* externally accessible functions */
-EAPI Evas_Object *
+E_API Evas_Object *
 e_pan_add(Evas *evas)
 {
    _e_smart_init();
    return evas_object_smart_add(evas, _e_smart);
 }
 
-EAPI void
+E_API void
 e_pan_child_set(Evas_Object *obj, Evas_Object *child)
 {
    API_ENTRY return;
@@ -75,14 +75,14 @@ e_pan_child_set(Evas_Object *obj, Evas_Object *child)
    evas_object_smart_callback_call(sd->smart_obj, "changed", NULL);
 }
 
-EAPI Evas_Object *
+E_API Evas_Object *
 e_pan_child_get(Evas_Object *obj)
 {
    API_ENTRY return NULL;
    return sd->child_obj;
 }
 
-EAPI void
+E_API void
 e_pan_set(Evas_Object *obj, Evas_Coord x, Evas_Coord y)
 {
    API_ENTRY return;
@@ -97,7 +97,7 @@ e_pan_set(Evas_Object *obj, Evas_Coord x, Evas_Coord y)
    evas_object_smart_callback_call(sd->smart_obj, "changed", NULL);
 }
 
-EAPI void
+E_API void
 e_pan_get(Evas_Object *obj, Evas_Coord *x, Evas_Coord *y)
 {
    API_ENTRY return;
@@ -105,7 +105,7 @@ e_pan_get(Evas_Object *obj, Evas_Coord *x, Evas_Coord *y)
    if (y) *y = sd->py;
 }
 
-EAPI void
+E_API void
 e_pan_max_get(Evas_Object *obj, Evas_Coord *x, Evas_Coord *y)
 {
    API_ENTRY return;
@@ -121,7 +121,7 @@ e_pan_max_get(Evas_Object *obj, Evas_Coord *x, Evas_Coord *y)
      }
 }
 
-EAPI void
+E_API void
 e_pan_child_size_get(Evas_Object *obj, Evas_Coord *w, Evas_Coord *h)
 {
    API_ENTRY return;
@@ -131,7 +131,7 @@ e_pan_child_size_get(Evas_Object *obj, Evas_Coord *w, Evas_Coord *h)
 
 /* local subsystem functions */
 static void
-_e_smart_child_del_hook(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_smart_child_del_hook(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Smart_Data *sd;
 
@@ -141,7 +141,7 @@ _e_smart_child_del_hook(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSE
 }
 
 static void
-_e_smart_child_resize_hook(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_smart_child_resize_hook(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Smart_Data *sd;
    Evas_Coord w, h;

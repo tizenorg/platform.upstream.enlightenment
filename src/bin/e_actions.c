@@ -7,7 +7,7 @@
      if (act) act->func.go = _e_actions_act_##name##_go;  \
   }
 #define ACT_FN_GO(act, use) \
-  static void _e_actions_act_##act##_go(E_Object * obj __UNUSED__, const char *params use)
+  static void _e_actions_act_##act##_go(E_Object * obj EINA_UNUSED, const char *params use)
 
 #define ACT_GO_MOUSE(name)                                            \
   {                                                                   \
@@ -15,7 +15,7 @@
      if (act) act->func.go_mouse = _e_actions_act_##name##_go_mouse;  \
   }
 #define ACT_FN_GO_MOUSE(act, use) \
-  static void _e_actions_act_##act##_go_mouse(E_Object * obj __UNUSED__, const char *params use, E_Binding_Event_Mouse_Button * ev __UNUSED__)
+  static void _e_actions_act_##act##_go_mouse(E_Object * obj EINA_UNUSED, const char *params use, E_Binding_Event_Mouse_Button * ev EINA_UNUSED)
 
 #define ACT_GO_WHEEL(name)                                            \
   {                                                                   \
@@ -23,7 +23,7 @@
      if (act) act->func.go_wheel = _e_actions_act_##name##_go_wheel;  \
   }
 #define ACT_FN_GO_WHEEL(act, use) \
-  static void _e_actions_act_##act##_go_wheel(E_Object * obj __UNUSED__, const char *params use, E_Binding_Event_Wheel * ev __UNUSED__)
+  static void _e_actions_act_##act##_go_wheel(E_Object * obj EINA_UNUSED, const char *params use, E_Binding_Event_Wheel * ev EINA_UNUSED)
 
 #define ACT_GO_EDGE(name)                                           \
   {                                                                 \
@@ -31,7 +31,7 @@
      if (act) act->func.go_edge = _e_actions_act_##name##_go_edge;  \
   }
 #define ACT_FN_GO_EDGE(act, use) \
-  static void _e_actions_act_##act##_go_edge(E_Object * obj __UNUSED__, const char *params use, E_Event_Zone_Edge * ev __UNUSED__)
+  static void _e_actions_act_##act##_go_edge(E_Object * obj EINA_UNUSED, const char *params use, E_Event_Zone_Edge * ev EINA_UNUSED)
 
 #define ACT_GO_SIGNAL(name)                                             \
   {                                                                     \
@@ -39,7 +39,7 @@
      if (act) act->func.go_signal = _e_actions_act_##name##_go_signal;  \
   }
 #define ACT_FN_GO_SIGNAL(act, use) \
-  static void _e_actions_act_##act##_go_signal(E_Object * obj __UNUSED__, const char *params use, const char *sig, const char *src)
+  static void _e_actions_act_##act##_go_signal(E_Object * obj EINA_UNUSED, const char *params use, const char *sig, const char *src)
 
 #define ACT_GO_KEY(name)                                          \
   {                                                               \
@@ -47,7 +47,7 @@
      if (act) act->func.go_key = _e_actions_act_##name##_go_key;  \
   }
 #define ACT_FN_GO_KEY(act, use1, use2) \
-  static void _e_actions_act_##act##_go_key(E_Object * obj __UNUSED__, const char *params use1, Ecore_Event_Key * ev use2)
+  static void _e_actions_act_##act##_go_key(E_Object * obj EINA_UNUSED, const char *params use1, Ecore_Event_Key * ev use2)
 
 #define ACT_END(name)                                       \
   {                                                         \
@@ -55,7 +55,7 @@
      if (act) act->func.end = _e_actions_act_##name##_end;  \
   }
 #define ACT_FN_END(act, use) \
-  static void _e_actions_act_##act##_end(E_Object * obj __UNUSED__, const char *params use)
+  static void _e_actions_act_##act##_end(E_Object * obj EINA_UNUSED, const char *params use)
 
 #define ACT_END_MOUSE(name)                                             \
   {                                                                     \
@@ -63,7 +63,7 @@
      if (act) act->func.end_mouse = _e_actions_act_##name##_end_mouse;  \
   }
 #define ACT_FN_END_MOUSE(act, use) \
-  static void _e_actions_act_##act##_end_mouse(E_Object * obj __UNUSED__, const char *params use, E_Binding_Event_Mouse_Button * ev __UNUSED__)
+  static void _e_actions_act_##act##_end_mouse(E_Object * obj EINA_UNUSED, const char *params use, E_Binding_Event_Mouse_Button * ev EINA_UNUSED)
 
 #define ACT_END_KEY(name)                                           \
   {                                                                 \
@@ -71,7 +71,7 @@
      if (act) act->func.end_key = _e_actions_act_##name##_end_key;  \
   }
 #define ACT_FN_END_KEY(act, use) \
-  static void _e_actions_act_##act##_end_key(E_Object * obj __UNUSED__, const char *params use, Ecore_Event_Key * ev __UNUSED__)
+  static void _e_actions_act_##act##_end_key(E_Object * obj EINA_UNUSED, const char *params use, Ecore_Event_Key * ev EINA_UNUSED)
 
 #define ACT_GO_ACPI(name)                                           \
   {                                                                 \
@@ -79,7 +79,7 @@
      if (act) act->func.go_acpi = _e_actions_act_##name##_go_acpi;  \
   }
 #define ACT_FN_GO_ACPI(act, use) \
-  static void _e_actions_act_##act##_go_acpi(E_Object * obj __UNUSED__, const char *params use, E_Event_Acpi * ev __UNUSED__)
+  static void _e_actions_act_##act##_go_acpi(E_Object * obj EINA_UNUSED, const char *params use, E_Event_Acpi * ev EINA_UNUSED)
 
 /* local functions forward declarations (window_jump_to needs the definition of exec) */
 ACT_FN_GO(exec, );
@@ -91,7 +91,7 @@ static int        _action_groups_sort_cb(const void *d1, const void *d2);
 
 /* to save writing this in N places - the sections are defined here */
 /***************************************************************************/
-ACT_FN_GO(window_move, __UNUSED__)
+ACT_FN_GO(window_move, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -100,7 +100,7 @@ ACT_FN_GO(window_move, __UNUSED__)
      e_client_act_move_begin((E_Client *)obj, NULL);
 }
 
-ACT_FN_GO_MOUSE(window_move, __UNUSED__)
+ACT_FN_GO_MOUSE(window_move, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -125,7 +125,7 @@ ACT_FN_GO_SIGNAL(window_move, )
      }
 }
 
-ACT_FN_END(window_move, __UNUSED__)
+ACT_FN_END(window_move, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -133,7 +133,7 @@ ACT_FN_END(window_move, __UNUSED__)
    e_client_act_move_end((E_Client *)obj, NULL);
 }
 
-ACT_FN_END_MOUSE(window_move, __UNUSED__)
+ACT_FN_END_MOUSE(window_move, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -141,7 +141,7 @@ ACT_FN_END_MOUSE(window_move, __UNUSED__)
    e_client_act_move_end((E_Client *)obj, ev);
 }
 
-ACT_FN_GO_KEY(window_move, __UNUSED__, __UNUSED__)
+ACT_FN_GO_KEY(window_move, EINA_UNUSED, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -155,7 +155,7 @@ ACT_FN_GO_KEY(window_move, __UNUSED__, __UNUSED__)
 }
 
 /***************************************************************************/
-ACT_FN_GO(window_resize, __UNUSED__)
+ACT_FN_GO(window_resize, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -164,7 +164,7 @@ ACT_FN_GO(window_resize, __UNUSED__)
      e_client_act_resize_begin((E_Client *)obj, NULL);
 }
 
-ACT_FN_GO_MOUSE(window_resize, __UNUSED__)
+ACT_FN_GO_MOUSE(window_resize, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -193,7 +193,7 @@ ACT_FN_GO_SIGNAL(window_resize, )
      }
 }
 
-ACT_FN_END(window_resize, __UNUSED__)
+ACT_FN_END(window_resize, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -201,7 +201,7 @@ ACT_FN_END(window_resize, __UNUSED__)
    e_client_act_resize_end((E_Client *)obj, NULL);
 }
 
-ACT_FN_END_MOUSE(window_resize, __UNUSED__)
+ACT_FN_END_MOUSE(window_resize, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -209,7 +209,7 @@ ACT_FN_END_MOUSE(window_resize, __UNUSED__)
    e_client_act_resize_end((E_Client *)obj, ev);
 }
 
-ACT_FN_GO_KEY(window_resize, __UNUSED__, __UNUSED__)
+ACT_FN_GO_KEY(window_resize, EINA_UNUSED, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -223,7 +223,7 @@ ACT_FN_GO_KEY(window_resize, __UNUSED__, __UNUSED__)
 }
 
 /***************************************************************************/
-ACT_FN_GO(window_menu, __UNUSED__)
+ACT_FN_GO(window_menu, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -235,7 +235,7 @@ ACT_FN_GO(window_menu, __UNUSED__)
    e_client_act_menu_begin((E_Client *)obj, NULL, 0);
 }
 
-ACT_FN_GO_MOUSE(window_menu, __UNUSED__)
+ACT_FN_GO_MOUSE(window_menu, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -247,7 +247,7 @@ ACT_FN_GO_MOUSE(window_menu, __UNUSED__)
    e_client_act_menu_begin((E_Client *)obj, ev, 0);
 }
 
-ACT_FN_GO_KEY(window_menu, __UNUSED__, __UNUSED__)
+ACT_FN_GO_KEY(window_menu, EINA_UNUSED, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -260,7 +260,7 @@ ACT_FN_GO_KEY(window_menu, __UNUSED__, __UNUSED__)
 }
 
 /***************************************************************************/
-ACT_FN_GO(window_raise, __UNUSED__)
+ACT_FN_GO(window_raise, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -274,7 +274,7 @@ ACT_FN_GO(window_raise, __UNUSED__)
 }
 
 /***************************************************************************/
-ACT_FN_GO(window_lower, __UNUSED__)
+ACT_FN_GO(window_lower, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -288,7 +288,7 @@ ACT_FN_GO(window_lower, __UNUSED__)
 }
 
 /***************************************************************************/
-ACT_FN_GO(window_close, __UNUSED__)
+ACT_FN_GO(window_close, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -320,7 +320,7 @@ _e_actions_cb_kill_dialog_ok(void *data, E_Dialog *dia)
 }
 
 static void
-_e_actions_cb_kill_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSED__)
+_e_actions_cb_kill_dialog_cancel(void *data EINA_UNUSED, E_Dialog *dia EINA_UNUSED)
 {
    e_object_del(E_OBJECT(kill_dialog));
    kill_dialog = NULL;
@@ -332,7 +332,7 @@ _e_actions_cb_kill_dialog_delete(void *data, Evas *e EINA_UNUSED, Evas_Object *o
    _e_actions_cb_kill_dialog_cancel(NULL, data);
 }
 
-ACT_FN_GO(window_kill, __UNUSED__)
+ACT_FN_GO(window_kill, EINA_UNUSED)
 {
    E_Client *ec;
    char dialog_text[1024];
@@ -377,7 +377,7 @@ ACT_FN_GO(window_kill, __UNUSED__)
 }
 
 /***************************************************************************/
-ACT_FN_GO(window_sticky_toggle, __UNUSED__)
+ACT_FN_GO(window_sticky_toggle, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -422,7 +422,7 @@ ACT_FN_GO(window_sticky, )
 }
 
 /***************************************************************************/
-ACT_FN_GO(window_iconic_toggle, __UNUSED__)
+ACT_FN_GO(window_iconic_toggle, EINA_UNUSED)
 {
    E_Client *ec;
 
@@ -732,6 +732,7 @@ ACT_FN_GO(window_shaded, )
         E_Client *ec;
 
         ec = (E_Client *)obj;
+        if (!e_comp_object_frame_allowed(ec->frame)) return;
         if (params)
           {
              int v;
@@ -767,7 +768,7 @@ ACT_FN_GO(window_shaded, )
 }
 
 /***************************************************************************/
-ACT_FN_GO(window_borderless_toggle, __UNUSED__)
+ACT_FN_GO(window_borderless_toggle, EINA_UNUSED)
 {
    if ((!obj) || (obj->type != E_CLIENT_TYPE))
      obj = E_OBJECT(e_client_focused_get());
@@ -777,6 +778,7 @@ ACT_FN_GO(window_borderless_toggle, __UNUSED__)
         E_Client *ec;
 
         ec = (E_Client *)obj;
+        if (!e_comp_object_frame_allowed(ec->frame)) return;
         ec->borderless = !ec->borderless;
 
         ec->border.changed = 1;
@@ -785,7 +787,7 @@ ACT_FN_GO(window_borderless_toggle, __UNUSED__)
 }
 
 /***************************************************************************/
-ACT_FN_GO(window_border_set, __UNUSED__)
+ACT_FN_GO(window_border_set, EINA_UNUSED)
 {
    if ((!obj) || (obj->type != E_CLIENT_TYPE))
      obj = E_OBJECT(e_client_focused_get());
@@ -795,6 +797,7 @@ ACT_FN_GO(window_border_set, __UNUSED__)
         E_Client *ec;
 
         ec = (E_Client *)obj;
+        if (!e_comp_object_frame_allowed(ec->frame)) return;
         if (ec && params)
           {
              eina_stringshare_replace(&ec->bordername, params);
@@ -805,7 +808,7 @@ ACT_FN_GO(window_border_set, __UNUSED__)
 }
 
 /***************************************************************************/
-ACT_FN_GO(window_border_cycle, __UNUSED__)
+ACT_FN_GO(window_border_cycle, EINA_UNUSED)
 {
    if ((!obj) || (obj->type != E_CLIENT_TYPE))
      obj = E_OBJECT(e_client_focused_get());
@@ -815,6 +818,7 @@ ACT_FN_GO(window_border_cycle, __UNUSED__)
         E_Client *ec;
 
         ec = (E_Client *)obj;
+        if (!e_comp_object_frame_allowed(ec->frame)) return;
         if (ec && params)
           {
              const char *space;
@@ -863,7 +867,7 @@ ACT_FN_GO(window_border_cycle, __UNUSED__)
 }
 
 /***************************************************************************/
-ACT_FN_GO(window_pinned_toggle, __UNUSED__)
+ACT_FN_GO(window_pinned_toggle, EINA_UNUSED)
 {
    if ((!obj) || (obj->type != E_CLIENT_TYPE))
      obj = E_OBJECT(e_client_focused_get());
@@ -959,8 +963,54 @@ ACT_FN_GO(window_move_to, )
      }
 }
 
+
 /***************************************************************************/
-ACT_FN_GO(window_move_to_center, __UNUSED__)
+ACT_FN_GO(window_quick_tile_to_quadrant, )
+{
+   E_Client *ec;
+   int x, y, zx, zy, zw, zh;
+   if ((!obj) || (obj->type != E_CLIENT_TYPE))
+      obj = E_OBJECT(e_client_focused_get());
+
+   if (!obj) return;
+
+   ec = (E_Client *)obj;
+   if((ec->maximized & E_MAXIMIZE_TYPE) != E_MAXIMIZE_NONE)
+      e_client_unmaximize(ec, E_MAXIMIZE_BOTH);
+   e_zone_useful_geometry_get(ec->zone, &zx, &zy, &zw, &zh);
+
+   if (params)
+     {
+        if (strcmp(params, "upper_left") == 0)
+          {
+             x = zx;
+             y = zy;
+          }
+        else if (strcmp(params, "upper_right") == 0)
+          {
+             x = zx + (zw / 2);
+             y = zy;
+          }
+        else if (strcmp(params, "lower_left") == 0)
+          {
+             x = zx;
+             y = zy + (zh / 2);
+          }
+        else if (strcmp(params, "lower_right") == 0)
+          {
+             x = zx + (zw / 2);
+             y = zy + (zh / 2);
+          }
+        else
+          return;
+
+        evas_object_geometry_set(ec->frame, x, y, zw / 2, zh / 2);
+     }
+}
+
+
+/***************************************************************************/
+ACT_FN_GO(window_move_to_center, EINA_UNUSED)
 {
    E_Client *ec;
 
@@ -1085,7 +1135,7 @@ ACT_FN_GO(window_push, )
 
         desk_current = e_desk_current_get(ec->zone);
 
-        E_CLIENT_FOREACH(ec->comp, cur)
+        E_CLIENT_FOREACH(cur)
           {
              if (((cur->desk == desk_current) || (cur->sticky)) && (ec != cur) && (!cur->iconic))
                {
@@ -1141,13 +1191,18 @@ window_jump_to(const char *params)
    EINA_LIST_FOREACH(l, ll, ec)
      {
         if (!ec->icccm.name) continue;
-        if (strcmp(ec->icccm.name, params)) continue;
+        if (strcasecmp(ec->icccm.name, params)) continue;
         /* Jump to the screen the window is on if it isn't on the current screen but
          * only if we don't have to warp the pointer anyway */
-        current_zone = e_util_zone_current_get(e_manager_current_get());
+        current_zone = e_zone_current_get();
 
         /* Change the virtual desktop if the window isn't on the current virtual desktop */
         e_desk_show(ec->desk);
+
+        /* A minimized window wont be focusable for key input, un-minimize it */
+        if (!ec->lock_user_iconify)
+          e_client_uniconify(ec);
+
 
         evas_object_raise(ec->frame);
         if (ec->zone != current_zone)
@@ -1194,7 +1249,7 @@ ACT_FN_GO(window_jump_to_or_start, )
 }
 
 /***************************************************************************/
-ACT_FN_GO(window_drag_icon, __UNUSED__)
+ACT_FN_GO(window_drag_icon, EINA_UNUSED)
 {
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if (!obj) return;
@@ -1296,16 +1351,16 @@ ACT_FN_GO(window_zone_move_by, )
    /* bad */
    if (!ec->zone) return;
    /* only one screen */
-   if (eina_list_count(ec->zone->comp->zones) < 2) return;
+   if (eina_list_count(e_comp->zones) < 2) return;
    errno = 0;
    move = strtol(params, &end, 10);
    if ((!end) || end[0] || errno) return;
    move += ec->zone->num;
    if (move < 0)
-     move = eina_list_count(ec->zone->comp->zones) - 1;
-   else if ((unsigned int)move >= eina_list_count(ec->zone->comp->zones))
+     move = eina_list_count(e_comp->zones) - 1;
+   else if ((unsigned int)move >= eina_list_count(e_comp->zones))
      move = 0;
-   zone = e_util_comp_zone_number_get(0, move);
+   zone = e_comp_zone_number_get(move);
    if (!zone) return;
    max = ec->maximized;
    fs = ec->fullscreen_policy;
@@ -1351,10 +1406,8 @@ _e_actions_zone_get(E_Object *obj)
 {
    if (obj)
      {
-        if (obj->type == (int)E_MANAGER_TYPE)
-          return e_util_zone_current_get((E_Manager *)obj);
-        else if (obj->type == (int)E_COMP_TYPE)
-          return e_zone_current_get((E_Comp *)obj);
+        if (obj->type == (int)E_COMP_TYPE)
+          return e_zone_current_get();
         else if (obj->type == (int)E_ZONE_TYPE)
           return (E_Zone *)obj;
         else if (obj->type == (int)E_CLIENT_TYPE)
@@ -1364,7 +1417,7 @@ _e_actions_zone_get(E_Object *obj)
         else if (e_obj_is_win(obj))
           return e_win_client_get((void*)obj)->zone;
      }
-   return e_util_zone_current_get(e_manager_current_get());
+   return e_zone_current_get();
 }
 
 ACT_FN_GO(desk_flip_by, )
@@ -1403,7 +1456,7 @@ ACT_FN_GO(desk_flip_to, )
 }
 
 /***************************************************************************/
-ACT_FN_GO(desk_flip_prev, __UNUSED__)
+ACT_FN_GO(desk_flip_prev, EINA_UNUSED)
 {
    E_Zone *zone;
 
@@ -1434,7 +1487,7 @@ ACT_FN_GO_EDGE(desk_flip_in_direction, )
    if (!zone) return;
    wev = E_NEW(E_Event_Pointer_Warp, 1);
    if (!wev) return;
-   ecore_evas_pointer_xy_get(zone->comp->ee, &x, &y);
+   ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
    wev->prev.x = x;
    wev->prev.y = y;
    if (params)
@@ -1448,7 +1501,7 @@ ACT_FN_GO_EDGE(desk_flip_in_direction, )
         if (ACT_FLIP_LEFT(zone))
           {
              e_zone_desk_flip_by(zone, -1, 0);
-             ecore_evas_pointer_warp(zone->comp->ee, zone->x + zone->w - offset, y);
+             ecore_evas_pointer_warp(e_comp->ee, zone->x + zone->w - offset, y);
              wev->curr.y = y;
              wev->curr.x = zone->w - offset;
           }
@@ -1458,7 +1511,7 @@ ACT_FN_GO_EDGE(desk_flip_in_direction, )
         if (ACT_FLIP_RIGHT(zone))
           {
              e_zone_desk_flip_by(zone, 1, 0);
-             ecore_evas_pointer_warp(zone->comp->ee, zone->x + offset, y);
+             ecore_evas_pointer_warp(e_comp->ee, zone->x + offset, y);
              wev->curr.y = y;
              wev->curr.x = offset;
           }
@@ -1468,7 +1521,7 @@ ACT_FN_GO_EDGE(desk_flip_in_direction, )
         if (ACT_FLIP_UP(zone))
           {
              e_zone_desk_flip_by(zone, 0, -1);
-             ecore_evas_pointer_warp(zone->comp->ee, x, zone->y + zone->h - offset);
+             ecore_evas_pointer_warp(e_comp->ee, x, zone->y + zone->h - offset);
              wev->curr.x = x;
              wev->curr.y = zone->h - offset;
           }
@@ -1478,7 +1531,7 @@ ACT_FN_GO_EDGE(desk_flip_in_direction, )
         if (ACT_FLIP_DOWN(zone))
           {
              e_zone_desk_flip_by(zone, 0, 1);
-             ecore_evas_pointer_warp(zone->comp->ee, x, zone->y + offset);
+             ecore_evas_pointer_warp(e_comp->ee, x, zone->y + offset);
              wev->curr.x = x;
              wev->curr.y = offset;
           }
@@ -1488,7 +1541,7 @@ ACT_FN_GO_EDGE(desk_flip_in_direction, )
         if (ACT_FLIP_UP_LEFT(zone))
           {
              e_zone_desk_flip_by(zone, -1, -1);
-             ecore_evas_pointer_warp(zone->comp->ee, zone->x + zone->w - offset, zone->y + zone->h - offset);
+             ecore_evas_pointer_warp(e_comp->ee, zone->x + zone->w - offset, zone->y + zone->h - offset);
              wev->curr.x = zone->w - offset;
              wev->curr.y = zone->h - offset;
           }
@@ -1498,7 +1551,7 @@ ACT_FN_GO_EDGE(desk_flip_in_direction, )
         if (ACT_FLIP_UP_RIGHT(zone))
           {
              e_zone_desk_flip_by(zone, 1, -1);
-             ecore_evas_pointer_warp(zone->comp->ee, zone->x + offset, zone->y + zone->h - offset);
+             ecore_evas_pointer_warp(e_comp->ee, zone->x + offset, zone->y + zone->h - offset);
              wev->curr.x = offset;
              wev->curr.y = zone->h - offset;
           }
@@ -1508,7 +1561,7 @@ ACT_FN_GO_EDGE(desk_flip_in_direction, )
         if (ACT_FLIP_DOWN_LEFT(zone))
           {
              e_zone_desk_flip_by(zone, -1, 1);
-             ecore_evas_pointer_warp(zone->comp->ee, zone->x + zone->w - offset, zone->y + offset);
+             ecore_evas_pointer_warp(e_comp->ee, zone->x + zone->w - offset, zone->y + offset);
              wev->curr.y = offset;
              wev->curr.x = zone->w - offset;
           }
@@ -1518,7 +1571,7 @@ ACT_FN_GO_EDGE(desk_flip_in_direction, )
         if (ACT_FLIP_DOWN_RIGHT(zone))
           {
              e_zone_desk_flip_by(zone, 1, 1);
-             ecore_evas_pointer_warp(zone->comp->ee, zone->x + offset, zone->y + offset);
+             ecore_evas_pointer_warp(e_comp->ee, zone->x + offset, zone->y + offset);
              wev->curr.y = offset;
              wev->curr.x = offset;
           }
@@ -1571,13 +1624,36 @@ ACT_FN_GO(desk_linear_flip_to, )
      }
 }
 
-#define DESK_ACTION_ALL(zone, act)                     \
-  E_Zone * zone;                                       \
-  const Eina_List *lz;                             \
-                                                       \
-    EINA_LIST_FOREACH(e_comp->zones, lz, zone) { \
-         act;                                  \
-              }                                        \
+#define DESK_ACTION_ALL(zone, act) \
+   E_Zone *zone; \
+   const Eina_List *lz; \
+   \
+   EINA_LIST_FOREACH(e_comp->zones, lz, zone) { \
+      act; \
+   }
+
+/***************************************************************************/
+ACT_FN_GO(desk_linear_flip_to_screen, )
+{
+   if (params)
+     {
+        int dx = 0, ds = 0;
+
+        if (sscanf(params, "%i %i", &dx, &ds) == 2)
+          {
+             int current_screen = 0;
+
+             DESK_ACTION_ALL(zone,
+                             if (current_screen == ds)
+                               {
+                                  e_zone_desk_linear_flip_to(zone, dx);
+                                  break;
+                               }
+                             else current_screen++;
+                            );
+          }
+     }
+}
 
 /***************************************************************************/
 ACT_FN_GO(desk_flip_by_all, )
@@ -1642,7 +1718,7 @@ ACT_FN_GO(screen_send_to, )
    int scr;
 
    zone = _e_actions_zone_get(obj);
-   if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
+   if (!zone) zone = e_zone_current_get();
    if (!zone) return;
    if (!params) return;
 
@@ -1650,23 +1726,13 @@ ACT_FN_GO(screen_send_to, )
    scr = strtol(params, NULL, 10);
    if (errno) return;
 
-   if (eina_list_count(e_manager_list()) > 1)
-     {
-        if (scr != -1)
-          scr = scr % eina_list_count(e_manager_list());
-        if (scr < 0) scr += eina_list_count(e_manager_list());
-        zone2 = e_util_comp_zone_number_get(scr, 0);
-     }
-   else
-     {
-        if (scr != -1)
-          scr = scr % eina_list_count(zone->comp->zones);
-        if (scr < 0) scr += eina_list_count(zone->comp->zones);
-        zone2 = e_util_comp_zone_number_get(0, scr);
-     }
+   if (scr != -1)
+     scr = scr % eina_list_count(e_comp->zones);
+   if (scr < 0) scr += eina_list_count(e_comp->zones);
+   zone2 = e_comp_zone_number_get(scr);
    if ((zone2) && (zone != zone2))
      {
-        ecore_evas_pointer_warp(zone2->comp->ee,
+        ecore_evas_pointer_warp(e_comp->ee,
                                 zone2->x + (zone2->w / 2),
                                 zone2->y + (zone2->h / 2));
         e_desk_last_focused_focus(e_desk_current_get(zone2));
@@ -1679,32 +1745,21 @@ ACT_FN_GO(screen_send_by, )
    int scr = 0;
 
    zone = _e_actions_zone_get(obj);
-   if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
+   if (!zone) zone = e_zone_current_get();
    if (!zone) return;
    if (!params) return;
 
    errno = 0;
    scr = strtol(params, NULL, 10);
    if (errno) return;
-   if (eina_list_count(e_manager_list()) > 1)
-     {
-        scr += zone->comp->num;
-        if (scr != -1)
-          scr = scr % eina_list_count(e_manager_list());
-        if (scr < 0) scr += eina_list_count(e_manager_list());
-        zone2 = e_util_comp_zone_number_get(scr, 0);
-     }
-   else
-     {
-        scr += zone->num;
-        if (scr != -1)
-          scr = scr % eina_list_count(zone->comp->zones);
-        if (scr < 0) scr += eina_list_count(zone->comp->zones);
-        zone2 = e_util_comp_zone_number_get(0, scr);
-     }
+   scr += zone->num;
+   if (scr != -1)
+     scr = scr % eina_list_count(e_comp->zones);
+   if (scr < 0) scr += eina_list_count(e_comp->zones);
+   zone2 = e_comp_zone_number_get(scr);
    if ((zone2) && (zone != zone2))
      {
-        ecore_evas_pointer_warp(zone2->comp->ee,
+        ecore_evas_pointer_warp(e_comp->ee,
                              zone2->x + (zone2->w / 2),
                              zone2->y + (zone2->h / 2));
         e_desk_last_focused_focus(e_desk_current_get(zone2));
@@ -1720,7 +1775,7 @@ ACT_FN_GO(screen_send_by, )
                  act;                                                     \
               } }                                                         \
        else if ((con_num < 0) && (zone_num >= 0)) /* c=all zone=1 */ {  \
-              zone = e_comp_zone_number_get(c, zone_num);  \
+              zone = e_comp_zone_number_get(zone_num);  \
               if (zone)                                           \
                 act;                                              \
                     }                                                  \
@@ -1729,7 +1784,7 @@ ACT_FN_GO(screen_send_by, )
                    act;                                           \
                 } } }                                         \
   else {                                                                  \
-       zone = e_util_comp_zone_number_get(con_num, zone_num);        \
+       zone = e_comp_zone_number_get(zone_num);        \
        if (zone) act;                                                     \
     }
 
@@ -1799,7 +1854,7 @@ ACT_FN_GO(zone_desk_linear_flip_to, )
 
 /***************************************************************************/
 static void
-_e_actions_cb_menu_end(void *data __UNUSED__, E_Menu *m)
+_e_actions_cb_menu_end(void *data EINA_UNUSED, E_Menu *m)
 {
    e_object_del(E_OBJECT(m));
 }
@@ -1827,7 +1882,7 @@ ACT_FN_GO(menu_show, )
    E_Zone *zone;
 
    /* menu is active - abort */
-   if (e_menu_grab_window_get()) return;
+   if (e_comp_util_kbd_grabbed() || e_comp_util_mouse_grabbed()) return;
    zone = _e_actions_zone_get(obj);
    if (zone)
      {
@@ -1842,7 +1897,7 @@ ACT_FN_GO(menu_show, )
 
                   /* FIXME: this is a bit of a hack... setting m->c - bad hack */
                   m->zone = zone;
-                  ecore_evas_pointer_xy_get(zone->comp->ee, &x, &y);
+                  ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
                   e_menu_post_deactivate_callback_set(m, _e_actions_cb_menu_end, NULL);
                   e_menu_activate_mouse(m, zone, x, y, 1, 1,
                                         E_MENU_POP_DIRECTION_DOWN, 0);
@@ -1856,7 +1911,7 @@ ACT_FN_GO_MOUSE(menu_show, )
    E_Zone *zone;
 
    /* menu is active - abort */
-   if (e_menu_grab_window_get()) return;
+   if (e_comp_util_kbd_grabbed() || e_comp_util_mouse_grabbed()) return;
    zone = _e_actions_zone_get(obj);
    if (zone)
      {
@@ -1873,8 +1928,6 @@ ACT_FN_GO_MOUSE(menu_show, )
                   m->zone = zone;
                   x = ev->canvas.x;
                   y = ev->canvas.y;
-                  x -= zone->comp->man->x;
-                  y -= zone->comp->man->y;
                   e_menu_post_deactivate_callback_set(m, _e_actions_cb_menu_end, NULL);
                   e_menu_activate_mouse(m, zone, x, y, 1, 1,
                                         E_MENU_POP_DIRECTION_DOWN, ev->timestamp);
@@ -1883,12 +1936,12 @@ ACT_FN_GO_MOUSE(menu_show, )
      }
 }
 
-ACT_FN_GO_KEY(menu_show, , __UNUSED__)
+ACT_FN_GO_KEY(menu_show, , EINA_UNUSED)
 {
    E_Zone *zone;
 
    /* menu is active - abort */
-   if (e_menu_grab_window_get()) return;
+   if (e_comp_util_kbd_grabbed() || e_comp_util_mouse_grabbed()) return;
    zone = _e_actions_zone_get(obj);
    if (zone)
      {
@@ -1903,7 +1956,7 @@ ACT_FN_GO_KEY(menu_show, , __UNUSED__)
 
                   /* FIXME: this is a bit of a hack... setting m->con - bad hack */
                   m->zone = zone;
-                  ecore_evas_pointer_xy_get(zone->comp->ee, &x, &y);
+                  ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
                   e_menu_post_deactivate_callback_set(m, _e_actions_cb_menu_end, NULL);
                   e_menu_activate_key(m, zone, x, y, 1, 1,
                                       E_MENU_POP_DIRECTION_DOWN);
@@ -1951,8 +2004,10 @@ ACT_FN_GO(app, )
           {
              Efreet_Desktop *desktop = NULL;
              char *p, *p2;
+             size_t plen;
 
-             p2 = strdupa(params);
+             plen = strlen(params);
+             p2 = memcpy(alloca(plen + 1), params, plen + 1);
              p = strchr(p2, ':');
              if (p)
                {
@@ -2001,14 +2056,14 @@ ACT_FN_GO(app, )
 }
 
 /***************************************************************************/
-ACT_FN_GO(app_new_instance, __UNUSED__)
+ACT_FN_GO(app_new_instance, EINA_UNUSED)
 {
    E_Client *ec;
    E_Zone *zone;
 
    zone = _e_actions_zone_get(obj);
    if (!zone)
-     zone = e_util_zone_current_get(e_manager_current_get());
+     zone = e_zone_current_get();
 
    if (!obj) obj = E_OBJECT(e_client_focused_get());
    if ((!obj) || (!zone)) return;
@@ -2024,21 +2079,21 @@ ACT_FN_GO(app_new_instance, __UNUSED__)
 }
 
 /***************************************************************************/
-ACT_FN_GO(desk_deskshow_toggle, __UNUSED__)
+ACT_FN_GO(desk_deskshow_toggle, EINA_UNUSED)
 {
    E_Zone *zone;
 
    zone = _e_actions_zone_get(obj);
-   if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
+   if (!zone) zone = e_zone_current_get();
    if (zone) e_desk_deskshow(zone);
 }
 
-ACT_FN_GO(cleanup_windows, __UNUSED__)
+ACT_FN_GO(cleanup_windows, EINA_UNUSED)
 {
    E_Zone *zone;
 
    zone = _e_actions_zone_get(obj);
-   if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
+   if (!zone) zone = e_zone_current_get();
    if (zone) e_place_zone_region_smart_cleanup(zone);
 }
 
@@ -2046,7 +2101,7 @@ ACT_FN_GO(cleanup_windows, __UNUSED__)
 static E_Dialog *exit_dialog = NULL;
 
 static void
-_e_actions_cb_exit_dialog_ok(void *data __UNUSED__, E_Dialog *dia)
+_e_actions_cb_exit_dialog_ok(void *data EINA_UNUSED, E_Dialog *dia)
 {
    if (dia)
      {
@@ -2057,7 +2112,7 @@ _e_actions_cb_exit_dialog_ok(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_e_actions_cb_exit_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSED__)
+_e_actions_cb_exit_dialog_cancel(void *data EINA_UNUSED, E_Dialog *dia EINA_UNUSED)
 {
    e_object_del(E_OBJECT(exit_dialog));
    exit_dialog = NULL;
@@ -2100,25 +2155,25 @@ ACT_FN_GO(exit, )
 }
 
 /***************************************************************************/
-ACT_FN_GO(restart, __UNUSED__)
+ACT_FN_GO(restart, EINA_UNUSED)
 {
    e_sys_action_do(E_SYS_RESTART, NULL);
 }
 
 /***************************************************************************/
-ACT_FN_GO(exit_now, __UNUSED__)
+ACT_FN_GO(exit_now, EINA_UNUSED)
 {
    e_sys_action_do(E_SYS_EXIT_NOW, NULL);
 }
 
 /***************************************************************************/
-ACT_FN_GO(halt_now, __UNUSED__)
+ACT_FN_GO(halt_now, EINA_UNUSED)
 {
    e_sys_action_do(E_SYS_HALT_NOW, NULL);
 }
 
 /***************************************************************************/
-ACT_FN_GO(mode_presentation_toggle, __UNUSED__)
+ACT_FN_GO(mode_presentation_toggle, EINA_UNUSED)
 {
    e_config->mode.presentation = !e_config->mode.presentation;
    e_config_mode_changed();
@@ -2126,7 +2181,7 @@ ACT_FN_GO(mode_presentation_toggle, __UNUSED__)
 }
 
 /***************************************************************************/
-ACT_FN_GO(mode_offline_toggle, __UNUSED__)
+ACT_FN_GO(mode_offline_toggle, EINA_UNUSED)
 {
    e_config->mode.offline = !e_config->mode.offline;
    e_config_mode_changed();
@@ -2137,7 +2192,7 @@ ACT_FN_GO(mode_offline_toggle, __UNUSED__)
 static E_Dialog *logout_dialog = NULL;
 
 static void
-_e_actions_cb_logout_dialog_ok(void *data __UNUSED__, E_Dialog *dia)
+_e_actions_cb_logout_dialog_ok(void *data EINA_UNUSED, E_Dialog *dia)
 {
    if (dia)
      {
@@ -2148,7 +2203,7 @@ _e_actions_cb_logout_dialog_ok(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_e_actions_cb_logout_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSED__)
+_e_actions_cb_logout_dialog_cancel(void *data EINA_UNUSED, E_Dialog *dia EINA_UNUSED)
 {
    e_object_del(E_OBJECT(logout_dialog));
    logout_dialog = NULL;
@@ -2194,7 +2249,7 @@ ACT_FN_GO(logout, )
 static E_Dialog *halt_dialog = NULL;
 
 static void
-_e_actions_cb_halt_dialog_ok(void *data __UNUSED__, E_Dialog *dia)
+_e_actions_cb_halt_dialog_ok(void *data EINA_UNUSED, E_Dialog *dia)
 {
    if (dia)
      {
@@ -2205,7 +2260,7 @@ _e_actions_cb_halt_dialog_ok(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_e_actions_cb_halt_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSED__)
+_e_actions_cb_halt_dialog_cancel(void *data EINA_UNUSED, E_Dialog *dia EINA_UNUSED)
 {
    e_object_del(E_OBJECT(halt_dialog));
    halt_dialog = NULL;
@@ -2254,7 +2309,7 @@ ACT_FN_GO(halt, )
 static E_Dialog *reboot_dialog = NULL;
 
 static void
-_e_actions_cb_reboot_dialog_ok(void *data __UNUSED__, E_Dialog *dia)
+_e_actions_cb_reboot_dialog_ok(void *data EINA_UNUSED, E_Dialog *dia)
 {
    if (dia)
      {
@@ -2265,7 +2320,7 @@ _e_actions_cb_reboot_dialog_ok(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_e_actions_cb_reboot_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSED__)
+_e_actions_cb_reboot_dialog_cancel(void *data EINA_UNUSED, E_Dialog *dia EINA_UNUSED)
 {
    e_object_del(E_OBJECT(reboot_dialog));
    reboot_dialog = NULL;
@@ -2311,7 +2366,7 @@ ACT_FN_GO(reboot, )
 static E_Dialog *suspend_dialog = NULL;
 
 static void
-_e_actions_cb_suspend_dialog_ok(void *data __UNUSED__, E_Dialog *dia)
+_e_actions_cb_suspend_dialog_ok(void *data EINA_UNUSED, E_Dialog *dia)
 {
    if (dia)
      {
@@ -2322,7 +2377,7 @@ _e_actions_cb_suspend_dialog_ok(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_e_actions_cb_suspend_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSED__)
+_e_actions_cb_suspend_dialog_cancel(void *data EINA_UNUSED, E_Dialog *dia EINA_UNUSED)
 {
    e_object_del(E_OBJECT(suspend_dialog));
    suspend_dialog = NULL;
@@ -2334,7 +2389,7 @@ _e_actions_cb_suspend_dialog_delete(void *data, Evas *e EINA_UNUSED, Evas_Object
    _e_actions_cb_suspend_dialog_cancel(NULL, data);
 }
 
-ACT_FN_GO(suspend_now, __UNUSED__)
+ACT_FN_GO(suspend_now, EINA_UNUSED)
 {
    e_sys_action_do(E_SYS_SUSPEND, NULL);
 }
@@ -2391,7 +2446,7 @@ _have_lid_and_external_screens_on(void)
    return EINA_FALSE;
 }
 
-ACT_FN_GO(suspend_smart, __UNUSED__)
+ACT_FN_GO(suspend_smart, EINA_UNUSED)
 {
    if ((!_have_lid_and_external_screens_on()) &&
        (ecore_power_state_get() != ECORE_POWER_STATE_MAINS))
@@ -2402,7 +2457,7 @@ ACT_FN_GO(suspend_smart, __UNUSED__)
 static E_Dialog *hibernate_dialog = NULL;
 
 static void
-_e_actions_cb_hibernate_dialog_ok(void *data __UNUSED__, E_Dialog *dia)
+_e_actions_cb_hibernate_dialog_ok(void *data EINA_UNUSED, E_Dialog *dia)
 {
    if (dia)
      {
@@ -2413,7 +2468,7 @@ _e_actions_cb_hibernate_dialog_ok(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_e_actions_cb_hibernate_dialog_cancel(void *data __UNUSED__, E_Dialog *dia __UNUSED__)
+_e_actions_cb_hibernate_dialog_cancel(void *data EINA_UNUSED, E_Dialog *dia EINA_UNUSED)
 {
    e_object_del(E_OBJECT(hibernate_dialog));
    hibernate_dialog = NULL;
@@ -2425,7 +2480,7 @@ _e_actions_cb_hibernate_dialog_delete(void *data, Evas *e EINA_UNUSED, Evas_Obje
    _e_actions_cb_hibernate_dialog_cancel(NULL, data);
 }
 
-ACT_FN_GO(hibernate_now, __UNUSED__)
+ACT_FN_GO(hibernate_now, EINA_UNUSED)
 {
    e_sys_action_do(E_SYS_HIBERNATE, NULL);
 }
@@ -2460,7 +2515,7 @@ ACT_FN_GO(hibernate, )
    e_dialog_show(hibernate_dialog);
 }
 
-ACT_FN_GO(hibernate_smart, __UNUSED__)
+ACT_FN_GO(hibernate_smart, EINA_UNUSED)
 {
    if ((!_have_lid_and_external_screens_on()) &&
        (ecore_power_state_get() != ECORE_POWER_STATE_MAINS))
@@ -2500,7 +2555,7 @@ ACT_FN_GO(pointer_resize_pop, )
 }
 
 /***************************************************************************/
-ACT_FN_GO(desk_lock, __UNUSED__)
+ACT_FN_GO(desk_lock, EINA_UNUSED)
 {
 /*  E_Zone *zone;
 
@@ -2747,7 +2802,7 @@ _delayed_action_key_add(E_Object *obj, const char *params, Ecore_Event_Key *ev)
 }
 
 static void
-_delayed_action_key_del(E_Object *obj, const char *params __UNUSED__, Ecore_Event_Key *ev)
+_delayed_action_key_del(E_Object *obj, const char *params EINA_UNUSED, Ecore_Event_Key *ev)
 {
    Eina_List *l;
    Delayed_Action *da;
@@ -2784,7 +2839,7 @@ _delayed_action_mouse_add(E_Object *obj, const char *params, E_Binding_Event_Mou
 }
 
 static void
-_delayed_action_mouse_del(E_Object *obj, const char *params __UNUSED__, E_Binding_Event_Mouse_Button *ev)
+_delayed_action_mouse_del(E_Object *obj, const char *params EINA_UNUSED, E_Binding_Event_Mouse_Button *ev)
 {
    Eina_List *l;
    Delayed_Action *da;
@@ -2823,13 +2878,13 @@ ACT_FN_END_MOUSE(delayed_action, )
    _delayed_action_mouse_del(obj, params, ev);
 }
 
-ACT_FN_GO(dim_screen, __UNUSED__)
+ACT_FN_GO(dim_screen, EINA_UNUSED)
 {
    E_Zone *zone = _e_actions_zone_get(obj);
    e_backlight_mode_set(zone, E_BACKLIGHT_MODE_DIM);
 }
 
-ACT_FN_GO(undim_screen, __UNUSED__)
+ACT_FN_GO(undim_screen, EINA_UNUSED)
 {
    E_Zone *zone = _e_actions_zone_get(obj);
    e_backlight_mode_set(zone, E_BACKLIGHT_MODE_NORMAL);
@@ -2878,14 +2933,14 @@ ACT_FN_GO(kbd_layout, )
 #endif
 }
 
-ACT_FN_GO(kbd_layout_next, __UNUSED__)
+ACT_FN_GO(kbd_layout_next, EINA_UNUSED)
 {
 #ifndef HAVE_WAYLAND_ONLY
    e_xkb_layout_next();
 #endif
 }
 
-ACT_FN_GO(kbd_layout_prev, __UNUSED__)
+ACT_FN_GO(kbd_layout_prev, EINA_UNUSED)
 {
 #ifndef HAVE_WAYLAND_ONLY
    e_xkb_layout_prev();
@@ -2935,7 +2990,7 @@ ACT_FN_GO(module_toggle, )
    else e_module_enable(m);
 }
 
-ACT_FN_GO(screen_redo, __UNUSED__)
+ACT_FN_GO(screen_redo, EINA_UNUSED)
 {
    printf("REDOOOOOOOOOOOOOOOOOOOOOOOOOOO\n");
 #ifndef HAVE_WAYLAND_ONLY
@@ -3135,7 +3190,12 @@ e_actions_init(void)
    e_action_predef_name_set(N_("Desktop"), N_("Flip Desktop To..."),
                             "desk_flip_to", NULL,
                             "syntax: X Y, example: 1 2", 1);
-
+   /* desk_linear_flip_to_screen */
+   ACT_GO(desk_linear_flip_to_screen);
+   e_action_predef_name_set(N_("Desktop"), N_("Switch Desktop To... On Screen..."),
+                            "desk_linear_flip_to_screen", NULL,
+                            "syntax: D S, example: 0 1", 1);
+   
    /* desk_linear_flip_by */
    ACT_GO(desk_linear_flip_by);
    e_action_predef_name_set(N_("Desktop"), N_("Flip Desktop Linearly..."),
@@ -3295,6 +3355,27 @@ e_actions_init(void)
    ACT_GO(window_move_to_center);
    e_action_predef_name_set(N_("Window : Actions"), N_("Move To Center"),
                             "window_move_to_center", NULL, NULL, 0);
+
+   /* window_quick_tile_upper_left */
+   ACT_GO(window_quick_tile_to_quadrant);
+   e_action_predef_name_set(N_("Window : Actions"), N_("Move/resize to upper-left quadrant"),
+                            "window_quick_tile_to_quadrant", "upper_left", NULL, 0);
+
+   /* window_quick_tile_upper_right */
+   ACT_GO(window_quick_tile_to_quadrant);
+   e_action_predef_name_set(N_("Window : Actions"), N_("Move/resize to upper-right quadrant"),
+                            "window_quick_tile_to_quadrant", "upper_right", NULL, 0);
+
+   /* window_quick_tile_lower_left */
+   ACT_GO(window_quick_tile_to_quadrant);
+   e_action_predef_name_set(N_("Window : Actions"), N_("Move/resize to lower-left quadrant"),
+                            "window_quick_tile_to_quadrant", "lower_left", NULL, 0);
+
+   /* window_quick_tile_lower_right */
+   ACT_GO(window_quick_tile_to_quadrant);
+   e_action_predef_name_set(N_("Window : Actions"), N_("Move/resize to lower-right quadrant"),
+                            "window_quick_tile_to_quadrant", "lower_right", NULL, 0);
+
    /* window_move_to */
    ACT_GO(window_move_to);
    e_action_predef_name_set(N_("Window : Actions"), N_("Move To Coordinates..."),
@@ -3509,13 +3590,13 @@ e_actions_shutdown(void)
    return 1;
 }
 
-EAPI Eina_List *
+E_API Eina_List *
 e_action_name_list(void)
 {
    return action_names;
 }
 
-EAPI E_Action *
+E_API E_Action *
 e_action_add(const char *name)
 {
    E_Action *act;
@@ -3533,7 +3614,7 @@ e_action_add(const char *name)
    return act;
 }
 
-EAPI void
+E_API void
 e_action_del(const char *name)
 {
    E_Action *act;
@@ -3542,7 +3623,7 @@ e_action_del(const char *name)
    if (act) _e_action_free(act);
 }
 
-EAPI E_Action *
+E_API E_Action *
 e_action_find(const char *name)
 {
    E_Action *act;
@@ -3551,7 +3632,7 @@ e_action_find(const char *name)
    return act;
 }
 
-EAPI const char *
+E_API const char *
 e_action_predef_label_get(const char *action, const char *params)
 {
    E_Action_Group *actg = NULL;
@@ -3577,7 +3658,7 @@ e_action_predef_label_get(const char *action, const char *params)
    return NULL;
 }
 
-EAPI void
+E_API void
 e_action_predef_name_set(const char *act_grp, const char *act_name, const char *act_cmd, const char *act_params, const char *param_example, int editable)
 {
    E_Action_Group *actg = NULL;
@@ -3623,7 +3704,7 @@ e_action_predef_name_set(const char *act_grp, const char *act_name, const char *
    actg->acts = eina_list_append(actg->acts, actd);
 }
 
-EAPI void
+E_API void
 e_action_predef_name_del(const char *act_grp, const char *act_name)
 {
    E_Action_Group *actg = NULL;
@@ -3662,7 +3743,7 @@ e_action_predef_name_del(const char *act_grp, const char *act_name)
      }
 }
 
-EAPI void
+E_API void
 e_action_predef_name_all_del(void)
 {
    E_Action_Group *actg = NULL;
@@ -3685,7 +3766,7 @@ e_action_predef_name_all_del(void)
    action_groups = NULL;
 }
 
-EAPI Eina_List *
+E_API Eina_List *
 e_action_groups_get(void)
 {
    return action_groups;

@@ -54,14 +54,15 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
    Evas *e;
    Evas_Coord w = 320, h = 240, mw = 0, mh = 0;
    Eina_List *objs = NULL;
-   Evas_Object *o, *po, *po2, *po3, *r;
-   
+   Evas_Object *o, *po, *po2, *po3, *win;
+
    _e_int_theme_preview_clear(preview);
    e = e_widget_preview_evas_get(preview);
+   win = e_win_evas_win_get(e);
+   if (!win)
+     win = elm_win_fake_add(ecore_evas_ecore_evas_get(e));
    evas_object_size_hint_min_get(preview, &w, &h);
    w *= 2; h *= 2;
-#warning REMOVE STUPID ELM HACK BEFORE RELEASE
-   r = evas_object_rectangle_add(e);
    
    o = edje_object_add(e);
    _e_int_theme_edje_file_set(o, file, "e/desktop/background");
@@ -89,7 +90,7 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
    po = o;
    po2 = po;
    
-   o = elm_box_add(r);
+   o = elm_box_add(win);
    elm_box_horizontal_set(o, 1);
    evas_object_show(o);
    edje_object_part_swallow(po, "e.swallow.content", o);
@@ -115,7 +116,7 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
    objs = eina_list_append(objs, o);
    po2 = o;
 
-   o = elm_box_add(r);
+   o = elm_box_add(win);
    elm_box_horizontal_set(o, 1);
    evas_object_show(o);
    edje_object_part_swallow(po2, "e.swallow.content", o);
@@ -265,7 +266,7 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
    edje_object_part_swallow(po, "e.swallow.icon", o);
    objs = eina_list_append(objs, o);
 
-   o = elm_box_add(r);
+   o = elm_box_add(win);
    elm_box_horizontal_set(o, 1);
    elm_box_homogeneous_set(o, 1);
    evas_object_show(o);
@@ -305,7 +306,7 @@ _e_int_theme_preview_set(Evas_Object *preview, const char *file)
 }
 
 E_Config_Dialog *
-e_int_config_theme(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
+e_int_config_theme(Evas_Object *parent EINA_UNUSED, const char *params EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -358,13 +359,13 @@ e_int_config_theme_update(E_Config_Dialog *dia, char *file)
 }
 
 static Eina_Bool
-_eio_filter_cb(void *data __UNUSED__, Eio_File *handler __UNUSED__, const char *file)
+_eio_filter_cb(void *data EINA_UNUSED, Eio_File *handler EINA_UNUSED, const char *file)
 {
    return eina_str_has_extension(file, ".edj");
 }
 
 static void
-_cb_button_up(void *data1, void *data2 __UNUSED__)
+_cb_button_up(void *data1, void *data2 EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -373,7 +374,7 @@ _cb_button_up(void *data1, void *data2 __UNUSED__)
 }
 
 static void
-_cb_files_changed(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_cb_files_changed(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -385,7 +386,7 @@ _cb_files_changed(void *data, Evas_Object *obj __UNUSED__, void *event_info __UN
 }
 
 static void
-_cb_files_selection_change(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_cb_files_selection_change(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
    Eina_List *selected;
@@ -429,7 +430,7 @@ _cb_files_selected(void *data, Evas_Object *obj, void *event_info)
 #endif
 
 static void
-_cb_files_files_changed(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_cb_files_files_changed(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
    const char *p;
@@ -464,7 +465,7 @@ _cb_files_files_changed(void *data, Evas_Object *obj __UNUSED__, void *event_inf
 }
 
 static void
-_cb_dir(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_cb_dir(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
    char path[PATH_MAX];
@@ -481,7 +482,7 @@ _cb_dir(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
 }
 
 static void
-_cb_files_files_deleted(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_cb_files_files_deleted(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
    Eina_List *sel, *all, *n;
@@ -514,7 +515,7 @@ _cb_files_files_deleted(void *data, Evas_Object *obj __UNUSED__, void *event_inf
 }
 
 static void
-_cb_import(void *data1, void *data2 __UNUSED__)
+_cb_import(void *data1, void *data2 EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -584,7 +585,7 @@ _open_done_cb(void *data, Eio_File *handler, Eet_File *file)
 }
 
 static void
-_open_error_cb(void *data, Eio_File *handler, int error __UNUSED__)
+_open_error_cb(void *data, Eio_File *handler, int error EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata = data;
    cfdata->theme_init = eina_list_remove(cfdata->theme_init, handler);
@@ -592,7 +593,7 @@ _open_error_cb(void *data, Eio_File *handler, int error __UNUSED__)
 }
 
 static void
-_init_main_cb(void *data, Eio_File *handler __UNUSED__, const char *file)
+_init_main_cb(void *data, Eio_File *handler EINA_UNUSED, const char *file)
 {
    E_Config_Dialog_Data *cfdata = data;
    cfdata->theme_init = eina_list_append(cfdata->theme_init, eio_eet_open(file, EET_FILE_MODE_READ, _open_done_cb, _open_error_cb, cfdata));
@@ -610,7 +611,7 @@ _init_done_cb(void *data, Eio_File *handler)
 }
 
 static void
-_init_error_cb(void *data, Eio_File *handler, int error __UNUSED__)
+_init_error_cb(void *data, Eio_File *handler, int error EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata = data;
    if (cfdata->init[0] == handler)
@@ -638,7 +639,7 @@ _create_data(E_Config_Dialog *cfd)
 }
 
 static void
-_free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_free_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    Eina_List *l;
    Eio_File *ls;
@@ -665,7 +666,7 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
    E_Radio_Group *rg;
    char path[PATH_MAX];
 
-   z = e_zone_current_get(e_comp_get(NULL));
+   z = e_zone_current_get();
    e_dialog_resizable_set(cfd->dia, 1);
 
    ot = e_widget_table_add(e_win_evas_win_get(evas), 0);
@@ -752,7 +753,7 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dia
 }
 
 static int
-_basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_basic_apply_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    E_Action *a;
    const char *file;

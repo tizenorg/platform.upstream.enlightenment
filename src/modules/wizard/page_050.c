@@ -4,14 +4,14 @@
 static double scale = 1.0;
 static Eina_List *obs = NULL;
 /*
-EAPI int
-wizard_page_init(E_Wizard_Page *pg __UNUSED__, Eina_Bool *need_xdg_desktops __UNUSED__, Eina_Bool *need_xdg_icons __UNUSED__)
+E_API int
+wizard_page_init(E_Wizard_Page *pg EINA_UNUSED, Eina_Bool *need_xdg_desktops EINA_UNUSED, Eina_Bool *need_xdg_icons EINA_UNUSED)
 {
    return 1;
 }
 
-EAPI int
-wizard_page_shutdown(E_Wizard_Page *pg __UNUSED__)
+E_API int
+wizard_page_shutdown(E_Wizard_Page *pg EINA_UNUSED)
 {
    return 1;
 }
@@ -42,7 +42,7 @@ _scale_preview_sel_set(Evas_Object *ob, int sel)
 }
 
 static void
-_scale_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_scale_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Evas_Object *ob = data;
 
@@ -63,7 +63,7 @@ _scale_preview_new(Evas *e, double sc, double *scp)
    e_widget_preview_vsize_set(ob, SZW, SZH);
 
    bg = edje_object_add(e_widget_preview_evas_get(ob));
-   file = e_bg_file_get(0, 0, 0, 0);
+   file = e_bg_file_get(0, 0, 0);
    edje_object_file_set(bg, file, "e/desktop/background");
    eina_stringshare_del(file);
    evas_object_move(bg, 0, 0);
@@ -118,7 +118,7 @@ _scale_preview_new(Evas *e, double sc, double *scp)
    return ob;
 }
 
-EAPI int
+E_API int
 wizard_page_show(E_Wizard_Page *pg)
 {
    Evas_Object *o, *of, *ob;
@@ -172,8 +172,8 @@ wizard_page_show(E_Wizard_Page *pg)
    return 1; /* 1 == show ui, and wait for user, 0 == just continue */
 }
 
-EAPI int
-wizard_page_hide(E_Wizard_Page *pg __UNUSED__)
+E_API int
+wizard_page_hide(E_Wizard_Page *pg EINA_UNUSED)
 {
    obs = eina_list_free(obs);
 //   evas_object_del(pg->data);
@@ -185,8 +185,8 @@ wizard_page_hide(E_Wizard_Page *pg __UNUSED__)
    return 1;
 }
 /*
-EAPI int
-wizard_page_apply(E_Wizard_Page *pg __UNUSED__)
+E_API int
+wizard_page_apply(E_Wizard_Page *pg EINA_UNUSED)
 {
    return 1;
 }

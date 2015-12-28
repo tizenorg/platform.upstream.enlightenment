@@ -19,7 +19,7 @@
 #define DBG(...)
 #endif
 
-static Eina_Bool     _evry_cb_desklock(Evry_Window *win, int type __UNUSED__, E_Event_Desklock *ev);
+static Eina_Bool     _evry_cb_desklock(Evry_Window *win, int type EINA_UNUSED, E_Event_Desklock *ev);
 static void           _evry_matches_update(Evry_Selector *sel, int async);
 static void           _evry_plugin_action(Evry_Selector *sel, int finished);
 static void           _evry_plugin_select(Evry_State *s, Evry_Plugin *p);
@@ -132,7 +132,7 @@ _evry_aggregator_fetch(Evry_State *s)
 }
 
 static Eina_Bool
-_evry_cb_item_changed(__UNUSED__ void *data, __UNUSED__ int type, void *event)
+_evry_cb_item_changed(EINA_UNUSED void *data, EINA_UNUSED int type, void *event)
 {
    Evry_Event_Item_Changed *ev = event;
    Evry_Selector *sel;
@@ -188,7 +188,7 @@ evry_show(E_Zone *zone, E_Zone_Edge edge, const char *params, Eina_Bool popup)
         if (ec)
           {
 #ifndef HAVE_WAYLAND_ONLY
-             if (ec->comp->comp_type == E_PIXMAP_TYPE_X)
+             if (e_comp->comp_type == E_PIXMAP_TYPE_X)
                ecore_x_netwm_window_type_set(elm_win_window_id_get(win->ewin),
                                              ECORE_X_WINDOW_TYPE_UTILITY);
 #endif
@@ -871,7 +871,7 @@ _evry_cb_drag_finished(E_Drag *drag, int dropped)
 #endif
 
 static Eina_Bool
-_evry_cb_desklock(Evry_Window *win, int type __UNUSED__, E_Event_Desklock *ev)
+_evry_cb_desklock(Evry_Window *win, int type EINA_UNUSED, E_Event_Desklock *ev)
 {
    if (ev->on) evry_hide(win, 0);
    return ECORE_CALLBACK_RENEW;
@@ -890,7 +890,8 @@ _evry_cb_mouse(void *data, int type, void *event)
    if (!win->grab)
      return ECORE_CALLBACK_PASS_ON;
 
-   if (ev->event_window != elm_win_window_id_get(win->ewin))
+   if ((win->grab && (ev->event_window != ecore_evas_window_get(e_comp->ee))) &&
+       (ev->event_window != elm_win_window_id_get(win->ewin)))
      return ECORE_CALLBACK_PASS_ON;
 
    ewin = win->ewin;
@@ -929,7 +930,7 @@ _evry_cb_mouse(void *data, int type, void *event)
              memcpy(sel + sel_length + s_len, "\r\n", 2);
              sel_length += s_len + 2;
 
-             d = e_drag_new(e_util_comp_current_get()),
+             d = e_drag_new(e_comp),
                             ev->x, ev->y,
                             drag_types, 1, sel, sel_length, NULL,
                             _evry_cb_drag_finished);
@@ -953,8 +954,8 @@ _evry_cb_mouse(void *data, int type, void *event)
      {
         win->mouse_out = 0;
 
-        if (!E_INSIDE(e_comp_canvas_x_root_adjust(e_comp, ev->root.x),
-                      e_comp_canvas_y_root_adjust(e_comp, ev->root.y), x, y, w, h))
+        if (!E_INSIDE(e_comp_canvas_x_root_adjust(ev->root.x),
+                      e_comp_canvas_y_root_adjust(ev->root.y), x, y, w, h))
           {
              win->mouse_out = 1;
              return ECORE_CALLBACK_PASS_ON;
@@ -967,8 +968,8 @@ _evry_cb_mouse(void *data, int type, void *event)
         win->mouse_button = 0;
 
         if (win->mouse_out &&
-            (!E_INSIDE(e_comp_canvas_x_root_adjust(e_comp, ev->root.x),
-                      e_comp_canvas_y_root_adjust(e_comp, ev->root.y), x, y, w, h)))
+            (!E_INSIDE(e_comp_canvas_x_root_adjust(ev->root.x),
+                      e_comp_canvas_y_root_adjust(ev->root.y), x, y, w, h)))
           {
              evry_hide(win, 0);
              return ECORE_CALLBACK_PASS_ON;
@@ -987,7 +988,7 @@ _evry_window_free(Evry_Window *win)
 }
 
 static void
-_evry_selector_cb_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
+_evry_selector_cb_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evas_Event_Mouse_Down *ev = event_info;
    Evry_Selector *sel = data;
@@ -1000,7 +1001,7 @@ _evry_selector_cb_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED
 }
 
 static void
-_evry_selector_cb_wheel(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
+_evry_selector_cb_wheel(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evas_Event_Mouse_Wheel *ev = event_info;
    Evry_Selector *sel = data;
@@ -1019,7 +1020,7 @@ _evry_selector_cb_wheel(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSE
 }
 
 static void
-_evry_selector_cb_up(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
+_evry_selector_cb_up(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evas_Event_Mouse_Up *ev = event_info;
    Evry_Selector *sel = data;
@@ -1211,7 +1212,7 @@ _evry_selector_activate(Evry_Selector *sel, int slide)
 }
 
 static void
-_evry_selector_thumb_gen(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_evry_selector_thumb_gen(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Evas_Coord w, h;
    Evry_Selector *sel = data;
@@ -1902,7 +1903,7 @@ _evry_cheat_history(Evry_State *s, int promote, int delete)
 }
 
 static Eina_Bool
-_evry_cb_key_down(void *data, int type __UNUSED__, void *event)
+_evry_cb_key_down(void *data, int type EINA_UNUSED, void *event)
 {
    Ecore_Event_Key *ev = event;
    Evry_State *s;
@@ -1910,7 +1911,8 @@ _evry_cb_key_down(void *data, int type __UNUSED__, void *event)
    Evry_Window *win = data;
    const char *old;
 
-   if (ev->event_window != elm_win_window_id_get(win->ewin))
+   if ((win->grab && (ev->event_window != ecore_evas_window_get(e_comp->ee))) &&
+       (ev->event_window != elm_win_window_id_get(win->ewin)))
      return ECORE_CALLBACK_PASS_ON;
 
    if (!strcmp(ev->key, "Escape"))
@@ -1929,7 +1931,7 @@ _evry_cb_key_down(void *data, int type __UNUSED__, void *event)
         ec = e_win_client_get(ewin);
         elm_win_borderless_set(ewin, 0);
 #ifndef HAVE_WAYLAND_ONLY
-        if (ec->comp->comp_type == E_PIXMAP_TYPE_X)
+        if (e_comp->comp_type == E_PIXMAP_TYPE_X)
           ecore_x_netwm_window_type_set(elm_win_window_id_get(ewin),
                                         ECORE_X_WINDOW_TYPE_DIALOG);
 #endif
@@ -2307,7 +2309,7 @@ _evry_clear(Evry_Selector *sel)
 }
 
 static void
-_evry_cb_free_action_performed(void *data __UNUSED__, void *event)
+_evry_cb_free_action_performed(void *data EINA_UNUSED, void *event)
 {
    Evry_Event_Action_Performed *ev = event;
 
@@ -2980,7 +2982,7 @@ _evry_plugin_select(Evry_State *s, Evry_Plugin *p)
 }
 
 static void
-_evry_cb_free_plugin_selected(void *data __UNUSED__, void *event)
+_evry_cb_free_plugin_selected(void *data EINA_UNUSED, void *event)
 {
    Evry_Event_Item_Selected *ev = event;
 
@@ -3041,7 +3043,7 @@ _evry_cb_show(Evry_Window *win, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSE
 
 #ifndef HAVE_WAYLAND_ONLY
 static Eina_Bool
-_evry_cb_selection_notify(void *data, int type __UNUSED__, void *event)
+_evry_cb_selection_notify(void *data, int type EINA_UNUSED, void *event)
 {
    Ecore_X_Event_Selection_Notify *ev;
    Evry_Window *win = data;

@@ -91,7 +91,7 @@ struct _E_Config_Dialog_Data
 };
 
 E_Config_Dialog *
-e_int_config_mousebindings(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
+e_int_config_mousebindings(Evas_Object *parent EINA_UNUSED, const char *params EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -168,7 +168,7 @@ _create_data(E_Config_Dialog *cfd)
 }
 
 static void
-_free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_free_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    E_Config_Binding_Mouse *eb;
    E_Config_Binding_Wheel *bw;
@@ -196,7 +196,7 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static int
-_basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_basic_apply_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    Eina_List *l, *l2;
    E_Config_Binding_Mouse *eb, *eb2;
@@ -205,7 +205,7 @@ _basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
    _auto_apply_changes(cfdata);
 
    e_comp_button_bindings_ungrab_all();
-   e_managers_keys_ungrab();
+   e_comp_canvas_keys_ungrab();
 
    EINA_LIST_FREE(e_bindings->mouse_bindings, eb)
      {
@@ -269,7 +269,7 @@ _basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
                              bw2->any_mod, bw2->action, bw2->params);
      }
    e_comp_button_bindings_grab_all();
-   e_managers_keys_grab();
+   e_comp_canvas_keys_grab();
 
    e_config_save_queue();
    return 1;
@@ -349,7 +349,7 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cf
    cfdata->gui.context.o_zone = ob;
    e_widget_disabled_set(ob, 1);
    e_widget_frametable_object_append(of, ob, 1, 2, 1, 1, 1, 1, 1, 1);
-   ob = e_widget_radio_add(evas, _("Container"), E_BINDING_CONTEXT_COMPOSITOR, rg);
+   ob = e_widget_radio_add(evas, _("Compositor"), E_BINDING_CONTEXT_COMPOSITOR, rg);
    cfdata->gui.context.o_container = ob;
    e_widget_disabled_set(ob, 1);
    e_widget_frametable_object_append(of, ob, 2, 0, 1, 1, 1, 1, 1, 1);
@@ -410,7 +410,7 @@ _fill_actions_list(E_Config_Dialog_Data *cfdata)
 
 /******************* Callbacks *************/
 static void
-_add_mouse_binding_cb(void *data, void *data2 __UNUSED__)
+_add_mouse_binding_cb(void *data, void *data2 EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -422,7 +422,7 @@ _add_mouse_binding_cb(void *data, void *data2 __UNUSED__)
 }
 
 static void
-_modify_mouse_binding_cb(void *data, void *data2 __UNUSED__)
+_modify_mouse_binding_cb(void *data, void *data2 EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -463,7 +463,7 @@ _binding_change_cb(void *data)
 }
 
 static void
-_delete_all_mouse_binding_cb(void *data, void *data2 __UNUSED__)
+_delete_all_mouse_binding_cb(void *data, void *data2 EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
    E_Config_Binding_Mouse *eb;
@@ -500,7 +500,7 @@ _delete_all_mouse_binding_cb(void *data, void *data2 __UNUSED__)
 }
 
 static void
-_delete_mouse_binding_cb(void *data, void *data2 __UNUSED__)
+_delete_mouse_binding_cb(void *data, void *data2 EINA_UNUSED)
 {
    Eina_List *l;
    int sel, n;
@@ -567,7 +567,7 @@ _delete_mouse_binding_cb(void *data, void *data2 __UNUSED__)
 }
 
 static void
-_restore_mouse_binding_defaults_cb(void *data, void *data2 __UNUSED__)
+_restore_mouse_binding_defaults_cb(void *data, void *data2 EINA_UNUSED)
 {
    E_Config_Bindings *ecb;
    Eina_Stringshare *prof;
@@ -1300,7 +1300,7 @@ _grab_wnd_show(E_Config_Dialog_Data *cfdata)
 }
 
 static Eina_Bool
-_grab_mouse_down_cb(void *data, __UNUSED__ int type, void *event)
+_grab_mouse_down_cb(void *data, EINA_UNUSED int type, void *event)
 {
    Eina_List *l;
    E_Config_Dialog_Data *cfdata;
@@ -1399,7 +1399,7 @@ _grab_mouse_down_cb(void *data, __UNUSED__ int type, void *event)
 }
 
 static Eina_Bool
-_grab_mouse_wheel_cb(void *data, int type __UNUSED__, void *event)
+_grab_mouse_wheel_cb(void *data, int type EINA_UNUSED, void *event)
 {
    Eina_List *l;
    E_Config_Binding_Wheel *bw = NULL;

@@ -6,15 +6,15 @@
 
 /* externally accessible functions */
 
-EAPI E_About *
-e_about_new(E_Comp *c)
+E_API E_About *
+e_about_new(void)
 {
    E_Obj_Dialog *od;
    char buf[16384];
    FILE *f;
    Eina_Strbuf *tbuf;
 
-   od = e_obj_dialog_new(c, _("About Enlightenment"), "E", "_about");
+   od = e_obj_dialog_new(_("About Enlightenment"), "E", "_about");
    if (!od) return NULL;
    e_obj_dialog_obj_theme_set(od, "base/theme/about", "e/widgets/about/main");
    e_obj_dialog_obj_part_text_set(od, "e.text.label", _("Close"));
@@ -110,7 +110,7 @@ e_about_new(E_Comp *c)
    return (E_About *)od;
 }
 
-EAPI void
+E_API void
 e_about_show(E_About *about)
 {
    e_obj_dialog_show((E_Obj_Dialog *)about);

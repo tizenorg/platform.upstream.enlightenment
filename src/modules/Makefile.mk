@@ -79,16 +79,6 @@ include src/modules/Makefile_gadman.mk
 
 include src/modules/Makefile_mixer.mk
 
-#include src/modules/Makefile_illume2.mk
-#include src/modules/Makefile_illume-home.mk
-#include src/modules/Makefile_illume-home-toggle.mk
-#include src/modules/Makefile_illume-softkey.mk
-#include src/modules/Makefile_illume-keyboard.mk
-#include src/modules/Makefile_illume-indicator.mk
-#include src/modules/Makefile_illume-kbd-toggle.mk
-#include src/modules/Makefile_illume-mode-toggle.mk
-#include src/modules/Makefile_illume-bluetooth.mk
-
 include src/modules/Makefile_syscon.mk
 
 include src/modules/Makefile_everything.mk
@@ -113,24 +103,34 @@ include src/modules/Makefile_xkbswitch.mk
 
 include src/modules/Makefile_tiling.mk
 
-#include src/modules/Makefile_access.mk
-
 include src/modules/Makefile_music_control.mk
 
 include src/modules/Makefile_packagekit.mk
 
-include src/modules/Makefile_contact.mk
-
 include src/modules/Makefile_wl_drm.mk
+
+include src/modules/Makefile_wl_wl.mk
 
 include src/modules/Makefile_wl_desktop_shell.mk
 
 include src/modules/Makefile_wl_x11.mk
 
-include src/modules/Makefile_wl_fb.mk
+#include src/modules/Makefile_wl_fb.mk
 
+<<<<<<< HEAD
 include src/modules/Makefile_wl_screenshot.mk
 
 include src/modules/Makefile_policy_mobile.mk
 
 include src/modules/Makefile_bufferqueue.mk
+=======
+include src/modules/Makefile_xwayland.mk
+
+include src/modules/Makefile_wl_text_input.mk
+
+include src/modules/Makefile_wl_weekeyboard.mk
+
+include src/modules/Makefile_policy_mobile.mk
+
+include src/modules/Makefile_geolocation.mk
+>>>>>>> upstream

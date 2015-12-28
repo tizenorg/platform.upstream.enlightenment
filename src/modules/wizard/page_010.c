@@ -81,8 +81,8 @@ _basic_lang_list_sort(const void *data1, const void *data2)
    return strcmp(trans1, trans2);
 }
 
-EAPI int
-wizard_page_init(E_Wizard_Page *pg __UNUSED__, Eina_Bool *need_xdg_desktops __UNUSED__, Eina_Bool *need_xdg_icons __UNUSED__)
+E_API int
+wizard_page_init(E_Wizard_Page *pg EINA_UNUSED, Eina_Bool *need_xdg_desktops EINA_UNUSED, Eina_Bool *need_xdg_icons EINA_UNUSED)
 {
    FILE *output;
 
@@ -142,14 +142,14 @@ wizard_page_init(E_Wizard_Page *pg __UNUSED__, Eina_Bool *need_xdg_desktops __UN
    return 1;
 }
 
-EAPI int
-wizard_page_shutdown(E_Wizard_Page *pg __UNUSED__)
+E_API int
+wizard_page_shutdown(E_Wizard_Page *pg EINA_UNUSED)
 {
    eina_list_free(blang_list);
    return 1;
 }
 
-EAPI int
+E_API int
 wizard_page_show(E_Wizard_Page *pg)
 {
    Evas_Object *o, *of, *ob, *ic;
@@ -222,8 +222,8 @@ wizard_page_show(E_Wizard_Page *pg)
    return 1; /* 1 == show ui, and wait for user, 0 == just continue */
 }
 
-EAPI int
-wizard_page_hide(E_Wizard_Page *pg __UNUSED__)
+E_API int
+wizard_page_hide(E_Wizard_Page *pg EINA_UNUSED)
 {
 //   evas_object_del(pg->data);
 /* special - language inits its stuff the moment it goes away */
@@ -238,8 +238,8 @@ wizard_page_hide(E_Wizard_Page *pg __UNUSED__)
    return 1;
 }
 
-EAPI int
-wizard_page_apply(E_Wizard_Page *pg __UNUSED__)
+E_API int
+wizard_page_apply(E_Wizard_Page *pg EINA_UNUSED)
 {
    // do this again as we want it to apply to the new profile
    eina_stringshare_del(e_config->language);

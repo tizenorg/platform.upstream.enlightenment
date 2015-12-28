@@ -6,8 +6,8 @@
 #define DEF_MENUCLICK             0.25
 #endif
 
-EAPI E_Config *e_config = NULL;
-EAPI E_Config_Bindings *e_bindings = NULL;
+E_API E_Config *e_config = NULL;
+E_API E_Config_Bindings *e_bindings = NULL;
 
 static int _e_config_revisions = 9;
 
@@ -52,11 +52,19 @@ static E_Config_DD *_e_config_xkb_layout_edd = NULL;
 static E_Config_DD *_e_config_xkb_option_edd = NULL;
 static E_Config_DD *_e_config_client_type_edd = NULL;
 
-EAPI int E_EVENT_CONFIG_ICON_THEME = 0;
-EAPI int E_EVENT_CONFIG_MODE_CHANGED = 0;
-EAPI int E_EVENT_CONFIG_LOADED = 0;
+E_API int E_EVENT_CONFIG_ICON_THEME = 0;
+E_API int E_EVENT_CONFIG_MODE_CHANGED = 0;
+E_API int E_EVENT_CONFIG_LOADED = 0;
 
 static E_Dialog *_e_config_error_dialog = NULL;
+
+typedef struct _E_Color_Class
+{
+   const char	 *name; /* stringshared name */
+   int		  r, g, b, a;
+   int		  r2, g2, b2, a2;
+   int		  r3, g3, b3, a3;
+} E_Color_Class;
 
 static void
 _e_config_error_dialog_cb_delete(void *dia)
@@ -181,8 +189,6 @@ _e_config_edd_init(Eina_Bool old)
 #define D _e_config_shelf_edd
    E_CONFIG_VAL(D, T, name, STR);
    E_CONFIG_VAL(D, T, id, INT);
-   EET_DATA_DESCRIPTOR_ADD_BASIC(D, T, "container", manager, EET_T_INT);
-   E_CONFIG_VAL(D, T, manager /*container */, INT);
    E_CONFIG_VAL(D, T, zone, INT);
    E_CONFIG_VAL(D, T, layer, INT);
    E_CONFIG_VAL(D, T, popup, UCHAR);
@@ -212,8 +218,6 @@ _e_config_edd_init(Eina_Bool old)
 #undef D
 #define T E_Config_Desktop_Background
 #define D _e_config_desktop_bg_edd
-   EET_DATA_DESCRIPTOR_ADD_BASIC(D, T, "container", manager, EET_T_INT);
-   E_CONFIG_VAL(D, T, manager /*container */, INT);
    E_CONFIG_VAL(D, T, zone, INT);
    E_CONFIG_VAL(D, T, desk_x, INT);
    E_CONFIG_VAL(D, T, desk_y, INT);
@@ -224,8 +228,6 @@ _e_config_edd_init(Eina_Bool old)
 #undef D
 #define T E_Config_Desktop_Name
 #define D _e_config_desktop_name_edd
-   EET_DATA_DESCRIPTOR_ADD_BASIC(D, T, "container", manager, EET_T_INT);
-   E_CONFIG_VAL(D, T, manager /*container */, INT);
    E_CONFIG_VAL(D, T, zone, INT);
    E_CONFIG_VAL(D, T, desk_x, INT);
    E_CONFIG_VAL(D, T, desk_y, INT);
@@ -236,7 +238,6 @@ _e_config_edd_init(Eina_Bool old)
 #undef D
 #define T E_Config_Desktop_Window_Profile
 #define D _e_config_desktop_window_profile_edd
-   E_CONFIG_VAL(D, T, manager, INT);
    E_CONFIG_VAL(D, T, zone, INT);
    E_CONFIG_VAL(D, T, desk_x, INT);
    E_CONFIG_VAL(D, T, desk_y, INT);
@@ -349,7 +350,6 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, prop.desk_x, INT);
    E_CONFIG_VAL(D, T, prop.desk_y, INT);
    E_CONFIG_VAL(D, T, prop.zone, INT);
-   E_CONFIG_VAL(D, T, prop.head, INT);
    E_CONFIG_VAL(D, T, prop.command, STR);
    E_CONFIG_VAL(D, T, prop.icon_preference, UCHAR);
    E_CONFIG_VAL(D, T, prop.desktop_file, STR);
@@ -458,10 +458,6 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, border_shade_speed, DOUBLE); /**/
    E_CONFIG_VAL(D, T, framerate, DOUBLE); /**/
    E_CONFIG_VAL(D, T, priority, INT); /**/
-   E_CONFIG_VAL(D, T, image_cache, INT); /**/
-   E_CONFIG_VAL(D, T, font_cache, INT); /**/
-   E_CONFIG_VAL(D, T, edje_cache, INT); /**/
-   E_CONFIG_VAL(D, T, edje_collection_cache, INT); /**/
    E_CONFIG_VAL(D, T, zone_desks_x_count, INT); /**/
    E_CONFIG_VAL(D, T, zone_desks_y_count, INT); /**/
    E_CONFIG_VAL(D, T, show_desktop_icons, INT); /**/
@@ -667,7 +663,6 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, menu_gadcon_client_toplevel, INT);
 
    E_CONFIG_VAL(D, T, ping_clients_interval, INT);
-   E_CONFIG_VAL(D, T, cache_flush_poll_interval, INT);
 
    E_CONFIG_VAL(D, T, thumbscroll_enable, INT);
    E_CONFIG_VAL(D, T, thumbscroll_threshhold, INT);
@@ -760,6 +755,9 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, xkb.default_model, STR);
    E_CONFIG_VAL(D, T, xkb.use_cache, UCHAR);
    E_CONFIG_VAL(D, T, xkb.delay_held_key_input_to_focus, UINT);
+
+   E_CONFIG_VAL(D, T, keyboard.repeat_delay, INT);
+   E_CONFIG_VAL(D, T, keyboard.repeat_rate, INT);
 
    E_CONFIG_VAL(D, T, keyboard.repeat_delay, INT);
    E_CONFIG_VAL(D, T, keyboard.repeat_rate, INT);
@@ -984,7 +982,7 @@ e_config_shutdown(void)
    return 1;
 }
 
-EAPI void
+E_API void
 e_config_load(void)
 {
    int reload = 0;
@@ -1122,7 +1120,7 @@ e_config_load(void)
    else
      e_bindings = e_config_domain_load("e_bindings", _e_config_binding_edd);
 
-   if (e_bindings && (e_bindings->config_version != E_CONFIG_BINDINGS_VERSION))
+   if ((!e_bindings) || (e_bindings->config_version != E_CONFIG_BINDINGS_VERSION))
      {
         Eina_Stringshare *prof;
 
@@ -1365,6 +1363,26 @@ e_config_load(void)
                     break;
                  }
           }
+        CONFIG_VERSION_CHECK(18)
+          {
+             E_Color_Class *ecc;
+
+             CONFIG_VERSION_UPDATE_INFO(18);
+             EINA_LIST_FREE(e_config->color_classes, ecc)
+               {
+                  elm_config_color_overlay_set(ecc->name, ecc->r, ecc->g, ecc->b, ecc->a, ecc->r2, ecc->g2, ecc->b2, ecc->a2, ecc->r3, ecc->g3, ecc->b3, ecc->a3);
+                  eina_stringshare_del(ecc->name);
+                  free(ecc);
+               }
+          }
+        CONFIG_VERSION_CHECK(19)
+          {
+             CONFIG_VERSION_UPDATE_INFO(19);
+
+             /* set (400, 25) as the default values of repeat delay, rate */
+             e_config->keyboard.repeat_delay = 400;
+             e_config->keyboard.repeat_rate = 25;
+          }
      }
    if (!e_config->remember_internal_fm_windows)
      e_config->remember_internal_fm_windows = !!(e_config->remember_internal_windows & E_REMEMBER_INTERNAL_FM_WINS);
@@ -1382,11 +1400,6 @@ e_config_load(void)
    E_CONFIG_LIMIT(e_config->border_shade_speed, 1.0, 20000.0);
    E_CONFIG_LIMIT(e_config->framerate, 1.0, 200.0);
    E_CONFIG_LIMIT(e_config->priority, 0, 19);
-   E_CONFIG_LIMIT(e_config->image_cache, 0, 256 * 1024);
-   E_CONFIG_LIMIT(e_config->font_cache, 0, 32 * 1024);
-   E_CONFIG_LIMIT(e_config->edje_cache, 0, 256);
-   E_CONFIG_LIMIT(e_config->edje_collection_cache, 0, 512);
-   E_CONFIG_LIMIT(e_config->cache_flush_poll_interval, 8, 32768);
    E_CONFIG_LIMIT(e_config->zone_desks_x_count, 1, 64);
    E_CONFIG_LIMIT(e_config->zone_desks_y_count, 1, 64);
    E_CONFIG_LIMIT(e_config->show_desktop_icons, 0, 1);
@@ -1511,9 +1524,9 @@ e_config_load(void)
    E_CONFIG_LIMIT(e_config->clientlist_limit_caption_len, 0, 1);
    E_CONFIG_LIMIT(e_config->clientlist_max_caption_len, 2, E_CLIENTLIST_MAX_CAPTION_LEN);
 
-   E_CONFIG_LIMIT(e_config->mouse_accel_numerator, 1, 10);
+   E_CONFIG_LIMIT(e_config->mouse_accel_numerator, 1, 30);
    E_CONFIG_LIMIT(e_config->mouse_accel_denominator, 1, 10);
-   E_CONFIG_LIMIT(e_config->mouse_accel_threshold, 1, 10);
+   E_CONFIG_LIMIT(e_config->mouse_accel_threshold, 0, 10);
 
    E_CONFIG_LIMIT(e_config->menu_favorites_show, 0, 1);
    E_CONFIG_LIMIT(e_config->menu_apps_show, 0, 1);
@@ -1545,9 +1558,12 @@ e_config_load(void)
 
    E_CONFIG_LIMIT(e_config->multiscreen_flip, 0, 1);
 
-   E_CONFIG_LIMIT(e_config->backlight.normal, 0.1, 1.0);
-   E_CONFIG_LIMIT(e_config->backlight.dim, 0.1, 1.0);
-   E_CONFIG_LIMIT(e_config->backlight.idle_dim, 0.1, 1.0);
+   E_CONFIG_LIMIT(e_config->backlight.normal, 0.05, 1.0);
+   E_CONFIG_LIMIT(e_config->backlight.dim, 0.05, 1.0);
+   E_CONFIG_LIMIT(e_config->backlight.idle_dim, 0, 1);
+
+   E_CONFIG_LIMIT(e_config->keyboard.repeat_delay, -1, 1000); // 1 second
+   E_CONFIG_LIMIT(e_config->keyboard.repeat_rate, -1, 1000); // 1 second
 
    E_CONFIG_LIMIT(e_config->keyboard.repeat_delay, -1, 1000); // 1 second
    E_CONFIG_LIMIT(e_config->keyboard.repeat_rate, -1, 1000); // 1 second
@@ -1566,7 +1582,7 @@ e_config_load(void)
    ecore_event_add(E_EVENT_CONFIG_LOADED, NULL, NULL, NULL);
 }
 
-EAPI int
+E_API int
 e_config_save(void)
 {
    E_FREE_FUNC(_e_config_save_defer, e_powersave_deferred_action_del);
@@ -1574,7 +1590,7 @@ e_config_save(void)
    return e_config_domain_save("e", _e_config_edd, e_config);
 }
 
-EAPI void
+E_API void
 e_config_save_flush(void)
 {
    if (_e_config_save_defer)
@@ -1585,7 +1601,7 @@ e_config_save_flush(void)
      }
 }
 
-EAPI void
+E_API void
 e_config_save_queue(void)
 {
    if (_e_config_save_defer)
@@ -1594,20 +1610,20 @@ e_config_save_queue(void)
                                                           NULL);
 }
 
-EAPI const char *
+E_API const char *
 e_config_profile_get(void)
 {
    return _e_config_profile;
 }
 
-EAPI void
+E_API void
 e_config_profile_set(const char *prof)
 {
    eina_stringshare_replace(&_e_config_profile, prof);
    e_util_env_set("E_CONF_PROFILE", _e_config_profile);
 }
 
-EAPI char *
+E_API char *
 e_config_profile_dir_get(const char *prof)
 {
    char buf[PATH_MAX];
@@ -1625,7 +1641,7 @@ _cb_sort_files(char *f1, char *f2)
    return strcmp(f1, f2);
 }
 
-EAPI Eina_List *
+E_API Eina_List *
 e_config_profile_list(void)
 {
    Eina_List *files;
@@ -1701,7 +1717,7 @@ e_config_profile_list(void)
    return flist;
 }
 
-EAPI void
+E_API void
 e_config_profile_add(const char *prof)
 {
    char buf[4096];
@@ -1710,7 +1726,7 @@ e_config_profile_add(const char *prof)
    ecore_file_mkdir(buf);
 }
 
-EAPI void
+E_API void
 e_config_profile_del(const char *prof)
 {
    char buf[4096];
@@ -1719,13 +1735,13 @@ e_config_profile_del(const char *prof)
    ecore_file_recursive_rm(buf);
 }
 
-EAPI void
+E_API void
 e_config_save_block_set(int block)
 {
    _e_config_save_block = block;
 }
 
-EAPI int
+E_API int
 e_config_save_block_get(void)
 {
    return _e_config_save_block;
@@ -1740,7 +1756,7 @@ e_config_save_block_get(void)
  * @param edd to struct definition
  * @return returns allocated struct on success, if unable to find config returns null
  */
-EAPI void *
+E_API void *
 e_config_domain_load(const char *domain, E_Config_DD *edd)
 {
    Eet_File *ef;
@@ -1773,7 +1789,7 @@ e_config_domain_load(const char *domain, E_Config_DD *edd)
    return e_config_domain_system_load(domain, edd);
 }
 
-EAPI void *
+E_API void *
 e_config_domain_system_load(const char *domain, E_Config_DD *edd)
 {
    Eet_File *ef;
@@ -1826,7 +1842,7 @@ _e_config_mv_error(const char *from, const char *to)
    _e_config_error_dialog = dia;
 }
 
-EAPI int
+E_API int
 e_config_profile_save(void)
 {
    Eet_File *ef;
@@ -1893,7 +1909,7 @@ e_config_profile_save(void)
  * @param data struct to save as configuration file
  * @return 1 if save success, 0 on failure
  */
-EAPI int
+E_API int
 e_config_domain_save(const char *domain, E_Config_DD *edd, const void *data)
 {
    Eet_File *ef;
@@ -1957,7 +1973,7 @@ e_config_domain_save(const char *domain, E_Config_DD *edd, const void *data)
    return ok;
 }
 
-EAPI E_Config_Binding_Mouse *
+E_API E_Config_Binding_Mouse *
 e_config_binding_mouse_match(E_Config_Binding_Mouse *eb_in)
 {
    Eina_List *l;
@@ -1978,7 +1994,7 @@ e_config_binding_mouse_match(E_Config_Binding_Mouse *eb_in)
    return NULL;
 }
 
-EAPI E_Config_Binding_Key *
+E_API E_Config_Binding_Key *
 e_config_binding_key_match(E_Config_Binding_Key *eb_in)
 {
    Eina_List *l;
@@ -2000,7 +2016,7 @@ e_config_binding_key_match(E_Config_Binding_Key *eb_in)
    return NULL;
 }
 
-EAPI E_Config_Binding_Edge *
+E_API E_Config_Binding_Edge *
 e_config_binding_edge_match(E_Config_Binding_Edge *eb_in)
 {
    Eina_List *l;
@@ -2023,7 +2039,7 @@ e_config_binding_edge_match(E_Config_Binding_Edge *eb_in)
    return NULL;
 }
 
-EAPI E_Config_Binding_Signal *
+E_API E_Config_Binding_Signal *
 e_config_binding_signal_match(E_Config_Binding_Signal *eb_in)
 {
    Eina_List *l;
@@ -2047,7 +2063,7 @@ e_config_binding_signal_match(E_Config_Binding_Signal *eb_in)
    return NULL;
 }
 
-EAPI E_Config_Binding_Wheel *
+E_API E_Config_Binding_Wheel *
 e_config_binding_wheel_match(E_Config_Binding_Wheel *eb_in)
 {
    Eina_List *l;
@@ -2069,7 +2085,7 @@ e_config_binding_wheel_match(E_Config_Binding_Wheel *eb_in)
    return NULL;
 }
 
-EAPI E_Config_Binding_Acpi *
+E_API E_Config_Binding_Acpi *
 e_config_binding_acpi_match(E_Config_Binding_Acpi *eb_in)
 {
    Eina_List *l;
@@ -2091,13 +2107,13 @@ e_config_binding_acpi_match(E_Config_Binding_Acpi *eb_in)
    return NULL;
 }
 
-EAPI void
+E_API void
 e_config_mode_changed(void)
 {
    ecore_event_add(E_EVENT_CONFIG_MODE_CHANGED, NULL, NULL, NULL);
 }
 
-EAPI void
+E_API void
 e_config_binding_acpi_free(E_Config_Binding_Acpi *eba)
 {
    if (!eba) return;
@@ -2106,7 +2122,7 @@ e_config_binding_acpi_free(E_Config_Binding_Acpi *eba)
    free(eba);
 }
 
-EAPI void
+E_API void
 e_config_binding_key_free(E_Config_Binding_Key *ebk)
 {
    if (!ebk) return;
@@ -2116,7 +2132,7 @@ e_config_binding_key_free(E_Config_Binding_Key *ebk)
    free(ebk);
 }
 
-EAPI void
+E_API void
 e_config_binding_edge_free(E_Config_Binding_Edge *ebe)
 {
    if (!ebe) return;
@@ -2125,7 +2141,7 @@ e_config_binding_edge_free(E_Config_Binding_Edge *ebe)
    free(ebe);
 }
 
-EAPI void
+E_API void
 e_config_binding_mouse_free(E_Config_Binding_Mouse *ebm)
 {
    if (!ebm) return;
@@ -2134,7 +2150,7 @@ e_config_binding_mouse_free(E_Config_Binding_Mouse *ebm)
    free(ebm);
 }
 
-EAPI void
+E_API void
 e_config_binding_wheel_free(E_Config_Binding_Wheel *ebw)
 {
    if (!ebw) return;
@@ -2143,7 +2159,7 @@ e_config_binding_wheel_free(E_Config_Binding_Wheel *ebw)
    free(ebw);
 }
 
-EAPI void
+E_API void
 e_config_binding_signal_free(E_Config_Binding_Signal *ebs)
 {
    if (!ebs) return;
@@ -2154,7 +2170,7 @@ e_config_binding_signal_free(E_Config_Binding_Signal *ebs)
    free(ebs);
 }
 
-EAPI void
+E_API void
 e_config_bindings_free(E_Config_Bindings *ecb)
 {
    if (!ecb) return;
@@ -2169,7 +2185,7 @@ e_config_bindings_free(E_Config_Bindings *ecb)
 
 /* local subsystem functions */
 static void
-_e_config_save_cb(void *data __UNUSED__)
+_e_config_save_cb(void *data EINA_UNUSED)
 {
    e_config_profile_save();
    e_module_save_all();

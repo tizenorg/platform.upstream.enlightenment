@@ -13,13 +13,12 @@ static void                  _basic_apply_border(E_Config_Dialog_Data *cfdata);
 struct _E_Config_Dialog_Data
 {
    E_Client *client;
-   E_Comp *comp;
    const char  *bordername;
    int          remember_border;
 };
 
 E_Config_Dialog *
-e_int_config_borders(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
+e_int_config_borders(Evas_Object *parent EINA_UNUSED, const char *params EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -34,7 +33,7 @@ e_int_config_borders(Evas_Object *parent EINA_UNUSED, const char *params __UNUSE
 }
 
 E_Config_Dialog *
-e_int_config_borders_border(E_Comp *comp __UNUSED__, const char *params)
+e_int_config_borders_border(E_Comp *comp EINA_UNUSED, const char *params)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -51,6 +50,7 @@ e_int_config_borders_border(E_Comp *comp __UNUSED__, const char *params)
                              "E", "_config_border_border_style_dialog",
                              "preferences-system-windows", 0, v, ec);
    ec->border_border_dialog = cfd;
+   evas_object_layer_set(e_win_client_get(cfd->dia->win)->frame, ec->layer);
    return cfd;
 }
 
@@ -76,11 +76,8 @@ _create_data(E_Config_Dialog *cfd)
    E_Config_Dialog_Data *cfdata;
 
    cfdata = E_NEW(E_Config_Dialog_Data, 1);
-   cfdata->comp = NULL;
    cfdata->client = NULL;
-   if (!cfd->data)
-     cfdata->comp = e_comp_get(NULL);
-   else
+   if (cfd->data)
      cfdata->client = cfd->data;
 
    _fill_data(cfdata);
@@ -104,7 +101,7 @@ _fill_data(E_Config_Dialog_Data *cfdata)
 }
 
 static void
-_free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_free_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    if (cfdata->client)
      cfdata->client->border_border_dialog = NULL;
@@ -114,7 +111,7 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static int
-_basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_basic_check_changed(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    Eina_Bool remch = ((cfdata->remember_border && 
                        !((cfdata->client->remember) &&
@@ -129,16 +126,16 @@ _basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfda
 }
 
 static int
-_basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_basic_apply(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    if (cfdata->client)
      _basic_apply_border(cfdata);
-   else if (cfdata->comp)
+   else
      {
         Eina_List *l;
         E_Client *ec;
         eina_stringshare_replace(&e_config->theme_default_border_style, cfdata->bordername);
-        EINA_LIST_FOREACH(cfdata->comp->clients, l, ec)
+        EINA_LIST_FOREACH(e_comp->clients, l, ec)
           {
              if (e_client_util_ignored_get(ec)) continue;
              EC_CHANGED(ec);

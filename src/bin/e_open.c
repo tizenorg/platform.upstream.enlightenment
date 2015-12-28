@@ -9,6 +9,31 @@
 #include <ctype.h>
 #include <errno.h>
 
+# ifdef E_API
+#  undef E_API
+# endif
+# ifdef WIN32
+#  ifdef BUILDING_DLL
+#   define E_API __declspec(dllexport)
+#  else
+#   define E_API __declspec(dllimport)
+#  endif
+# else
+#  ifdef __GNUC__
+#   if __GNUC__ >= 4
+/* BROKEN in gcc 4 on amd64 */
+#    if 0
+#     pragma GCC visibility push(hidden)
+#    endif
+#    define E_API __attribute__ ((visibility("default")))
+#   else
+#    define E_API
+#   endif
+#  else
+#   define E_API
+#  endif
+# endif
+
 static const char *
 xdg_defaults_get(const char *path, const char *mime)
 {
@@ -116,7 +141,7 @@ handler_find(const char *mime)
 }
 
 static void *
-get_command(void *data, Efreet_Desktop *desktop __UNUSED__, char *command, int remaining __UNUSED__)
+get_command(void *data, Efreet_Desktop *desktop EINA_UNUSED, char *command, int remaining EINA_UNUSED)
 {
    Eina_List **p_cmd = data;
    *p_cmd = eina_list_append(*p_cmd, command);
@@ -448,7 +473,7 @@ static const Ecore_Getopt options = {
    }
 };
 
-EAPI int
+E_API int
 main(int argc, char *argv[])
 {
    Eina_Bool quit_option = EINA_FALSE;

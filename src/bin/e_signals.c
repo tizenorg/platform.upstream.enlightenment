@@ -5,8 +5,15 @@
  */
 #include "e.h"
 
+<<<<<<< HEAD
 #ifdef HAVE_WAYLAND_ONLY
 #include <Ecore_Drm.h>
+=======
+#ifdef HAVE_WAYLAND
+# ifdef HAVE_WL_DRM
+#include <Ecore_Drm.h>
+# endif
+>>>>>>> upstream
 #endif
 
 #ifdef HAVE_EXECINFO_H
@@ -63,12 +70,10 @@ _e_write_safe_int(int fd, const char *buf, size_t size)
 
 #endif
 
-/* a tricky little devil, requires e and it's libs to be built
- * with the -rdynamic flag to GCC for any sort of decent output.
- */
-EAPI void
-e_sigseg_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__)
+static void
+_e_crash(void)
 {
+<<<<<<< HEAD
 #ifdef HAVE_WAYLAND_ONLY
    Eina_List *list, *l, *ll;
    Ecore_Drm_Device *dev;
@@ -85,6 +90,32 @@ e_sigseg_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__
 
    ecore_drm_shutdown();
 #else
+=======
+#ifdef HAVE_WAYLAND
+   if (e_comp->comp_type == E_PIXMAP_TYPE_WL)
+     {
+#ifdef HAVE_WL_DRM
+        const Eina_List *list, *l, *ll;
+        Ecore_Drm_Device *dev;
+
+        if (!strstr(ecore_evas_engine_name_get(e_comp->ee), "drm")) return;
+        list = ecore_drm_devices_get();
+        EINA_LIST_FOREACH_SAFE(list, l, ll, dev)
+          {
+             ecore_drm_inputs_destroy(dev);
+             ecore_drm_sprites_destroy(dev);
+             ecore_drm_device_close(dev);
+             ecore_drm_launcher_disconnect(dev);
+             ecore_drm_device_free(dev);
+          }
+
+        ecore_drm_shutdown();
+#endif
+        return;
+     }
+#endif
+#ifndef HAVE_WAYLAND_ONLY
+>>>>>>> upstream
    _e_x_composite_shutdown();
    ecore_x_pointer_ungrab();
    ecore_x_keyboard_ungrab();
@@ -94,12 +125,21 @@ e_sigseg_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__
 #endif
 }
 
-EAPI void
-e_sigill_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__)
+/* a tricky little devil, requires e and it's libs to be built
+ * with the -rdynamic flag to GCC for any sort of decent output.
+ */
+E_API void
+e_sigseg_act(int x EINA_UNUSED, siginfo_t *info EINA_UNUSED, void *data EINA_UNUSED)
 {
-   // In case of a sigill in Enlightenment, Enlightenment start will catch the sigill and continue,
-   // because evas cpu detection use that behaviour. But if we get a SIGILL after that, we endup in
-   // this sig handler. So E start remember the SIGILL, and we will commit succide with a USR1, followed
+   _e_crash();
+}
+
+E_API void
+e_sigill_act(int x EINA_UNUSED, siginfo_t *info EINA_UNUSED, void *data EINA_UNUSED)
+{
+   // In case of a SIGILL in Enlightenment, Enlightenment start will catch the SIGILL and continue,
+   // because evas cpu detection use that behaviour. But if we get a SIGILL after that, we end up in
+   // this sig handler. So E start remember the SIGILL, and we will commit suicide with a USR1, followed
    // by a SEGV.
    kill(getpid(), SIGUSR1);
    kill(getpid(), SIGSEGV);
@@ -112,9 +152,10 @@ e_sigill_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__
    /* e_alert_show(); */
 }
 
-EAPI void
-e_sigfpe_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__)
+E_API void
+e_sigfpe_act(int x EINA_UNUSED, siginfo_t *info EINA_UNUSED, void *data EINA_UNUSED)
 {
+<<<<<<< HEAD
 #ifdef HAVE_WAYLAND_ONLY
    Eina_List *list, *l, *ll;
    Ecore_Drm_Device *dev;
@@ -138,11 +179,15 @@ e_sigfpe_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__
    ecore_x_sync();
    e_alert_show();
 #endif
+=======
+   _e_crash();
+>>>>>>> upstream
 }
 
-EAPI void
-e_sigbus_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__)
+E_API void
+e_sigbus_act(int x EINA_UNUSED, siginfo_t *info EINA_UNUSED, void *data EINA_UNUSED)
 {
+<<<<<<< HEAD
 #ifdef HAVE_WAYLAND_ONLY
    Eina_List *list, *l, *ll;
    Ecore_Drm_Device *dev;
@@ -166,11 +211,15 @@ e_sigbus_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__
    ecore_x_sync();
    e_alert_show();
 #endif
+=======
+   _e_crash();
+>>>>>>> upstream
 }
 
-EAPI void
-e_sigabrt_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED__)
+E_API void
+e_sigabrt_act(int x EINA_UNUSED, siginfo_t *info EINA_UNUSED, void *data EINA_UNUSED)
 {
+<<<<<<< HEAD
 #ifdef HAVE_WAYLAND_ONLY
    Eina_List *list, *l, *ll;
    Ecore_Drm_Device *dev;
@@ -194,4 +243,7 @@ e_sigabrt_act(int x __UNUSED__, siginfo_t *info __UNUSED__, void *data __UNUSED_
    ecore_x_sync();
    e_alert_show();
 #endif
+=======
+   _e_crash();
+>>>>>>> upstream
 }

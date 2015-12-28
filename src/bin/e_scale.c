@@ -1,8 +1,12 @@
 #include "e.h"
 
+<<<<<<< HEAD
 EAPI double e_scale = 1.0;
 static Eina_Bool _initted = EINA_FALSE;
 static int _dpi = -1;
+=======
+E_API double e_scale = 1.0;
+>>>>>>> upstream
 
 EINTERN int
 e_scale_init(void)
@@ -23,7 +27,7 @@ e_scale_shutdown(void)
    return 1;
 }
 
-EAPI void
+E_API void
 e_scale_update(void)
 {
    char buf[128];
@@ -33,7 +37,8 @@ e_scale_update(void)
 #ifndef HAVE_WAYLAND_ONLY
         if (e_comp->comp_type == E_PIXMAP_TYPE_X)
           e_scale = (double)ecore_x_dpi_get() / (double)e_config->scale.base_dpi;
-#else
+#endif
+#ifdef HAVE_WAYLAND
         if (e_comp->comp_type == E_PIXMAP_TYPE_WL)
           e_scale = (double)ecore_wl_dpi_get() / (double)e_config->scale.base_dpi;
 #endif

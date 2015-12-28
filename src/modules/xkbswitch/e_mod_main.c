@@ -7,15 +7,15 @@ static E_Gadcon_Client *_gc_init(E_Gadcon *gc, const char *name, const char *id,
 static void             _gc_shutdown(E_Gadcon_Client *gcc);
 static void             _gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient);
 static const char      *_gc_label(const E_Gadcon_Client_Class *client_class);
-static const char      *_gc_id_new(const E_Gadcon_Client_Class *client_class __UNUSED__);
+static const char      *_gc_id_new(const E_Gadcon_Client_Class *client_class EINA_UNUSED);
 static Evas_Object     *_gc_icon(const E_Gadcon_Client_Class *client_class, Evas *evas);
 
 /* EVENTS */
-static Eina_Bool        _xkb_changed_state(void *data __UNUSED__, int type __UNUSED__, void *event);
+static Eina_Bool        _xkb_changed_state(void *data EINA_UNUSED, int type EINA_UNUSED, void *event);
 static void             _e_xkb_cb_mouse_down(void *data, Evas *evas, Evas_Object *obj, void *event);
-static void             _e_xkb_cb_menu_configure(void *data, E_Menu *mn, E_Menu_Item *mi __UNUSED__);
-static void             _e_xkb_cb_lmenu_post(void *data, E_Menu *menu __UNUSED__);
-static void             _e_xkb_cb_lmenu_set(void *data, E_Menu *mn __UNUSED__, E_Menu_Item *mi __UNUSED__);
+static void             _e_xkb_cb_menu_configure(void *data, E_Menu *mn, E_Menu_Item *mi EINA_UNUSED);
+static void             _e_xkb_cb_lmenu_post(void *data, E_Menu *menu EINA_UNUSED);
+static void             _e_xkb_cb_lmenu_set(void *data, E_Menu *mn EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED);
 
 /* Static variables
  * The static variables specific to the current code unit.
@@ -54,7 +54,7 @@ static const E_Gadcon_Client_Class _gc_class =
    E_GADCON_CLIENT_STYLE_PLAIN
 };
 
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION,
    "XKB Switcher"
@@ -64,9 +64,11 @@ EAPI E_Module_Api e_modapi =
  * Initializes the configuration file, checks its versions, populates
  * menus, finds the rules file, initializes gadget icon.
  */
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
+   /* FIXME */
+   if (e_comp->comp_type == E_PIXMAP_TYPE_WL) return NULL;
    /* Menus and dialogs */
    e_configure_registry_category_add("keyboard_and_mouse", 80, _("Input"),
                                      NULL, "preferences-behavior");
@@ -77,7 +79,10 @@ e_modapi_init(E_Module *m)
 
 
    _xkb.module = m;
-   ecore_event_handler_add(ECORE_X_EVENT_XKB_STATE_NOTIFY, _xkb_changed_state, NULL);
+#ifndef HAVE_WAYLAND_ONLY
+   if (e_comp_util_has_x())
+     ecore_event_handler_add(ECORE_X_EVENT_XKB_STATE_NOTIFY, _xkb_changed_state, NULL);
+#endif
    /* Gadcon */
    e_gadcon_provider_register(&_gc_class);
    return m;
@@ -87,8 +92,8 @@ e_modapi_init(E_Module *m)
  * Called when the module gets unloaded. Deregisters the menu state
  * and frees up the config.
  */
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    e_configure_registry_item_del("keyboard_and_mouse/xkbswitch");
    e_configure_registry_category_del("keyboard_and_mouse");
@@ -105,8 +110,8 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
 /* Module state save
  * Used to save the configuration file.
  */
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    return 1;
 }
@@ -242,14 +247,14 @@ _gc_shutdown(E_Gadcon_Client *gcc)
 }
 
 static void
-_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient __UNUSED__)
+_gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient EINA_UNUSED)
 {
    e_gadcon_client_aspect_set(gcc, 16, 16);
    e_gadcon_client_min_size_set(gcc, 16, 16);
 }
 
 static const char *
-_gc_label(const E_Gadcon_Client_Class *client_class __UNUSED__)
+_gc_label(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    return _("Keyboard");
 }
@@ -265,7 +270,7 @@ _gc_id_new(const E_Gadcon_Client_Class *client_class)
 }
 
 static Evas_Object *
-_gc_icon(const E_Gadcon_Client_Class *client_class __UNUSED__, Evas *evas)
+_gc_icon(const E_Gadcon_Client_Class *client_class EINA_UNUSED, Evas *evas)
 {
    Evas_Object *o;
    char buf[PATH_MAX];
@@ -276,8 +281,9 @@ _gc_icon(const E_Gadcon_Client_Class *client_class __UNUSED__, Evas *evas)
    return o;
 }
 
+#ifndef HAVE_WAYLAND_ONLY
 static Eina_Bool
-_xkb_changed_state(void *data __UNUSED__, int type __UNUSED__, void *event __UNUSED__)
+_xkb_changed_state(void *data EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
    Ecore_X_Event_Xkb *ev = (Ecore_X_Event_Xkb *)event;
 
@@ -286,6 +292,7 @@ _xkb_changed_state(void *data __UNUSED__, int type __UNUSED__, void *event __UNU
    _xkb_update_icon(ev->group);
    return ECORE_CALLBACK_PASS_ON;
 }
+#endif
 
 #if 0
 static int
@@ -303,7 +310,7 @@ _xkb_menu_items_sort(const void *data1, const void *data2)
 
 #endif
 static void
-_e_xkb_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSED__, void *event)
+_e_xkb_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    Evas_Event_Mouse_Down *ev = event;
    Instance *inst = data;
@@ -331,7 +338,7 @@ _e_xkb_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSE
                                           NULL, NULL);
         /* Activate - we show the menu relative to the gadget */
         e_menu_activate_mouse(m,
-                              e_util_zone_current_get(e_manager_current_get()),
+                              e_zone_current_get(),
                               (x + ev->output.x), (y + ev->output.y), 1, 1,
                               E_MENU_POP_DIRECTION_AUTO, ev->timestamp);
         evas_event_feed_mouse_up(inst->gcc->gadcon->evas, ev->button,
@@ -458,8 +465,7 @@ _e_xkb_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSE
          * the start menu - thus the need for direction etc.
          */
         e_menu_activate_mouse(inst->lmenu,
-                              e_util_zone_current_get
-                                (e_manager_current_get()),
+                              e_zone_current_get(),
                               x, y, w, h, dir, ev->timestamp);
      }
    else if (ev->button == 2) /* Middle click */
@@ -467,7 +473,7 @@ _e_xkb_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSE
 }
 
 static void
-_e_xkb_cb_lmenu_post(void *data, E_Menu *menu __UNUSED__)
+_e_xkb_cb_lmenu_post(void *data, E_Menu *menu EINA_UNUSED)
 {
    Instance *inst = data;
 
@@ -477,14 +483,14 @@ _e_xkb_cb_lmenu_post(void *data, E_Menu *menu __UNUSED__)
 }
 
 static void
-_e_xkb_cb_menu_configure(void *data __UNUSED__, E_Menu *mn EINA_UNUSED, E_Menu_Item *mi __UNUSED__)
+_e_xkb_cb_menu_configure(void *data EINA_UNUSED, E_Menu *mn EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    if (_xkb.cfd) return;
    _xkb_cfg_dialog(NULL, NULL);
 }
 
 static void
-_e_xkb_cb_lmenu_set(void *data, E_Menu *mn __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_xkb_cb_lmenu_set(void *data, E_Menu *mn EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    Eina_List *l;
    int cur_group = -1, grp = -1;

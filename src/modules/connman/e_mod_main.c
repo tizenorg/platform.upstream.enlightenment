@@ -196,7 +196,7 @@ _econnman_app_launch(E_Connman_Instance *inst)
 
    zone = e_gadcon_client_zone_get(inst->gcc);
    if (!zone)
-     zone = e_util_zone_current_get(e_manager_current_get());
+     zone = e_zone_current_get();
 
    e_exec(zone, desktop, NULL, NULL, "econnman/app");
    efreet_desktop_free(desktop);
@@ -272,7 +272,7 @@ _econnman_popup_new(E_Connman_Instance *inst)
      return;
 
    inst->popup = e_gadcon_popup_new(inst->gcc, 0);
-   evas = e_comp_get(inst->gcc)->evas;
+   evas = e_comp->evas;
 
    list = e_widget_list_add(evas, 0, 0);
    inst->ui.popup.list = e_widget_ilist_add(evas, 24, 24, NULL);
@@ -434,7 +434,7 @@ _econnman_menu_new(E_Connman_Instance *inst, Evas_Event_Mouse_Down *ev)
    m = e_gadcon_client_util_menu_items_append(inst->gcc, m, 0);
    e_gadcon_canvas_zone_geometry_get(inst->gcc->gadcon, &x, &y, NULL, NULL);
    e_menu_activate_mouse(m,
-                         e_util_zone_current_get(e_manager_current_get()),
+                         e_zone_current_get(),
                          x + ev->output.x, y + ev->output.y, 1, 1,
                          E_MENU_POP_DIRECTION_DOWN, ev->timestamp);
 }
@@ -575,10 +575,10 @@ static const E_Gadcon_Client_Class _gc_class =
    E_GADCON_CLIENT_STYLE_PLAIN
 };
 
-EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, _e_connman_Name };
+E_API E_Module_Api e_modapi = { E_MODULE_API_VERSION, _e_connman_Name };
 
 static E_Config_Dialog *
-_econnman_config(Evas_Object *parent, const char *params EINA_UNUSED)
+_econnman_config(Evas_Object *parent EINA_UNUSED, const char *params EINA_UNUSED)
 {
    E_Connman_Module_Context *ctxt;
 
@@ -615,7 +615,7 @@ _econnman_configure_registry_unregister(void)
    e_configure_registry_category_del(_reg_cat);
 }
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    E_Connman_Module_Context *ctxt;
@@ -673,7 +673,7 @@ _econnman_instances_free(E_Connman_Module_Context *ctxt)
      }
 }
 
-EAPI int
+E_API int
 e_modapi_shutdown(E_Module *m)
 {
    E_Connman_Module_Context *ctxt;
@@ -698,7 +698,7 @@ e_modapi_shutdown(E_Module *m)
    return 1;
 }
 
-EAPI int
+E_API int
 e_modapi_save(E_Module *m)
 {
    E_Connman_Module_Context *ctxt;

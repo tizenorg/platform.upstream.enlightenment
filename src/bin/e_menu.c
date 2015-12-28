@@ -103,19 +103,6 @@ static int _e_menu_autoscroll_y = 0;
 static Eina_List *handlers = NULL;
 static Eina_Bool _e_menu_lock = EINA_FALSE;
 
-static void
-_mouse_up_feed(Evas *e, unsigned int activate_time)
-{
-   int button_mask, i;
-
-   button_mask = evas_pointer_button_down_mask_get(e);
-   for (i = 0; i < 32; i++)
-     {
-       if ((button_mask & (1 << i)))
-         evas_event_feed_mouse_up(e, i + 1, EVAS_BUTTON_NONE, activate_time, NULL);
-     }
-}
-
 static Eina_List *
 _e_active_menus_copy_ref(void)
 {
@@ -192,7 +179,7 @@ e_menu_shutdown(void)
    return 1;
 }
 
-EAPI void
+E_API void
 e_menu_hide_all(void)
 {
    E_Menu *m;
@@ -208,7 +195,7 @@ e_menu_hide_all(void)
      }
 }
 
-EAPI E_Menu *
+E_API E_Menu *
 e_menu_new(void)
 {
    E_Menu *m;
@@ -221,7 +208,7 @@ e_menu_new(void)
    return m;
 }
 
-EAPI void
+E_API void
 e_menu_activate_key(E_Menu *m, E_Zone *zone, int x, int y, int w, int h, int dir)
 {
    E_OBJECT_CHECK(m);
@@ -294,7 +281,7 @@ e_menu_activate_key(E_Menu *m, E_Zone *zone, int x, int y, int w, int h, int dir
      }
 }
 
-EAPI void
+E_API void
 e_menu_activate_mouse(E_Menu *m, E_Zone *zone, int x, int y, int w, int h, int dir, unsigned int activate_time)
 {
    E_Menu_Item *pmi;
@@ -357,10 +344,10 @@ e_menu_activate_mouse(E_Menu *m, E_Zone *zone, int x, int y, int w, int h, int d
      }
    pmi = _e_menu_item_active_get();
    if (pmi) e_menu_item_active_set(pmi, 0);
-   _mouse_up_feed(e_comp->evas, activate_time);
+   e_comp_canvas_feed_mouse_up(activate_time);
 }
 
-EAPI void
+E_API void
 e_menu_activate(E_Menu *m, E_Zone *zone, int x, int y, int w, int h, int dir)
 {
    E_Menu_Item *pmi;
@@ -429,7 +416,7 @@ e_menu_activate(E_Menu *m, E_Zone *zone, int x, int y, int w, int h, int dir)
    if (pmi) e_menu_item_active_set(pmi, 0);
 }
 
-EAPI void
+E_API void
 e_menu_deactivate(E_Menu *m)
 {
    E_OBJECT_CHECK(m);
@@ -441,7 +428,7 @@ e_menu_deactivate(E_Menu *m)
      m->post_deactivate_cb.func(m->post_deactivate_cb.data, m);
 }
 
-EAPI int
+E_API int
 e_menu_freeze(E_Menu *m)
 {
    E_OBJECT_CHECK_RETURN(m, 0);
@@ -450,7 +437,7 @@ e_menu_freeze(E_Menu *m)
    return m->frozen;
 }
 
-EAPI int
+E_API int
 e_menu_thaw(E_Menu *m)
 {
    E_OBJECT_CHECK_RETURN(m, 0);
@@ -460,7 +447,7 @@ e_menu_thaw(E_Menu *m)
    return m->frozen;
 }
 
-EAPI void
+E_API void
 e_menu_title_set(E_Menu *m, const char *title)
 {
    E_OBJECT_CHECK(m);
@@ -483,8 +470,8 @@ e_menu_title_set(E_Menu *m, const char *title)
    edje_object_message_signal_process(m->bg_object);
 }
 
-EAPI void
-e_menu_icon_file_set(E_Menu *m __UNUSED__, const char *icon __UNUSED__)
+E_API void
+e_menu_icon_file_set(E_Menu *m EINA_UNUSED, const char *icon EINA_UNUSED)
 {
    /* FIXME: support menu icons
       E_OBJECT_CHECK(m);
@@ -492,7 +479,7 @@ e_menu_icon_file_set(E_Menu *m __UNUSED__, const char *icon __UNUSED__)
     */
 }
 
-EAPI void
+E_API void
 e_menu_category_set(E_Menu *m, const char *category)
 {
    E_OBJECT_CHECK(m);
@@ -509,7 +496,7 @@ e_menu_category_set(E_Menu *m, const char *category)
    m->changed = 1;
 }
 
-EAPI void
+E_API void
 e_menu_category_data_set(char *category, void *data)
 {
    E_Menu_Category *cat;
@@ -525,7 +512,7 @@ e_menu_category_data_set(char *category, void *data)
      }
 }
 
-EAPI E_Menu_Category_Callback *
+E_API E_Menu_Category_Callback *
 e_menu_category_callback_add(char *category, void (*create_cb)(void *data, E_Menu *m, void *category_data), Ecore_Cb free_cb, void *data)
 {
    E_Menu_Category *cat;
@@ -552,7 +539,7 @@ e_menu_category_callback_add(char *category, void (*create_cb)(void *data, E_Men
    return cb;
 }
 
-EAPI void
+E_API void
 e_menu_category_callback_del(E_Menu_Category_Callback *cb)
 {
    E_Menu_Category *cat;
@@ -567,7 +554,7 @@ e_menu_category_callback_del(E_Menu_Category_Callback *cb)
      }
 }
 
-EAPI void
+E_API void
 e_menu_pre_activate_callback_set(E_Menu *m, void (*func)(void *data, E_Menu *m), void *data)
 {
    E_OBJECT_CHECK(m);
@@ -576,7 +563,7 @@ e_menu_pre_activate_callback_set(E_Menu *m, void (*func)(void *data, E_Menu *m),
    m->pre_activate_cb.data = data;
 }
 
-EAPI void
+E_API void
 e_menu_post_deactivate_callback_set(E_Menu *m, void (*func)(void *data, E_Menu *m), void *data)
 {
    E_OBJECT_CHECK(m);
@@ -585,7 +572,7 @@ e_menu_post_deactivate_callback_set(E_Menu *m, void (*func)(void *data, E_Menu *
    m->post_deactivate_cb.data = data;
 }
 
-EAPI E_Menu *
+E_API E_Menu *
 e_menu_root_get(E_Menu *m)
 {
    E_Menu *ret;
@@ -599,7 +586,7 @@ e_menu_root_get(E_Menu *m)
    return ret;
 }
 
-EAPI E_Menu_Item *
+E_API E_Menu_Item *
 e_menu_item_new(E_Menu *m)
 {
    E_Menu_Item *mi;
@@ -615,7 +602,7 @@ e_menu_item_new(E_Menu *m)
    return mi;
 }
 
-EAPI E_Menu_Item *
+E_API E_Menu_Item *
 e_menu_item_new_relative(E_Menu *m, E_Menu_Item *rel)
 {
    E_Menu_Item *mi;
@@ -650,7 +637,7 @@ e_menu_item_new_relative(E_Menu *m, E_Menu_Item *rel)
    return mi;
 }
 
-EAPI E_Menu_Item *
+E_API E_Menu_Item *
 e_menu_item_nth(E_Menu *m, int n)
 {
    E_OBJECT_CHECK_RETURN(m, NULL);
@@ -658,7 +645,7 @@ e_menu_item_nth(E_Menu *m, int n)
    return (E_Menu_Item *)eina_list_nth(m->items, n);
 }
 
-EAPI int
+E_API int
 e_menu_item_num_get(const E_Menu_Item *mi)
 {
    const Eina_List *l;
@@ -676,7 +663,7 @@ e_menu_item_num_get(const E_Menu_Item *mi)
    return -1;
 }
 
-EAPI void
+E_API void
 e_menu_item_icon_file_set(E_Menu_Item *mi, const char *icon)
 {
    E_OBJECT_CHECK(mi);
@@ -698,7 +685,7 @@ e_menu_item_icon_file_set(E_Menu_Item *mi, const char *icon)
    mi->menu->changed = 1;
 }
 
-EAPI void
+E_API void
 e_menu_item_icon_edje_set(E_Menu_Item *mi, const char *icon, const char *key)
 {
    E_OBJECT_CHECK(mi);
@@ -713,7 +700,7 @@ e_menu_item_icon_edje_set(E_Menu_Item *mi, const char *icon, const char *key)
    mi->menu->changed = 1;
 }
 
-EAPI void
+E_API void
 e_menu_item_label_set(E_Menu_Item *mi, const char *label)
 {
    E_OBJECT_CHECK(mi);
@@ -728,7 +715,7 @@ e_menu_item_label_set(E_Menu_Item *mi, const char *label)
    mi->menu->changed = 1;
 }
 
-EAPI void
+E_API void
 e_menu_item_submenu_set(E_Menu_Item *mi, E_Menu *sub)
 {
    Eina_Bool submenu = EINA_FALSE;
@@ -814,7 +801,7 @@ out:
    _e_menu_list_free_unref(tmp);
 }
 
-EAPI void
+E_API void
 e_menu_item_separator_set(E_Menu_Item *mi, int sep)
 {
    E_OBJECT_CHECK(mi);
@@ -825,7 +812,7 @@ e_menu_item_separator_set(E_Menu_Item *mi, int sep)
    mi->menu->changed = 1;
 }
 
-EAPI void
+E_API void
 e_menu_item_check_set(E_Menu_Item *mi, int chk)
 {
    E_OBJECT_CHECK(mi);
@@ -836,7 +823,7 @@ e_menu_item_check_set(E_Menu_Item *mi, int chk)
    mi->menu->changed = 1;
 }
 
-EAPI void
+E_API void
 e_menu_item_radio_set(E_Menu_Item *mi, int rad)
 {
    E_OBJECT_CHECK(mi);
@@ -847,7 +834,7 @@ e_menu_item_radio_set(E_Menu_Item *mi, int rad)
    mi->menu->changed = 1;
 }
 
-EAPI void
+E_API void
 e_menu_item_radio_group_set(E_Menu_Item *mi, int radg)
 {
    E_OBJECT_CHECK(mi);
@@ -858,7 +845,7 @@ e_menu_item_radio_group_set(E_Menu_Item *mi, int radg)
    mi->menu->changed = 1;
 }
 
-EAPI void
+E_API void
 e_menu_item_toggle_set(E_Menu_Item *mi, int tog)
 {
    E_OBJECT_CHECK(mi);
@@ -913,7 +900,7 @@ e_menu_item_toggle_set(E_Menu_Item *mi, int tog)
      }
 }
 
-EAPI int
+E_API int
 e_menu_item_toggle_get(E_Menu_Item *mi)
 {
    E_OBJECT_CHECK_RETURN(mi, 0);
@@ -921,7 +908,7 @@ e_menu_item_toggle_get(E_Menu_Item *mi)
    return mi->toggle;
 }
 
-EAPI void
+E_API void
 e_menu_item_callback_set(E_Menu_Item *mi, void (*func)(void *data, E_Menu *m, E_Menu_Item *mi), const void *data)
 {
    E_OBJECT_CHECK(mi);
@@ -930,7 +917,7 @@ e_menu_item_callback_set(E_Menu_Item *mi, void (*func)(void *data, E_Menu *m, E_
    mi->cb.data = (void *)data;
 }
 
-EAPI void
+E_API void
 e_menu_item_realize_callback_set(E_Menu_Item *mi, void (*func)(void *data, E_Menu *m, E_Menu_Item *mi), void *data)
 {
    E_OBJECT_CHECK(mi);
@@ -939,7 +926,7 @@ e_menu_item_realize_callback_set(E_Menu_Item *mi, void (*func)(void *data, E_Men
    mi->realize_cb.data = data;
 }
 
-EAPI void
+E_API void
 e_menu_item_submenu_pre_callback_set(E_Menu_Item *mi, void (*func)(void *data, E_Menu *m, E_Menu_Item *mi), const void *data)
 {
    E_OBJECT_CHECK(mi);
@@ -950,7 +937,7 @@ e_menu_item_submenu_pre_callback_set(E_Menu_Item *mi, void (*func)(void *data, E
      mi->submenu_post_cb.func = _e_menu_cb_item_submenu_post_default;
 }
 
-EAPI void
+E_API void
 e_menu_item_submenu_post_callback_set(E_Menu_Item *mi, void (*func)(void *data, E_Menu *m, E_Menu_Item *mi), const void *data)
 {
    E_OBJECT_CHECK(mi);
@@ -959,7 +946,7 @@ e_menu_item_submenu_post_callback_set(E_Menu_Item *mi, void (*func)(void *data, 
    mi->submenu_post_cb.data = (void *)data;
 }
 
-EAPI void
+E_API void
 e_menu_item_drag_callback_set(E_Menu_Item *mi, void (*func)(void *data, E_Menu *m, E_Menu_Item *mi), void *data)
 {
    E_OBJECT_CHECK(mi);
@@ -968,7 +955,7 @@ e_menu_item_drag_callback_set(E_Menu_Item *mi, void (*func)(void *data, E_Menu *
    mi->drag_cb.data = data;
 }
 
-EAPI void
+E_API void
 e_menu_item_active_set(E_Menu_Item *mi, int active)
 {
    Eina_List *tmp = NULL;
@@ -1051,20 +1038,20 @@ e_menu_item_active_set(E_Menu_Item *mi, int active)
    _e_menu_list_free_unref(tmp);
 }
 
-EAPI E_Menu_Item *
+E_API E_Menu_Item *
 e_menu_item_active_get(void)
 {
    return _e_active_menu_item;
 }
 
-EAPI void
+E_API void
 e_menu_active_item_activate(void)
 {
    _e_menu_active_call();
    _e_menu_deactivate_all();
 }
 
-EAPI void
+E_API void
 e_menu_item_disabled_set(E_Menu_Item *mi, int disable)
 {
    E_OBJECT_CHECK(mi);
@@ -1093,7 +1080,7 @@ e_menu_item_disabled_set(E_Menu_Item *mi, int disable)
      }
 }
 
-EAPI void
+E_API void
 e_menu_idler_before(void)
 {
    /* when e goes "idle" this gets called so leave all our hard work till */
@@ -1167,7 +1154,7 @@ e_menu_idler_before(void)
      {
         if (m->frozen) continue;
         if (!m->realized) continue;
-        if ((m->cur.visible) && (!m->prev.visible))
+        if (m->cur.visible)
           {
              m->prev.visible = m->cur.visible;
              evas_object_pass_events_set(m->comp_object, 0);
@@ -1199,13 +1186,13 @@ e_menu_idler_before(void)
      {
         if (_e_menu_win)
           {
-             e_comp_ungrab_input(e_comp, 1, 1);
+             e_comp_ungrab_input(1, 1);
              _e_menu_win = 0;
           }
      }
 }
 
-EAPI Ecore_Window
+E_API Ecore_Window
 e_menu_grab_window_get(void)
 {
    return _e_menu_win;
@@ -1463,7 +1450,7 @@ no_submenu_item:
                }
              //if (o) evas_object_pass_events_set(o, 1);
 
-             /* FIXME: Not sure why there are two different tries to get the icon size, surely only the last one si needed. */
+             /* FIXME: Not sure why there are two different tries to get the icon size, surely only the last one is needed. */
              /* FIXME: Do it this way later, when e_app_icon_add() just registers a request for an icon to be filled in when it's ready.
                 if (mi->app)
                 {
@@ -1625,7 +1612,7 @@ _e_menu_realize(E_Menu *m)
    if (m->parent_item && m->parent_item->menu)
      m->zone = m->parent_item->menu->zone;
    if (!m->zone) return; //menu not ready!
-   m->evas = e_comp->evas;
+   m->evas = evas_object_evas_get(e_comp->elm);
    evas_event_freeze(m->evas);
 
    o = edje_object_add(m->evas);
@@ -1855,7 +1842,6 @@ _e_menu_unrealize(E_Menu *m)
         evas_object_pass_events_set(m->comp_object, 1);
         evas_object_hide(m->comp_object);
         E_FREE_FUNC(m->comp_object, evas_object_del);
-        e_object_ref(E_OBJECT(m));
         return;
      }
    if (m->comp_object)
@@ -1890,16 +1876,12 @@ _e_menu_activate_internal(E_Menu *m, E_Zone *zone)
    m->pending_new_submenu = 0;
    if (!_e_menu_win)
      {
-        _e_menu_win = zone->comp->ee_win;
-        if (!e_comp_grab_input(zone->comp, 1, 1))
+        _e_menu_win = e_comp->ee_win;
+        if (!e_comp_grab_input(1, 1))
           {
              _e_menu_win = 0;
              return;
           }
-     }
-   if ((m->zone) && (m->zone->comp != zone->comp))
-     {
-        return;
      }
    m->zone = zone;
    if (!m->active)
@@ -2649,7 +2631,7 @@ _e_menu_auto_place(E_Menu *m, int x, int y, int w, int h)
 }
 
 static void
-_e_menu_cb_item_in(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_menu_cb_item_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Menu_Item *mi = data;
 
@@ -2660,7 +2642,7 @@ _e_menu_cb_item_in(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSED_
 }
 
 static void
-_e_menu_cb_item_out(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info EINA_UNUSED)
+_e_menu_cb_item_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Menu_Item *mi = data;
    /* this can be triggered when creating menus if the new menu is on top of its parent */
@@ -2729,7 +2711,7 @@ _e_menu_cb_mouse_evas_down(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED)
 }
 
 static Eina_Bool
-_e_menu_cb_mouse_down(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_menu_cb_mouse_down(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Event_Mouse_Button *ev;
 
@@ -2740,6 +2722,10 @@ _e_menu_cb_mouse_down(void *data __UNUSED__, int type __UNUSED__, void *event)
           _e_menu_deactivate_all();
         return ECORE_CALLBACK_PASS_ON;
      }
+
+   _e_menu_lock = 1;
+   e_comp_canvas_feed_mouse_up(0);
+   _e_menu_lock = 0;
 
    /* Only allow dragging from floating menus for now.
     * The reason for this is that for non floating menus,
@@ -2753,12 +2739,13 @@ _e_menu_cb_mouse_down(void *data __UNUSED__, int type __UNUSED__, void *event)
 }
 
 static Eina_Bool
-_e_menu_cb_mouse_up(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_menu_cb_mouse_up(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Event_Mouse_Button *ev;
    unsigned int t;
    int ret = 0;
 
+   if (_e_menu_lock) return ECORE_CALLBACK_RENEW;
    ev = event;
    if (ev->window != _e_menu_win) return ECORE_CALLBACK_RENEW;
 
@@ -2773,7 +2760,7 @@ _e_menu_cb_mouse_up(void *data __UNUSED__, int type __UNUSED__, void *event)
    if (_e_menu_activate_dragging)
      {
         /* FIXME: This is a drop, which is not allowed for now.
-         * Once dragging is working, this will be subject to some experimenattion.
+         * Once dragging is working, this will be subject to some experimentation.
          */
      }
    else
@@ -2782,8 +2769,8 @@ _e_menu_cb_mouse_up(void *data __UNUSED__, int type __UNUSED__, void *event)
 
         mi = _e_menu_item_active_get();
         if ((!mi) ||
-            (E_INSIDE(e_comp_canvas_x_root_adjust(e_comp, ev->root.x),
-                      e_comp_canvas_y_root_adjust(e_comp, ev->root.y),
+            (E_INSIDE(e_comp_canvas_x_root_adjust(ev->root.x),
+                      e_comp_canvas_y_root_adjust(ev->root.y),
                       mi->x, mi->y, mi->w, mi->h))
            )
           ret = _e_menu_active_call();
@@ -2804,7 +2791,7 @@ _e_menu_cb_mouse_up(void *data __UNUSED__, int type __UNUSED__, void *event)
 }
 
 static Eina_Bool
-_e_menu_cb_mouse_move(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_menu_cb_mouse_move(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Event_Mouse_Move *ev;
    Eina_List *l, *tmp;
@@ -2878,7 +2865,7 @@ _e_menu_cb_mouse_move(void *data __UNUSED__, int type __UNUSED__, void *event)
 }
 
 static Eina_Bool
-_e_menu_cb_mouse_wheel(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_menu_cb_mouse_wheel(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Event_Mouse_Wheel *ev;
 
@@ -2902,7 +2889,7 @@ _e_menu_cb_mouse_wheel(void *data __UNUSED__, int type __UNUSED__, void *event)
 }
 
 static Eina_Bool
-_e_menu_cb_scroll_animator(void *data __UNUSED__)
+_e_menu_cb_scroll_animator(void *data EINA_UNUSED)
 {
    double t, dt;
    double dx, dy;
@@ -2952,7 +2939,7 @@ _e_menu_cb_scroll_animator(void *data __UNUSED__)
 }
 
 static void
-_e_menu_cb_item_submenu_post_default(void *data __UNUSED__, E_Menu *m __UNUSED__, E_Menu_Item *mi)
+_e_menu_cb_item_submenu_post_default(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Menu_Item *mi)
 {
    E_Menu *subm;
 

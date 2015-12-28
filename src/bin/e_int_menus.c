@@ -62,7 +62,7 @@ static void         _e_int_menus_desk_item_cb(void *data, E_Menu *m, E_Menu_Item
 static void         _e_int_menus_item_label_set(Efreet_Menu *entry, E_Menu_Item *mi);
 static Efreet_Menu *_e_int_menus_apps_thread_new(E_Menu *m, const char *dir);
 static Eina_Bool    _e_int_menus_efreet_desktop_cache_update(void *d, int type, void *e);
-//static void _e_int_menus_apps_drag_finished(E_Drag *drag, int dropped __UNUSED__);
+//static void _e_int_menus_apps_drag_finished(E_Drag *drag, int dropped EINA_UNUSED);
 
 /* local subsystem globals */
 static Eina_Hash *_e_int_menus_augmentation = NULL;
@@ -88,7 +88,7 @@ _e_int_menus_augmentation_find(const char *key)
 
 #ifdef ISCOMFITOR
 static void
-_TEST_ADD(void *data, E_Dialog *dia __UNUSED__)
+_TEST_ADD(void *data, E_Dialog *dia EINA_UNUSED)
 {
    char buf[4096];
 
@@ -97,19 +97,19 @@ _TEST_ADD(void *data, E_Dialog *dia __UNUSED__)
 }
 
 static void
-_TEST_DEL(void *data, E_Dialog *dia __UNUSED__)
+_TEST_DEL(void *data, E_Dialog *dia EINA_UNUSED)
 {
    e_widget_ilist_remove_num(data, e_widget_ilist_selected_get(data));
 }
 
 static void
-_TEST(void *d __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
+_TEST(void *d EINA_UNUSED, E_Menu *m, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Dialog *dia;
    Evas_Object *o_list;
    Evas *e;
 
-   dia = e_dialog_normal_win_new(m->zone->comp, "E", "_widget_playground_dialog");
+   dia = e_dialog_normal_win_new(e_comp, "E", "_widget_playground_dialog");
    e = evas_object_evas_get(dia->win);
    o_list = e_widget_ilist_add(e, 32, 32, NULL);
    e_dialog_button_add(dia, "Add", NULL, _TEST_ADD, o_list);
@@ -121,7 +121,7 @@ _TEST(void *d __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
 #endif
 
 /* externally accessible functions */
-EAPI E_Menu *
+E_API E_Menu *
 e_int_menus_main_new(void)
 {
    E_Menu *m, *subm;
@@ -195,7 +195,6 @@ e_int_menus_main_new(void)
    e_menu_item_submenu_set(mi, subm);
    e_object_data_set(E_OBJECT(subm), dat);
 
-#if 0 // lost windows already handled inside "Windows" from main menu.
    subm = e_int_menus_lost_clients_new();
    e_object_data_set(E_OBJECT(subm), dat);
    dat->lost_clients = subm;
@@ -203,7 +202,6 @@ e_int_menus_main_new(void)
    e_menu_item_label_set(mi, _("Lost Windows"));
    e_util_menu_item_theme_icon_set(mi, "preferences-windows-lost");
    e_menu_item_submenu_set(mi, subm);
-#endif
 
    l = _e_int_menus_augmentation_find("main/3");
    if (l) _e_int_menus_augmentation_add(m, l);
@@ -300,7 +298,7 @@ e_int_menus_main_new(void)
    return m;
 }
 
-EAPI E_Menu *
+E_API E_Menu *
 e_int_menus_apps_new(const char *dir)
 {
    E_Menu *m;
@@ -311,7 +309,7 @@ e_int_menus_apps_new(const char *dir)
    return m;
 }
 
-EAPI E_Menu *
+E_API E_Menu *
 e_int_menus_desktops_new(void)
 {
    E_Menu *m, *subm;
@@ -346,7 +344,7 @@ e_int_menus_desktops_new(void)
    return m;
 }
 
-EAPI E_Menu *
+E_API E_Menu *
 e_int_menus_favorite_apps_new(void)
 {
    E_Menu *m = NULL;
@@ -358,7 +356,7 @@ e_int_menus_favorite_apps_new(void)
    return m;
 }
 
-EAPI E_Menu *
+E_API E_Menu *
 e_int_menus_all_apps_new(void)
 {
    E_Menu *m;
@@ -367,7 +365,7 @@ e_int_menus_all_apps_new(void)
    return m;
 }
 
-EAPI E_Menu *
+E_API E_Menu *
 e_int_menus_config_new(void)
 {
    E_Menu *m;
@@ -378,7 +376,7 @@ e_int_menus_config_new(void)
    return m;
 }
 
-EAPI E_Menu *
+E_API E_Menu *
 e_int_menus_clients_new(void)
 {
    E_Menu *m;
@@ -388,7 +386,7 @@ e_int_menus_clients_new(void)
    return m;
 }
 
-EAPI E_Menu *
+E_API E_Menu *
 e_int_menus_lost_clients_new(void)
 {
    E_Menu *m;
@@ -398,7 +396,7 @@ e_int_menus_lost_clients_new(void)
    return m;
 }
 
-EAPI E_Int_Menu_Augmentation *
+E_API E_Int_Menu_Augmentation *
 e_int_menus_menu_augmentation_add_sorted(const char *menu,
                                          const char *sort_key,
                                          void (*func_add)(void *data, E_Menu *m),
@@ -463,7 +461,7 @@ e_int_menus_menu_augmentation_add_sorted(const char *menu,
    return maug;
 }
 
-EAPI E_Int_Menu_Augmentation *
+E_API E_Int_Menu_Augmentation *
 e_int_menus_menu_augmentation_add(const char *menu,
                                   void (*func_add)(void *data, E_Menu *m),
                                   void *data_add,
@@ -474,7 +472,7 @@ e_int_menus_menu_augmentation_add(const char *menu,
             (menu, NULL, func_add, data_add, func_del, data_del);
 }
 
-EAPI void
+E_API void
 e_int_menus_menu_augmentation_del(const char *menu, E_Int_Menu_Augmentation *maug)
 {
    Eina_List *l;
@@ -500,7 +498,14 @@ e_int_menus_menu_augmentation_del(const char *menu, E_Int_Menu_Augmentation *mau
    free(maug);
 }
 
-EAPI void
+E_API void
+e_int_menus_cache_clear(void)
+{
+   if (_e_int_menus_app_menus)
+     eina_hash_free_buckets(_e_int_menus_app_menus);
+}
+
+E_API void
 e_int_menus_menu_augmentation_point_disabled_set(const char *menu, Eina_Bool disabled)
 {
    if (!menu) return;
@@ -544,7 +549,7 @@ e_int_menus_shutdown(void)
 
 /* local subsystem functions */
 static Eina_Bool
-_e_int_menus_efreet_desktop_cache_update(void *d __UNUSED__, int type __UNUSED__, void *e __UNUSED__)
+_e_int_menus_efreet_desktop_cache_update(void *d EINA_UNUSED, int type EINA_UNUSED, void *e EINA_UNUSED)
 {
    e_int_menus_shutdown();
    e_int_menus_init();
@@ -583,20 +588,20 @@ _e_int_menus_main_del_hook(void *obj)
 }
 
 static void
-_e_int_menus_main_about(void *data __UNUSED__, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_main_about(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_About *about;
 
-   about = e_about_new(e_util_comp_current_get());
+   about = e_about_new();
    if (about) e_about_show(about);
 }
 
 static void
-_e_int_menus_themes_about(void *data __UNUSED__, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_themes_about(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Theme_About *about;
 
-   about = e_theme_about_new(e_util_comp_current_get());
+   about = e_theme_about_new();
    if (about) e_theme_about_show(about);
 }
 
@@ -604,12 +609,12 @@ _e_int_menus_themes_about(void *data __UNUSED__, E_Menu *m __UNUSED__, E_Menu_It
    static void
    _e_int_menus_fwin_favorites_item_cb(void *data, E_Menu *m, E_Menu_Item *mi)
    {
-   e_fwin_new(m->zone->comp, "favorites", "/");
+   e_fwin_new("favorites", "/");
    }
  */
 
 static void
-_e_int_menus_config_cb(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_config_cb(void *data EINA_UNUSED, E_Menu *m, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Action *act;
 
@@ -618,7 +623,7 @@ _e_int_menus_config_cb(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSE
 }
 
 static void
-_e_int_menus_main_showhide(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_main_showhide(void *data EINA_UNUSED, E_Menu *m, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Action *act;
 
@@ -627,7 +632,7 @@ _e_int_menus_main_showhide(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __U
 }
 
 static void
-_e_int_menus_main_restart(void *data __UNUSED__, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_main_restart(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Action *a;
 
@@ -636,7 +641,7 @@ _e_int_menus_main_restart(void *data __UNUSED__, E_Menu *m __UNUSED__, E_Menu_It
 }
 
 static void
-_e_int_menus_main_exit(void *data __UNUSED__, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_main_exit(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Action *a;
 
@@ -689,7 +694,7 @@ _e_int_menus_app_finder(const char *exec)
 }
 
 /*
- * This function initalises E_Int_Menu_Applications and add
+ * This function initalises E_Int_Menu_Applications and adds
  * our data.
  */
 static E_Int_Menu_Applications*
@@ -823,7 +828,7 @@ _e_int_menus_apps_scan(E_Menu *m, Efreet_Menu *menu)
 }
 
 static Eina_Bool
-_e_int_menus_app_cleaner_cb(void *d __UNUSED__)
+_e_int_menus_app_cleaner_cb(void *d EINA_UNUSED)
 {
    eina_hash_free_buckets(_e_int_menus_app_menus);
    return EINA_TRUE;
@@ -965,7 +970,7 @@ _e_int_menus_apps_free_hook2(void *obj)
 }
 
 static void
-_e_int_menus_apps_run(void *data, E_Menu *m, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_apps_run(void *data, E_Menu *m, E_Menu_Item *mi EINA_UNUSED)
 {
    Efreet_Desktop *desktop;
 
@@ -975,7 +980,7 @@ _e_int_menus_apps_run(void *data, E_Menu *m, E_Menu_Item *mi __UNUSED__)
 
 /*
    static void
-   _e_int_menus_apps_drag_finished(E_Drag *drag, int dropped __UNUSED__)
+   _e_int_menus_apps_drag_finished(E_Drag *drag, int dropped EINA_UNUSED)
    {
    Efreet_Desktop *desktop;
 
@@ -985,7 +990,7 @@ _e_int_menus_apps_run(void *data, E_Menu *m, E_Menu_Item *mi __UNUSED__)
  */
 
 static void
-_e_int_menus_apps_drag(void *data, E_Menu *m, E_Menu_Item *mi)
+_e_int_menus_apps_drag(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi)
 {
    Efreet_Desktop *desktop;
 
@@ -1002,8 +1007,9 @@ _e_int_menus_apps_drag(void *data, E_Menu *m, E_Menu_Item *mi)
 
         evas_object_geometry_get(mi->icon_object, &x, &y, &w, &h);
         efreet_desktop_ref(desktop);
-        drag = e_drag_new(m->zone->comp, x, y, drag_types, 1, desktop, -1,
+        drag = e_drag_new(x, y, drag_types, 1, desktop, -1,
                           NULL, NULL);
+        drag->button_mask = evas_pointer_button_down_mask_get(e_comp->evas);
 
         size = MIN(w, h);
         o = e_util_desktop_icon_add(desktop, size, e_drag_evas_get(drag));
@@ -1014,7 +1020,7 @@ _e_int_menus_apps_drag(void *data, E_Menu *m, E_Menu_Item *mi)
 }
 
 static void
-_e_int_menus_virtuals_pre_cb(void *data __UNUSED__, E_Menu *m)
+_e_int_menus_virtuals_pre_cb(void *data EINA_UNUSED, E_Menu *m)
 {
    E_Menu_Item *mi;
    E_Menu *root;
@@ -1074,13 +1080,13 @@ _e_int_menus_desktops_free_hook(void *obj)
 }
 
 static void
-_e_int_menus_desk_item_cb(void *data __UNUSED__, E_Menu *m EINA_UNUSED, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_desk_item_cb(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    e_configure_registry_call("screen/virtual_desktops", NULL, NULL);
 }
 
 static void
-_e_int_menus_virtuals_item_cb(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_virtuals_item_cb(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Desk *desk;
 
@@ -1102,7 +1108,7 @@ _e_int_menus_virtuals_icon_cb(void *data, E_Menu *m, E_Menu_Item *mi)
    tw = 50;
    th = (tw * desk->zone->h) / desk->zone->w;
 
-   bgfile = e_bg_file_get(desk->zone->comp->num, desk->zone->num, desk->x, desk->y);
+   bgfile = e_bg_file_get(desk->zone->num, desk->x, desk->y);
    o = e_thumb_icon_add(m->evas);
    e_thumb_icon_file_set(o, bgfile, "e/desktop/background");
    eina_stringshare_del(bgfile);
@@ -1118,7 +1124,7 @@ _e_e_int_menus_conf_comp_cb(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Men
 }
 
 static void
-_e_int_menus_config_pre_cb(void *data __UNUSED__, E_Menu *m)
+_e_int_menus_config_pre_cb(void *data EINA_UNUSED, E_Menu *m)
 {
    E_Menu_Item *mi;
    Eina_List *l = NULL;
@@ -1319,7 +1325,7 @@ _e_int_menus_clients_add_by_desk(E_Desk *curr_desk, Eina_List *clients, E_Menu *
    /* Deal with present desk first */
    EINA_LIST_FOREACH(clients, l, ec)
      {
-        if (ec->iconic && e_config->clientlist_separate_iconified_apps && E_CLIENTLIST_GROUPICONS_SEP)
+        if (ec->iconic && (e_config->clientlist_separate_iconified_apps == E_CLIENTLIST_GROUPICONS_SEP))
           {
              ico = eina_list_append(ico, ec);
              continue;
@@ -1390,8 +1396,7 @@ _e_int_menus_clients_add_by_none(Eina_List *clients, E_Menu *m)
 
    EINA_LIST_FOREACH(clients, l, ec)
      {
-        if ((ec->iconic) && (e_config->clientlist_separate_iconified_apps) &&
-            (E_CLIENTLIST_GROUPICONS_SEP))
+        if ((ec->iconic) && (e_config->clientlist_separate_iconified_apps == E_CLIENTLIST_GROUPICONS_SEP))
           {
              ico = eina_list_append(ico, ec);
              continue;
@@ -1402,7 +1407,7 @@ _e_int_menus_clients_add_by_none(Eina_List *clients, E_Menu *m)
 }
 
 static void
-_e_int_menus_clients_pre_cb(void *data __UNUSED__, E_Menu *m)
+_e_int_menus_clients_pre_cb(void *data EINA_UNUSED, E_Menu *m)
 {
    E_Menu *subm;
    E_Menu_Item *mi = NULL;
@@ -1414,13 +1419,13 @@ _e_int_menus_clients_pre_cb(void *data __UNUSED__, E_Menu *m)
 
    e_menu_pre_activate_callback_set(m, NULL, NULL);
    /* get the current clients */
-   zone = e_zone_current_get(e_util_comp_current_get());
+   zone = e_zone_current_get();
    desk = e_desk_current_get(zone);
 
    if (e_config->clientlist_sort_by == E_CLIENTLIST_SORT_MOST_RECENT)
      l = e_client_focus_stack_get();
    else
-     l = zone->comp->clients;
+     l = e_comp->clients;
    EINA_LIST_FOREACH(l, l, ec)
      {
         if (ec->user_skip_winlist || e_client_util_ignored_get(ec)) continue;
@@ -1565,7 +1570,7 @@ _e_int_menus_clients_free_hook(void *obj)
 }
 
 static void
-_e_int_menus_clients_item_cb(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_clients_item_cb(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Client *ec;
 
@@ -1600,7 +1605,7 @@ _e_int_menus_clients_icon_cb(void *data, E_Menu *m, E_Menu_Item *mi)
 }
 
 static void
-_e_int_menus_clients_cleanup_cb(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_clients_cleanup_cb(void *data EINA_UNUSED, E_Menu *m, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Action *act;
 
@@ -1609,7 +1614,7 @@ _e_int_menus_clients_cleanup_cb(void *data __UNUSED__, E_Menu *m, E_Menu_Item *m
 }
 
 static void
-_e_int_menus_lost_clients_pre_cb(void *data __UNUSED__, E_Menu *m)
+_e_int_menus_lost_clients_pre_cb(void *data EINA_UNUSED, E_Menu *m)
 {
    E_Menu_Item *mi;
    Eina_List *l, *clients = NULL;
@@ -1666,7 +1671,7 @@ _e_int_menus_lost_clients_free_hook(void *obj)
 }
 
 static void
-_e_int_menus_lost_clients_item_cb(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_lost_clients_item_cb(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Client *ec = data;
 
@@ -1712,17 +1717,15 @@ _e_int_menus_augmentation_del(E_Menu *m, Eina_List *augmentation)
 }
 
 static void
-_e_int_menus_shelves_pre_cb(void *data __UNUSED__, E_Menu *m)
+_e_int_menus_shelves_pre_cb(void *data EINA_UNUSED, E_Menu *m)
 {
    E_Menu_Item *mi;
    Eina_List *l, *shelves = NULL;
    E_Shelf *es;
    E_Zone *zone;
-   E_Comp *c;
 
    e_menu_pre_activate_callback_set(m, NULL, NULL);
-   c = e_util_comp_current_get();
-   zone = e_zone_current_get(c);
+   zone = e_zone_current_get();
 
    /* get the current clients */
    shelves = e_shelf_list();
@@ -1733,7 +1736,6 @@ _e_int_menus_shelves_pre_cb(void *data __UNUSED__, E_Menu *m)
 
         if (!es) continue;
         if (es->zone->num != zone->num) continue;
-        if (es->cfg->manager != (int)c->num) continue;
 
         if (es->name)
           name = es->name;
@@ -1822,7 +1824,7 @@ _e_int_menus_shelves_pre_cb(void *data __UNUSED__, E_Menu *m)
 }
 
 static void
-_e_int_menus_shelves_item_cb(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_shelves_item_cb(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Shelf *s = data;
 
@@ -1831,16 +1833,16 @@ _e_int_menus_shelves_item_cb(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi _
 }
 
 static void
-_e_int_menus_shelves_add_cb(void *data __UNUSED__, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_shelves_add_cb(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_Zone *zone;
 
-   zone = e_util_zone_current_get(e_manager_current_get());
+   zone = e_zone_current_get();
    e_shelf_new_dialog(zone);
 }
 
 static void
-_e_int_menus_shelves_del_cb(void *data __UNUSED__, E_Menu *m EINA_UNUSED, E_Menu_Item *mi __UNUSED__)
+_e_int_menus_shelves_del_cb(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    e_configure_registry_call("extensions/shelves", NULL, NULL);
 }

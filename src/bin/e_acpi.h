@@ -72,11 +72,11 @@ EINTERN int e_acpi_init(void);
 EINTERN int e_acpi_shutdown(void);
 
 EINTERN E_Acpi_Lid_Status e_acpi_lid_status_get(void);
+E_API Eina_Bool e_acpi_lid_is_closed(void);
+E_API void e_acpi_events_freeze(void);
+E_API void e_acpi_events_thaw(void);
 
-EAPI void e_acpi_events_freeze(void);
-EAPI void e_acpi_events_thaw(void);
-
-extern EAPI int E_EVENT_ACPI;
+extern E_API int E_EVENT_ACPI;
 
 # endif
 #endif

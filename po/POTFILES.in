@@ -6,7 +6,6 @@ src/bin/e_bg.c
 src/bin/e_bindings.c
 src/bin/e_client.c
 src/bin/e_color.c
-src/bin/e_color_class.c
 src/bin/e_color_dialog.c
 src/bin/e_comp.c
 src/bin/e_comp_x.c
@@ -61,7 +60,6 @@ src/bin/e_ipc_codec.c
 src/bin/e_layout.c
 src/bin/e_livethumb.c
 src/bin/e_main.c
-src/bin/e_manager.c
 src/bin/e_maximize.c
 src/bin/e_menu.c
 src/bin/e_module.c
@@ -105,8 +103,6 @@ src/bin/e_widget_button.c
 src/bin/e_widget_check.c
 src/bin/e_widget_color_well.c
 src/bin/e_widget_config_list.c
-src/bin/e_widget_csel.c
-src/bin/e_widget_cslider.c
 src/bin/e_widget_entry.c
 src/bin/e_widget_filepreview.c
 src/bin/e_widget_font_preview.c
@@ -242,10 +238,8 @@ src/modules/ibox/e_mod_config.c
 src/modules/ibox/e_mod_main.c
 src/modules/lokker/e_mod_main.c
 src/modules/lokker/lokker.c
-src/modules/mixer/app_mixer.c
-src/modules/mixer/conf_gadget.c
-src/modules/mixer/conf_module.c
 src/modules/mixer/e_mod_main.c
+src/modules/mixer/e_mod_config.c
 src/modules/music-control/e_mod_main.c
 src/modules/music-control/ui.c
 src/modules/notification/e_mod_config.c

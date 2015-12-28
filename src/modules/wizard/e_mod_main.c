@@ -30,7 +30,7 @@ E_Module *wiz_module = NULL;
  */
 
 /* module setup */
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION,
    "Wizard"
@@ -42,12 +42,13 @@ _cb_sort_files(char *f1, char *f2)
    return strcmp(f1, f2);
 }
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    Eina_List *files;
    char buf[PATH_MAX];
    char *file;
+   const char *src_path;
 
    wiz_module = m;
    e_wizard_init();
@@ -56,7 +57,11 @@ e_modapi_init(E_Module *m)
    e_config->scale.use_custom = 1;
    e_config->scale.factor = 1.2;
    e_scale_update();
-   snprintf(buf, sizeof(buf), "%s/%s", e_module_dir_get(m), MODULE_ARCH);
+   src_path = getenv("E_MODULE_SRC_PATH");
+   if (src_path)
+     snprintf(buf, sizeof(buf), "%s/.libs", e_module_dir_get(m));
+   else
+     snprintf(buf, sizeof(buf), "%s/%s", e_module_dir_get(m), MODULE_ARCH);
    files = ecore_file_ls(buf);
    files = eina_list_sort(files, 0, (Eina_Compare_Cb)_cb_sort_files);
    EINA_LIST_FREE(files, file)
@@ -65,8 +70,11 @@ e_modapi_init(E_Module *m)
           {
              void *handle;
 
-             snprintf(buf, sizeof(buf), "%s/%s/%s",
-                      e_module_dir_get(m), MODULE_ARCH, file);
+             if (src_path)
+               snprintf(buf, sizeof(buf), "%s/.libs/%s", e_module_dir_get(m), file);
+             else
+               snprintf(buf, sizeof(buf), "%s/%s/%s",
+                        e_module_dir_get(m), MODULE_ARCH, file);
              handle = dlopen(buf, RTLD_NOW | RTLD_GLOBAL);
              if (handle)
                e_wizard_page_add(handle,
@@ -90,8 +98,8 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    e_wizard_shutdown();
    wiz_module = NULL;
@@ -101,8 +109,8 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    return 1;
 }
 
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    return 1;
 }

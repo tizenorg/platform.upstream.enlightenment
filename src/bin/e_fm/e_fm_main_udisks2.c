@@ -128,8 +128,8 @@ _util_fuckyouglib_convert(Eldbus_Message_Iter *fuckyouglib)
 }
 
 static void
-_e_fm_main_udisks2_name_start(void *data __UNUSED__, const Eldbus_Message *msg,
-                             Eldbus_Pending *pending __UNUSED__)
+_e_fm_main_udisks2_name_start(void *data EINA_UNUSED, const Eldbus_Message *msg,
+                             Eldbus_Pending *pending EINA_UNUSED)
 {
    unsigned flag = 0;
    Eldbus_Object *obj;
@@ -410,8 +410,8 @@ out:
 }
 
 static void
-_e_fm_main_udisks2_cb_dev_all(void *data __UNUSED__, const Eldbus_Message *msg,
-                             Eldbus_Pending *pending __UNUSED__)
+_e_fm_main_udisks2_cb_dev_all(void *data EINA_UNUSED, const Eldbus_Message *msg,
+                             Eldbus_Pending *pending EINA_UNUSED)
 {
    const char *name, *txt;
    Eldbus_Message_Iter *arr1, *dict1;
@@ -461,7 +461,7 @@ _e_fm_main_udisks2_cb_vol_props(void *data, const Eldbus_Message *msg, Eldbus_Pe
 }
 
 static void
-_e_fm_main_udisks2_cb_dev_add(void *data __UNUSED__, const Eldbus_Message *msg)
+_e_fm_main_udisks2_cb_dev_add(void *data EINA_UNUSED, const Eldbus_Message *msg)
 {
    const char *interface;
 
@@ -539,7 +539,7 @@ _e_fm_main_udisks2_cb_dev_add(void *data __UNUSED__, const Eldbus_Message *msg)
 }
 
 static void
-_e_fm_main_udisks2_cb_dev_del(void *data __UNUSED__, const Eldbus_Message *msg)
+_e_fm_main_udisks2_cb_dev_del(void *data EINA_UNUSED, const Eldbus_Message *msg)
 {
    char *path, *interface;
    Eldbus_Message_Iter *arr;
@@ -588,8 +588,11 @@ _e_fm_main_udisks2_cb_storage_prop_modified(void *data, const Eldbus_Message *ms
      if (type[0] == 's')
        {
           char *txt;
+
           if (eldbus_message_arguments_get(msg, type, &txt))
-            ERR("%s", txt);
+            {
+               ERR("%s", txt);
+            }
        }
    }
    if (!eldbus_message_arguments_get(msg, "a{sv}", &arr))
@@ -919,7 +922,9 @@ _volume_eject_umount_cb(void *data, const Eldbus_Message *msg, Eldbus_Pending *p
    E_Volume *v = data;
 
    if (eldbus_message_error_get(msg, &name, &txt))
-     ERR("%s: %s", name, txt);
+     {
+        ERR("%s: %s", name, txt);
+     }
    else if (v->optype == E_VOLUME_OP_TYPE_EJECT)
      {
         vols_ejecting = eina_list_remove(vols_ejecting, v);
@@ -957,7 +962,9 @@ _volume_mount(Eldbus_Proxy *proxy, const char *fstype, const char *buf)
    if (fstype)
      {
         if (!eldbus_message_iter_arguments_append(array, "{sv}", &dict))
-          ERR("E");
+          {
+             ERR("E");
+          }
         eldbus_message_iter_basic_append(dict, 's', fs_txt);
 
         var = eldbus_message_iter_container_new(dict, 'v', "s");
@@ -969,7 +976,9 @@ _volume_mount(Eldbus_Proxy *proxy, const char *fstype, const char *buf)
    if (buf[0])
      {
         if (!eldbus_message_iter_arguments_append(array, "{sv}", &dict))
-          ERR("E");
+          {
+             ERR("E");
+          }
         eldbus_message_iter_basic_append(dict, 's', opt_txt);
 
         var = eldbus_message_iter_container_new(dict, 'v', "s");

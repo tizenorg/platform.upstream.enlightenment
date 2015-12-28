@@ -12,13 +12,13 @@ static E_Action *act = NULL;
 static E_Int_Menu_Augmentation *maug = NULL;
 
 /* module setup */
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION,
    "Syscon"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    conf_module = m;
@@ -40,8 +40,8 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
    while ((cfd = e_config_dialog_get("E", "advanced/conf_syscon")))
@@ -69,7 +69,7 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
 
 /* action callback */
 static void
-_e_mod_action_syscon_cb(E_Object *obj, const char *params)
+_e_mod_action_syscon_cb(E_Object *obj EINA_UNUSED, const char *params)
 {
    E_Zone *zone = NULL;
 
@@ -80,18 +80,7 @@ _e_mod_action_syscon_cb(E_Object *obj, const char *params)
    // reboot
    // suspend
    // hibernate
-   if (obj)
-     {
-        if (obj->type == E_MANAGER_TYPE)
-          zone = e_util_zone_current_get((E_Manager *)obj);
-        else if (obj->type == E_COMP_TYPE)
-          zone = e_zone_current_get((E_Comp *)obj);
-        else if (obj->type == E_ZONE_TYPE)
-          zone = e_util_zone_current_get(((E_Zone *)obj)->comp->man);
-        else
-          zone = e_util_zone_current_get(e_manager_current_get());
-     }
-   if (!zone) zone = e_util_zone_current_get(e_manager_current_get());
+   zone = e_zone_current_get();
    if (zone) e_syscon_show(zone, params);
 }
 
@@ -107,20 +96,20 @@ _e_mod_syscon_defer_cb(void *data)
 }
 
 static void
-_e_mod_syscon_cb(void *data __UNUSED__, E_Menu *m, E_Menu_Item *mi __UNUSED__)
+_e_mod_syscon_cb(void *data EINA_UNUSED, E_Menu *m, E_Menu_Item *mi EINA_UNUSED)
 {
    ecore_idle_enterer_add(_e_mod_syscon_defer_cb, m->zone);
 }
 
 static void
-_e_mod_menu_generate(void *data __UNUSED__, E_Menu *m)
+_e_mod_menu_generate(void *data EINA_UNUSED, E_Menu *m)
 {
    e_syscon_menu_fill(m);
 }
 
 /* menu item add hook */
 static void
-_e_mod_menu_add(void *data __UNUSED__, E_Menu *m)
+_e_mod_menu_add(void *data EINA_UNUSED, E_Menu *m)
 {
    E_Menu *sub;
    E_Menu_Item *mi;

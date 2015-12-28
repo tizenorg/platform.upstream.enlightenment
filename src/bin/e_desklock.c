@@ -21,6 +21,7 @@ static E_Dialog *_e_desklock_ask_presentation_dia = NULL;
 static int _e_desklock_ask_presentation_count = 0;
 
 static Ecore_Event_Handler *_e_desklock_run_handler = NULL;
+static Ecore_Event_Handler *_e_desklock_randr_handler = NULL;
 static Ecore_Job *job = NULL;
 static Eina_List *tasks = NULL;
 
@@ -33,15 +34,16 @@ static Eina_List *desklock_ifaces = NULL;
 static E_Desklock_Interface *current_iface = NULL;
 
 /***********************************************************************/
-static Eina_Bool _e_desklock_cb_custom_desklock_exit(void *data __UNUSED__, int type __UNUSED__, void *event);
-static Eina_Bool _e_desklock_cb_idle_poller(void *data __UNUSED__);
+static Eina_Bool _e_desklock_cb_custom_desklock_exit(void *data EINA_UNUSED, int type EINA_UNUSED, void *event);
+static Eina_Bool _e_desklock_cb_idle_poller(void *data EINA_UNUSED);
 static Eina_Bool _e_desklock_cb_run(void *data, int type, void *event);
+static Eina_Bool _e_desklock_cb_randr(void *data, int type, void *event);
 
 static Eina_Bool _e_desklock_state = EINA_FALSE;
 
 static void      _e_desklock_ask_presentation_mode(void);
 
-EAPI int E_EVENT_DESKLOCK = 0;
+E_API int E_EVENT_DESKLOCK = 0;
 
 EINTERN int
 e_desklock_init(void)
@@ -60,6 +62,8 @@ e_desklock_init(void)
    _e_desklock_run_handler = ecore_event_handler_add(E_EVENT_DESKLOCK,
                                                      _e_desklock_cb_run, NULL);
 
+   _e_desklock_randr_handler = ecore_event_handler_add(E_EVENT_RANDR_CHANGE,
+                                                       _e_desklock_cb_randr, NULL);
    return 1;
 }
 
@@ -79,6 +83,8 @@ e_desklock_shutdown(void)
 
    ecore_event_handler_del(_e_desklock_run_handler);
    _e_desklock_run_handler = NULL;
+   ecore_event_handler_del(_e_desklock_randr_handler);
+   _e_desklock_randr_handler = NULL;
 
    if (job) ecore_job_del(job);
    job = NULL;
@@ -95,7 +101,7 @@ e_desklock_shutdown(void)
    return 1;
 }
 
-EAPI Eina_Stringshare *
+E_API Eina_Stringshare *
 e_desklock_user_wallpaper_get(E_Zone *zone)
 {
    const E_Config_Desktop_Background *cdbg;
@@ -105,7 +111,6 @@ e_desklock_user_wallpaper_get(E_Zone *zone)
    desk = e_desk_current_get(zone);
    EINA_LIST_FOREACH(e_config->desktop_backgrounds, l, cdbg)
      {
-        if ((cdbg->manager > -1) && (cdbg->manager != (int)zone->comp->num)) continue;
         if ((cdbg->zone > -1) && (cdbg->zone != (int)zone->num)) continue;
         if ((cdbg->desk_x > -1) && (cdbg->desk_x != desk->x)) continue;
         if ((cdbg->desk_y > -1) && (cdbg->desk_y != desk->y)) continue;
@@ -118,7 +123,7 @@ e_desklock_user_wallpaper_get(E_Zone *zone)
    return e_theme_edje_file_get("base/theme/desklock", "e/desklock/background");
 }
 
-EAPI void
+E_API void
 e_desklock_interface_append(E_Desklock_Interface *iface)
 {
    EINA_SAFETY_ON_NULL_RETURN(iface);
@@ -140,7 +145,7 @@ e_desklock_interface_append(E_Desklock_Interface *iface)
      }
 }
 
-EAPI void
+E_API void
 e_desklock_interface_remove(E_Desklock_Interface *iface)
 {
    E_Desklock_Interface *diface;
@@ -169,35 +174,35 @@ e_desklock_interface_remove(E_Desklock_Interface *iface)
     */
 }
 
-EAPI void
+E_API void
 e_desklock_show_hook_add(E_Desklock_Show_Cb cb)
 {
    EINA_SAFETY_ON_NULL_RETURN(cb);
    show_hooks = eina_list_append(show_hooks, cb);
 }
 
-EAPI void
+E_API void
 e_desklock_show_hook_del(E_Desklock_Show_Cb cb)
 {
    EINA_SAFETY_ON_NULL_RETURN(cb);
    show_hooks = eina_list_remove(show_hooks, cb);
 }
 
-EAPI void
+E_API void
 e_desklock_hide_hook_add(E_Desklock_Hide_Cb cb)
 {
    EINA_SAFETY_ON_NULL_RETURN(cb);
    hide_hooks = eina_list_append(hide_hooks, cb);
 }
 
-EAPI void
+E_API void
 e_desklock_hide_hook_del(E_Desklock_Hide_Cb cb)
 {
    EINA_SAFETY_ON_NULL_RETURN(cb);
    hide_hooks = eina_list_remove(hide_hooks, cb);
 }
 
-EAPI int
+E_API int
 e_desklock_show_autolocked(void)
 {
    if (_e_desklock_autolock_time < 1.0)
@@ -205,7 +210,7 @@ e_desklock_show_autolocked(void)
    return e_desklock_show(EINA_FALSE);
 }
 
-EAPI int
+E_API int
 e_desklock_show(Eina_Bool suspend)
 {
    const Eina_List *l;
@@ -249,7 +254,7 @@ e_desklock_show(Eina_Bool suspend)
           {
              E_Zone *zone;
 
-             zone = e_util_zone_current_get(e_manager_current_get());
+             zone = e_zone_current_get();
              if (zone)
                e_configure_registry_call("screen/screen_lock", NULL, NULL);
              return 0;
@@ -268,7 +273,7 @@ e_desklock_show(Eina_Bool suspend)
       o = evas_object_rectangle_add(e_comp->evas);
       block_rects = eina_list_append(block_rects, o);
       evas_object_color_set(o, 0, 0, 0, 255);
-      evas_object_resize(o, e_comp->man->w, e_comp->man->h);
+      evas_object_resize(o, 99999, 99999);
       evas_object_layer_set(o, E_LAYER_DESKLOCK);
       evas_object_show(o);
    }
@@ -324,7 +329,7 @@ fail:
    return 0;
 }
 
-EAPI void
+E_API void
 e_desklock_hide(void)
 {
    Eina_List *l;
@@ -333,8 +338,8 @@ e_desklock_hide(void)
 
    if ((!_e_desklock_state) && (!_e_custom_desklock_exe)) return;
 
-   e_comp_override_del(e_comp);
-   e_comp_shape_queue(e_comp);
+   e_comp_override_del();
+   e_comp_shape_queue();
    E_FREE_LIST(block_rects, evas_object_del);
    //e_comp_block_window_del();
    if (e_config->desklock_language)
@@ -390,14 +395,14 @@ e_desklock_hide(void)
    e_util_env_set("E_DESKLOCK_UNLOCKED", "happened");
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_desklock_state_get(void)
 {
    return _e_desklock_state;
 }
 
 static Eina_Bool
-_e_desklock_cb_custom_desklock_exit(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_desklock_cb_custom_desklock_exit(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Exe_Event_Del *ev = event;
 
@@ -414,7 +419,7 @@ _e_desklock_cb_custom_desklock_exit(void *data __UNUSED__, int type __UNUSED__, 
 }
 
 static Eina_Bool
-_e_desklock_cb_idle_poller(void *data __UNUSED__)
+_e_desklock_cb_idle_poller(void *data EINA_UNUSED)
 {
    if ((e_config->desklock_autolock_idle) && (!e_config->mode.presentation))
      {
@@ -424,9 +429,12 @@ _e_desklock_cb_idle_poller(void *data __UNUSED__)
         if ((_e_custom_desklock_exe) || (_e_desklock_state)) return ECORE_CALLBACK_RENEW;
 
 #ifndef HAVE_WAYLAND_ONLY
-        idle = ecore_x_screensaver_idle_time_get();
-#else
-        idle = e_comp_wl_idle_time_get();
+        if (e_comp->comp_type == E_PIXMAP_TYPE_X)
+          idle = ecore_x_screensaver_idle_time_get();
+#endif
+#ifdef HAVE_WAYLAND
+        if (e_comp->comp_type == E_PIXMAP_TYPE_WL)
+          idle = e_comp_wl_idle_time_get();
 #endif
 
         max = e_config->desklock_autolock_idle_timeout;
@@ -467,7 +475,7 @@ _e_desklock_ask_presentation_del(void *data)
 }
 
 static void
-_e_desklock_ask_presentation_yes(void *data __UNUSED__, E_Dialog *dia)
+_e_desklock_ask_presentation_yes(void *data EINA_UNUSED, E_Dialog *dia)
 {
    e_config->mode.presentation = 1;
    e_config_mode_changed();
@@ -477,31 +485,29 @@ _e_desklock_ask_presentation_yes(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_e_desklock_ask_presentation_no(void *data __UNUSED__, E_Dialog *dia)
+_e_desklock_ask_presentation_no(void *data EINA_UNUSED, E_Dialog *dia)
 {
    e_object_del(E_OBJECT(dia));
    _e_desklock_ask_presentation_count = 0;
 }
 
 static void
-_e_desklock_ask_presentation_no_increase(void *data __UNUSED__, E_Dialog *dia)
+_e_desklock_ask_presentation_no_increase(void *data EINA_UNUSED, E_Dialog *dia)
 {
-#ifndef HAVE_WAYLAND_ONLY
-   int timeout, interval, blanking, expose;
+   int timeout, blanking, expose;
 
    _e_desklock_ask_presentation_count++;
    timeout = e_config->screensaver_timeout * _e_desklock_ask_presentation_count;
-   interval = e_config->screensaver_interval;
    blanking = e_config->screensaver_blanking;
    expose = e_config->screensaver_expose;
 
-   ecore_x_screensaver_set(timeout, interval, blanking, expose);
-#endif
+   e_screensaver_attrs_set(timeout, blanking, expose);
+   e_screensaver_update();
    e_object_del(E_OBJECT(dia));
 }
 
 static void
-_e_desklock_ask_presentation_no_forever(void *data __UNUSED__, E_Dialog *dia)
+_e_desklock_ask_presentation_no_forever(void *data EINA_UNUSED, E_Dialog *dia)
 {
    e_config->desklock_ask_presentation = 0;
    e_config_save_queue();
@@ -510,7 +516,7 @@ _e_desklock_ask_presentation_no_forever(void *data __UNUSED__, E_Dialog *dia)
 }
 
 static void
-_e_desklock_ask_presentation_key_down(void *data, Evas *e __UNUSED__, Evas_Object *o __UNUSED__, void *event)
+_e_desklock_ask_presentation_key_down(void *data, Evas *e EINA_UNUSED, Evas_Object *o EINA_UNUSED, void *event)
 {
    Evas_Event_Key_Down *ev = event;
    E_Dialog *dia = data;
@@ -577,7 +583,7 @@ _e_desklock_run(E_Desklock_Run *task)
 }
 
 static void
-_e_desklock_job(void *data __UNUSED__)
+_e_desklock_job(void *data EINA_UNUSED)
 {
    E_Desklock_Run *task;
 
@@ -592,7 +598,7 @@ _e_desklock_job(void *data __UNUSED__)
 }
 
 static Eina_Bool
-_e_desklock_cb_run(void *data __UNUSED__, int type __UNUSED__, void *event)
+_e_desklock_cb_run(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    E_Desklock_Run *task;
    E_Event_Desklock *ev = event;
@@ -632,3 +638,11 @@ _e_desklock_cb_run(void *data __UNUSED__, int type __UNUSED__, void *event)
    return ECORE_CALLBACK_PASS_ON;
 }
 
+static Eina_Bool
+_e_desklock_cb_randr(void *data EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED)
+{
+   if (!_e_desklock_state) return ECORE_CALLBACK_PASS_ON;
+   e_desklock_hide();
+   e_desklock_show(EINA_FALSE);
+   return ECORE_CALLBACK_PASS_ON;
+}

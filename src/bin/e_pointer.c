@@ -12,6 +12,15 @@ static Eina_List *_hdlrs = NULL;
 static Eina_List *_ptrs = NULL;
 static Eina_Bool _initted = EINA_FALSE;
 
+static inline void
+_e_pointer_theme_buf(E_Pointer *ptr, char cursor[1024])
+{
+   if (ptr->color)
+     snprintf(cursor, 1024, "e/pointer/enlightenment/%s/color", ptr->type);
+   else
+     snprintf(cursor, 1024, "e/pointer/enlightenment/%s/mono", ptr->type);
+}
+
 static inline void 
 _e_pointer_hot_update(E_Pointer *ptr, int x, int y)
 {
@@ -56,12 +65,12 @@ _e_pointer_cb_idle_poller(void *data)
         return ECORE_CALLBACK_CANCEL;
      }
 
-#ifndef HAVE_WAYLAND_ONLY
-   if (!ptr->canvas)
-     ecore_x_pointer_xy_get(ptr->win, &x, &y);
-   else
-#endif
+   if (ptr->canvas)
      ecore_evas_pointer_xy_get(ptr->ee, &x, &y);
+#ifndef HAVE_WAYLAND_ONLY
+   else
+     ecore_x_pointer_xy_get(ptr->win, &x, &y);
+#endif
 
    if ((ptr->x != x) || (ptr->y != y))
      {
@@ -104,12 +113,12 @@ _e_pointer_cb_idle_pre(void *data)
 
    if (!(ptr = data)) return ECORE_CALLBACK_RENEW;
 
-#ifndef HAVE_WAYLAND_ONLY
-   if (!ptr->canvas)
-     ecore_x_pointer_xy_get(ptr->win, &ptr->x, &ptr->y);
-   else
-#endif
+   if (ptr->canvas)
      ecore_evas_pointer_xy_get(ptr->ee, &ptr->x, &ptr->y);
+#ifndef HAVE_WAYLAND_ONLY
+   else
+     ecore_x_pointer_xy_get(ptr->win, &ptr->x, &ptr->y);
+#endif
 
    ptr->idle_tmr = ecore_timer_loop_add(4.0, _e_pointer_cb_idle_wait, ptr);
 
@@ -210,10 +219,9 @@ _e_pointer_cb_mouse_wheel(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev
 static void 
 _e_pointer_cb_hot_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
-   E_Pointer *ptr;
+   E_Pointer *ptr = data;
    int x = 0, y = 0;
 
-   if (!(ptr = data)) return;
    if (!ptr->e_cursor) return;
    if (!evas_object_visible_get(ptr->o_ptr)) return;
    edje_object_part_geometry_get(ptr->o_ptr, "e.swallow.hotspot", 
@@ -224,22 +232,40 @@ _e_pointer_cb_hot_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA
 static void 
 _e_pointer_cb_hot_show(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
-   E_Pointer *ptr;
+   E_Pointer *ptr = data;
    int x = 0, y = 0;
 
-   if (!(ptr = data)) return;
+   if (!ptr->e_cursor) return;
    edje_object_part_geometry_get(ptr->o_ptr, "e.swallow.hotspot", 
                                  &x, &y, NULL, NULL);
    _e_pointer_hot_update(ptr, x, y);
 }
 
+static void
+_e_pointer_pointer_canvas_init(E_Pointer *ptr, Evas *e, Evas_Object **o_ptr, Evas_Object **o_hot)
+{
+   /* create pointer object */
+   *o_ptr = edje_object_add(e);
+
+   /* create hotspot object */
+   *o_hot = evas_object_rectangle_add(e);
+   evas_object_color_set(*o_hot, 0, 0, 0, 0);
+
+   evas_object_event_callback_add(*o_hot, EVAS_CALLBACK_MOVE,
+                                  _e_pointer_cb_hot_move, ptr);
+   evas_object_event_callback_add(*o_hot, EVAS_CALLBACK_SHOW,
+                                  _e_pointer_cb_hot_show, ptr);
+
+   evas_object_move(*o_ptr, 0, 0);
+   evas_object_resize(*o_ptr, ptr->w, ptr->h);
+}
+
 static void 
 _e_pointer_canvas_del(E_Pointer *ptr)
 {
-   E_FREE_FUNC(ptr->o_hot, evas_object_del);
-   E_FREE_FUNC(ptr->o_ptr, evas_object_del);
-   if (ptr->evas) evas_free(ptr->evas);
-   ptr->evas = NULL;
+   E_FREE_FUNC(ptr->buffer_o_hot, evas_object_del);
+   E_FREE_FUNC(ptr->buffer_o_ptr, evas_object_del);
+   E_FREE_FUNC(ptr->buffer_evas, evas_free);
    E_FREE(ptr->pixels);
 }
 
@@ -250,19 +276,19 @@ _e_pointer_canvas_add(E_Pointer *ptr)
    int method = 0;
 
    /* try to create new canvas */
-   if (!(ptr->evas = evas_new())) goto err;
+   if (!(ptr->buffer_evas = evas_new())) goto err;
 
    method = evas_render_method_lookup("buffer");
-   evas_output_method_set(ptr->evas, method);
-   evas_output_size_set(ptr->evas, ptr->w, ptr->h);
-   evas_output_viewport_set(ptr->evas, 0, 0, ptr->w, ptr->h);
+   evas_output_method_set(ptr->buffer_evas, method);
+   evas_output_size_set(ptr->buffer_evas, ptr->w, ptr->h);
+   evas_output_viewport_set(ptr->buffer_evas, 0, 0, ptr->w, ptr->h);
 
    /* try to allocate space for pixels */
    if (!(ptr->pixels = malloc(ptr->w * ptr->h * sizeof(int))))
      goto err;
 
    /* try to get the buffer engine info */
-   einfo = (Evas_Engine_Info_Buffer *)evas_engine_info_get(ptr->evas);
+   einfo = (Evas_Engine_Info_Buffer *)evas_engine_info_get(ptr->buffer_evas);
    if (!einfo) goto err;
 
    /* fill in buffer engine info */
@@ -275,23 +301,15 @@ _e_pointer_canvas_add(E_Pointer *ptr)
    einfo->info.func.free_update_region = NULL;
 
    /* set buffer engine info */
-   evas_engine_info_set(ptr->evas, (Evas_Engine_Info *)einfo);
+   evas_engine_info_set(ptr->buffer_evas, (Evas_Engine_Info *)einfo);
 
-   /* create pointer object */
-   ptr->o_ptr = edje_object_add(ptr->evas);
-
-   /* create hotspot object */
-   ptr->o_hot = evas_object_rectangle_add(ptr->evas);
-   evas_object_color_set(ptr->o_hot, 0, 0, 0, 0);
-
-   evas_object_event_callback_add(ptr->o_hot, EVAS_CALLBACK_MOVE, 
-                                  _e_pointer_cb_hot_move, ptr);
-   evas_object_event_callback_add(ptr->o_hot, EVAS_CALLBACK_SHOW, 
-                                  _e_pointer_cb_hot_show, ptr);
-
-   evas_object_move(ptr->o_ptr, 0, 0);
-   evas_object_resize(ptr->o_ptr, ptr->w, ptr->h);
-
+   _e_pointer_pointer_canvas_init(ptr, ptr->buffer_evas, &ptr->buffer_o_ptr, &ptr->buffer_o_hot);
+   if (!ptr->evas)
+     {
+        ptr->evas = ptr->buffer_evas;
+        ptr->o_ptr = ptr->buffer_o_ptr;
+        ptr->o_hot = ptr->buffer_o_hot;
+     }
    return;
 
 err:
@@ -306,20 +324,20 @@ _e_pointer_canvas_resize(E_Pointer *ptr, int w, int h)
    if ((ptr->w == w) && (ptr->h == h)) return;
    ptr->w = w;
    ptr->h = h;
-   evas_output_size_set(ptr->evas, w, h);
-   evas_output_viewport_set(ptr->evas, 0, 0, w, h);
+   evas_output_size_set(ptr->buffer_evas, w, h);
+   evas_output_viewport_set(ptr->buffer_evas, 0, 0, w, h);
 
    ptr->pixels = realloc(ptr->pixels, (ptr->w * ptr->h * sizeof(int)));
 
-   einfo = (Evas_Engine_Info_Buffer *)evas_engine_info_get(ptr->evas);
+   einfo = (Evas_Engine_Info_Buffer *)evas_engine_info_get(ptr->buffer_evas);
    EINA_SAFETY_ON_NULL_RETURN(einfo);
 
    einfo->info.dest_buffer = ptr->pixels;
    einfo->info.dest_buffer_row_bytes = (ptr->w * sizeof(int));
-   evas_engine_info_set(ptr->evas, (Evas_Engine_Info *)einfo);
+   evas_engine_info_set(ptr->buffer_evas, (Evas_Engine_Info *)einfo);
 
-   evas_object_move(ptr->o_ptr, 0, 0);
-   evas_object_resize(ptr->o_ptr, ptr->w, ptr->h);
+   evas_object_move(ptr->buffer_o_ptr, 0, 0);
+   evas_object_resize(ptr->buffer_o_ptr, ptr->w, ptr->h);
 }
 
 static void 
@@ -341,9 +359,71 @@ _e_pointer_cb_free(E_Pointer *ptr)
    E_FREE_FUNC(ptr->idle_tmr, ecore_timer_del);
    E_FREE_FUNC(ptr->idle_poll, ecore_poller_del);
 
-   if (!ptr->canvas) _e_pointer_canvas_del(ptr);
+   if (ptr->buffer_evas) _e_pointer_canvas_del(ptr);
 
    free(ptr);
+}
+
+static void
+_e_pointer_x11_setup(E_Pointer *ptr, const char *cursor)
+{
+   if (ptr->e_cursor)
+     {
+        /* create a pointer canvas if we need to */
+        if ((!ptr->buffer_evas) && ptr->win) _e_pointer_canvas_add(ptr);
+        if (ptr->buffer_o_ptr && (ptr->buffer_o_ptr != ptr->o_ptr))
+          {
+             e_theme_edje_object_set(ptr->buffer_o_ptr, "base/theme/pointer", cursor);
+             edje_object_part_swallow(ptr->buffer_o_ptr, "e.swallow.hotspot", ptr->buffer_o_hot);
+          }
+        return;
+     }
+   if (ptr->buffer_evas) _e_pointer_canvas_del(ptr);
+#ifndef HAVE_WAYLAND_ONLY
+   if (!e_comp_util_has_x()) return;
+   Ecore_X_Cursor curs = 0;
+
+   if (!strcmp(ptr->type, "move"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_FLEUR);
+# if 0
+   else if (!strcmp(ptr->type, "resize"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_SIZING);
+# endif
+   else if (!strcmp(ptr->type, "resize_tl"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_TOP_LEFT_CORNER);
+   else if (!strcmp(ptr->type, "resize_t"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_TOP_SIDE);
+   else if (!strcmp(ptr->type, "resize_tr"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_TOP_RIGHT_CORNER);
+   else if (!strcmp(ptr->type, "resize_r"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_RIGHT_SIDE);
+   else if (!strcmp(ptr->type, "resize_br"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_BOTTOM_RIGHT_CORNER);
+   else if (!strcmp(ptr->type, "resize_b"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_BOTTOM_SIDE);
+   else if (!strcmp(ptr->type, "resize_bl"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_BOTTOM_LEFT_CORNER);
+   else if (!strcmp(ptr->type, "resize_l"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_LEFT_SIDE);
+   else if (!strcmp(ptr->type, "entry"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_XTERM);
+   else if (!strcmp(ptr->type, "default"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_LEFT_PTR);
+   else if (!strcmp(ptr->type, "plus"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_PLUS);
+   else if (!strcmp(ptr->type, "hand"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_HAND1);
+   else if (!strcmp(ptr->type, "rotate"))
+     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_EXCHANGE);
+   else
+     {
+        WRN("Unknown pointer ptr->type: %s\n", ptr->type);
+        curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_ARROW);
+     }
+   if (!curs) WRN("X Cursor for %s is missing\n", ptr->type);
+   ecore_x_window_cursor_set(ptr->win, curs);
+   if (curs) ecore_x_cursor_free(curs);
+#endif
 }
 
 static void 
@@ -366,21 +446,14 @@ _e_pointer_type_set(E_Pointer *ptr, const char *type)
         char cursor[1024];
         int x = 0, y = 0;
 
-        /* create a pointer canvas if we need to */
-        if ((!ptr->evas) && (!ptr->canvas)) _e_pointer_canvas_add(ptr);
-
-        if (ptr->color)
-          snprintf(cursor, sizeof(cursor), 
-                   "e/pointer/enlightenment/%s/color", type);
-        else
-          snprintf(cursor, sizeof(cursor), 
-                   "e/pointer/enlightenment/%s/mono", type);
+        if ((!ptr->buffer_evas) && ptr->win) _e_pointer_canvas_add(ptr);
+        _e_pointer_theme_buf(ptr, cursor);
 
         /* try to set the edje object theme */
         if (!e_theme_edje_object_set(ptr->o_ptr, "base/theme/pointer", cursor))
-          goto fallback;
-
-        edje_object_part_swallow(ptr->o_ptr, "e.swallow.hotspot", ptr->o_hot);
+          cursor[0] = 0;
+        _e_pointer_x11_setup(ptr, cursor);
+        if (!cursor[0]) return;
 
         edje_object_part_geometry_get(ptr->o_ptr, "e.swallow.hotspot", 
                                       &x, &y, NULL, NULL);
@@ -391,56 +464,9 @@ _e_pointer_type_set(E_Pointer *ptr, const char *type)
         else
           evas_object_show(ptr->o_ptr);
 
-        return;
      }
-
-fallback:
-   if ((ptr->evas) && (!ptr->canvas)) _e_pointer_canvas_del(ptr);
-#ifndef HAVE_WAYLAND_ONLY
-   Ecore_X_Cursor cursor = 0;
-
-   if (!strcmp(type, "move"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_FLEUR);
-# if 0
-   else if (!strcmp(type, "resize"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_SIZING);
-# endif
-   else if (!strcmp(type, "resize_tl"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_TOP_LEFT_CORNER);
-   else if (!strcmp(type, "resize_t"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_TOP_SIDE);
-   else if (!strcmp(type, "resize_tr"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_TOP_RIGHT_CORNER);
-   else if (!strcmp(type, "resize_r"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_RIGHT_SIDE);
-   else if (!strcmp(type, "resize_br"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_BOTTOM_RIGHT_CORNER);
-   else if (!strcmp(type, "resize_b"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_BOTTOM_SIDE);
-   else if (!strcmp(type, "resize_bl"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_BOTTOM_LEFT_CORNER);
-   else if (!strcmp(type, "resize_l"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_LEFT_SIDE);
-   else if (!strcmp(type, "entry"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_XTERM);
-   else if (!strcmp(type, "default"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_LEFT_PTR);
-   else if (!strcmp(type, "plus"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_PLUS);
-   else if (!strcmp(type, "hand"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_HAND1);
-   else if (!strcmp(type, "rotate"))
-     cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_EXCHANGE);
    else
-     {
-        WRN("Unknown pointer type: %s\n", type);
-        cursor = ecore_x_cursor_shape_get(ECORE_X_CURSOR_ARROW);
-     }
-   if (!cursor) WRN("X Cursor for %s is missing\n", type);
-   ecore_x_window_cursor_set(ptr->win, cursor);
-   if (cursor) ecore_x_cursor_free(cursor);
-#endif
-   return;
+     _e_pointer_x11_setup(ptr, NULL);
 }
 
 EINTERN int 
@@ -466,7 +492,7 @@ e_pointer_shutdown(void)
    return 1;
 }
 
-EAPI E_Pointer *
+E_API E_Pointer *
 e_pointer_window_new(Ecore_Window win, Eina_Bool filled)
 {
    E_Pointer *ptr = NULL;
@@ -495,7 +521,7 @@ e_pointer_window_new(Ecore_Window win, Eina_Bool filled)
    return ptr;
 }
 
-EAPI E_Pointer *
+E_API E_Pointer *
 e_pointer_canvas_new(Ecore_Evas *ee, Eina_Bool filled)
 {
    E_Pointer *ptr = NULL;
@@ -515,18 +541,7 @@ e_pointer_canvas_new(Ecore_Evas *ee, Eina_Bool filled)
 
    ptr->ee = ee;
    ptr->evas = ecore_evas_get(ee);
-
-   ptr->o_ptr = edje_object_add(ptr->evas);
-
-   ptr->o_hot = evas_object_rectangle_add(ptr->evas);
-   evas_object_color_set(ptr->o_hot, 0, 0, 0, 0);
-   evas_object_event_callback_add(ptr->o_hot, EVAS_CALLBACK_MOVE, 
-                                  _e_pointer_cb_hot_move, ptr);
-   evas_object_event_callback_add(ptr->o_hot, EVAS_CALLBACK_SHOW, 
-                                  _e_pointer_cb_hot_show, ptr);
-
-   evas_object_move(ptr->o_ptr, 0, 0);
-   evas_object_resize(ptr->o_ptr, ptr->w, ptr->h);
+   _e_pointer_pointer_canvas_init(ptr, ptr->evas, &ptr->o_ptr, &ptr->o_hot);
 
    /* set pointer default type */
    if (filled) e_pointer_type_push(ptr, ptr, "default");
@@ -539,7 +554,7 @@ e_pointer_canvas_new(Ecore_Evas *ee, Eina_Bool filled)
    return ptr;
 }
 
-EAPI void 
+E_API void 
 e_pointers_size_set(int size)
 {
    Eina_List *l;
@@ -550,36 +565,41 @@ e_pointers_size_set(int size)
    EINA_LIST_FOREACH(_ptrs, l, ptr)
      {
         if ((ptr->w == size) && (ptr->h == size)) continue;
-        if ((ptr->evas) && (!ptr->canvas))
+        if (ptr->buffer_evas)
           _e_pointer_canvas_resize(ptr, size, size);
-        else if (ptr->canvas)
+        if (ptr->canvas)
           {
              ptr->w = size;
              ptr->h = size;
              evas_object_resize(ptr->o_ptr, size, size);
           }
-
-#ifndef HAVE_WAYLAND_ONLY
-        ecore_x_cursor_size_set(e_config->cursor_size * 3 / 4);
-#endif
      }
+#ifndef HAVE_WAYLAND_ONLY
+   if (e_comp_util_has_x())
+     ecore_x_cursor_size_set(e_config->cursor_size * 3 / 4);
+#endif
 }
 
-EAPI void 
+E_API void 
 e_pointer_hide(E_Pointer *ptr)
 {
+<<<<<<< HEAD
    EINA_SAFETY_ON_NULL_RETURN(ptr);
 
    if ((ptr->evas) && (!ptr->canvas)) 
+=======
+   if (ptr->buffer_evas)
+>>>>>>> upstream
      _e_pointer_canvas_del(ptr);
-   else if (ptr->canvas)
+   if (ptr->canvas)
      evas_object_hide(ptr->o_ptr);
 #ifndef HAVE_WAYLAND_ONLY
-   ecore_x_window_cursor_set(ptr->win, 0);
+   if (ptr->win)
+     ecore_x_window_cursor_set(ptr->win, 0);
 #endif
 }
 
-EAPI void 
+E_API void 
 e_pointer_type_push(E_Pointer *ptr, void *obj, const char *type)
 {
    E_Pointer_Stack *stack;
@@ -594,7 +614,7 @@ e_pointer_type_push(E_Pointer *ptr, void *obj, const char *type)
    ptr->stack = eina_list_prepend(ptr->stack, stack);
 }
 
-EAPI void 
+E_API void 
 e_pointer_type_pop(E_Pointer *ptr, void *obj, const char *type)
 {
    Eina_List *l, *ll;
@@ -627,7 +647,7 @@ e_pointer_type_pop(E_Pointer *ptr, void *obj, const char *type)
    eina_stringshare_refplace(&ptr->type, stack->type);
 }
 
-EAPI void 
+E_API void 
 e_pointer_mode_push(void *obj, E_Pointer_Mode mode)
 {
    E_Client *ec;
@@ -681,7 +701,7 @@ e_pointer_mode_push(void *obj, E_Pointer_Mode mode)
      }
 }
 
-EAPI void 
+E_API void 
 e_pointer_mode_pop(void *obj, E_Pointer_Mode mode)
 {
    switch (mode)
@@ -726,7 +746,7 @@ e_pointer_mode_pop(void *obj, E_Pointer_Mode mode)
      }
 }
 
-EAPI void 
+E_API void 
 e_pointer_idler_before(void)
 {
    Eina_List *l;
@@ -736,16 +756,16 @@ e_pointer_idler_before(void)
 
    EINA_LIST_FOREACH(_ptrs, l, ptr)
      {
-        if ((!ptr->e_cursor) || (!ptr->evas)) continue;
+        if ((!ptr->e_cursor) || (!ptr->buffer_evas)) continue;
 
         if (ptr->hot.update)
           _e_pointer_type_set(ptr, ptr->type);
  
-        if (!ptr->canvas)
+        if (ptr->buffer_evas)
           {
              Eina_List *updates;
 
-             if ((updates = evas_render_updates(ptr->evas)))
+             if ((updates = evas_render_updates(ptr->buffer_evas)))
                {
 #ifndef HAVE_WAYLAND_ONLY
                   Ecore_X_Cursor cur;
@@ -763,7 +783,7 @@ e_pointer_idler_before(void)
      }
 }
 
-EAPI void
+E_API void
 e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
 {
    Evas_Object *o;
@@ -783,7 +803,11 @@ e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
      {
         if (o == obj)
           {
+<<<<<<< HEAD
              ecore_evas_object_cursor_set(ptr->ee, obj, EVAS_LAYER_MAX, x, y);
+=======
+             ecore_evas_object_cursor_set(ptr->ee, obj, E_LAYER_MAX - 1, x, y);
+>>>>>>> upstream
              return;
           }
         ec = e_comp_object_client_get(o);
@@ -797,10 +821,25 @@ e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
         ec = e_comp_object_client_get(obj);
         if (ec)
           ec->hidden = 1;
-        ecore_evas_object_cursor_set(ptr->ee, obj, EVAS_LAYER_MAX, x, y);
+        ecore_evas_object_cursor_set(ptr->ee, obj, E_LAYER_MAX - 1, x, y);
      }
+<<<<<<< HEAD
    else if (ptr->o_ptr)
      {
         ecore_evas_object_cursor_set(ptr->ee, ptr->o_ptr, EVAS_LAYER_MAX, ptr->hot.x, ptr->hot.y);
      }
+=======
+   else
+     ecore_evas_object_cursor_set(ptr->ee, ptr->o_ptr, E_LAYER_MAX - 1, ptr->hot.x, ptr->hot.y);
+}
+
+E_API void
+e_pointer_window_add(E_Pointer *ptr, Ecore_Window win)
+{
+   char buf[1024];
+
+   ptr->win = win;
+   _e_pointer_theme_buf(ptr, buf);
+   _e_pointer_x11_setup(ptr, buf);
+>>>>>>> upstream
 }

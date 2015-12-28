@@ -29,10 +29,12 @@ struct _E_Pointer
 
    Evas *evas;
    Ecore_Evas *ee;
+   Evas *buffer_evas;
    Evas_Object *o_ptr;
    Evas_Object *o_hot;
+   Evas_Object *buffer_o_ptr;
+   Evas_Object *buffer_o_hot;
 
-//   E_Pixmap *pixmap;
    Ecore_Window win;
 
    int *pixels;
@@ -59,16 +61,17 @@ struct _E_Pointer
 EINTERN int e_pointer_init(void);
 EINTERN int e_pointer_shutdown(void);
 
-EAPI E_Pointer *e_pointer_window_new(Ecore_Window win, Eina_Bool filled);
-EAPI E_Pointer *e_pointer_canvas_new(Ecore_Evas *ee, Eina_Bool filled);
+E_API E_Pointer *e_pointer_window_new(Ecore_Window win, Eina_Bool filled);
+E_API E_Pointer *e_pointer_canvas_new(Ecore_Evas *ee, Eina_Bool filled);
 
-EAPI void e_pointers_size_set(int size);
-EAPI void e_pointer_hide(E_Pointer *ptr);
-EAPI void e_pointer_type_push(E_Pointer *ptr, void *obj, const char *type);
-EAPI void e_pointer_type_pop(E_Pointer *ptr, void *obj, const char *type);
-EAPI void e_pointer_mode_push(void *obj, E_Pointer_Mode mode);
-EAPI void e_pointer_mode_pop(void *obj, E_Pointer_Mode mode);
-EAPI void e_pointer_idler_before(void);
-EAPI void e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y);
+E_API void e_pointers_size_set(int size);
+E_API void e_pointer_hide(E_Pointer *ptr);
+E_API void e_pointer_type_push(E_Pointer *ptr, void *obj, const char *type);
+E_API void e_pointer_type_pop(E_Pointer *ptr, void *obj, const char *type);
+E_API void e_pointer_mode_push(void *obj, E_Pointer_Mode mode);
+E_API void e_pointer_mode_pop(void *obj, E_Pointer_Mode mode);
+E_API void e_pointer_idler_before(void);
+E_API void e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y);
+E_API void e_pointer_window_add(E_Pointer *ptr, Ecore_Window win);
 # endif
 #endif

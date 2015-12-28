@@ -20,7 +20,7 @@ static char tmpbuf[1024];
 static E_Config_DD *conf_edd = NULL;
 Config *ebluez4_config = NULL;
 
-EAPI E_Module_Api e_modapi = {E_MODULE_API_VERSION, "Bluez4"};
+E_API E_Module_Api e_modapi = {E_MODULE_API_VERSION, "Bluez4"};
 
 /* Local Functions */
 static Eina_Bool
@@ -75,7 +75,7 @@ _ebluez4_search_dialog_del(Instance *inst)
 }
 
 static void
-_ebluez4_cb_search_dialog_del(void *data, Evas *e, Evas_Object *obj, void *event_info)
+_ebluez4_cb_search_dialog_del(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Dialog *dialog = data;
    _ebluez4_search_dialog_del(dialog->data);
@@ -133,7 +133,7 @@ _ebluez4_cb_search(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSE
 }
 
 static void
-_ebluez4_cb_adap_settings_dialog_del(void *data, Evas *e, Evas_Object *obj, void *event_info)
+_ebluez4_cb_adap_settings_dialog_del(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Dialog *dialog = data;
    ebluez4_adapter_settings_del(dialog);
@@ -148,19 +148,19 @@ _ebluez4_check_changed(void *data, Evas_Object *obj, const char *prop_name)
 }
 
 static void
-_ebluez4_powered_changed(void *data, Evas_Object *obj, void *info __UNUSED__)
+_ebluez4_powered_changed(void *data, Evas_Object *obj, void *info EINA_UNUSED)
 {
    _ebluez4_check_changed(data, obj, "Powered");
 }
 
 static void
-_ebluez4_visible_changed(void *data, Evas_Object *obj, void *info __UNUSED__)
+_ebluez4_visible_changed(void *data, Evas_Object *obj, void *info EINA_UNUSED)
 {
    _ebluez4_check_changed(data, obj, "Discoverable");
 }
 
 static void
-_ebluez4_pairable_changed(void *data, Evas_Object *obj, void *info __UNUSED__)
+_ebluez4_pairable_changed(void *data, Evas_Object *obj, void *info EINA_UNUSED)
 {
    _ebluez4_check_changed(data, obj, "Pairable");
 }
@@ -235,7 +235,7 @@ _ebluez4_adap_list_dialog_del(Instance *inst)
 }
 
 static void
-_ebluez4_cb_adap_list_dialog_del(void *data, Evas *e, Evas_Object *obj, void *event_info)
+_ebluez4_cb_adap_list_dialog_del(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Dialog *dialog = data;
    _ebluez4_adap_list_dialog_del(dialog->data);
@@ -291,7 +291,7 @@ _ebluez4_cb_forget(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSE
 #ifdef HAVE_BLUETOOTH
 static void
 _ebluez4_cb_lock(void *data,
-		 E_Menu *m __UNUSED__,
+		 E_Menu *m EINA_UNUSED,
 		 E_Menu_Item *mi)
 {
    Device *dev = data;
@@ -311,7 +311,7 @@ _ebluez4_cb_lock(void *data,
 
 static void
 _ebluez4_cb_unlock(void *data,
-		   E_Menu *m __UNUSED__,
+		   E_Menu *m EINA_UNUSED,
 		   E_Menu_Item *mi)
 {
    Device *dev = data;
@@ -331,7 +331,7 @@ _ebluez4_cb_unlock(void *data,
 #endif
 
 static void
-_menu_post_deactivate(void *data __UNUSED__, E_Menu *m)
+_menu_post_deactivate(void *data EINA_UNUSED, E_Menu *m)
 {
    Eina_List *iter;
    E_Menu_Item *mi;
@@ -467,7 +467,7 @@ _ebluez4_cb_mouse_down(void *data, Evas *evas EINA_UNUSED,
 
    e_gadcon_canvas_zone_geometry_get(inst->gcc->gadcon, &x, &y, NULL, NULL);
    e_menu_activate_mouse(inst->menu, 
-                         e_util_zone_current_get(e_manager_current_get()), 
+                         e_zone_current_get(), 
                          x + ev->output.x, y + ev->output.y, 1, 1, 
                          E_MENU_POP_DIRECTION_AUTO, ev->timestamp);
    evas_event_feed_mouse_up(inst->gcc->gadcon->evas, ev->button, 
@@ -664,7 +664,7 @@ _ebluez_desklock(void *data EINA_UNUSED, int ev_type EINA_UNUSED,
 }
 
 /* Module Functions */
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    Eina_Strbuf *buf;
@@ -700,7 +700,7 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
+E_API int
 e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    E_CONFIG_DD_FREE(conf_edd);
@@ -723,7 +723,7 @@ e_modapi_shutdown(E_Module *m EINA_UNUSED)
    return 1;
 }
 
-EAPI int
+E_API int
 e_modapi_save(E_Module *m EINA_UNUSED)
 {
    e_config_domain_save("module.ebluez4",

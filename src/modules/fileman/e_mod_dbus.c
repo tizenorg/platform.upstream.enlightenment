@@ -56,14 +56,35 @@ _e_fileman_dbus_daemon_free(E_Fileman_DBus_Daemon *d)
    free(d);
 }
 
+static Eina_Bool
+_e_fileman_dbus_call_rate_limit(void)
+{
+   static double last_call = 0.0;
+   static unsigned long long last_calls = 0;
+   double t = ecore_time_get();
+
+   if ((t - last_call) < 0.5) last_calls++;
+   else last_calls = 0;
+   last_call = t;
+   // if we get more than 10 requests over 0.5 sec - rate limit
+   if (last_calls > 10) return EINA_TRUE;
+   return EINA_FALSE;
+}
+
 static Eldbus_Message *
-_e_fileman_dbus_daemon_open_directory_cb(const Eldbus_Service_Interface *iface __UNUSED__,
+_e_fileman_dbus_daemon_open_directory_cb(const Eldbus_Service_Interface *iface EINA_UNUSED,
                                          const Eldbus_Message *msg)
 {
    const char *directory = NULL, *p;
    char *dev, *to_free = NULL;
    E_Zone *zone;
 
+
+   if (_e_fileman_dbus_call_rate_limit())
+     {
+        fprintf(stderr, "EFM remote call rate limiting to avoid DOS attacks");
+        return eldbus_message_method_return_new(msg);
+     }
    if (!eldbus_message_arguments_get(msg, "s", &directory))
      {
         fprintf(stderr, "Error: getting arguments of OpenDirectory call.\n");
@@ -73,7 +94,7 @@ _e_fileman_dbus_daemon_open_directory_cb(const Eldbus_Service_Interface *iface _
    if ((!directory) || (directory[0] == '\0'))
      return _e_fileman_dbus_daemon_error(msg, "no directory provided.");
 
-   zone = e_util_zone_current_get(e_manager_current_get());
+   zone = e_zone_current_get();
    if (!zone)
      return _e_fileman_dbus_daemon_error(msg, "could not find a zone.");
 
@@ -120,7 +141,7 @@ _e_fileman_dbus_daemon_open_directory_cb(const Eldbus_Service_Interface *iface _
         directory = "/";
      }
 
-   e_fwin_new(zone->comp, dev, directory);
+   e_fwin_new(dev, directory);
    free(dev);
    free(to_free);
    return eldbus_message_method_return_new(msg);
@@ -151,7 +172,7 @@ _mime_shell_script_check(const char *mime)
 }
 
 static Eldbus_Message*
-_e_fileman_dbus_daemon_open_file_cb(const Eldbus_Service_Interface *iface __UNUSED__,
+_e_fileman_dbus_daemon_open_file_cb(const Eldbus_Service_Interface *iface EINA_UNUSED,
                                     const Eldbus_Message *msg)
 {
    Eina_List *handlers;
@@ -159,6 +180,11 @@ _e_fileman_dbus_daemon_open_file_cb(const Eldbus_Service_Interface *iface __UNUS
    char *real_file, *to_free = NULL;
    E_Zone *zone;
 
+   if (_e_fileman_dbus_call_rate_limit())
+     {
+        fprintf(stderr, "EFM remote call rate limiting to avoid DOS attacks");
+        return eldbus_message_method_return_new(msg);
+     }
    if (!eldbus_message_arguments_get(msg, "s", &param_file))
      {
         fprintf(stderr, "ERROR: getting arguments of OpenFile call.\n");
@@ -168,7 +194,7 @@ _e_fileman_dbus_daemon_open_file_cb(const Eldbus_Service_Interface *iface __UNUS
    if ((!param_file) || (param_file[0] == '\0'))
      return _e_fileman_dbus_daemon_error(msg, "no file provided.");
 
-   zone = e_util_zone_current_get(e_manager_current_get());
+   zone = e_zone_current_get();
    if (!zone)
      return _e_fileman_dbus_daemon_error(msg, "could not find a zone.");
 

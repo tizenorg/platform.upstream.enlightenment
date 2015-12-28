@@ -155,7 +155,7 @@ _create_data(E_Config_Dialog *cfd)
 }
 
 static void
-_free_data(E_Config_Dialog *cfd  __UNUSED__,
+_free_data(E_Config_Dialog *cfd  EINA_UNUSED,
            E_Config_Dialog_Data *cfdata)
 {
    E_Config_Binding_Key *bi;
@@ -178,7 +178,7 @@ _free_data(E_Config_Dialog *cfd  __UNUSED__,
 }
 
 static int
-_basic_apply_data(E_Config_Dialog *cfd  __UNUSED__,
+_basic_apply_data(E_Config_Dialog *cfd  EINA_UNUSED,
                   E_Config_Dialog_Data *cfdata)
 {
    Eina_List *l = NULL;
@@ -186,7 +186,7 @@ _basic_apply_data(E_Config_Dialog *cfd  __UNUSED__,
 
    _auto_apply_changes(cfdata);
 
-   e_managers_keys_ungrab();
+   e_comp_canvas_keys_ungrab();
    EINA_LIST_FREE(e_bindings->key_bindings, bi)
      {
         e_bindings_key_del(bi->context, bi->key, bi->modifiers, bi->any_mod,
@@ -215,7 +215,7 @@ _basic_apply_data(E_Config_Dialog *cfd  __UNUSED__,
         e_bindings_key_add(bi->context, bi->key, bi->modifiers, bi->any_mod,
                            bi->action, bi->params);
      }
-   e_managers_keys_grab();
+   e_comp_canvas_keys_grab();
    e_config_save_queue();
 
    return 1;
@@ -317,7 +317,7 @@ _fill_actions_list(E_Config_Dialog_Data *cfdata)
 
 static void
 _add_key_binding_cb(void *data,
-                    void *data2 __UNUSED__)
+                    void *data2 EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -331,7 +331,7 @@ _add_key_binding_cb(void *data,
 
 static void
 _modify_key_binding_cb(void *data,
-                       void *data2 __UNUSED__)
+                       void *data2 EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -377,7 +377,7 @@ _action_change_cb(void *data)
 
 static void
 _delete_all_key_binding_cb(void *data,
-                           void *data2 __UNUSED__)
+                           void *data2 EINA_UNUSED)
 {
    E_Config_Binding_Key *bi;
    E_Config_Dialog_Data *cfdata;
@@ -407,7 +407,7 @@ _delete_all_key_binding_cb(void *data,
 
 static void
 _delete_key_binding_cb(void *data,
-                       void *data2 __UNUSED__)
+                       void *data2 EINA_UNUSED)
 {
    Eina_List *l = NULL;
    const char *n;
@@ -460,7 +460,7 @@ _delete_key_binding_cb(void *data,
 
 static void
 _restore_key_binding_defaults_cb(void *data,
-                                 void *data2 __UNUSED__)
+                                 void *data2 EINA_UNUSED)
 {
    E_Config_Bindings *ecb;
    Eina_Stringshare *prof;
@@ -832,7 +832,7 @@ _grab_wnd_show(E_Config_Dialog_Data *cfdata)
 
 static Eina_Bool
 _grab_key_down_cb(void *data,
-                  __UNUSED__ int type,
+                  EINA_UNUSED int type,
                   void *event)
 {
    E_Config_Dialog_Data *cfdata;
@@ -860,6 +860,7 @@ _grab_key_down_cb(void *data,
         const Eina_List *l = NULL;
         unsigned int mod = E_BINDING_MODIFIER_NONE;
         unsigned int n, found = 0;
+        const char *key = ev->key;
 
         if (!e_bindings_key_allowed(ev->key))
           return ECORE_CALLBACK_PASS_ON;
@@ -873,6 +874,10 @@ _grab_key_down_cb(void *data,
         if (ev->modifiers & ECORE_EVENT_MODIFIER_WIN)
           mod |= E_BINDING_MODIFIER_WIN;
 
+        /* swap for un-shifted key; binding '(' or ')' is impossible */
+        if ((ev->modifiers & ECORE_EVENT_MODIFIER_SHIFT) &&
+            (eina_streq(ev->key, "parenleft") || eina_streq(ev->key, "parenright")))
+          ev->key = ev->keyname;
         if (cfdata->locals.add)
           found = !!e_util_binding_match(cfdata->binding.key, ev, &n, NULL);
         else if (cfdata->locals.cur && cfdata->locals.cur[0])
@@ -902,8 +907,7 @@ _grab_key_down_cb(void *data,
                   e_widget_ilist_selected_set(cfdata->gui.o_binding_list, n);
                   e_widget_ilist_nth_show(cfdata->gui.o_binding_list, n, 0);
                   e_widget_ilist_unselect(cfdata->gui.o_action_list);
-                  eina_stringshare_del(cfdata->locals.action);
-                  cfdata->locals.action = eina_stringshare_add("");
+                  eina_stringshare_replace(&cfdata->locals.action, "");
                   if ((cfdata->params) && (cfdata->params[0]))
                     {
                        int j, g = -1;
@@ -989,6 +993,7 @@ _grab_key_down_cb(void *data,
              e_widget_ilist_selected_set(cfdata->gui.o_binding_list, n);
           }
         e_object_del(E_OBJECT(cfdata->locals.eg));
+        ev->key = key;
      }
    return ECORE_CALLBACK_PASS_ON;
 }

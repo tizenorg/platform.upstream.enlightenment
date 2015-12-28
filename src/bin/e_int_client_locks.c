@@ -8,7 +8,7 @@ static int          _advanced_apply_data(E_Config_Dialog *cfd, E_Config_Dialog_D
 static Evas_Object *_basic_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata);
 static Evas_Object *_advanced_create_widgets(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata);
 
-/* Actual config data we will be playing with whil the dialog is active */
+/* Actual config data we will be playing with while the dialog is active */
 struct _E_Config_Dialog_Data
 {
    E_Client *client;
@@ -44,7 +44,7 @@ struct _E_Config_Dialog_Data
 };
 
 /* a nice easy setup function that does the dirty work */
-EAPI void
+E_API void
 e_int_client_locks(E_Client *ec)
 {
    E_Config_Dialog *cfd;
@@ -67,6 +67,7 @@ e_int_client_locks(E_Client *ec)
                                   "E", "_border_locks_dialog",
                                   NULL, 0, v, ec);
         ec->border_locks_dialog = cfd;
+        evas_object_layer_set(e_win_client_get(cfd->dia->win)->frame, ec->layer);
      }
 }
 
@@ -137,7 +138,7 @@ _create_data(E_Config_Dialog *cfd)
 }
 
 static void
-_free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_free_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    /* Free the cfdata */
    cfdata->client->border_locks_dialog = NULL;
@@ -146,7 +147,7 @@ _free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 
 /**--APPLY--**/
 static int
-_basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_basic_apply_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    int flag;
    /* Actually take our cfdata settings and apply them in real life */
@@ -213,7 +214,7 @@ _basic_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static int
-_advanced_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_advanced_apply_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    /* Actually take our cfdata settings and apply them in real life */
    cfdata->client->lock_user_location = cfdata->lock.user.location;
@@ -274,7 +275,7 @@ _advanced_apply_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfda
 
 /**--GUI--**/
 static Evas_Object *
-_basic_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata)
+_basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    /* generate the core widget layout for a basic dialog */
    Evas_Object *o, *ob, *of;
@@ -297,7 +298,7 @@ _basic_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dial
 }
 
 static Evas_Object *
-_advanced_create_widgets(E_Config_Dialog *cfd __UNUSED__, Evas *evas, E_Config_Dialog_Data *cfdata)
+_advanced_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas, E_Config_Dialog_Data *cfdata)
 {
    /* generate the core widget layout for an advanced dialog */
    Evas_Object *o, *ob, *of, *ol;

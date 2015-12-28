@@ -65,6 +65,7 @@ struct _E_Comp_Match
    const char *role; // glob - used for borders
 
    const char *shadow_style; // shadow style to use
+   const char *visibility_effect; // effect to use when showing and hiding
 
    int         primary_type; // Ecore_X_Window_Type - used for borders, overrides, first one found - ECORE_X_WINDOW_TYPE_UNKNOWN if not to be used
    char        borderless; // used for borders, 0 == dont use, 1 == borderless, -1 == not borderless
@@ -79,10 +80,10 @@ struct _E_Comp_Match
    char        no_shadow; // set whether shadow is disabled
 };
 
-EAPI void           e_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd);
-EAPI E_Comp_Config *e_comp_cfdata_config_new(void);
-EAPI void           e_comp_cfdata_config_free(E_Comp_Config *cfg);
-EAPI void           e_comp_cfdata_match_free(E_Comp_Match *m);
+E_API void           e_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd);
+E_API E_Comp_Config *e_comp_cfdata_config_new(void);
+E_API void           e_comp_cfdata_config_free(E_Comp_Config *cfg);
+E_API void           e_comp_cfdata_match_free(E_Comp_Match *m);
 
 #endif
 #endif

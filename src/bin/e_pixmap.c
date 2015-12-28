@@ -1,18 +1,33 @@
 #include "e.h"
 
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND
 # include "e_comp_wl.h"
+<<<<<<< HEAD
 # include <wayland-tbm-server.h>
 #include <tizen-extension-server-protocol.h>
+=======
+# ifndef EGL_TEXTURE_FORMAT
+#  define EGL_TEXTURE_FORMAT		0x3080
+# endif
+# ifndef EGL_TEXTURE_RGBA
+#  define EGL_TEXTURE_RGBA		0x305E
+# endif
+>>>>>>> upstream
 #endif
 #ifndef HAVE_WAYLAND_ONLY
 # include "e_comp_x.h"
 #endif
 
+#include <uuid.h>
+
 static Eina_Hash *pixmaps[2] = {NULL};
+<<<<<<< HEAD
 static Eina_Hash *deleted[2] = {NULL};
 static Eina_Hash *res_ids = NULL;
 static uint32_t res_id = 0;
+=======
+static Eina_Hash *aliases[2] = {NULL};
+>>>>>>> upstream
 
 struct _E_Pixmap
 {
@@ -37,14 +52,19 @@ struct _E_Pixmap
    Eina_List *images_cache;
 #endif
 
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND
+   E_Comp_Wl_Buffer *buffer;
    E_Comp_Wl_Buffer_Ref buffer_ref;
    struct wl_listener buffer_destroy_listener;
    void *data;
    Eina_Rectangle opaque;
+<<<<<<< HEAD
 
    E_Comp_Wl_Client_Data *cdata;
    Eina_Bool own_cdata : 1;
+=======
+   uuid_t uuid;
+>>>>>>> upstream
 #endif
 
    Eina_Bool usable : 1;
@@ -52,6 +72,7 @@ struct _E_Pixmap
    Eina_Bool image_argb : 1;
 };
 
+<<<<<<< HEAD
 static int _e_pixmap_hooks_delete = 0;
 static int _e_pixmap_hooks_walking = 0;
 
@@ -95,6 +116,9 @@ _e_pixmap_hook_call(E_Pixmap_Hook_Point hookpoint, E_Pixmap *cp)
 }
 
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+=======
+#ifdef HAVE_WAYLAND
+>>>>>>> upstream
 static void 
 _e_pixmap_cb_buffer_destroy(struct wl_listener *listener, void *data EINA_UNUSED)
 {
@@ -125,6 +149,7 @@ _e_pixmap_clear(E_Pixmap *cp, Eina_Bool cache)
 #endif
         break;
       case E_PIXMAP_TYPE_WL:
+<<<<<<< HEAD
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
         if (cp->buffer_destroy_listener.notify)
           {
@@ -136,6 +161,10 @@ _e_pixmap_clear(E_Pixmap *cp, Eina_Bool cache)
         ELOG("PIXMAP CLEAR", cp, cp->client);
 
         (void)cache;
+=======
+#ifdef HAVE_WAYLAND
+        e_pixmap_image_clear(cp, cache);
+>>>>>>> upstream
 #endif
         break;
       default: 
@@ -172,7 +201,7 @@ _e_pixmap_free(E_Pixmap *cp)
 #endif
         break;
       case E_PIXMAP_TYPE_WL:
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND
 #endif
         break;
       default:
@@ -224,9 +253,14 @@ _e_pixmap_find(E_Pixmap_Type type, va_list *l)
 #ifndef HAVE_WAYLAND_ONLY
    Ecore_X_Window xwin;
 #endif
+<<<<<<< HEAD
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+=======
+#ifdef HAVE_WAYLAND
+>>>>>>> upstream
    uintptr_t id;
 #endif
+   E_Pixmap *cp;
    
    if (!pixmaps[type]) return NULL;
    switch (type)
@@ -234,13 +268,23 @@ _e_pixmap_find(E_Pixmap_Type type, va_list *l)
       case E_PIXMAP_TYPE_X:
 #ifndef HAVE_WAYLAND_ONLY
         xwin = va_arg(*l, uint32_t);
-        return eina_hash_find(pixmaps[type], &xwin);
+        cp = eina_hash_find(aliases[type], &xwin);
+        if (!cp) cp = eina_hash_find(pixmaps[type], &xwin);
+        return cp;
 #endif
         break;
       case E_PIXMAP_TYPE_WL:
+<<<<<<< HEAD
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
         id = va_arg(*l, uintptr_t);
         return eina_hash_find(pixmaps[type], &id);
+=======
+#ifdef HAVE_WAYLAND
+        id = va_arg(*l, uintptr_t);
+        cp = eina_hash_find(aliases[type], &id);
+        if (!cp) cp = eina_hash_find(pixmaps[type], &id);
+        return cp;
+>>>>>>> upstream
 #endif
         break;
       default: break;
@@ -248,7 +292,7 @@ _e_pixmap_find(E_Pixmap_Type type, va_list *l)
    return NULL;
 }
 
-EAPI int
+E_API int
 e_pixmap_free(E_Pixmap *cp)
 {
    if (!cp) return 0;
@@ -256,8 +300,11 @@ e_pixmap_free(E_Pixmap *cp)
    ELOG("PIXMAP DEL", cp, cp->client);
    _e_pixmap_hook_call(E_PIXMAP_HOOK_DEL, cp);
    e_pixmap_image_clear(cp, EINA_FALSE);
+<<<<<<< HEAD
    if (cp->parent) eina_hash_set(pixmaps[cp->type], &cp->parent, NULL);
    eina_hash_del_by_key(res_ids, &cp->res_id);
+=======
+>>>>>>> upstream
    eina_hash_del_by_key(pixmaps[cp->type], &cp->win);
 
    if (e_pixmap_is_del(cp))
@@ -268,6 +315,7 @@ e_pixmap_free(E_Pixmap *cp)
    return 0;
 }
 
+<<<<<<< HEAD
 EAPI void
 e_pixmap_del(E_Pixmap *cp)
 {
@@ -293,6 +341,9 @@ e_pixmap_is_del(E_Pixmap *cp)
 }
 
 EAPI E_Pixmap *
+=======
+E_API E_Pixmap *
+>>>>>>> upstream
 e_pixmap_ref(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, NULL);
@@ -300,7 +351,7 @@ e_pixmap_ref(E_Pixmap *cp)
    return cp;
 }
 
-EAPI E_Pixmap *
+E_API E_Pixmap *
 e_pixmap_new(E_Pixmap_Type type, ...)
 {
    E_Pixmap *cp = NULL;
@@ -308,7 +359,11 @@ e_pixmap_new(E_Pixmap_Type type, ...)
 #ifndef HAVE_WAYLAND_ONLY
    Ecore_X_Window xwin;
 #endif
+<<<<<<< HEAD
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+=======
+#ifdef HAVE_WAYLAND
+>>>>>>> upstream
    uintptr_t id;
 #endif
 
@@ -336,7 +391,11 @@ e_pixmap_new(E_Pixmap_Type type, ...)
 #endif
         break;
       case E_PIXMAP_TYPE_WL:
+<<<<<<< HEAD
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+=======
+#ifdef HAVE_WAYLAND
+>>>>>>> upstream
         id = va_arg(l, uintptr_t);
         if (pixmaps[type])
           {
@@ -348,6 +407,7 @@ e_pixmap_new(E_Pixmap_Type type, ...)
                }
           }
         else
+<<<<<<< HEAD
           {
              pixmaps[type] = eina_hash_pointer_new(NULL);
              deleted[type] = eina_hash_pointer_new((Eina_Free_Cb)_e_pixmap_free);
@@ -361,22 +421,30 @@ e_pixmap_new(E_Pixmap_Type type, ...)
         eina_hash_add(res_ids, &res_id, cp);
         res_id++;
         ELOG("PIXMAP NEW", cp, cp->client);
+=======
+          pixmaps[type] = eina_hash_pointer_new((Eina_Free_Cb)_e_pixmap_free);
+        cp = _e_pixmap_new(type);
+        cp->win = id;
+        eina_hash_add(pixmaps[type], &id, cp);
+        uuid_generate(cp->uuid);
+>>>>>>> upstream
 #endif
         break;
+      default: break;
      }
    va_end(l);
    _e_pixmap_hook_call(E_PIXMAP_HOOK_NEW, cp);
    return cp;
 }
 
-EAPI E_Pixmap_Type
+E_API E_Pixmap_Type
 e_pixmap_type_get(const E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, 9999);
    return cp->type;
 }
 
-EAPI void
+E_API void
 e_pixmap_parent_window_set(E_Pixmap *cp, Ecore_Window win)
 {
    EINA_SAFETY_ON_NULL_RETURN(cp);
@@ -399,13 +467,10 @@ e_pixmap_parent_window_set(E_Pixmap *cp, Ecore_Window win)
          break;
      }
 
-   if (cp->parent)
-     eina_hash_set(pixmaps[cp->type], &cp->parent, NULL);
    cp->parent = win;
-   if (win) eina_hash_add(pixmaps[cp->type], &win, cp);
 }
 
-EAPI void
+E_API void
 e_pixmap_visual_cmap_set(E_Pixmap *cp, void *visual, unsigned int cmap)
 {
    EINA_SAFETY_ON_NULL_RETURN(cp);
@@ -419,7 +484,7 @@ e_pixmap_visual_cmap_set(E_Pixmap *cp, void *visual, unsigned int cmap)
 #endif
 }
 
-EAPI void *
+E_API void *
 e_pixmap_visual_get(const E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, NULL);
@@ -430,28 +495,38 @@ e_pixmap_visual_get(const E_Pixmap *cp)
    return NULL;
 }
 
-EAPI void
+E_API uint32_t
+e_pixmap_pixmap_get(const E_Pixmap *cp)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cp, 0);
+#ifndef HAVE_WAYLAND_ONLY
+   if (e_pixmap_is_x(cp)) return cp->pixmap;
+#endif
+   return 0;
+}
+
+E_API void
 e_pixmap_usable_set(E_Pixmap *cp, Eina_Bool set)
 {
    EINA_SAFETY_ON_NULL_RETURN(cp);
    cp->usable = !!set;
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_pixmap_usable_get(const E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, EINA_FALSE);
    return cp->usable;
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_pixmap_dirty_get(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, EINA_FALSE);
    return cp->dirty;
 }
 
-EAPI void
+E_API void
 e_pixmap_clear(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN(cp);
@@ -459,14 +534,14 @@ e_pixmap_clear(E_Pixmap *cp)
    cp->dirty = EINA_TRUE;
 }
 
-EAPI void
+E_API void
 e_pixmap_dirty(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN(cp);
    cp->dirty = 1;
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_pixmap_refresh(E_Pixmap *cp)
 {
    Eina_Bool success = EINA_FALSE;
@@ -522,8 +597,38 @@ e_pixmap_refresh(E_Pixmap *cp)
 #endif
         break;
       case E_PIXMAP_TYPE_WL:
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-        success = ((cp->w > 0) && (cp->h > 0));
+#ifdef HAVE_WAYLAND
+        {
+           E_Comp_Wl_Buffer *buffer = cp->buffer;
+           struct wl_shm_buffer *shm_buffer;
+           int format;
+
+           cp->w = cp->h = 0;
+           cp->image_argb = EINA_FALSE;
+
+           if (!buffer) return EINA_FALSE;
+
+           shm_buffer = buffer->shm_buffer;
+           cp->w = buffer->w;
+           cp->h = buffer->h;
+
+           if (shm_buffer)
+             format = wl_shm_buffer_get_format(shm_buffer);
+           else
+             e_comp_wl->wl.glapi->evasglQueryWaylandBuffer(e_comp_wl->wl.gl, buffer->resource, EGL_TEXTURE_FORMAT, &format);
+           switch (format)
+             {
+              case WL_SHM_FORMAT_ARGB8888:
+              case EGL_TEXTURE_RGBA:
+                cp->image_argb = EINA_TRUE;
+                break;
+              default:
+                cp->image_argb = EINA_FALSE;
+                break;
+             }
+
+           success = ((cp->w > 0) && (cp->h > 0));
+        }
 #endif
         break;
       default:
@@ -540,7 +645,7 @@ e_pixmap_refresh(E_Pixmap *cp)
    return success;
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_pixmap_size_changed(E_Pixmap *cp, int w, int h)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, EINA_FALSE);
@@ -548,7 +653,7 @@ e_pixmap_size_changed(E_Pixmap *cp, int w, int h)
    return (w != cp->w) || (h != cp->h);
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_pixmap_size_get(E_Pixmap *cp, int *w, int *h)
 {
    if (w) *w = 0;
@@ -559,28 +664,29 @@ e_pixmap_size_get(E_Pixmap *cp, int *w, int *h)
    return (cp->w > 0) && (cp->h > 0);
 }
 
-EAPI unsigned int
+E_API unsigned int
 e_pixmap_failures_get(const E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, 0);
    return cp->failures;
 }
 
-EAPI void
+E_API void
 e_pixmap_client_set(E_Pixmap *cp, E_Client *ec)
 {
    EINA_SAFETY_ON_NULL_RETURN(cp);
+   if (cp->client && ec) CRI("ACK!");
    cp->client = ec;
 }
 
-EAPI E_Client *
+E_API E_Client *
 e_pixmap_client_get(E_Pixmap *cp)
 {
    if (!cp) return NULL;
    return cp->client;
 }
 
-EAPI E_Pixmap *
+E_API E_Pixmap *
 e_pixmap_find(E_Pixmap_Type type, ...)
 {
    va_list l;
@@ -592,7 +698,7 @@ e_pixmap_find(E_Pixmap_Type type, ...)
    return cp;
 }
 
-EAPI E_Client *
+E_API E_Client *
 e_pixmap_find_client(E_Pixmap_Type type, ...)
 {
    va_list l;
@@ -604,6 +710,7 @@ e_pixmap_find_client(E_Pixmap_Type type, ...)
    return (!cp) ? NULL : cp->client;
 }
 
+<<<<<<< HEAD
 EAPI E_Client *
 e_pixmap_find_client_by_res_id(uint32_t res_id)
 {
@@ -623,13 +730,16 @@ e_pixmap_res_id_get(E_Pixmap *cp)
 }
 
 EAPI Ecore_Window
+=======
+E_API uint64_t
+>>>>>>> upstream
 e_pixmap_window_get(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, 0);
    return cp->win;
 }
 
-EAPI void *
+E_API void *
 e_pixmap_resource_get(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, NULL);
@@ -638,16 +748,17 @@ e_pixmap_resource_get(E_Pixmap *cp)
         CRI("ACK");
         return NULL;
      }
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-   return cp->buffer_ref.buffer;
+#ifdef HAVE_WAYLAND
+   return cp->buffer;
 #endif
    return NULL;
 }
 
-EAPI void
+E_API void
 e_pixmap_resource_set(E_Pixmap *cp, void *resource)
 {
    if ((!cp) || (cp->type != E_PIXMAP_TYPE_WL)) return;
+<<<<<<< HEAD
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
      {
         E_Comp_Wl_Buffer *buffer;
@@ -754,19 +865,23 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
         cp->buffer_destroy_listener.notify = _e_pixmap_cb_buffer_destroy;
         wl_signal_add(&buffer->destroy_signal, &cp->buffer_destroy_listener);
      }
+=======
+#ifdef HAVE_WAYLAND
+   cp->buffer = resource;
+>>>>>>> upstream
 #else
    (void)resource;
 #endif
 }
 
-EAPI Ecore_Window
+E_API Ecore_Window
 e_pixmap_parent_window_get(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, 0);
    return cp->parent;
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_pixmap_native_surface_init(E_Pixmap *cp, Evas_Native_Surface *ns)
 {
    Eina_Bool ret = EINA_FALSE;
@@ -786,6 +901,7 @@ e_pixmap_native_surface_init(E_Pixmap *cp, Evas_Native_Surface *ns)
 #endif
         break;
       case E_PIXMAP_TYPE_WL:
+<<<<<<< HEAD
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
         if (cp->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
           {
@@ -796,6 +912,13 @@ e_pixmap_native_surface_init(E_Pixmap *cp, Evas_Native_Surface *ns)
           }
         else
           ret = EINA_FALSE;
+=======
+#ifdef HAVE_WAYLAND
+        ns->type = EVAS_NATIVE_SURFACE_WL;
+        ns->version = EVAS_NATIVE_SURFACE_VERSION;
+        ns->data.wl.legacy_buffer = cp->buffer->resource;
+        ret = !cp->buffer->shm_buffer;
+>>>>>>> upstream
 #endif
         break;
       default:
@@ -805,7 +928,7 @@ e_pixmap_native_surface_init(E_Pixmap *cp, Evas_Native_Surface *ns)
    return ret;
 }
 
-EAPI void
+E_API void
 e_pixmap_image_clear(E_Pixmap *cp, Eina_Bool cache)
 {
    EINA_SAFETY_ON_NULL_RETURN(cp);
@@ -813,10 +936,12 @@ e_pixmap_image_clear(E_Pixmap *cp, Eina_Bool cache)
    if (!cache)
      {
 #ifndef HAVE_WAYLAND_ONLY
-        if (!cp->image) return;
+        if (e_pixmap_is_x(cp))
+          if (!cp->image) return;
 #endif
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-        if (!cp->buffer_ref.buffer) return;
+#ifdef HAVE_WAYLAND
+        if (cp->type == E_PIXMAP_TYPE_WL)
+          if (!cp->buffer_ref.buffer) return;
 #endif
      }
 
@@ -840,7 +965,7 @@ e_pixmap_image_clear(E_Pixmap *cp, Eina_Bool cache)
 #endif
         break;
       case E_PIXMAP_TYPE_WL:
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND
         if (cache)
           {
              E_Comp_Wl_Client_Data *cd;
@@ -851,10 +976,17 @@ e_pixmap_image_clear(E_Pixmap *cp, Eina_Bool cache)
              cd = (E_Comp_Wl_Client_Data *)cp->client->comp_data;
              EINA_LIST_FOREACH_SAFE(cd->frames, l, ll, cb)
                {
-                  wl_callback_send_done(cb, ecore_time_unix_get());
+                  wl_callback_send_done(cb, ecore_time_unix_get() * 1000);
                   wl_resource_destroy(cb);
                }
           }
+        if (cp->buffer_destroy_listener.notify)
+          {
+             wl_list_remove(&cp->buffer_destroy_listener.link);
+             cp->buffer_destroy_listener.notify = NULL;
+          }
+        e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
+        cp->data = NULL;
 #endif
         break;
       default:
@@ -862,7 +994,7 @@ e_pixmap_image_clear(E_Pixmap *cp, Eina_Bool cache)
      }
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_pixmap_image_refresh(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, EINA_FALSE);
@@ -890,9 +1022,31 @@ e_pixmap_image_refresh(E_Pixmap *cp)
 #endif
         break;
       case E_PIXMAP_TYPE_WL:
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-        /* FIXME */
-        return EINA_TRUE;
+#ifdef HAVE_WAYLAND
+        {
+           E_Comp_Wl_Buffer *buffer = cp->buffer;
+           struct wl_shm_buffer *shm_buffer;
+
+           shm_buffer = buffer->shm_buffer;
+           if (cp->buffer_ref.buffer && (cp->buffer_ref.buffer != buffer))
+             {
+                /* FIXME: wtf? */
+             }
+           else if (cp->buffer_ref.buffer) return EINA_TRUE;
+           e_comp_wl_buffer_reference(&cp->buffer_ref, buffer);
+
+           if (cp->buffer_destroy_listener.notify)
+             {
+                wl_list_remove(&cp->buffer_destroy_listener.link);
+                cp->buffer_destroy_listener.notify = NULL;
+             }
+
+           cp->buffer_destroy_listener.notify = _e_pixmap_cb_buffer_destroy;
+           wl_signal_add(&buffer->destroy_signal, &cp->buffer_destroy_listener);
+           if (shm_buffer)
+             cp->data = wl_shm_buffer_get_data(shm_buffer);
+           return EINA_TRUE;
+        }
 #endif
         break;
       default:
@@ -902,7 +1056,7 @@ e_pixmap_image_refresh(E_Pixmap *cp)
    return EINA_FALSE;
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_pixmap_image_exists(const E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, EINA_FALSE);
@@ -911,14 +1065,14 @@ e_pixmap_image_exists(const E_Pixmap *cp)
    if (cp->type == E_PIXMAP_TYPE_X)
      return !!cp->image;
 #endif
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-   return (cp->buffer_ref.buffer != NULL);
+#ifdef HAVE_WAYLAND
+   return (!!cp->data) || (e_comp->gl && (!cp->buffer->shm_buffer));
 #endif
 
    return EINA_FALSE;
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_pixmap_image_is_argb(const E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, EINA_FALSE);
@@ -930,7 +1084,7 @@ e_pixmap_image_is_argb(const E_Pixmap *cp)
         return cp->image && cp->image_argb;
 #endif
       case E_PIXMAP_TYPE_WL:
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND
         return ((cp->buffer_ref.buffer != NULL) && (cp->image_argb));
 #endif
         default: break;
@@ -938,7 +1092,7 @@ e_pixmap_image_is_argb(const E_Pixmap *cp)
    return EINA_FALSE;
 }
 
-EAPI void *
+E_API void *
 e_pixmap_image_data_get(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, NULL);
@@ -952,7 +1106,7 @@ e_pixmap_image_data_get(E_Pixmap *cp)
 #endif
         break;
       case E_PIXMAP_TYPE_WL:
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND
         return cp->data;
 #endif
         break;
@@ -962,7 +1116,7 @@ e_pixmap_image_data_get(E_Pixmap *cp)
    return NULL;
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_pixmap_image_data_argb_convert(E_Pixmap *cp, void *pix, void *ipix, Eina_Rectangle *r, int stride)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, EINA_FALSE);
@@ -982,7 +1136,7 @@ e_pixmap_image_data_argb_convert(E_Pixmap *cp, void *pix, void *ipix, Eina_Recta
         break;
       case E_PIXMAP_TYPE_WL:
         if (cp->image_argb) return EINA_TRUE;
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND
         if (cp->buffer_ref.buffer)
           {
              struct wl_shm_buffer *shm_buffer;
@@ -990,7 +1144,7 @@ e_pixmap_image_data_argb_convert(E_Pixmap *cp, void *pix, void *ipix, Eina_Recta
              int i, x, y;
              unsigned int *src, *dst;
 
-             shm_buffer = wl_shm_buffer_get(cp->buffer_ref.buffer->resource);
+             shm_buffer = cp->buffer_ref.buffer->shm_buffer;
              if (!shm_buffer) return EINA_FALSE;
 
              format = wl_shm_buffer_get_format(shm_buffer);
@@ -1018,7 +1172,7 @@ e_pixmap_image_data_argb_convert(E_Pixmap *cp, void *pix, void *ipix, Eina_Recta
    return EINA_FALSE;
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_pixmap_image_draw(E_Pixmap *cp, const Eina_Rectangle *r)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, EINA_FALSE);
@@ -1032,7 +1186,7 @@ e_pixmap_image_draw(E_Pixmap *cp, const Eina_Rectangle *r)
 #endif
         break;
       case E_PIXMAP_TYPE_WL:
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND
 #endif
         (void) r;
         return EINA_TRUE;
@@ -1042,6 +1196,7 @@ e_pixmap_image_draw(E_Pixmap *cp, const Eina_Rectangle *r)
    return EINA_FALSE;
 }
 
+<<<<<<< HEAD
 EAPI Eina_Bool
 e_pixmap_validate_check(const E_Pixmap *cp)
 {
@@ -1090,10 +1245,13 @@ e_pixmap_image_draw_done(E_Pixmap *cp)
 }
 
 EAPI void
+=======
+E_API void
+>>>>>>> upstream
 e_pixmap_image_opaque_set(E_Pixmap *cp, int x, int y, int w, int h)
 {
    EINA_SAFETY_ON_NULL_RETURN(cp);
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND
    EINA_RECTANGLE_SET(&cp->opaque, x, y, w, h);
 #else
    (void)x;
@@ -1103,11 +1261,11 @@ e_pixmap_image_opaque_set(E_Pixmap *cp, int x, int y, int w, int h)
 #endif
 }
 
-EAPI void
+E_API void
 e_pixmap_image_opaque_get(E_Pixmap *cp, int *x, int *y, int *w, int *h)
 {
    EINA_SAFETY_ON_NULL_RETURN(cp);
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+#ifdef HAVE_WAYLAND
    if (x) *x = cp->opaque.x;
    if (y) *y = cp->opaque.y;
    if (w) *w = cp->opaque.w;
@@ -1120,6 +1278,7 @@ e_pixmap_image_opaque_get(E_Pixmap *cp, int *x, int *y, int *w, int *h)
 #endif
 }
 
+<<<<<<< HEAD
 EAPI E_Comp_Client_Data *
 e_pixmap_cdata_get(E_Pixmap *cp)
 {
@@ -1189,4 +1348,39 @@ e_pixmap_hook_del(E_Pixmap_Hook *ph)
      }
    else
      _e_pixmap_hooks_delete++;
+=======
+E_API void
+e_pixmap_alias(E_Pixmap *cp, E_Pixmap_Type type, ...)
+{
+   va_list l;
+#ifndef HAVE_WAYLAND_ONLY
+   Ecore_X_Window xwin;
+#endif
+#ifdef HAVE_WAYLAND
+   uintptr_t id;
+#endif
+
+   va_start(l, type);
+   switch (type)
+     {
+      case E_PIXMAP_TYPE_X:
+#ifndef HAVE_WAYLAND_ONLY
+        xwin = va_arg(l, uint32_t);
+        if (!aliases[type])
+          aliases[type] = eina_hash_int32_new(NULL);
+        eina_hash_set(aliases[type], &xwin, cp);
+#endif
+        break;
+      case E_PIXMAP_TYPE_WL:
+#ifdef HAVE_WAYLAND
+        id = va_arg(l, uintptr_t);
+        if (!aliases[type])
+          aliases[type] = eina_hash_pointer_new(NULL);
+        eina_hash_set(aliases[type], &id, cp);
+#endif
+        break;
+      default: break;
+     }
+   va_end(l);
+>>>>>>> upstream
 }

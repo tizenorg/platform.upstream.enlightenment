@@ -98,7 +98,7 @@ _systray_menu_new(Instance *inst, Evas_Event_Mouse_Down *ev)
    //E_Menu_Item *mi;
    int x, y;
 
-   zone = e_util_zone_current_get(e_manager_current_get());
+   zone = e_zone_current_get();
 
    m = e_menu_new();
    //mi = e_menu_item_new(m);
@@ -114,7 +114,7 @@ _systray_menu_new(Instance *inst, Evas_Event_Mouse_Down *ev)
 }
 
 static void
-_systray_cb_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj __UNUSED__, void *event __UNUSED__)
+_systray_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
    Instance *inst = data;
    Evas_Event_Mouse_Down *ev = event;
@@ -216,8 +216,7 @@ _gc_init(E_Gadcon *gc, const char *name, const char *id, const char *style)
    if (!inst)
      return NULL;
    inst->evas = gc->evas;
-   inst->comp = e_comp_get(NULL);
-   if (!inst->comp)
+   if (!e_comp)
      {
         E_FREE(inst);
         return NULL;
@@ -352,13 +351,13 @@ _gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient)
 }
 
 static const char *
-_gc_label(const E_Gadcon_Client_Class *client_class __UNUSED__)
+_gc_label(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    return _("Systray");
 }
 
 static Evas_Object *
-_gc_icon(const E_Gadcon_Client_Class *client_class __UNUSED__, Evas *evas)
+_gc_icon(const E_Gadcon_Client_Class *client_class EINA_UNUSED, Evas *evas)
 {
    Evas_Object *o;
 
@@ -368,7 +367,7 @@ _gc_icon(const E_Gadcon_Client_Class *client_class __UNUSED__, Evas *evas)
 }
 
 static const char *
-_gc_id_new(const E_Gadcon_Client_Class *client_class __UNUSED__)
+_gc_id_new(const E_Gadcon_Client_Class *client_class EINA_UNUSED)
 {
    return _name;
 }
@@ -383,19 +382,28 @@ static const E_Gadcon_Client_Class _gc_class =
    E_GADCON_CLIENT_STYLE_PLAIN
 };
 
-EAPI E_Module_Api e_modapi = {E_MODULE_API_VERSION, _Name};
+E_API E_Module_Api e_modapi = {E_MODULE_API_VERSION, _Name};
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    systray_mod = m;
 
    ctx = calloc(1, sizeof(Systray_Context));
    ctx->conf_edd = E_CONFIG_DD_NEW("Systray_Config", Systray_Config);
+   ctx->notifier_item_edd = E_CONFIG_DD_NEW("Notifier_Item_Cache", Notifier_Item_Cache);
+   #undef T
+   #undef D
+   #define T Notifier_Item_Cache
+   #define D ctx->notifier_item_edd
+   E_CONFIG_VAL(D, T, path, STR);
    #undef T
    #undef D
    #define T Systray_Config
    #define D ctx->conf_edd
+   E_CONFIG_VAL(D, T, dbus, STR);
+   E_CONFIG_HASH(D, T, items, ctx->notifier_item_edd);
+
    ctx->config = e_config_domain_load(_name, ctx->conf_edd);
    if (!ctx->config)
      ctx->config = calloc(1, sizeof(Systray_Config));
@@ -407,8 +415,8 @@ e_modapi_init(E_Module *m)
    return ctx;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    e_gadcon_provider_unregister(&_gc_class);
    systray_mod = NULL;
@@ -416,13 +424,14 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    systray_notifier_host_shutdown();
 
    E_CONFIG_DD_FREE(ctx->conf_edd);
+   E_CONFIG_DD_FREE(ctx->notifier_item_edd);
    free(ctx->config);
    free(ctx);
    return 1;
 }
 
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    e_config_domain_save(_name, ctx->conf_edd, ctx->config);
    return 1;
@@ -500,18 +509,11 @@ systray_edje_box_remove(const Instance *inst, Evas_Object *child)
    edje_object_part_box_remove(inst->ui.gadget, "box", child);
 }
 
-int
-systray_manager_number_get(const Instance *inst)
-{
-   EINA_SAFETY_ON_NULL_RETURN_VAL(inst, 0);
-   return inst->comp->num;
-}
-
 Ecore_X_Window
 systray_root_get(const Instance *inst)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(inst, 0);
-   return inst->comp->man->root;
+   return e_comp->root;
 }
 
 static void

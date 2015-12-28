@@ -16,7 +16,7 @@ static int start_app_pos = -1;
 static Ecore_Event_Handler *desktop_cache_update_handler = NULL;
 
 /* externally accessible functions */
-EAPI void
+E_API void
 e_startup(E_Startup_Mode mode)
 {
    char buf[PATH_MAX];
@@ -69,7 +69,7 @@ _e_startup(void)
 }
 
 static void
-_e_startup_next_cb(void *data __UNUSED__)
+_e_startup_next_cb(void *data EINA_UNUSED)
 {
    _e_startup();
 }
@@ -94,7 +94,7 @@ _e_startup_next_cb(void *data __UNUSED__)
  */
 
 static Eina_Bool
-_e_startup_event_cb(void *data, int ev_type __UNUSED__, void *ev)
+_e_startup_event_cb(void *data, int ev_type EINA_UNUSED, void *ev)
 {
    char *buf;
    Efreet_Event_Cache_Update *e;

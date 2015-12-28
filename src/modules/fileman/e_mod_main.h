@@ -110,9 +110,9 @@ Fileman_Path *e_mod_fileman_path_find(E_Zone *zone);
 
 E_Menu *e_mod_menu_add(E_Menu *m, const char *path);
 
-E_Config_Dialog *e_int_config_fileman(Evas_Object *parent, const char *params __UNUSED__);
+E_Config_Dialog *e_int_config_fileman(Evas_Object *parent, const char *params EINA_UNUSED);
 E_Config_Dialog *e_int_config_mime_edit(E_Config_Mime_Icon *data, void *data2);
-E_Config_Dialog *e_int_config_mime(Evas_Object *parent, const char *params __UNUSED__);
+E_Config_Dialog *e_int_config_mime(Evas_Object *parent, const char *params EINA_UNUSED);
 void e_int_config_mime_edit_done(void *data);
 
 void e_fileman_dbus_init(void);
@@ -120,7 +120,7 @@ void e_fileman_dbus_shutdown(void);
 
 int  e_fwin_init          (void);
 int  e_fwin_shutdown      (void);
-void e_fwin_new           (E_Comp *comp, const char *dev, const char *path);
+void e_fwin_new           (const char *dev, const char *path);
 void e_fwin_zone_new      (E_Zone *zone, void *path);
 void e_fwin_zone_shutdown (E_Zone *zone);
 void e_fwin_all_unsel     (void *data);

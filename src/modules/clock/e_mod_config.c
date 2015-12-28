@@ -39,7 +39,7 @@ e_int_config_clock_module(Evas_Object *parent EINA_UNUSED, Config_Item *ci)
 }
 
 static void *
-_create_data(E_Config_Dialog *cfd __UNUSED__)
+_create_data(E_Config_Dialog *cfd EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
    Config_Item *ci;
@@ -53,7 +53,7 @@ _create_data(E_Config_Dialog *cfd __UNUSED__)
 }
 
 static void
-_free_data(E_Config_Dialog *cfd  __UNUSED__,
+_free_data(E_Config_Dialog *cfd  EINA_UNUSED,
            E_Config_Dialog_Data *cfdata)
 {
    clock_config->config_dialog = NULL;
@@ -61,7 +61,7 @@ _free_data(E_Config_Dialog *cfd  __UNUSED__,
 }
 
 static Evas_Object *
-_basic_create_widgets(E_Config_Dialog *cfd __UNUSED__,
+_basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED,
                       Evas *evas,
                       E_Config_Dialog_Data *cfdata)
 {
@@ -108,6 +108,8 @@ _basic_create_widgets(E_Config_Dialog *cfd __UNUSED__,
    e_widget_frametable_object_append(of, ob, 0, 2, 1, 1, 1, 1, 0, 0);
    ob = e_widget_radio_add(evas, _("Date Only"), 3, rg);
    e_widget_frametable_object_append(of, ob, 0, 3, 1, 1, 1, 1, 0, 0);
+   ob = e_widget_radio_add(evas, _("ISO 8601"), 4, rg);
+   e_widget_frametable_object_append(of, ob, 0, 4, 1, 1, 1, 1, 0, 0);
 
    e_widget_table_object_append(tab, of, 0, 1, 1, 1, 1, 1, 1, 1);
    
@@ -158,7 +160,7 @@ _basic_create_widgets(E_Config_Dialog *cfd __UNUSED__,
 }
 
 static int
-_basic_apply_data(E_Config_Dialog *cfd  __UNUSED__,
+_basic_apply_data(E_Config_Dialog *cfd  EINA_UNUSED,
                   E_Config_Dialog_Data *cfdata)
 {
    Config_Item *ci;

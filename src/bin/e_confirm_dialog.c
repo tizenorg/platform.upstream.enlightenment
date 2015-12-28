@@ -15,7 +15,7 @@ _dia_del(void *data)
 }
 
 /********** externally accesible functions ****************/
-EAPI E_Confirm_Dialog *
+E_API E_Confirm_Dialog *
 e_confirm_dialog_show(const char *title, const char *icon, const char *text,
                       const char *button_text, const char *button2_text,
                       void (*func)(void *data), void (*func2)(void *data),
@@ -77,7 +77,7 @@ _e_confirm_dialog_free(E_Confirm_Dialog *cd)
 }
 
 static void
-_e_confirm_dialog_yes(void *data, E_Dialog *dia __UNUSED__)
+_e_confirm_dialog_yes(void *data, E_Dialog *dia EINA_UNUSED)
 {
    E_Confirm_Dialog *cd;
 
@@ -90,7 +90,7 @@ _e_confirm_dialog_yes(void *data, E_Dialog *dia __UNUSED__)
 }
 
 static void
-_e_confirm_dialog_no(void *data, E_Dialog *dia __UNUSED__)
+_e_confirm_dialog_no(void *data, E_Dialog *dia EINA_UNUSED)
 {
    E_Confirm_Dialog *cd;
 

@@ -118,9 +118,7 @@ static const E_Gadcon_Client_Class _gc_class =
 static E_Desk *
 get_current_desk(void)
 {
-   E_Manager *m = e_manager_current_get();
-   E_Comp *c = m->comp;
-   E_Zone *z = e_zone_current_get(c);
+   E_Zone *z = e_zone_current_get();
 
    return e_desk_current_get(z);
 }
@@ -189,7 +187,7 @@ is_tilable(const E_Client *ec)
      return false;
 #endif
 
-   if (ec->e.state.centered)
+   if (ec->e.state.centered || e_win_centered_get(ec->internal_elm_win))
      return false;
 
    if (!tiling_g.config->tile_dialogs && ((ec->icccm.transient_for != 0) ||
@@ -467,17 +465,11 @@ _restore_free_client(void *_item)
 void
 change_desk_conf(struct _Config_vdesk *newconf)
 {
-   E_Manager *m;
-   E_Comp *c;
    E_Zone *z;
    E_Desk *d;
    int old_nb_stacks, new_nb_stacks = newconf->nb_stacks;
 
-   m = e_manager_current_get();
-   if (!m)
-     return;
-   c = m->comp;
-   z = e_comp_zone_number_get(c, newconf->zone_num);
+   z = e_comp_zone_number_get(newconf->zone_num);
    if (!z)
      return;
    d = e_desk_at_xy_get(z, newconf->x, newconf->y);
@@ -507,7 +499,7 @@ _desk_config_apply(E_Desk *d, int old_nb_stacks, int new_nb_stacks)
      {
         E_Client *ec;
 
-        E_CLIENT_FOREACH(e_comp_get(NULL), ec)
+        E_CLIENT_FOREACH(ec)
           {
              _client_apply_settings(ec, NULL);
           }
@@ -519,7 +511,7 @@ _desk_config_apply(E_Desk *d, int old_nb_stacks, int new_nb_stacks)
         /* Add all the existing windows. */
         E_Client *ec;
 
-        E_CLIENT_FOREACH(e_comp_get(NULL), ec)
+        E_CLIENT_FOREACH(ec)
           {
              _add_client(ec);
           }
@@ -868,7 +860,7 @@ _tiling_split_type_changed_popup(void)
    /* If this is not NULL, the rest isn't either. */
    if (!o)
      {
-        _G.split_popup.obj = o = edje_object_add(e_comp_get(NULL)->evas);
+        _G.split_popup.obj = o = edje_object_add(e_comp->evas);
         if (!e_theme_edje_object_set(o, "base/theme/modules/tiling",
                  "modules/tiling/main"))
            edje_object_file_set(o, _G.edj_path, "modules/tiling/main");
@@ -1127,6 +1119,14 @@ _move_hook(void *data EINA_UNUSED, int type EINA_UNUSED, E_Event_Client *event)
         return true;
      }
 
+   /* A hack because e doesn't trigger events for all property changes */
+   if (!is_tilable(ec))
+     {
+        toggle_floating(ec);
+
+        return true;
+     }
+
    e_client_act_move_end(event->ec, NULL);
 
    _reapply_tree();
@@ -1303,7 +1303,7 @@ _compositor_resize_hook_desk_reapply(E_Desk *desk)
 
 static bool
 _compositor_resize_hook(void *data EINA_UNUSED, int type EINA_UNUSED,
-                        E_Event_Compositor_Resize *ev EINA_UNUSED)
+                        void *ev EINA_UNUSED)
 {
    _foreach_desk(_compositor_resize_hook_desk_reapply);
 
@@ -1369,12 +1369,12 @@ _clear_border_extras(void *data)
    E_FREE(extra);
 }
 
-EAPI E_Module_Api e_modapi = {
+E_API E_Module_Api e_modapi = {
    E_MODULE_API_VERSION,
    "Tiling"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    E_Desk *desk;
@@ -1503,7 +1503,7 @@ e_modapi_init(E_Module *m)
    {
       E_Client *ec;
 
-      E_CLIENT_FOREACH(e_comp_get(NULL), ec)
+      E_CLIENT_FOREACH(ec)
       {
          _add_client(ec);
       }
@@ -1554,7 +1554,7 @@ _foreach_desk(void (*func)(E_Desk *desk))
      }
 }
 
-EAPI int
+E_API int
 e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    e_gadcon_provider_unregister(&_gc_class);
@@ -1628,7 +1628,7 @@ e_modapi_shutdown(E_Module *m EINA_UNUSED)
    return 1;
 }
 
-EAPI int
+E_API int
 e_modapi_save(E_Module *m EINA_UNUSED)
 {
    e_config_domain_save("module.tiling", _G.config_edd, tiling_g.config);
@@ -1693,7 +1693,7 @@ _gadget_mouse_down_cb(void *data, Evas *e, Evas_Object *obj EINA_UNUSED, void *e
         E_Menu_Item *mi;
         int x, y;
 
-        zone = e_util_zone_current_get(e_manager_current_get());
+        zone = e_zone_current_get();
 
         m = e_menu_new();
         mi = e_menu_item_new(m);

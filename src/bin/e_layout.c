@@ -47,14 +47,14 @@ static void           _e_layout_smart_clip_unset(Evas_Object *obj);
 static Evas_Smart *_e_smart = NULL;
 
 /* externally accessible functions */
-EAPI Evas_Object *
+E_API Evas_Object *
 e_layout_add(Evas *evas)
 {
    _e_layout_smart_init();
    return evas_object_smart_add(evas, _e_smart);
 }
 
-EAPI int
+E_API int
 e_layout_freeze(Evas_Object *obj)
 {
    E_Smart_Data *sd;
@@ -65,7 +65,7 @@ e_layout_freeze(Evas_Object *obj)
    return sd->frozen;
 }
 
-EAPI int
+E_API int
 e_layout_thaw(Evas_Object *obj)
 {
    E_Smart_Data *sd;
@@ -77,7 +77,7 @@ e_layout_thaw(Evas_Object *obj)
    return sd->frozen;
 }
 
-EAPI void
+E_API void
 e_layout_virtual_size_set(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
 {
    E_Smart_Data *sd;
@@ -93,7 +93,7 @@ e_layout_virtual_size_set(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
    if (sd->frozen <= 0) _e_layout_smart_reconfigure(sd);
 }
 
-EAPI void
+E_API void
 e_layout_virtual_size_get(Evas_Object *obj, Evas_Coord *w, Evas_Coord *h)
 {
    E_Smart_Data *sd;
@@ -104,7 +104,7 @@ e_layout_virtual_size_get(Evas_Object *obj, Evas_Coord *w, Evas_Coord *h)
    if (h) *h = sd->vh;
 }
 
-EAPI void
+E_API void
 e_layout_coord_canvas_to_virtual(Evas_Object *obj, Evas_Coord cx, Evas_Coord cy, Evas_Coord *vx, Evas_Coord *vy)
 {
    E_Smart_Data *sd;
@@ -116,7 +116,7 @@ e_layout_coord_canvas_to_virtual(Evas_Object *obj, Evas_Coord cx, Evas_Coord cy,
    if (vy) *vy = (cy - sd->y) * ((double)(sd->vh) / sd->h);
 }
 
-EAPI void
+E_API void
 e_layout_coord_virtual_to_canvas(Evas_Object *obj, Evas_Coord vx, Evas_Coord vy, Evas_Coord *cx, Evas_Coord *cy)
 {
    E_Smart_Data *sd;
@@ -128,7 +128,7 @@ e_layout_coord_virtual_to_canvas(Evas_Object *obj, Evas_Coord vx, Evas_Coord vy,
    if (cy) *cy = vy * ((double)(sd->h) / sd->vh) + sd->y;
 }
 
-EAPI void
+E_API void
 e_layout_pack(Evas_Object *obj, Evas_Object *child)
 {
    E_Smart_Data *sd;
@@ -138,10 +138,11 @@ e_layout_pack(Evas_Object *obj, Evas_Object *child)
    sd = evas_object_smart_data_get(obj);
    li = _e_layout_smart_adopt(sd, child);
    sd->items = eina_inlist_append(sd->items, EINA_INLIST_GET(li));
+   evas_object_lower(child);
    if (sd->frozen <= 0) _e_layout_smart_move_resize_item(li);
 }
 
-EAPI void
+E_API void
 e_layout_child_move(Evas_Object *obj, Evas_Coord x, Evas_Coord y)
 {
    E_Layout_Item *li;
@@ -154,7 +155,7 @@ e_layout_child_move(Evas_Object *obj, Evas_Coord x, Evas_Coord y)
    if (li->sd->frozen <= 0) _e_layout_smart_move_resize_item(li);
 }
 
-EAPI Evas_Object *
+E_API Evas_Object *
 e_layout_child_above_get(Evas_Object *obj)
 {
    E_Layout_Item *li;
@@ -165,7 +166,7 @@ e_layout_child_above_get(Evas_Object *obj)
    return li ? li->obj : NULL;
 }
 
-EAPI Evas_Object *
+E_API Evas_Object *
 e_layout_child_below_get(Evas_Object *obj)
 {
    E_Layout_Item *li;
@@ -176,7 +177,7 @@ e_layout_child_below_get(Evas_Object *obj)
    return li ? li->obj : NULL;
 }
 
-EAPI Evas_Object *
+E_API Evas_Object *
 e_layout_top_child_get(Evas_Object *obj)
 {
    E_Smart_Data *sd;
@@ -189,7 +190,7 @@ e_layout_top_child_get(Evas_Object *obj)
    return li->obj;
 }
 
-EAPI void
+E_API void
 e_layout_child_resize(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
 {
    E_Layout_Item *li;
@@ -204,7 +205,7 @@ e_layout_child_resize(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
    if (li->sd->frozen <= 0) _e_layout_smart_move_resize_item(li);
 }
 
-EAPI void
+E_API void
 e_layout_child_lower(Evas_Object *obj)
 {
    E_Layout_Item *li;
@@ -216,7 +217,7 @@ e_layout_child_lower(Evas_Object *obj)
    evas_object_lower(obj);
 }
 
-EAPI void
+E_API void
 e_layout_child_raise(Evas_Object *obj)
 {
    E_Layout_Item *li;
@@ -228,7 +229,7 @@ e_layout_child_raise(Evas_Object *obj)
    evas_object_raise(obj);
 }
 
-EAPI void
+E_API void
 e_layout_child_lower_below(Evas_Object *obj, Evas_Object *below)
 {
    E_Layout_Item *li, *li2;
@@ -244,7 +245,7 @@ e_layout_child_lower_below(Evas_Object *obj, Evas_Object *below)
    li->sd->items = eina_inlist_prepend_relative(li->sd->items, EINA_INLIST_GET(li), EINA_INLIST_GET(li2));
 }
 
-EAPI void
+E_API void
 e_layout_child_raise_above(Evas_Object *obj, Evas_Object *above)
 {
    E_Layout_Item *li, *li2;
@@ -260,7 +261,7 @@ e_layout_child_raise_above(Evas_Object *obj, Evas_Object *above)
    li->sd->items = eina_inlist_append_relative(li->sd->items, EINA_INLIST_GET(li), EINA_INLIST_GET(li2));
 }
 
-EAPI void
+E_API void
 e_layout_child_geometry_get(Evas_Object *obj, Evas_Coord *x, Evas_Coord *y, Evas_Coord *w, Evas_Coord *h)
 {
    E_Layout_Item *li;
@@ -274,7 +275,7 @@ e_layout_child_geometry_get(Evas_Object *obj, Evas_Coord *x, Evas_Coord *y, Evas
    if (h) *h = li->h;
 }
 
-EAPI void
+E_API void
 e_layout_unpack(Evas_Object *obj)
 {
    E_Layout_Item *li;
@@ -287,7 +288,7 @@ e_layout_unpack(Evas_Object *obj)
    _e_layout_smart_disown(obj);
 }
 
-EAPI Eina_List *
+E_API Eina_List *
 e_layout_children_get(Evas_Object *obj)
 {
    E_Smart_Data *sd;
@@ -301,7 +302,7 @@ e_layout_children_get(Evas_Object *obj)
    return l;
 }
 
-EAPI Evas_Object *
+E_API Evas_Object *
 e_layout_top_child_at_xy_get(Evas_Object *obj, Evas_Coord x, Evas_Coord y, Eina_Bool vis, const Eina_List *ignore)
 {
    E_Smart_Data *sd;
@@ -369,7 +370,7 @@ _e_layout_smart_disown(Evas_Object *obj)
 }
 
 static void
-_e_layout_smart_item_del_hook(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj, void *event_info __UNUSED__)
+_e_layout_smart_item_del_hook(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
    e_layout_unpack(obj);
 }

@@ -42,6 +42,8 @@ systray_notifier_item_free(Notifier_Item *item)
      e_dbusmenu_unload(item->menu_data);
    eina_stringshare_del(item->bus_id);
    eina_stringshare_del(item->path);
+   free(item->imgdata);
+   free(item->attnimgdata);
    if (item->attention_icon_name)
      eina_stringshare_del(item->attention_icon_name);
    if (item->icon_name)
@@ -64,7 +66,7 @@ systray_notifier_item_free(Notifier_Item *item)
 }
 
 static void
-image_load(const char *name, const char *path, Evas_Object *image)
+image_load(const char *name, const char *path, uint32_t *imgdata, int w, int h, Evas_Object *image)
 {
    const char **ext, *exts[] =
    {
@@ -80,7 +82,7 @@ image_load(const char *name, const char *path, Evas_Object *image)
         for (theme = themes; *theme; theme++)
           {
              struct stat st;
-             unsigned int *i, sizes[] = { 24, 32, 48, 64, 128, 256, 0 };
+             unsigned int *i, sizes[] = { 16, 22, 24, 32, 36, 40, 48, 64, 72, 96, 128, 192, 256, 512, 0 };
 
              snprintf(buf, sizeof(buf), "%s/%s", path, *theme);
              if (stat(buf, &st)) continue;
@@ -96,12 +98,23 @@ image_load(const char *name, const char *path, Evas_Object *image)
                }
           }
      }
-   if (!e_util_icon_theme_set(image, name))
+   if (name && name[0] && e_util_icon_theme_set(image, name)) return;
+   if (imgdata)
+     {
+        Evas_Object *o;
+
+        o = evas_object_image_filled_add(evas_object_evas_get(image));
+        evas_object_image_alpha_set(o, 1);
+        evas_object_image_size_set(o, w, h);
+        evas_object_image_data_set(o, imgdata);
+        e_icon_image_object_set(image, o);
+     }
+   else
      e_util_icon_theme_set(image, "dialog-error");
 }
 
 static void
-_sub_item_clicked_cb(void *data, E_Menu *m __UNUSED__, E_Menu_Item *mi __UNUSED__)
+_sub_item_clicked_cb(void *data, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    E_DBusMenu_Item *item = data;
    e_dbusmenu_event_send(item, E_DBUSMENU_ITEM_EVENT_CLICKED);
@@ -162,7 +175,7 @@ _item_submenu_new(E_DBusMenu_Item *item, E_Menu_Item *mi)
 }
 
 void
-_clicked_item_cb(void *data, Evas *evas, Evas_Object *obj __UNUSED__, void *event)
+_clicked_item_cb(void *data, Evas *evas, Evas_Object *obj EINA_UNUSED, void *event)
 {
    Notifier_Item_Icon *ii = data;
    Evas_Event_Mouse_Down *ev = event;
@@ -184,7 +197,7 @@ _clicked_item_cb(void *data, Evas *evas, Evas_Object *obj __UNUSED__, void *even
    e_menu_post_deactivate_callback_set(m, _menu_post_deactivate, gadcon);
 
    zone = e_gadcon_zone_get(gadcon);
-   ecore_evas_pointer_xy_get(zone->comp->ee, &x, &y);
+   ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
    e_menu_activate_mouse(m, zone, x, y, 1, 1, E_MENU_POP_DIRECTION_DOWN, ev->timestamp);
    evas_event_feed_mouse_up(evas, ev->button,
                          EVAS_BUTTON_NONE, ev->timestamp, NULL);
@@ -203,6 +216,7 @@ image_scale(Instance_Notifier_Host *notifier_inst, Notifier_Item_Icon *ii)
    Evas_Coord sz;
    switch (systray_gadcon_get(notifier_inst->inst)->orient)
      {
+      case E_GADCON_ORIENT_FLOAT:
       case E_GADCON_ORIENT_HORIZ:
       case E_GADCON_ORIENT_TOP:
       case E_GADCON_ORIENT_BOTTOM:
@@ -210,7 +224,11 @@ image_scale(Instance_Notifier_Host *notifier_inst, Notifier_Item_Icon *ii)
       case E_GADCON_ORIENT_CORNER_TR:
       case E_GADCON_ORIENT_CORNER_BL:
       case E_GADCON_ORIENT_CORNER_BR:
-        sz = systray_gadcon_get(notifier_inst->inst)->shelf->h;
+        if (systray_gadcon_get(notifier_inst->inst)->shelf)
+          sz = systray_gadcon_get(notifier_inst->inst)->shelf->h;
+        else
+          evas_object_geometry_get(notifier_inst->inst->gcc->o_frame ?:
+            notifier_inst->inst->gcc->o_base, NULL, NULL, NULL, &sz);
         break;
 
       case E_GADCON_ORIENT_VERT:
@@ -221,7 +239,11 @@ image_scale(Instance_Notifier_Host *notifier_inst, Notifier_Item_Icon *ii)
       case E_GADCON_ORIENT_CORNER_LB:
       case E_GADCON_ORIENT_CORNER_RB:
       default:
-        sz = systray_gadcon_get(notifier_inst->inst)->shelf->w;
+        if (systray_gadcon_get(notifier_inst->inst)->shelf)
+          sz = systray_gadcon_get(notifier_inst->inst)->shelf->w;
+        else
+          evas_object_geometry_get(notifier_inst->inst->gcc->o_frame ?:
+            notifier_inst->inst->gcc->o_base, NULL, NULL, &sz, NULL);
         break;
      }
    sz = sz - 5;
@@ -261,7 +283,7 @@ jump_search:
      {
       case STATUS_ACTIVE:
         {
-           image_load(item->icon_name, item->icon_path, ii->icon);
+           image_load(item->icon_name, item->icon_path, item->imgdata, item->imgw, item->imgh, ii->icon);
            if (!evas_object_visible_get(ii->icon))
              {
                 systray_edje_box_append(host_inst->inst, ii->icon);
@@ -280,7 +302,7 @@ jump_search:
         }
       case STATUS_ATTENTION:
         {
-           image_load(item->attention_icon_name, item->icon_path, ii->icon);
+           image_load(item->attention_icon_name, item->icon_path, item->attnimgdata, item->attnimgw, item->attnimgh, ii->icon);
            if (!evas_object_visible_get(ii->icon))
              {
                 systray_edje_box_append(host_inst->inst, ii->icon);

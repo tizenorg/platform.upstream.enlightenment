@@ -60,7 +60,7 @@ struct _E_Config_Dialog_Data
 };
 
 E_Config_Dialog *
-e_int_config_desklock(Evas_Object *parent EINA_UNUSED, const char *params __UNUSED__)
+e_int_config_desklock(Evas_Object *parent EINA_UNUSED, const char *params EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
    E_Config_Dialog_View *v;
@@ -151,7 +151,8 @@ _fill_data(E_Config_Dialog_Data *cfdata)
 
    cfdata->bg_method_prev = cfdata->bg_method;
 #ifndef HAVE_WAYLAND_ONLY
-   cfdata->use_xscreensaver = ecore_x_screensaver_event_available_get();
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
+     cfdata->use_xscreensaver = ecore_x_screensaver_event_available_get();
 #endif
 
    cfdata->desklock_auth_method = e_config->desklock_auth_method;
@@ -193,7 +194,7 @@ _create_data(E_Config_Dialog *cfd)
 }
 
 static void
-_free_data(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_free_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    E_Config_Desklock_Background *bg;
    if (cfdata->bg_fsel)
@@ -238,23 +239,23 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
    ow = e_widget_radio_add(evas, _("Use System Authentication"), E_DESKLOCK_AUTH_METHOD_SYSTEM, rg);
    evas_object_smart_callback_add(ow, "changed", _login_method_change, cfdata);
    e_widget_list_object_append(ol, ow, 1, 1, 0.5);
-   ow = e_widget_radio_add(evas, _("Use Personal Screenlock Password"), E_DESKLOCK_AUTH_METHOD_PERSONAL, rg);
+   ow = e_widget_radio_add(evas, _("Use Personal Screenlock Password (insecure)"), E_DESKLOCK_AUTH_METHOD_PERSONAL, rg);
    evas_object_smart_callback_add(ow, "changed", _login_method_change, cfdata);
    e_widget_list_object_append(ol, ow, 1, 1, 0.5);
-   ow = e_widget_radio_add(evas, _("Use PIN"), E_DESKLOCK_AUTH_METHOD_PIN, rg);
+   ow = e_widget_radio_add(evas, _("Use PIN (insecure)"), E_DESKLOCK_AUTH_METHOD_PIN, rg);
    evas_object_smart_callback_add(ow, "changed", _login_method_change, cfdata);
    e_widget_list_object_append(ol, ow, 1, 1, 0.5);
    ow = e_widget_radio_add(evas, _("Use External Screenlock Command"), E_DESKLOCK_AUTH_METHOD_EXTERNAL, rg);
    evas_object_smart_callback_add(ow, "changed", _login_method_change, cfdata);
    e_widget_list_object_append(ol, ow, 1, 1, 0.5);
 
-   of = e_widget_framelist_add(evas, _("Personal Screenlock Password"), 0);
+   of = e_widget_framelist_add(evas, _("Personal Screenlock Password (insecure)"), 0);
    cfdata->passwd_entry = ow = e_widget_entry_add(cfd->dia->win, &(cfdata->desklock_personal_passwd), NULL, NULL, NULL);
    e_widget_entry_password_set(ow, 1);
    e_widget_framelist_object_append(of, ow);
    e_widget_list_object_append(ol, of, 1, 1, 0.5);
 
-   of = e_widget_framelist_add(evas, _("PIN Entry"), 0);
+   of = e_widget_framelist_add(evas, _("PIN Entry (insecure)"), 0);
    cfdata->pin_entry = ow = e_widget_entry_add(cfd->dia->win, &(cfdata->pin_str), NULL, NULL, NULL);
    e_widget_entry_password_set(ow, 1);
    e_widget_framelist_object_append(of, ow);
@@ -425,7 +426,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas, E_Config_Dialog_Data *cfdata)
 }
 
 static int
-_basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_basic_apply(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    const Eina_List *l;
    E_Config_Desklock_Background *cbg;
@@ -514,7 +515,7 @@ _basic_apply(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
 }
 
 static int
-_basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfdata)
+_basic_check_changed(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    Eina_List *l, *ll;
    E_Config_Desklock_Background *cbg;
@@ -601,7 +602,7 @@ _basic_check_changed(E_Config_Dialog *cfd __UNUSED__, E_Config_Dialog_Data *cfda
 }
 
 static void
-_cb_method_change(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_cb_method_change(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
    Eina_List *l;
@@ -749,7 +750,7 @@ _login_method_change(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 }
 
 static void
-_cb_login_change(void *data, Evas_Object *obj __UNUSED__)
+_cb_login_change(void *data, Evas_Object *obj EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 
@@ -758,7 +759,7 @@ _cb_login_change(void *data, Evas_Object *obj __UNUSED__)
 }
 
 static void
-_cb_bg_mouse_down(void *data, Evas *evas __UNUSED__, Evas_Object *obj, void *event __UNUSED__)
+_cb_bg_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj, void *event EINA_UNUSED)
 {
    E_Config_Dialog_Data *cfdata;
 

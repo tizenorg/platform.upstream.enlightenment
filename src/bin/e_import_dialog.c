@@ -15,7 +15,7 @@ _fsel_path_save(E_Import_Dialog *id)
 }
 
 static void
-_fsel_cb_close(void *data, E_Dialog *dia __UNUSED__)
+_fsel_cb_close(void *data, E_Dialog *dia EINA_UNUSED)
 {
    E_Import_Dialog *id = data;
 
@@ -38,7 +38,7 @@ _import_ok(void *data, void *data2)
 }
 
 static void
-_fsel_cb_ok(void *data, E_Dialog *dia __UNUSED__)
+_fsel_cb_ok(void *data, E_Dialog *dia EINA_UNUSED)
 {
    E_Import_Dialog *id;
    const char *path, *p;
@@ -132,7 +132,7 @@ _e_import_dialog_win_del(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_
 
 //////////////////////////////////////////////////////////////////////////////////
 
-EAPI E_Import_Dialog *
+E_API E_Import_Dialog *
 e_import_dialog_show(Evas_Object *parent EINA_UNUSED, const char *dev, const char *path, Ecore_End_Cb ok, Ecore_Cb cancel)
 {
    Evas *evas;
@@ -188,7 +188,7 @@ e_import_dialog_show(Evas_Object *parent EINA_UNUSED, const char *dev, const cha
     */
    ofm = e_widget_fsel_add(evas, fdev, fpath, NULL, NULL, (void *)_fsel_cb_ok, id,
                            NULL, NULL, 1);
-   e_widget_fsel_window_object_set(ofm, E_OBJECT(dia->win));
+   e_widget_fsel_window_set(ofm, dia->win);
    id->fsel_obj = ofm;
    e_widget_size_min_get(ofm, &w, &h);
    e_dialog_content_set(dia, ofm, w, h);

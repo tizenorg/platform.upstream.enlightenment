@@ -62,21 +62,21 @@ _e_smart_label_change(void *data)
 }
 
 /* externally accessible functions */
-EAPI Evas_Object *
+E_API Evas_Object *
 e_slidesel_add(Evas *evas)
 {
    _e_smart_init();
    return evas_object_smart_add(evas, _e_smart);
 }
 
-EAPI void
+E_API void
 e_slidesel_item_distance_set(Evas_Object *obj, Evas_Coord dist)
 {
    API_ENTRY return;
    e_slidecore_item_distance_set(sd->slide_obj, dist);
 }
 
-EAPI void
+E_API void
 e_slidesel_item_add(Evas_Object *obj, const char *label, const char *icon, void (*func)(void *data), void *data)
 {
    E_Smart_Item *it;
@@ -93,7 +93,7 @@ e_slidesel_item_add(Evas_Object *obj, const char *label, const char *icon, void 
    e_slidecore_item_add(sd->slide_obj, label, icon, _e_smart_label_change, it);
 }
 
-EAPI void
+E_API void
 e_slidesel_jump(Evas_Object *obj, int num)
 {
    API_ENTRY return;
@@ -102,7 +102,7 @@ e_slidesel_jump(Evas_Object *obj, int num)
 
 /* local subsystem functions */
 static void
-_e_smart_event_mouse_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
+_e_smart_event_mouse_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evas_Event_Mouse_Down *ev;
    E_Smart_Data *sd;
@@ -121,7 +121,7 @@ _e_smart_event_mouse_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNU
 }
 
 static void
-_e_smart_event_mouse_up(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
+_e_smart_event_mouse_up(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evas_Event_Mouse_Down *ev;
    E_Smart_Data *sd;
@@ -151,7 +151,7 @@ _e_smart_event_mouse_up(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSE
 }
 
 static void
-_e_smart_event_mouse_move(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
+_e_smart_event_mouse_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evas_Event_Mouse_Move *ev;
    E_Smart_Data *sd;
@@ -174,7 +174,7 @@ _e_smart_event_mouse_move(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNU
 }
 
 static void
-_e_smart_event_key_down(void *data __UNUSED__, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_smart_event_key_down(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
 /*
    Evas_Event_Key_Down *ev;

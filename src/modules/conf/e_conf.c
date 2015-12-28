@@ -11,7 +11,6 @@ struct _E_Configure
 {
    E_Object             e_obj_inherit;
 
-   E_Comp              *comp;
    Evas_Object         *win;
    Evas                *evas;
    Evas_Object         *edje;
@@ -61,7 +60,7 @@ static Eina_Bool             _e_configure_module_update_cb(void *data, int type,
 static E_Configure *_e_configure = NULL;
 
 void
-e_configure_show(E_Comp *comp, const char *params)
+e_configure_show(const char *params)
 {
    E_Configure *eco;
    Evas_Object *o;
@@ -71,26 +70,15 @@ e_configure_show(E_Comp *comp, const char *params)
 
    if (_e_configure)
      {
-        E_Zone *z, *z2;
         const Eina_List *l;
         void *it;
         int x = 0;
 
         eco = _e_configure;
         ec = e_win_client_get(eco->win);
-        z = e_util_zone_current_get(e_manager_current_get());
-        z2 = ec->zone;
         evas_object_show(eco->win);
         elm_win_raise(eco->win);
-        if (z->comp == z2->comp)
-          e_client_desk_set(ec, e_desk_current_get(z));
-        else
-          {
-             if (!ec->sticky)
-               e_desk_show(ec->desk);
-             ecore_evas_pointer_warp(z2->comp->ee,
-                                  z2->x + (z2->w / 2), z2->y + (z2->h / 2));
-          }
+        e_client_desk_set(ec, e_desk_current_get(ec->zone));
         e_client_unshade(ec, ec->shade_dir);
         if ((e_config->focus_setting == E_FOCUS_NEW_DIALOG) ||
             (e_config->focus_setting == E_FOCUS_NEW_WINDOW))
@@ -116,7 +104,6 @@ e_configure_show(E_Comp *comp, const char *params)
         return;
      }
    evas_object_data_set(eco->win, "e_conf_win", eco);
-   eco->comp = comp;
    eco->evas = evas_object_evas_get(eco->win);
 
    /* Event Handler for Module Updates */
@@ -241,7 +228,7 @@ _e_configure_cb_del_req(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
 }
 
 static void
-_e_configure_cb_close(void *data, void *data2 __UNUSED__)
+_e_configure_cb_close(void *data, void *data2 EINA_UNUSED)
 {
    E_Configure *eco;
 
@@ -280,7 +267,7 @@ _e_configure_category_add(E_Configure *eco, const char *label, const char *icon_
 }
 
 static void
-_e_configure_category_cb(void *data, void *data2 __UNUSED__)
+_e_configure_category_cb(void *data, void *data2 EINA_UNUSED)
 {
    E_Configure_Category *cat;
    E_Configure *eco;
@@ -378,7 +365,7 @@ _e_configure_focus_cb(void *data, Evas_Object *obj)
 }
 
 static void
-_e_configure_keydown_cb(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event)
+_e_configure_keydown_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    Evas_Event_Key_Down *ev;
    E_Configure *eco = data;
@@ -490,7 +477,7 @@ _e_configure_fill_cat_list(void *data, const char *sel)
 }
 
 static Eina_Bool
-_e_configure_module_update_cb(void *data, int type __UNUSED__, void *event __UNUSED__)
+_e_configure_module_update_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
    E_Configure *eco;
    int sel = 0;

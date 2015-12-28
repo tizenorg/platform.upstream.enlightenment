@@ -10,7 +10,7 @@ static void _e_obj_dialog_cb_close(void *data, Evas_Object *obj, const char *emi
 /* externally accessible functions */
 
 static void
-_key_down_cb(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event)
+_key_down_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    Evas_Event_Key_Down *ev = event;
 
@@ -18,8 +18,8 @@ _key_down_cb(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *
      _e_obj_dialog_cb_delete(data, NULL, NULL, NULL);
 }
 
-EAPI E_Obj_Dialog *
-e_obj_dialog_new(E_Comp *c EINA_UNUSED, char *title, char *class_name, char *class_class)
+E_API E_Obj_Dialog *
+e_obj_dialog_new(char *title, char *class_name, char *class_class)
 {
    E_Obj_Dialog *od;
    Evas_Object *o;
@@ -50,18 +50,18 @@ e_obj_dialog_new(E_Comp *c EINA_UNUSED, char *title, char *class_name, char *cla
    if (!kg)
      fprintf(stderr, "ERROR: unable to redirect \"Escape\" key events to object %p.\n", o);
    evas_object_event_callback_add(o, EVAS_CALLBACK_KEY_DOWN,
-                                  _key_down_cb, od->win);
+                                  _key_down_cb, od);
 
    return od;
 }
 
-EAPI void
+E_API void
 e_obj_dialog_cb_delete_set(E_Obj_Dialog *od, void (*func)(E_Obj_Dialog *od))
 {
    od->cb_delete = func;
 }
 
-EAPI void
+E_API void
 e_obj_dialog_icon_set(E_Obj_Dialog *od, char *icon)
 {
    E_OBJECT_CHECK(od);
@@ -69,7 +69,7 @@ e_obj_dialog_icon_set(E_Obj_Dialog *od, char *icon)
    e_win_client_icon_set(od->win, icon);
  }
 
-EAPI void
+E_API void
 e_obj_dialog_show(E_Obj_Dialog *od)
 {
    Evas_Coord w, h, mw, mh;
@@ -96,7 +96,7 @@ e_obj_dialog_show(E_Obj_Dialog *od)
    evas_object_show(od->win);
 }
 
-EAPI void
+E_API void
 e_obj_dialog_obj_part_text_set(E_Obj_Dialog *od, const char *part, const char *text)
 {
    E_OBJECT_CHECK(od);
@@ -104,7 +104,7 @@ e_obj_dialog_obj_part_text_set(E_Obj_Dialog *od, const char *part, const char *t
    edje_object_part_text_set(od->bg_object, part, text);
 }
 
-EAPI void
+E_API void
 e_obj_dialog_obj_theme_set(E_Obj_Dialog *od, char *theme_cat, char *theme_obj)
 {
    E_OBJECT_CHECK(od);
@@ -135,7 +135,7 @@ _e_obj_dialog_cb_delete(E_Obj_Dialog *od, Evas *e EINA_UNUSED, Evas_Object *obj 
 }
 
 static void
-_e_obj_dialog_cb_close(void *data, Evas_Object *obj __UNUSED__, const char *emission __UNUSED__, const char *source __UNUSED__)
+_e_obj_dialog_cb_close(void *data, Evas_Object *obj EINA_UNUSED, const char *emission EINA_UNUSED, const char *source EINA_UNUSED)
 {
    E_Obj_Dialog *od;
 

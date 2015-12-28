@@ -8,7 +8,7 @@
                                              "<br>Press <hilight>Escape</hilight> to abort.")
 
 static Eina_Bool
-_e_grab_dialog_key_handler(void *data, int type __UNUSED__, Ecore_Event_Key *ev)
+_e_grab_dialog_key_handler(void *data, int type EINA_UNUSED, Ecore_Event_Key *ev)
 {
    E_Grab_Dialog *eg = data;
 
@@ -33,7 +33,7 @@ _e_grab_dialog_key_handler(void *data, int type __UNUSED__, Ecore_Event_Key *ev)
 }
 
 static Eina_Bool
-_e_grab_dialog_wheel_handler(void *data, int type __UNUSED__, Ecore_Event_Mouse_Wheel *ev)
+_e_grab_dialog_wheel_handler(void *data, int type EINA_UNUSED, Ecore_Event_Mouse_Wheel *ev)
 {
    E_Grab_Dialog *eg = data;
 
@@ -49,7 +49,7 @@ _e_grab_dialog_wheel_handler(void *data, int type __UNUSED__, Ecore_Event_Mouse_
 }
 
 static Eina_Bool
-_e_grab_dialog_mouse_handler(void *data, int type __UNUSED__, Ecore_Event_Mouse_Button *ev)
+_e_grab_dialog_mouse_handler(void *data, int type EINA_UNUSED, Ecore_Event_Mouse_Button *ev)
 {
    E_Grab_Dialog *eg = data;
 
@@ -73,8 +73,11 @@ _e_grab_dialog_free(E_Grab_Dialog *eg)
      {
         e_grabinput_release(eg->grab_win, eg->grab_win);
 #ifndef HAVE_WAYLAND_ONLY
-        ecore_x_window_free(eg->grab_win);
+        if (e_comp->comp_type == E_PIXMAP_TYPE_X)
+          ecore_x_window_free(eg->grab_win);
+        else
 #endif
+          e_comp_ungrab_input(1, 1);
      }
    E_FREE_LIST(eg->handlers, ecore_event_handler_del);
 
@@ -96,7 +99,7 @@ _e_grab_dialog_dia_del(void *data)
    e_object_del(dia->data);
 }
 
-EAPI E_Grab_Dialog *
+E_API E_Grab_Dialog *
 e_grab_dialog_show(Evas_Object *parent, Eina_Bool is_mouse, Ecore_Event_Handler_Cb key, Ecore_Event_Handler_Cb mouse, Ecore_Event_Handler_Cb wheel, const void *data)
 {
    E_Grab_Dialog *eg;
@@ -130,10 +133,18 @@ e_grab_dialog_show(Evas_Object *parent, Eina_Bool is_mouse, Ecore_Event_Handler_
    evas_object_event_callback_add(eg->dia->win, EVAS_CALLBACK_DEL, _e_grab_dialog_delete, eg);
 
 #ifndef HAVE_WAYLAND_ONLY
-   eg->grab_win = ecore_x_window_input_new(e_comp->man->root, 0, 0, 1, 1);
-   ecore_x_window_show(eg->grab_win);
-   e_grabinput_get(eg->grab_win, 0, eg->grab_win);
+   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
+     {
+        eg->grab_win = ecore_x_window_input_new(e_comp->root, 0, 0, 1, 1);
+        ecore_x_window_show(eg->grab_win);
+        e_grabinput_get(eg->grab_win, 0, eg->grab_win);
+     }
+   else
 #endif
+     {
+        e_comp_grab_input(1, 1);
+        eg->grab_win = e_comp->ee_win;
+     }
 
    eg->key = key;
    eg->mouse = mouse;

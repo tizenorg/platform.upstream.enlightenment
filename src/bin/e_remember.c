@@ -3,8 +3,8 @@
 #define REMEMBER_HIERARCHY 1
 #define REMEMBER_SIMPLE    0
 
-EAPI int E_EVENT_REMEMBER_UPDATE = -1;
-EAPI E_Config_DD *e_remember_edd = NULL; //created in e_config.c
+E_API int E_EVENT_REMEMBER_UPDATE = -1;
+E_API E_Config_DD *e_remember_edd = NULL; //created in e_config.c
 
 typedef struct _E_Remember_List E_Remember_List;
 
@@ -45,7 +45,16 @@ e_remember_init(E_Startup_Mode mode)
         EINA_LIST_FOREACH(e_config->remembers, l, rem)
           {
              if ((rem->apply & E_REMEMBER_APPLY_RUN) && (rem->prop.command))
-               e_util_head_exec(rem->prop.head, rem->prop.command);
+               {
+                  if (!ecore_exe_run(rem->prop.command, NULL))
+                    {
+                       e_util_dialog_show(_("Run Error"),
+                                          _("Enlightenment was unable to fork a child process:<br>"
+                                            "<br>"
+                                            "%s<br>"),
+                                          rem->prop.command);
+                    }
+               }
           }
      }
    E_EVENT_REMEMBER_UPDATE = ecore_event_type_new();
@@ -86,7 +95,7 @@ e_remember_shutdown(void)
    return 1;
 }
 
-EAPI void
+E_API void
 e_remember_internal_save(void)
 {
    const Eina_List *l;
@@ -129,7 +138,7 @@ e_remember_internal_save(void)
 }
 
 static Eina_Bool
-_e_remember_restore_idler_cb(void *d __UNUSED__)
+_e_remember_restore_idler_cb(void *d EINA_UNUSED)
 {
    E_Remember *rem;
    E_Action *act_fm = NULL, *act;
@@ -190,7 +199,7 @@ _e_remember_restore_idler_cb(void *d __UNUSED__)
 }
 
 static Eina_Bool
-_e_remember_restore_cb(void *data __UNUSED__, int type __UNUSED__, void *event __UNUSED__)
+_e_remember_restore_cb(void *data EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
    handlers = eina_list_free(handlers);
    if (!remembers->list) return ECORE_CALLBACK_PASS_ON;
@@ -199,7 +208,7 @@ _e_remember_restore_cb(void *data __UNUSED__, int type __UNUSED__, void *event _
    return ECORE_CALLBACK_PASS_ON;
 }
 
-EAPI E_Remember *
+E_API E_Remember *
 e_remember_new(void)
 {
    E_Remember *rem;
@@ -210,14 +219,14 @@ e_remember_new(void)
    return rem;
 }
 
-EAPI int
+E_API int
 e_remember_usable_get(E_Remember *rem)
 {
    if ((rem->apply_first_only) && (rem->used_count > 0)) return 0;
    return 1;
 }
 
-EAPI void
+E_API void
 e_remember_use(E_Remember *rem)
 {
    rem->used_count++;
@@ -236,13 +245,13 @@ e_remember_use(E_Remember *rem)
      }
 }
 
-EAPI void
+E_API void
 e_remember_unuse(E_Remember *rem)
 {
    rem->used_count--;
 }
 
-EAPI void
+E_API void
 e_remember_del(E_Remember *rem)
 {
    const Eina_List *l;
@@ -259,7 +268,7 @@ e_remember_del(E_Remember *rem)
    _e_remember_free(rem);
 }
 
-EAPI E_Remember *
+E_API E_Remember *
 e_remember_find_usable(E_Client *ec)
 {
    E_Remember *rem;
@@ -268,7 +277,7 @@ e_remember_find_usable(E_Client *ec)
    return rem;
 }
 
-EAPI E_Remember *
+E_API E_Remember *
 e_remember_find(E_Client *ec)
 {
    E_Remember *rem;
@@ -277,7 +286,7 @@ e_remember_find(E_Client *ec)
    return rem;
 }
 
-EAPI void
+E_API void
 e_remember_match_update(E_Remember *rem)
 {
    int max_count = 0;
@@ -294,7 +303,7 @@ e_remember_match_update(E_Remember *rem)
      {
         /* The number of matches for this remember has changed so we
          * need to remove from list and insert back into the appropriate
-         * loction. */
+         * location. */
         Eina_List *l = NULL;
         E_Remember *r;
 
@@ -313,7 +322,7 @@ e_remember_match_update(E_Remember *rem)
      }
 }
 
-EAPI int
+E_API int
 e_remember_default_match_set(E_Remember *rem, E_Client *ec)
 {
    const char *title, *clasz, *name, *role;
@@ -364,9 +373,13 @@ e_remember_default_match_set(E_Remember *rem, E_Client *ec)
    return match;
 }
 
-EAPI void
+E_API void
 e_remember_update(E_Client *ec)
 {
+#ifdef HAVE_WAYLAND
+   /* Use this as e_remeber_update is called in all the right places already */
+   e_uuid_store_entry_update(ec->uuid, ec);
+#endif
    if (ec->new_client) return;
    if (!ec->remember) return;
    if (ec->remember->keep_settings) return;
@@ -378,6 +391,7 @@ static void
 _e_remember_event_free(void *d EINA_UNUSED, void *event)
 {
    E_Event_Remember_Update *ev = event;
+   UNREFD(ev->ec, 10);
    e_object_unref(E_OBJECT(ev->ec));
    free(ev);
 }
@@ -451,7 +465,6 @@ _e_remember_update(E_Client *ec, E_Remember *rem)
    if (rem->apply & E_REMEMBER_APPLY_ZONE)
      {
         rem->prop.zone = ec->zone->num;
-        rem->prop.head = ec->zone->comp->num;
      }
    if (rem->apply & E_REMEMBER_APPLY_SKIP_WINLIST)
      rem->prop.skip_winlist = ec->user_skip_winlist;
@@ -485,6 +498,7 @@ _e_remember_update(E_Client *ec, E_Remember *rem)
       ev = malloc(sizeof(E_Event_Remember_Update));
       if (!ev) return;
       ev->ec = ec;
+      REFD(ec, 10);
       e_object_ref(E_OBJECT(ec));
       ecore_event_add(E_EVENT_REMEMBER_UPDATE, ev, _e_remember_event_free, NULL);
    }
@@ -606,7 +620,7 @@ _e_remember_free(E_Remember *rem)
 }
 
 static void
-_e_remember_cb_hook_eval_post_new_client(void *data __UNUSED__, E_Client *ec)
+_e_remember_cb_hook_eval_post_new_client(void *data EINA_UNUSED, E_Client *ec)
 {
    // remember only when window was modified
    // if (!ec->new_client) return;
@@ -642,7 +656,7 @@ _e_remember_cb_hook_eval_post_new_client(void *data __UNUSED__, E_Client *ec)
 }
 
 static void
-_e_remember_cb_hook_pre_post_fetch(void *data __UNUSED__, E_Client *ec)
+_e_remember_cb_hook_pre_post_fetch(void *data EINA_UNUSED, E_Client *ec)
 {
    E_Remember *rem = NULL;
    int temporary = 0;
@@ -686,7 +700,7 @@ _e_remember_cb_hook_pre_post_fetch(void *data __UNUSED__, E_Client *ec)
      {
         E_Zone *zone;
 
-        zone = e_comp_zone_number_get(ec->zone->comp, rem->prop.zone);
+        zone = e_comp_zone_number_get(rem->prop.zone);
         if (zone)
           e_client_zone_set(ec, zone);
      }
@@ -729,11 +743,11 @@ _e_remember_cb_hook_pre_post_fetch(void *data __UNUSED__, E_Client *ec)
                }
              if (ec->icccm.min_w > ec->client.w)
                ec->client.w = ec->icccm.min_w;
-             if (ec->icccm.max_w < ec->client.w)
+             if ((ec->icccm.max_w > 0) && (ec->icccm.max_w < ec->client.w))
                ec->client.w = ec->icccm.max_w;
              if (ec->icccm.min_h > ec->client.h)
                ec->client.h = ec->icccm.min_h;
-             if (ec->icccm.max_h < ec->client.h)
+             if ((ec->icccm.max_h > 0) && (ec->icccm.max_h < ec->client.h))
                ec->client.h = ec->icccm.max_h;
           }
         e_comp_object_frame_wh_adjust(ec->frame, ec->client.w, ec->client.h, &ec->w, &ec->h);

@@ -19,13 +19,13 @@ static void _e_maximize_client_rects_fill_both(E_Client *ec, Eina_List *rects, i
 static void _e_maximize_client_rects_fill_horiz(E_Client *ec, Eina_List *rects, int *x1, int *x2, int *bx, int *by, int *bw, int *bh);
 static void _e_maximize_client_rects_fill_vert(E_Client *ec, Eina_List *rects, int *yy1, int *y2, int *bx, int *by, int *bw, int *bh);
 
-EAPI void
+E_API void
 e_maximize_client_shelf_fit(E_Client *ec, int *x1, int *yy1, int *x2, int *y2, E_Maximize dir)
 {
    e_maximize_client_shelf_fill(ec, x1, yy1, x2, y2, dir);
 }
 
-EAPI void
+E_API void
 e_maximize_client_dock_fit(E_Client *ec, int *x1, int *yy1, int *x2, int *y2)
 {
    E_Client *ec2;
@@ -43,7 +43,7 @@ e_maximize_client_dock_fit(E_Client *ec, int *x1, int *yy1, int *x2, int *y2)
    cy2 = ec->zone->y + ec->zone->h;
    if (y2) cy2 = *y2;
 
-   E_CLIENT_FOREACH(ec->comp, ec2)
+   E_CLIENT_FOREACH(ec2)
      {
         enum
         {
@@ -123,7 +123,7 @@ e_maximize_client_dock_fit(E_Client *ec, int *x1, int *yy1, int *x2, int *y2)
    if (y2) *y2 = cy2;
 }
 
-EAPI void
+E_API void
 e_maximize_client_shelf_fill(E_Client *ec, int *x1, int *yy1, int *x2, int *y2, E_Maximize dir)
 {
    Eina_List *l, *rects = NULL;
@@ -145,14 +145,14 @@ e_maximize_client_shelf_fill(E_Client *ec, int *x1, int *yy1, int *x2, int *y2, 
      }
 }
 
-EAPI void
+E_API void
 e_maximize_client_client_fill(E_Client *ec, int *x1, int *yy1, int *x2, int *y2, E_Maximize dir)
 {
    Eina_List *rects = NULL;
    E_Maximize_Rect *r;
    E_Client *ec2;
 
-   E_CLIENT_FOREACH(ec->comp, ec2)
+   E_CLIENT_FOREACH(ec2)
      {
         if ((ec2->zone != ec->zone) || (ec == ec2) || (ec2->desk != ec->desk && !ec2->sticky) || (ec2->iconic))
           continue;
@@ -178,12 +178,14 @@ _e_maximize_client_rects_fill(E_Client *ec, Eina_List *rects, int *x1, int *yy1,
 
         bx = E_CLAMP(ec->x, ec->zone->x, ec->zone->x + ec->zone->w);
         by = E_CLAMP(ec->y, ec->zone->y, ec->zone->y + ec->zone->h);
-        bw = ec->w;
-        bh = ec->h;
+        bw = E_CLAMP(ec->w, 0, ec->zone->w);
+        bh = E_CLAMP(ec->h, 0, ec->zone->h);
 
         if ((dir & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_HORIZONTAL)
           _e_maximize_client_rects_fill_horiz(ec, rects, x1, x2, &bx, &by, &bw, &bh);
-        else if ((dir & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_VERTICAL)
+        else if (((dir & E_MAXIMIZE_DIRECTION) == E_MAXIMIZE_VERTICAL) ||
+                 ((dir & E_MAXIMIZE_LEFT) == E_MAXIMIZE_LEFT) ||
+                 ((dir & E_MAXIMIZE_RIGHT) == E_MAXIMIZE_RIGHT))
           _e_maximize_client_rects_fill_vert(ec, rects, yy1, y2, &bx, &by, &bw, &bh);
      }
 }

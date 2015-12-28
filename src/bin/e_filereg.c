@@ -14,9 +14,9 @@ struct _Filereg_Item
    int         ref_count;
 };
 
-static Eina_Bool _filereg_hash_cb_free(const Eina_Hash *hash __UNUSED__,
-                                       const void *key __UNUSED__,
-                                       void *data, void *fdata __UNUSED__);
+static Eina_Bool _filereg_hash_cb_free(const Eina_Hash *hash EINA_UNUSED,
+                                       const void *key EINA_UNUSED,
+                                       void *data, void *fdata EINA_UNUSED);
 
 /* Externally accessible functions */
 EINTERN int
@@ -36,7 +36,7 @@ e_filereg_shutdown(void)
    return 1;
 }
 
-EAPI int
+E_API int
 e_filereg_register(const char *path)
 {
    Filereg_Item *fi = NULL;
@@ -55,7 +55,7 @@ e_filereg_register(const char *path)
    return 1;
 }
 
-EAPI void
+E_API void
 e_filereg_deregister(const char *path)
 {
    Filereg_Item *fi = NULL;
@@ -73,7 +73,7 @@ e_filereg_deregister(const char *path)
      }
 }
 
-EAPI Eina_Bool
+E_API Eina_Bool
 e_filereg_file_protected(const char *path)
 {
    if (eina_hash_find(_e_filereg, path)) return EINA_TRUE;
@@ -82,8 +82,8 @@ e_filereg_file_protected(const char *path)
 
 /* Private Functions */
 static Eina_Bool
-_filereg_hash_cb_free(const Eina_Hash *hash __UNUSED__, const void *key __UNUSED__,
-                      void *data, void *fdata __UNUSED__)
+_filereg_hash_cb_free(const Eina_Hash *hash EINA_UNUSED, const void *key EINA_UNUSED,
+                      void *data, void *fdata EINA_UNUSED)
 {
    Filereg_Item *fi;
 

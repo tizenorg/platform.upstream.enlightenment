@@ -23,6 +23,8 @@ struct _E_Config_Dialog_Data
    Evas_Object *rel_to_obj;
    Evas_Object *rel_align_obj;
    int restore;
+   int hotplug;
+   int acpi;
    int screen;
 };
 
@@ -79,6 +81,8 @@ _create_data(E_Config_Dialog *cfd EINA_UNUSED)
 
    if (!(cfdata = E_NEW(E_Config_Dialog_Data, 1))) return NULL;
    cfdata->restore = e_randr2_cfg->restore;
+   cfdata->hotplug = !e_randr2_cfg->ignore_hotplug_events;
+   cfdata->acpi = !e_randr2_cfg->ignore_acpi_events;
    return cfdata;
 }
 
@@ -105,6 +109,22 @@ _cb_restore_changed(void *data EINA_UNUSED, Evas_Object *obj, void *event EINA_U
 {
    E_Config_Dialog_Data *cfdata = data;
    cfdata->restore = elm_check_state_get(obj);
+   e_config_dialog_changed_set(cfdata->cfd, EINA_TRUE);
+}
+
+static void
+_cb_hotplug_changed(void *data EINA_UNUSED, Evas_Object *obj, void *event EINA_UNUSED)
+{
+   E_Config_Dialog_Data *cfdata = data;
+   cfdata->hotplug = elm_check_state_get(obj);
+   e_config_dialog_changed_set(cfdata->cfd, EINA_TRUE);
+}
+
+static void
+_cb_acpi_changed(void *data EINA_UNUSED, Evas_Object *obj, void *event EINA_UNUSED)
+{
+   E_Config_Dialog_Data *cfdata = data;
+   cfdata->acpi = elm_check_state_get(obj);
    e_config_dialog_changed_set(cfdata->cfd, EINA_TRUE);
 }
 
@@ -223,7 +243,7 @@ _basic_screen_info_fill(E_Config_Dialog_Data *cfdata, E_Config_Randr2_Screen *cs
              snprintf(buf, sizeof(buf), "%ix%i @ %1.2fHz", m->w, m->h, m->refresh);
              it = elm_list_item_append(cfdata->modes_obj, buf, NULL, NULL, _cb_mode_set, mode_cbdata);
              cfdata->freelist = eina_list_append(cfdata->freelist, mode_cbdata);
-             printf("mode add %p %p %p\n", mode_cbdata, cfdata->modes_obj, it);
+             /* printf("mode add %p %p %p\n", mode_cbdata, cfdata->modes_obj, it); */
              if ((cs->mode_w == m->w) && (cs->mode_h == m->h) &&
                  (cs->mode_refresh == m->refresh))
                it_sel = it;
@@ -290,17 +310,17 @@ _basic_screen_info_fill(E_Config_Dialog_Data *cfdata, E_Config_Randr2_Screen *cs
    elm_slider_value_set(cfdata->priority_obj, cs->priority);
 
    if (cs->rel_mode == E_RANDR2_RELATIVE_NONE)
-     elm_object_text_set(cfdata->rel_mode_obj, "None");
+     elm_object_text_set(cfdata->rel_mode_obj, _("None"));
    else if (cs->rel_mode == E_RANDR2_RELATIVE_CLONE)
-     elm_object_text_set(cfdata->rel_mode_obj, "Clone");
+     elm_object_text_set(cfdata->rel_mode_obj, _("Clone"));
    else if (cs->rel_mode == E_RANDR2_RELATIVE_TO_LEFT)
-     elm_object_text_set(cfdata->rel_mode_obj, "Left of");
+     elm_object_text_set(cfdata->rel_mode_obj, _("Left of"));
    else if (cs->rel_mode == E_RANDR2_RELATIVE_TO_RIGHT)
-     elm_object_text_set(cfdata->rel_mode_obj, "Right of");
+     elm_object_text_set(cfdata->rel_mode_obj, _("Right of"));
    else if (cs->rel_mode == E_RANDR2_RELATIVE_TO_ABOVE)
-     elm_object_text_set(cfdata->rel_mode_obj, "Above");
+     elm_object_text_set(cfdata->rel_mode_obj, _("Above"));
    else if (cs->rel_mode == E_RANDR2_RELATIVE_TO_BELOW)
-     elm_object_text_set(cfdata->rel_mode_obj, "Below");
+     elm_object_text_set(cfdata->rel_mode_obj, _("Below"));
    else
      elm_object_text_set(cfdata->rel_mode_obj, "???");
 
@@ -370,8 +390,11 @@ _cb_rel_to_set(void *data, Evas_Object *obj, void *event)
         if (it == event)
           {
              E_Config_Randr2_Screen *cs2 = _config_screen_n_find(cfdata, i);
-             printf("find cs = %p\n", cs2);
-             printf("cs id = %s\n", cs2->id);
+             if (cs2)
+               {
+                  printf("find cs = %p\n", cs2);
+                  printf("cs id = %s\n", cs2->id);
+               }
              if (cs2 == cs) return;
              if (cs2)
                {
@@ -410,7 +433,7 @@ _cb_rel_mode_none(void *data, Evas_Object *obj, void *event EINA_UNUSED)
    E_Config_Randr2_Screen *cs = _config_screen_find(cfdata);
    if (!cs) return;
    cs->rel_mode = E_RANDR2_RELATIVE_NONE;
-   elm_object_text_set(obj, "None");
+   elm_object_text_set(obj, _("None"));
    e_config_dialog_changed_set(cfdata->cfd, EINA_TRUE);
 }
 
@@ -421,7 +444,7 @@ _cb_rel_mode_clone(void *data, Evas_Object *obj, void *event EINA_UNUSED)
    E_Config_Randr2_Screen *cs = _config_screen_find(cfdata);
    if (!cs) return;
    cs->rel_mode = E_RANDR2_RELATIVE_CLONE;
-   elm_object_text_set(obj, "Clone");
+   elm_object_text_set(obj, _("Clone"));
    e_config_dialog_changed_set(cfdata->cfd, EINA_TRUE);
 }
 
@@ -432,7 +455,7 @@ _cb_rel_mode_left_of(void *data, Evas_Object *obj, void *event EINA_UNUSED)
    E_Config_Randr2_Screen *cs = _config_screen_find(cfdata);
    if (!cs) return;
    cs->rel_mode = E_RANDR2_RELATIVE_TO_LEFT;
-   elm_object_text_set(obj, "Left of");
+   elm_object_text_set(obj, _("Left of"));
    e_config_dialog_changed_set(cfdata->cfd, EINA_TRUE);
 }
 
@@ -443,7 +466,7 @@ _cb_rel_mode_right_of(void *data, Evas_Object *obj, void *event EINA_UNUSED)
    E_Config_Randr2_Screen *cs = _config_screen_find(cfdata);
    if (!cs) return;
    cs->rel_mode = E_RANDR2_RELATIVE_TO_RIGHT;
-   elm_object_text_set(obj, "Right of");
+   elm_object_text_set(obj, _("Right of"));
    e_config_dialog_changed_set(cfdata->cfd, EINA_TRUE);
 }
 
@@ -454,7 +477,7 @@ _cb_rel_mode_above(void *data, Evas_Object *obj, void *event EINA_UNUSED)
    E_Config_Randr2_Screen *cs = _config_screen_find(cfdata);
    if (!cs) return;
    cs->rel_mode = E_RANDR2_RELATIVE_TO_ABOVE;
-   elm_object_text_set(obj, "Above");
+   elm_object_text_set(obj, _("Above"));
    e_config_dialog_changed_set(cfdata->cfd, EINA_TRUE);
 }
 
@@ -465,7 +488,7 @@ _cb_rel_mode_below(void *data, Evas_Object *obj, void *event EINA_UNUSED)
    E_Config_Randr2_Screen *cs = _config_screen_find(cfdata);
    if (!cs) return;
    cs->rel_mode = E_RANDR2_RELATIVE_TO_BELOW;
-   elm_object_text_set(obj, "Below");
+   elm_object_text_set(obj, _("Below"));
    e_config_dialog_changed_set(cfdata->cfd, EINA_TRUE);
 }
 
@@ -486,6 +509,7 @@ _cb_enabled_changed(void *data, Evas_Object *obj, void *event EINA_UNUSED)
    E_Config_Randr2_Screen *cs = _config_screen_find(cfdata);
    if (!cs) return;
    cs->enabled = elm_check_state_get(obj);
+   printf("RR: enabled = %i\n", cs->enabled);
    e_config_dialog_changed_set(cfdata->cfd, EINA_TRUE);
 }
 
@@ -493,7 +517,7 @@ static Evas_Object *
 _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data *cfdata)
 {
    Evas_Object *win = cfd->dia->win;
-   Evas_Object *o, *bx, *tb;
+   Evas_Object *o, *bx, *tb, *bx2;
    Eina_List *l;
    E_Randr2_Screen *s, *first = NULL;
    E_Config_Randr2_Screen *first_cfg = NULL;
@@ -517,7 +541,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
    o = elm_hoversel_add(win);
    evas_object_size_hint_weight_set(o, 0.0, 0.0);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.5);
-   elm_object_text_set(o, "Outputs");
+   elm_object_text_set(o, _("Outputs"));
    cfdata->screens = NULL;
    cfdata->screen_items = NULL;
    i = 0;
@@ -584,7 +608,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
    o = elm_check_add(win);
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, 0.0);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.5);
-   elm_object_text_set(o, "Laptop lid");
+   elm_object_text_set(o, _("Laptop lid"));
    elm_table_pack(tb, o, 0, 3, 1, 1);
    evas_object_show(o);
    cfdata->lid_obj = o;
@@ -592,7 +616,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
    o = elm_check_add(win);
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, 0.0);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.5);
-   elm_object_text_set(o, "Backlight");
+   elm_object_text_set(o, _("Backlight"));
    elm_table_pack(tb, o, 0, 4, 1, 1);
    evas_object_show(o);
    cfdata->backlight_obj = o;
@@ -621,7 +645,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
    o = elm_check_add(win);
    evas_object_size_hint_weight_set(o, 0.0, 0.0);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.5);
-   elm_object_text_set(o, "On");
+   elm_object_text_set(o, _("On"));
    elm_table_pack(tb, o, 2, 4, 1, 1);
    evas_object_show(o);
    evas_object_smart_callback_add(o, "changed", _cb_enabled_changed, cfdata);
@@ -630,7 +654,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
    o = elm_slider_add(win);
    evas_object_size_hint_weight_set(o, 0.0, 0.0);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.5);
-   elm_object_text_set(o, "Priority");
+   elm_object_text_set(o, _("Priority"));
    elm_slider_unit_format_set(o, "%3.0f");
    elm_slider_span_size_set(o, 100);
    elm_slider_min_max_set(o, 0, 100);
@@ -642,13 +666,13 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
    o = elm_hoversel_add(win);
    evas_object_size_hint_weight_set(o, 0.0, 0.0);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.5);
-   elm_object_text_set(o, "Relative");
-   elm_hoversel_item_add(o, "None", NULL, ELM_ICON_NONE, _cb_rel_mode_none, cfdata);
-   elm_hoversel_item_add(o, "Clone", NULL, ELM_ICON_NONE, _cb_rel_mode_clone, cfdata);
-   elm_hoversel_item_add(o, "Left of", NULL, ELM_ICON_NONE, _cb_rel_mode_left_of, cfdata);
-   elm_hoversel_item_add(o, "Right of", NULL, ELM_ICON_NONE, _cb_rel_mode_right_of, cfdata);
-   elm_hoversel_item_add(o, "Above", NULL, ELM_ICON_NONE, _cb_rel_mode_above, cfdata);
-   elm_hoversel_item_add(o, "Below", NULL, ELM_ICON_NONE, _cb_rel_mode_below, cfdata);
+   elm_object_text_set(o, _("Relative"));
+   elm_hoversel_item_add(o, _("None"), NULL, ELM_ICON_NONE, _cb_rel_mode_none, cfdata);
+   elm_hoversel_item_add(o, _("Clone"), NULL, ELM_ICON_NONE, _cb_rel_mode_clone, cfdata);
+   elm_hoversel_item_add(o, _("Left of"), NULL, ELM_ICON_NONE, _cb_rel_mode_left_of, cfdata);
+   elm_hoversel_item_add(o, _("Right of"), NULL, ELM_ICON_NONE, _cb_rel_mode_right_of, cfdata);
+   elm_hoversel_item_add(o, _("Above"), NULL, ELM_ICON_NONE, _cb_rel_mode_above, cfdata);
+   elm_hoversel_item_add(o, _("Below"), NULL, ELM_ICON_NONE, _cb_rel_mode_below, cfdata);
    elm_table_pack(tb, o, 2, 6, 1, 1);
    evas_object_show(o);
    cfdata->rel_mode_obj = o;
@@ -656,7 +680,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
    o = elm_hoversel_add(win);
    evas_object_size_hint_weight_set(o, 0.0, 0.0);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.5);
-   elm_object_text_set(o, "To");
+   elm_object_text_set(o, _("To"));
    EINA_LIST_FOREACH(e_randr2->screens, l, s)
      {
         Elm_Object_Item *it = NULL;
@@ -676,7 +700,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
    o = elm_slider_add(win);
    evas_object_size_hint_weight_set(o, 0.0, 0.0);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.5);
-   elm_object_text_set(o, "Align");
+   elm_object_text_set(o, _("Align"));
    elm_slider_unit_format_set(o, "%1.1f");
    elm_slider_span_size_set(o, 100);
    elm_slider_min_max_set(o, 0.0, 1.0);
@@ -687,14 +711,40 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
 
    _basic_screen_info_fill(cfdata, first_cfg, first);
 
+   o = elm_box_add(win);
+   elm_box_horizontal_set(o, EINA_TRUE);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(o, 0.0, EVAS_HINT_FILL);
+   elm_box_pack_end(bx, o);
+   evas_object_show(o);
+   bx2 = o;
+
    o = elm_check_add(win);
    evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, 0.0);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_text_set(o, "Restore setup on start");
-   elm_check_state_set(o, e_randr2_cfg->restore);
-   elm_box_pack_end(bx, o);
+   elm_object_text_set(o, _("Restore setup on start"));
+   elm_check_state_set(o, cfdata->restore);
+   elm_box_pack_end(bx2, o);
    evas_object_show(o);
    evas_object_smart_callback_add(o, "changed", _cb_restore_changed, cfdata);
+
+   o = elm_check_add(win);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(o, _("Monitor hotplug"));
+   elm_check_state_set(o, cfdata->hotplug);
+   elm_box_pack_end(bx2, o);
+   evas_object_show(o);
+   evas_object_smart_callback_add(o, "changed", _cb_hotplug_changed, cfdata);
+
+   o = elm_check_add(win);
+   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(o, _("Lid Events"));
+   elm_check_state_set(o, cfdata->acpi);
+   elm_box_pack_end(bx2, o);
+   evas_object_show(o);
+   evas_object_smart_callback_add(o, "changed", _cb_acpi_changed, cfdata);
 
    evas_smart_objects_calculate(evas_object_evas_get(win));
 
@@ -711,6 +761,9 @@ _basic_apply(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
    E_Config_Randr2_Screen *cs, *cs2;
 
    e_randr2_cfg->restore = cfdata->restore;
+   e_randr2_cfg->ignore_hotplug_events = !cfdata->hotplug;
+   e_randr2_cfg->ignore_acpi_events = !cfdata->acpi;
+
    printf("APPLY....................\n");
    EINA_LIST_FOREACH(cfdata->screens, l, cs2)
      {

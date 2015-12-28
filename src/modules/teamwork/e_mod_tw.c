@@ -50,7 +50,7 @@ static Ecore_Idler *media_cleaner[2] = {NULL};
 static Eina_List *handlers = NULL;
 static Media_Cache_List *tw_cache_list[2] = {NULL};
 
-static Evas_Point last_coords = {0};
+static Evas_Point last_coords = {0, 0};
 
 static uint64_t tw_win = 0;
 
@@ -727,7 +727,7 @@ tw_media_get(const char *url, unsigned long long timestamp, Eina_Bool *video)
 
         img = eet_read(media[*video], url, &size);
         alias = eet_alias_get(media[*video], url);
-        buf = eina_binbuf_manage_new_length(img, size);
+        buf = eina_binbuf_manage_new(img, size, EINA_FALSE);
         media_cache_update(alias, timestamp, *video);
 
         eina_stringshare_del(alias);
@@ -779,7 +779,7 @@ tw_show_helper(Evas_Object *o, int w, int h)
    int px, py, pw, ph;
    double ratio = tw_config->popup_size / 100.;
    E_Client *ec = NULL;
-   E_Zone *zone = e_zone_current_get(e_util_comp_current_get());
+   E_Zone *zone = e_zone_current_get();
 
    evas_object_hide(tw_mod->pop);
    evas_object_del(tw_mod->pop);
@@ -885,7 +885,7 @@ tw_video_opened_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED)
         return;
      }
 
-   zone = e_zone_current_get(e_util_comp_current_get());
+   zone = e_zone_current_get();
    w = MIN(zone->w, (ratio * (double)zone->w));
    ratio = emotion_object_ratio_get(obj);
    if (ratio > 0.0) iw = (ih * ratio) + 0.5;
@@ -948,7 +948,7 @@ tw_video_thread_done_cb(void *data, Ecore_Thread *eth)
    close(tw_tmpfd);
    tw_tmpfd = -1;
    i->tmpfile = eina_stringshare_ref(tw_tmpfile);
-   prev = e_livethumb_add(e_util_comp_current_get()->evas);
+   prev = e_livethumb_add(e_comp->evas);
    tw_show_video(prev, tw_tmpfile);
    download_media_cleanup();
 }
@@ -1028,7 +1028,7 @@ tw_show(Media *i)
                }
              eina_stringshare_del(tw_tmpfile);
              tw_tmpfile = eina_stringshare_ref(i->tmpfile);
-             prev = e_livethumb_add(e_util_comp_current_get()->evas);
+             prev = e_livethumb_add(e_comp->evas);
              tw_show_video(prev, tw_tmpfile);
              return;
           }
@@ -1061,7 +1061,7 @@ tw_show(Media *i)
      }
    else
      {
-        prev = e_livethumb_add(e_util_comp_current_get()->evas);
+        prev = e_livethumb_add(e_comp->evas);
         o = evas_object_image_filled_add(e_livethumb_evas_get(prev));
         evas_object_image_memfile_set(o, (void*)eina_binbuf_string_get(i->buf), eina_binbuf_length_get(i->buf), NULL, NULL);
         evas_object_image_size_get(o, &w, &h);
@@ -1098,7 +1098,7 @@ tw_show_local_file(const char *uri)
      {
         if (!evas_object_image_extension_can_load_get(uri)) return;
      }
-   prev = e_livethumb_add(e_util_comp_current_get()->evas);
+   prev = e_livethumb_add(e_comp->evas);
    if (video)
      {
         tw_show_video(prev, uri);

@@ -9,13 +9,13 @@ static E_Module *conf_module = NULL;
 static E_Int_Menu_Augmentation *maug = NULL;
 
 /* module setup */
-EAPI E_Module_Api e_modapi =
+E_API E_Module_Api e_modapi =
 {
    E_MODULE_API_VERSION,
      "Settings - Shelves"
 };
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    e_configure_registry_category_add("extensions", 90, _("Extensions"), NULL, 
@@ -33,8 +33,8 @@ e_modapi_init(E_Module *m)
    return m;
 }
 
-EAPI int
-e_modapi_shutdown(E_Module *m __UNUSED__)
+E_API int
+e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    E_Config_Dialog *cfd;
 
@@ -53,22 +53,22 @@ e_modapi_shutdown(E_Module *m __UNUSED__)
    return 1;
 }
 
-EAPI int
-e_modapi_save(E_Module *m __UNUSED__)
+E_API int
+e_modapi_save(E_Module *m EINA_UNUSED)
 {
    return 1;
 }
 
 /* menu item callback(s) */
 static void 
-_e_mod_run_cb(void *data __UNUSED__, E_Menu *m EINA_UNUSED, E_Menu_Item *mi __UNUSED__)
+_e_mod_run_cb(void *data EINA_UNUSED, E_Menu *m EINA_UNUSED, E_Menu_Item *mi EINA_UNUSED)
 {
    e_configure_registry_call("extensions/shelves", NULL, NULL);
 }
 
 /* menu item add hook */
 static void
-_e_mod_menu_add(void *data __UNUSED__, E_Menu *m)
+_e_mod_menu_add(void *data EINA_UNUSED, E_Menu *m)
 {
    E_Menu_Item *mi;
 

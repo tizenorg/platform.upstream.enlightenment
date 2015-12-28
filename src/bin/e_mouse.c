@@ -3,7 +3,7 @@
 #include <Ecore_Drm.h>
 #endif
 
-EAPI int
+E_API int
 e_mouse_update(void)
 {
 #ifndef HAVE_WAYLAND_ONLY

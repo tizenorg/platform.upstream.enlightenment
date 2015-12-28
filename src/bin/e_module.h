@@ -1,6 +1,6 @@
 #ifdef E_TYPEDEFS
 
-#define E_MODULE_API_VERSION 14
+#define E_MODULE_API_VERSION 17
 
 typedef struct _E_Module     E_Module;
 typedef struct _E_Module_Api E_Module_Api;
@@ -15,8 +15,8 @@ typedef struct E_Module_Desktop E_Module_Desktop;
 
 #define E_MODULE_TYPE 0xE0b0100b
 
-extern EAPI int E_EVENT_MODULE_UPDATE;
-extern EAPI int E_EVENT_MODULE_INIT_END;
+extern E_API int E_EVENT_MODULE_UPDATE;
+extern E_API int E_EVENT_MODULE_INIT_END;
 
 struct _E_Event_Module_Update
 {
@@ -62,6 +62,7 @@ struct _E_Module_Api
 EINTERN int          e_module_init(void);
 EINTERN int          e_module_shutdown(void);
 
+<<<<<<< HEAD
 EAPI void         e_module_deferred_job(void);
 EAPI void         e_module_all_load(void);
 EAPI E_Module    *e_module_new(const char *name);
@@ -79,5 +80,23 @@ EAPI void         e_module_dialog_show(E_Module *m, const char *title, const cha
 EAPI void         e_module_delayed_set(E_Module *m, int delayed);
 EAPI void         e_module_priority_set(E_Module *m, int priority);
 EAPI Eina_Bool   e_module_loading_get(void);
+=======
+E_API void         e_module_all_load(void);
+E_API E_Module    *e_module_new(const char *name);
+E_API int          e_module_save(E_Module *m);
+E_API const char  *e_module_dir_get(E_Module *m);
+E_API int          e_module_enable(E_Module *m);
+E_API int          e_module_disable(E_Module *m);
+E_API int          e_module_enabled_get(E_Module *m);
+E_API int          e_module_save_all(void);
+E_API E_Module    *e_module_find(const char *name);
+E_API Eina_List   *e_module_list(void);
+E_API Eina_List   *e_module_desktop_list(void);
+E_API void         e_module_desktop_free(E_Module_Desktop *md);
+E_API void         e_module_dialog_show(E_Module *m, const char *title, const char *body);
+E_API void         e_module_delayed_set(E_Module *m, int delayed);
+E_API void         e_module_priority_set(E_Module *m, int priority);
+E_API Eina_Bool   e_module_loading_get(void);
+>>>>>>> upstream
 #endif
 #endif

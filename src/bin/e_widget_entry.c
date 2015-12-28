@@ -8,7 +8,6 @@ struct _E_Widget_Data
    void         (*func)(void *data, void *data2);
    void        *data;
    void        *data2;
-   Eina_Bool    have_pointer : 1;
 };
 
 /* local subsystem functions */
@@ -16,8 +15,6 @@ static void _e_wid_del_hook(Evas_Object *obj);
 static void _e_wid_focus_hook(Evas_Object *obj);
 static void _e_wid_disable_hook(Evas_Object *obj);
 static void _e_wid_focus_steal(void *data, Evas *e, Evas_Object *obj, void *event_info);
-static void _e_wid_in(void *data, Evas *e, Evas_Object *obj, void *event_info);
-static void _e_wid_out(void *data, Evas *e, Evas_Object *obj, void *event_info);
 static void _e_wid_changed_cb(void *data, Evas_Object *obj, void *event_info);
 static void _e_wid_keydown(void *data, Evas *e, Evas_Object *obj, void *event_info);
 static void _e_wid_movresz(void *data, Evas *e, Evas_Object *obj, void *event_info);
@@ -35,7 +32,7 @@ static void _e_wid_movresz(void *data, Evas *e, Evas_Object *obj, void *event_in
  * The current value will be used to initialize the entry
  * @return Returns the new entry widget
  */
-EAPI Evas_Object *
+E_API Evas_Object *
 e_widget_entry_add(Evas_Object *parent, char **text_location, void (*func)(void *data, void *data2), void *data, void *data2)
 {
    Evas_Object *obj, *o;
@@ -81,8 +78,6 @@ e_widget_entry_add(Evas_Object *parent, char **text_location, void (*func)(void 
    evas_object_show(o);
 
    evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN, _e_wid_focus_steal, obj);
-   evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_IN, _e_wid_in, obj);
-   evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_OUT, _e_wid_out, obj);
 
    o = wd->o_entry;
    if ((text_location) && (*text_location))
@@ -91,7 +86,7 @@ e_widget_entry_add(Evas_Object *parent, char **text_location, void (*func)(void 
    wd->func = func;
    wd->data = data;
    wd->data2 = data2;
-   evas_object_smart_callback_add(o, "changed,user", _e_wid_changed_cb, obj);
+   evas_object_smart_callback_add(o, "changed", _e_wid_changed_cb, obj);
 
    return obj;
 }
@@ -102,7 +97,7 @@ e_widget_entry_add(Evas_Object *parent, char **text_location, void (*func)(void 
  * @param entry an entry widget
  * @param text the text to set
  */
-EAPI void
+E_API void
 e_widget_entry_text_set(Evas_Object *entry, const char *text)
 {
    E_Widget_Data *wd;
@@ -118,7 +113,7 @@ e_widget_entry_text_set(Evas_Object *entry, const char *text)
  * @param entry an entry widget
  * @return Returns the text of the entry widget
  */
-EAPI const char *
+E_API const char *
 e_widget_entry_text_get(Evas_Object *entry)
 {
    E_Widget_Data *wd;
@@ -133,7 +128,7 @@ e_widget_entry_text_get(Evas_Object *entry)
  *
  * @param entry an entry widget
  */
-EAPI void
+E_API void
 e_widget_entry_clear(Evas_Object *entry)
 {
    E_Widget_Data *wd;
@@ -150,7 +145,7 @@ e_widget_entry_clear(Evas_Object *entry)
  * @param entry an entry widget
  * @param password_mode 1 to turn on password mode, 0 to turn it off
  */
-EAPI void
+E_API void
 e_widget_entry_password_set(Evas_Object *entry, int password_mode)
 {
    E_Widget_Data *wd;
@@ -167,7 +162,7 @@ e_widget_entry_password_set(Evas_Object *entry, int password_mode)
  * @param entry an entry widget
  * @param readonly_mode 1 to enable read-only mode, 0 to turn it off
  */
-EAPI void
+E_API void
 e_widget_entry_readonly_set(Evas_Object *entry, int readonly_mode)
 {
    E_Widget_Data *wd;
@@ -183,7 +178,7 @@ e_widget_entry_readonly_set(Evas_Object *entry, int readonly_mode)
  *
  * @param entry an entry widget
  */
-EAPI void
+E_API void
 e_widget_entry_select_all(Evas_Object *entry)
 {
    E_Widget_Data *wd;
@@ -199,14 +194,9 @@ static void
 _e_wid_del_hook(Evas_Object *obj)
 {
    E_Widget_Data *wd;
-   E_Pointer *p;
 
    if (!(obj) || (!(wd = e_widget_data_get(obj))))
      return;
-   evas_object_event_callback_del(wd->o_inout, EVAS_CALLBACK_MOUSE_IN, _e_wid_in);
-   evas_object_event_callback_del(wd->o_inout, EVAS_CALLBACK_MOUSE_OUT, _e_wid_out);
-   p = e_widget_pointer_get(obj);
-   if (p) e_pointer_type_pop(p, obj, NULL);
    evas_object_del(wd->o_entry);
    evas_object_del(wd->o_inout);
    wd->o_entry = NULL;
@@ -237,41 +227,13 @@ _e_wid_disable_hook(Evas_Object *obj)
 }
 
 static void
-_e_wid_focus_steal(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_wid_focus_steal(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    e_widget_focus_steal(data);
 }
 
 static void
-_e_wid_in(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
-{
-   E_Pointer *p;
-   E_Widget_Data *wd;
-
-   if (!(data) || (!(wd = e_widget_data_get(data))))
-     return;
-   if (wd->have_pointer) return;
-   p = e_widget_pointer_get(data);
-   if (p) e_pointer_type_push(p, data, "entry");
-   wd->have_pointer = EINA_TRUE;
-}
-
-static void
-_e_wid_out(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
-{
-   E_Pointer *p;
-   E_Widget_Data *wd;
-
-   if (!(data) || (!(wd = e_widget_data_get(data))))
-     return;
-   if (!wd->have_pointer) return;
-   p = e_widget_pointer_get(data);
-   if (p) e_pointer_type_pop(p, data, "entry");
-   wd->have_pointer = EINA_FALSE;
-}
-
-static void
-_e_wid_changed_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UNUSED__)
+_e_wid_changed_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Evas_Object *entry;
    E_Widget_Data *wd;
@@ -292,13 +254,13 @@ _e_wid_changed_cb(void *data, Evas_Object *obj __UNUSED__, void *event_info __UN
 }
 
 static void
-_e_wid_keydown(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event_info)
+_e_wid_keydown(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    evas_object_smart_callback_call(data, "key_down", event_info);
 }
 
 static void
-_e_wid_movresz(void *data, Evas *e __UNUSED__, Evas_Object *obj, void *event_info __UNUSED__)
+_e_wid_movresz(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
    E_Widget_Data *wd;
    Evas_Coord x, y, w, h;

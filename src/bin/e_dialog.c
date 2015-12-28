@@ -77,19 +77,19 @@ _e_dialog_internal_new(Evas_Object *parent, const char *name, const char *class,
    return dia;
 }
 
-EAPI E_Dialog *
+E_API E_Dialog *
 e_dialog_new(Evas_Object *parent, const char *name, const char *class)
 {
    return _e_dialog_internal_new(parent, name, class, 1);
 }
 
-EAPI E_Dialog *
+E_API E_Dialog *
 e_dialog_normal_win_new(Evas_Object *parent, const char *name, const char *class)
 {
    return _e_dialog_internal_new(parent, name, class, 0);
 }
 
-EAPI void
+E_API void
 e_dialog_button_add(E_Dialog *dia, const char *label, const char *icon, E_Dialog_Cb func, void *data)
 {
    Evas_Object *o;
@@ -100,7 +100,7 @@ e_dialog_button_add(E_Dialog *dia, const char *label, const char *icon, E_Dialog
    dia->buttons = eina_list_append(dia->buttons, o);
 }
 
-EAPI int
+E_API int
 e_dialog_button_focus_num(E_Dialog *dia, int button)
 {
    Evas_Object *o;
@@ -110,7 +110,7 @@ e_dialog_button_focus_num(E_Dialog *dia, int button)
    return 1;
 }
 
-EAPI int
+E_API int
 e_dialog_button_disable_num_set(E_Dialog *dia, int button, int disabled)
 {
    Evas_Object *o;
@@ -120,7 +120,7 @@ e_dialog_button_disable_num_set(E_Dialog *dia, int button, int disabled)
    return 1;
 }
 
-EAPI int
+E_API int
 e_dialog_button_disable_num_get(E_Dialog *dia, int button)
 {
    Evas_Object *o;
@@ -131,13 +131,13 @@ e_dialog_button_disable_num_get(E_Dialog *dia, int button)
    return ret;
 }
 
-EAPI void
+E_API void
 e_dialog_title_set(E_Dialog *dia, const char *title)
 {
    elm_win_title_set(dia->win, title);
 }
 
-EAPI void
+E_API void
 e_dialog_text_set(E_Dialog *dia, const char *text)
 {
    if (!dia->text_object)
@@ -154,7 +154,7 @@ e_dialog_text_set(E_Dialog *dia, const char *text)
    elm_object_part_text_set(dia->text_object, "e.textblock.message", text);
 }
 
-EAPI void
+E_API void
 e_dialog_icon_set(E_Dialog *dia, const char *icon, Evas_Coord size)
 {
    if (!icon)
@@ -188,7 +188,7 @@ e_dialog_icon_set(E_Dialog *dia, const char *icon, Evas_Coord size)
    edje_object_message_signal_process(elm_layout_edje_get(dia->bg_object));
 }
 
-EAPI void
+E_API void
 e_dialog_border_icon_set(E_Dialog *dia, const char *icon)
 {
    E_Client *ec;
@@ -198,7 +198,7 @@ e_dialog_border_icon_set(E_Dialog *dia, const char *icon)
      eina_stringshare_replace(&ec->internal_icon, icon);
 }
 
-EAPI void
+E_API void
 e_dialog_content_set(E_Dialog *dia, Evas_Object *obj, Evas_Coord minw, Evas_Coord minh)
 {
    int mw, mh;
@@ -206,6 +206,8 @@ e_dialog_content_set(E_Dialog *dia, Evas_Object *obj, Evas_Coord minw, Evas_Coor
    e_widget_on_focus_hook_set(obj, _e_dialog_cb_wid_on_focus, dia);
    evas_object_size_hint_min_set(obj, minw, minh);
    elm_object_part_content_set(dia->bg_object, "e.swallow.content", obj);
+   elm_layout_sizing_eval(dia->bg_object);
+   evas_object_smart_calculate(dia->bg_object);
    evas_object_size_hint_min_get(dia->bg_object, &mw, &mh);
    evas_object_resize(dia->win, mw, mh);
    dia->min_w = mw;
@@ -213,7 +215,7 @@ e_dialog_content_set(E_Dialog *dia, Evas_Object *obj, Evas_Coord minw, Evas_Coor
    evas_object_show(obj);
 }
 
-EAPI void
+E_API void
 e_dialog_resizable_set(E_Dialog *dia, int resizable)
 {
    dia->resizable = resizable;
@@ -236,7 +238,7 @@ e_dialog_resizable_set(E_Dialog *dia, int resizable)
      }
 }
 
-EAPI void
+E_API void
 e_dialog_show(E_Dialog *dia)
 {
    Evas_Coord mw, mh;
@@ -246,13 +248,12 @@ e_dialog_show(E_Dialog *dia)
    if (o)
      elm_object_part_content_set(dia->bg_object, "e.swallow.content", o);
 
-   o = dia->box_object;
-   evas_object_size_hint_min_get(o, &mw, &mh);
-   elm_object_part_content_set(dia->bg_object, "e.swallow.buttons", o);
+   if (dia->min_w && dia->min_h)
+     mw = dia->min_w, mh = dia->min_h;
+   else
+     evas_object_size_hint_min_get(dia->bg_object, &mw, &mh);
 
    evas_object_resize(dia->win, mw, mh);
-   dia->min_w = mw;
-   dia->min_h = mh;
    if (!dia->resizable)
      {
         evas_object_size_hint_weight_set(dia->bg_object, 0, 0);
@@ -285,13 +286,13 @@ _e_dialog_free(E_Dialog *dia)
 }
 
 static void
-_e_dialog_del_func_cb(void *data __UNUSED__, E_Dialog *dia)
+_e_dialog_del_func_cb(void *data EINA_UNUSED, E_Dialog *dia)
 {
    e_util_defer_object_del(E_OBJECT(dia));
 }
 
 static void
-_e_dialog_cb_key_down(void *data, Evas *e __UNUSED__, Evas_Object *obj __UNUSED__, void *event)
+_e_dialog_cb_key_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    Evas_Event_Key_Down *ev;
    E_Dialog *dia;

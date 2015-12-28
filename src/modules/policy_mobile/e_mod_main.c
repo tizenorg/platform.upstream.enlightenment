@@ -1,6 +1,6 @@
 #include "e_mod_main.h"
 
-EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Policy-Mobile" };
+E_API E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Policy-Mobile" };
 
 Mod *_pol_mod = NULL;
 Eina_Hash *hash_pol_desks = NULL;
@@ -279,7 +279,6 @@ _pol_cb_zone_add(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
    for (i = 0; i < n; i++)
      {
         d = e_mod_pol_conf_desk_get_by_nums(_pol_mod->conf,
-                                            zone->comp->num,
                                             zone->num,
                                             zone->desks[i]->x,
                                             zone->desks[i]->y);
@@ -374,7 +373,6 @@ _pol_cb_zone_desk_count_set(void *data EINA_UNUSED, int type EINA_UNUSED, void *
    for (i = 0; i < n; i++)
      {
         d = e_mod_pol_conf_desk_get_by_nums(_pol_mod->conf,
-                                            zone->comp->num,
                                             zone->num,
                                             zone->desks[i]->x,
                                             zone->desks[i]->y);
@@ -436,7 +434,7 @@ e_mod_pol_desk_add(E_Desk *desk)
    eina_hash_add(hash_pol_desks, &desk, pd);
 
    /* add clients */
-   E_CLIENT_FOREACH(e_comp, ec)
+   E_CLIENT_FOREACH(ec)
      {
         if (pd->desk == ec->desk)
           _pol_client_add(ec);
@@ -528,7 +526,7 @@ e_mod_pol_client_launcher_get(E_Zone *zone)
     }                                     \
   while (0)
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    Mod *mod;
@@ -564,7 +562,6 @@ e_modapi_init(E_Module *m)
         for (i = 0; i < n; i++)
           {
              d = e_mod_pol_conf_desk_get_by_nums(_pol_mod->conf,
-                                                 e_comp->num,
                                                  zone->num,
                                                  zone->desks[i]->x,
                                                  zone->desks[i]->y);
@@ -598,7 +595,7 @@ e_modapi_init(E_Module *m)
    return mod;
 }
 
-EAPI int
+E_API int
 e_modapi_shutdown(E_Module *m)
 {
    Mod *mod = m->data;
@@ -631,7 +628,7 @@ e_modapi_shutdown(E_Module *m)
    return 1;
 }
 
-EAPI int
+E_API int
 e_modapi_save(E_Module *m)
 {
    Mod *mod = m->data;
