@@ -3934,13 +3934,7 @@ e_client_bottom_get(void)
 {
    unsigned int x;
 
-<<<<<<< HEAD
-   EINA_SAFETY_ON_NULL_RETURN_VAL(c, NULL);
-
    for (x = e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x <= e_comp_canvas_layer_map(E_LAYER_CLIENT_ALERT); x++)
-=======
-   for (x = e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x <= e_comp_canvas_layer_map(E_LAYER_CLIENT_PRIO); x++)
->>>>>>> upstream
      {
         E_Client *ec2;
 
@@ -3957,13 +3951,7 @@ e_client_top_get(void)
 {
    unsigned int x;
 
-<<<<<<< HEAD
-   EINA_SAFETY_ON_NULL_RETURN_VAL(c, NULL);
-
    for (x = e_comp_canvas_layer_map(E_LAYER_CLIENT_ALERT); x >= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x--)
-=======
-   for (x = e_comp_canvas_layer_map(E_LAYER_CLIENT_PRIO); x >= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x--)
->>>>>>> upstream
      {
         E_Client *ec2;
 

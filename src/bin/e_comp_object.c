@@ -1418,11 +1418,7 @@ _e_comp_intercept_stack_helper(E_Comp_Object *cw, Evas_Object *stack, E_Comp_Obj
              /* reached the top client layer somehow
               * use top client object
               */
-<<<<<<< HEAD
-             o = cw->comp->layers[e_comp_canvas_layer_map(E_LAYER_CLIENT_ALERT)].obj;
-=======
-             o = e_comp->layers[e_comp_canvas_layer_map(E_LAYER_CLIENT_PRIO)].obj;
->>>>>>> upstream
+             o = e_comp->layers[e_comp_canvas_layer_map(E_LAYER_CLIENT_ALERT)].obj;
           }
         if (!o)
           /* top client layer window hasn't been stacked yet. this probably shouldn't happen?
