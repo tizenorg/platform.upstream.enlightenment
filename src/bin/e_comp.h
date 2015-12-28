@@ -57,13 +57,9 @@ typedef enum _E_Layer
 
 # include "e_comp_cfdata.h"
 
-<<<<<<< HEAD
-extern EAPI int E_EVENT_COMPOSITOR_DISABLE;
-extern EAPI int E_EVENT_COMPOSITOR_ENABLE;
-extern EAPI int E_EVENT_COMPOSITOR_FPS_UPDATE;
-=======
 extern E_API int E_EVENT_COMPOSITOR_DISABLE;
 extern E_API int E_EVENT_COMPOSITOR_ENABLE;
+extern E_API int E_EVENT_COMPOSITOR_FPS_UPDATE;
 
 typedef void (*E_Comp_Cb)(void);
 

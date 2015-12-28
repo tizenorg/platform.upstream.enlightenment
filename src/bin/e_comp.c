@@ -38,16 +38,10 @@ static double ecore_frametime = 0;
 
 static int _e_comp_log_dom = -1;
 
-<<<<<<< HEAD
-EAPI int E_EVENT_COMPOSITOR_RESIZE = -1;
-EAPI int E_EVENT_COMPOSITOR_DISABLE = -1;
-EAPI int E_EVENT_COMPOSITOR_ENABLE = -1;
-EAPI int E_EVENT_COMPOSITOR_FPS_UPDATE = -1;
-=======
 E_API int E_EVENT_COMPOSITOR_RESIZE = -1;
 E_API int E_EVENT_COMPOSITOR_DISABLE = -1;
 E_API int E_EVENT_COMPOSITOR_ENABLE = -1;
->>>>>>> upstream
+E_API int E_EVENT_COMPOSITOR_FPS_UPDATE = -1;
 
 //////////////////////////////////////////////////////////////////////////
 #undef DBG
