@@ -23,14 +23,10 @@ extern E_API Ecore_X_Atom E_ATOM_DESKTOP_FILE;
 extern E_API Ecore_X_Atom E_ATOM_WINDOW_STATE;
 extern E_API Ecore_X_Atom E_ATOM_WINDOW_STATE_CENTERED;
 
-<<<<<<< HEAD
-extern EAPI Ecore_X_Atom E_ATOM_WINDOW_OPAQUE;
+extern E_API Ecore_X_Atom E_ATOM_WINDOW_OPAQUE;
 
-extern EAPI Ecore_X_Atom E_ATOM_ZONE_GEOMETRY;
-=======
 extern E_API Ecore_X_Atom E_ATOM_ZONE_GEOMETRY;
 extern E_API Ecore_X_Atom WL_SURFACE_ID;
->>>>>>> upstream
 
 EINTERN int    e_atoms_init(void);
 EINTERN int    e_atoms_shutdown(void);
