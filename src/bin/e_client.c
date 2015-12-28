@@ -3,37 +3,6 @@
 static int _e_client_hooks_delete = 0;
 static int _e_client_hooks_walking = 0;
 
-<<<<<<< HEAD
-EAPI int E_EVENT_CLIENT_ADD = -1;
-EAPI int E_EVENT_CLIENT_REMOVE = -1;
-EAPI int E_EVENT_CLIENT_ZONE_SET = -1;
-EAPI int E_EVENT_CLIENT_DESK_SET = -1;
-EAPI int E_EVENT_CLIENT_RESIZE = -1;
-EAPI int E_EVENT_CLIENT_MOVE = -1;
-EAPI int E_EVENT_CLIENT_SHOW = -1;
-EAPI int E_EVENT_CLIENT_HIDE = -1;
-EAPI int E_EVENT_CLIENT_ICONIFY = -1;
-EAPI int E_EVENT_CLIENT_UNICONIFY = -1;
-EAPI int E_EVENT_CLIENT_STACK = -1;
-EAPI int E_EVENT_CLIENT_FOCUS_IN = -1;
-EAPI int E_EVENT_CLIENT_FOCUS_OUT = -1;
-EAPI int E_EVENT_CLIENT_PROPERTY = -1;
-EAPI int E_EVENT_CLIENT_FULLSCREEN = -1;
-EAPI int E_EVENT_CLIENT_UNFULLSCREEN = -1;
-#ifdef _F_ZONE_WINDOW_ROTATION_
-EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_BEGIN = -1;
-EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL = -1;
-EAPI int E_EVENT_CLIENT_ROTATION_CHANGE_END = -1;
-#endif
-EAPI int E_EVENT_CLIENT_VISIBILITY_CHANGE = -1;
-#ifdef HAVE_WAYLAND_ONLY
-EAPI int E_EVENT_CLIENT_BUFFER_CHANGE = -1;
-#endif
-
-static Eina_Hash *clients_hash = NULL; // pixmap->client
-
-static int focus_track_frozen = 0;
-=======
 E_API int E_EVENT_CLIENT_ADD = -1;
 E_API int E_EVENT_CLIENT_REMOVE = -1;
 E_API int E_EVENT_CLIENT_ZONE_SET = -1;
@@ -50,11 +19,19 @@ E_API int E_EVENT_CLIENT_FOCUS_OUT = -1;
 E_API int E_EVENT_CLIENT_PROPERTY = -1;
 E_API int E_EVENT_CLIENT_FULLSCREEN = -1;
 E_API int E_EVENT_CLIENT_UNFULLSCREEN = -1;
+#ifdef _F_ZONE_WINDOW_ROTATION_
+E_API int E_EVENT_CLIENT_ROTATION_CHANGE_BEGIN = -1;
+E_API int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL = -1;
+E_API int E_EVENT_CLIENT_ROTATION_CHANGE_END = -1;
+#endif
+E_API int E_EVENT_CLIENT_VISIBILITY_CHANGE = -1;
+#ifdef HAVE_WAYLAND_ONLY
+E_API int E_EVENT_CLIENT_BUFFER_CHANGE = -1;
+#endif
 
 static Eina_Hash *clients_hash[2] = {NULL}; // pixmap->client
 
 static unsigned int focus_track_frozen = 0;
->>>>>>> upstream
 
 static int warp_to = 0;
 static int warp_to_x = 0;
@@ -902,15 +879,12 @@ _e_client_free(E_Client *ec)
    ec->e.state.profile.wait_desk = NULL;
    evas_object_del(ec->frame);
    E_OBJECT(ec)->references--;
-<<<<<<< HEAD
    ELOG("CLIENT FREE", ec->pixmap, ec);
-=======
 
 #ifdef HAVE_WAYLAND
    e_uuid_store_entry_del(ec->uuid);
 #endif
 
->>>>>>> upstream
    free(ec);
 }
 
@@ -3255,13 +3229,9 @@ e_client_new(E_Pixmap *cp, int first_map, int internal)
    e_comp->clients = eina_list_append(e_comp->clients, ec);
    eina_hash_add(clients_hash[e_pixmap_type_get(cp)], &ec->pixmap, ec);
 
-<<<<<<< HEAD
    ELOG("CLIENT ADD", ec->pixmap, ec);
-   _e_client_event_simple(ec, E_EVENT_CLIENT_ADD);
-=======
    if (!ec->ignored)
      _e_client_event_simple(ec, E_EVENT_CLIENT_ADD);
->>>>>>> upstream
    e_comp_object_client_add(ec);
    if (ec->frame)
      {
@@ -3402,23 +3372,15 @@ e_client_desk_set(E_Client *ec, E_Desk *desk)
    if (old_desk)
      {
         ev = E_NEW(E_Event_Client_Desk_Set, 1);
-<<<<<<< HEAD
         if (ev)
           {
              ev->ec = ec;
+             UNREFD(ec, 4);
              e_object_ref(E_OBJECT(ec));
              ev->desk = old_desk;
              e_object_ref(E_OBJECT(old_desk));
              ecore_event_add(E_EVENT_CLIENT_DESK_SET, ev, (Ecore_End_Cb)_e_client_event_desk_set_free, NULL);
           }
-=======
-        ev->ec = ec;
-        UNREFD(ec, 4);
-        e_object_ref(E_OBJECT(ec));
-        ev->desk = old_desk;
-        e_object_ref(E_OBJECT(old_desk));
-        ecore_event_add(E_EVENT_CLIENT_DESK_SET, ev, (Ecore_End_Cb)_e_client_event_desk_set_free, NULL);
->>>>>>> upstream
 
         if (old_desk->zone == ec->zone)
           {
@@ -3953,16 +3915,11 @@ e_client_below_get(const E_Client *ec)
      }
 
    /* go down the layers until we find one */
-<<<<<<< HEAD
-   if (e_comp_canvas_layer_map(ec->layer) == 9999) return NULL;
-   if (e_comp_canvas_layer_map(ec->layer) <= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP)) return NULL;
-   for (x = e_comp_canvas_layer_map(ec->layer) - 1; x >= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x--)
-=======
+   if (e_comp_canvas_layer_map(ec->layer) > e_comp_canvas_layer_map(E_LAYER_MAX)) return NULL;
    x = e_comp_canvas_layer_map(ec->layer);
    if (x > 0) x--;
 
    for (; x >= e_comp_canvas_layer_map(E_LAYER_CLIENT_DESKTOP); x--)
->>>>>>> upstream
      {
         if (!e_comp->layers[x].clients) continue;
         EINA_INLIST_REVERSE_FOREACH(e_comp->layers[x].clients, ec2)
