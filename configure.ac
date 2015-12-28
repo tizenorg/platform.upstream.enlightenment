@@ -249,6 +249,26 @@ fi
 AM_CONDITIONAL([HAVE_SYSTEMD_USER_SESSION], [test "x${have_systemd_user_session}" = "xyes"])
 AC_SUBST([USER_SESSION_DIR])
 
+AS_IF([test "x$want_systemd" != "xno"],
+        [
+	  PKG_CHECK_MODULES([LIBSYSTEMD], [libsystemd],
+	          [have_libsystemd="yes"],
+		  [have_libsystemd="no"])
+          AS_IF([test "x$have_libsystemd" = "xyes"],
+                  [have_systemd_daemon=yes],
+                  [PKG_CHECK_MODULES([LIBSYSTEMD_DAEMON], [libsystemd-daemon],
+                          [have_systemd_daemon="yes"],
+                          [have_systemd_daemon="no"])])
+	],
+        [
+	  have_libsystemd=no
+	  have_systemd_daemon=no
+        ])
+
+AM_CONDITIONAL([HAVE_SYSTEMD_DAEMON], [test "x${have_systemd_daemon}" = "xyes"])
+AC_SUBST([HAVE_SYSTEMD_DAEMON])
+AS_IF([test "x${have_systemd_daemon}" = "xyes"], AC_DEFINE([HAVE_SYSTEMD_DAEMON], 1, [Have libsystemd-daemon or libsystemd]))
+
 execinfo_libs=""
 AC_CHECK_HEADERS([execinfo.h], [have_execinfo="yes"], [have_execinfo="no"])
 if test "x${have_execinfo}" = "xyes" ; then

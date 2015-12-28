@@ -3,7 +3,9 @@
 #include "e_comp_wl_screenshooter_server.h"
 
 #include <wayland-tbm-server.h>
+#ifdef HAVE_SYSTEMD_DAEMON
 #include <systemd/sd-daemon.h>
+#endif
 
 /* handle include for printing uint64_t */
 #define __STDC_FORMAT_MACROS
@@ -4148,7 +4150,7 @@ _e_comp_wl_compositor_create(void)
    const char *name;
    int fd = 0;
    const char *runtime_dir;
-#ifdef HAVE_SYSTEMD
+#ifdef HAVE_SYSTEMD_DAEMON
    int a;
 #endif
 
@@ -4176,7 +4178,7 @@ _e_comp_wl_compositor_create(void)
         goto disp_err;
      }
 
-#ifdef HAVE_SYSTEMD
+#ifdef HAVE_SYSTEMD_DAEMON
    a = sd_listen_fds(1);
    if (a < 0)
      {
