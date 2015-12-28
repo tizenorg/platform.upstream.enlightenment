@@ -4688,15 +4688,12 @@ e_client_iconify(E_Client *ec)
 {
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
-<<<<<<< HEAD
 
    ELOGF("TZVIS", "ICONIFY  |not_raise:%d       |by_client:%d",
          ec->pixmap, ec, (unsigned int)ec->exp_iconify.not_raise,
          ec->exp_iconify.by_client);
 
-=======
    if (!ec->zone) return;
->>>>>>> upstream
    if (ec->shading || ec->iconic) return;
    ec->iconic = 1;
    ec->want_focus = ec->take_focus = 0;
@@ -4735,15 +4732,12 @@ e_client_uniconify(E_Client *ec)
 
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
-<<<<<<< HEAD
 
    ELOGF("TZVIS", "UNICONIFY|not_raise:%d       |by_client:%d",
          ec->pixmap, ec, (unsigned int)ec->exp_iconify.not_raise,
          ec->exp_iconify.by_client);
 
-=======
    if (!ec->zone) return;
->>>>>>> upstream
    if (ec->shading || (!ec->iconic)) return;
    desk = e_desk_current_get(ec->desk->zone);
    e_client_desk_set(ec, desk);
