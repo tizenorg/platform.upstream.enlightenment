@@ -583,13 +583,9 @@ e_pointers_size_set(int size)
 E_API void 
 e_pointer_hide(E_Pointer *ptr)
 {
-<<<<<<< HEAD
    EINA_SAFETY_ON_NULL_RETURN(ptr);
 
-   if ((ptr->evas) && (!ptr->canvas)) 
-=======
    if (ptr->buffer_evas)
->>>>>>> upstream
      _e_pointer_canvas_del(ptr);
    if (ptr->canvas)
      evas_object_hide(ptr->o_ptr);
@@ -803,11 +799,7 @@ e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
      {
         if (o == obj)
           {
-<<<<<<< HEAD
-             ecore_evas_object_cursor_set(ptr->ee, obj, EVAS_LAYER_MAX, x, y);
-=======
              ecore_evas_object_cursor_set(ptr->ee, obj, E_LAYER_MAX - 1, x, y);
->>>>>>> upstream
              return;
           }
         ec = e_comp_object_client_get(o);
@@ -823,13 +815,7 @@ e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
           ec->hidden = 1;
         ecore_evas_object_cursor_set(ptr->ee, obj, E_LAYER_MAX - 1, x, y);
      }
-<<<<<<< HEAD
    else if (ptr->o_ptr)
-     {
-        ecore_evas_object_cursor_set(ptr->ee, ptr->o_ptr, EVAS_LAYER_MAX, ptr->hot.x, ptr->hot.y);
-     }
-=======
-   else
      ecore_evas_object_cursor_set(ptr->ee, ptr->o_ptr, E_LAYER_MAX - 1, ptr->hot.x, ptr->hot.y);
 }
 
@@ -841,5 +827,4 @@ e_pointer_window_add(E_Pointer *ptr, Ecore_Window win)
    ptr->win = win;
    _e_pointer_theme_buf(ptr, buf);
    _e_pointer_x11_setup(ptr, buf);
->>>>>>> upstream
 }
