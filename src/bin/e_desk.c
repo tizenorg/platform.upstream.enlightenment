@@ -216,12 +216,8 @@ e_desk_show(E_Desk *desk)
    Edje_Message_Float_Set *msg;
    Eina_List *l;
    E_Shelf *es;
-<<<<<<< HEAD
-   int x, y, dx = 0, dy = 0;
-=======
    E_Desk *desk2;
-   int was_zone = 0, dx = 0, dy = 0;
->>>>>>> upstream
+   int x, y, dx = 0, dy = 0;
 
    E_OBJECT_CHECK(desk);
    E_OBJECT_TYPE_CHECK(desk, E_DESK_TYPE);
