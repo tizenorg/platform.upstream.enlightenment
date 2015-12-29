@@ -1449,7 +1449,6 @@ e_comp_shutdown(void)
    return 1;
 }
 
-<<<<<<< HEAD
 EAPI void
 e_comp_deferred_job(void)
 {
@@ -1475,12 +1474,8 @@ e_comp_deferred_job(void)
 #endif
 }
 
-EAPI void
-e_comp_render_queue(E_Comp *c)
-=======
 E_API void
 e_comp_render_queue(void)
->>>>>>> upstream
 {
    if (conf->lock_fps)
      {
@@ -1740,12 +1735,8 @@ e_comp_layer_name_get(unsigned int layer, char *buff, int buff_size)
      }
 }
 
-EAPI Eina_Bool
-e_comp_grab_input(E_Comp *c, Eina_Bool mouse, Eina_Bool kbd)
-=======
 E_API Eina_Bool
 e_comp_grab_input(Eina_Bool mouse, Eina_Bool kbd)
->>>>>>> upstream
 {
    Eina_Bool ret = EINA_FALSE;
    Ecore_Window mwin = 0, kwin = 0;
