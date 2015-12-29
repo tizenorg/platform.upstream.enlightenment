@@ -1606,8 +1606,7 @@ e_hints_window_e_state_set(E_Client *ec EINA_UNUSED)
    /* TODO */
 }
 
-<<<<<<< HEAD
-EAPI void
+E_API void
 e_hints_window_e_opaque_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
@@ -1628,10 +1627,7 @@ e_hints_window_e_opaque_get(E_Client *ec)
 #endif
 }
 
-EAPI void
-=======
 E_API void
->>>>>>> upstream
 e_hints_window_qtopia_soft_menu_get(E_Client *ec)
 {
 #ifdef HAVE_WAYLAND_ONLY
