@@ -1421,32 +1421,21 @@ e_comp_shutdown(void)
    E_Pixmap_Type type = e_comp->comp_type;
 #endif
    E_FREE_FUNC(action_timeout, ecore_timer_del);
-<<<<<<< HEAD
-   while (e_comp->clients)
-     e_object_del(eina_list_data_get(e_comp->clients));
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
-   e_comp_wl_shutdown();
-#endif
-=======
    EINA_LIST_FOREACH_SAFE(e_comp->clients, l, ll, ec)
      {
         DELD(ec, 99999);
         e_object_del(E_OBJECT(ec));
      }
->>>>>>> upstream
+
+#ifdef HAVE_WAYLAND
+   e_comp_wl_shutdown();
+#endif
+
    e_object_del(E_OBJECT(e_comp));
    E_FREE_LIST(handlers, ecore_event_handler_del);
    E_FREE_LIST(actions, e_object_del);
    E_FREE_LIST(hooks, e_client_hook_del);
 
-<<<<<<< HEAD
-=======
-#ifdef HAVE_WAYLAND
-   if (type == E_PIXMAP_TYPE_WL)
-     e_comp_wl_shutdown();
-#endif
-
->>>>>>> upstream
    gl_avail = EINA_FALSE;
    e_comp_cfdata_config_free(conf);
    E_CONFIG_DD_FREE(conf_match_edd);
