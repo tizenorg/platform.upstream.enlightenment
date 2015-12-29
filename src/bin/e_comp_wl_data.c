@@ -312,7 +312,6 @@ _e_comp_wl_data_device_selection_set(void *data EINA_UNUSED, E_Comp_Wl_Data_Sour
 }
 
 static void
-<<<<<<< HEAD
 _e_comp_wl_drag_icon_map(struct wl_resource *resource)
 {
    E_Pixmap *ep;
@@ -334,10 +333,7 @@ _e_comp_wl_drag_icon_confiugre(struct wl_resource *resource,
    /* do nothing */
 }
 
-
 static void
-_e_comp_wl_data_device_cb_drag_start(struct wl_client *client, struct wl_resource *resource, struct wl_resource *source_resource, struct wl_resource *origin_resource, struct wl_resource *icon_resource, uint32_t serial)
-=======
 _e_comp_wl_data_device_drag_finished(E_Drag *drag, int dropped)
 {
    Evas_Object *o;
@@ -590,8 +586,8 @@ _e_comp_wl_data_cb_bind_manager(struct wl_client *client, void *data EINA_UNUSED
         return;
      }
 
-<<<<<<< HEAD
-   wl_resource_set_implementation(res, &_e_manager_interface, cdata, NULL);
+   wl_resource_set_implementation(res, &_e_manager_interface,
+                                  e_comp->wl_comp_data, NULL);
 }
 
 static int
@@ -625,10 +621,6 @@ _e_comp_wl_clipboard_source_unref(E_Comp_Wl_Clipboard_Source *source)
    free(source);
 
    return 0;
-=======
-   wl_resource_set_implementation(res, &_e_manager_interface,
-                                  e_comp->wl_comp_data, NULL);
->>>>>>> upstream
 }
 
 static Eina_Bool
@@ -711,13 +703,8 @@ _e_comp_wl_clipboard_source_save(void *data EINA_UNUSED, Ecore_Fd_Handler *handl
      }
    else if (len < 0)
      {
-<<<<<<< HEAD
         if (!(_e_comp_wl_clipboard_source_unref(source)))
-          cdata->clipboard.source = NULL;
-=======
-        e_comp_wl_clipboard_source_unref(source);
-        e_comp_wl->clipboard.source = NULL;
->>>>>>> upstream
+          e_comp_wl->clipboard.source = NULL;
      }
    else
      {
@@ -753,7 +740,6 @@ _e_comp_wl_clipboard_source_cancelled_send(E_Comp_Wl_Data_Source *source EINA_UN
 {
 }
 
-<<<<<<< HEAD
 static E_Comp_Wl_Clipboard_Source*
 _e_comp_wl_clipboard_source_create(E_Comp_Data *cdata, const char *mime_type, uint32_t serial, int* fd)
 {
@@ -793,8 +779,6 @@ _e_comp_wl_clipboard_source_create(E_Comp_Data *cdata, const char *mime_type, ui
    return source;
 }
 
-=======
->>>>>>> upstream
 static void
 _e_comp_wl_clipboard_selection_set(struct wl_listener *listener EINA_UNUSED, void *data EINA_UNUSED)
 {
