@@ -404,7 +404,7 @@ src/bin/e_main.c \
 $(enlightenment_src)
 
 src_bin_enlightenment_LDFLAGS = -export-dynamic
-src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ @WL_DRM_LIBS@ @WAYLAND_EGL_LIBS@ -lm @SHM_OPEN_LIBS@ @ECORE_X_LIBS@
+src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ @LIBSYSTEMD_DAEMON_LIBS@ @LIBSYSTEMD_LIBS@ @WL_DRM_LIBS@ @WAYLAND_EGL_LIBS@ -lm @SHM_OPEN_LIBS@ @ECORE_X_LIBS@
 if HAVE_WAYLAND_TBM
 src_bin_enlightenment_LDADD += @WAYLAND_TBM_LIBS@ @ECORE_DRM_LIBS@
 endif

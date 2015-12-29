@@ -267,7 +267,8 @@ AS_IF([test "x$want_systemd" != "xno"],
 
 AM_CONDITIONAL([HAVE_SYSTEMD_DAEMON], [test "x${have_systemd_daemon}" = "xyes"])
 AC_SUBST([HAVE_SYSTEMD_DAEMON])
-AS_IF([test "x${have_systemd_daemon}" = "xyes"], AC_DEFINE([HAVE_SYSTEMD_DAEMON], 1, [Have libsystemd-daemon or libsystemd]))
+AS_IF([test "x${have_systemd_daemon}" = "xyes"],
+        AC_DEFINE_UNQUOTED([HAVE_SYSTEMD_DAEMON], [1], [Have libsystemd-daemon or libsystemd]))
 
 execinfo_libs=""
 AC_CHECK_HEADERS([execinfo.h], [have_execinfo="yes"], [have_execinfo="no"])
