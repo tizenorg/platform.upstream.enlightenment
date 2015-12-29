@@ -763,19 +763,14 @@ _e_comp_shapes_update_job(void *d EINA_UNUSED)
    INF("---------------------");
 #endif
 
-<<<<<<< HEAD
-   E_FREE_LIST(c->debug_rects, evas_object_del);
-   tb = eina_tiler_new(c->man->w, c->man->h);
-   EINA_SAFETY_ON_NULL_GOTO(tb, tb_fail);
-
-=======
    if (e_comp->comp_type == E_PIXMAP_TYPE_X)
      win = e_comp->win;
    else
      win = e_comp->cm_selection;
    E_FREE_LIST(e_comp->debug_rects, evas_object_del);
    tb = eina_tiler_new(e_comp->w, e_comp->h);
->>>>>>> upstream
+   EINA_SAFETY_ON_NULL_GOTO(tb, tb_fail);
+
    eina_tiler_tile_size_set(tb, 1, 1);
    /* background */
    eina_tiler_rect_add(tb, &(Eina_Rectangle){0, 0, e_comp->w, e_comp->h});
@@ -1866,14 +1861,8 @@ e_comp_util_object_is_above_nocomp(Evas_Object *obj)
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(obj, EINA_FALSE);
    if (!evas_object_visible_get(obj)) return EINA_FALSE;
-<<<<<<< HEAD
-   comp = e_comp_util_evas_object_comp_get(obj);
-   if ((!comp) || (!comp->nocomp_ec)) return EINA_FALSE;
-   cl = evas_object_layer_get(comp->nocomp_ec->frame);
-=======
    if (!e_comp->nocomp_ec) return EINA_FALSE;
    cl = evas_object_layer_get(e_comp->nocomp_ec->frame);
->>>>>>> upstream
    ol = evas_object_layer_get(obj);
    if (cl > ol) return EINA_FALSE;
    o = evas_object_above_get(e_comp->nocomp_ec->frame);
