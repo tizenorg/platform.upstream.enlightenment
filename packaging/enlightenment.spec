@@ -49,6 +49,7 @@ BuildRequires:  pkgconfig(xext)
 BuildRequires:  pkgconfig(xcb-keysyms)
 BuildRequires:  pkgconfig(ecore-x)
 %else
+BuildRequires:  pkgconfig(libsystemd)
 BuildRequires:  pkgconfig(wayland-server)
 BuildRequires:  pkgconfig(xdg-shell-server)
 BuildRequires:  pkgconfig(scaler-server)
