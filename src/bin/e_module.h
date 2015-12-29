@@ -62,25 +62,7 @@ struct _E_Module_Api
 EINTERN int          e_module_init(void);
 EINTERN int          e_module_shutdown(void);
 
-<<<<<<< HEAD
-EAPI void         e_module_deferred_job(void);
-EAPI void         e_module_all_load(void);
-EAPI E_Module    *e_module_new(const char *name);
-EAPI int          e_module_save(E_Module *m);
-EAPI const char  *e_module_dir_get(E_Module *m);
-EAPI int          e_module_enable(E_Module *m);
-EAPI int          e_module_disable(E_Module *m);
-EAPI int          e_module_enabled_get(E_Module *m);
-EAPI int          e_module_save_all(void);
-EAPI E_Module    *e_module_find(const char *name);
-EAPI Eina_List   *e_module_list(void);
-EAPI Eina_List   *e_module_desktop_list(void);
-EAPI void         e_module_desktop_free(E_Module_Desktop *md);
-EAPI void         e_module_dialog_show(E_Module *m, const char *title, const char *body);
-EAPI void         e_module_delayed_set(E_Module *m, int delayed);
-EAPI void         e_module_priority_set(E_Module *m, int priority);
-EAPI Eina_Bool   e_module_loading_get(void);
-=======
+E_API void         e_module_deferred_job(void);
 E_API void         e_module_all_load(void);
 E_API E_Module    *e_module_new(const char *name);
 E_API int          e_module_save(E_Module *m);
@@ -97,6 +79,5 @@ E_API void         e_module_dialog_show(E_Module *m, const char *title, const ch
 E_API void         e_module_delayed_set(E_Module *m, int delayed);
 E_API void         e_module_priority_set(E_Module *m, int priority);
 E_API Eina_Bool   e_module_loading_get(void);
->>>>>>> upstream
 #endif
 #endif
