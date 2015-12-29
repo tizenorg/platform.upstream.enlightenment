@@ -1,12 +1,8 @@
 #include "e.h"
 
-<<<<<<< HEAD
-EAPI double e_scale = 1.0;
+E_API double e_scale = 1.0;
 static Eina_Bool _initted = EINA_FALSE;
 static int _dpi = -1;
-=======
-E_API double e_scale = 1.0;
->>>>>>> upstream
 
 EINTERN int
 e_scale_init(void)
@@ -61,7 +57,7 @@ e_scale_update(void)
    e_hints_scale_update();
 }
 
-EAPI void
+E_API void
 e_scale_manual_update(int dpi)
 {
    char buf[128];
