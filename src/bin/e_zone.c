@@ -19,24 +19,6 @@ static void        _e_zone_object_del_attach(void *o);
 static E_Zone_Edge _e_zone_detect_edge(E_Zone *zone, Evas_Object *obj);
 static void        _e_zone_edge_move_resize(E_Zone *zone);
 
-<<<<<<< HEAD
-EAPI int E_EVENT_ZONE_DESK_COUNT_SET = 0;
-EAPI int E_EVENT_POINTER_WARP = 0;
-EAPI int E_EVENT_ZONE_MOVE_RESIZE = 0;
-EAPI int E_EVENT_ZONE_ADD = 0;
-EAPI int E_EVENT_ZONE_DEL = 0;
-EAPI int E_EVENT_ZONE_EDGE_IN = 0;
-EAPI int E_EVENT_ZONE_EDGE_OUT = 0;
-EAPI int E_EVENT_ZONE_EDGE_MOVE = 0;
-EAPI int E_EVENT_ZONE_STOW = 0;
-EAPI int E_EVENT_ZONE_UNSTOW = 0;
-#ifdef _F_ZONE_WINDOW_ROTATION_
-EAPI int E_EVENT_ZONE_ROTATION_CHANGE_BEGIN = 0;
-EAPI int E_EVENT_ZONE_ROTATION_CHANGE_CANCEL = 0;
-EAPI int E_EVENT_ZONE_ROTATION_CHANGE_END = 0;
-#endif
-EAPI int E_EVENT_ZONE_DISPLAY_STATE_CHANGE = 0;
-=======
 E_API int E_EVENT_ZONE_DESK_COUNT_SET = 0;
 E_API int E_EVENT_POINTER_WARP = 0;
 E_API int E_EVENT_ZONE_MOVE_RESIZE = 0;
@@ -47,7 +29,12 @@ E_API int E_EVENT_ZONE_EDGE_OUT = 0;
 E_API int E_EVENT_ZONE_EDGE_MOVE = 0;
 E_API int E_EVENT_ZONE_STOW = 0;
 E_API int E_EVENT_ZONE_UNSTOW = 0;
->>>>>>> upstream
+#ifdef _F_ZONE_WINDOW_ROTATION_
+E_API int E_EVENT_ZONE_ROTATION_CHANGE_BEGIN = 0;
+E_API int E_EVENT_ZONE_ROTATION_CHANGE_CANCEL = 0;
+E_API int E_EVENT_ZONE_ROTATION_CHANGE_END = 0;
+#endif
+E_API int E_EVENT_ZONE_DISPLAY_STATE_CHANGE = 0;
 
 #define E_ZONE_FLIP_LEFT(zone)  (((e_config->desk_flip_wrap && ((zone)->desk_x_count > 1)) || ((zone)->desk_x_current > 0)) && (zone)->edge.left)
 #define E_ZONE_FLIP_RIGHT(zone) (((e_config->desk_flip_wrap && ((zone)->desk_x_count > 1)) || (((zone)->desk_x_current + 1) < (zone)->desk_x_count)) && (zone)->edge.right)
