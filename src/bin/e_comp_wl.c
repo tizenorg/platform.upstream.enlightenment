@@ -4151,7 +4151,7 @@ _e_comp_wl_compositor_create(void)
    int fd = 0;
    const char *runtime_dir;
 #ifdef HAVE_SYSTEMD_DAEMON
-   int a;
+   int n;
 #endif
 
    /* check for existing compositor. create if needed */
@@ -4179,20 +4179,20 @@ _e_comp_wl_compositor_create(void)
      }
 
 #ifdef HAVE_SYSTEMD_DAEMON
-   a = sd_listen_fds(1);
-   if (a < 0)
+   n = sd_listen_fds(1);
+   if (n < 0)
      {
        ERR("Could not receive an open Wayland socket: %m");
        goto sock_err;
      }
-   else if (a > 1)
+   else if (n > 1)
      {
        ERR("Too many open sockets received");
        goto sock_err;
      }
-   else if (a == 1) /* Is it posible and desirable to accept more than one socket? */
+   else if (n == 1) /* Is it posible and desirable to accept more than one socket? */
      {
-       int f = SD_LISTEN_FDS_START;
+       int socket = SD_LISTEN_FDS_START;
        const char* runtime_dir;
 
        /* If unset wl_display_add_socket_auto() would fail, let's fail too. */
@@ -4211,13 +4211,13 @@ _e_comp_wl_compositor_create(void)
 	   goto sock_err;
 	 }
 
-       if (wl_display_add_socket_fd(cdata->wl.disp, f) < 0)
+       if (wl_display_add_socket_fd(cdata->wl.disp, socket) < 0)
 	 {
 	   ERR("Could not add a file descriptor to a display");
 	   goto sock_err;
 	 }
      }
-   else
+   else /* a == 0, no sockets received */
 #endif
    /* try to setup wayland socket */
    if (!(name = wl_display_add_socket_auto(cdata->wl.disp)))
