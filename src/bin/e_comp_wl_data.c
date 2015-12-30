@@ -384,17 +384,12 @@ _e_comp_wl_data_device_drag_finished(E_Drag *drag, int dropped)
 
 static void
 _e_comp_wl_data_device_cb_drag_start(struct wl_client *client, struct wl_resource *resource EINA_UNUSED, struct wl_resource *source_resource, struct wl_resource *origin_resource, struct wl_resource *icon_resource, uint32_t serial)
->>>>>>> upstream
 {
    E_Comp_Wl_Data_Source *source;
    Eina_List *l;
    struct wl_resource *res;
-<<<<<<< HEAD
-   E_Client *focused = NULL;
-=======
    E_Client *ec = NULL;
    int x, y;
->>>>>>> upstream
 
    DBG("Data Device Drag Start");
 
@@ -405,37 +400,6 @@ _e_comp_wl_data_device_cb_drag_start(struct wl_client *client, struct wl_resourc
 
    if (icon_resource)
      {
-<<<<<<< HEAD
-        E_Pixmap *cp;
-        E_Client *ec;
-
-        DBG("\tHave Icon Resource: %p", icon_resource);
-        cp = wl_resource_get_user_data(icon_resource);
-
-        if ((cp) && !(ec = e_pixmap_client_get(cp)))
-          {
-             int x, y;
-
-             ec = e_client_new(NULL, cp, 1, 0);
-             ec->lock_focus_out = ec->layer_block = ec->visible = ec->override = 1;
-             ec->new_client = 0;
-             e_comp->new_clients--;
-             ec->icccm.title = eina_stringshare_add("drag-win");
-             evas_object_pass_events_set(ec->frame, 1);
-             ec->client.w = ec->client.h = 1;
-             l = e_client_focus_stack_get();
-             e_client_focus_stack_set(eina_list_remove(l, ec));
-
-             ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
-             evas_object_move(ec->frame, x, y);
-             evas_object_show(ec->frame);
-
-             ec->comp_data->shell.surface = icon_resource;
-             ec->comp_data->shell.configure = _e_comp_wl_drag_icon_confiugre;
-             ec->comp_data->shell.map = _e_comp_wl_drag_icon_map;
-
-             cdata->dnd.icon = ec;
-=======
         DBG("\tHave Icon Resource: %p", icon_resource);
         ec = wl_resource_get_user_data(icon_resource);
         if (!ec->re_manage)
@@ -449,7 +413,6 @@ _e_comp_wl_data_device_cb_drag_start(struct wl_client *client, struct wl_resourc
              e_client_focus_stack_set(eina_list_remove(e_client_focus_stack_get(), ec));
              EC_CHANGED(ec);
              e_comp_wl->drag_client = ec;
->>>>>>> upstream
           }
      }
 
@@ -460,24 +423,6 @@ _e_comp_wl_data_device_cb_drag_start(struct wl_client *client, struct wl_resourc
         wl_pointer_send_leave(res, serial, e_comp_wl->kbd.focus);
      }
 
-<<<<<<< HEAD
-   cdata->dnd.enabled = EINA_TRUE;
-   cdata->dnd.data_source = source;
-   cdata->dnd.client = client;
-
-   if (source)
-     {
-        cdata->dnd.data_source_listener.notify =
-           _e_comp_wl_data_device_destroy_dnd_data_source;
-        wl_signal_add(&source->destroy_signal,
-                      &cdata->dnd.data_source_listener);
-     }
-
-   focused = e_client_focused_get();
-   if (!focused) return;
-
-   e_comp_wl_data_dnd_focus(focused);
-=======
    evas_pointer_canvas_xy_get(e_comp->evas, &x, &y);
    e_comp_wl->drag = e_drag_new(x, y,
                                            NULL, 0, NULL, 0, NULL, _e_comp_wl_data_device_drag_finished);
@@ -496,7 +441,6 @@ _e_comp_wl_data_device_cb_drag_start(struct wl_client *client, struct wl_resourc
      e_comp_wl_data_device_send_enter(e_comp_wl->ptr.ec);
    e_screensaver_inhibit_toggle(1);
    e_comp_canvas_feed_mouse_up(0);
->>>>>>> upstream
 }
 
 static void
@@ -801,15 +745,7 @@ _e_comp_wl_clipboard_selection_set(struct wl_listener *listener EINA_UNUSED, voi
    else if (sel_source->target == _e_comp_wl_clipboard_source_target_send)
      return;
 
-<<<<<<< HEAD
-   mime_type = eina_list_nth(sel_source->mime_types, 0);
-=======
-   if (clip_source)
-     e_comp_wl_clipboard_source_unref(clip_source);
-
-   e_comp_wl->clipboard.source = NULL;
    mime_type = eina_array_data_get(sel_source->mime_types, 0);
->>>>>>> upstream
 
    if (!clip_source)
      {
@@ -818,11 +754,10 @@ _e_comp_wl_clipboard_selection_set(struct wl_listener *listener EINA_UNUSED, voi
 
         sel_source->send(sel_source, mime_type, p[1]);
 
-<<<<<<< HEAD
-        cdata->clipboard.source =
-           _e_comp_wl_clipboard_source_create(cdata, mime_type,
-                                              cdata->selection.serial, p);
-        if (!cdata->clipboard.source)
+        e_comp_wl->clipboard.source =
+           _e_comp_wl_clipboard_source_create(mime_type,
+                                              e_comp_wl->selection.serial, p);
+        if (!e_comp_wl->clipboard.source)
           {
              close(p[0]);
              close(p[1]);
@@ -831,16 +766,7 @@ _e_comp_wl_clipboard_selection_set(struct wl_listener *listener EINA_UNUSED, voi
    else
      {
         sel_source->send(sel_source, mime_type, clip_source->fd[1]);
-
      }
-=======
-   e_comp_wl->clipboard.source =
-      e_comp_wl_clipboard_source_create(mime_type,
-                                         e_comp_wl->selection.serial, p[0]);
-
-   if (!e_comp_wl->clipboard.source)
-     close(p[0]);
->>>>>>> upstream
 }
 
 static void
@@ -982,12 +908,6 @@ e_comp_wl_data_device_keyboard_focus_set(void)
      }
    source = (E_Comp_Wl_Data_Source*)e_comp_wl->selection.data_source;
 
-<<<<<<< HEAD
-   if (!(ep = wl_resource_get_user_data(focus))) return;
-   if (!(ec = e_pixmap_client_get(ep))) return;
-   if (e_object_is_del(E_OBJECT(ec))) return;
-
-=======
 #ifndef HAVE_WAYLAND_ONLY
    do
      {
@@ -1005,33 +925,16 @@ e_comp_wl_data_device_keyboard_focus_set(void)
           }
      } while (0);
 #endif
->>>>>>> upstream
    data_device_res =
       e_comp_wl_data_find_for_client(wl_resource_get_client(focus));
    if (!data_device_res) return;
 
    if (source)
-<<<<<<< HEAD
      {
-        uint32_t serial;
-        int cx, cy;
-
-        serial = wl_display_next_serial(cdata->wl.disp);
-
-        offer_res = _e_comp_wl_data_device_data_offer_create(source,
-                                                             data_device_res);
-
-        cx = wl_fixed_to_int(cdata->ptr.x) - ec->client.x;
-        cy = wl_fixed_to_int(cdata->ptr.y) - ec->client.y;
-
-        wl_data_device_send_enter(data_device_res, serial, focus, 
-                                  wl_fixed_from_int(cx), wl_fixed_from_int(cy), offer_res);
-        wl_data_device_send_selection(data_device_res, offer_res);
+        offer_res =
+           _e_comp_wl_data_device_data_offer_create(source, data_device_res);
      }
-=======
-     offer_res = _e_comp_wl_data_device_data_offer_create(source, data_device_res);
    wl_data_device_send_selection(data_device_res, offer_res);
->>>>>>> upstream
 }
 
 EINTERN Eina_Bool
