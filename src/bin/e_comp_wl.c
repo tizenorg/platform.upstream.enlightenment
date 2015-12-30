@@ -4117,30 +4117,6 @@ e_comp_wl_init(void)
 #endif
 
    /* add event handlers to catch E events */
-<<<<<<< HEAD
-#ifndef HAVE_WAYLAND_ONLY
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_RANDR_CHANGE,          _e_comp_wl_cb_randr_change,    NULL);
-#endif
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD,       _e_comp_wl_cb_comp_object_add, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN,          _e_comp_wl_cb_input_event,     NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_UP,            _e_comp_wl_cb_input_event,     NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_DOWN, _e_comp_wl_cb_input_event,     NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_UP,   _e_comp_wl_cb_input_event,     NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_MOVE,        _e_comp_wl_cb_input_event,     NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_WHEEL,       _e_comp_wl_cb_input_event,     NULL);
-
-   /* add hooks to catch e_client events */
-   e_client_hook_add(E_CLIENT_HOOK_NEW_CLIENT,           _e_comp_wl_client_cb_new,          NULL);
-   e_client_hook_add(E_CLIENT_HOOK_DEL,                  _e_comp_wl_client_cb_del,          NULL);
-   e_client_hook_add(E_CLIENT_HOOK_EVAL_POST_NEW_CLIENT, _e_comp_wl_client_cb_post_new,     NULL);
-   e_client_hook_add(E_CLIENT_HOOK_FOCUS_SET,            _e_comp_wl_client_cb_focus_set,    NULL);
-   e_client_hook_add(E_CLIENT_HOOK_FOCUS_UNSET,          _e_comp_wl_client_cb_focus_unset,  NULL);
-   e_client_hook_add(E_CLIENT_HOOK_RESIZE_BEGIN,         _e_comp_wl_client_cb_resize_begin, NULL);
-   e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,           _e_comp_wl_client_cb_resize_end,   NULL);
-   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,             _e_comp_wl_client_cb_move_end,     NULL);
-   e_client_hook_add(E_CLIENT_HOOK_ICONIFY,              _e_comp_wl_client_cb_iconify,    NULL);
-   e_client_hook_add(E_CLIENT_HOOK_UNICONIFY,            _e_comp_wl_client_cb_uniconify,    NULL);
-=======
    if (e_comp->comp_type != E_PIXMAP_TYPE_X)
      {
         if (e_randr2_init())
@@ -4176,7 +4152,10 @@ e_comp_wl_init(void)
                      _e_comp_wl_client_cb_resize_begin, NULL);
    e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,
                      _e_comp_wl_client_cb_resize_end, NULL);
->>>>>>> upstream
+
+   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,             _e_comp_wl_client_cb_move_end,     NULL);
+   e_client_hook_add(E_CLIENT_HOOK_ICONIFY,              _e_comp_wl_client_cb_iconify,    NULL);
+   e_client_hook_add(E_CLIENT_HOOK_UNICONIFY,            _e_comp_wl_client_cb_uniconify,    NULL);
 
    e_desklock_show_hook_add(_e_comp_wl_desklock_show);
    e_desklock_hide_hook_add(_e_comp_wl_desklock_hide);
