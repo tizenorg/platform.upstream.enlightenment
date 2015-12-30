@@ -679,12 +679,6 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    if (!ec->comp_data->surface) return;
    if (ec->comp_data->transform.start) return;
 
-   if (e_comp->wl_comp_data->dnd.enabled)
-     {
-        e_comp_wl_data_dnd_focus(ec);
-        return;
-     }
-
    if (e_config->use_cursor_timer)
      {
         if (ec->comp->wl_comp_data->ptr.hidden == EINA_TRUE)
@@ -709,6 +703,7 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
         e_comp_wl_data_device_send_enter(ec);
         return;
      }
+
    if (!eina_list_count(e_comp_wl->ptr.resources)) return;
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
@@ -761,12 +756,6 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
    if (!ec->comp_data->surface) return;
    if (ec->comp_data->transform.start) return;
 
-   if (e_comp->wl_comp_data->dnd.enabled)
-     {
-        if (e_comp->wl_comp_data->dnd.focus == ec->comp_data->surface)
-          e_comp_wl_data_dnd_focus(NULL);
-     }
-
    if (e_comp_wl->drag)
      {
         e_comp_wl_data_device_send_leave(ec);
@@ -785,7 +774,7 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
 }
 
 static void
-_e_comp_wl_evas_handle_mouse_move_to_touch(E_Client *ec, uint32_t timestamp, int canvas_x, int canvas_y)
+_e_comp_wl_send_touch_move(E_Client *ec, int canvas_x, int canvas_y, uint32_t timestamp)
 {
    Eina_List *l;
    struct wl_client *wc;
@@ -910,7 +899,6 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    E_Client *ec;
    Evas_Event_Mouse_Move *ev;
    struct wl_resource *res;
-   struct wl_client *wc;
    Eina_List *l;
    Evas_Device *dev = NULL;
 
@@ -926,23 +914,16 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    if (ec->ignored) return;
    if (!ec->comp_data->surface) return;
 
-   if (e_comp->wl_comp_data->dnd.enabled)
+   if ((!e_comp_wl->drag_client) ||
+       (!e_client_has_xwindow(e_comp_wl->drag_client)))
      {
-        e_comp_wl_data_dnd_motion(ec, ev->timestamp,
-                                  ev->cur.canvas.x - ec->client.x,
-                                  ev->cur.canvas.y - ec->client.y);
-        return;
-     }
-
-   dev = ev->dev;
-   if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
-     _e_comp_wl_evas_handle_mouse_move_to_touch(ec, ev->timestamp, ev->cur.canvas.x, ev->cur.canvas.y);
-   else
-     {
-        if ((!e_comp_wl->drag_client) ||
-            (!e_client_has_xwindow(e_comp_wl->drag_client)))
+        dev = ev->dev;
+        if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
+          _e_comp_wl_send_touch_move(ec, ev->cur.canvas.x, ev->cur.canvas.y, ev->timestamp);
+        else
           _e_comp_wl_send_mouse_move(ec, ev->cur.canvas.x, ev->cur.canvas.y, ev->timestamp);
      }
+
    if (e_config->use_cursor_timer)
      {
         if (ec->comp->wl_comp_data->ptr.hidden == EINA_TRUE)
@@ -962,14 +943,10 @@ _e_comp_wl_evas_handle_mouse_button_to_touch(E_Client *ec, uint32_t timestamp, i
    struct wl_resource *res;
    wl_fixed_t x, y;
 
+   if (ec->cur_mouse_action || ec->border_menu || e_comp_wl->drag) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (!ec->comp_data->surface) return;
-
-   if (e_comp->wl_comp_data->dnd.enabled)
-     {
-        e_comp_wl_data_dnd_drop_touch(ec, timestamp, canvas_x, canvas_y, flag);
-        return;
-     }
+   if (ec->ignored) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
@@ -4786,12 +4763,6 @@ e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t bu
      {
         _e_comp_wl_transform_unset(ec);
         return EINA_TRUE;
-     }
-
-   if (e_comp->wl_comp_data->dnd.enabled)
-     {
-        e_comp_wl_data_dnd_drop(ec, timestamp, btn, state);
-        return EINA_FALSE;
      }
 
    if (!eina_list_count(e_comp_wl->ptr.resources))
