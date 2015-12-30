@@ -2320,6 +2320,7 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
    E_Client *wc, *ec = NULL;
    Eina_List *l;
    pid_t pid;
+   int internal = 0;
 
    DBG("Compositor Cb Surface Create: %d", id);
 
@@ -2342,6 +2343,7 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
    if (pid == getpid())
      {
         /* pixmap of internal win was supposed to be created at trap show */
+        internal = 1;
         ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, (uintptr_t)id);
      }
    else
@@ -2371,7 +2373,7 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
 
         DBG("\tUsing Pixmap: %p", ep);
 
-        ec = e_client_new(ep, 0, 0);
+        ec = e_client_new(ep, 0, internal);
      }
    if (ec)
      {

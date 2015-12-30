@@ -542,40 +542,10 @@ _e_shell_cb_shell_surface_get(struct wl_client *client, struct wl_resource *reso
         return;
      }
 
-<<<<<<< HEAD
-   /* make sure it's a wayland pixmap */
-   if (e_pixmap_type_get(ep) != E_PIXMAP_TYPE_WL) return;
-
-   /* find the client for this pixmap */
-   if (!(ec = e_pixmap_client_get(ep)))
-     ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, e_pixmap_window_get(ep));
-
-   if (!ec)
-     {
-        pid_t pid;
-        int internal = 0;
-
-        /* check if it's internal or external */
-        wl_client_get_credentials(client, &pid, NULL, NULL);
-        if (pid == getpid()) internal = 1;
-
-        if (!(ec = e_client_new(NULL, ep, 0, internal)))
-          {
-             wl_resource_post_error(surface_resource,
-                                    WL_DISPLAY_ERROR_INVALID_OBJECT,
-                                    "No Client For Pixmap");
-             return;
-          }
-
-        ec->netwm.pid = pid;
-        ec->netwm.ping = EINA_TRUE;
-     }
-=======
    EC_CHANGED(ec);
    ec->new_client = ec->netwm.ping = EINA_TRUE;
    e_comp->new_clients++;
    e_client_unignore(ec);
->>>>>>> upstream
 
    /* get the client data */
    if (!(cdata = ec->comp_data))
@@ -1152,40 +1122,10 @@ _e_xdg_shell_cb_surface_get(struct wl_client *client, struct wl_resource *resour
         return;
      }
 
-<<<<<<< HEAD
-   /* make sure it's a wayland pixmap */
-   if (e_pixmap_type_get(ep) != E_PIXMAP_TYPE_WL) return;
-
-   /* find the client for this pixmap */
-   if (!(ec = e_pixmap_client_get(ep)))
-     ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, e_pixmap_window_get(ep));
-
-   if (!ec)
-     {
-        pid_t pid;
-        int internal = 0;
-
-        /* check if it's internal or external */
-        wl_client_get_credentials(client, &pid, NULL, NULL);
-        if (pid == getpid()) internal = 1;
-
-        if (!(ec = e_client_new(NULL, ep, 0, internal)))
-          {
-             wl_resource_post_error(surface_resource,
-                                    WL_DISPLAY_ERROR_INVALID_OBJECT,
-                                    "No Client For Pixmap");
-             return;
-          }
-        ec->netwm.pid = pid;
-     }
-
-   ec->netwm.ping = EINA_TRUE;
-=======
    EC_CHANGED(ec);
    ec->new_client = ec->netwm.ping = EINA_TRUE;
    e_comp->new_clients++;
    e_client_unignore(ec);
->>>>>>> upstream
 
    /* get the client data */
    if (!(cdata = ec->comp_data))
@@ -1474,7 +1414,6 @@ _e_xdg_shell_cb_bind(struct wl_client *client, void *data EINA_UNUSED, uint32_t 
                               e_comp->wl_comp_data, NULL);
 }
 
-<<<<<<< HEAD
 static void
 _e_tz_surf_cb_tz_res_get(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface)
 {
