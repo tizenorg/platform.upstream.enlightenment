@@ -1124,7 +1124,6 @@ e_pixmap_image_draw(E_Pixmap *cp, const Eina_Rectangle *r)
    return EINA_FALSE;
 }
 
-<<<<<<< HEAD
 E_API Eina_Bool
 e_pixmap_validate_check(const E_Pixmap *cp)
 {
