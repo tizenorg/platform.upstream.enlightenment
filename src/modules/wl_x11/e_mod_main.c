@@ -11,13 +11,8 @@ _cb_delete_request(Ecore_Evas *ee EINA_UNUSED)
    ecore_main_loop_quit();
 }
 
-<<<<<<< HEAD
-static Eina_Bool
-_cb_keymap_changed(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
-=======
 static Eina_Bool 
 _cb_keymap_changed(void *data EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED)
->>>>>>> upstream
 {
    E_Config_XKB_Layout *ekbd;
    char *rules = NULL, *model = NULL, *layout = NULL;
@@ -84,12 +79,7 @@ e_modapi_init(E_Module *m)
 
    ecore_evas_screen_geometry_get(e_comp->ee, NULL, NULL, &w, &h);
 
-<<<<<<< HEAD
-   /* NB: This needs to be called AFTER comp_canvas has been setup as it
-    * makes reference to the comp->evas */
-=======
    e_comp_x_randr_screen_iface_set();
->>>>>>> upstream
    if (!e_comp_wl_init()) return NULL;
    if (!e_comp_canvas_init(w, h)) return NULL;
 
@@ -97,40 +87,23 @@ e_modapi_init(E_Module *m)
    e_comp_wl_input_keyboard_enabled_set(EINA_TRUE);
    e_comp_wl_input_touch_enabled_set(EINA_TRUE);
 
-<<<<<<< HEAD
-   /* comp->pointer =  */
-   /*   e_pointer_window_new(ecore_evas_window_get(comp->ee), EINA_TRUE); */
-   if ((comp->pointer = e_pointer_canvas_new(comp->ee, EINA_TRUE))
-       comp->pointer->color = EINA_TRUE;
-=======
    /* e_comp->pointer =  */
    /*   e_pointer_window_new(ecore_evas_window_get(e_comp->ee), EINA_TRUE); */
-   e_comp->pointer = e_pointer_canvas_new(e_comp->ee, EINA_TRUE);
-   e_comp->pointer->color = EINA_TRUE;
->>>>>>> upstream
+   if ((e_comp->pointer = e_pointer_canvas_new(e_comp->ee, EINA_TRUE)))
+     e_comp->pointer->color = EINA_TRUE;
 
    /* force a keymap update so compositor keyboard gets setup */
    _cb_keymap_changed(e_comp->wl_comp_data, 0, NULL);
 
    /* setup keymap_change event handler */
-<<<<<<< HEAD
-   kbd_hdlr =
-     ecore_event_handler_add(ECORE_X_EVENT_XKB_STATE_NOTIFY,
-                             _cb_keymap_changed, comp->wl_comp_data);
-=======
    kbd_hdlr = 
      ecore_event_handler_add(ECORE_X_EVENT_XKB_STATE_NOTIFY, 
                              _cb_keymap_changed, e_comp->wl_comp_data);
->>>>>>> upstream
 
    return m;
 }
 
-<<<<<<< HEAD
-EAPI int
-=======
 E_API int 
->>>>>>> upstream
 e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
    /* delete handler for keymap change */
