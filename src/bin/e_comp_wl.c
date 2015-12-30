@@ -1911,9 +1911,6 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
           ec->comp_data->shell.configure(ec->comp_data->shell.surface,
                                          x, y, ec->w, ec->h);
         else
-<<<<<<< HEAD
-          e_client_util_move_resize_without_frame(ec, x, y, ec->w, ec->h);
-=======
           {
              if (ec->netwm.sync.wait)
                {
@@ -1951,9 +1948,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
                   e_drag_resize(e_comp_wl->drag, state->bw, state->bh);
                }
              else
-               e_client_util_move_resize_without_frame(ec, x, y, w, h);
+               e_client_util_move_resize_without_frame(ec, x, y, ec->w, ec->h);
           }
->>>>>>> upstream
 
         if (ec->new_client)
           ec->placed = placed;
@@ -2333,24 +2329,11 @@ _e_comp_wl_surface_destroy(struct wl_resource *resource)
 {
    E_Client *ec;
 
-<<<<<<< HEAD
-   if (!(ep = wl_resource_get_user_data(resource))) return;
-
-   /* try to get the e_client from this pixmap */
-   if (!(ec = e_pixmap_client_get(ep)))
-     {
-        e_pixmap_free(ep);
-        return;
-     }
-   else
-     e_pixmap_del(ep);
-
-   evas_object_hide(ec->frame);
-=======
    if (!(ec = wl_resource_get_user_data(resource))) return;
 
+   e_pixmap_del(ec->pixmap);
+
    _e_comp_wl_surface_render_stop(ec);
->>>>>>> upstream
    e_object_del(E_OBJECT(ec));
 }
 
@@ -2358,12 +2341,9 @@ static void
 _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 {
    struct wl_resource *res;
-<<<<<<< HEAD
    E_Pixmap *ep = NULL;
-=======
    E_Client *wc, *ec = NULL;
    Eina_List *l;
->>>>>>> upstream
    pid_t pid;
 
    DBG("Compositor Cb Surface Create: %d", id);
@@ -2384,11 +2364,10 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
                                   _e_comp_wl_surface_destroy);
 
    wl_client_get_credentials(client, &pid, NULL, NULL);
-<<<<<<< HEAD
    if (pid == getpid())
      {
         /* pixmap of internal win was supposed to be created at trap show */
-        ep = e_pixmap_find(E_PIXMAP_TYPE_WL, (uintptr_t)id);
+        ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, (uintptr_t)id);
      }
    else
      {
@@ -2400,15 +2379,8 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
           }
      }
 
-   if (!ep)
-=======
-   if (pid == getpid()) //internal!
-     ec = e_pixmap_find_client(E_PIXMAP_TYPE_WL, (uintptr_t)id);
    if (!ec)
->>>>>>> upstream
      {
-        E_Pixmap *ep;
-
         /* try to create new pixmap */
         if (!(ep = e_pixmap_new(E_PIXMAP_TYPE_WL, res)))
           {
@@ -2417,18 +2389,11 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
              wl_client_post_no_memory(client);
              return;
           }
-<<<<<<< HEAD
-     }
-   DBG("\tUsing Pixmap: %p", ep);
 
-   /* set reference to pixmap so we can fetch it later */
-   wl_resource_set_user_data(res, ep);
+        E_Comp_Wl_Client_Data *cdata = e_pixmap_cdata_get(ep);
+        if (cdata)
+          cdata->wl_surface = res;
 
-   E_Comp_Wl_Client_Data *cdata = e_pixmap_cdata_get(ep);
-   if (cdata)
-     cdata->wl_surface = res;
-
-=======
         DBG("\tUsing Pixmap: %p", ep);
 
         ec = e_client_new(ep, 0, 0);
@@ -2456,7 +2421,6 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
         break;
      }
 #endif
->>>>>>> upstream
    /* emit surface create signal */
    wl_signal_emit(&e_comp_wl->signals.surface.create, res);
 }
