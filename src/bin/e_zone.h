@@ -199,8 +199,8 @@ E_API void      e_zone_unstow(E_Zone *zone);
 
 E_API void      e_zone_fade_handle(E_Zone *zone, int out, double tim);
 
-EAPI void                 e_zone_display_state_set(E_Zone *zone, E_Zone_Display_State state);
-EAPI E_Zone_Display_State e_zone_display_state_get(E_Zone *zone);
+E_API void                 e_zone_display_state_set(E_Zone *zone, E_Zone_Display_State state);
+E_API E_Zone_Display_State e_zone_display_state_get(E_Zone *zone);
 
 extern E_API int E_EVENT_ZONE_DESK_COUNT_SET;
 extern E_API int E_EVENT_ZONE_MOVE_RESIZE;
@@ -214,12 +214,12 @@ extern E_API int E_EVENT_ZONE_STOW;
 extern E_API int E_EVENT_ZONE_UNSTOW;
 
 #ifdef _F_ZONE_WINDOW_ROTATION_
-extern EAPI int E_EVENT_ZONE_ROTATION_CHANGE_BEGIN;
-extern EAPI int E_EVENT_ZONE_ROTATION_CHANGE_CANCEL;
-extern EAPI int E_EVENT_ZONE_ROTATION_CHANGE_END;
+extern E_API int E_EVENT_ZONE_ROTATION_CHANGE_BEGIN;
+extern E_API int E_EVENT_ZONE_ROTATION_CHANGE_CANCEL;
+extern E_API int E_EVENT_ZONE_ROTATION_CHANGE_END;
 #endif
 
-extern EAPI int E_EVENT_ZONE_DISPLAY_STATE_CHANGE;
+extern E_API int E_EVENT_ZONE_DISPLAY_STATE_CHANGE;
 
 #endif
 #endif

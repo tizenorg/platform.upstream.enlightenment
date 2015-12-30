@@ -1446,7 +1446,7 @@ e_zone_unstow(E_Zone *zone)
    zone->stowed = EINA_FALSE;
 }
 
-EAPI void
+E_API void
 e_zone_display_state_set(E_Zone *zone, E_Zone_Display_State state)
 {
    E_Event_Zone_Display_State_Change *ev;
@@ -1463,7 +1463,7 @@ e_zone_display_state_set(E_Zone *zone, E_Zone_Display_State state)
    ecore_event_add(E_EVENT_ZONE_DISPLAY_STATE_CHANGE, ev, _e_zone_event_generic_free, NULL);
 }
 
-EAPI E_Zone_Display_State
+E_API E_Zone_Display_State
 e_zone_display_state_get(E_Zone *zone)
 {
    E_OBJECT_CHECK_RETURN(zone, E_ZONE_DISPLAY_STATE_OFF);
