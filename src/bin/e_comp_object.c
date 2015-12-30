@@ -4017,49 +4017,41 @@ e_comp_object_effect_set(Evas_Object *obj, const char *effect)
 
    if (!effect) effect = "none";
    snprintf(buf, sizeof(buf), "e/comp/effects/%s", effect);
-<<<<<<< HEAD
 
    config = e_comp_config_get();
    if ((config) && (config->effect_file))
      {
         if (edje_object_file_set(cw->effect_obj, config->effect_file, buf))
-          loaded = EINA_TRUE;
+          {
+             cw->effect_set = EINA_TRUE;
+             loaded = EINA_TRUE;
+          }
      }
 
    if (!loaded)
-=======
-   edje_object_file_get(cw->effect_obj, NULL, &grp);
-   cw->effect_set = !eina_streq(effect, "none");
-   if (!e_util_strcmp(buf, grp)) return cw->effect_set;
-   if (!e_theme_edje_object_set(cw->effect_obj, "base/theme/comp", buf))
->>>>>>> upstream
      {
         edje_object_file_get(cw->effect_obj, NULL, &grp);
-        if (!e_util_strcmp(buf, grp)) return;
+        cw->effect_set = !eina_streq(effect, "none");
+        if (!e_util_strcmp(buf, grp)) return cw->effect_set;
         if (!e_theme_edje_object_set(cw->effect_obj, "base/theme/comp", buf))
-<<<<<<< HEAD
           {
              snprintf(buf, sizeof(buf), "e/comp/effects/auto/%s", effect);
              if (!e_theme_edje_object_set(cw->effect_obj, "base/theme/comp", buf))
-               if (!e_theme_edje_object_set(cw->effect_obj, "base/theme/comp", "e/comp/effects/none")) return;
-          }
-=======
-          if (!e_theme_edje_object_set(cw->effect_obj, "base/theme/comp", "e/comp/effects/none"))
-            {
-               if (cw->effect_running)
+               if (!e_theme_edje_object_set(cw->effect_obj, "base/theme/comp", "e/comp/effects/none"))
                  {
-                    if (!e_comp_object_effect_stop(obj, evas_object_data_get(cw->effect_obj, "_e_comp.end_cb")))
-                      return EINA_FALSE;
+                    if (cw->effect_running)
+                      {
+                         if (!e_comp_object_effect_stop(obj, evas_object_data_get(cw->effect_obj, "_e_comp.end_cb")))
+                           return EINA_FALSE;
+                      }
+                    cw->effect_set = EINA_FALSE;
+                    return cw->effect_set;
                  }
-               cw->effect_set = EINA_FALSE;
-               return cw->effect_set;
-            }
      }
    if (cw->effect_running)
      {
         if (!e_comp_object_effect_stop(obj, evas_object_data_get(cw->effect_obj, "_e_comp.end_cb")))
           return EINA_FALSE;
->>>>>>> upstream
      }
    edje_object_part_swallow(cw->effect_obj, "e.swallow.content", cw->shobj);
    if (cw->effect_clip)
