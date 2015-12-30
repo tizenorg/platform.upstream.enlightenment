@@ -64,8 +64,6 @@ static int screen_size_index = -1;
 static Ecore_X_Atom backlight_atom = 0;
 extern double e_bl_val;
 
-<<<<<<< HEAD
-=======
 static void _e_comp_x_hook_client_pre_frame_assign(void *d EINA_UNUSED, E_Client *ec);
 
 static inline E_Comp_X_Client_Data *
@@ -78,7 +76,6 @@ _e_comp_x_client_data_get(const E_Client *ec)
    return ec->comp_data;
 }
 
->>>>>>> upstream
 static Eina_Bool
 _e_comp_x_flusher(void *data EINA_UNUSED)
 {
@@ -1561,11 +1558,7 @@ _e_comp_x_configure_request(void *data  EINA_UNUSED, int type EINA_UNUSED, Ecore
          return ECORE_CALLBACK_PASS_ON;
     }
    /* pass through requests for windows we haven't/won't reparent yet */
-<<<<<<< HEAD
-   if ((ec) && (!ec->comp_data->need_reparent) && (!ec->comp_data->reparented))
-=======
    if (ec && (!_e_comp_x_client_data_get(ec)->need_reparent) && (!_e_comp_x_client_data_get(ec)->reparented))
->>>>>>> upstream
      {
         _e_comp_x_client_data_get(ec)->initial_attributes.x = ev->x;
         _e_comp_x_client_data_get(ec)->initial_attributes.y = ev->y;
@@ -2905,26 +2898,8 @@ _e_comp_x_damage(void *data EINA_UNUSED, int type EINA_UNUSED, Ecore_X_Event_Dam
      }
    //WRN("DAMAGE %p: %dx%d", ec, ev->area.width, ev->area.height);
 
-<<<<<<< HEAD
    ec->comp_data->damage_count++;
 
-   if (ec->comp->nocomp)
-     e_pixmap_dirty(ec->pixmap);
-   /* discard unwanted xy position of first damage
-    * to avoid wrong composition for override redirect window */
-   else if ((ec->override) && (!ec->comp_data->first_damage))
-     e_comp_object_damage(ec->frame, 0, 0, ev->area.width, ev->area.height);
-   else
-     e_comp_object_damage(ec->frame, ev->area.x, ev->area.y, ev->area.width, ev->area.height);
-
-   if ((e_comp_config_get()->skip_first_damage) &&
-       (!ec->re_manage) && (!ec->override) && (!ec->comp_data->first_damage))
-     e_comp_object_render_update_del(ec->frame);
-   else
-     E_FREE_FUNC(ec->comp_data->first_draw_delay, ecore_timer_del);
-   ec->comp_data->first_damage = 1;
-
-=======
    if (e_comp->nocomp)
      e_pixmap_dirty(ec->pixmap);
    else if (skip)
@@ -2937,12 +2912,12 @@ _e_comp_x_damage(void *data EINA_UNUSED, int type EINA_UNUSED, Ecore_X_Event_Dam
           e_comp_object_damage(ec->frame, rects[i].x, rects[i].y, rects[i].width, rects[i].height);
      }
    free(rects);
-   if ((!ec->re_manage) && (!ec->override) && (!_e_comp_x_client_data_get(ec)->first_damage))
+   if ((e_comp_config_get()->skip_first_damage) &&
+       (!ec->re_manage) && (!ec->override) && (!_e_comp_x_client_data_get(ec)->first_damage))
      e_comp_object_render_update_del(ec->frame);
    else
      E_FREE_FUNC(_e_comp_x_client_data_get(ec)->first_draw_delay, ecore_timer_del);
    _e_comp_x_client_data_get(ec)->first_damage = 1;
->>>>>>> upstream
    return ECORE_CALLBACK_RENEW;
 }
 
@@ -5373,42 +5348,20 @@ _e_comp_x_screens_setup(void)
    root = ecore_x_window_root_first_get();
    if (!root)
      {
-<<<<<<< HEAD
-        int rw, rh;
-        Ecore_X_Window root = roots[i];
-        E_Comp *c;
-
-        ecore_x_window_size_get(root, &rw, &rh);
-        if (n == 1)
-          {
-             /* more than 1 root window - xinerama wont be active */
-             success = _e_comp_x_xinerama_setup(rw, rh);
-             if (!success) break;
-          }
-        if (!success) break;
-        c = e_comp_new();
-        c->comp_type = E_PIXMAP_TYPE_X;
-        success = _e_comp_x_setup(c, root, rw, rh);
-        if (!success) break;
-#ifdef _F_ZONE_WINDOW_ROTATION_
-        if (e_config->wm_win_rotation)
-          {
-             ecore_x_e_window_rotation_supported_set(roots[i],
-                                                     e_config->wm_win_rotation);
-          }
-#endif
-     }
-   free(roots);
-   return success;
-=======
         e_error_message_show("X reports there are no root windows!\n");
         return 0;
      }
    ecore_x_window_size_get(root, &rw, &rh);
    if (e_comp->comp_type == E_PIXMAP_TYPE_NONE)
      e_randr2_screens_setup(rw, rh);
+#ifdef _F_ZONE_WINDOW_ROTATION_
+   if (e_config->wm_win_rotation)
+     {
+        ecore_x_e_window_rotation_supported_set(roots[i],
+                                                e_config->wm_win_rotation);
+     }
+#endif
    return _e_comp_x_setup(root, rw, rh);
->>>>>>> upstream
 }
 
 E_API Eina_Bool
@@ -5550,8 +5503,6 @@ e_comp_x_init(void)
 
    ecore_x_sync();
    _x_idle_flush = ecore_idle_enterer_add(_e_comp_x_flusher, NULL);
-<<<<<<< HEAD
-=======
 
    if (e_comp->comp_type != E_PIXMAP_TYPE_WL)
      {
@@ -5567,7 +5518,6 @@ e_comp_x_init(void)
      }
    else
      e_dnd_init();
->>>>>>> upstream
 
    return EINA_TRUE;
 }
