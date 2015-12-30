@@ -1,13 +1,8 @@
 #define E_COMP_WL
 #include "e.h"
-<<<<<<< HEAD
 #include <xdg-shell-server-protocol.h>
 #include <tizen-extension-server-protocol.h>
 #include "e_scaler.h"
-=======
-#include "e_mod_main.h"
-#include "e_desktop_shell_protocol.h"
->>>>>>> upstream
 
 #define XDG_SERVER_VERSION 5
 
@@ -180,13 +175,8 @@ _e_shell_surface_cb_move(struct wl_client *client EINA_UNUSED, struct wl_resourc
      }
 
    e_comp_object_frame_xy_unadjust(ec->frame,
-<<<<<<< HEAD
-                                   wl_fixed_to_int(cdata->ptr.x),
-                                   wl_fixed_to_int(cdata->ptr.y),
-=======
                                    wl_fixed_to_int(e_comp_wl->ptr.x),
                                    wl_fixed_to_int(e_comp_wl->ptr.y),
->>>>>>> upstream
                                    &ev.canvas.x, &ev.canvas.y);
 
    _e_shell_surface_mouse_down_helper(ec, &ev, EINA_TRUE);
@@ -215,20 +205,10 @@ _e_shell_surface_cb_resize(struct wl_client *client EINA_UNUSED, struct wl_resou
 
    DBG("Comp Resize Edges Set: %d", edges);
 
-<<<<<<< HEAD
-   cdata->resize.resource = resource;
-   cdata->resize.edges = edges;
-
-   cx = wl_fixed_to_int(cdata->ptr.x) - ec->client.x;
-   cy = wl_fixed_to_int(cdata->ptr.y) - ec->client.y;
-   cdata->ptr.grab_x = wl_fixed_from_int(cx);
-   cdata->ptr.grab_y = wl_fixed_from_int(cy);
-=======
    e_comp_wl->resize.resource = resource;
    e_comp_wl->resize.edges = edges;
    e_comp_wl->ptr.grab_x = e_comp_wl->ptr.x - wl_fixed_from_int(ec->client.x);
    e_comp_wl->ptr.grab_y = e_comp_wl->ptr.y - wl_fixed_from_int(ec->client.y);
->>>>>>> upstream
 
    switch (e_comp_wl->ptr.button)
      {
@@ -247,13 +227,8 @@ _e_shell_surface_cb_resize(struct wl_client *client EINA_UNUSED, struct wl_resou
      }
 
    e_comp_object_frame_xy_unadjust(ec->frame,
-<<<<<<< HEAD
-                                   wl_fixed_to_int(cdata->ptr.x),
-                                   wl_fixed_to_int(cdata->ptr.y),
-=======
                                    wl_fixed_to_int(e_comp_wl->ptr.x),
                                    wl_fixed_to_int(e_comp_wl->ptr.y),
->>>>>>> upstream
                                    &ev.canvas.x, &ev.canvas.y);
 
    _e_shell_surface_mouse_down_helper(ec, &ev, EINA_FALSE);
@@ -274,10 +249,7 @@ _e_shell_surface_cb_toplevel_set(struct wl_client *client EINA_UNUSED, struct wl
      }
 
    /* set toplevel client properties */
-<<<<<<< HEAD
    ec->icccm.accepts_focus = 1;
-=======
->>>>>>> upstream
    if (!ec->internal)
      ec->borderless = !ec->internal;
 
@@ -843,13 +815,8 @@ _e_xdg_shell_surface_cb_move(struct wl_client *client EINA_UNUSED, struct wl_res
      }
 
    e_comp_object_frame_xy_unadjust(ec->frame,
-<<<<<<< HEAD
-                                   wl_fixed_to_int(cdata->ptr.x),
-                                   wl_fixed_to_int(cdata->ptr.y),
-=======
                                    wl_fixed_to_int(e_comp_wl->ptr.x),
                                    wl_fixed_to_int(e_comp_wl->ptr.y),
->>>>>>> upstream
                                    &ev.canvas.x, &ev.canvas.y);
 
    _e_shell_surface_mouse_down_helper(ec, &ev, EINA_TRUE);
@@ -879,29 +846,10 @@ _e_xdg_shell_surface_cb_resize(struct wl_client *client EINA_UNUSED, struct wl_r
 
    if ((ec->maximized) || (ec->fullscreen)) return;
 
-<<<<<<< HEAD
-   /* get compositor data from seat */
-   if (!(cdata = wl_resource_get_user_data(seat_resource)))
-     {
-        wl_resource_post_error(seat_resource,
-                               WL_DISPLAY_ERROR_INVALID_OBJECT,
-                               "No Comp_Data for Seat");
-        return;
-     }
-
-   cdata->resize.resource = resource;
-   cdata->resize.edges = edges;
-
-   cx = wl_fixed_to_int(cdata->ptr.x) - ec->client.x;
-   cy = wl_fixed_to_int(cdata->ptr.y) - ec->client.y;
-   cdata->ptr.grab_x = wl_fixed_from_int(cx);
-   cdata->ptr.grab_y = wl_fixed_from_int(cy);
-=======
    e_comp_wl->resize.resource = resource;
    e_comp_wl->resize.edges = edges;
    e_comp_wl->ptr.grab_x = e_comp_wl->ptr.x - wl_fixed_from_int(ec->client.x);
    e_comp_wl->ptr.grab_y = e_comp_wl->ptr.y - wl_fixed_from_int(ec->client.y);
->>>>>>> upstream
 
    switch (e_comp_wl->ptr.button)
      {
@@ -920,13 +868,8 @@ _e_xdg_shell_surface_cb_resize(struct wl_client *client EINA_UNUSED, struct wl_r
      }
 
    e_comp_object_frame_xy_unadjust(ec->frame,
-<<<<<<< HEAD
-                                   wl_fixed_to_int(cdata->ptr.x),
-                                   wl_fixed_to_int(cdata->ptr.y),
-=======
                                    wl_fixed_to_int(e_comp_wl->ptr.x),
                                    wl_fixed_to_int(e_comp_wl->ptr.y),
->>>>>>> upstream
                                    &ev.canvas.x, &ev.canvas.y);
 
    _e_shell_surface_mouse_down_helper(ec, &ev, EINA_FALSE);
@@ -1389,14 +1332,10 @@ _e_xdg_shell_cb_popup_get(struct wl_client *client, struct wl_resource *resource
    cdata->shell.map = _e_xdg_shell_surface_map;
    cdata->shell.unmap = _e_xdg_shell_surface_unmap;
 
-<<<<<<< HEAD
-   ec->override = 1;
-=======
    EC_CHANGED(ec);
    ec->new_client = ec->override = 1;
    e_client_unignore(ec);
    e_comp->new_clients++;
->>>>>>> upstream
    if (!ec->internal)
      ec->borderless = !ec->internal_elm_win;
    ec->lock_border = EINA_TRUE;
@@ -1608,10 +1547,7 @@ _e_tz_surf_cb_bind(struct wl_client *client, void *data, uint32_t version, uint3
    wl_resource_set_implementation(res, &_e_tz_surf_interface, cdata, NULL);
 }
 
-EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Wl_Desktop_Shell" };
-=======
 E_API E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Wl_Desktop_Shell" };
->>>>>>> upstream
 
 E_API void *
 e_modapi_init(E_Module *m)
@@ -1641,7 +1577,6 @@ e_modapi_init(E_Module *m)
         return NULL;
      }
 
-<<<<<<< HEAD
    e_scaler_init();
 
    if (!wl_global_create(cdata->wl.disp,
@@ -1653,7 +1588,7 @@ e_modapi_init(E_Module *m)
         ERR("Could not create tizen_surface to wayland globals: %m");
         return NULL;
      }
-=======
+
 #ifdef HAVE_WL_TEXT_INPUT
    if (!e_input_panel_init())
      {
@@ -1661,7 +1596,6 @@ e_modapi_init(E_Module *m)
         return NULL;
      }
 #endif
->>>>>>> upstream
 
    return m;
 }
