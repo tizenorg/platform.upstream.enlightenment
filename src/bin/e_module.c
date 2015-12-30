@@ -759,6 +759,7 @@ e_module_deferred_job(void)
         _e_module_dialog_disable_show(dd->title, dd->body, dd->m);
         eina_stringshare_del(dd->title);
         eina_stringshare_del(dd->body);
+        E_FREE(dd);
      }
 }
 
