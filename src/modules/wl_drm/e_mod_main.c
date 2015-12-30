@@ -734,7 +734,6 @@ _drm_read_pixels(E_Comp_Wl_Output *output, void *pixels)
 E_API void *
 e_modapi_init(E_Module *m)
 {
-<<<<<<< HEAD
    E_Comp *comp;
    int w = 0, h = 0, scr_w = 0, scr_h = 0;
    const char *env_w, *env_h;
