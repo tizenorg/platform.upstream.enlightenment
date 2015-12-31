@@ -4393,6 +4393,7 @@ _e_comp_wl_compositor_create(void)
         e_comp_wl_input_touch_enabled_set(EINA_TRUE);
      }
 
+   INF("BANG!");
    return EINA_TRUE;
 
 input_err:
