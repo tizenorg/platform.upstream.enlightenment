@@ -4179,6 +4179,7 @@ _e_comp_wl_compositor_create(void)
      }
 
 #ifdef HAVE_SYSTEMD_DAEMON
+   INF("Checking for open sockets...");
    n = sd_listen_fds(1);
    if (n < 0)
      {
@@ -4195,6 +4196,7 @@ _e_comp_wl_compositor_create(void)
        int socket = SD_LISTEN_FDS_START;
        const char* runtime_dir;
 
+       INF("... found one!");
        /* If unset wl_display_add_socket_auto() would fail, let's fail too. */
        runtime_dir = getenv("XDG_RUNTIME_DIR");
        if (!runtime_dir)
@@ -4202,6 +4204,7 @@ _e_comp_wl_compositor_create(void)
 	   ERR("XDG_RUNTIME_DIR not set in environment");
 	   goto sock_err;
 	 }
+       INF("XDG_RUNTIME_DIR set to %s", runtime_dir);
 
        /* Let's not try to figure out the value from the socket path at the moment. */
        name = getenv("WAYLAND_DISPLAY");
@@ -4210,7 +4213,9 @@ _e_comp_wl_compositor_create(void)
 	   ERR("WAYLAND_DISPLAY not set in environment");
 	   goto sock_err;
 	 }
+       INF("WAYLAND_DISPLAY set to %s", name);
 
+       INF("Adding the socket to the display.");
        if (wl_display_add_socket_fd(cdata->wl.disp, socket) < 0)
 	 {
 	   ERR("Could not add a file descriptor to a display");
