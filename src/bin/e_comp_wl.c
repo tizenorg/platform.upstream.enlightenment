@@ -4259,6 +4259,7 @@ _e_comp_wl_compositor_create(void)
    }
 #endif
 
+   INF("Ready to serve my purpose");
    /* set wayland display environment variable */
    e_env_set("WAYLAND_DISPLAY", name);
 
