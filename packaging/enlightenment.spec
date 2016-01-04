@@ -83,7 +83,7 @@ export CFLAGS+=" -fPIE "
 export LDFLAGS+=" -pie "
 %autogen \
 %if %{with wayland}
-      --enable-wayland-only \
+      --enable-wayland \
       --enable-wl-drm \
       --disable-shot \
       --disable-xkbswitch \
