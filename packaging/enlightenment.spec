@@ -100,6 +100,9 @@ export LDFLAGS+=" -pie "
       --disable-winlist \
       --disable-wizard \
       --disable-wl-x11 \
+      --disable-xwayland \
+      --disable-wl-text-input \
+      --disable-wl-weekeyboard \
       --enable-quick-init \
 %endif
 %if 0%{?light_e}
