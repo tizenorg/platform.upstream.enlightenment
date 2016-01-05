@@ -138,9 +138,9 @@ export LDFLAGS+=" -pie "
       --disable-start \
       --disable-syscon \
       --disable-tasks \
-      --disable-teamwork \
       --disable-temperature \
 %endif
+      --disable-teamwork \
       --enable-mount-eeze
 
 make %{?_smp_mflags}
