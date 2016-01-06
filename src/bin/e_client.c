@@ -95,6 +95,7 @@ static Eina_Inlist *_e_client_hooks[] =
    [E_CLIENT_HOOK_EVAL_VISIBILITY] = NULL,
    [E_CLIENT_HOOK_ICONIFY] = NULL,
    [E_CLIENT_HOOK_UNICONIFY] = NULL,
+   [E_CLIENT_HOOK_AUX_HINT_CHANGE] = NULL,
 };
 
 ///////////////////////////////////////////
@@ -2583,6 +2584,19 @@ _e_client_eval(E_Client *ec)
      {
         _e_client_event_property(ec, prop);
      }
+
+#ifdef HAVE_WAYLAND_ONLY
+     {
+        E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+
+        if (cdata && cdata->aux_hint.changed)
+          {
+             _e_client_hook_call(E_CLIENT_HOOK_AUX_HINT_CHANGE, ec);
+             cdata->aux_hint.changed = 0;
+          }
+     }
+#endif
+
    _e_client_hook_call(E_CLIENT_HOOK_EVAL_END, ec);
 }
 
@@ -3093,6 +3107,18 @@ e_client_new(E_Comp *c EINA_UNUSED, E_Pixmap *cp, int first_map, int internal)
         //e_object_del(E_OBJECT(ec));
         return NULL;
      }
+
+#ifdef HAVE_WAYLAND_ONLY
+     {
+        E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+
+        if (cdata && cdata->aux_hint.changed)
+          {
+             _e_client_hook_call(E_CLIENT_HOOK_AUX_HINT_CHANGE, ec);
+             cdata->aux_hint.changed = 0;
+          }
+     }
+#endif
 
    if (ec->override)
      _e_client_zone_update(ec);
