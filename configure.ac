@@ -1018,7 +1018,6 @@ PKG_CHECK_MODULES(E, [$e_requires])
 requirements_e="\
 evas >= ${efl_version} \
 ecore >= ${efl_version} \
-ecore-x >= ${efl_version} \
 ecore-evas >= ${efl_version} \
 ecore-con >= ${efl_version} \
 ecore-ipc >= ${efl_version} \
