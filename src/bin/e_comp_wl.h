@@ -395,6 +395,7 @@ struct _E_Comp_Wl_Client_Data
 
    struct
      {
+        Eina_Bool  changed : 1;
         Eina_List *hints;
      } aux_hint;
 
