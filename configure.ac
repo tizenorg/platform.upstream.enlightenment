@@ -465,16 +465,16 @@ AC_ARG_ENABLE([quick-init],
 AC_MSG_CHECKING([whether enlightenment quick initialization is enabled])
 AC_MSG_RESULT([${quick_init}])
 
-light-e=no
+light_e=no
 AC_ARG_ENABLE([light-e],
   AS_HELP_STRING([--enable-light-e],[]),
   [
-   light-e=yes
+   light_e=yes
    AC_DEFINE_UNQUOTED([DISABLE_FORMAT_TEST], [1], [disable file format test])
   ],
-  [light-e=no])
+  [light_e=no])
 AC_MSG_CHECKING([whether lightweight enlightenment is enabled])
-AC_MSG_RESULT([${light-e}])
+AC_MSG_RESULT([${light_e}])
 
 # doxygen program for documentation building
 
