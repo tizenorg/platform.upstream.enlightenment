@@ -3420,7 +3420,7 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
    EINA_SAFETY_ON_NULL_RETURN(p_cdata);
    ec->comp_data->accepts_focus = p_cdata->accepts_focus;
    ec->comp_data->conformant = p_cdata->conformant;
-   ec->comp_data->aux_hint.hints = p_cdata->aux_hint.hints;
+   ec->comp_data->aux_hint = p_cdata->aux_hint;
    ec->comp_data->win_type = p_cdata->win_type;
    ec->comp_data->layer = p_cdata->layer;
    ec->comp_data->fetch.win_type = p_cdata->fetch.win_type;

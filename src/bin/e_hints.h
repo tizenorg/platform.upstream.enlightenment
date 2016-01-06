@@ -50,6 +50,16 @@ EAPI const Eina_List * e_hints_aux_hint_supported_add(const char *hint);
 EAPI const Eina_List * e_hints_aux_hint_supported_del(const char *hint);
 EAPI const Eina_List * e_hints_aux_hint_supported_get(void);
 
+EAPI Eina_Bool e_hints_aux_hint_add(E_Client *ec, int32_t id, const char *name, const char *val);
+EAPI Eina_Bool e_hints_aux_hint_change(E_Client *ec, int32_t id, const char *val);
+EAPI Eina_Bool e_hints_aux_hint_del(E_Client *ec, int32_t id);
+EAPI const char * e_hints_aux_hint_value_get(E_Client *ec, const char *name);
+
+EAPI Eina_Bool e_hints_aux_hint_add_with_pixmap(E_Pixmap *cp, int32_t id, const char *name, const char *val);
+EAPI Eina_Bool e_hints_aux_hint_change_with_pixmap(E_Pixmap *cp, int32_t id, const char *val);
+EAPI Eina_Bool e_hints_aux_hint_del_with_pixmap(E_Pixmap *cp, int32_t id);
+EAPI const char * e_hints_aux_hint_value_get_with_pixmap(E_Pixmap *cp, const char *name);
+
 #ifdef E_COMP_X_H
 EAPI void e_hints_window_state_update(E_Client *ec, int state, int action);
 extern EAPI Ecore_X_Atom ATM__QTOPIA_SOFT_MENU;
