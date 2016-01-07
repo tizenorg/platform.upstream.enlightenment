@@ -3737,6 +3737,7 @@ _e_comp_wl_gl_init(void)
 
    e_comp_wl->gl.evasgl = evasgl;
    e_comp_wl->gl.api = glapi;
+   e_comp_wl->wl.glapi = glapi;
    e_comp_wl->gl.sfc = sfc;
    e_comp_wl->gl.ctx = ctx;
 
