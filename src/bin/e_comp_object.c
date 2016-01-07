@@ -896,6 +896,9 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
 {
    E_Comp_Object *cw = data;
    int pw, ph, fw, fh, iw, ih, prev_w, prev_h;
+#ifdef HAVE_WAYLAND_ONLY
+   E_Comp_Wl_Client_Data *cd;
+#endif
 
    if ((!e_util_strcmp("wl_pointer-cursor", cw->ec->icccm.window_role)) ||
        (!e_util_strcmp("input_panel_surface", cw->ec->icccm.window_role)))
@@ -980,6 +983,21 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
 #endif
         return;
      }
+
+#ifdef HAVE_WAYLAND_ONLY
+   cd = (E_Comp_Wl_Client_Data *)cw->ec->comp_data;
+   if (cd && cd->sub.data && (cd->width_from_viewport < cd->width_from_buffer))
+     {
+        /* resize to the viewport size of a client.
+         * When the buffer size is bigger than the viewport size, the object is
+         * clipped by evas rendering mechanism even if we scale down the object
+         * with evas_map.
+         */
+        pw = cd->width_from_viewport;
+        ph = cd->height_from_viewport;
+     }
+#endif
+
    prev_w = cw->w, prev_h = cw->h;
    e_comp_object_frame_wh_adjust(obj, 0, 0, &fw, &fh);
    /* check shading and clamp to pixmap size for regular clients */
@@ -3358,6 +3376,9 @@ e_comp_object_dirty(Evas_Object *obj)
    Evas_Object *o;
    int w, h, bx, by, bxx, byy;
    Eina_Bool dirty, visible;
+#ifdef HAVE_WAYLAND_ONLY
+   E_Comp_Wl_Client_Data *cd;
+#endif
 
    API_ENTRY;
    /* only actually dirty if pixmap is available */
@@ -3411,6 +3432,16 @@ e_comp_object_dirty(Evas_Object *obj)
    it = eina_tiler_iterator_new(cw->updates);
    EINA_ITERATOR_FOREACH(it, rect)
      {
+#ifdef HAVE_WAYLAND_ONLY
+        cd = (E_Comp_Wl_Client_Data *)cw->ec->comp_data;
+        if (cd && cd->sub.data && (cd->width_from_viewport < cd->width_from_buffer))
+          {
+             Eina_Rectangle tr;
+             /* change to the buffer cordinate if subsurface */
+             e_comp_wl_surface_to_buffer_rect(cw->ec, rect, &tr);
+             rect = &tr;
+          }
+#endif
         RENDER_DEBUG("UPDATE ADD [%p]: %d %d %dx%d", cw->ec, rect->x, rect->y, rect->w, rect->h);
         evas_object_image_data_update_add(cw->obj, rect->x, rect->y, rect->w, rect->h);
         EINA_LIST_FOREACH(cw->obj_mirror, ll, o)
@@ -3446,6 +3477,9 @@ e_comp_object_render(Evas_Object *obj)
    int stride, pw, ph;
    unsigned int *pix, *srcpix;
    Eina_Bool ret = EINA_FALSE;
+#ifdef HAVE_WAYLAND_ONLY
+   E_Comp_Wl_Client_Data *cd;
+#endif
 
    API_ENTRY EINA_FALSE;
 
@@ -3474,6 +3508,16 @@ e_comp_object_render(Evas_Object *obj)
         pix = e_pixmap_image_data_get(cw->ec->pixmap);
         EINA_ITERATOR_FOREACH(it, r)
           {
+#ifdef HAVE_WAYLAND_ONLY
+        cd = (E_Comp_Wl_Client_Data *)cw->ec->comp_data;
+        if (cd && cd->sub.data && (cd->width_from_viewport < cd->width_from_buffer))
+          {
+             Eina_Rectangle tr;
+             /* change to the buffer cordinate if subsurface */
+             e_comp_wl_surface_to_buffer_rect(cw->ec, r, &tr);
+             r = &tr;
+          }
+#endif
              E_RECTS_CLIP_TO_RECT(r->x, r->y, r->w, r->h, 0, 0, pw, ph);
              /* get pixmap data from rect region on display server into memory */
              ret = e_pixmap_image_draw(cw->ec->pixmap, r);
@@ -3508,6 +3552,16 @@ e_comp_object_render(Evas_Object *obj)
    srcpix = e_pixmap_image_data_get(cw->ec->pixmap);
    EINA_ITERATOR_FOREACH(it, r)
      {
+#ifdef HAVE_WAYLAND_ONLY
+        cd = (E_Comp_Wl_Client_Data *)cw->ec->comp_data;
+        if (cd && cd->sub.data && (cd->width_from_viewport < cd->width_from_buffer))
+          {
+             Eina_Rectangle tr;
+             /* change to the buffer cordinate if subsurface */
+             e_comp_wl_surface_to_buffer_rect(cw->ec, r, &tr);
+             r = &tr;
+          }
+#endif
         E_RECTS_CLIP_TO_RECT(r->x, r->y, r->w, r->h, 0, 0, pw, ph);
         ret = e_pixmap_image_draw(cw->ec->pixmap, r);
         if (!ret)
