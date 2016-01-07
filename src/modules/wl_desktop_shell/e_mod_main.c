@@ -1518,7 +1518,9 @@ e_modapi_init(E_Module *m)
 E_API int
 e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
+#ifdef HAVE_WL_TEXT_INPUT
    e_input_panel_shutdown();
+#endif
 
    return 1;
 }

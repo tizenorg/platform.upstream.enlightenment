@@ -17,9 +17,13 @@ src_modules_wl_desktop_shell_module_la_LDFLAGS = $(MOD_LDFLAGS)
 src_modules_wl_desktop_shell_module_la_SOURCES = \
   src/modules/wl_desktop_shell/e_mod_main.c \
   src/modules/wl_desktop_shell/e_mod_main.h \
-  src/modules/wl_desktop_shell/e_mod_input_panel.c \
   src/modules/wl_desktop_shell/e_scaler.c \
   src/modules/wl_desktop_shell/e_scaler.h
+
+if USE_MODULE_WL_TEXT_INPUT
+src_modules_wl_desktop_shell_module_la_SOURCES += \
+  src/modules/wl_desktop_shell/e_mod_input_panel.c
+endif
 
 PHONIES += wl_desktop_shell install-wl_desktop_shell
 wl_desktop_shell: $(wl_desktop_shellpkg_LTLIBRARIES) $(wl_desktop_shell_DATA)
