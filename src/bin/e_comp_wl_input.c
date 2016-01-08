@@ -531,6 +531,7 @@ EINTERN void
 e_comp_wl_input_shutdown(E_Comp_Data *cdata)
 {
    struct wl_resource *res;
+   E_Comp_Wl_Input_Device *dev;
 
    /* check for valid compositor data */
    if (!cdata)
@@ -570,6 +571,17 @@ e_comp_wl_input_shutdown(E_Comp_Data *cdata)
    /* destroy the global seat resource */
    if (cdata->seat.global) wl_global_destroy(cdata->seat.global);
    cdata->seat.global = NULL;
+
+   if (cdata->input_device_mgr.global) wl_global_destroy(cdata->input_device_mgr.global);
+   cdata->input_device_mgr.global = NULL;
+
+   if (cdata->input_device_mgr.curr_device_name) eina_stringshare_del(cdata->input_device_mgr.curr_device_name);
+   EINA_LIST_FREE (cdata->input_device_mgr.device_list, dev)
+     {
+        if (dev->name) eina_stringshare_del(dev->name);
+        if (dev->identifier) eina_stringshare_del(dev->identifier);
+        free(dev);
+     }
 }
 
 EINTERN Eina_Bool
