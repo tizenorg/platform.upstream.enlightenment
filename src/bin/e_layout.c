@@ -322,6 +322,20 @@ e_layout_top_child_at_xy_get(Evas_Object *obj, Evas_Coord x, Evas_Coord y, Eina_
 }
 
 /* local subsystem functions */
+static void
+_e_layout_intercept_layer_set(void *data, Evas_Object *obj, int layer)
+{
+   E_Smart_Data *sd = data;
+   E_Layout_Item *li;
+
+   EINA_INLIST_FOREACH(sd->items, li)
+     {
+        evas_object_layer_set(li->obj, layer);
+     }
+
+   evas_object_layer_set(obj, layer);
+}
+
 static E_Layout_Item *
 _e_layout_smart_adopt(E_Smart_Data *sd, Evas_Object *obj)
 {
@@ -341,6 +355,7 @@ _e_layout_smart_adopt(E_Smart_Data *sd, Evas_Object *obj)
    evas_object_clip_set(obj, sd->clip);
    evas_object_smart_member_add(obj, li->sd->obj);
    evas_object_data_set(obj, "e_layout_data", li);
+   evas_object_layer_set(obj, evas_object_layer_get(sd->obj));
    evas_object_event_callback_add(obj, EVAS_CALLBACK_FREE,
                                   _e_layout_smart_item_del_hook, NULL);
    if ((!evas_object_visible_get(sd->clip)) &&
@@ -448,6 +463,8 @@ _e_layout_smart_add(Evas_Object *obj)
    evas_object_resize(sd->clip, 200002, 200002);
    evas_object_color_set(sd->clip, 255, 255, 255, 255);
    evas_object_smart_data_set(obj, sd);
+
+   evas_object_intercept_layer_set_callback_add(obj, _e_layout_intercept_layer_set, sd);
 }
 
 static void
