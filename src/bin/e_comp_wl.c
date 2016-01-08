@@ -739,6 +739,10 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    Eina_List *l;
    uint32_t serial;
 
+   const char *dev_name;
+   E_Comp_Wl_Input_Device *input_dev;
+   const char *curr_dev;
+
    ev = event;
    if (!(ec = data)) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
@@ -778,6 +782,21 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
         wl_pointer_send_enter(res, serial, ec->comp_data->surface,
                               wl_fixed_from_int(ev->canvas.x - ec->client.x),
                               wl_fixed_from_int(ev->canvas.y - ec->client.y));
+     }
+
+   if (ec->comp->wl_comp_data->input_device_mgr.curr_device_name)
+     {
+        EINA_LIST_FOREACH(ec->comp->wl_comp_data->input_device_mgr.device_list, l, input_dev)
+          {
+             if (strcmp(input_dev->identifier, ec->comp->wl_comp_data->input_device_mgr.curr_device_name)) continue;
+
+             wc = wl_resource_get_client(ec->comp_data->surface);
+             EINA_LIST_FOREACH(input_dev->resources, l, res)
+               {
+                  if (wl_resource_get_client(res) != wc) continue;
+                  tizen_input_device_send_event_device(res, ev->timestamp);
+               }
+          }
      }
 }
 
@@ -919,6 +938,40 @@ _e_comp_wl_cursor_timer(void *data)
 }
 
 static void
+_e_comp_wl_evas_handle_event_device(Evas_Device *dev, E_Client *ec, uint32_t timestamp)
+{
+   const char *dev_name;
+   E_Comp_Wl_Input_Device *input_dev;
+   const char *curr_dev;
+   struct wl_resource *res;
+   struct wl_client *wc;
+   Eina_List *l, *ll;
+
+   if (dev && (dev_name = evas_device_name_get(dev)))
+     {
+       curr_dev = ec->comp->wl_comp_data->input_device_mgr.curr_device_name;
+       if (!curr_dev || (curr_dev && (strcmp(curr_dev, dev_name))))
+         {
+            if (curr_dev)
+              eina_stringshare_del(curr_dev);
+            curr_dev = eina_stringshare_add(dev_name);
+            ec->comp->wl_comp_data->input_device_mgr.curr_device_name= curr_dev;
+            EINA_LIST_FOREACH(ec->comp->wl_comp_data->input_device_mgr.device_list, l, input_dev)
+               {
+                  if (strcmp(input_dev->identifier, dev_name)) continue;
+
+                  wc = wl_resource_get_client(ec->comp_data->surface);
+                  EINA_LIST_FOREACH(input_dev->resources, ll, res)
+                    {
+                       if (wl_resource_get_client(res) != wc) continue;
+                       tizen_input_device_send_event_device(res, timestamp);
+                    }
+               }
+          }
+     }
+}
+
+static void
 _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    E_Client *ec;
@@ -949,6 +1002,9 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
      }
 
    dev = ev->dev;
+
+   _e_comp_wl_evas_handle_event_device(dev, ec, ev->timestamp);
+
    if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
      _e_comp_wl_evas_handle_mouse_move_to_touch(ec, ev->timestamp, ev->cur.canvas.x, ev->cur.canvas.y);
    else
@@ -1081,6 +1137,9 @@ _e_comp_wl_evas_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    dev = ev->dev;
+
+   _e_comp_wl_evas_handle_event_device(dev, ec, ev->timestamp);
+
    if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
      _e_comp_wl_evas_handle_mouse_button_to_touch(ec, ev->timestamp, ev->canvas.x, ev->canvas.y, EINA_TRUE);
    else
@@ -1113,6 +1172,9 @@ _e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    dev = ev->dev;
+
+   _e_comp_wl_evas_handle_event_device(dev, ec, ev->timestamp);
+
    if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
      _e_comp_wl_evas_handle_mouse_button_to_touch(ec, ev->timestamp, ev->canvas.x, ev->canvas.y, EINA_FALSE);
    else
