@@ -9,6 +9,7 @@
 #  pragma GCC diagnostic ignored "-Wshadow"
 #  define WL_HIDE_DEPRECATED
 #  include <wayland-server.h>
+#  include <tizen-extension-server-protocol.h>
 #  pragma GCC diagnostic pop
 
 #  include <xkbcommon/xkbcommon.h>
@@ -47,6 +48,7 @@ typedef struct _E_Comp_Wl_Surface_State E_Comp_Wl_Surface_State;
 typedef struct _E_Comp_Wl_Client_Data E_Comp_Wl_Client_Data;
 typedef struct _E_Comp_Wl_Data E_Comp_Wl_Data;
 typedef struct _E_Comp_Wl_Output E_Comp_Wl_Output;
+typedef struct _E_Comp_Wl_Input_Device E_Comp_Wl_Input_Device;
 
 typedef enum _E_Comp_Wl_Buffer_Type
 {
@@ -131,6 +133,14 @@ struct _E_Comp_Wl_Subsurf_Data
    Eina_Bool synchronized;
 };
 
+struct _E_Comp_Wl_Input_Device
+{
+   Eina_List *resources;
+   const char *name;
+   const char *identifier;
+   unsigned int capability;
+};
+
 struct _E_Comp_Wl_Data
 {
    struct
@@ -168,6 +178,14 @@ struct _E_Comp_Wl_Data
         struct wl_resource *shell;
         struct wl_resource *xdg_shell;
      } shell_interface;
+
+   struct
+     {
+        struct wl_global *global;
+        Eina_List *resources;
+        Eina_List *device_list;
+        const char *curr_device_name;
+     } input_device_mgr;
 
    struct
      {
