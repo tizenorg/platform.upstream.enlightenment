@@ -574,7 +574,7 @@ _e_comp_shape_debug_rect(E_Comp *c, Eina_Rectangle *rect, E_Color *color)
    else
      evas_object_color_set(o, 0, 0, (color->b += COLOR_INCREMENT), 255);
    evas_object_repeat_events_set(o, 1);
-   evas_object_layer_set(o, E_LAYER_MENU - 1);
+   evas_object_layer_set(o, E_LAYER_EFFECT - 1);
    evas_object_move(o, rect->x, rect->y);
    evas_object_resize(o, rect->w, rect->h);
    c->debug_rects = eina_list_append(c->debug_rects, o);
@@ -1653,6 +1653,7 @@ e_comp_layer_name_get(unsigned int layer, char *buff, int buff_size)
       case E_LAYER_CLIENT_NOTIFICATION_TOP: strncpy(buff, "E_LAYER_CLIENT_NOTIFICATION_TOP", buff_size); break;
       case E_LAYER_CLIENT_ALERT: strncpy(buff, "E_LAYER_CLIENT_ALERT", buff_size); break;
       case E_LAYER_POPUP: strncpy(buff, "E_LAYER_POPUP", buff_size); break;
+      case E_LAYER_EFFECT: strncpy(buff, "E_LAYER_EFFECT", buff_size); break;
       case E_LAYER_MENU: strncpy(buff, "E_LAYER_MENU", buff_size); break;
       case E_LAYER_DESKLOCK: strncpy(buff, "E_LAYER_DESKLOCK", buff_size); break;
       case E_LAYER_MAX: strncpy(buff, "E_LAYER_MAX", buff_size); break;

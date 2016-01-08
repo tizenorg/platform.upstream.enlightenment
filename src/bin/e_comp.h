@@ -47,6 +47,7 @@ typedef enum _E_Layer
    E_LAYER_CLIENT_NOTIFICATION_TOP = 800,
    E_LAYER_CLIENT_ALERT = 850,
    E_LAYER_POPUP = 999, // popups
+   E_LAYER_EFFECT = 1999,
    E_LAYER_MENU = 5000, // menus
    E_LAYER_DESKLOCK = 9999, // desklock
    E_LAYER_MAX = 32767 // EVAS_LAYER_MAX
