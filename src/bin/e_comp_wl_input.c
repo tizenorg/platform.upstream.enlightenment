@@ -2,6 +2,9 @@
 #define E_COMP_WL
 #include "e.h"
 #include <sys/mman.h>
+#ifdef HAVE_WL_DRM
+#include <Ecore_Drm.h>
+#endif
 
 static void
 _e_comp_wl_input_update_seat_caps(E_Comp_Data *cdata)
@@ -653,13 +656,73 @@ e_comp_wl_input_keyboard_enabled_set(Eina_Bool enabled)
    _e_comp_wl_input_update_seat_caps(e_comp->wl_comp_data);
 }
 
+EAPI Eina_Stringshare *
+e_coml_wl_input_keymap_path_get(const char *rules, const char *model, const char *layout)
+{
+   return eina_stringshare_printf("/var/lib/xkb/%s-%s-%s-%s-%s.xkb",
+              rules ? rules : "evdev",
+              model ? model : "pc105",
+              layout ? layout : "us",
+              "", "");
+}
+
+EAPI struct xkb_keymap *
+e_comp_wl_input_keymap_compile(struct xkb_context *ctx, const char *rules, const char *model, const char *layout, char **keymap_path)
+{
+   struct xkb_rule_names names;
+   struct xkb_keymap *keymap;
+   char *cache_path = NULL;
+   FILE *file = NULL;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, NULL);
+
+   if (e_config->xkb.use_cache)
+     {
+        cache_path = (char *)e_coml_wl_input_keymap_path_get(rules, model, layout);
+        file = fopen(cache_path, "r");
+     }
+
+   if (!file)
+     {
+        INF("There is a no keymap file (%s). Generate keymap using rmlvo\n", cache_path);
+        /* assemble xkb_rule_names so we can fetch keymap */
+        memset(&names, 0, sizeof(names));
+        if (rules) names.rules = strdup(rules);
+        else names.rules = strdup("evdev");
+        if (model) names.model = strdup(model);
+        else names.rules = strdup("pc105");
+        if (layout) names.layout = strdup(layout);
+        else names.layout = strdup("us");
+
+        /* fetch new keymap based on names */
+        keymap = xkb_map_new_from_names(ctx, &names, 0);
+
+        free((char *)names.rules);
+        free((char *)names.model);
+        free((char *)names.layout);
+     }
+   else
+     {
+        INF("Keymap file (%s) has been found. xkb_keymap is going to be generated with it.\n", cache_path);
+        keymap = xkb_map_new_from_file(ctx, file, XKB_KEYMAP_FORMAT_TEXT_V1, 0);
+        eina_stringshare_del(cache_path);
+        cache_path = NULL;
+        fclose(file);
+     }
+   *keymap_path = cache_path;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(keymap, NULL);
+
+   return keymap;
+}
+
 EAPI void
-e_comp_wl_input_keymap_set(E_Comp_Data *cdata, const char *rules, const char *model, const char *layout)
+e_comp_wl_input_keymap_set(E_Comp_Data *cdata, const char *rules, const char *model, const char *layout,
+                           struct xkb_context *dflt_ctx, struct xkb_keymap *dflt_map)
 {
    struct xkb_keymap *keymap;
-   struct xkb_rule_names names;
-   FILE *file = NULL;
-   const char *keymap_path = NULL;
+   char *keymap_path = NULL;
+   Eina_Bool use_dflt_xkb = EINA_FALSE;
 
    /* check for valid compositor data */
    if (!cdata)
@@ -670,54 +733,41 @@ e_comp_wl_input_keymap_set(E_Comp_Data *cdata, const char *rules, const char *mo
 
    /* DBG("COMP_WL: Keymap Set: %s %s %s", rules, model, layout); */
 
-   /* assemble xkb_rule_names so we can fetch keymap */
-   memset(&names, 0, sizeof(names));
-   if (rules) names.rules = strdup(rules);
-   if (model) names.model = strdup(model);
-   if (layout) names.layout = strdup(layout);
+   if (dflt_ctx && dflt_map) use_dflt_xkb = EINA_TRUE;
 
    /* unreference any existing context */
    if (cdata->xkb.context) xkb_context_unref(cdata->xkb.context);
 
    /* create a new xkb context */
-   cdata->xkb.context = xkb_context_new(0);
+   if (use_dflt_xkb) cdata->xkb.context = dflt_ctx;
+   else cdata->xkb.context = xkb_context_new(0);
+
    if (!cdata->xkb.context)
      return;
 
+#ifdef HAVE_WL_DRM
    if (e_config->xkb.use_cache)
-     {
-        keymap_path = eina_stringshare_printf("/var/lib/xkb/%s-%s-%s-%s-%s.xkb",
-              names.rules ? names.rules : "",
-              names.model ? names.model : "",
-              names.layout ? names.layout : "",
-              names.variant ? names.variant : "",
-              names.options ? names.options : "");
+     ecore_drm_device_keyboard_cached_context_set(cdata->xkb.context);
+#endif
 
-        file = fopen(keymap_path, "r");
-     }
-
-   if (!file)
+   if (use_dflt_xkb)
      {
-        INF("There is a no keymap file (%s). Generate keymap using rmlvo\n", keymap_path);
-        /* fetch new keymap based on names */
-        keymap = xkb_map_new_from_names(cdata->xkb.context, &names, 0);
+        keymap = dflt_map;
+        keymap_path = (char *)e_coml_wl_input_keymap_path_get(rules, model, layout);
      }
    else
-     {
-        INF("Keymap file (%s) has been found. xkb_keymap is going to be generated with it.\n", keymap_path);
-        keymap = xkb_map_new_from_file(cdata->xkb.context, file, XKB_KEYMAP_FORMAT_TEXT_V1, 0);
-        eina_stringshare_del(keymap_path);
-        keymap_path = NULL;
-     }
+     keymap = e_comp_wl_input_keymap_compile(cdata->xkb.context, rules, model, layout, &keymap_path);
 
    /* update compositor keymap */
    _e_comp_wl_input_keymap_update(cdata, keymap, keymap_path);
 
+#ifdef HAVE_WL_DRM
+   if (e_config->xkb.use_cache)
+     ecore_drm_device_keyboard_cached_keymap_set(keymap);
+#endif
+
    /* cleanup */
    if (keymap_path) eina_stringshare_del(keymap_path);
-   free((char *)names.rules);
-   free((char *)names.model);
-   free((char *)names.layout);
 }
 
 EAPI void
