@@ -142,12 +142,47 @@ end:
    return ECORE_CALLBACK_PASS_ON;
 }
 
+static void
+_e_mod_drm_keymap_set(struct xkb_context **ctx, struct xkb_keymap **map)
+{
+   char *keymap_path = NULL;
+   struct xkb_context *context;
+   struct xkb_keymap *keymap;
+   struct xkb_rule_names names = {0,};
+
+   context = xkb_context_new(0);
+   EINA_SAFETY_ON_NULL_RETURN(context);
+
+   /* assemble xkb_rule_names so we can fetch keymap */
+   memset(&names, 0, sizeof(names));
+   names.rules = strdup("evdev");
+   names.model = strdup("pc105");
+   names.layout = strdup("us");
+
+   keymap = e_comp_wl_input_keymap_compile(context, names, &keymap_path);
+   eina_stringshare_del(keymap_path);
+   EINA_SAFETY_ON_NULL_GOTO(keymap, cleanup);
+
+   *ctx = context;
+   *map = keymap;
+
+   ecore_drm_device_keyboard_cached_context_set(*ctx);
+   ecore_drm_device_keyboard_cached_keymap_set(*map);
+
+cleanup:
+   free((char *)names.rules);
+   free((char *)names.model);
+   free((char *)names.layout);
+}
+
 EAPI void *
 e_modapi_init(E_Module *m)
 {
    E_Comp *comp;
    int w = 0, h = 0, scr_w = 0, scr_h = 0;
    const char *env_w, *env_h;
+   struct xkb_context *ctx = NULL;
+   struct xkb_keymap *map = NULL;
 
    printf("LOAD WL_DRM MODULE\n");
 
@@ -185,6 +220,9 @@ e_modapi_init(E_Module *m)
 
    DBG("GL available:%d config engine:%d screen size:%dx%d",
        e_comp_gl_get(), e_comp_config_get()->engine, scr_w, scr_h);
+
+   if (e_config->xkb.use_cache)
+     _e_mod_drm_keymap_set(&ctx, &map);
 
    if ((e_comp_gl_get()) &&
        (e_comp_config_get()->engine == E_COMP_ENGINE_GL))
@@ -285,7 +323,7 @@ e_modapi_init(E_Module *m)
 
    /* FIXME: This is just for testing at the moment....
     * happens to jive with what drm does */
-   e_comp_wl_input_keymap_set(comp->wl_comp_data, "evdev", "pc105", "us");
+   e_comp_wl_input_keymap_set(comp->wl_comp_data, "evdev", "pc105", "us", ctx, map);
 
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,
                          _e_mod_drm_cb_activate, comp);
