@@ -2,6 +2,9 @@
 #define E_COMP_WL
 #include "e.h"
 #include <sys/mman.h>
+#ifdef HAVE_WL_DRM
+#include <Ecore_Drm.h>
+#endif
 
 E_API int E_EVENT_TEXT_INPUT_PANEL_VISIBILITY_CHANGE = -1;
 
@@ -661,15 +664,83 @@ e_comp_wl_input_keyboard_enabled_set(Eina_Bool enabled)
    _e_comp_wl_input_update_seat_caps();
 }
 
+E_API Eina_Stringshare *
+e_comp_wl_input_keymap_path_get(struct xkb_rule_names names)
+{
+   return eina_stringshare_printf("/var/lib/xkb/%s-%s-%s-%s-%s.xkb",
+            names.rules ? names.rules : "evdev",
+            names.model ? names.model : "pc105",
+            names.layout ? names.layout : "us",
+            names.variant ? names.variant : "",
+            names.options ? names.options : "");
+}
+
+
+E_API struct xkb_keymap *
+e_comp_wl_input_keymap_compile(struct xkb_context *ctx, struct xkb_rule_names names, char **keymap_path)
+{
+   struct xkb_keymap *keymap;
+   char *cache_path = NULL;
+   FILE *file = NULL;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, NULL);
+
+   if (e_config->xkb.use_cache)
+     {
+        cache_path = (char *)e_comp_wl_input_keymap_path_get(names);
+        file = fopen(cache_path, "r");
+     }
+
+   if (!file)
+     {
+        INF("There is a no keymap file (%s). Generate keymap using rmlvo\n", cache_path);
+
+        /* fetch new keymap based on names */
+        keymap = xkb_map_new_from_names(ctx, &names, 0);
+     }
+   else
+     {
+        INF("Keymap file (%s) has been found. xkb_keymap is going to be generated with it.\n", cache_path);
+        keymap = xkb_map_new_from_file(ctx, file, XKB_KEYMAP_FORMAT_TEXT_V1, 0);
+        eina_stringshare_del(cache_path);
+        cache_path = NULL;
+        fclose(file);
+     }
+
+   *keymap_path = cache_path;
+   EINA_SAFETY_ON_NULL_RETURN_VAL(keymap, NULL);
+
+   return keymap;
+}
+
 E_API void
-e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *layout)
+e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *layout,
+                           struct xkb_context *dflt_ctx, struct xkb_keymap *dflt_map)
 {
    struct xkb_keymap *keymap;
    struct xkb_rule_names names;
-   FILE *file = NULL;
-   const char *keymap_path = NULL;
+   char *keymap_path = NULL;
+   Eina_Bool use_dflt_xkb = EINA_FALSE;
 
    /* DBG("COMP_WL: Keymap Set: %s %s %s", rules, model, layout); */
+
+   if (dflt_ctx && dflt_map) use_dflt_xkb = EINA_TRUE;
+
+   /* unreference any existing context */
+   if (e_comp_wl->xkb.context)
+     xkb_context_unref(e_comp_wl->xkb.context);
+
+   /* create a new xkb context */
+   if (use_dflt_xkb) e_comp_wl->xkb.context = dflt_ctx;
+   else e_comp_wl->xkb.context = xkb_context_new(0);
+
+   if (!e_comp_wl->xkb.context)
+     return;
+
+#ifdef HAVE_WL_DRM
+   if (e_config->xkb.use_cache)
+     ecore_drm_device_keyboard_cached_context_set(e_comp_wl->xkb.context);
+#endif
 
    /* assemble xkb_rule_names so we can fetch keymap */
    memset(&names, 0, sizeof(names));
@@ -680,44 +751,26 @@ e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *lay
    if (layout) names.layout = strdup(layout);
    else names.layout = strdup("us");
 
-   /* unreference any existing context */
-   if (e_comp_wl->xkb.context)
-     xkb_context_unref(e_comp_wl->xkb.context);
-
-   /* create a new xkb context */
-   e_comp_wl->xkb.context = xkb_context_new(0);
-
-   if (!e_comp_wl->xkb.context)
-     return;
-
-   if (e_config->xkb.use_cache)
+   if (use_dflt_xkb)
      {
-        keymap_path = eina_stringshare_printf("/var/lib/xkb/%s-%s-%s-%s-%s.xkb",
-              names.rules ? names.rules : "",
-              names.model ? names.model : "",
-              names.layout ? names.layout : "",
-              names.variant ? names.variant : "",
-              names.options ? names.options : "");
-
-        file = fopen(keymap_path, "r");
-     }
-
-   if (!file)
-     {
-        INF("There is a no keymap file (%s). Generate keymap using rmlvo\n", keymap_path);
-        /* fetch new keymap based on names */
-        keymap = xkb_map_new_from_names(e_comp_wl->xkb.context, &names, 0);
+        keymap = dflt_map;
+        keymap_path = (char *)e_comp_wl_input_keymap_path_get(names);
+        if (access(keymap_path, R_OK) == 0)
+          {
+             eina_stringshare_del(keymap_path);
+             keymap_path = NULL;
+          }
      }
    else
-     {
-        INF("Keymap file (%s) has been found. xkb_keymap is going to be generated with it.\n", keymap_path);
-        keymap = xkb_map_new_from_file(e_comp_wl->xkb.context, file, XKB_KEYMAP_FORMAT_TEXT_V1, 0);
-        eina_stringshare_del(keymap_path);
-        keymap_path = NULL;
-     }
+     keymap = e_comp_wl_input_keymap_compile(e_comp_wl->xkb.context, names, &keymap_path);
 
    /* update compositor keymap */
    _e_comp_wl_input_keymap_update(keymap, keymap_path);
+
+#ifdef HAVE_WL_DRM
+   if (e_config->xkb.use_cache)
+     ecore_drm_device_keyboard_cached_keymap_set(keymap);
+#endif
 
    /* cleanup */
    if (keymap_path) eina_stringshare_del(keymap_path);

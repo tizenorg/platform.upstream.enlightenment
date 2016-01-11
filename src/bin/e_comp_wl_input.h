@@ -27,7 +27,9 @@ E_API void e_comp_wl_input_pointer_enabled_set(Eina_Bool enabled);
 E_API void e_comp_wl_input_keyboard_enabled_set(Eina_Bool enabled);
 E_API void e_comp_wl_input_touch_enabled_set(Eina_Bool enabled);
 
-E_API void e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *layout);
+E_API Eina_Stringshare *e_comp_wl_input_keymap_path_get(struct xkb_rule_names names);
+E_API struct xkb_keymap *e_comp_wl_input_keymap_compile(struct xkb_context *ctx, struct xkb_rule_names names, char **keymap_path);
+E_API void e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *layout, struct xkb_context *dflt_ctx, struct xkb_keymap *dflt_map);
 
 # endif
 #endif
