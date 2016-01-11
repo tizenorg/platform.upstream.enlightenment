@@ -4075,7 +4075,7 @@ _e_comp_wl_compositor_create(void)
         if (!layout) layout = strdup("us");
 
         /* update compositor keymap */
-        e_comp_wl_input_keymap_set(cdata, rules, model, layout);
+        e_comp_wl_input_keymap_set(cdata, rules, model, layout, NULL, NULL);
      }
 #endif
 
