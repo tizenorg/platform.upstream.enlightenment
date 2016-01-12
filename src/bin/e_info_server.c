@@ -1,5 +1,9 @@
 #include "e.h"
 #include <tbm_bufmgr.h>
+#include <tbm_surface.h>
+#ifdef HAVE_WAYLAND_ONLY
+#include <wayland-tbm-server.h>
+#endif
 
 #define BUS "org.enlightenment.wm"
 #define PATH "/org/enlightenment/wm"
@@ -14,20 +18,6 @@ typedef struct _E_Info_Server
 } E_Info_Server;
 
 static E_Info_Server e_info_server;
-
-struct wl_drm;
-
-struct wl_drm_buffer
-{
-   struct wl_resource *resource;
-   struct wl_drm *drm;
-   int32_t width, height;
-   uint32_t format;
-   const void *driver_format;
-   int32_t offset[3];
-   int32_t stride[3];
-   void *driver_buffer;
-};
 
 #define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbs"
 
@@ -429,10 +419,15 @@ _e_info_server_cb_topvwins_dump(const Eldbus_Service_Interface *iface EINA_UNUSE
           }
         else if (buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
           {
-             struct wl_drm_buffer *drm_buffer = wl_resource_get_user_data(buffer->resource);
-             data = tbm_bo_map((tbm_bo)drm_buffer->driver_buffer, TBM_DEVICE_CPU, TBM_OPTION_READ).ptr;
-             w = drm_buffer->stride[0]/4;
-             h = drm_buffer->height;
+             tbm_surface_info_s surface_info;
+             tbm_surface_h tbm_surface = wayland_tbm_server_get_surface(NULL, buffer->resource);
+
+             memset(&surface_info, 0, sizeof(tbm_surface_info_s));
+             tbm_surface_map(tbm_surface, TBM_SURF_OPTION_READ, &surface_info);
+
+             data = surface_info.planes[0].ptr;
+             w = surface_info.planes[0].stride/4;
+             h = surface_info.height;
           }
         else
           {
@@ -459,8 +454,8 @@ err:
 #ifdef HAVE_WAYLAND_ONLY
         if (data && buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
           {
-             struct wl_drm_buffer *drm_buffer = wl_resource_get_user_data(buffer->resource);
-             tbm_bo_unmap((tbm_bo)(drm_buffer->driver_buffer));
+             tbm_surface_h tbm_surface = wayland_tbm_server_get_surface(NULL, buffer->resource);
+             tbm_surface_unmap(tbm_surface);
           }
 #endif
 
