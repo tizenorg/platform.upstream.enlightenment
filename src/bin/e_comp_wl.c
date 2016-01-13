@@ -3072,6 +3072,10 @@ _e_comp_wl_subsurface_create(E_Client *ec, E_Client *epc, uint32_t id, struct wl
    ec->maximized = E_MAXIMIZE_NONE;
    EC_CHANGED(ec);
 
+   ec->new_client = ec->netwm.ping = EINA_TRUE;
+   e_comp->new_clients++;
+   e_client_unignore(ec);
+
    return EINA_TRUE;
 
 res_err:
