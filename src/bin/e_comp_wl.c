@@ -374,9 +374,11 @@ static void
 _e_comp_wl_map_size_cal_from_buffer(E_Client *ec)
 {
    E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
+   E_Comp_Wl_Buffer *buffer;
    int32_t width, height;
 
-   if (!ec->comp_data->buffer_ref.buffer)
+   buffer = e_pixmap_resource_get(ec->pixmap);
+   if (!buffer)
      {
         ec->comp_data->width_from_buffer = 0;
         ec->comp_data->height_from_buffer = 0;
@@ -389,12 +391,12 @@ _e_comp_wl_map_size_cal_from_buffer(E_Client *ec)
       case WL_OUTPUT_TRANSFORM_270:
       case WL_OUTPUT_TRANSFORM_FLIPPED_90:
       case WL_OUTPUT_TRANSFORM_FLIPPED_270:
-        width = ec->comp_data->buffer_ref.buffer->h / vp->buffer.scale;
-        height = ec->comp_data->buffer_ref.buffer->w / vp->buffer.scale;
+        width = buffer->h / vp->buffer.scale;
+        height = buffer->w / vp->buffer.scale;
         break;
       default:
-        width = ec->comp_data->buffer_ref.buffer->w / vp->buffer.scale;
-        height = ec->comp_data->buffer_ref.buffer->h / vp->buffer.scale;
+        width = buffer->w / vp->buffer.scale;
+        height = buffer->h / vp->buffer.scale;
         break;
      }
 
@@ -1799,6 +1801,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    Eina_Rectangle *dmg;
    Eina_Bool ignored, placed = EINA_TRUE;
    int x = 0, y = 0, w, h;
+   E_Comp_Wl_Buffer *buffer;
 
    first = !e_pixmap_usable_get(ec->pixmap);
    ignored = ec->ignored;
@@ -1955,6 +1958,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    ec->ignored = ignored;
    if (!ec->comp_data->mapped) goto unmapped;
 
+   buffer = e_pixmap_resource_get(ec->pixmap);
+
    /* put state damages into surface */
    if ((!e_comp->nocomp) && (ec->frame))
      {
@@ -1975,9 +1980,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
              EINA_LIST_FREE(state->damages, dmg)
                {
                   /* not creating damage for ec that shows a underlay video */
-                  if (!ec->comp_data->buffer_ref.buffer ||
-                      !e_comp->wl_comp_data->available_hw_accel.underlay ||
-                      ec->comp_data->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_VIDEO)
+                  if (!e_comp->wl_comp_data->available_hw_accel.underlay ||
+                      !buffer || buffer->type != E_COMP_WL_BUFFER_TYPE_VIDEO)
                     e_comp_object_damage(ec->frame, dmg->x, dmg->y, dmg->w, dmg->h);
 
                   eina_rectangle_free(dmg);
@@ -2038,9 +2042,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
         eina_tiler_clear(state->input);
      }
 
-   if (((ec->comp_data->buffer_ref.buffer) &&
-        (ec->comp_data->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO)) &&
-       (e_comp->wl_comp_data->available_hw_accel.underlay))
+   if ((buffer && buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO) &&
+       e_comp->wl_comp_data->available_hw_accel.underlay)
      e_pixmap_image_clear(ec->pixmap, 1);
 
    return;
