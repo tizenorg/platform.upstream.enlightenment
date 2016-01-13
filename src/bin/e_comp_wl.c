@@ -2072,7 +2072,7 @@ _e_comp_wl_surface_cb_attach(struct wl_client *client EINA_UNUSED, struct wl_res
 
    if (buffer_resource)
      {
-        if (!(buffer = e_comp_wl_buffer_get(buffer_resource)))
+        if (!(buffer = e_comp_wl_buffer_get(buffer_resource, ec)))
           {
              ERR("Could not get buffer from resource");
              wl_client_post_no_memory(client);
@@ -3181,7 +3181,7 @@ _e_comp_wl_screenshooter_cb_shoot(struct wl_client *client EINA_UNUSED, struct w
    void *pixels, *d;
 
    output = wl_resource_get_user_data(output_resource);
-   buffer = e_comp_wl_buffer_get(buffer_resource);
+   buffer = e_comp_wl_buffer_get(buffer_resource, NULL);
 
    if (!buffer)
      {
@@ -4360,7 +4360,7 @@ e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
  * @returns a new E_Comp_Wl_Buffer object
  */
 E_API E_Comp_Wl_Buffer *
-e_comp_wl_buffer_get(struct wl_resource *resource)
+e_comp_wl_buffer_get(struct wl_resource *resource, E_Client *ec)
 {
    E_Comp_Wl_Buffer *buffer = NULL;
    struct wl_listener *listener;
@@ -4386,9 +4386,7 @@ e_comp_wl_buffer_get(struct wl_resource *resource)
      }
    else
      {
-        E_Client *ec = eina_hash_find(clients_buffer_hash, &resource);
-
-        if ((ec) && (ec->e.state.video))
+        if ((ec) && (ec->comp_data->video_client))
           {
              tbm_surf = wayland_tbm_server_get_surface(e_comp_wl->tbm.server, resource);
              buffer->type = E_COMP_WL_BUFFER_TYPE_VIDEO;
