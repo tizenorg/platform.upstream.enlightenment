@@ -1947,7 +1947,6 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    state->sx = 0;
    state->sy = 0;
    state->new_attach = EINA_FALSE;
-   state->buffer_viewport.changed = 0;
 
    /* insert state frame callbacks into comp_data->frames
     * NB: This clears state->frames list */
@@ -1980,7 +1979,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
              EINA_LIST_FREE(state->damages, dmg)
                {
                   /* not creating damage for ec that shows a underlay video */
-                  if (!e_comp->wl_comp_data->available_hw_accel.underlay ||
+                  if (state->buffer_viewport.changed ||
+                      !e_comp->wl_comp_data->available_hw_accel.underlay ||
                       !buffer || buffer->type != E_COMP_WL_BUFFER_TYPE_VIDEO)
                     e_comp_object_damage(ec->frame, dmg->x, dmg->y, dmg->w, dmg->h);
 
@@ -2042,9 +2042,12 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
         eina_tiler_clear(state->input);
      }
 
-   if ((buffer && buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO) &&
+   if (!state->buffer_viewport.changed &&
+       (buffer && buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO) &&
        e_comp->wl_comp_data->available_hw_accel.underlay)
      e_pixmap_image_clear(ec->pixmap, 1);
+
+   state->buffer_viewport.changed = 0;
 
    return;
 
