@@ -868,4 +868,7 @@ group "E_Config" struct {
     value "exe_always_single_instance" uchar: 1;
     value "use_desktop_window_profile" int: 0;
     value "wm_win_rotation" uchar: 0;
+    value "wayland_socket_owner" string: "root";
+    value "wayland_socket_group" string: "root";
+    value "wayland_socket_permissions" int: 511; // decimal for 0777
 }
