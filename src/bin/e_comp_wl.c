@@ -4352,6 +4352,17 @@ e_comp_wl_subsurface_commit(E_Client *ec)
         E_Client *subc;
         Eina_List *l;
 
+        if (sdata->position.set)
+          {
+             E_Client *parent = sdata->parent;
+             if (parent)
+               {
+                  evas_object_move(ec->frame, parent->x + sdata->position.x,
+                                   parent->y + sdata->position.y);
+                  sdata->position.set = EINA_FALSE;
+               }
+          }
+
         if (sdata->cached.has_data)
           {
              _e_comp_wl_subsurface_commit_to_cache(ec);
