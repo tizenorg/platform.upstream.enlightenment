@@ -451,6 +451,10 @@ struct _E_Config
    int cursor_timer_interval;
 
    Eina_List *client_types;
+
+   const char*  wayland_socket_owner;
+   const char*  wayland_socket_group;
+   unsigned int wayland_socket_permissions;
 };
 
 struct E_Config_Bindings
