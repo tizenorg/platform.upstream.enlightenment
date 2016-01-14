@@ -463,6 +463,7 @@ EINTERN Eina_Bool e_comp_wl_subsurface_commit(E_Client *ec);
 E_API void e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer);
 E_API E_Comp_Wl_Buffer *e_comp_wl_buffer_get(struct wl_resource *resource, E_Client *ec);
 E_API void e_comp_wl_surface_to_buffer_rect(E_Client *ec, Eina_Rectangle *srect, Eina_Rectangle *drect);
+E_API Eina_Bool e_comp_wl_subsurface_create(E_Client *ec, E_Client *epc, uint32_t id, struct wl_resource *surface_resource);
 
 E_API struct wl_signal e_comp_wl_surface_create_signal_get(void);
 E_API double e_comp_wl_idle_time_get(void);
