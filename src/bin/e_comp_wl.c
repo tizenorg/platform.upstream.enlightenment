@@ -3182,8 +3182,8 @@ static const struct wl_subsurface_interface _e_subsurface_interface =
    _e_comp_wl_subsurface_cb_desync_set
 };
 
-static Eina_Bool
-_e_comp_wl_subsurface_create(E_Client *ec, E_Client *epc, uint32_t id, struct wl_resource *surface_resource)
+EAPI Eina_Bool
+e_comp_wl_subsurface_create(E_Client *ec, E_Client *epc, uint32_t id, struct wl_resource *surface_resource)
 {
    struct wl_client *client;
    struct wl_resource *res;
@@ -3331,7 +3331,7 @@ _e_comp_wl_subcompositor_cb_subsurface_get(struct wl_client *client EINA_UNUSED,
      }
 
    /* try to create a new subsurface */
-   if (!_e_comp_wl_subsurface_create(ec, epc, id, surface_resource))
+   if (!e_comp_wl_subsurface_create(ec, epc, id, surface_resource))
      ERR("Failed to create subsurface for surface %d",
          wl_resource_get_id(surface_resource));
 }
