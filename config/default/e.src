@@ -225,4 +225,7 @@ group "E_Config" struct {
   value "powersave.min" int: 0;
   value "powersave.max" int: 5;
   value "wm_win_rotation" uchar: 0;
+  value "wayland_socket_owner" string: "root";
+  value "wayland_socket_group" string: "root";
+  value "wayland_socket_permission" int: 511; // decimal for 0777
 }

@@ -3953,6 +3953,7 @@ _e_comp_wl_compositor_create(void)
    E_Comp_Data *cdata;
    const char *name;
    int fd = 0;
+   const char *runtime_dir;
 
    /* check for existing compositor. create if needed */
    if (!(comp = e_comp))
@@ -3989,6 +3990,30 @@ _e_comp_wl_compositor_create(void)
         goto sock_err;
      }
 
+   runtime_dir = getenv("XDG_RUNTIME_DIR");
+   if (runtime_dir) {
+     struct group *g;
+     struct passwd *u;
+     uid_t uid;
+     gid_t gid;
+
+     char socket_path[108]; // sun_path is 108 bytes see <sys/un.h>
+     snprintf(socket_path, sizeof(socket_path), "%s/%s", runtime_dir, name);
+
+     u = getpwnam(e_config->wayland_socket_owner);
+     uid = (u !=NULL) ? u->pw_uid : 0;
+
+     g = getgrnam(e_config->wayland_socket_group);
+     gid = (g != NULL) ? g->gr_gid : 0;
+
+     INF("owner: %s (%d) group: %s (%d) permission: %o",
+	 e_config->wayland_socket_owner, uid,
+	 e_config->wayland_socket_group, gid,
+	 e_config->wayland_socket_permission);
+
+     chmod(socket_path, e_config->wayland_socket_permission);
+     chown(socket_path, uid, gid);
+   }
    /* set wayland display environment variable */
    e_env_set("WAYLAND_DISPLAY", name);
 
