@@ -391,10 +391,6 @@ _e_info_server_cb_topvwins_dump(const Eldbus_Service_Interface *iface EINA_UNUSE
         E_Client *ec = evas_object_data_get(o, "E_Client");
         char fname[PATH_MAX];
         Ecore_Window win;
-        void *data = NULL;
-        int w = 0, h = 0;
-        Ecore_Evas *ee = NULL;
-        Evas_Object *img = NULL;
 
         if (!ec) continue;
         if (e_client_util_ignored_get(ec)) continue;
@@ -402,65 +398,7 @@ _e_info_server_cb_topvwins_dump(const Eldbus_Service_Interface *iface EINA_UNUSE
         win = e_client_util_win_get(ec);
         snprintf(fname, sizeof(fname), "%s/0x%08x.png", dir, win);
 
-#ifdef HAVE_WAYLAND_ONLY
-        struct wl_shm_buffer *shmbuffer = NULL;
-        E_Comp_Wl_Buffer *buffer = e_pixmap_resource_get(ec->pixmap);
-        if (!buffer) continue;
-
-        if (buffer->type == E_COMP_WL_BUFFER_TYPE_SHM)
-          {
-             shmbuffer = wl_shm_buffer_get(buffer->resource);
-             if (shmbuffer)
-               {
-                  data = wl_shm_buffer_get_data(shmbuffer);
-                  w = wl_shm_buffer_get_stride(shmbuffer)/4;
-                  h = wl_shm_buffer_get_height(shmbuffer);
-               }
-          }
-        else if (buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
-          {
-             tbm_surface_info_s surface_info;
-             tbm_surface_h tbm_surface = wayland_tbm_server_get_surface(NULL, buffer->resource);
-
-             memset(&surface_info, 0, sizeof(tbm_surface_info_s));
-             tbm_surface_map(tbm_surface, TBM_SURF_OPTION_READ, &surface_info);
-
-             data = surface_info.planes[0].ptr;
-             w = surface_info.planes[0].stride/4;
-             h = surface_info.height;
-          }
-        else
-          {
-             ERR("Invalid resource:%u", wl_resource_get_id(buffer->resource));
-          }
-#endif
-
-        EINA_SAFETY_ON_NULL_GOTO(data, err);
-
-        ee = ecore_evas_buffer_new(1, 1);
-        EINA_SAFETY_ON_NULL_GOTO(ee, err);
-
-        img = evas_object_image_add(ecore_evas_get(ee));
-        EINA_SAFETY_ON_NULL_GOTO(img, err);
-
-        evas_object_image_alpha_set(img, ec->argb);
-        evas_object_image_size_set(img, w, h);
-        evas_object_image_data_set(img, data);
-
-        if (!evas_object_image_save(img, fname, NULL, "compress=1 quality=100"))
-          ERR("Cannot save window to '%s'", fname);
-
-err:
-#ifdef HAVE_WAYLAND_ONLY
-        if (data && buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
-          {
-             tbm_surface_h tbm_surface = wayland_tbm_server_get_surface(NULL, buffer->resource);
-             tbm_surface_unmap(tbm_surface);
-          }
-#endif
-
-        if (img) evas_object_del(img);
-        if (ee) ecore_evas_free(ee);
+        e_info_server_dump_client(ec, fname);
      }
 
    return reply;
@@ -681,4 +619,76 @@ e_info_server_shutdown(void)
    eldbus_shutdown();
 
    return 1;
+}
+
+EINTERN void
+e_info_server_dump_client(E_Client *ec, char *fname)
+{
+   void *data = NULL;
+   int w = 0, h = 0;
+   Ecore_Evas *ee = NULL;
+   Evas_Object *img = NULL;
+
+   if (!ec) return;
+   if (e_client_util_ignored_get(ec)) return;
+
+ #ifdef HAVE_WAYLAND_ONLY
+   struct wl_shm_buffer *shmbuffer = NULL;
+   E_Comp_Wl_Buffer *buffer = e_pixmap_resource_get(ec->pixmap);
+   if (!buffer) return;
+
+   if (buffer->type == E_COMP_WL_BUFFER_TYPE_SHM)
+     {
+        shmbuffer = wl_shm_buffer_get(buffer->resource);
+        if (shmbuffer)
+          {
+             data = wl_shm_buffer_get_data(shmbuffer);
+             w = wl_shm_buffer_get_stride(shmbuffer)/4;
+             h = wl_shm_buffer_get_height(shmbuffer);
+          }
+     }
+   else if (buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
+     {
+        tbm_surface_info_s surface_info;
+        tbm_surface_h tbm_surface = wayland_tbm_server_get_surface(NULL, buffer->resource);
+
+        memset(&surface_info, 0, sizeof(tbm_surface_info_s));
+        tbm_surface_map(tbm_surface, TBM_SURF_OPTION_READ, &surface_info);
+
+        data = surface_info.planes[0].ptr;
+        w = surface_info.planes[0].stride/4;
+        h = surface_info.height;
+     }
+   else
+     {
+        ERR("Invalid resource:%u", wl_resource_get_id(buffer->resource));
+     }
+ #endif
+
+   EINA_SAFETY_ON_NULL_GOTO(data, err);
+
+   ee = ecore_evas_buffer_new(1, 1);
+   EINA_SAFETY_ON_NULL_GOTO(ee, err);
+
+   img = evas_object_image_add(ecore_evas_get(ee));
+   EINA_SAFETY_ON_NULL_GOTO(img, err);
+
+   evas_object_image_alpha_set(img, EINA_TRUE);
+   evas_object_image_size_set(img, w, h);
+   evas_object_image_data_set(img, data);
+
+   if (!evas_object_image_save(img, fname, NULL, "compress=1 quality=100"))
+     ERR("Cannot save window to '%s'", fname);
+
+ err:
+ #ifdef HAVE_WAYLAND_ONLY
+   if (data && buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
+     {
+        tbm_surface_h tbm_surface = wayland_tbm_server_get_surface(NULL, buffer->resource);
+        tbm_surface_unmap(tbm_surface);
+     }
+ #endif
+
+   if (img) evas_object_del(img);
+   if (ee) ecore_evas_free(ee);
 }
