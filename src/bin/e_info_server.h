@@ -19,5 +19,7 @@ E_API extern int E_EVENT_INFO_ROTATION_MESSAGE;
 EINTERN int e_info_server_init(void);
 EINTERN int e_info_server_shutdown(void);
 
+EINTERN void e_info_server_dump_client(E_Client *ec, char *fname);
+
 #endif
 #endif
