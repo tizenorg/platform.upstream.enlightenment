@@ -15,6 +15,8 @@ typedef struct _E_Info_Client
 
    /* topvwins */
    Eina_List         *win_list;
+
+   Eina_List         *input_dev;
 } E_Info_Client;
 
 typedef struct _E_Win_Info
@@ -141,6 +143,54 @@ finish:
      }
 }
 
+#define VALUE_TYPE_FOR_INPUTDEV "ssi"
+
+static void
+_cb_input_device_info_get(const Eldbus_Message *msg)
+{
+   const char *name = NULL, *text = NULL;
+   Eldbus_Message_Iter *array, *eldbus_msg;
+   Eina_Bool res;
+   E_Comp_Wl_Input_Device *dev;
+
+   res = eldbus_message_error_get(msg, &name, &text);
+   EINA_SAFETY_ON_TRUE_GOTO(res, finish);
+
+   res = eldbus_message_arguments_get(msg, "a("VALUE_TYPE_FOR_INPUTDEV")", &array);
+   EINA_SAFETY_ON_FALSE_GOTO(res, finish);
+
+   while (eldbus_message_iter_get_and_next(array, 'r', &eldbus_msg))
+     {
+        char *dev_name;
+        char *identifier;
+        int capability;
+        res = eldbus_message_iter_arguments_get(eldbus_msg,
+                                                VALUE_TYPE_FOR_INPUTDEV,
+                                                &dev_name,
+                                                &identifier,
+                                                &capability);
+        if (!res)
+          {
+             printf("Failed to get device info\n");
+             continue;
+          }
+
+        dev = E_NEW(E_Comp_Wl_Input_Device, 1);
+        dev->name = strdup(dev_name);
+        dev->identifier = strdup(identifier);
+        dev->capability = capability;
+
+        e_info_client.input_dev = eina_list_append(e_info_client.input_dev, dev);
+     }
+
+finish:
+   if ((name) || (text))
+     {
+        printf("errname:%s errmsg:%s\n", name, text);
+     }
+}
+
+
 static void
 _e_info_client_proc_topvwins_info(int argc, char **argv)
 {
@@ -185,6 +235,35 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
              prev_layer_name ? prev_layer_name : " ");
 
    E_FREE_LIST(e_info_client.win_list, _e_win_info_free);
+}
+
+static void
+_e_info_client_proc_input_device_info(int argc, char **argv)
+{
+   E_Comp_Wl_Input_Device *dev;
+   Eina_List *l;
+   int i = 0;
+
+   if (!_e_info_client_eldbus_message("get_input_devices", _cb_input_device_info_get))
+     return;
+
+   printf("--------------------------------------[ input devices ]----------------------------------------------------------\n");
+   printf(" No                               Name                        identifier            Cap\n");
+   printf("-----------------------------------------------------------------------------------------------------------------\n");
+
+   if (!e_info_client.input_dev)
+     {
+        printf("no devices\n");
+        return;
+     }
+
+   EINA_LIST_FOREACH(e_info_client.input_dev, l, dev)
+     {
+        i++;
+        printf("%3d %50s %20s         0x%x\n", i, dev->name, dev->identifier, dev->capability);
+     }
+
+   E_FREE_LIST(e_info_client.input_dev, free);
 }
 
 static char *
@@ -596,6 +675,11 @@ static struct
       ROTATION_USAGE,
       "Send a message about rotation",
       _e_info_client_proc_rotation
+   },
+   {
+      "input_devices", NULL,
+      "Print connected input devices",
+      _e_info_client_proc_input_device_info
    },
 };
 
