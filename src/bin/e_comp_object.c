@@ -1741,6 +1741,15 @@ _e_comp_intercept_show(void *data, Evas_Object *obj EINA_UNUSED)
         evas_object_color_set(cw->clip, ec->netwm.opacity, ec->netwm.opacity, ec->netwm.opacity, ec->netwm.opacity);
      }
 
+   evas_object_geometry_set(cw->effect_obj, cw->x, cw->y, cw->w, cw->h);
+   if (cw->input_obj)
+     evas_object_geometry_set(cw->input_obj,
+       cw->x + cw->input_rect.x + (!!cw->frame_object * cw->client_inset.l),
+       cw->y + cw->input_rect.y + (!!cw->frame_object * cw->client_inset.t),
+       cw->input_rect.w, cw->input_rect.h);
+   if (cw->mask_obj)
+     evas_object_resize(cw->mask_obj, cw->w, cw->h);
+
    _e_comp_intercept_show_helper(cw);
 }
 
