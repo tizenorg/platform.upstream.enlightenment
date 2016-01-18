@@ -576,7 +576,7 @@ _e_comp_wl_evas_cb_show(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EIN
         if ((ec->hidden) || (ec->iconic))
           {
              evas_object_hide(ec->frame);
-             e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
+//             e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
           }
         else if (!ec->internal_elm_win)
           evas_object_show(ec->frame);
