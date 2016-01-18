@@ -1831,24 +1831,17 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
 
         if (!ec->lock_client_size)
           {
-             ec->w = ec->client.w = state->bw;
-             ec->h = ec->client.h = state->bh;
+             if (first && e_client_has_xwindow(ec))
+               /* use client geometry to avoid race condition from x11 configure request */
+               x = ec->x, y = ec->y;
+             else
+               {
+                  ec->client.w = state->bw;
+                  ec->client.h = state->bh;
+                  e_comp_object_frame_wh_adjust(ec->frame, ec->client.w, ec->client.h, &ec->w, &ec->h);
+               }
           }
-
-        if (first && e_client_has_xwindow(ec))
-          /* use client geometry to avoid race condition from x11 configure request */
-          x = ec->x, y = ec->y;
-        else
-          {
-             ec->client.w = state->bw;
-             ec->client.h = state->bh;
-             e_comp_object_frame_wh_adjust(ec->frame, ec->client.w, ec->client.h, &ec->w, &ec->h);
-          }
-        w = ec->client.w;
-        h = ec->client.h;
      }
-   else
-     w = state->bw, h = state->bh;
    if (!e_pixmap_usable_get(ec->pixmap))
      {
         if (ec->comp_data->mapped)
