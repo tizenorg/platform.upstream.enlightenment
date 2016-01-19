@@ -792,7 +792,7 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_LIST(D, T, client_types, _e_config_client_type_edd);
    E_CONFIG_VAL(D, T, wayland_socket_owner, STR);
    E_CONFIG_VAL(D, T, wayland_socket_group, STR);
-   E_CONFIG_VAL(D, T, wayland_socket_permission, INT);
+   E_CONFIG_VAL(D, T, wayland_socket_permissions, INT);
 }
 
 /* externally accessible functions */
