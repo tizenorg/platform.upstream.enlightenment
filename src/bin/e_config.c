@@ -1565,9 +1565,6 @@ e_config_load(void)
    E_CONFIG_LIMIT(e_config->keyboard.repeat_delay, -1, 1000); // 1 second
    E_CONFIG_LIMIT(e_config->keyboard.repeat_rate, -1, 1000); // 1 second
 
-   E_CONFIG_LIMIT(e_config->keyboard.repeat_delay, -1, 1000); // 1 second
-   E_CONFIG_LIMIT(e_config->keyboard.repeat_rate, -1, 1000); // 1 second
-
    E_CONFIG_LIMIT(e_config->xkb.delay_held_key_input_to_focus, 0,5000); // 5000(ms) == 5(s)
 
    E_CONFIG_LIMIT(e_config->use_cursor_timer, 0, 1);
