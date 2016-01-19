@@ -3991,7 +3991,9 @@ _e_comp_wl_compositor_create(void)
      }
 
    runtime_dir = getenv("XDG_RUNTIME_DIR");
-   if (runtime_dir) {
+   if (runtime_dir &&
+       e_config->wayland_socket_owner &&
+       e_config->wayland_socket_group) {
      struct group *g;
      struct passwd *u;
      uid_t uid;
@@ -4006,12 +4008,12 @@ _e_comp_wl_compositor_create(void)
      g = getgrnam(e_config->wayland_socket_group);
      gid = (g != NULL) ? g->gr_gid : 0;
 
-     INF("owner: %s (%d) group: %s (%d) permission: %o",
+     DBG("socket path: %s owner: %s (%d) group: %s (%d) permissions: %o",
 	 e_config->wayland_socket_owner, uid,
 	 e_config->wayland_socket_group, gid,
-	 e_config->wayland_socket_permission);
+	 e_config->wayland_socket_permissions);
 
-     chmod(socket_path, e_config->wayland_socket_permission);
+     chmod(socket_path, e_config->wayland_socket_permissions);
      chown(socket_path, uid, gid);
    }
    /* set wayland display environment variable */

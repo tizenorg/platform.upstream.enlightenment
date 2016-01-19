@@ -870,5 +870,5 @@ group "E_Config" struct {
     value "wm_win_rotation" uchar: 0;
     value "wayland_socket_owner" string: "root";
     value "wayland_socket_group" string: "root";
-    value "wayland_socket_permission" int: 511; // decimal for 0777
+    value "wayland_socket_permissions" int: 511; // decimal for 0777
 }
