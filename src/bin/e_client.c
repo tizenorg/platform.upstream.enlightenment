@@ -4730,8 +4730,8 @@ e_client_iconify(E_Client *ec)
    if (!ec->new_client)
      {
         _e_client_revert_focus(ec);
-        evas_object_hide(ec->frame);
      }
+   evas_object_hide(ec->frame);
    e_client_urgent_set(ec, ec->icccm.urgent);
 
    _e_client_event_simple(ec, E_EVENT_CLIENT_ICONIFY);
