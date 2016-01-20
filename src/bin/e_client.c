@@ -4609,8 +4609,8 @@ e_client_iconify(E_Client *ec)
    if (!ec->new_client)
      {
         _e_client_revert_focus(ec);
-        evas_object_hide(ec->frame);
      }
+   evas_object_hide(ec->frame);
    e_hints_window_iconic_set(ec);
    e_client_urgent_set(ec, ec->icccm.urgent);
 
