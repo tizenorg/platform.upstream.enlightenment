@@ -3918,6 +3918,13 @@ e_comp_object_render(Evas_Object *obj)
    pix = evas_object_image_data_get(cw->obj, EINA_TRUE);
    stride = evas_object_image_stride_get(cw->obj);
    srcpix = e_pixmap_image_data_get(cw->ec->pixmap);
+
+   if (!srcpix)
+     {
+        e_pixmap_image_refresh(cw->ec->pixmap);
+        srcpix = e_pixmap_image_data_get(cw->ec->pixmap);
+     }
+
    EINA_ITERATOR_FOREACH(it, r)
      {
 #ifdef HAVE_WAYLAND_ONLY
