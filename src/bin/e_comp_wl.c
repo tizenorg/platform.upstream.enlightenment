@@ -1335,6 +1335,8 @@ _e_comp_wl_evas_cb_multi_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
         _e_comp_wl_evas_handle_event_device(dev_name, dev_class, ec, ev->timestamp);
         _e_comp_wl_evas_handle_axes(dev_name, dev_class, ec, ev->radius_x, ev->radius_y, ev->pressure, ev->angle);
      }
+   /* Do not deliver emulated single touch events to client */
+   if (ev->device == 0) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
@@ -1376,6 +1378,8 @@ _e_comp_wl_evas_cb_multi_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
         _e_comp_wl_evas_handle_event_device(dev_name, dev_class, ec, ev->timestamp);
         _e_comp_wl_evas_handle_axes(dev_name, dev_class, ec, ev->radius_x, ev->radius_y, ev->pressure, ev->angle);
      }
+   /* Do not deliver emulated single touch events to client */
+   if (ev->device == 0) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
@@ -1413,6 +1417,8 @@ _e_comp_wl_evas_cb_multi_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
         _e_comp_wl_evas_handle_event_device(dev_name, dev_class, ec, ev->timestamp);
         _e_comp_wl_evas_handle_axes(dev_name, dev_class, ec, ev->radius_x, ev->radius_y, ev->pressure, ev->angle);
      }
+   /* Do not deliver emulated single touch events to client */
+   if (ev->device == 0) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
 
