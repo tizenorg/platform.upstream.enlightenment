@@ -2172,6 +2172,17 @@ _e_comp_smart_resize(Evas_Object *obj, int w, int h)
    if (!cw->effect_obj) CRI("ACK!");
    first = ((cw->w < 1) || (cw->h < 1));
    cw->w = w, cw->h = h;
+
+#ifdef HAVE_WAYLAND_ONLY
+   /* not resize a clipper if it's a subsurface.
+    * When a video is rotated in the small screen target device, a clipper clips
+    * the smart object of video client.
+    */
+   E_Comp_Wl_Client_Data *cd = (E_Comp_Wl_Client_Data *)cw->ec->comp_data;
+   if (!cd || !cd->sub.data ||
+       (cd->scaler.buffer_viewport.surface.width == -1 &&
+        cd->scaler.buffer_viewport.buffer.src_width == wl_fixed_from_int(-1)))
+#endif
    evas_object_resize(cw->clip, cw->comp->man->w, cw->comp->man->h);
    if ((!cw->ec->shading) && (!cw->ec->shaded))
      {

@@ -450,6 +450,93 @@ _e_comp_wl_map_transform(int width, int height, uint32_t transform, int32_t scal
 }
 
 static void
+_e_comp_wl_map_transform_rect(int width, int height,
+                              uint32_t transform, int32_t scale,
+                              Eina_Rectangle *srect, Eina_Rectangle *drect)
+{
+   int x1, x2, y1, y2;
+
+   x1 = srect->x;
+   y1 = srect->y;
+   x2 = srect->x + srect->w;
+   y2 = srect->y + srect->h;
+
+   _e_comp_wl_map_transform(width, height, transform, scale, x1, y1, &x1, &y1);
+   _e_comp_wl_map_transform(width, height, transform, scale, x2, y2, &x2, &y2);
+
+   drect->x = MIN(x1, x2);
+   drect->y = MIN(y1, y2);
+   drect->w = MAX(x1, x2) - drect->x;
+   drect->h = MAX(y1, y2) - drect->y;
+}
+
+static void
+_e_comp_wl_map_scaler_surface_to_buffer(E_Client *ec, int sx, int sy, int *bx, int *by)
+{
+   E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
+   double src_width, src_height;
+   double src_x, src_y;
+
+   if (vp->buffer.src_width == wl_fixed_from_int(-1))
+     {
+        if (vp->surface.width == -1)
+          {
+             *bx = sx;
+             *by = sy;
+             return;
+          }
+
+        src_x = 0.0;
+        src_y = 0.0;
+        src_width = ec->comp_data->width_from_buffer;
+        src_height = ec->comp_data->height_from_buffer;
+     }
+   else
+     {
+        src_x = wl_fixed_to_double(vp->buffer.src_x);
+        src_y = wl_fixed_to_double(vp->buffer.src_y);
+        src_width = wl_fixed_to_double(vp->buffer.src_width);
+        src_height = wl_fixed_to_double(vp->buffer.src_height);
+     }
+
+   *bx = sx * src_width / ec->comp_data->width_from_viewport + src_x;
+   *by = sy * src_height / ec->comp_data->height_from_viewport + src_y;
+}
+
+static void
+_e_comp_wl_surface_to_buffer_rect(E_Client *ec, Eina_Rectangle *srect, Eina_Rectangle *drect)
+{
+   E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
+   int xf1, yf1, xf2, yf2;
+
+   if (!ec->comp_data->sub.data)
+     {
+        *drect = *srect;
+        return;
+     }
+
+   /* first transform box coordinates if the scaler is set */
+
+   xf1 = srect->x;
+   yf1 = srect->y;
+   xf2 = srect->x + srect->w;
+   yf2 = srect->y + srect->h;
+
+   _e_comp_wl_map_scaler_surface_to_buffer(ec, xf1, yf1, &xf1, &yf1);
+   _e_comp_wl_map_scaler_surface_to_buffer(ec, xf2, yf2, &xf2, &yf2);
+
+   srect->x = MIN(xf1, xf2);
+   srect->y = MIN(yf1, yf2);
+   srect->w = MAX(xf1, xf2) - srect->x;
+   srect->h = MAX(yf1, yf2) - srect->y;
+
+   _e_comp_wl_map_transform_rect(ec->comp_data->width_from_buffer,
+                                 ec->comp_data->height_from_buffer,
+                                 vp->buffer.transform, vp->buffer.scale,
+                                 srect, drect);
+}
+
+static void
 _e_comp_wl_map_apply(E_Client *ec)
 {
    E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
@@ -2055,12 +2142,23 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
           {
              EINA_LIST_FREE(state->damages, dmg)
                {
+                  Eina_Rectangle temp = {0,};
+                  if (ec->comp_data && ec->comp_data->sub.data &&
+                      (ec->comp_data->scaler.buffer_viewport.surface.width != -1 ||
+                       ec->comp_data->scaler.buffer_viewport.buffer.src_width != wl_fixed_from_int(-1)))
+                    {
+                       /* change to the buffer cordinate if subsurface */
+                       _e_comp_wl_surface_to_buffer_rect(ec, dmg, &temp);
+                       dmg = &temp;
+                    }
+
                   /* not creating damage for ec that shows a underlay video */
                   if (ec->comp_data->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_VIDEO ||
                       !e_comp->wl_comp_data->available_hw_accel.underlay)
                     e_comp_object_damage(ec->frame, dmg->x, dmg->y, dmg->w, dmg->h);
 
-                  eina_rectangle_free(dmg);
+                  if (dmg != &temp)
+                    eina_rectangle_free(dmg);
                }
           }
      }
