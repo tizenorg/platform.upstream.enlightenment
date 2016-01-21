@@ -2187,6 +2187,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    return;
 
 unmapped:
+   state->buffer_viewport.changed = 0;
+
    /* clear pending damages */
    EINA_LIST_FREE(state->damages, dmg)
      eina_rectangle_free(dmg);
