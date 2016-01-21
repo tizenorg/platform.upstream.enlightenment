@@ -2,7 +2,7 @@
 %bcond_with wayland
 
 Name:           enlightenment
-Version:        0.19.99
+Version:        0.20.0
 Release:        0
 License:        BSD-2-Clause
 Summary:        The Enlightenment window manager
