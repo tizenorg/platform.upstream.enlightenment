@@ -3937,6 +3937,7 @@ e_comp_object_util_mirror_add(Evas_Object *obj)
    Evas_Object *o;
    int w, h;
    unsigned int *pix = NULL;
+   Eina_Bool argb = EINA_FALSE;
 
    SOFT_ENTRY(NULL);
 
@@ -3982,7 +3983,15 @@ e_comp_object_util_mirror_add(Evas_Object *obj)
                }
           }
         else
-          pix = evas_object_image_data_get(cw->obj, EINA_FALSE);
+          {
+             /* FIXME: legacy code, please refer to commit 5e6831187a1 */
+             argb = e_pixmap_image_is_argb(cw->ec->pixmap);
+             if ((argb) &&
+                 (e_pixmap_image_exists(cw->ec->pixmap)))
+               pix = e_pixmap_image_data_get(cw->ec->pixmap);
+             else
+               pix = evas_object_image_data_get(cw->obj, EINA_FALSE);
+          }
      }
    if (pix)
      {
