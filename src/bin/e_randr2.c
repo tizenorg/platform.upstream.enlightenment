@@ -84,18 +84,16 @@ e_randr2_init(void)
    _screen_config_maxsize();
    // load config and apply it
    e_randr2_cfg = _config_load();
-   // only apply if restore is set AND at least one configured screen
-   // matches one we have
-   if ((e_randr2_cfg->restore) &&
-       (_config_screen_match_count(e_randr2, e_randr2_cfg) > 0))
-     {
-        _do_apply();
-     }
-   else
+   // update config
+   if ((!e_randr2_cfg->restore) ||
+       (_config_screen_match_count(e_randr2, e_randr2_cfg) == 0))
      {
         _config_update(e_randr2, e_randr2_cfg);
         e_randr2_config_save();
      }
+
+   _do_apply();
+
    ecore_event_add(E_EVENT_RANDR_CHANGE, NULL, NULL, NULL);
    return EINA_TRUE;
 }
