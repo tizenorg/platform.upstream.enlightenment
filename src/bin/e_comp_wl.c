@@ -2390,6 +2390,9 @@ _e_comp_wl_surface_cb_buffer_transform_set(struct wl_client *client EINA_UNUSED,
         return;
      }
 
+   if (ec->comp_data->pending.buffer_viewport.buffer.transform == transform)
+     return;
+
    ec->comp_data->pending.buffer_viewport.buffer.transform = transform;
    ec->comp_data->pending.buffer_viewport.changed = 1;
 }
@@ -2410,6 +2413,9 @@ _e_comp_wl_surface_cb_buffer_scale_set(struct wl_client *client EINA_UNUSED, str
                                "('%d' specified)", scale);
         return;
      }
+
+   if (ec->comp_data->pending.buffer_viewport.buffer.scale == scale)
+     return;
 
    ec->comp_data->pending.buffer_viewport.buffer.scale = scale;
    ec->comp_data->pending.buffer_viewport.changed = 1;
