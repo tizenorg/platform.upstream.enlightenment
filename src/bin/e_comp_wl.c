@@ -750,15 +750,67 @@ _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
    _e_comp_wl_subsurface_restack(parent);
 }
 
+static short
+_e_comp_wl_device_cap_to_class(int cap)
+{
+   switch(cap)
+     {
+      case ECORE_DEVICE_POINTER:
+         return EVAS_DEVICE_CLASS_MOUSE;
+      case ECORE_DEVICE_KEYBOARD:
+         return EVAS_DEVICE_CLASS_KEYBOARD;
+      case ECORE_DEVICE_TOUCH:
+         return EVAS_DEVICE_CLASS_TOUCH;
+      default:
+         return EVAS_DEVICE_CLASS_NONE;
+     }
+   return EVAS_DEVICE_CLASS_NONE;
+}
+
+static void
+_e_comp_wl_device_send_event_device(const char *dev_name, Evas_Device_Class dev_class, E_Client *ec, uint32_t timestamp)
+{
+   const char *last_dev_name;
+   E_Comp_Wl_Input_Device *input_dev;
+   struct wl_resource *dev_res;
+   struct wl_client *wc;
+   uint32_t serial;
+   Eina_List *l, *ll;
+
+   last_dev_name = e_comp_wl->input_device_manager.last_device_name;
+   if (!last_dev_name || (last_dev_name && (strcmp(last_dev_name, dev_name))))
+     {
+        if (last_dev_name)
+          eina_stringshare_del(last_dev_name);
+        last_dev_name = eina_stringshare_add(dev_name);
+        e_comp_wl->input_device_manager.last_device_name= last_dev_name;
+
+        wc = wl_resource_get_client(ec->comp_data->surface);
+        serial = wl_display_next_serial(e_comp_wl->wl.disp);
+
+        EINA_LIST_FOREACH(e_comp_wl->input_device_manager.device_list, l, input_dev)
+          {
+             if ((strcmp(input_dev->identifier, dev_name)) || (_e_comp_wl_device_cap_to_class(input_dev->capability) != dev_class)) continue;
+             e_comp_wl->input_device_manager.last_device_cap = input_dev->capability;
+             EINA_LIST_FOREACH(input_dev->resources, ll, dev_res)
+               {
+                  if (wl_resource_get_client(dev_res) != wc) continue;
+                  tizen_input_device_send_event_device(dev_res, serial, input_dev->identifier, timestamp);
+               }
+          }
+     }
+}
+
 static void
 _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
    E_Client *ec;
    Evas_Event_Mouse_In *ev;
-   struct wl_resource *res;
+   struct wl_resource *res, *dev_res;
    struct wl_client *wc;
-   Eina_List *l;
+   Eina_List *l, *ll;
    uint32_t serial;
+   E_Comp_Wl_Input_Device *input_dev;
 
    ev = event;
    if (!(ec = data)) return;
@@ -800,6 +852,22 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
         wl_pointer_send_enter(res, serial, ec->comp_data->surface,
                               wl_fixed_from_int(ev->canvas.x - ec->client.x),
                               wl_fixed_from_int(ev->canvas.y - ec->client.y));
+     }
+
+   if (e_comp_wl->input_device_manager.last_device_name)
+     {
+        EINA_LIST_FOREACH(e_comp_wl->input_device_manager.device_list, l, input_dev)
+          {
+             if ((strcmp(input_dev->identifier, e_comp_wl->input_device_manager.last_device_name)) ||
+                 (input_dev->capability != e_comp_wl->input_device_manager.last_device_cap))
+               continue;
+
+             EINA_LIST_FOREACH(input_dev->resources, ll, dev_res)
+               {
+                  if (wl_resource_get_client(dev_res) != wc) continue;
+                  tizen_input_device_send_event_device(dev_res, serial, input_dev->identifier, ev->timestamp);
+               }
+          }
      }
 }
 
@@ -964,9 +1032,8 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
 {
    E_Client *ec;
    Evas_Event_Mouse_Move *ev;
-   struct wl_resource *res;
-   Eina_List *l;
    Evas_Device *dev = NULL;
+   const char *dev_name;
 
    ev = event;
 
@@ -984,7 +1051,11 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
        (!e_client_has_xwindow(e_comp_wl->drag_client)))
      {
         dev = ev->dev;
-        if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
+
+        if (dev && (dev_name = evas_device_name_get(dev)))
+          _e_comp_wl_device_send_event_device(dev_name, evas_device_class_get(dev), ec, ev->timestamp);
+
+        if (dev && (evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH))
           _e_comp_wl_send_touch_move(ec, ev->cur.canvas.x, ev->cur.canvas.y, ev->timestamp);
         else
           _e_comp_wl_send_mouse_move(ec, ev->cur.canvas.x, ev->cur.canvas.y, ev->timestamp);
@@ -1091,12 +1162,17 @@ _e_comp_wl_evas_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    E_Client *ec = data;
    Evas_Event_Mouse_Down *ev = event;
    Evas_Device *dev = NULL;
+   const char *dev_name;
 
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    dev = ev->dev;
-   if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
+
+   if (dev  && (dev_name = evas_device_name_get(dev)))
+     _e_comp_wl_device_send_event_device(dev_name, evas_device_class_get(dev), ec, ev->timestamp);
+
+   if (dev &&  (evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH))
      _e_comp_wl_evas_handle_mouse_button_to_touch(ec, ev->timestamp, ev->canvas.x, ev->canvas.y, EINA_TRUE);
    else
      e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
@@ -1123,12 +1199,17 @@ _e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    E_Client *ec = data;
    Evas_Event_Mouse_Up *ev = event;
    Evas_Device *dev = NULL;
+   const char *dev_name;
 
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    dev = ev->dev;
-   if (dev && evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH)
+
+   if (dev && (dev_name = evas_device_name_get(dev)))
+     _e_comp_wl_device_send_event_device(dev_name, evas_device_class_get(dev), ec, ev->timestamp);
+
+   if (dev && (evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH))
      _e_comp_wl_evas_handle_mouse_button_to_touch(ec, ev->timestamp, ev->canvas.x, ev->canvas.y, EINA_FALSE);
    else
      e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
@@ -1194,6 +1275,54 @@ _e_comp_wl_evas_cb_mouse_wheel(void *data, Evas *evas EINA_UNUSED, Evas_Object *
 }
 
 static void
+_e_comp_wl_device_send_axis(const char *dev_name, Evas_Device_Class dev_class, E_Client *ec, enum tizen_input_device_axis_type axis_type, double value)
+{
+   E_Comp_Wl_Input_Device *input_dev;
+   struct wl_resource *dev_res;
+   struct wl_client *wc;
+   Eina_List *l, *ll;
+   wl_fixed_t f_value;
+
+   f_value = wl_fixed_from_double(value);
+   wc = wl_resource_get_client(ec->comp_data->surface);
+
+   EINA_LIST_FOREACH(e_comp_wl->input_device_manager.device_list, l, input_dev)
+     {
+        if ((strcmp(input_dev->identifier, dev_name)) || (_e_comp_wl_device_cap_to_class(input_dev->capability) != dev_class)) continue;
+        EINA_LIST_FOREACH(input_dev->resources, ll, dev_res)
+          {
+             if (wl_resource_get_client(dev_res) != wc) continue;
+             tizen_input_device_send_axis(dev_res, axis_type, f_value);
+          }
+     }
+}
+
+static void
+_e_comp_wl_device_handle_axes(const char *dev_name, Evas_Device_Class dev_class, E_Client *ec, double radius_x, double radius_y, double pressure, double angle)
+{
+   if (e_comp_wl->input_device_manager.multi.radius_x != radius_x)
+     {
+        _e_comp_wl_device_send_axis(dev_name, dev_class, ec, TIZEN_INPUT_DEVICE_AXIS_TYPE_RADIUS_X, radius_x);
+        e_comp_wl->input_device_manager.multi.radius_x = radius_x;
+     }
+   if (e_comp_wl->input_device_manager.multi.radius_y != radius_y)
+     {
+        _e_comp_wl_device_send_axis(dev_name, dev_class, ec, TIZEN_INPUT_DEVICE_AXIS_TYPE_RADIUS_Y, radius_y);
+        e_comp_wl->input_device_manager.multi.radius_y = radius_y;
+     }
+   if (e_comp_wl->input_device_manager.multi.pressure != pressure)
+     {
+        _e_comp_wl_device_send_axis(dev_name, dev_class, ec, TIZEN_INPUT_DEVICE_AXIS_TYPE_PRESSURE, pressure);
+        e_comp_wl->input_device_manager.multi.pressure = pressure;
+     }
+   if (e_comp_wl->input_device_manager.multi.angle != angle)
+     {
+        _e_comp_wl_device_send_axis(dev_name, dev_class, ec, TIZEN_INPUT_DEVICE_AXIS_TYPE_ANGLE, angle);
+        e_comp_wl->input_device_manager.multi.angle = angle;
+     }
+}
+
+static void
 _e_comp_wl_evas_cb_multi_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
 {
    Eina_List *l;
@@ -1203,10 +1332,22 @@ _e_comp_wl_evas_cb_multi_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    E_Client *ec = data;
    Evas_Event_Multi_Down *ev = event;
    wl_fixed_t x, y;
+   Evas_Device *dev = NULL;
+   const char *dev_name;
+   Evas_Device_Class dev_class;
 
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (!ec->comp_data->surface) return;
+
+   dev = ev->dev;
+
+   if (dev && (dev_name = evas_device_name_get(dev)))
+     {
+       dev_class = evas_device_class_get(dev);
+        _e_comp_wl_device_send_event_device(dev_name, dev_class, ec, ev->timestamp);
+        _e_comp_wl_device_handle_axes(dev_name, dev_class, ec, ev->radius_x, ev->radius_y, ev->pressure, ev->angle);
+     }
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
@@ -1232,10 +1373,22 @@ _e_comp_wl_evas_cb_multi_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    struct wl_resource *res;
    E_Client *ec = data;
    Evas_Event_Multi_Up *ev = event;
+   Evas_Device *dev = NULL;
+   const char *dev_name;
+   Evas_Device_Class dev_class;
 
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (!ec->comp_data->surface) return;
+
+   dev = ev->dev;
+
+   if (dev && (dev_name = evas_device_name_get(dev)))
+     {
+       dev_class = evas_device_class_get(dev);
+        _e_comp_wl_device_send_event_device(dev_name, dev_class, ec, ev->timestamp);
+        _e_comp_wl_device_handle_axes(dev_name, dev_class, ec, ev->radius_x, ev->radius_y, ev->pressure, ev->angle);
+     }
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
@@ -1257,10 +1410,22 @@ _e_comp_wl_evas_cb_multi_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    E_Client *ec = data;
    Evas_Event_Multi_Move *ev = event;
    wl_fixed_t x, y;
+   Evas_Device *dev = NULL;
+   const char *dev_name;
+   Evas_Device_Class dev_class;
 
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (!ec->comp_data->surface) return;
+
+   dev = ev->dev;
+
+   if (dev && (dev_name = evas_device_name_get(dev)))
+     {
+       dev_class = evas_device_class_get(dev);
+        _e_comp_wl_device_send_event_device(dev_name, dev_class, ec, ev->timestamp);
+        _e_comp_wl_device_handle_axes(dev_name, dev_class, ec, ev->radius_x, ev->radius_y, ev->pressure, ev->angle);
+     }
 
    wc = wl_resource_get_client(ec->comp_data->surface);
 
