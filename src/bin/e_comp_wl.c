@@ -4757,14 +4757,6 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
         if (*k == keycode) return EINA_FALSE;
      }
 
-   e_comp_wl->kbd.keys.size = (const char *)end - (const char *)e_comp_wl->kbd.keys.data;
-   if (!(k = wl_array_add(&e_comp_wl->kbd.keys, sizeof(*k))))
-     {
-        DBG("wl_array_add: Out of memory\n");
-        return EINA_FALSE;
-     }
-   *k = keycode;
-
    if ((!e_client_action_get()) && (!e_comp->input_key_grabs) &&
        (!e_menu_grab_window_get()))
      {
@@ -4778,6 +4770,15 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
              EINA_LIST_FOREACH(e_comp_wl->kbd.focused, l, res)
                wl_keyboard_send_key(res, serial, ev->timestamp,
                                keycode, WL_KEYBOARD_KEY_STATE_PRESSED);
+
+             /* A key only sent to clients is added to the list */
+             e_comp_wl->kbd.keys.size = (const char *)end - (const char *)e_comp_wl->kbd.keys.data;
+             if (!(k = wl_array_add(&e_comp_wl->kbd.keys, sizeof(*k))))
+               {
+                  DBG("wl_array_add: Out of memory\n");
+                  return EINA_FALSE;
+               }
+             *k = keycode;
           }
      }
 
@@ -4793,6 +4794,7 @@ e_comp_wl_key_up(Ecore_Event_Key *ev)
    uint32_t serial, *end, *k, keycode;
    struct wl_resource *res;
    Eina_List *l;
+   uint32_t delivered_key;
 
    if ((e_comp->comp_type != E_PIXMAP_TYPE_WL) ||
        (ev->window != e_comp->ee_win)) return EINA_FALSE;
@@ -4800,17 +4802,26 @@ e_comp_wl_key_up(Ecore_Event_Key *ev)
    _last_event_time = ecore_loop_time_get();
 
    keycode = (ev->keycode - 8);
+   delivered_key = 0;
    if (!(e_comp_wl = e_comp->wl_comp_data)) return EINA_FALSE;
 
    end = (uint32_t *)e_comp_wl->kbd.keys.data + (e_comp_wl->kbd.keys.size / sizeof(*k));
    for (k = e_comp_wl->kbd.keys.data; k < end; k++)
-     if (*k == keycode) *k = *--end;
+     {
+        if (*k == keycode)
+          {
+             *k = *--end;
+             delivered_key = 1;
+          }
+     }
 
    e_comp_wl->kbd.keys.size =
      (const char *)end - (const char *)e_comp_wl->kbd.keys.data;
 
-   if ((!e_client_action_get()) && (!e_comp->input_key_grabs) &&
-       (!e_menu_grab_window_get()))
+   /* If a key down event have been sent to clients, send a key up event to client for garantee key event sequence pair. (down/up) */
+   if ((delivered_key) ||
+       ((!e_client_action_get()) && (!e_comp->input_key_grabs) &&
+        (!e_menu_grab_window_get())))
      {
         ec = e_client_focused_get();
 
