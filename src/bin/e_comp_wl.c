@@ -30,6 +30,8 @@ E_API int E_EVENT_WAYLAND_GLOBAL_ADD = -1;
 
 static void _e_comp_wl_subsurface_parent_commit(E_Client *ec, Eina_Bool parent_synchronized);
 static void _e_comp_wl_subsurface_restack(E_Client *ec);
+static void _e_comp_wl_subsurface_restack_bg_rectangle(E_Client *ec);
+static void _e_comp_wl_subsurface_create_below_bg_rectangle(E_Client *ec);
 
 static Eina_Bool _e_comp_wl_cursor_timer(void *data);
 static void _e_comp_wl_cursor_reload(E_Client *ec);
@@ -557,6 +559,42 @@ _e_comp_wl_surface_to_buffer_rect(E_Client *ec, Eina_Rectangle *srect, Eina_Rect
                                  srect, drect);
 }
 
+static E_Client*
+_e_comp_wl_topmost_parent_get(E_Client *ec)
+{
+   E_Client *parent = NULL;
+
+   if (!ec->comp_data || !ec->comp_data->sub.data)
+      return ec;
+
+   parent = ec->comp_data->sub.data->parent;
+   while (parent)
+     {
+        if (!parent->comp_data || !parent->comp_data->sub.data)
+          return parent;
+
+        parent = parent->comp_data->sub.data->parent;
+     }
+
+   return ec;
+}
+
+static void
+_e_comp_wl_extern_parent_commit(E_Client *ec)
+{
+   E_Client **subc;
+   Eina_List *l;
+
+   EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
+     _e_comp_wl_extern_parent_commit(subc);
+
+   EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
+     _e_comp_wl_extern_parent_commit(subc);
+
+   if (ec->comp_data->has_extern_parent)
+     _e_comp_wl_subsurface_parent_commit(ec, EINA_TRUE);
+}
+
 static void
 _e_comp_wl_map_apply(E_Client *ec)
 {
@@ -745,9 +783,11 @@ _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
    EINA_SAFETY_ON_NULL_RETURN(parent);
 
    /* return if parent is null or is in restacking progress */
-   if (parent->comp_data->sub.restacking) return;
+   if (!parent->comp_data->sub.restacking)
+     _e_comp_wl_subsurface_restack(parent);
 
-   _e_comp_wl_subsurface_restack(parent);
+   _e_comp_wl_subsurface_restack(ec);
+   _e_comp_wl_subsurface_restack_bg_rectangle(ec);
 }
 
 static short
@@ -1951,10 +1991,22 @@ _e_comp_wl_subsurface_restack(E_Client *ec)
         temp = subc;
      }
 
-   if (ec->comp_data->sub.below_obj)
-     evas_object_stack_below(ec->comp_data->sub.below_obj, temp->frame);
-
    ec->comp_data->sub.restacking = EINA_FALSE;
+}
+
+static void
+_e_comp_wl_subsurface_restack_bg_rectangle(E_Client *ec)
+{
+   E_Client *bottom = ec;
+
+   if (!ec->comp_data->sub.below_obj)
+     return;
+
+   while (bottom)
+     {
+        evas_object_stack_below(ec->comp_data->sub.below_obj, bottom->frame);
+        bottom = eina_list_nth(bottom->comp_data->sub.below_list, 0);
+     }
 }
 
 static void
@@ -1984,6 +2036,7 @@ _e_comp_wl_surface_subsurface_order_commit(E_Client *ec)
      }
 
    _e_comp_wl_subsurface_restack(ec);
+   _e_comp_wl_subsurface_restack_bg_rectangle(ec);
 }
 
 static void
@@ -2527,6 +2580,12 @@ _e_comp_wl_surface_cb_commit(struct wl_client *client EINA_UNUSED, struct wl_res
 
    e_comp_wl_surface_commit(ec);
 
+   if (ec->comp_data->need_commit_extern_parent)
+     {
+        ec->comp_data->need_commit_extern_parent = 0;
+        _e_comp_wl_extern_parent_commit(ec);
+     }
+
    EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
      {
         if (ec != subc)
@@ -3051,6 +3110,7 @@ _e_comp_wl_subsurface_create_below_bg_rectangle(E_Client *ec)
                                   _e_comp_wl_subsurface_bg_evas_cb_resize, ec);
 
    _e_comp_wl_subsurface_restack(ec);
+   _e_comp_wl_subsurface_restack_bg_rectangle(ec);
 }
 
 static void
@@ -4606,12 +4666,20 @@ EINTERN Eina_Bool
 e_comp_wl_subsurface_commit(E_Client *ec)
 {
    E_Comp_Wl_Subsurf_Data *sdata;
+   E_Client *topmost;
 
    /* check for valid subcompositor data */
    if (!(sdata = ec->comp_data->sub.data)) return EINA_FALSE;
 
+   topmost = _e_comp_wl_topmost_parent_get(ec);
+
    if (_e_comp_wl_subsurface_synchronized_get(sdata))
      _e_comp_wl_subsurface_commit_to_cache(ec);
+   else if (ec->comp_data->has_extern_parent && !topmost->visible)
+     {
+        _e_comp_wl_subsurface_commit_to_cache(ec);
+        topmost->comp_data->need_commit_extern_parent = 1;
+     }
    else
      {
         E_Client *subc;
