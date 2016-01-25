@@ -1401,11 +1401,11 @@ static void
 _e_tz_surf_cb_tz_res_get(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface)
 {
    struct wl_resource *res;
-   E_Pixmap *ep;
+   E_Client *ec;
    uint32_t res_id;
 
    /* get the pixmap from this surface so we can find the client */
-   if (!(ep = wl_resource_get_user_data(surface)))
+   if (!(ec = wl_resource_get_user_data(surface)))
      {
         wl_resource_post_error(surface,
                                WL_DISPLAY_ERROR_INVALID_OBJECT,
@@ -1414,10 +1414,10 @@ _e_tz_surf_cb_tz_res_get(struct wl_client *client, struct wl_resource *resource,
      }
 
    /* make sure it's a wayland pixmap */
-   if (e_pixmap_type_get(ep) != E_PIXMAP_TYPE_WL) return;
+   if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
 
    /* find the window id for this pixmap */
-   res_id = e_pixmap_res_id_get(ep);
+   res_id = e_pixmap_res_id_get(ec->pixmap);
 
    DBG("tizen resource id %" PRIu32, res_id);
 
@@ -1433,7 +1433,7 @@ _e_tz_surf_cb_tz_res_get(struct wl_client *client, struct wl_resource *resource,
 
    wl_resource_set_implementation(res,
                                   &_e_tz_res_interface,
-                                  ep,
+                                  ec,
                                   NULL);
 
    tizen_resource_send_resource_id(res, res_id);
