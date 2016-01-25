@@ -69,6 +69,7 @@ Enlightenment is a window manager.
 Summary:        Development components for the enlightenment package
 Group:          Development/Libraries
 Requires:       %{name} = %{version}
+Requires:       pkgconfig(tizen-extension-server)
 
 %description devel
 Development files for enlightenment
