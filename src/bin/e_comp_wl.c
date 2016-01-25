@@ -4616,7 +4616,7 @@ e_comp_wl_surface_commit(E_Client *ec)
 
    if (ec->comp_data->sub.below_list || ec->comp_data->sub.below_list_pending)
      {
-        if (!ec->comp_data->sub.below_obj)
+        if (!ec->comp_data->sub.below_obj && e_pixmap_resource_get(ec->pixmap))
           _e_comp_wl_subsurface_create_below_bg_rectangle(ec);
      }
    ignored = ec->ignored;
