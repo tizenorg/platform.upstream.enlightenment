@@ -314,14 +314,6 @@ struct _E_Comp_Wl_Data
 
    struct
      {
-        Evas_GL *evasgl;
-        Evas_GL_API *api;
-        Evas_GL_Surface *sfc;
-        Evas_GL_Context *ctx;
-     } gl;
-
-   struct
-     {
         Eina_Bool underlay;
         Eina_Bool scaler;
      } available_hw_accel;
