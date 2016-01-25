@@ -4055,11 +4055,11 @@ _e_comp_wl_gl_init(void)
 
    evas_gl_config_free(cfg);
 
-   e_comp_wl->gl.evasgl = evasgl;
-   e_comp_wl->gl.api = glapi;
+   e_comp_wl->wl.gl = evasgl;
    e_comp_wl->wl.glapi = glapi;
-   e_comp_wl->gl.sfc = sfc;
-   e_comp_wl->gl.ctx = ctx;
+   e_comp_wl->wl.glsfc = sfc;
+   e_comp_wl->wl.glctx = ctx;
+   e_comp_wl->wl.glcfg = cfg;
 
    /* for native surface */
    e_comp->gl = 1;
@@ -4334,19 +4334,19 @@ _e_comp_wl_desklock_hide(void)
 static void
 _e_comp_wl_gl_shutdown(void)
 {
-   if (!e_comp_wl->gl.evasgl) return;
+   if (!e_comp_wl->wl.gl) return;
 
-   e_comp_wl->gl.api->evasglUnbindWaylandDisplay(e_comp_wl->gl.evasgl, e_comp_wl->wl.disp);
+   e_comp_wl->wl.glapi->evasglUnbindWaylandDisplay(e_comp_wl->wl.gl, e_comp_wl->wl.disp);
 
-   evas_gl_make_current(e_comp_wl->gl.evasgl, NULL, NULL);
-   evas_gl_context_destroy(e_comp_wl->gl.evasgl, e_comp_wl->gl.ctx);
-   evas_gl_surface_destroy(e_comp_wl->gl.evasgl, e_comp_wl->gl.sfc);
-   evas_gl_free(e_comp_wl->gl.evasgl);
+   evas_gl_make_current(e_comp_wl->wl.gl, NULL, NULL);
+   evas_gl_context_destroy(e_comp_wl->wl.gl, e_comp_wl->wl.glctx);
+   evas_gl_surface_destroy(e_comp_wl->wl.gl, e_comp_wl->wl.glsfc);
+   evas_gl_free(e_comp_wl->wl.gl);
 
-   e_comp_wl->gl.sfc = NULL;
-   e_comp_wl->gl.ctx = NULL;
-   e_comp_wl->gl.api = NULL;
-   e_comp_wl->gl.evasgl = NULL;
+   e_comp_wl->wl.glsfc = NULL;
+   e_comp_wl->wl.glctx = NULL;
+   e_comp_wl->wl.glapi = NULL;
+   e_comp_wl->wl.gl = NULL;
 }
 
 /* public functions */
@@ -4723,16 +4723,16 @@ e_comp_wl_buffer_get(struct wl_resource *resource, E_Client *ec)
           {
              buffer->type = E_COMP_WL_BUFFER_TYPE_NATIVE;
 
-             res = e_comp_wl->gl.api->evasglQueryWaylandBuffer(e_comp_wl->wl.gl,
-                                                           resource,
-                                                           EVAS_GL_WIDTH,
-                                                           &buffer->w);
+             res = e_comp_wl->wl.glapi->evasglQueryWaylandBuffer(e_comp_wl->wl.gl,
+                                                                 resource,
+                                                                 EVAS_GL_WIDTH,
+                                                                 &buffer->w);
              EINA_SAFETY_ON_FALSE_GOTO(res, err);
 
-             res = e_comp_wl->gl.api->evasglQueryWaylandBuffer(e_comp_wl->wl.gl,
-                                                           resource,
-                                                           EVAS_GL_HEIGHT,
-                                                           &buffer->h);
+             res = e_comp_wl->wl.glapi->evasglQueryWaylandBuffer(e_comp_wl->wl.gl,
+                                                                 resource,
+                                                                 EVAS_GL_HEIGHT,
+                                                                 &buffer->h);
              EINA_SAFETY_ON_FALSE_GOTO(res, err);
           }
         else
