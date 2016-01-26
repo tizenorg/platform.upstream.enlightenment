@@ -30,6 +30,7 @@ E_API int E_EVENT_WAYLAND_GLOBAL_ADD = -1;
 
 static void _e_comp_wl_subsurface_parent_commit(E_Client *ec, Eina_Bool parent_synchronized);
 static void _e_comp_wl_subsurface_restack(E_Client *ec);
+static void _e_comp_wl_subsurface_restack_bg_rectangle(E_Client *ec);
 
 static Eina_Bool _e_comp_wl_cursor_timer(void *data);
 static void _e_comp_wl_cursor_reload(E_Client *ec);
@@ -761,29 +762,24 @@ static void
 _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Client *ec;
-   E_Client *parent = NULL;
+   E_Client *topmost;
 
    if (!(ec = data)) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
+   if (ec->comp_data->sub.restacking) return;
 
    /* return if ec isn't both a parent of a subsurface and a subsurface itself */
    if (!ec->comp_data->sub.list && !ec->comp_data->sub.below_list && !ec->comp_data->sub.data)
      {
-        if (ec->comp_data->sub.below_obj) _e_comp_wl_subsurface_restack(ec);
+        if (ec->comp_data->sub.below_obj)
+          _e_comp_wl_subsurface_restack_bg_rectangle(ec);
         return;
      }
 
-   if (ec->comp_data->sub.data)
-     parent = ec->comp_data->sub.data->parent;
-   else
-     parent = ec;
+   topmost = _e_comp_wl_topmost_parent_get(ec);
 
-   EINA_SAFETY_ON_NULL_RETURN(parent);
-
-   /* return if parent is null or is in restacking progress */
-   if (parent->comp_data->sub.restacking) return;
-
-   _e_comp_wl_subsurface_restack(parent);
+   _e_comp_wl_subsurface_restack(topmost);
+   _e_comp_wl_subsurface_restack_bg_rectangle(topmost);
 }
 
 static short
@@ -1980,26 +1976,44 @@ _e_comp_wl_subsurface_restack(E_Client *ec)
    E_Client *subc, *temp;
    Eina_List *l;
 
-   ec->comp_data->sub.restacking = EINA_TRUE;
-
    temp = ec;
    EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
      {
+        subc->comp_data->sub.restacking = EINA_TRUE;
         evas_object_stack_above(subc->frame, temp->frame);
+        subc->comp_data->sub.restacking = EINA_FALSE;
         temp = subc;
      }
 
    temp = ec;
    EINA_LIST_REVERSE_FOREACH(ec->comp_data->sub.below_list, l, subc)
      {
+        subc->comp_data->sub.restacking = EINA_TRUE;
         evas_object_stack_below(subc->frame, temp->frame);
+        subc->comp_data->sub.restacking = EINA_FALSE;
         temp = subc;
      }
 
-   if (ec->comp_data->sub.below_obj)
-     evas_object_stack_below(ec->comp_data->sub.below_obj, temp->frame);
+   EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
+     _e_comp_wl_subsurface_restack(subc);
 
-   ec->comp_data->sub.restacking = EINA_FALSE;
+   EINA_LIST_REVERSE_FOREACH(ec->comp_data->sub.below_list, l, subc)
+     _e_comp_wl_subsurface_restack(subc);
+}
+
+static void
+_e_comp_wl_subsurface_restack_bg_rectangle(E_Client *ec)
+{
+   E_Client *bottom = ec;
+
+   if (!ec->comp_data->sub.below_obj)
+     return;
+
+   while (bottom)
+     {
+        evas_object_stack_below(ec->comp_data->sub.below_obj, bottom->frame);
+        bottom = eina_list_nth(bottom->comp_data->sub.below_list, 0);
+     }
 }
 
 static void
@@ -2027,8 +2041,6 @@ _e_comp_wl_surface_subsurface_order_commit(E_Client *ec)
 
         _e_comp_wl_surface_subsurface_order_commit(subc);
      }
-
-   _e_comp_wl_subsurface_restack(ec);
 }
 
 static void
@@ -3102,6 +3114,7 @@ _e_comp_wl_subsurface_create_below_bg_rectangle(E_Client *ec)
                                   _e_comp_wl_subsurface_bg_evas_cb_resize, ec);
 
    _e_comp_wl_subsurface_restack(ec);
+   _e_comp_wl_subsurface_restack_bg_rectangle(ec);
 }
 
 static void
@@ -3170,6 +3183,7 @@ _e_comp_wl_subsurface_commit_from_cache(E_Client *ec)
 {
    E_Comp_Client_Data *cdata;
    E_Comp_Wl_Subsurf_Data *sdata;
+   Eina_Bool need_restack = EINA_FALSE;
 
    if (!(cdata = ec->comp_data)) return;
    if (!(sdata = cdata->sub.data)) return;
@@ -3180,7 +3194,16 @@ _e_comp_wl_subsurface_commit_from_cache(E_Client *ec)
 
    e_comp_wl_buffer_reference(&sdata->cached_buffer_ref, NULL);
 
+   need_restack = ec->comp_data->sub.list_changed;
+
    _e_comp_wl_surface_subsurface_order_commit(ec);
+
+   if (need_restack)
+     {
+        E_Client *topmost = _e_comp_wl_topmost_parent_get(ec);
+        _e_comp_wl_subsurface_restack(topmost);
+        _e_comp_wl_subsurface_restack_bg_rectangle(topmost);
+     }
 }
 
 static void
@@ -4600,19 +4623,30 @@ EINTERN Eina_Bool
 e_comp_wl_surface_commit(E_Client *ec)
 {
    Eina_Bool ignored;
+   Eina_Bool need_restack = EINA_FALSE;
 
    _e_comp_wl_surface_state_commit(ec, &ec->comp_data->pending);
    if (!e_comp_object_damage_exists(ec->frame))
      e_pixmap_image_clear(ec->pixmap, 1);
 
-   if (ec->comp_data->sub.below_list || ec->comp_data->sub.below_list_pending)
-     {
-        if (!ec->comp_data->sub.below_obj)
-          _e_comp_wl_subsurface_create_below_bg_rectangle(ec);
-     }
    ignored = ec->ignored;
 
+   need_restack = ec->comp_data->sub.list_changed;
+
    _e_comp_wl_surface_subsurface_order_commit(ec);
+
+   if (need_restack)
+     {
+        E_Client *topmost = _e_comp_wl_topmost_parent_get(ec);
+        _e_comp_wl_subsurface_restack(topmost);
+        _e_comp_wl_subsurface_restack_bg_rectangle(topmost);
+     }
+
+   if (ec->comp_data->sub.below_list || ec->comp_data->sub.below_list_pending)
+     {
+        if (!ec->comp_data->sub.below_obj && e_pixmap_resource_get(ec->pixmap))
+          _e_comp_wl_subsurface_create_below_bg_rectangle(ec);
+     }
 
    if (!e_pixmap_usable_get(ec->pixmap))
      {
