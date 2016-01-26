@@ -1616,7 +1616,14 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
 
         pw = cw->ec->client.w, ph = cw->ec->client.h;
         if ((!pw) || (!ph))
-          e_pixmap_size_get(cw->ec->pixmap, &pw, &ph);
+          if (!e_pixmap_size_get(cw->ec->pixmap, &pw, &ph))
+            {
+               cw->ec->changes.visible = !cw->ec->hidden;
+               cw->ec->visible = 1;
+               EC_CHANGED(cw->ec);
+               return;
+            }
+
         cw->updates = eina_tiler_new(pw, ph);
         if (!cw->updates)
           {
