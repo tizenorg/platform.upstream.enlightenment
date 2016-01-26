@@ -4178,6 +4178,7 @@ _e_comp_wl_compositor_create(void)
         goto disp_err;
      }
 
+   runtime_dir = getenv("XDG_RUNTIME_DIR");
 #ifdef HAVE_SYSTEMD_DAEMON
    INF("Checking for open sockets...");
    n = sd_listen_fds(1);
@@ -4230,11 +4231,9 @@ _e_comp_wl_compositor_create(void)
         ERR("Could not create Wayland display socket: %m");
         goto sock_err;
      }
-
-   runtime_dir = getenv("XDG_RUNTIME_DIR");
-   if (runtime_dir &&
-       e_config->wayland_socket_owner &&
-       e_config->wayland_socket_group) {
+   else if (runtime_dir &&
+	    e_config->wayland_socket_owner &&
+	    e_config->wayland_socket_group) {
      struct group *g;
      struct passwd *u;
      uid_t uid;
@@ -4257,7 +4256,6 @@ _e_comp_wl_compositor_create(void)
      chmod(socket_path, e_config->wayland_socket_permissions);
      chown(socket_path, uid, gid);
    }
-#endif
 
    INF("Ready to serve my purpose");
    /* set wayland display environment variable */
