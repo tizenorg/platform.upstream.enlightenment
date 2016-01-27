@@ -2751,6 +2751,8 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
      }
    if (ec)
      {
+        if (!ec->netwm.pid)
+          ec->netwm.pid = pid;
         if (ec->new_client)
           e_comp->new_clients--;
         ec->new_client = 0;
