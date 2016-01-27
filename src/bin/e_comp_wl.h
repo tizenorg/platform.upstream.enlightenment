@@ -235,7 +235,6 @@ struct _E_Comp_Wl_Data
         uint32_t button;
         Ecore_Timer *hide_tmr;
         E_Client *ec;
-        Eina_Bool hidden :1;
         Eina_Bool enabled : 1;
         unsigned int num_devices;
      } ptr;
