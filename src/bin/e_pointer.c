@@ -828,3 +828,25 @@ e_pointer_window_add(E_Pointer *ptr, Ecore_Window win)
    _e_pointer_theme_buf(ptr, buf);
    _e_pointer_x11_setup(ptr, buf);
 }
+
+E_API Eina_Bool
+e_pointer_is_hidden(E_Pointer *ptr)
+{
+   Evas_Object *o;
+
+   ecore_evas_cursor_get(ptr->ee, &o, NULL, NULL, NULL);
+   if (o)
+     {
+        printf("is_hidden! client cursor shown");
+        return EINA_FALSE;
+     }
+   else
+     {
+        if (ptr->o_ptr && (evas_object_visible_get(ptr->o_ptr)))
+          {
+             printf("if_hidden! system cursor shown");
+             return EINA_FALSE;
+          }
+     }
+   return EINA_TRUE;
+}
