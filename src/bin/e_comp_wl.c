@@ -4576,8 +4576,15 @@ e_comp_wl_surface_commit(E_Client *ec)
 
    if (ec->comp_data->sub.below_list || ec->comp_data->sub.below_list_pending)
      {
-        if (!ec->comp_data->sub.below_obj && e_pixmap_resource_get(ec->pixmap))
-          _e_comp_wl_subsurface_create_below_bg_rectangle(ec);
+        //temporarily only check if below_obj is null.
+        if (!ec->comp_data->sub.below_obj)
+//        if (!ec->argb && !ec->comp_data->video_client && !ec->comp_data->sub.below_obj)
+          {
+            e_comp_object_alpha_set(ec->frame, EINA_TRUE);
+
+            if (e_pixmap_resource_get(ec->pixmap))
+              _e_comp_wl_subsurface_create_below_bg_rectangle(ec);
+          }
      }
 
    if (!e_pixmap_usable_get(ec->pixmap))
