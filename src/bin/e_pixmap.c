@@ -408,6 +408,9 @@ e_pixmap_parent_window_set(E_Pixmap *cp, Ecore_Window win)
          e_pixmap_clear(cp);
 #endif
          break;
+      default:
+         ERR("Unkown pixmap type:%d", cp->type);
+         break;
      }
 
    cp->parent = win;
@@ -864,7 +867,7 @@ e_pixmap_image_refresh(E_Pixmap *cp)
            cp->w = cp->h = 0;
            cp->image_argb = EINA_FALSE;
 
-           if (!buffer) return;
+           if (!buffer) return EINA_FALSE;
 
            if (buffer->type == E_COMP_WL_BUFFER_TYPE_SHM)
              {
@@ -873,7 +876,7 @@ e_pixmap_image_refresh(E_Pixmap *cp)
                   {
                      ERR("No shm_buffer resource:%u", wl_resource_get_id(buffer->resource));
                      e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
-                     return;
+                     return EINA_FALSE;
                   }
 
                 buffer->shm_buffer = shm_buffer;
@@ -914,7 +917,7 @@ e_pixmap_image_refresh(E_Pixmap *cp)
                   {
                      ERR("Invalid native buffer resource:%u", wl_resource_get_id(buffer->resource));
                      e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
-                     return;
+                     return EINA_FALSE;
                   }
 
              }
@@ -947,7 +950,7 @@ e_pixmap_image_refresh(E_Pixmap *cp)
              {
                 ERR("Invalid resource:%u", wl_resource_get_id(buffer->resource));
                 e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
-                return;
+                return EINA_FALSE;
              }
 
            cp->buffer_destroy_listener.notify = _e_pixmap_cb_buffer_destroy;

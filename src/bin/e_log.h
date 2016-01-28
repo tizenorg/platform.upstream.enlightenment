@@ -47,7 +47,7 @@
    while (0)
 
 
-extern E_API int e_log_dom;
+EINTERN extern int e_log_dom;
 
 EINTERN int e_log_init(void);
 EINTERN int e_log_shutdown(void);

@@ -199,10 +199,6 @@ _e_comp_wl_input_cb_keyboard_get(struct wl_client *client, struct wl_resource *r
 {
    E_Client *focused;
    struct wl_resource *res;
-   E_Client *ec;
-   struct wl_client *wc;
-   uint32_t serial, *k;
-   Eina_List *l;
 
    /* try to create keyboard resource */
    res = wl_resource_create(client, &wl_keyboard_interface,
