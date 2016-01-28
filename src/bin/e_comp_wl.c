@@ -1107,56 +1107,6 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
      }
 }
 
-static Eina_Bool
-_e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t button_id, uint32_t state)
-{
-   Eina_List *l;
-   struct wl_client *wc;
-   uint32_t serial, btn;
-   struct wl_resource *res;
-
-   if (ec->cur_mouse_action || ec->border_menu) return EINA_FALSE;
-   if (e_object_is_del(E_OBJECT(ec))) return EINA_FALSE;
-   if (e_client_util_ignored_get(ec)) return EINA_FALSE;
-
-   switch (button_id)
-     {
-      case 1:
-        btn = BTN_LEFT;
-        break;
-      case 2:
-        btn = BTN_MIDDLE;
-        break;
-      case 3:
-        btn = BTN_RIGHT;
-        break;
-      default:
-        btn = button_id;
-        break;
-     }
-
-   e_comp_wl->ptr.button = btn;
-
-   if (!ec->comp_data->surface) return EINA_FALSE;
-
-   if ((ec->comp_data->transform.cur_degree != 0) &&
-       (btn == BTN_MIDDLE))
-     {
-        _e_comp_wl_transform_unset(ec);
-        return EINA_TRUE;
-     }
-
-   wc = wl_resource_get_client(ec->comp_data->surface);
-   serial = wl_display_next_serial(e_comp_wl->wl.disp);
-
-   EINA_LIST_FOREACH(e_comp_wl->ptr.resources, l, res)
-     {
-        if (wl_resource_get_client(res) != wc) continue;
-        if (!e_comp_wl_input_pointer_check(res)) continue;
-        wl_pointer_send_button(res, serial, timestamp, btn, state);
-     }
-}
-
 static void
 _e_comp_wl_evas_handle_mouse_button_to_touch(E_Client *ec, uint32_t timestamp, int canvas_x, int canvas_y, Eina_Bool flag)
 {
@@ -2152,7 +2102,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    Eina_Bool first = EINA_FALSE;
    Eina_Rectangle *dmg;
    Eina_Bool ignored, placed = EINA_TRUE;
-   int x = 0, y = 0, w, h;
+   int x = 0, y = 0;
    E_Comp_Wl_Buffer *buffer;
 
    first = !e_pixmap_usable_get(ec->pixmap);
@@ -2691,8 +2641,7 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
 {
    struct wl_resource *res;
    E_Pixmap *ep = NULL;
-   E_Client *wc, *ec = NULL;
-   Eina_List *l;
+   E_Client *ec = NULL;
    pid_t pid;
    int internal = 0;
 
@@ -2977,7 +2926,7 @@ _e_comp_wl_compositor_cb_bind(struct wl_client *client, void *data EINA_UNUSED, 
         return;
      }
 
-   wl_resource_set_implementation(res, &_e_comp_interface, e_comp, NULL);
+   wl_resource_set_implementation(res, &_e_comp_interface, e_comp, _e_comp_wl_compositor_cb_unbind);
 
    wl_client_get_credentials(client, &pid, &uid, &gid);
 
@@ -3800,25 +3749,6 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
    _e_comp_wl_focus_check();
 }
 
-static void
-_e_comp_wl_client_cb_post_new(void *data EINA_UNUSED, E_Client *ec)
-{
-   if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
-   if (e_object_is_del(E_OBJECT(ec))) return;
-
-   ec->need_shape_merge = EINA_FALSE;
-
-   if (ec->need_shape_export)
-     {
-//        ec->shape_changed = EINA_TRUE;
-        e_comp_shape_queue();
-        ec->need_shape_export = EINA_FALSE;
-     }
-
-   if (ec->argb && ec->frame && !e_util_strcmp("video", ec->icccm.window_role))
-     _e_comp_wl_subsurface_create_below_bg_rectangle(ec);
-}
-
 #if 0
 static void
 _e_comp_wl_client_cb_pre_frame(void *data EINA_UNUSED, E_Client *ec)
@@ -4090,7 +4020,7 @@ _e_comp_wl_cb_output_bind(struct wl_client *client, void *data, uint32_t version
 }
 
 static void
-_e_comp_wl_gl_init(void)
+_e_comp_wl_gl_init(void *data EINA_UNUSED)
 {
    Evas_GL *evasgl = NULL;
    Evas_GL_API *glapi = NULL;
@@ -4312,7 +4242,7 @@ _e_comp_wl_compositor_create(void)
         goto input_err;
      }
 
-   _e_comp_wl_gl_init();
+   _e_comp_wl_gl_init(NULL);
 
 #ifndef HAVE_WAYLAND_ONLY
    if (e_comp_util_has_x())

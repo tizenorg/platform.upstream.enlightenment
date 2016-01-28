@@ -187,7 +187,6 @@ _e_shell_surface_cb_resize(struct wl_client *client EINA_UNUSED, struct wl_resou
 {
    E_Client *ec;
    E_Binding_Event_Mouse_Button ev;
-   int cx, cy;
 
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
@@ -797,7 +796,6 @@ _e_xdg_shell_surface_cb_resize(struct wl_client *client EINA_UNUSED, struct wl_r
 {
    E_Client *ec;
    E_Binding_Event_Mouse_Button ev;
-   int cx, cy;
 
    /* DBG("XDG_SHELL: Surface Resize: %d\tEdges: %d",  */
    /*     wl_resource_get_id(resource), edges); */

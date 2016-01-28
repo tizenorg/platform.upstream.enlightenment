@@ -47,7 +47,7 @@ e_mouse_update(void)
 #ifdef HAVE_WL_DRM
    if (strstr(ecore_evas_engine_name_get(e_comp->ee), "drm"))
      {
-        Eina_List *list, *l;
+        const Eina_List *list, *l;
         Ecore_Drm_Device *dev;
 
         list = ecore_drm_devices_get();
