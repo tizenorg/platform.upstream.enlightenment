@@ -1,6 +1,6 @@
 #include "e.h"
 
-EINTERN int e_log_dom = -1;
+E_API int e_log_dom = -1;
 
 static const char *_names[] = {
    "CRI",
