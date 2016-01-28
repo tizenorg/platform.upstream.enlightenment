@@ -4469,6 +4469,17 @@ e_comp_wl_init(void)
         return EINA_FALSE;
      }
 
+   wl_event_loop_dispatch(e_comp->wl_comp_data->wl.loop, -1); //server calls wl_client_create()
+
+   ecore_wl_flush(); // client sendmsg wl_display.get_registry request
+   wl_event_loop_dispatch(e_comp->wl_comp_data->wl.loop, -1); // server calls display_get_registry()
+   wl_display_flush_clients(e_comp->wl_comp_data->wl.disp); // server flushes wl_registry.global events
+
+   ecore_wl_display_iterate(); // client handles global events and make 'bind' requests to each global interfaces
+
+   ecore_wl_flush(); // client sendmsg wl_registry.bind requests
+   wl_event_loop_dispatch(e_comp->wl_comp_data->wl.loop, -1); // server calls registry_bind() using given interfaces' name
+
    /* create hash to store clients */
    /* clients_win_hash = eina_hash_int64_new(NULL); */
    clients_buffer_hash = eina_hash_pointer_new(NULL);
