@@ -200,6 +200,10 @@ struct _E_Comp_Wl_Data
         Eina_List *device_list;
         const char *last_device_name;
         unsigned int last_device_cap;
+        unsigned int block_devtype;
+        Eina_List *block_devices;
+        unsigned int disable_devtype;
+        Eina_List *disable_devices;
         struct
           {
              double radius_x;
