@@ -2322,16 +2322,31 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
        (!eina_tiler_empty(state->input)))
      {
         Eina_Tiler *src, *tmp;
+        Eina_Bool unset = EINA_FALSE;
+        Eina_Rectangle *rect;
+        Eina_Iterator *itr;
 
         tmp = eina_tiler_new(state->bw, state->bh);
         eina_tiler_tile_size_set(tmp, 1, 1);
         eina_tiler_rect_add(tmp,
                             &(Eina_Rectangle){0, 0, state->bw, state->bh});
-        if ((src = eina_tiler_intersection(state->input, tmp)))
-          {
-             Eina_Rectangle *rect;
-             Eina_Iterator *itr;
 
+        itr = eina_tiler_iterator_new(state->input);
+        EINA_ITERATOR_FOREACH(itr, rect)
+          {
+             if (rect->x == 0 && rect->y == 0 && rect->w == 1 && rect->h ==1)
+               {
+                  unset = EINA_TRUE;
+                  break;
+               }
+          }
+
+        if (unset)
+          {
+             e_comp_object_input_area_set(ec->frame, -1, -1, 1, 1);
+          }
+        else if ((src = eina_tiler_intersection(state->input, tmp)))
+          {
              itr = eina_tiler_iterator_new(src);
              EINA_ITERATOR_FOREACH(itr, rect)
                e_comp_object_input_area_set(ec->frame, rect->x, rect->y,
