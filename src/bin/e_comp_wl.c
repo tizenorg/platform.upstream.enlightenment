@@ -2645,7 +2645,13 @@ _e_comp_wl_surface_cb_input_region_set(struct wl_client *client EINA_UNUSED, str
         if (!(tmp = wl_resource_get_user_data(region_resource)))
           return;
 
-        eina_tiler_union(ec->comp_data->pending.input, tmp);
+        if (eina_tiler_empty(tmp))
+          {
+             ELOGF("COMP", "         |unset input rect", NULL, NULL, 0);
+             e_comp_object_input_area_set(ec->frame, -1, -1, 1, 1);
+          }
+        else
+          eina_tiler_union(ec->comp_data->pending.input, tmp);
      }
    else
      {
