@@ -35,6 +35,8 @@ typedef struct _E_Win_Info
 } E_Win_Info;
 
 #define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbs"
+#define VALUE_TYPE_REQUEST_RESLIST "ui"
+#define VALUE_TYPE_REPLY_RESLIST "ssi"
 
 static E_Info_Client e_info_client;
 
@@ -553,6 +555,209 @@ arg_err:
    printf("Usage: enlightenment_info -rotation %s", ROTATION_USAGE);
 }
 
+#define RESLIST_USAGE \
+   "\t-tree     : All resources\n" \
+   "\t-p {pid}  : Specify client pid\n"
+
+enum
+{
+   DEFAULT_SUMMARY = 0,
+   TREE,
+   PID
+};
+
+static void
+_pname_get(pid_t pid, char *name, int size)
+{
+   if (!name) return;
+
+   FILE *h;
+   char proc[512], pname[512];
+   size_t len;
+
+   snprintf(proc, 512,"/proc/%d/cmdline", pid);
+
+   h = fopen(proc, "r");
+   if (!h) return;
+
+   len = fread(pname, sizeof(char), 512, h);
+   if (len > 0)
+     {
+        if ('\n' == pname[len - 1])
+          pname[len - 1] = '\0';
+     }
+
+   fclose(h);
+
+   strncpy(name, pname, size);
+}
+
+
+static void
+_cb_disp_res_lists_get(const Eldbus_Message *msg)
+{
+   const char *name = NULL, *text = NULL;
+   Eldbus_Message_Iter *array, *resource;
+   Eina_Bool res;
+   int nClient = 0, nResource = 0;
+   char temp[PATH_MAX];
+   int pid = 0;
+
+   res = eldbus_message_error_get(msg, &name, &text);
+   EINA_SAFETY_ON_TRUE_GOTO(res, finish);
+
+   res = eldbus_message_arguments_get(msg, "a("VALUE_TYPE_REPLY_RESLIST")", &array);
+   EINA_SAFETY_ON_FALSE_GOTO(res, finish);
+
+   snprintf(temp, PATH_MAX,"%6s   %6s   %s   %s\n", "NO", "PID", "N_of_Res", "NAME");
+   printf("%s",temp);
+
+   while (eldbus_message_iter_get_and_next(array, 'r', &resource))
+     {
+        char cmd[512] = {0, };
+        const char *type;
+        const char *item;
+        int id = 0;
+        res = eldbus_message_iter_arguments_get(resource,
+                                                VALUE_TYPE_REPLY_RESLIST,
+                                                &type,
+                                                &item,
+                                                &id);
+        if (!res)
+          {
+             printf("Failed to get connected clients info\n");
+             continue;
+          }
+        if (!strcmp(type, "[client]"))
+          {
+             pid = id;
+             nResource = 0;
+             ++nClient;
+          }
+        else if (!strcmp(type, "[count]"))
+          {
+             nResource = id;
+             _pname_get(pid, cmd, sizeof(cmd));
+
+             printf("%6d   %6d   %4d      %9s\n", nClient, pid, nResource, cmd);
+             pid = 0;
+          }
+     }
+
+finish:
+   if ((name) || (text))
+     {
+        printf("errname:%s errmsg:%s\n", name, text);
+     }
+}
+
+static void
+_cb_disp_res_lists_get_detail(const Eldbus_Message *msg)
+{
+   const char *name = NULL, *text = NULL;
+   Eldbus_Message_Iter *array, *resource;
+   Eina_Bool res;
+   int nClient = 0, nResource = 0;
+
+   res = eldbus_message_error_get(msg, &name, &text);
+   EINA_SAFETY_ON_TRUE_GOTO(res, finish);
+
+   res = eldbus_message_arguments_get(msg, "a("VALUE_TYPE_REPLY_RESLIST")", &array);
+   EINA_SAFETY_ON_FALSE_GOTO(res, finish);
+
+   while (eldbus_message_iter_get_and_next(array, 'r', &resource))
+     {
+        const char *type;
+        const char *item;
+        char cmd[512] = {0, };
+        int id = 0, pid = 0, rid = 0;
+
+        res = eldbus_message_iter_arguments_get(resource,
+                                                VALUE_TYPE_REPLY_RESLIST,
+                                                &type,
+                                                &item,
+                                                &id);
+
+        if (!res)
+          {
+             printf("Failed to get connected clients info\n");
+             continue;
+          }
+        if (!strcmp(type, "[client]"))
+          {
+             nResource = 0;
+             pid = id;
+             ++nClient;
+             _pname_get(pid, cmd, sizeof(cmd));
+             printf("[%2d] pid %d  (%s)\n", nClient, pid, cmd);
+
+          }
+        else if (!strcmp(type, "[resource]"))
+          {
+             ++nResource;
+             rid = id;
+             printf("      |----- %s obj@%d\n", item, id);
+          }
+
+     }
+
+finish:
+   if ((name) || (text))
+     {
+        printf("errname:%s errmsg:%s\n", name, text);
+     }
+}
+
+static void
+_e_info_server_proc_res_lists(int argc, char **argv)
+{
+   uint32_t mode;
+   int pid = 0;
+
+   if (argc == 2)
+     {
+        mode = DEFAULT_SUMMARY;
+        if (!_e_info_client_eldbus_message_with_args("get_res_lists", _cb_disp_res_lists_get, VALUE_TYPE_REQUEST_RESLIST, mode, pid))
+          {
+             printf("%s error\n", __FUNCTION__);
+             return;
+          }
+     }
+   else if (argc == 3)
+     {
+        if (eina_streq(argv[2], "-tree")) mode = TREE;
+        else goto arg_err;
+
+        if (!_e_info_client_eldbus_message_with_args("get_res_lists", _cb_disp_res_lists_get_detail, VALUE_TYPE_REQUEST_RESLIST, mode, pid))
+          {
+             printf("%s error\n", __FUNCTION__);
+             return;
+          }
+     }
+   else if (argc == 4)
+     {
+        if (eina_streq(argv[2], "-p"))
+          {
+             mode = PID;
+             pid = atoi(argv[3]);
+             if (pid <= 0) goto arg_err;
+          }
+        else goto arg_err;
+
+        if (!_e_info_client_eldbus_message_with_args("get_res_lists", _cb_disp_res_lists_get_detail, VALUE_TYPE_REQUEST_RESLIST, mode, pid))
+          {
+             printf("%s error\n", __FUNCTION__);
+             return;
+          }
+     }
+   else goto arg_err;
+
+   return;
+arg_err:
+   printf("Usage: enlightenment_info -reslist\n%s", RESLIST_USAGE);
+
+}
+
 static struct
 {
    const char *option;
@@ -597,6 +802,11 @@ static struct
       "Send a message about rotation",
       _e_info_client_proc_rotation
    },
+   {
+      "reslist", "[-tree|-p]",
+      "Print connected client's and their resources",
+      _e_info_server_proc_res_lists
+   }
 };
 
 static void

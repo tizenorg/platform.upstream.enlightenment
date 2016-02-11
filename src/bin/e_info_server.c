@@ -1,8 +1,10 @@
+#define E_COMP_WL
 #include "e.h"
 #include <tbm_bufmgr.h>
 #include <tbm_surface.h>
 #ifdef HAVE_WAYLAND_ONLY
 #include <wayland-tbm-server.h>
+#include "e_comp_wl.h"
 #endif
 
 #define BUS "org.enlightenment.wm"
@@ -20,6 +22,8 @@ typedef struct _E_Info_Server
 static E_Info_Server e_info_server;
 
 #define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbs"
+#define VALUE_TYPE_REQUEST_RESLIST "ui"
+#define VALUE_TYPE_REPLY_RESLIST "ssi"
 
 static void
 _msg_clients_append(Eldbus_Message_Iter *iter)
@@ -148,6 +152,93 @@ _e_info_server_cb_connected_clients_get(const Eldbus_Service_Interface *iface EI
    Eldbus_Message *reply = eldbus_message_method_return_new(msg);
 
    _msg_connected_clients_append(eldbus_message_iter_get(reply));
+
+   return reply;
+}
+
+#define wl_client_for_each(client, list)     \
+   for (client = 0, client = wl_client_from_link((list)->next);   \
+        wl_client_get_link(client) != (list);                     \
+        client = wl_client_from_link(wl_client_get_link(client)->next))
+
+static int resurceCnt = 0;
+
+static void
+_e_info_server_get_resource(void *element, void *data)
+{
+   struct wl_resource *resource = element;
+   Eldbus_Message_Iter* array_of_res= data;
+   Eldbus_Message_Iter* struct_of_res;
+
+   eldbus_message_iter_arguments_append(array_of_res, "("VALUE_TYPE_REPLY_RESLIST")", &struct_of_res);
+   eldbus_message_iter_arguments_append(struct_of_res, VALUE_TYPE_REPLY_RESLIST, "[resource]", wl_resource_get_name(resource), wl_resource_get_id(resource));
+   eldbus_message_iter_container_close(array_of_res, struct_of_res);
+   resurceCnt++;
+}
+
+static void
+_msg_clients_res_list_append(Eldbus_Message_Iter *iter, uint32_t mode, int id)
+{
+   Eldbus_Message_Iter *array_of_res;
+
+   struct wl_list * client_list;
+   struct wl_client *client;
+   struct wl_map *res_objs;
+   //E_Comp_Data *cdata;
+   E_Comp_Wl_Data *cdata;
+   int pid = -1;
+
+   enum {
+   DEFAULT_SUMMARY,
+   TREE,
+   PID} type = mode;
+
+   eldbus_message_iter_arguments_append(iter, "a("VALUE_TYPE_REPLY_RESLIST")", &array_of_res);
+
+   if (!e_comp) return;
+   if (!(cdata = e_comp->wl_comp_data)) return;
+   if (!cdata->wl.disp) return;
+
+   client_list = wl_display_get_client_list(cdata->wl.disp);
+
+   wl_client_for_each(client, client_list)
+     {
+        Eldbus_Message_Iter* struct_of_res;
+
+        wl_client_get_credentials(client, &pid, NULL, NULL);
+
+        if ((type == PID) && (pid != id)) continue;
+
+        eldbus_message_iter_arguments_append(array_of_res, "("VALUE_TYPE_REPLY_RESLIST")", &struct_of_res);
+
+        eldbus_message_iter_arguments_append(struct_of_res, VALUE_TYPE_REPLY_RESLIST, "[client]", "pid", pid);
+        eldbus_message_iter_container_close(array_of_res, struct_of_res);
+
+        resurceCnt = 0;
+        res_objs = wl_client_get_resources(client);
+        wl_map_for_each(res_objs, _e_info_server_get_resource, array_of_res);
+
+        eldbus_message_iter_arguments_append(array_of_res, "("VALUE_TYPE_REPLY_RESLIST")", &struct_of_res);
+        eldbus_message_iter_arguments_append(struct_of_res, VALUE_TYPE_REPLY_RESLIST, "[count]", "resurceCnt", resurceCnt);
+        eldbus_message_iter_container_close(array_of_res, struct_of_res);
+     }
+   eldbus_message_iter_container_close(iter, array_of_res);
+}
+
+static Eldbus_Message *
+_e_info_server_cb_res_lists_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   uint32_t mode = 0;
+   int pid = -1;
+
+   if (!eldbus_message_arguments_get(msg, VALUE_TYPE_REQUEST_RESLIST, &mode, &pid))
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   _msg_clients_res_list_append(eldbus_message_iter_get(reply), mode, pid);
 
    return reply;
 }
@@ -572,6 +663,7 @@ static const Eldbus_Method methods[] = {
    { "get_connected_clients", NULL, ELDBUS_ARGS({"a(ss)", "array of ec"}), _e_info_server_cb_connected_clients_get, 0 },
    { "rotation_query", ELDBUS_ARGS({"i", "query_rotation"}), NULL, _e_info_server_cb_rotation_query, 0},
    { "rotation_message", ELDBUS_ARGS({"iii", "rotation_message"}), NULL, _e_info_server_cb_rotation_message, 0},
+   { "get_res_lists", ELDBUS_ARGS({VALUE_TYPE_REQUEST_RESLIST, "client resource"}), ELDBUS_ARGS({"a("VALUE_TYPE_REPLY_RESLIST")", "array of client resources"}), _e_info_server_cb_res_lists_get, 0 },
    { NULL, NULL, NULL, NULL, 0 }
 };
 
