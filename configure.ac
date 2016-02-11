@@ -816,6 +816,15 @@ if test "x${have_wayland}" = "xyes"; then
   fi
 fi
 
+# Check for ttrace header files
+PKG_CHECK_MODULES(TTRACE,
+		[ttrace],
+		[have_ttrace="yes"], [have_ttrace="no"])
+
+if test "x$have_ttrace" = "xyes"; then
+	AC_DEFINE(ENABLE_TTRACE, 1, [ttrace available])
+fi
+
 AM_CONDITIONAL([HAVE_WAYLAND], [test "x${have_wayland}" = "xyes"])
 AM_CONDITIONAL([HAVE_WAYLAND_EGL], [test "x${have_wayland_egl}" = "xyes"])
 AM_CONDITIONAL([HAVE_WAYLAND_TBM], [test "x${have_wayland_tbm}" = "xyes"])
