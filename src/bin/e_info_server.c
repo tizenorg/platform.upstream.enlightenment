@@ -24,6 +24,7 @@ static E_Info_Server e_info_server;
 #define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbs"
 #define VALUE_TYPE_REQUEST_RESLIST "ui"
 #define VALUE_TYPE_REPLY_RESLIST "ssi"
+#define VALUE_TYPE_FOR_INPUTDEV "ssi"
 
 static void
 _msg_clients_append(Eldbus_Message_Iter *iter)
@@ -84,6 +85,43 @@ _e_info_server_cb_window_info_get(const Eldbus_Service_Interface *iface EINA_UNU
    Eldbus_Message *reply = eldbus_message_method_return_new(msg);
 
    _msg_clients_append(eldbus_message_iter_get(reply));
+
+   return reply;
+}
+
+static void
+_input_msg_clients_append(Eldbus_Message_Iter *iter)
+{
+   Eldbus_Message_Iter *array_of_input;
+   Eina_List *l;
+   E_Comp_Wl_Data *cdata;
+   E_Comp_Wl_Input_Device *dev;
+
+   eldbus_message_iter_arguments_append(iter, "a("VALUE_TYPE_FOR_INPUTDEV")", &array_of_input);
+
+   cdata = e_comp->wl_comp_data;
+   EINA_LIST_FOREACH(cdata->input_device_manager.device_list, l, dev)
+     {
+        Eldbus_Message_Iter *struct_of_input;
+
+        eldbus_message_iter_arguments_append(array_of_input, "("VALUE_TYPE_FOR_INPUTDEV")", &struct_of_input);
+
+        eldbus_message_iter_arguments_append
+                     (struct_of_input, VALUE_TYPE_FOR_INPUTDEV,
+                      dev->name, dev->identifier, dev->capability);
+
+        eldbus_message_iter_container_close(array_of_input, struct_of_input);
+     }
+   eldbus_message_iter_container_close(iter, array_of_input);
+}
+
+
+static Eldbus_Message *
+_e_info_server_cb_input_device_info_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+
+   _input_msg_clients_append(eldbus_message_iter_get(reply));
 
    return reply;
 }
@@ -664,6 +702,7 @@ static const Eldbus_Method methods[] = {
    { "rotation_query", ELDBUS_ARGS({"i", "query_rotation"}), NULL, _e_info_server_cb_rotation_query, 0},
    { "rotation_message", ELDBUS_ARGS({"iii", "rotation_message"}), NULL, _e_info_server_cb_rotation_message, 0},
    { "get_res_lists", ELDBUS_ARGS({VALUE_TYPE_REQUEST_RESLIST, "client resource"}), ELDBUS_ARGS({"a("VALUE_TYPE_REPLY_RESLIST")", "array of client resources"}), _e_info_server_cb_res_lists_get, 0 },
+   { "get_input_devices", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_INPUTDEV")", "array of input"}), _e_info_server_cb_input_device_info_get, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 
