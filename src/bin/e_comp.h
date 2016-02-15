@@ -80,6 +80,13 @@ typedef struct E_Comp_Screen_Iface
    void (*dpms)(int);
 } E_Comp_Screen_Iface;
 
+typedef struct _E_Launch_Screen
+{
+   Evas *evas;
+   Evas_Object *shobj;
+   Ecore_Timer    *timeout;
+} E_Launch_Screen;
+
 struct _E_Comp
 {
    E_Object e_obj_inherit;
@@ -124,6 +131,8 @@ struct _E_Comp
    } autoclose;
 
    E_Comp_Screen_Iface *screen;
+
+   E_Launch_Screen   *launchscrn;
 
    Eina_List *debug_rects;
    Eina_List *ignore_wins;
