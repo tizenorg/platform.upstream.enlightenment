@@ -58,6 +58,7 @@ e_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd)
    E_CONFIG_VAL(D, T, skip_first_damage, UCHAR);
    E_CONFIG_VAL(D, T, disable_screen_effects, UCHAR);
    E_CONFIG_VAL(D, T, enable_advanced_features, UCHAR);
+   E_CONFIG_VAL(D, T, launch_file, STR);
    E_CONFIG_VAL(D, T, fast_popups, UCHAR);
    E_CONFIG_VAL(D, T, fast_borders, UCHAR);
    E_CONFIG_VAL(D, T, fast_menus, UCHAR);
@@ -110,6 +111,7 @@ e_comp_cfdata_config_new(void)
    cfg->smooth_windows = 0; // 1 if gl, 0 if not
    cfg->first_draw_delay = 0.15;
    cfg->skip_first_damage = 1;
+   cfg->launch_file = NULL;
 
    cfg->match.popups = NULL;
 
@@ -222,6 +224,7 @@ e_comp_cfdata_config_free(E_Comp_Config *cfg)
    eina_stringshare_del(cfg->effect_style);
    eina_stringshare_del(cfg->effect_file);
    eina_stringshare_del(cfg->shadow_style);
+   eina_stringshare_del(cfg->launch_file);
 
    E_FREE_LIST(cfg->match.popups, e_comp_cfdata_match_free);
    E_FREE_LIST(cfg->match.borders, e_comp_cfdata_match_free);
