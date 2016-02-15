@@ -34,6 +34,8 @@ static E_Config_DD *conf_match_edd = NULL;
 static Ecore_Timer *action_timeout = NULL;
 static Eina_Bool gl_avail = EINA_FALSE;
 
+E_Launch_Screen *launch_scrn = NULL; 
+
 static double ecore_frametime = 0;
 
 static int _e_comp_log_dom = -1;
@@ -1030,6 +1032,42 @@ _e_comp_act_redirect_toggle_go(E_Object * obj EINA_UNUSED, const char *params EI
    e_comp_client_redirect_toggle(e_client_focused_get());
 }
 
+static void
+_e_launchscreen_free(E_Launch_Screen *plscrn)
+{
+   if(plscrn->shobj) evas_object_del(plscrn->shobj);
+   E_FREE(plscrn);
+}
+
+E_Launch_Screen *
+_e_launchscreen_new(Ecore_Evas *ee)
+{
+   E_Launch_Screen *plscrn = NULL;
+
+   EINA_SAFETY_ON_NULL_GOTO(ee, error);
+
+   if(!edje_file_group_exists( "/usr/share/enlightenment/data/themes/launch.edj", "e/comp/effects/launch"))
+      goto error;
+
+   plscrn = E_NEW(E_Launch_Screen, 1);
+   EINA_SAFETY_ON_NULL_GOTO(plscrn, error);
+
+   plscrn->evas = ecore_evas_get(ee);
+   plscrn->shobj = edje_object_add(plscrn->evas);
+   evas_object_name_set(plscrn->shobj, "launch_screen");
+
+   evas_object_move(plscrn->shobj, 0, 0);
+   evas_object_resize(plscrn->shobj, e_comp->w, e_comp->h);
+   evas_object_layer_set(plscrn->shobj, E_LAYER_CLIENT_TOP);
+   edje_object_file_set(plscrn->shobj, "/usr/share/enlightenment/data/themes/launch.edj", "e/comp/effects/launch");
+
+   return plscrn;
+
+error:
+   ERR("Could not initialize launchscreen");
+   return NULL;
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 EINTERN Eina_Bool
@@ -1432,6 +1470,11 @@ e_comp_shutdown(void)
 
    E_FREE_FUNC(ignores, eina_hash_free);
 
+   if (e_comp->launchscrn)
+     {
+	   _e_launchscreen_free(e_comp->launchscrn);
+     }
+
    return 1;
 }
 
@@ -1453,6 +1496,12 @@ e_comp_deferred_job(void)
      {
         e_comp->pointer = e_pointer_canvas_new(e_comp->ee, EINA_TRUE);
         e_pointer_hide(e_comp->pointer);
+     }
+
+   /* launchscreen setting */
+   if (!e_comp->launchscrn)
+     {
+        e_comp->launchscrn = _e_launchscreen_new(e_comp->ee);
      }
 
 #if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
