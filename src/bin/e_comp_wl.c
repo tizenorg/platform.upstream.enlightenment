@@ -2964,10 +2964,9 @@ _e_comp_wl_pname_get(pid_t pid, char *name, int size)
 
    len = fread(pname, sizeof(char), 512, h);
    if (len > 0)
-     {
-        if ('\n' == pname[len - 1])
-          pname[len - 1] = '\0';
-     }
+     pname[len - 1] = '\0';
+   else
+     strncpy(pname, "NO NAME", sizeof(pname));
 
    fclose(h);
 
@@ -2988,10 +2987,9 @@ _e_comp_wl_pname_print(pid_t pid)
 
    len = fread(pname, sizeof(char), 512, h);
    if (len > 0)
-     {
-        if ('\n' == pname[len - 1])
-          pname[len - 1] = '\0';
-     }
+     pname[len - 1] = '\0';
+   else
+     strncpy(pname, "NO NAME", sizeof(pname));
 
    fclose(h);
 
