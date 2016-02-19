@@ -1812,7 +1812,7 @@ e_hints_aux_hint_add_with_pixmap(E_Pixmap *cp, int32_t id, const char *name, con
    Eina_List *l;
 
    if (!cp) return EINA_FALSE;
-   cdata = e_pixmap_cdata_get(cp);
+   cdata = (E_Comp_Wl_Client_Data*)e_pixmap_cdata_get(cp);
    if (!cdata) return EINA_FALSE;
 
    EINA_LIST_FOREACH(cdata->aux_hint.hints, l, hint)
@@ -1821,8 +1821,9 @@ e_hints_aux_hint_add_with_pixmap(E_Pixmap *cp, int32_t id, const char *name, con
           {
              if (strcmp(hint->val, val) != 0)
                {
-                  ELOGF("COMP", "AUX_HINT |Change [pixmap = %d] [%d:%s:%s -> %s]", cp, e_pixmap_client_get(cp),
-                        id, hint->hint, hint->val, val);
+                  ELOGF("COMP", "AUX_HINT |Change [pixmap] [%d:%s:%s -> %s]",
+                        cp, e_pixmap_client_get(cp),
+                         id, hint->hint, hint->val, val);
                   eina_stringshare_del(hint->val);
                   hint->val = eina_stringshare_add(val);
                   cdata->aux_hint.changed = 1;
@@ -1866,7 +1867,7 @@ e_hints_aux_hint_change_with_pixmap(E_Pixmap *cp, int32_t id, const char *val)
    Eina_Bool found = EINA_FALSE;
 
    if (!cp) return EINA_FALSE;
-   cdata = e_pixmap_cdata_get(cp);
+   cdata = (E_Comp_Wl_Client_Data*)e_pixmap_cdata_get(cp);
    if (!cdata) return EINA_FALSE;
 
    EINA_LIST_FOREACH(cdata->aux_hint.hints, l, hint)
@@ -1903,7 +1904,7 @@ e_hints_aux_hint_del_with_pixmap(E_Pixmap *cp, int32_t id)
    unsigned int res = -1;
 
    if (!cp) return EINA_FALSE;
-   cdata = e_pixmap_cdata_get(cp);
+   cdata = (E_Comp_Wl_Client_Data*)e_pixmap_cdata_get(cp);
    if (!cdata) return EINA_FALSE;
 
    EINA_LIST_FOREACH_SAFE(cdata->aux_hint.hints, l, ll, hint)
@@ -1937,7 +1938,7 @@ e_hints_aux_hint_value_get_with_pixmap(E_Pixmap *cp, const char *name)
    const char *res = NULL;
 
    if (!cp) return NULL;
-   cdata = e_pixmap_cdata_get(cp);
+   cdata = (E_Comp_Wl_Client_Data*)e_pixmap_cdata_get(cp);
    if (!cdata) return NULL;
 
    EINA_LIST_FOREACH(cdata->aux_hint.hints, l, hint)
