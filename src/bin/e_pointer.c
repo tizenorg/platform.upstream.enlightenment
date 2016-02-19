@@ -834,7 +834,7 @@ e_pointer_is_hidden(E_Pointer *ptr)
 {
    Evas_Object *o;
 
-   EINA_SAFETY_ON_NULL_RETURN(ptr);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ptr, EINA_TRUE);
 
    if (!e_config->show_cursor)
      return EINA_TRUE;

@@ -2647,7 +2647,7 @@ _e_comp_wl_surface_cb_input_region_set(struct wl_client *client EINA_UNUSED, str
 
         if (eina_tiler_empty(tmp))
           {
-             ELOGF("COMP", "         |unset input rect", NULL, NULL, 0);
+             ELOGF("COMP", "         |unset input rect", NULL, NULL);
              e_comp_object_input_area_set(ec->frame, -1, -1, 1, 1);
           }
         else
