@@ -814,24 +814,6 @@ if test "x${have_wayland}" = "xyes"; then
   else
     have_wayland_tbm=no
   fi
-
-  have_hwc=no
-  AC_ARG_ENABLE([hwc],
-    AS_HELP_STRING([--enable-hwc],[enable hwc @<:@default=enabled@:>@]),
-    [e_cv_want_hwc=$enableval],
-    [e_cv_want_hwc=yes])
-  AC_MSG_CHECKING([whether HWC support is enabled])
-  AC_MSG_RESULT([${e_cv_want_hwc}])
-
-  if test "x$e_cv_want_hwc" != "xno";then
-    PKG_CHECK_MODULES([HWC], [libtdm, gbm],
-      [
-        have_hwc=yes
-        AC_DEFINE_UNQUOTED([HAVE_HWC],[1],[enable hwc support])
-      ])
-  else
-    have_hwc=no
-  fi
 fi
 
 # Check for ttrace header files
@@ -846,7 +828,6 @@ fi
 AM_CONDITIONAL([HAVE_WAYLAND], [test "x${have_wayland}" = "xyes"])
 AM_CONDITIONAL([HAVE_WAYLAND_EGL], [test "x${have_wayland_egl}" = "xyes"])
 AM_CONDITIONAL([HAVE_WAYLAND_TBM], [test "x${have_wayland_tbm}" = "xyes"])
-AM_CONDITIONAL([HAVE_HWC], [test "x${have_hwc}" = "xyes"])
 
 if test "x${have_wayland_only}" != "xyes"; then
   PKG_CHECK_MODULES([ECORE_X], [ecore-x >= ${efl_version}])
