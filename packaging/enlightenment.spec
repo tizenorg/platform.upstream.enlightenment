@@ -133,7 +133,6 @@ export LDFLAGS+=" -pie "
       --disable-ibar \
       --disable-ibox \
       --disable-lokker \
-      --disable-mixer \
       --disable-msgbus \
       --disable-music_control \
       --disable-notification \
@@ -145,6 +144,7 @@ export LDFLAGS+=" -pie "
       --disable-tasks \
       --disable-temperature \
 %endif
+      --disable-mixer \
       --disable-teamwork \
       --enable-mount-eeze
 
