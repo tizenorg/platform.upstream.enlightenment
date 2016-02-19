@@ -578,7 +578,7 @@ _e_comp_wl_topmost_parent_get(E_Client *ec)
 static void
 _e_comp_wl_extern_parent_commit(E_Client *ec)
 {
-   E_Client **subc;
+   E_Client *subc;
    Eina_List *l;
 
    EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
