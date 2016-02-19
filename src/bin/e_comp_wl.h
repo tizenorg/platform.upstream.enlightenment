@@ -45,16 +45,6 @@
 
 #include <Evas_GL.h>
 
-#ifdef ENABLE_TTRACE
-#include <ttrace.h>
-
-#define TRACE_BEGIN(NAME) traceBegin(TTRACE_TAG_INPUT, "INPUT:SERVER:"#NAME)
-#define TRACE_END() traceEnd(TTRACE_TAG_INPUT)
-#else
-#define TRACE_BEGIN(NAME)
-#define TRACE_END()
-#endif
-
 typedef struct _E_Comp_Wl_Aux_Hint  E_Comp_Wl_Aux_Hint;
 typedef struct _E_Comp_Wl_Buffer E_Comp_Wl_Buffer;
 typedef struct _E_Comp_Wl_Buffer_Ref E_Comp_Wl_Buffer_Ref;

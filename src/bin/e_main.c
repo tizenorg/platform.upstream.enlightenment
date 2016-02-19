@@ -17,7 +17,6 @@ static double t0, t1, t2;
 #else
 # define TS(x)
 #endif
-
 /*
  * i need to make more use of these when i'm baffled as to when something is
  * up. other hooks:
@@ -216,6 +215,8 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
    int argc;
    char **argv;
 
+   TRACE_DS_BEGIN(MAIN:_e_main_subsystem_defer);
+
    ecore_app_args_get(&argc, &argv);
 
    /* try to init delayed subsystems */
@@ -297,6 +298,8 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
    e_module_deferred_job();
    TS("[DEFERRED] E_Module's deferred job Done");
 
+   TRACE_DS_END();
+
    return ECORE_CALLBACK_DONE;
 }
 
@@ -330,6 +333,7 @@ main(int argc, char **argv)
 #ifdef TS_DO
    t0 = t1 = t2 = ecore_time_unix_get();
 #endif
+   TRACE_DS_BEGIN(MAIN:Begin_Startup);
    TS("Begin Startup");
 
    /* trap deadly bug signals and allow some form of sane recovery */
@@ -814,6 +818,8 @@ main(int argc, char **argv)
 
    if (e_config->show_splash)
      e_init_status_set(_("Setup Screens"));
+
+   TRACE_DS_BEGIN(MAIN:SCREEN_INIT);
    TS("Screens Init");
    if (!_e_main_screens_init())
      {
@@ -823,6 +829,7 @@ main(int argc, char **argv)
      }
    TS("Screens Init Done");
    _e_main_shutdown_push(_e_main_screens_shutdown);
+   TRACE_DS_END();
 
    TS("E_Pointer Init");
    if (!e_pointer_init())
@@ -1323,6 +1330,8 @@ main(int argc, char **argv)
 
    if (e_config->show_splash)
      e_init_status_set(_("Setup Screens"));
+
+   TRACE_DS_BEGIN(MAIN:SCREEN_INIT);
    TS("Screens Init");
    if (!_e_main_screens_init())
      {
@@ -1332,6 +1341,7 @@ main(int argc, char **argv)
      }
    TS("Screens Init Done");
    _e_main_shutdown_push(_e_main_screens_shutdown);
+   TRACE_DS_END();
 
    if (e_config->show_splash)
      e_init_status_set(_("Setup System Controls"));
@@ -1438,6 +1448,8 @@ main(int argc, char **argv)
    e_util_env_set("E_RESTART", "1");
 
    TS("MAIN LOOP AT LAST");
+
+   TRACE_DS_END();
    if (!setjmp(x_fatal_buff))
      ecore_main_loop_begin();
    else

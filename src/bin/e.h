@@ -100,6 +100,23 @@ void *alloca (size_t);
 #  include <execinfo.h>
 # endif
 
+# ifdef ENABLE_TTRACE
+#  include <ttrace.h>
+#  undef TRACE_DS_BEGIN
+#  undef TRACE_DS_END
+#  undef TRACE_INPUT_BEGIN
+#  undef TRACE_INPUT_END
+#  define TRACE_DS_BEGIN(NAME) traceBegin(TTRACE_TAG_WINDOW_MANAGER, "DS:"#NAME)
+#  define TRACE_DS_END() traceEnd(TTRACE_TAG_WINDOW_MANAGER)
+#  define TRACE_INPUT_BEGIN(NAME) traceBegin(TTRACE_TAG_INPUT, "INPUT:SERVER:"#NAME)
+#  define TRACE_INPUT_END() traceEnd(TTRACE_TAG_INPUT)
+# else
+#  define TRACE_DS_BEGIN(NAME)
+#  define TRACE_DS_END()
+#  define TRACE_INPUT_BEGIN(NAME)
+#  define TRACE_INPUT_END()
+# endif
+
 /* egl.h must come before Evas_GL.h otherwise they will conflict */
 # ifdef HAVE_WAYLAND_EGL
 #  include <EGL/egl.h>

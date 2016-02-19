@@ -4721,6 +4721,9 @@ e_client_iconify(E_Client *ec)
 
    if (!ec->zone) return;
    if (ec->shading || ec->iconic) return;
+
+   TRACE_DS_BEGIN(ICONIC:e_client_iconify);
+
    ec->iconic = 1;
    ec->want_focus = ec->take_focus = 0;
    ec->changes.visible = 0;
@@ -4748,6 +4751,8 @@ e_client_iconify(E_Client *ec)
    _e_client_hook_call(E_CLIENT_HOOK_ICONIFY, ec);
 
    e_remember_update(ec);
+
+   TRACE_DS_END();
 }
 
 E_API void
@@ -4765,6 +4770,9 @@ e_client_uniconify(E_Client *ec)
 
    if (!ec->zone) return;
    if (ec->shading || (!ec->iconic)) return;
+
+   TRACE_DS_BEGIN(ICONIC:e_client_uniconify);
+
    desk = e_desk_current_get(ec->desk->zone);
    e_client_desk_set(ec, desk);
    not_raise = ec->exp_iconify.not_raise;
@@ -4794,6 +4802,8 @@ e_client_uniconify(E_Client *ec)
    ec->exp_iconify.not_raise = 0;
    ec->exp_iconify.by_client = 0;
    e_remember_update(ec);
+
+   TRACE_DS_END();
 }
 
 ///////////////////////////////////////
