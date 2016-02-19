@@ -1262,7 +1262,8 @@ out:
 #endif
 
 #ifdef HAVE_HWC
-   if (conf->hwc)
+// soolim : hwc default on...
+//   if (conf->hwc)
      {
         e_comp->hwc = e_comp_hwc_init();
         if (!e_comp->hwc)
