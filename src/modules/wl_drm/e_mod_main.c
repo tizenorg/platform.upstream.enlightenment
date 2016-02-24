@@ -6,6 +6,9 @@ E_API E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Wl_Drm" };
 static Eina_List *event_handlers = NULL;
 static Eina_Bool session_state = EINA_FALSE;
 
+static Eina_Bool dont_set_ecore_drm_keymap = EINA_FALSE;
+static Eina_Bool dont_use_xkb_cache = EINA_FALSE;
+
 static Eina_Bool
 _e_mod_drm_cb_activate(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
@@ -743,6 +746,8 @@ _e_mod_drm_keymap_set(struct xkb_context **ctx, struct xkb_keymap **map)
    struct xkb_keymap *keymap;
    struct xkb_rule_names names = {0,};
 
+   TRACE_BEGIN(_e_mod_drm_keymap_set);
+
    context = xkb_context_new(0);
    EINA_SAFETY_ON_NULL_RETURN(context);
 
@@ -759,13 +764,18 @@ _e_mod_drm_keymap_set(struct xkb_context **ctx, struct xkb_keymap **map)
    *ctx = context;
    *map = keymap;
 
-   ecore_drm_device_keyboard_cached_context_set(*ctx);
-   ecore_drm_device_keyboard_cached_keymap_set(*map);
+   if (dont_set_ecore_drm_keymap == EINA_FALSE)
+     {
+        ecore_drm_device_keyboard_cached_context_set(*ctx);
+        ecore_drm_device_keyboard_cached_keymap_set(*map);
+     }
 
 cleanup:
    free((char *)names.rules);
    free((char *)names.model);
    free((char *)names.layout);
+
+   TRACE_END();
 }
 
 E_API void *
@@ -778,6 +788,9 @@ e_modapi_init(E_Module *m)
    struct xkb_keymap *map = NULL;
 
    printf("LOAD WL_DRM MODULE\n");
+
+   dont_set_ecore_drm_keymap = getenv("NO_ECORE_DRM_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
+   dont_use_xkb_cache = getenv("NO_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
 
    TRACE_DS_BEGIN(WL_DRM:INIT);
 
@@ -820,7 +833,7 @@ e_modapi_init(E_Module *m)
    DBG("GL available:%d config engine:%d screen size:%dx%d",
        e_comp_gl_get(), e_comp_config_get()->engine, scr_w, scr_h);
 
-   if (e_config->xkb.use_cache)
+   if (e_config->xkb.use_cache && !dont_use_xkb_cache)
      _e_mod_drm_keymap_set(&ctx, &map);
 
    if ((e_comp_gl_get()) &&
@@ -955,6 +968,8 @@ e_modapi_shutdown(E_Module *m EINA_UNUSED)
    /* shutdown ecore_drm */
    /* ecore_drm_shutdown(); */
 
+   dont_set_ecore_drm_keymap = EINA_FALSE;
+   dont_use_xkb_cache = EINA_FALSE;
    E_FREE_LIST(event_handlers, ecore_event_handler_del);
 
    return 1;

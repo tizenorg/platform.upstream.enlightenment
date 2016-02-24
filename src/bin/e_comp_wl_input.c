@@ -7,6 +7,8 @@
 #endif
 
 E_API int E_EVENT_TEXT_INPUT_PANEL_VISIBILITY_CHANGE = -1;
+static Eina_Bool dont_set_ecore_drm_keymap = EINA_FALSE;
+static Eina_Bool dont_use_xkb_cache = EINA_FALSE;
 
 static void
 _e_comp_wl_input_update_seat_caps(void)
@@ -222,9 +224,11 @@ _e_comp_wl_input_cb_keyboard_get(struct wl_client *client, struct wl_resource *r
      wl_keyboard_send_repeat_info(res, e_config->keyboard.repeat_rate, e_config->keyboard.repeat_delay);
 
    /* send current keymap */
+   TRACE_BEGIN(wl_keyboard_send_keymap);
    wl_keyboard_send_keymap(res, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
                            e_comp_wl->xkb.fd,
                            e_comp_wl->xkb.size);
+   TRACE_END();
 
    /* if the client owns the focused surface, we need to send an enter */
    focused = e_client_focused_get();
@@ -310,8 +314,13 @@ static void
 _e_comp_wl_input_keymap_cache_create(const char *keymap_path, char *keymap_data)
 {
    FILE *file = NULL;
+   TRACE_BEGIN(_e_comp_wl_input_keymap_cache_create);
 
-   if (EINA_FALSE == e_config->xkb.use_cache) return;
+   if ((EINA_FALSE == e_config->xkb.use_cache) && !dont_use_xkb_cache)
+     {
+        TRACE_END();
+        return;
+     }
 
    if (keymap_path)
      {
@@ -330,6 +339,7 @@ _e_comp_wl_input_keymap_cache_create(const char *keymap_path, char *keymap_data)
              fclose(file);
           }
      }
+   TRACE_END();
 }
 
 static int
@@ -465,10 +475,12 @@ _e_comp_wl_input_keymap_update(struct xkb_keymap *keymap, const char *keymap_pat
    free(tmp);
 
    /* send updated keymap */
+   TRACE_BEGIN(wl_keyboard_send_keymap_update);
    EINA_LIST_FOREACH(e_comp_wl->kbd.resources, l, res)
      wl_keyboard_send_keymap(res, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
                              e_comp_wl->xkb.fd,
                              e_comp_wl->xkb.size);
+   TRACE_END();
 
    /* update modifiers */
    e_comp_wl_input_keyboard_modifiers_update();
@@ -482,6 +494,8 @@ e_comp_wl_input_init(void)
      e_comp_wl->seat.name = "default";
 
    e_comp_wl->xkb.fd = -1;
+   dont_set_ecore_drm_keymap = getenv("NO_ECORE_DRM_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
+   dont_use_xkb_cache = getenv("NO_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
 
    /* get default keyboard repeat rate/delay from configuration */
    e_comp_wl->kbd.repeat_delay = e_config->keyboard.repeat_delay;
@@ -559,6 +573,9 @@ e_comp_wl_input_shutdown(void)
 
    if (e_comp_wl->input_device_manager.last_device_name)
      eina_stringshare_del(e_comp_wl->input_device_manager.last_device_name);
+
+   dont_set_ecore_drm_keymap = EINA_FALSE;
+   dont_use_xkb_cache = EINA_FALSE;
 
    EINA_LIST_FREE (e_comp_wl->input_device_manager.device_list, dev)
      {
@@ -696,7 +713,9 @@ e_comp_wl_input_keymap_compile(struct xkb_context *ctx, struct xkb_rule_names na
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, NULL);
 
-   if (e_config->xkb.use_cache)
+   TRACE_BEGIN(e_comp_wl_input_keymap_compile);
+
+   if (e_config->xkb.use_cache && !dont_use_xkb_cache)
      {
         cache_path = (char *)e_comp_wl_input_keymap_path_get(names);
         file = fopen(cache_path, "r");
@@ -721,6 +740,8 @@ e_comp_wl_input_keymap_compile(struct xkb_context *ctx, struct xkb_rule_names na
    *keymap_path = cache_path;
    EINA_SAFETY_ON_NULL_RETURN_VAL(keymap, NULL);
 
+   TRACE_END();
+
    return keymap;
 }
 
@@ -734,6 +755,7 @@ e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *lay
    Eina_Bool use_dflt_xkb = EINA_FALSE;
 
    /* DBG("COMP_WL: Keymap Set: %s %s %s", rules, model, layout); */
+   TRACE_BEGIN(e_comp_wl_input_keymap_set);
 
    if (dflt_ctx && dflt_map) use_dflt_xkb = EINA_TRUE;
 
@@ -746,10 +768,13 @@ e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *lay
    else e_comp_wl->xkb.context = xkb_context_new(0);
 
    if (!e_comp_wl->xkb.context)
-     return;
+     {
+        TRACE_END();
+        return;
+     }
 
 #ifdef HAVE_WL_DRM
-   if (e_config->xkb.use_cache)
+   if (e_config->xkb.use_cache && !dont_set_ecore_drm_keymap)
      ecore_drm_device_keyboard_cached_context_set(e_comp_wl->xkb.context);
 #endif
 
@@ -762,6 +787,7 @@ e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *lay
    if (layout) names.layout = strdup(layout);
    else names.layout = strdup("us");
 
+   TRACE_BEGIN(e_comp_wl_input_keymap_set_keymap_compile);
    if (use_dflt_xkb)
      {
         keymap = dflt_map;
@@ -774,12 +800,13 @@ e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *lay
      }
    else
      keymap = e_comp_wl_input_keymap_compile(e_comp_wl->xkb.context, names, &keymap_path);
+   TRACE_END();
 
    /* update compositor keymap */
    _e_comp_wl_input_keymap_update(keymap, keymap_path);
 
 #ifdef HAVE_WL_DRM
-   if (e_config->xkb.use_cache)
+   if (e_config->xkb.use_cache && !dont_set_ecore_drm_keymap)
      ecore_drm_device_keyboard_cached_keymap_set(keymap);
 #endif
 
@@ -788,6 +815,7 @@ e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *lay
    free((char *)names.rules);
    free((char *)names.model);
    free((char *)names.layout);
+   TRACE_END();
 }
 
 E_API void
