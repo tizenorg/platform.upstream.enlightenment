@@ -713,9 +713,19 @@ e_comp_wl_input_keymap_compile(struct xkb_context *ctx, struct xkb_rule_names na
      {
         INF("Keymap file (%s) has been found. xkb_keymap is going to be generated with it.\n", cache_path);
         keymap = xkb_map_new_from_file(ctx, file, XKB_KEYMAP_FORMAT_TEXT_V1, 0);
-        eina_stringshare_del(cache_path);
-        cache_path = NULL;
-        fclose(file);
+        if (!keymap)
+          {
+             WRN("Keymap file is exist (%s) but it is invaild file. Generate keymap using rmlvo\n", cache_path);
+             fclose(file);
+             remove(cache_path);
+             keymap = xkb_map_new_from_names(ctx, &names, 0);
+          }
+        else
+          {
+             eina_stringshare_del(cache_path);
+             cache_path = NULL;
+             fclose(file);
+          }
      }
 
    *keymap_path = cache_path;
