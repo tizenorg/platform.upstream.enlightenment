@@ -40,9 +40,13 @@ typedef struct _E_Win_Info
 #define VALUE_TYPE_REQUEST_RESLIST "ui"
 #define VALUE_TYPE_REPLY_RESLIST "ssi"
 #define VALUE_TYPE_FOR_INPUTDEV "ssi"
+#define VALUE_TYPE_FOR_FPS "s"
+
 
 static E_Info_Client e_info_client;
 
+static int keepRunning = 1;
+static void end_program (int sig);
 static Eina_Bool _e_info_client_eldbus_message(const char *method, E_Info_Message_Cb cb);
 static Eina_Bool _e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb, const char *signature, ...);
 
@@ -751,7 +755,7 @@ _cb_disp_res_lists_get_detail(const Eldbus_Message *msg)
         const char *type;
         const char *item;
         char cmd[512] = {0, };
-        int id = 0, pid = 0, rid = 0;
+        int id = 0, pid = 0;
 
         res = eldbus_message_iter_arguments_get(resource,
                                                 VALUE_TYPE_REPLY_RESLIST,
@@ -776,7 +780,6 @@ _cb_disp_res_lists_get_detail(const Eldbus_Message *msg)
         else if (!strcmp(type, "[resource]"))
           {
              ++nResource;
-             rid = id;
              printf("      |----- %s obj@%d\n", item, id);
           }
 
@@ -790,7 +793,7 @@ finish:
 }
 
 static void
-_e_info_server_proc_res_lists(int argc, char **argv)
+_e_info_client_proc_res_lists(int argc, char **argv)
 {
    uint32_t mode;
    int pid = 0;
@@ -839,6 +842,56 @@ arg_err:
 
 }
 
+static void
+_cb_fps_info_get(const Eldbus_Message *msg)
+{
+   const char *name = NULL, *text = NULL;
+   Eldbus_Message_Iter *array, *fps;
+   Eina_Bool res;
+
+   res = eldbus_message_error_get(msg, &name, &text);
+   EINA_SAFETY_ON_TRUE_GOTO(res, finish);
+
+   res = eldbus_message_arguments_get(msg, "a("VALUE_TYPE_FOR_FPS")", &array);
+   EINA_SAFETY_ON_FALSE_GOTO(res, finish);
+
+   while (eldbus_message_iter_get_and_next(array, 'r', &fps))
+     {
+        E_Win_Info *win = NULL;
+        const char *item;
+        res = eldbus_message_iter_arguments_get(fps,
+                                                VALUE_TYPE_FOR_FPS,
+                                                &item);
+
+        if (!res)
+          {
+             printf("Failed to get fps info\n");
+             continue;
+          }
+        if (strcmp(item, "none")) { printf("%s\n", item); }
+     }
+
+finish:
+   if ((name) || (text))
+     {
+        printf("errname:%s errmsg:%s\n", name, text);
+     }
+}
+
+static void
+_e_info_client_proc_fps_info(int argc, char **argv)
+{
+   keepRunning = 1;
+
+   do{
+        if (!_e_info_client_eldbus_message("get_fps_info", _cb_fps_info_get))
+          return;
+
+        sleep(1);
+
+   }while(keepRunning);
+}
+
 static struct
 {
    const char *option;
@@ -869,12 +922,12 @@ static struct
    },
    {
       "prop", "[id]",
-      "print window infomation",
+      "Print window infomation",
       _e_info_client_prop_prop_info
    },
    {
       "connected_clients", NULL,
-      "print connected clients on Enlightenment",
+      "Print connected clients on Enlightenment",
       _e_info_client_proc_connected_clients
    },
    {
@@ -884,14 +937,19 @@ static struct
       _e_info_client_proc_rotation
    },
    {
-      "reslist", "[-tree|-p]",
-      "Print connected client's and their resources",
-      _e_info_server_proc_res_lists
+      "reslist", "[-tree|-p pid]",
+      "Print connected client's resources",
+      _e_info_client_proc_res_lists
    },
    {
       "input_devices", NULL,
       "Print connected input devices",
       _e_info_client_proc_input_device_info
+   },
+   {
+      "fps", NULL,
+      "Print FPS in every sec",
+      _e_info_client_proc_fps_info
    }
 };
 
@@ -910,6 +968,13 @@ _e_info_client_eldbus_message(const char *method, E_Info_Message_Cb cb)
 {
    Eldbus_Pending *p;
 
+   signal(SIGINT,	end_program);
+   signal(SIGALRM,	end_program);
+   signal(SIGHUP,	end_program);
+   signal(SIGPIPE,	end_program);
+   signal(SIGQUIT,	end_program);
+   signal(SIGTERM,	end_program);
+
    p = eldbus_proxy_call(e_info_client.proxy, method,
                          _e_info_client_eldbus_message_cb,
                          cb, -1, "");
@@ -924,6 +989,13 @@ _e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb
 {
    Eldbus_Pending *p;
    va_list ap;
+
+   signal(SIGINT,	end_program);
+   signal(SIGHUP,	end_program);
+   signal(SIGALRM,	end_program);
+   signal(SIGPIPE,	end_program);
+   signal(SIGQUIT,	end_program);
+   signal(SIGTERM,	end_program);
 
    va_start(ap, signature);
    p = eldbus_proxy_vcall(e_info_client.proxy, method,
@@ -1028,6 +1100,11 @@ _e_info_client_print_usage(const char *exec)
      }
 
    printf("\n");
+}
+
+static void end_program (int sig)
+{
+   keepRunning = 0;
 }
 
 int

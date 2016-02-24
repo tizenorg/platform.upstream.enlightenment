@@ -382,6 +382,12 @@ _e_comp_cb_update(void)
    Eina_List *l;
    //   static int doframeinfo = -1;
 
+   static double rtime = 0.0;
+   static double rlapse = 0.0;
+   static int frames = 0;
+   static int flapse = 0;
+   double tim;
+
    if (!e_comp) return EINA_FALSE;
    if (e_comp->update_job)
      e_comp->update_job = NULL;
@@ -464,6 +470,41 @@ _e_comp_cb_update(void)
      }
    else
      {
+	   if (e_comp->calc_fps)
+		 {
+
+		double t;
+		double ct = ecore_time_get();
+
+		t = ct - e_comp->frametimes[0];
+		e_comp->frametimes[0] = ct;
+
+		tim = ecore_time_get();
+		rtime += t;
+		frames++;
+		e_comp->frameskip++;
+
+		if (rlapse == 0.0)
+		  {
+			 rlapse = tim;
+			 flapse = frames;
+		  }
+		else if ((tim - rlapse) >= 1.0)
+		  {
+			 printf("FRAME: %i, FPS: %3.1f, RTIME %3.0f%%\n",
+					frames,
+					(frames - flapse) / (tim - rlapse),
+					(100.0 * rtime) / (tim - rlapse)
+					);
+             e_comp->fps = (frames - flapse) / (tim - rlapse);
+			 e_comp->frameskip = 0;
+			 rlapse = tim;
+			 flapse = frames;
+			 rtime = 0.0;
+		  }
+		}
+
+/*
         if (e_comp->calc_fps)
           {
              double fps = 0.0, dt;
@@ -490,6 +531,7 @@ _e_comp_cb_update(void)
                   ecore_event_add(E_EVENT_COMPOSITOR_FPS_UPDATE, NULL, NULL, NULL);
                }
           }
+*/
      }
    if (conf->lock_fps)
      {
@@ -1234,6 +1276,8 @@ out:
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN, _e_comp_key_down, NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_SIGNAL_USER, _e_comp_signal_user, NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD, _e_comp_object_add, NULL);
+
+   e_comp->calc_fps = 1;
 
    return EINA_TRUE;
 }
