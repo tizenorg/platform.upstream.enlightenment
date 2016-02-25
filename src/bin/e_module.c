@@ -33,6 +33,7 @@ static Eina_Hash *_e_module_path_hash = NULL;
 
 E_API int E_EVENT_MODULE_UPDATE = 0;
 E_API int E_EVENT_MODULE_INIT_END = 0;
+E_API int E_EVENT_MODULE_DEFER_JOB = 0;
 
 static Eina_Stringshare *mod_src_path = NULL;
 static Eina_List *deferred_dialogs = NULL;
@@ -190,6 +191,7 @@ e_module_init(void)
    if (_e_modules_hash) return 1;
    E_EVENT_MODULE_UPDATE = ecore_event_type_new();
    E_EVENT_MODULE_INIT_END = ecore_event_type_new();
+   E_EVENT_MODULE_DEFER_JOB = ecore_event_type_new();
    _e_module_path_hash = eina_hash_string_superfast_new((Eina_Free_Cb)eina_stringshare_del);
    _e_modules_hash = eina_hash_string_superfast_new(NULL);
 
@@ -774,6 +776,8 @@ E_API void
 e_module_deferred_job(void)
 {
    Defer_Dialog *dd;
+
+   ecore_event_add(E_EVENT_MODULE_DEFER_JOB, NULL, NULL, NULL);
 
    if (!deferred_dialogs) return;
 

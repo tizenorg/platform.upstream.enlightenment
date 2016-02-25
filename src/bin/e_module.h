@@ -17,6 +17,7 @@ typedef struct E_Module_Desktop E_Module_Desktop;
 
 extern E_API int E_EVENT_MODULE_UPDATE;
 extern E_API int E_EVENT_MODULE_INIT_END;
+extern E_API int E_EVENT_MODULE_DEFER_JOB;
 
 struct _E_Event_Module_Update
 {
