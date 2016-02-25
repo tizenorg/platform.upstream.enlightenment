@@ -767,6 +767,8 @@ _e_xdg_shell_surface_cb_move(struct wl_client *client EINA_UNUSED, struct wl_res
 
    if ((ec->maximized) || (ec->fullscreen)) return;
 
+   TRACE_DS_BEGIN(SHELL:SURFACE MOVE REQUEST CB);
+
    switch (e_comp_wl->ptr.button)
      {
       case BTN_LEFT:
@@ -789,6 +791,8 @@ _e_xdg_shell_surface_cb_move(struct wl_client *client EINA_UNUSED, struct wl_res
                                    &ev.canvas.x, &ev.canvas.y);
 
    _e_shell_surface_mouse_down_helper(ec, &ev, EINA_TRUE);
+
+   TRACE_DS_END();
 }
 
 static void
@@ -813,6 +817,8 @@ _e_xdg_shell_surface_cb_resize(struct wl_client *client EINA_UNUSED, struct wl_r
        ((edges & 3) == 3) || ((edges & 12) == 12)) return;
 
    if ((ec->maximized) || (ec->fullscreen)) return;
+
+   TRACE_DS_BEGIN(SHELL:SURFACE RESIZE REQUEST CB);
 
    e_comp_wl->resize.resource = resource;
    e_comp_wl->resize.edges = edges;
@@ -841,6 +847,8 @@ _e_xdg_shell_surface_cb_resize(struct wl_client *client EINA_UNUSED, struct wl_r
                                    &ev.canvas.x, &ev.canvas.y);
 
    _e_shell_surface_mouse_down_helper(ec, &ev, EINA_FALSE);
+
+   TRACE_DS_END();
 }
 
 static void
@@ -1056,12 +1064,15 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
 
    /* DBG("XDG_SHELL: Map Surface: %d", wl_resource_get_id(resource)); */
 
+   TRACE_DS_BEGIN(SHELL:MAP);
+
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
      {
         wl_resource_post_error(resource,
                                WL_DISPLAY_ERROR_INVALID_OBJECT,
                                "No Client For Shell Surface");
+        TRACE_DS_END();
         return;
      }
 
@@ -1077,6 +1088,8 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
         /* if (ec->netwm.type == E_WINDOW_TYPE_POPUP_MENU) */
         /*   e_client_raise_latest_set(ec); */
      }
+
+   TRACE_DS_END();
 }
 
 static void
@@ -1086,12 +1099,15 @@ _e_xdg_shell_surface_unmap(struct wl_resource *resource)
 
    /* DBG("XDG_SHELL: Unmap Surface: %d", wl_resource_get_id(resource)); */
 
+   TRACE_DS_BEGIN(SHELL:UNMAP);
+
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
      {
         wl_resource_post_error(resource,
                                WL_DISPLAY_ERROR_INVALID_OBJECT,
                                "No Client For Shell Surface");
+        TRACE_DS_END();
         return;
      }
 
@@ -1101,6 +1117,8 @@ _e_xdg_shell_surface_unmap(struct wl_resource *resource)
         evas_object_hide(ec->frame);
         ec->comp_data->mapped = EINA_FALSE;
      }
+
+   TRACE_DS_END();
 }
 
 static void

@@ -2086,7 +2086,13 @@ _e_client_eval(E_Client *ec)
         return;
      }
 
-   if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_PRE_NEW_CLIENT, ec)) return;
+   TRACE_DS_BEGIN(CLIENT:EVAL);
+
+   if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_PRE_NEW_CLIENT, ec))
+     {
+        TRACE_DS_END();
+        return;
+     }
 
    if ((ec->new_client) && (!e_client_util_ignored_get(ec)) && (ec->zone))
      {
@@ -2317,7 +2323,11 @@ _e_client_eval(E_Client *ec)
         }
      }
 
-   if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_POST_NEW_CLIENT, ec)) return;
+   if (!_e_client_hook_call(E_CLIENT_HOOK_EVAL_POST_NEW_CLIENT, ec))
+     {
+        TRACE_DS_END();
+        return;
+     }
 
    /* effect changes to the window border itself */
    if ((ec->changes.shading))
@@ -2653,6 +2663,8 @@ _e_client_eval(E_Client *ec)
 #endif
 
    _e_client_hook_call(E_CLIENT_HOOK_EVAL_END, ec);
+
+   TRACE_DS_END();
 }
 
 static void
@@ -2805,6 +2817,8 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
 
    if (!zone) return;
 
+   TRACE_DS_BEGIN(CLIENT:VISIBILITY CALCULATE);
+
    t = eina_tiler_new(zone->w + edge, zone->h + edge);
    eina_tiler_tile_size_set(t, 1, 1);
 
@@ -2938,6 +2952,8 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
              evas_object_focus_set(focus_ec->frame, 1);
           }
      }
+
+   TRACE_DS_END();
 }
 
 E_API void
@@ -2961,6 +2977,7 @@ e_client_idler_before(void)
 
    if ((!eina_hash_population(clients_hash[0])) && (!eina_hash_population(clients_hash[1]))) return;
 
+   TRACE_DS_BEGIN(CLIENT:IDLE BEFORE);
 
    EINA_LIST_FOREACH(e_comp->clients, l, ec)
      {
@@ -3046,6 +3063,8 @@ e_client_idler_before(void)
              ec->changed = ec->changes.visible;
           }
      }
+
+   TRACE_DS_END();
 }
 
 
@@ -4128,10 +4147,20 @@ e_client_focus_set_with_pointer(E_Client *ec)
        (!ec->icccm.take_focus)) return;
    if (ec->lock_focus_out) return;
    if (ec == focused) return;
+
+   TRACE_DS_BEGIN(CLIENT:FOCUS SET WITH POINTER);
    evas_object_focus_set(ec->frame, 1);
 
-   if (e_config->focus_policy == E_FOCUS_CLICK) return;
-   if (!ec->visible) return;
+   if (e_config->focus_policy == E_FOCUS_CLICK)
+     {
+        TRACE_DS_END();
+        return;
+     }
+   if (!ec->visible)
+     {
+        TRACE_DS_END();
+        return;
+     }
 
    if (e_config->focus_policy == E_FOCUS_SLOPPY)
      {
@@ -4147,6 +4176,8 @@ e_client_focus_set_with_pointer(E_Client *ec)
         if (e_config->pointer_slide)
           e_client_pointer_warp_to_center(ec);
      }
+
+   TRACE_DS_END();
 }
 
 EINTERN void
@@ -4156,6 +4187,9 @@ e_client_focused_set(E_Client *ec)
    Eina_List *l, *ll;
 
    if (ec == focused) return;
+
+   TRACE_DS_BEGIN(CLIENT:FOCUSED SET);
+
    ELOG("CLIENT FOCUS_SET", NULL, ec);
    focused = ec;
    if ((ec) && (ec->zone))
@@ -4229,7 +4263,11 @@ e_client_focused_set(E_Client *ec)
           }
         break;
      }
-   if (!ec) return;
+   if (!ec)
+     {
+        TRACE_DS_END();
+        return;
+     }
 
    _e_client_hook_call(E_CLIENT_HOOK_FOCUS_SET, ec);
    e_focus_event_focus_in(ec);
@@ -4241,6 +4279,8 @@ e_client_focused_set(E_Client *ec)
    _e_client_event_simple(ec, E_EVENT_CLIENT_FOCUS_IN);
    if (ec->sticky && ec->desk && (!ec->desk->visible))
      e_client_desk_set(ec, e_desk_current_get(ec->zone));
+
+   TRACE_DS_END();
 }
 
 E_API void
@@ -4248,6 +4288,9 @@ e_client_activate(E_Client *ec, Eina_Bool just_do_it)
 {
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
+
+   TRACE_DS_BEGIN(CLIENT:ACTIVATE);
+
    if ((e_config->focus_setting == E_FOCUS_NEW_WINDOW) ||
        ((ec->parent) &&
         ((e_config->focus_setting == E_FOCUS_NEW_DIALOG) ||
@@ -4294,6 +4337,8 @@ e_client_activate(E_Client *ec, Eina_Bool just_do_it)
              evas_object_focus_set(ec->frame, 1);
           }
      }
+
+   TRACE_DS_END();
 }
 
 E_API E_Client *
@@ -4722,7 +4767,7 @@ e_client_iconify(E_Client *ec)
    if (!ec->zone) return;
    if (ec->shading || ec->iconic) return;
 
-   TRACE_DS_BEGIN(ICONIC:e_client_iconify);
+   TRACE_DS_BEGIN(CLIENT:ICONIFY);
 
    ec->iconic = 1;
    ec->want_focus = ec->take_focus = 0;
@@ -4771,7 +4816,7 @@ e_client_uniconify(E_Client *ec)
    if (!ec->zone) return;
    if (ec->shading || (!ec->iconic)) return;
 
-   TRACE_DS_BEGIN(ICONIC:e_client_uniconify);
+   TRACE_DS_BEGIN(CLIENT:UNICONIFY);
 
    desk = e_desk_current_get(ec->desk->zone);
    e_client_desk_set(ec, desk);

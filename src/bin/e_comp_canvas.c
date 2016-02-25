@@ -240,6 +240,8 @@ e_comp_canvas_init(int w, int h)
    Evas_Object *o;
    Eina_List *screens;
 
+   TRACE_DS_BEGIN(COMP_CANVAS:INIT);
+
    e_comp->evas = ecore_evas_get(e_comp->ee);
    e_comp->w = w;
    e_comp->h = h;
@@ -295,6 +297,7 @@ e_comp_canvas_init(int w, int h)
    ecore_evas_callback_resize_set(e_comp->ee, _e_comp_canvas_resize);
    ecore_evas_resize(e_comp->ee, w, h);
 
+   TRACE_DS_END();
    return EINA_TRUE;
 }
 

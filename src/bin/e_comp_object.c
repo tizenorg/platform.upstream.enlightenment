@@ -1457,7 +1457,10 @@ _e_comp_intercept_stack_above(void *data, Evas_Object *obj, Evas_Object *above)
 {
    EINA_SAFETY_ON_TRUE_RETURN(obj == above);
    if (evas_object_below_get(obj) == above) return;
+
+   TRACE_DS_BEGIN(COMP:INTERCEPT STACK ABOVE);
    _e_comp_intercept_stack_helper(data, above, evas_object_stack_above);
+   TRACE_DS_END();
 }
 
 static void
@@ -1465,7 +1468,10 @@ _e_comp_intercept_stack_below(void *data, Evas_Object *obj, Evas_Object *below)
 {
    EINA_SAFETY_ON_TRUE_RETURN(obj == below);
    if (evas_object_above_get(obj) == below) return;
+
+   TRACE_DS_BEGIN(COMP:INTERCEPT STACK BELOW);
    _e_comp_intercept_stack_helper(data, below, evas_object_stack_below);
+   TRACE_DS_END();
 }
 
 static void
@@ -1474,24 +1480,29 @@ _e_comp_intercept_lower(void *data, Evas_Object *obj)
    E_Comp_Object *cw = data;
    Evas_Object *o;
 
+   TRACE_DS_BEGIN(COMP:INTERCEPT LOWER);
+
    if (cw->ec->layer_block)
      {
         evas_object_lower(obj);
-        return;
+        goto end;
      }
-   if (!EINA_INLIST_GET(cw->ec)->prev) return; //already lowest on layer
+   if (!EINA_INLIST_GET(cw->ec)->prev) goto end; //already lowest on layer
    o = evas_object_below_get(obj);
    _e_comp_object_layers_remove(cw);
    /* prepend to client list since this client should be the first item now */
    _e_comp_object_layers_add(cw, NULL, NULL, 1);
-   if (evas_object_layer_get(o) != evas_object_layer_get(obj)) return; //already at bottom!
-   if (obj == e_comp->layers[cw->layer].obj) return; //never lower a layer marker!
+   if (evas_object_layer_get(o) != evas_object_layer_get(obj)) goto end; //already at bottom!
+   if (obj == e_comp->layers[cw->layer].obj) goto end; //never lower a layer marker!
    evas_object_data_set(obj, "client_restack", (void*)1);
    evas_object_lower(obj);
    evas_object_data_del(obj, "client_restack");
-   if (!cw->visible) return;
+   if (!cw->visible) goto end;
    e_comp_render_queue();
    e_comp_shape_queue();
+
+end:
+   TRACE_DS_END();
 }
 
 static void
@@ -1500,19 +1511,21 @@ _e_comp_intercept_raise(void *data, Evas_Object *obj)
    E_Comp_Object *cw = data;
    Evas_Object *o;
 
+   TRACE_DS_BEGIN(COMP:INTERCEPT RAISE);
+
    if (cw->ec->layer_block)
      {
         evas_object_raise(obj);
-        return;
+        goto end;
      }
-   if (!EINA_INLIST_GET(cw->ec)->next) return;//already highest on layer
+   if (!EINA_INLIST_GET(cw->ec)->next) goto end;//already highest on layer
    o = evas_object_above_get(obj);
    {
       E_Client *ecabove = e_client_above_get(cw->ec);
       if (ecabove && (ecabove->frame == e_comp->layers[cw->layer].obj) &&
-          (ecabove->frame == o)) return; //highest below marker
+          (ecabove->frame == o)) goto end; //highest below marker
    }
-   if (evas_object_layer_get(o) != evas_object_layer_get(obj)) return; //already at top!
+   if (evas_object_layer_get(o) != evas_object_layer_get(obj)) goto end; //already at top!
    if (obj == e_comp->layers[cw->layer].obj) //never raise a non-layer marker!
      evas_object_raise(obj);
    else
@@ -1533,9 +1546,12 @@ _e_comp_intercept_raise(void *data, Evas_Object *obj)
         if (e_client_focus_track_enabled())
           e_client_raise_latest_set(cw->ec); //modify raise list if necessary
      }
-   if (!cw->visible) return;
+   if (!cw->visible) goto end;
    e_comp_render_queue();
    e_comp_shape_queue();
+
+end:
+   TRACE_DS_END();
 }
 
 static void
@@ -2281,6 +2297,8 @@ _e_comp_smart_clip_unset(Evas_Object *obj)
 static void
 _e_comp_smart_hide(Evas_Object *obj)
 {
+   TRACE_DS_BEGIN(COMP:SMART HIDE);
+
    INTERNAL_ENTRY;
    cw->visible = 0;
    evas_object_hide(cw->clip);
@@ -2298,9 +2316,17 @@ _e_comp_smart_hide(Evas_Object *obj)
              evas_object_event_callback_del_full(o, EVAS_CALLBACK_DEL, _e_comp_object_cb_mirror_del, cw);
              evas_object_del(o);
           }
-        if (!_e_comp_object_animating_end(cw)) return;
+        if (!_e_comp_object_animating_end(cw))
+          {
+             TRACE_DS_END();
+             return;
+          }
      }
-   if (stopping) return;
+   if (stopping)
+     {
+        TRACE_DS_END();
+        return;
+     }
    if (!cw->ec->input_only)
      {
         edje_object_freeze(cw->effect_obj);
@@ -2314,6 +2340,8 @@ _e_comp_smart_hide(Evas_Object *obj)
      evas_object_focus_set(cw->ec->frame, 0);
    e_comp_render_queue(); //force nocomp recheck
    e_comp_shape_queue();
+
+   TRACE_DS_END();
 }
 
 static void
@@ -2329,6 +2357,8 @@ _e_comp_smart_show(Evas_Object *obj)
      CRI("ACK!");
 
    //INF("SMART SHOW: %p EC(%dx%d) CW(%dx%d)", cw->ec, cw->ec->w, cw->ec->h, cw->w, cw->h);
+
+   TRACE_DS_BEGIN(COMP:SMART SHOW);
 
    EINA_LIST_FOREACH(cw->ec->e.state.video_child, l, tmp)
      evas_object_show(tmp->frame);
@@ -2351,6 +2381,7 @@ _e_comp_smart_show(Evas_Object *obj)
    if (cw->ec->input_only)
      {
         e_comp_shape_queue();
+        TRACE_DS_END();
         return;
      }
    if (cw->ec->iconic && (!cw->ec->new_client))
@@ -2360,7 +2391,11 @@ _e_comp_smart_show(Evas_Object *obj)
         e_comp_object_signal_emit(cw->smart_obj, "e,state,visible", "e");
         _e_comp_object_animating_begin(cw);
         cw->showing = 1;
-        if (!_e_comp_object_effect_visibility_start(cw, 1)) return;
+        if (!_e_comp_object_effect_visibility_start(cw, 1))
+          {
+             TRACE_DS_END();
+             return;
+          }
      }
    /* ensure some random effect doesn't lock the client offscreen */
    if (!cw->animating)
@@ -2369,6 +2404,8 @@ _e_comp_smart_show(Evas_Object *obj)
         e_comp_object_effect_set(obj, NULL);
         e_comp_shape_queue();
      }
+
+   TRACE_DS_END();
 }
 
 static void
@@ -2449,6 +2486,9 @@ _e_comp_smart_resize(Evas_Object *obj, int w, int h)
 
    //INF("RSZ(%p): %dx%d -> %dx%d", cw->ec, cw->w, cw->h, w, h);
    if (!cw->effect_obj) CRI("ACK!");
+
+   TRACE_DS_BEGIN(COMP:SMART RESIZE);
+
    first = ((cw->w < 1) || (cw->h < 1));
    cw->w = w, cw->h = h;
    if ((!cw->ec->shading) && (!cw->ec->shaded))
@@ -2497,10 +2537,16 @@ _e_comp_smart_resize(Evas_Object *obj, int w, int h)
      {
         evas_object_resize(cw->effect_obj, w, h);
      }
-   if (!cw->visible) return;
+   if (!cw->visible)
+     {
+        TRACE_DS_END();
+        return;
+     }
    e_comp_render_queue();
    if (!cw->animating)
      e_comp_shape_queue();
+
+   TRACE_DS_END();
 }
 
 static void

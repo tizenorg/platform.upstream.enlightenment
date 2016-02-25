@@ -383,6 +383,9 @@ _e_comp_cb_update(void)
    //   static int doframeinfo = -1;
 
    if (!e_comp) return EINA_FALSE;
+
+   TRACE_DS_BEGIN(COMP:UPDATE CB);
+
    if (e_comp->update_job)
      e_comp->update_job = NULL;
    else
@@ -564,6 +567,8 @@ nocomp:
      }
    else
      _e_comp_nocomp_end();
+
+   TRACE_DS_END();
 
    return ECORE_CALLBACK_RENEW;
 }

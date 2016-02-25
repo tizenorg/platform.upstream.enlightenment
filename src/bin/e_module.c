@@ -286,8 +286,14 @@ e_module_all_load(void)
    E_Config_Module *em;
    char buf[128];
 
+   TRACE_DS_BEGIN(MODULE:ALL LOAD);
+
    _e_modules_initting = EINA_TRUE;
-   if (_e_module_path_lists) return;
+   if (_e_module_path_lists)
+     {
+        TRACE_DS_END();
+        return;
+     }
 
    e_config->modules =
      eina_list_sort(e_config->modules, 0, _e_module_sort_priority);
@@ -335,6 +341,8 @@ e_module_all_load(void)
      }
 
    unsetenv("E_MODULE_LOAD");
+
+   TRACE_DS_END();
 }
 
 E_API Eina_Bool
@@ -927,6 +935,7 @@ _e_module_cb_dialog_disable(void *data, E_Dialog *dia)
 static Eina_Bool
 _e_module_cb_idler(void *data EINA_UNUSED)
 {
+   TRACE_DS_BEGIN(MODULE:DELAYER MODULES);
    while (_e_modules_delayed)
      {
         const char *name;
@@ -957,6 +966,7 @@ _e_module_cb_idler(void *data EINA_UNUSED)
    if (_e_modules_delayed)
      {
         e_util_wakeup();
+        TRACE_DS_END();
         return ECORE_CALLBACK_RENEW;
      }
 
@@ -966,6 +976,7 @@ _e_module_cb_idler(void *data EINA_UNUSED)
    _e_module_whitelist_check();
 
    _e_module_idler = NULL;
+   TRACE_DS_END();
    return ECORE_CALLBACK_CANCEL;
 }
 

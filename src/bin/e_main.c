@@ -215,15 +215,19 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
    int argc;
    char **argv;
 
-   TRACE_DS_BEGIN(MAIN:_e_main_subsystem_defer);
+   TRACE_DS_BEGIN(MAIN:SUBSYSTEMS DEFER);
 
    ecore_app_args_get(&argc, &argv);
 
    /* try to init delayed subsystems */
+
+   TRACE_DS_BEGIN(MAIN:DEFFERED EFL INIT);
+
    TS("[DEFERRED] Elementary Init");
    if (!elm_init(argc, argv))
      {
         e_error_message_show(_("Enlightenment cannot initialize Elementary!\n"));
+        TRACE_DS_END();
         _e_main_shutdown(-1);
      }
    TS("[DEFERRED] Elementary Init Done");
@@ -232,6 +236,7 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
    if (!edje_init())
      {
         e_error_message_show(_("Enlightenment cannot initialize Edje!\n"));
+        TRACE_DS_END();
         _e_main_shutdown(-1);
      }
    TS("[DEFERRED] Edje Init Done");
@@ -243,15 +248,20 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
         e_error_message_show(_("Enlightenment cannot initialize the FDO desktop system.\n"
                                "Perhaps you lack permissions on ~/.cache/efreet or are\n"
                                "out of memory or disk space?"));
+        TRACE_DS_END();
         _e_main_shutdown(-1);
      }
    TS("[DEFERRED] Efreet Init Done");
    _e_main_shutdown_push(efreet_shutdown);
 
+   TRACE_DS_END();
+   TRACE_DS_BEGIN(MAIN:DEFERRED INTERNAL SUBSYSTEMS INIT);
+
    TS("[DEFERRED] Screens Init: win");
    if (!e_win_init())
      {
         e_error_message_show(_("Enlightenment cannot setup elementary trap!\n"));
+        TRACE_DS_END();
         _e_main_shutdown(-1);
      }
    TS("[DEFERRED] Screens Init: win Done");
@@ -260,6 +270,7 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
    if (!e_pointer_init())
      {
         e_error_message_show(_("Enlightenment cannot set up its pointer system.\n"));
+        TRACE_DS_END();
         _e_main_shutdown(-1);
      }
 
@@ -270,6 +281,7 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
    if (!e_scale_init())
      {
         e_error_message_show(_("Enlightenment cannot set up its scale system.\n"));
+        TRACE_DS_END();
         _e_main_shutdown(-1);
      }
    TS("[DEFERRED E_Scale Init Done");
@@ -289,15 +301,22 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
    _e_main_shutdown_push(e_info_server_shutdown);
    TS("[DEFERRED] E_INFO_SERVER Done");
 
+   TRACE_DS_END();
+   TRACE_DS_BEGIN(MAIN:DEFERRED COMP JOB);
+
    /* try to do deferred job of any subsystems*/
    TS("[DEFERRED] Compositor's deferred job");
    e_comp_deferred_job();
    TS("[DEFERRED] Compositor's deferred job Done");
 
+   TRACE_DS_END();
+   TRACE_DS_BEGIN(MAIN:DEFERRED MODULE JOB);
+
    TS("[DEFERRED] E_Module's deferred job");
    e_module_deferred_job();
    TS("[DEFERRED] E_Module's deferred job Done");
 
+   TRACE_DS_END();
    TRACE_DS_END();
 
    return ECORE_CALLBACK_DONE;
@@ -333,7 +352,7 @@ main(int argc, char **argv)
 #ifdef TS_DO
    t0 = t1 = t2 = ecore_time_unix_get();
 #endif
-   TRACE_DS_BEGIN(MAIN:Begin_Startup);
+   TRACE_DS_BEGIN(MAIN:BEGIN STARTUP);
    TS("Begin Startup");
 
    /* trap deadly bug signals and allow some form of sane recovery */
@@ -819,7 +838,7 @@ main(int argc, char **argv)
    if (e_config->show_splash)
      e_init_status_set(_("Setup Screens"));
 
-   TRACE_DS_BEGIN(MAIN:SCREEN_INIT);
+   TRACE_DS_BEGIN(MAIN:SCREEN INIT);
    TS("Screens Init");
    if (!_e_main_screens_init())
      {
@@ -1331,7 +1350,7 @@ main(int argc, char **argv)
    if (e_config->show_splash)
      e_init_status_set(_("Setup Screens"));
 
-   TRACE_DS_BEGIN(MAIN:SCREEN_INIT);
+   TRACE_DS_BEGIN(MAIN:SCREEN INIT);
    TS("Screens Init");
    if (!_e_main_screens_init())
      {
