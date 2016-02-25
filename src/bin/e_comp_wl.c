@@ -2786,12 +2786,15 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
 
    DBG("Compositor Cb Surface Create: %d", id);
 
+   TRACE_DS_BEGIN(COMP_WL:SURFACE CREATE CB);
+
    /* try to create an internal surface */
    if (!(res = wl_resource_create(client, &wl_surface_interface,
                                   wl_resource_get_version(resource), id)))
      {
         ERR("Could not create compositor surface");
         wl_client_post_no_memory(client);
+        TRACE_DS_END();
         return;
      }
 
@@ -2826,6 +2829,7 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
              ERR("Could not create new pixmap");
              wl_resource_destroy(res);
              wl_client_post_no_memory(client);
+             TRACE_DS_END();
              return;
           }
 
@@ -2864,6 +2868,8 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
 #endif
    /* emit surface create signal */
    wl_signal_emit(&e_comp_wl->signals.surface.create, res);
+
+   TRACE_DS_END();
 }
 
 static void
@@ -3737,6 +3743,8 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
    /* make sure this is a wayland client */
    if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
 
+   TRACE_DS_BEGIN(COMP_WL:CLIENT NEW HOOK);
+
    /* get window id from pixmap */
    win = e_pixmap_window_get(ec->pixmap);
 
@@ -3745,12 +3753,14 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
      {
         e_comp_ignore_win_add(E_PIXMAP_TYPE_WL, win);
         e_object_del(E_OBJECT(ec));
+        TRACE_DS_END();
         return;
      }
 
    if (!(ec->comp_data = E_NEW(E_Comp_Client_Data, 1)))
      {
         ERR("Could not allocate new client data structure");
+        TRACE_DS_END();
         return;
      }
 
@@ -3797,6 +3807,8 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
    e_hints_client_list_set();
 
    e_pixmap_cdata_set(ec->pixmap, ec->comp_data);
+
+   TRACE_DS_END();
 }
 
 static void
@@ -3808,6 +3820,8 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
 
    /* make sure this is a wayland client */
    if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
+
+   TRACE_DS_BEGIN(COMP_WL:CLIENT DEL CB);
 
    if ((!ec->already_unparented) && (ec->comp_data->reparented))
      _e_comp_wl_focus_down_set(ec);
@@ -3884,6 +3898,8 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
    E_FREE(ec->comp_data);
 
    _e_comp_wl_focus_check();
+
+   TRACE_DS_END();
 }
 
 #if 0
@@ -4504,6 +4520,8 @@ _e_comp_wl_gl_shutdown(void)
 E_API Eina_Bool
 e_comp_wl_init(void)
 {
+   TRACE_DS_BEGIN(COMP_WL:INIT);
+
    /* set gl available if we have ecore_evas support */
    if (ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_WAYLAND_EGL) ||
        ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_OPENGL_DRM))
@@ -4513,6 +4531,7 @@ e_comp_wl_init(void)
    if (!_e_comp_wl_compositor_create())
      {
         e_error_message_show(_("Enlightenment cannot create a Wayland Compositor!\n"));
+        TRACE_DS_END();
         return EINA_FALSE;
      }
 
@@ -4574,6 +4593,7 @@ e_comp_wl_init(void)
 
    _last_event_time = ecore_loop_time_get();
 
+   TRACE_DS_END();
    return EINA_TRUE;
 }
 

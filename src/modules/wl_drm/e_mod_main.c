@@ -779,10 +779,16 @@ e_modapi_init(E_Module *m)
 
    printf("LOAD WL_DRM MODULE\n");
 
+   TRACE_DS_BEGIN(WL_DRM:INIT);
+
    if (!(comp = e_comp))
      {
         comp = e_comp_new();
-        EINA_SAFETY_ON_NULL_RETURN_VAL(comp, NULL);
+        if (!comp)
+          {
+             TRACE_DS_END();
+             EINA_SAFETY_ON_NULL_RETURN_VAL(comp, NULL);
+          }
 
         comp->comp_type = E_PIXMAP_TYPE_WL;
      }
@@ -871,6 +877,7 @@ e_modapi_init(E_Module *m)
         else
           {
              fprintf(stderr, "Could not create ecore_evas_drm canvas");
+             TRACE_DS_END();
              return NULL;
           }
      }
@@ -891,8 +898,16 @@ e_modapi_init(E_Module *m)
 
    e_comp->screen = &drmiface;
 
-   if (!e_comp_wl_init()) return NULL;
-   if (!e_comp_canvas_init(w, h)) return NULL;
+   if (!e_comp_wl_init())
+     {
+        TRACE_DS_END();
+        return NULL;
+     }
+   if (!e_comp_canvas_init(w, h))
+     {
+        TRACE_DS_END();
+        return NULL;
+     }
 
    e_comp_wl->screenshooter.read_pixels = _drm_read_pixels;
 
@@ -928,6 +943,8 @@ e_modapi_init(E_Module *m)
                          _e_mod_drm_cb_input_device_add, comp);
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_DEL,
                          _e_mod_drm_cb_input_device_del, comp);
+
+   TRACE_DS_END();
 
    return m;
 }
