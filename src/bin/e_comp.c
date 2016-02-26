@@ -380,7 +380,6 @@ _e_comp_cb_update(void)
 {
    E_Client *ec;
    Eina_List *l;
-   //   static int doframeinfo = -1;
 
    static double rtime = 0.0;
    static double rlapse = 0.0;
@@ -472,34 +471,6 @@ _e_comp_cb_update(void)
      }
    else
      {
-#if 0
-        if (e_comp->calc_fps)
-          {
-             double fps = 0.0, dt;
-             double t = ecore_time_get();
-             int i, avg_range = 60;
-
-             dt = t - e_comp->frametimes[avg_range - 1];
-
-             if (dt > 0.0) fps = (double)avg_range / dt;
-             else fps = 0.0;
-
-             if (fps > 60.0) fps = 60.0;
-             if (fps < 0.0) fps = 0.0;
-
-             for (i = avg_range; i >= 1; i--)
-               e_comp->frametimes[i] = e_comp->frametimes[i - 1];
-
-             e_comp->frametimes[0] = t;
-             e_comp->frameskip++;
-             if (e_comp->frameskip >= avg_range)
-               {
-                  e_comp->frameskip = 0;
-                  e_comp->fps = fps;
-                  ecore_event_add(E_EVENT_COMPOSITOR_FPS_UPDATE, NULL, NULL, NULL);
-               }
-          }
-#else
         if (e_comp->calc_fps)
           {
              double dt;
@@ -524,7 +495,6 @@ _e_comp_cb_update(void)
                   rtime = 0.0;
                }
           }
-#endif
      }
    if (conf->lock_fps)
      {
