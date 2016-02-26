@@ -912,6 +912,13 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    if (!ec->comp_data->surface) return;
    if (ec->comp_data->transform.start) return;
 
+   e_comp_wl->ptr.ec = ec;
+   if (e_comp_wl->drag)
+     {
+        e_comp_wl_data_device_send_enter(ec);
+        return;
+     }
+
    if (e_config->use_cursor_timer)
      {
         if (e_pointer_is_hidden(e_comp->pointer))
@@ -922,12 +929,6 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
         e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
      }
 
-   e_comp_wl->ptr.ec = ec;
-   if (e_comp_wl->drag)
-     {
-        e_comp_wl_data_device_send_enter(ec);
-        return;
-     }
    if (!eina_list_count(e_comp_wl->ptr.resources)) return;
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
@@ -1907,9 +1908,14 @@ _e_comp_wl_cb_mouse_move(void *d EINA_UNUSED, int t EINA_UNUSED, Ecore_Event_Mou
         struct wl_resource *res;
         int x, y;
 
+
         res = e_comp_wl_data_find_for_client(wl_resource_get_client(e_comp_wl->selection.target->comp_data->surface));
         x = ev->x - e_comp_wl->selection.target->client.x;
         y = ev->y - e_comp_wl->selection.target->client.y;
+
+        if (e_comp_wl->drag_client)
+          evas_object_move(e_comp_wl->drag_client->frame, x, y);
+
         wl_data_device_send_motion(res, ev->timestamp, wl_fixed_from_int(x), wl_fixed_from_int(y));
      }
    if (e_comp_wl->drag &&
