@@ -44,7 +44,7 @@ typedef struct _E_Win_Info
 static E_Info_Client e_info_client;
 
 static int keepRunning = 1;
-static void end_program (int sig);
+static void end_program(int sig);
 static Eina_Bool _e_info_client_eldbus_message(const char *method, E_Info_Message_Cb cb);
 static Eina_Bool _e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb, const char *signature, ...);
 
@@ -857,9 +857,10 @@ _cb_fps_info_get(const Eldbus_Message *msg)
         printf("%s\n", fps);
 
 finish:
-   if ((name) || (text )) {
+   if ((name) || (text ))
+     {
         printf("errname:%s errmsg:%s\n", name, text);
-   }
+     }
 }
 
 static void
@@ -867,13 +868,13 @@ _e_info_client_proc_fps_info(int argc, char **argv)
 {
    keepRunning = 1;
 
-   do {
+   do
+     {
         if (!_e_info_client_eldbus_message("get_fps_info", _cb_fps_info_get))
           return;
-
         sleep(1);
-
-   }while(keepRunning);
+     }
+   while (keepRunning);
 }
 
 static struct
@@ -1037,12 +1038,12 @@ _e_info_client_process(int argc, char **argv)
    int nproc = sizeof(procs) / sizeof(procs[0]);
    int i;
 
-   signal(SIGINT,	end_program);
-   signal(SIGALRM,	end_program);
-   signal(SIGHUP,	end_program);
-   signal(SIGPIPE,	end_program);
-   signal(SIGQUIT,	end_program);
-   signal(SIGTERM,	end_program);
+   signal(SIGINT,  end_program);
+   signal(SIGALRM, end_program);
+   signal(SIGHUP,  end_program);
+   signal(SIGPIPE, end_program);
+   signal(SIGQUIT, end_program);
+   signal(SIGTERM, end_program);
 
    for (i = 0; i < nproc; i++)
      {
@@ -1080,7 +1081,8 @@ _e_info_client_print_usage(const char *exec)
    printf("\n");
 }
 
-static void end_program (int sig)
+static void
+end_program(int sig)
 {
    keepRunning = 0;
 }
