@@ -1061,39 +1061,16 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    Evas_Device *dev = NULL;
    const char *dev_name;
 
-   TRACE_INPUT_BEGIN(_e_comp_wl_evas_cb_mouse_move);
-
    ev = event;
 
    e_comp->wl_comp_data->ptr.x = wl_fixed_from_int(ev->cur.canvas.x);
    e_comp->wl_comp_data->ptr.y = wl_fixed_from_int(ev->cur.canvas.y);
 
-   if (!(ec = data))
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-
-   if (ec->cur_mouse_action)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (e_object_is_del(E_OBJECT(ec)))
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (ec->ignored)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (!ec->comp_data->surface)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
+   if (!(ec = data)) return;
+   if (ec->cur_mouse_action) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (ec->ignored) return;
+   if (!ec->comp_data->surface) return;
 
    if ((!e_comp_wl->drag_client) ||
        (!e_client_has_xwindow(e_comp_wl->drag_client)))
@@ -1121,8 +1098,6 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
         else
           e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
      }
-
-   TRACE_INPUT_END();
 }
 
 static void
@@ -1149,10 +1124,12 @@ _e_comp_wl_evas_handle_mouse_button_to_touch(E_Client *ec, uint32_t timestamp, i
      {
         if (wl_resource_get_client(res) != wc) continue;
         if (!e_comp_wl_input_touch_check(res)) continue;
+        TRACE_INPUT_BEGIN(_e_comp_wl_evas_handle_mouse_button_to_touch);
         if (flag)
           wl_touch_send_down(res, serial, timestamp, ec->comp_data->surface, 0, x, y); //id 0 for the 1st finger
         else
           wl_touch_send_up(res, serial, timestamp, 0);
+        TRACE_INPUT_END();
      }
 }
 
@@ -1164,18 +1141,8 @@ _e_comp_wl_evas_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    Evas_Device *dev = NULL;
    const char *dev_name;
 
-   TRACE_INPUT_BEGIN(_e_comp_wl_evas_cb_mouse_down);
-
-   if (!ec)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (e_object_is_del(E_OBJECT(ec)))
-     {
-        TRACE_INPUT_END();
-        return;
-     }
+   if (!ec) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
 
    dev = ev->dev;
 
@@ -1187,8 +1154,6 @@ _e_comp_wl_evas_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    else
      e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
                                         WL_POINTER_BUTTON_STATE_PRESSED);
-
-   TRACE_INPUT_END();
 }
 
 static void
@@ -1199,18 +1164,8 @@ _e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    Evas_Device *dev = NULL;
    const char *dev_name;
 
-   TRACE_INPUT_BEGIN(_e_comp_wl_evas_cb_mouse_up);
-
-   if (!ec)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (e_object_is_del(E_OBJECT(ec)))
-     {
-        TRACE_INPUT_END();
-        return;
-     }
+   if (!ec) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
 
    dev = ev->dev;
 
@@ -1222,8 +1177,6 @@ _e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    else
      e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
                                         WL_POINTER_BUTTON_STATE_RELEASED);
-
-   TRACE_INPUT_END();
 }
 
 static void
@@ -1236,29 +1189,11 @@ _e_comp_wl_evas_cb_mouse_wheel(void *data, Evas *evas EINA_UNUSED, Evas_Object *
    Eina_List *l;
    uint32_t axis, dir;
 
-   TRACE_INPUT_BEGIN(_e_comp_wl_evas_cb_mouse_wheel);
-
    ev = event;
-   if (!(ec = data))
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (ec->cur_mouse_action)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (e_object_is_del(E_OBJECT(ec)))
-     {
-        TRACE_INPUT_END();
-        return;
-     }
+   if (!(ec = data)) return;
+   if (ec->cur_mouse_action) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
    if (ec->ignored) return;
-     {
-        TRACE_INPUT_END();
-        return;
-     }
 
    if (ev->direction == 0)
      axis = WL_POINTER_AXIS_VERTICAL_SCROLL;
@@ -1270,23 +1205,14 @@ _e_comp_wl_evas_cb_mouse_wheel(void *data, Evas *evas EINA_UNUSED, Evas_Object *
    else
      dir = wl_fixed_from_int(ev->z);
 
-   if (!ec->comp_data->surface)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
+   if (!ec->comp_data->surface) return;
+   if (ec->comp_data->transform.start) return;
 
-   if (ec->comp_data->transform.start)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
    if (ec->comp_data->transform.enabled)
      {
         if (ec->comp_data->transform.stime == 0)
           {
              ec->comp_data->transform.stime = ev->timestamp;
-             TRACE_INPUT_END();
              return;
           }
 
@@ -1299,7 +1225,6 @@ _e_comp_wl_evas_cb_mouse_wheel(void *data, Evas *evas EINA_UNUSED, Evas_Object *
           }
 
         /* do not send wheel event to client */
-        TRACE_INPUT_END();
         return;
      }
 
@@ -1310,8 +1235,6 @@ _e_comp_wl_evas_cb_mouse_wheel(void *data, Evas *evas EINA_UNUSED, Evas_Object *
         if (wl_resource_get_client(res) != wc) continue;
         wl_pointer_send_axis(res, ev->timestamp, axis, dir);
      }
-
-   TRACE_INPUT_END();
 }
 
 static void
@@ -1376,23 +1299,9 @@ _e_comp_wl_evas_cb_multi_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    const char *dev_name;
    Evas_Device_Class dev_class;
 
-   TRACE_INPUT_BEGIN(_e_comp_wl_evas_cb_multi_down);
-
-   if (!ec)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (e_object_is_del(E_OBJECT(ec)))
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (!ec->comp_data->surface)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
+   if (!ec) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (!ec->comp_data->surface) return;
 
    dev = ev->dev;
 
@@ -1404,11 +1313,7 @@ _e_comp_wl_evas_cb_multi_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
      }
 
    /* Do not deliver emulated single touch events to client */
-   if (ev->device == 0)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
+   if (ev->device == 0) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
@@ -1420,11 +1325,11 @@ _e_comp_wl_evas_cb_multi_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
      {
         if (wl_resource_get_client(res) != wc) continue;
         if (!e_comp_wl_input_touch_check(res)) continue;
+        TRACE_INPUT_BEGIN(_e_comp_wl_evas_cb_multi_down);
         wl_touch_send_down(res, serial, ev->timestamp,
                            ec->comp_data->surface, ev->device, x, y);
+        TRACE_INPUT_END();
      }
-
-   TRACE_INPUT_END();
 }
 
 static void
@@ -1440,23 +1345,9 @@ _e_comp_wl_evas_cb_multi_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    const char *dev_name;
    Evas_Device_Class dev_class;
 
-   TRACE_INPUT_BEGIN(_e_comp_wl_evas_cb_multi_up);
-
-   if (!ec)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (e_object_is_del(E_OBJECT(ec)))
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (!ec->comp_data->surface)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
+   if (!ec) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (!ec->comp_data->surface) return;
 
    dev = ev->dev;
 
@@ -1468,11 +1359,7 @@ _e_comp_wl_evas_cb_multi_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
      }
 
    /* Do not deliver emulated single touch events to client */
-   if (ev->device == 0)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
+   if (ev->device == 0) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
@@ -1481,10 +1368,10 @@ _e_comp_wl_evas_cb_multi_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
      {
         if (wl_resource_get_client(res) != wc) continue;
         if (!e_comp_wl_input_touch_check(res)) continue;
+        TRACE_INPUT_BEGIN(_e_comp_wl_evas_cb_multi_up);
         wl_touch_send_up(res, serial, ev->timestamp, ev->device);
+        TRACE_INPUT_END();
      }
-
-   TRACE_INPUT_END();
 }
 
 static void
@@ -1500,23 +1387,9 @@ _e_comp_wl_evas_cb_multi_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    const char *dev_name;
    Evas_Device_Class dev_class;
 
-   TRACE_INPUT_BEGIN(_e_comp_wl_evas_cb_multi_move);
-
    if (!ec) return;
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (e_object_is_del(E_OBJECT(ec)))
-     {
-        TRACE_INPUT_END();
-        return;
-     }
-   if (!ec->comp_data->surface)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (!ec->comp_data->surface) return;
 
    dev = ev->dev;
 
@@ -1528,11 +1401,7 @@ _e_comp_wl_evas_cb_multi_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
      }
 
    /* Do not deliver emulated single touch events to client */
-   if (ev->device == 0)
-     {
-        TRACE_INPUT_END();
-        return;
-     }
+   if (ev->device == 0) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
 
@@ -1545,8 +1414,6 @@ _e_comp_wl_evas_cb_multi_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
         if (!e_comp_wl_input_touch_check(res)) continue;
         wl_touch_send_motion(res, ev->timestamp, ev->device, x, y);
      }
-
-   TRACE_INPUT_END();
 }
 
 static void
@@ -5071,11 +4938,8 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
    E_Client *ec = NULL;
    uint32_t serial, *end, *k, keycode;
 
-   TRACE_INPUT_BEGIN(e_comp_wl_key_down);
-
    if ((e_comp->comp_type != E_PIXMAP_TYPE_WL) || (ev->window != e_comp->ee_win))
      {
-        TRACE_INPUT_END();
         return EINA_FALSE;
      }
    _last_event_time = ecore_loop_time_get();
@@ -5083,7 +4947,6 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
    keycode = (ev->keycode - 8);
    if (!(e_comp_wl = e_comp->wl_comp_data))
      {
-        TRACE_INPUT_END();
         return EINA_FALSE;
      }
 
@@ -5093,7 +4956,6 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
        (ev->modifiers & ECORE_EVENT_MODIFIER_ALTGR)) &&
        eina_streq(ev->key, "BackSpace"))
      {
-        TRACE_INPUT_END();
         exit(0);
      }
 #endif
@@ -5105,7 +4967,6 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
         /* ignore server-generated key repeats */
         if (*k == keycode)
           {
-             TRACE_INPUT_END();
              return EINA_FALSE;
           }
      }
@@ -5121,15 +4982,18 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
 
              serial = wl_display_next_serial(e_comp_wl->wl.disp);
              EINA_LIST_FOREACH(e_comp_wl->kbd.focused, l, res)
-               wl_keyboard_send_key(res, serial, ev->timestamp,
-                               keycode, WL_KEYBOARD_KEY_STATE_PRESSED);
+               {
+                  TRACE_INPUT_BEGIN(e_comp_wl_key_down);
+                  wl_keyboard_send_key(res, serial, ev->timestamp,
+                                  keycode, WL_KEYBOARD_KEY_STATE_PRESSED);
+                  TRACE_INPUT_END();
+               }
 
              /* A key only sent to clients is added to the list */
              e_comp_wl->kbd.keys.size = (const char *)end - (const char *)e_comp_wl->kbd.keys.data;
              if (!(k = wl_array_add(&e_comp_wl->kbd.keys, sizeof(*k))))
                {
                   DBG("wl_array_add: Out of memory\n");
-                  TRACE_INPUT_END();
                   return EINA_FALSE;
                }
              *k = keycode;
@@ -5139,7 +5003,6 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
    /* update modifier state */
    e_comp_wl_input_keyboard_state_update(keycode, EINA_TRUE);
 
-   TRACE_INPUT_END();
    return !!ec;
 }
 
@@ -5152,11 +5015,9 @@ e_comp_wl_key_up(Ecore_Event_Key *ev)
    Eina_List *l;
    uint32_t delivered_key;
 
-   TRACE_INPUT_BEGIN(e_comp_wl_key_up);
    if ((e_comp->comp_type != E_PIXMAP_TYPE_WL) ||
        (ev->window != e_comp->ee_win))
      {
-        TRACE_INPUT_END();
         return EINA_FALSE;
      }
 
@@ -5166,7 +5027,6 @@ e_comp_wl_key_up(Ecore_Event_Key *ev)
    delivered_key = 0;
    if (!(e_comp_wl = e_comp->wl_comp_data))
      {
-        TRACE_INPUT_END();
         return EINA_FALSE;
      }
 
@@ -5194,15 +5054,18 @@ e_comp_wl_key_up(Ecore_Event_Key *ev)
           {
              serial = wl_display_next_serial(e_comp_wl->wl.disp);
              EINA_LIST_FOREACH(e_comp_wl->kbd.focused, l, res)
-               wl_keyboard_send_key(res, serial, ev->timestamp,
-                                    keycode, WL_KEYBOARD_KEY_STATE_RELEASED);
+               {
+                  TRACE_INPUT_BEGIN(e_comp_wl_key_up);
+                  wl_keyboard_send_key(res, serial, ev->timestamp,
+                                       keycode, WL_KEYBOARD_KEY_STATE_RELEASED);
+                  TRACE_INPUT_END();
+               }
           }
      }
 
    /* update modifier state */
    e_comp_wl_input_keyboard_state_update(keycode, EINA_FALSE);
 
-   TRACE_INPUT_END();
    return !!ec;
 }
 
@@ -5256,7 +5119,9 @@ e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t bu
      {
         if (wl_resource_get_client(res) != wc) continue;
         if (!e_comp_wl_input_pointer_check(res)) continue;
+        TRACE_INPUT_BEGIN(e_comp_wl_evas_handle_mouse_button);
         wl_pointer_send_button(res, serial, timestamp, btn, state);
+        TRACE_INPUT_END();
      }
    return EINA_TRUE;
 }

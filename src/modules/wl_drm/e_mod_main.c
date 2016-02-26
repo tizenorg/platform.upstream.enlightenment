@@ -746,7 +746,7 @@ _e_mod_drm_keymap_set(struct xkb_context **ctx, struct xkb_keymap **map)
    struct xkb_keymap *keymap;
    struct xkb_rule_names names = {0,};
 
-   TRACE_BEGIN(_e_mod_drm_keymap_set);
+   TRACE_INPUT_BEGIN(_e_mod_drm_keymap_set);
 
    context = xkb_context_new(0);
    EINA_SAFETY_ON_NULL_RETURN(context);
@@ -775,7 +775,7 @@ cleanup:
    free((char *)names.model);
    free((char *)names.layout);
 
-   TRACE_END();
+   TRACE_INPUT_END();
 }
 
 E_API void *
