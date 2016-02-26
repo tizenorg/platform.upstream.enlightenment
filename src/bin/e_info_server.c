@@ -692,6 +692,37 @@ _e_info_server_cb_rotation_message(const Eldbus_Service_Interface *iface EINA_UN
    return reply;
 }
 
+static Eldbus_Message *
+_e_info_server_cb_fps_info_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   static double old_fps = 0;
+
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   char buf[128] = {};
+
+   if (!e_comp->calc_fps)
+     {
+        e_comp->calc_fps = 1;
+     }
+
+   if (old_fps == e_comp->fps)
+     {
+        snprintf(buf, sizeof(buf), "no_update");
+     }
+   else if (e_comp->fps > 0.0)
+     {
+        snprintf(buf, sizeof(buf), "... FPS %3.1f", e_comp->fps);
+        old_fps = e_comp->fps;
+     }
+   else
+     {
+        snprintf(buf, sizeof(buf), "... FPS N/A");
+     }
+
+   eldbus_message_arguments_append(reply, "s", buf);
+   return reply;
+}
+
 static const Eldbus_Method methods[] = {
    { "get_window_info", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_TOPVWINS")", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, 0 },
@@ -703,6 +734,7 @@ static const Eldbus_Method methods[] = {
    { "rotation_message", ELDBUS_ARGS({"iii", "rotation_message"}), NULL, _e_info_server_cb_rotation_message, 0},
    { "get_res_lists", ELDBUS_ARGS({VALUE_TYPE_REQUEST_RESLIST, "client resource"}), ELDBUS_ARGS({"a("VALUE_TYPE_REPLY_RESLIST")", "array of client resources"}), _e_info_server_cb_res_lists_get, 0 },
    { "get_input_devices", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_INPUTDEV")", "array of input"}), _e_info_server_cb_input_device_info_get, 0},
+   { "get_fps_info", NULL, ELDBUS_ARGS({"s", "fps request"}), _e_info_server_cb_fps_info_get, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 

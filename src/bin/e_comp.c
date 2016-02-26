@@ -382,6 +382,11 @@ _e_comp_cb_update(void)
    Eina_List *l;
    //   static int doframeinfo = -1;
 
+   static double rtime = 0.0;
+   static double rlapse = 0.0;
+   static int frames = 0;
+   static int flapse = 0;
+
    if (!e_comp) return EINA_FALSE;
    if (e_comp->update_job)
      e_comp->update_job = NULL;
@@ -464,6 +469,7 @@ _e_comp_cb_update(void)
      }
    else
      {
+#if 0
         if (e_comp->calc_fps)
           {
              double fps = 0.0, dt;
@@ -490,6 +496,32 @@ _e_comp_cb_update(void)
                   ecore_event_add(E_EVENT_COMPOSITOR_FPS_UPDATE, NULL, NULL, NULL);
                }
           }
+#else
+        if (e_comp->calc_fps)
+          {
+             double dt;
+             double tim = ecore_time_get();
+
+             dt = tim - e_comp->frametimes[0];
+             e_comp->frametimes[0] = tim;
+
+             rtime += dt;
+             frames++;
+
+             if (rlapse == 0.0)
+               {
+                  rlapse = tim;
+                  flapse = frames;
+               }
+             else if ((tim - rlapse) >= 1.0)
+               {
+                  e_comp->fps = (frames - flapse) / (tim - rlapse);
+                  rlapse = tim;
+                  flapse = frames;
+                  rtime = 0.0;
+               }
+          }
+#endif
      }
    if (conf->lock_fps)
      {
