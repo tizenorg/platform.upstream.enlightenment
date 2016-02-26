@@ -43,6 +43,8 @@ typedef struct _E_Win_Info
 
 static E_Info_Client e_info_client;
 
+static int keepRunning = 1;
+static void end_program (int sig);
 static Eina_Bool _e_info_client_eldbus_message(const char *method, E_Info_Message_Cb cb);
 static Eina_Bool _e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb, const char *signature, ...);
 
@@ -839,6 +841,41 @@ arg_err:
 
 }
 
+static void
+_cb_fps_info_get(const Eldbus_Message *msg)
+{
+   const char *name = NULL, *text = NULL;
+   Eina_Bool res;
+   const char *fps;
+
+   res = eldbus_message_error_get(msg, &name, &text);
+   EINA_SAFETY_ON_TRUE_GOTO(res, finish);
+
+   res = eldbus_message_arguments_get(msg, "s", &fps);
+   EINA_SAFETY_ON_FALSE_GOTO(res, finish);
+   if (strcmp(fps, "no_update"))
+        printf("%s\n", fps);
+
+finish:
+   if ((name) || (text )) {
+        printf("errname:%s errmsg:%s\n", name, text);
+   }
+}
+
+static void
+_e_info_client_proc_fps_info(int argc, char **argv)
+{
+   keepRunning = 1;
+
+   do {
+        if (!_e_info_client_eldbus_message("get_fps_info", _cb_fps_info_get))
+          return;
+
+        sleep(1);
+
+   }while(keepRunning);
+}
+
 static struct
 {
    const char *option;
@@ -893,6 +930,11 @@ static struct
       "input_devices", NULL,
       "Print connected input devices",
       _e_info_client_proc_input_device_info
+   },
+   {
+      "fps", NULL,
+      "Print FPS in every sec",
+      _e_info_client_proc_fps_info
    }
 };
 
@@ -995,6 +1037,13 @@ _e_info_client_process(int argc, char **argv)
    int nproc = sizeof(procs) / sizeof(procs[0]);
    int i;
 
+   signal(SIGINT,	end_program);
+   signal(SIGALRM,	end_program);
+   signal(SIGHUP,	end_program);
+   signal(SIGPIPE,	end_program);
+   signal(SIGQUIT,	end_program);
+   signal(SIGTERM,	end_program);
+
    for (i = 0; i < nproc; i++)
      {
         if (!strncmp(argv[1]+1, procs[i].option, strlen(procs[i].option)))
@@ -1029,6 +1078,11 @@ _e_info_client_print_usage(const char *exec)
      }
 
    printf("\n");
+}
+
+static void end_program (int sig)
+{
+   keepRunning = 0;
 }
 
 int
