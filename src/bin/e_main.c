@@ -266,6 +266,15 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
      }
    TS("[DEFERRED] Screens Init: win Done");
 
+   TS("[DEFERRED] E_Dnd Init");
+   if (!e_dnd_init())
+     {
+        e_error_message_show(_("Enlightenment cannot set up its dnd system.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("[DEFERRED] E_Dnd Init Done");
+   _e_main_shutdown_push(e_dnd_shutdown);
+
    TS("[DEFERRED] E_Pointer Init");
    if (!e_pointer_init())
      {
@@ -2023,7 +2032,7 @@ _e_main_screens_init(void)
 
    _e_main_desk_restore();
 
-#ifndef HAVE_WAYLAND_ONLY
+#ifndef ENABLE_QUICK_INIT
    if (e_config->show_splash)
      e_init_status_set(_("Setup DND"));
    TS("E_Dnd Init");
