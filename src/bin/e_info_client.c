@@ -637,6 +637,7 @@ arg_err:
 }
 
 #define RESLIST_USAGE \
+   "[-tree|-p]\n" \
    "\t-tree     : All resources\n" \
    "\t-p {pid}  : Specify client pid\n"
 
@@ -751,7 +752,7 @@ _cb_disp_res_lists_get_detail(const Eldbus_Message *msg)
         const char *type;
         const char *item;
         char cmd[512] = {0, };
-        int id = 0, pid = 0, rid = 0;
+        int id = 0, pid = 0;
 
         res = eldbus_message_iter_arguments_get(resource,
                                                 VALUE_TYPE_REPLY_RESLIST,
@@ -776,7 +777,6 @@ _cb_disp_res_lists_get_detail(const Eldbus_Message *msg)
         else if (!strcmp(type, "[resource]"))
           {
              ++nResource;
-             rid = id;
              printf("      |----- %s obj@%d\n", item, id);
           }
 
@@ -790,7 +790,7 @@ finish:
 }
 
 static void
-_e_info_server_proc_res_lists(int argc, char **argv)
+_e_info_client_proc_res_lists(int argc, char **argv)
 {
    uint32_t mode;
    int pid = 0;
@@ -869,12 +869,12 @@ static struct
    },
    {
       "prop", "[id]",
-      "print window infomation",
+      "Print window infomation",
       _e_info_client_prop_prop_info
    },
    {
       "connected_clients", NULL,
-      "print connected clients on Enlightenment",
+      "Print connected clients on Enlightenment",
       _e_info_client_proc_connected_clients
    },
    {
@@ -884,9 +884,10 @@ static struct
       _e_info_client_proc_rotation
    },
    {
-      "reslist", "[-tree|-p]",
-      "Print connected client's and their resources",
-      _e_info_server_proc_res_lists
+      "reslist",
+      RESLIST_USAGE,
+      "Print connected client's resources",
+      _e_info_client_proc_res_lists
    },
    {
       "input_devices", NULL,
