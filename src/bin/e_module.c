@@ -167,7 +167,6 @@ _module_is_important(const char *name)
       "wl_drm",
       "wl_fb",
       "wl_text_input",
-      "wl_weekeyboard",
       "wl_wl",
       "wl_x11",
    };
@@ -1127,7 +1126,6 @@ _e_module_whitelist_check(void)
       "appmenu",
       "packagekit",
       "policy_mobile",
-      "geolocation",
       "xwayland",
       NULL   // end marker
    };

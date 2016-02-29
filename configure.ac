@@ -927,17 +927,6 @@ define([CHECK_MODULE_WL_TEXT_INPUT],
 ])
 AM_CONDITIONAL([HAVE_WL_TEXT_INPUT], [test "x${WL_TEXT_INPUT}" = "xtrue"])
 
-WL_WEEKEYBOARD=false
-define([CHECK_MODULE_WL_WEEKEYBOARD],
-[
-   if test "x${have_wayland}" = "xyes" ; then
-      AC_E_CHECK_PKG(WL_WEEKEYBOARD, [ eina >= 1.8.0 evas >= 1.8.0 ecore >= 1.8.0 ecore-evas >= 1.8.0 ecore-wayland >= 1.8.0 edje >= 1.8.0 ], [WL_WEEKEYBOARD=true], [WL_WEEKEYBOARD=false])
-   else
-      WL_WEEKEYBOARD=false
-   fi
-])
-AM_CONDITIONAL([HAVE_WL_WEEKEYBOARD], [test "x${WL_WEEKEYBOARD}" = "xtrue"])
-
 AC_E_OPTIONAL_MODULE([ibar], true)
 AC_E_OPTIONAL_MODULE([clock], true)
 AC_E_OPTIONAL_MODULE([pager], true)
@@ -994,9 +983,7 @@ AC_E_OPTIONAL_MODULE([wl_drm], $have_wayland, [CHECK_MODULE_WL_DRM])
 AC_E_OPTIONAL_MODULE([policy_mobile], true)
 AC_E_OPTIONAL_MODULE([bufferqueue], $have_wayland, [CHECK_MODULE_BUFFERQUEUE])
 AC_E_OPTIONAL_MODULE([wl_text_input], $have_wayland, [CHECK_MODULE_WL_TEXT_INPUT])
-AC_E_OPTIONAL_MODULE([wl_weekeyboard], $have_wayland, [CHECK_MODULE_WL_WEEKEYBOARD])
 AC_E_OPTIONAL_MODULE([policy_mobile], true)
-AC_E_OPTIONAL_MODULE([geolocation], true)
 AC_E_OPTIONAL_MODULE([xwayland], $have_wayland, [CHECK_MODULE_XWAYLAND])
 
 if test "x${HAVE_WL_X11}" != "xyes" && test "x${have_wayland}" = "xyes" && test "x${HAVE_XWAYLAND}" != "xyes"; then
@@ -1179,7 +1166,6 @@ src/modules/quickaccess/module.desktop
 src/modules/teamwork/module.desktop
 src/modules/shot/module.desktop
 src/modules/backlight/module.desktop
-src/modules/geolocation/module.desktop
 src/modules/tasks/module.desktop
 src/modules/xkbswitch/module.desktop
 src/modules/tiling/module.desktop
