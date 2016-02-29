@@ -58,14 +58,6 @@ _e_viewport_cb_set(struct wl_client *client EINA_UNUSED,
         return;
      }
 
-   if (ec->comp_data->pending.buffer_viewport.buffer.src_x == src_x &&
-       ec->comp_data->pending.buffer_viewport.buffer.src_y == src_y &&
-       ec->comp_data->pending.buffer_viewport.buffer.src_width == src_width &&
-       ec->comp_data->pending.buffer_viewport.buffer.src_height == src_height &&
-       ec->comp_data->pending.buffer_viewport.surface.width == dst_width &&
-       ec->comp_data->pending.buffer_viewport.surface.height == dst_height)
-     return;
-
    ec->comp_data->pending.buffer_viewport.buffer.src_x = src_x;
    ec->comp_data->pending.buffer_viewport.buffer.src_y = src_y;
    ec->comp_data->pending.buffer_viewport.buffer.src_width = src_width;
@@ -90,9 +82,6 @@ _e_viewport_cb_set_source(struct wl_client *client EINA_UNUSED,
 
    if (src_width == wl_fixed_from_int(-1) && src_height == wl_fixed_from_int(-1))
      {
-        if (ec->comp_data->pending.buffer_viewport.buffer.src_width == wl_fixed_from_int(-1))
-          return;
-
         /* unset source size */
         ec->comp_data->pending.buffer_viewport.buffer.src_width = wl_fixed_from_int(-1);
         ec->comp_data->pending.buffer_viewport.changed = 1;
@@ -108,12 +97,6 @@ _e_viewport_cb_set_source(struct wl_client *client EINA_UNUSED,
                                wl_fixed_to_double(src_height));
         return;
      }
-
-   if (ec->comp_data->pending.buffer_viewport.buffer.src_x == src_x &&
-       ec->comp_data->pending.buffer_viewport.buffer.src_y == src_y &&
-       ec->comp_data->pending.buffer_viewport.buffer.src_width == src_width &&
-       ec->comp_data->pending.buffer_viewport.buffer.src_height == src_height)
-     return;
 
    ec->comp_data->pending.buffer_viewport.buffer.src_x = src_x;
    ec->comp_data->pending.buffer_viewport.buffer.src_y = src_y;
@@ -135,9 +118,6 @@ _e_viewport_cb_set_destination(struct wl_client *client EINA_UNUSED,
 
    if (dst_width == -1 && dst_height == -1)
      {
-        if (ec->comp_data->pending.buffer_viewport.surface.width == -1)
-          return;
-
         /* unset destination size */
         ec->comp_data->pending.buffer_viewport.surface.width = -1;
         ec->comp_data->pending.buffer_viewport.changed = 1;
@@ -152,10 +132,6 @@ _e_viewport_cb_set_destination(struct wl_client *client EINA_UNUSED,
                                dst_width, dst_height);
         return;
      }
-
-   if (ec->comp_data->pending.buffer_viewport.surface.width == dst_width &&
-       ec->comp_data->pending.buffer_viewport.surface.height == dst_height)
-     return;
 
    ec->comp_data->pending.buffer_viewport.surface.width = dst_width;
    ec->comp_data->pending.buffer_viewport.surface.height = dst_height;
