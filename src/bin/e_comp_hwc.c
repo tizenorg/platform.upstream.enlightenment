@@ -10,7 +10,6 @@
 #include <tdm_helper.h>
 #include <wayland-tbm-server.h>
 
-//#define TDM_DISPLAY_HANDLE_EVENT
 #define HWC_DRM_MODE_DPMS_OFF 3
 #ifndef CLEAR
 #define CLEAR(x) memset(&(x), 0, sizeof (x))
@@ -30,9 +29,6 @@ struct _E_Comp_Hwc_Update_Data {
 
 struct _E_Comp_Hwc {
    Evas_Engine_Info_GL_Drm *einfo;
-
-   int drm_fd;
-   Ecore_Fd_Handler *drm_hdlr;
 
    Ecore_Drm_Output *drm_output;
 
@@ -56,9 +52,8 @@ struct _E_Comp_Hwc {
 // Global variable.
 static E_Comp_Hwc *g_hwc = NULL;
 
-#ifdef TDM_DISPLAY_HANDLE_EVENT
 static void
-_e_comp_hwc_tdm_output_wait_vblank_handler(tdm_output *output, unsigned int sequence,
+_e_comp_hwc_ee_wait_vblank_handler(tdm_output *output, unsigned int sequence,
                                   unsigned int tv_sec, unsigned int tv_usec, void *user_data)
 {
    E_Comp_Hwc *hwc = NULL;
@@ -72,10 +67,27 @@ _e_comp_hwc_tdm_output_wait_vblank_handler(tdm_output *output, unsigned int sequ
 
    gbm_surface_release_buffer(hwc->gsurface, hwc->cur_gbo);
 
-   INF("HWC: done wait vblank");
+   INF("HWC: done wait vblank Canvas");
 }
-#endif
 
+static void
+_e_comp_hwc_ec_wait_vblank_handler(tdm_output *output, unsigned int sequence,
+                                  unsigned int tv_sec, unsigned int tv_usec, void *user_data)
+{
+   E_Comp_Hwc *hwc = NULL;
+   E_Client *ec = NULL;
+
+   hwc = user_data;
+
+   if (!hwc) return;
+
+   ec = hwc->nocomp_ec;
+
+   // release buffer
+   e_pixmap_image_clear(ec->pixmap, 1);
+
+   INF("HWC: done wait vblank E_Client");
+}
 
 static Eina_Bool
 _e_comp_hwc_set_layer(E_Comp_Hwc *hwc, tdm_layer *layer, tbm_surface_h surface)
@@ -127,65 +139,11 @@ _e_comp_hwc_set_layer(E_Comp_Hwc *hwc, tdm_layer *layer, tbm_surface_h surface)
    return EINA_TRUE;
 }
 
-static void
-_e_comp_hwc_ec_wait_vblank_handler(void *data)
-{
-   E_Comp_Hwc *hwc = NULL;
-   E_Client *ec = NULL;
-
-   hwc = data;
-
-   if (!hwc) return;
-
-   ec = hwc->nocomp_ec;
-
-   // release buffer
-   e_pixmap_image_clear(ec->pixmap, 1);
-
-   INF("HWC: done wait vblank E_Client");
-}
-
-static void
-_e_comp_hwc_ee_wait_vblank_handler(void *data)
-{
-   E_Comp_Hwc *hwc = NULL;
-
-   hwc = data;
-
-   if (!hwc) return;
-
-   hwc->ee_wait_vblank = EINA_FALSE;
-   hwc->einfo->info.wait_for_showup = EINA_FALSE;
-
-   gbm_surface_release_buffer(hwc->gsurface, hwc->cur_gbo);
-
-   INF("HWC: done wait vblank Canvas");
-}
-
-static Eina_Bool
-_e_comp_hwc_ec_wait_vblank(E_Comp_Hwc *hwc)
-{
-   /* If not DPMS_ON, we call vblank handler directory to do post-process
-    * for video frame buffer handling.
-    */
-   if (ecore_drm_output_dpms_get(hwc->output) == HWC_DRM_MODE_DPMS_OFF)
-     {
-        WRN("warning : DRM_MODE_DPMS_OFF\n");
-        return EINA_FALSE;
-     }
-
-   if (!ecore_drm_output_wait_vblank(hwc->drm_output, 1, _e_comp_hwc_ec_wait_vblank_handler, hwc))
-     {
-        WRN("warning: fail ecore_drm_output_wait_vblank");
-        return EINA_FALSE;
-     }
-
-   return EINA_TRUE;
-}
-
 static Eina_Bool
 _e_comp_hwc_ee_wait_vblank(E_Comp_Hwc *hwc)
 {
+   tdm_error error = TDM_ERROR_NONE;
+
    /* If not DPMS_ON, we call vblank handler directory to do post-process
     * for video frame buffer handling.
     */
@@ -195,45 +153,38 @@ _e_comp_hwc_ee_wait_vblank(E_Comp_Hwc *hwc)
         return EINA_FALSE;
      }
 
-#if 1
-   if (!ecore_drm_output_wait_vblank(hwc->drm_output, 1, _e_comp_hwc_ee_wait_vblank_handler, hwc))
-     {
-        WRN("failed: ecore_drm_output_wait_vblank");
-        return EINA_FALSE;
-     }
-#else
-   tdm_error error = TDM_ERROR_NONE;
-
-   error = tdm_output_wait_vblank(hwc->output, 1, 0, _e_comp_hwc_tdm_output_wait_vblank_handler, hwc);
+   error = tdm_output_wait_vblank(hwc->output, 1, 0, _e_comp_hwc_ee_wait_vblank_handler, hwc);
    if (error != TDM_ERROR_NONE)
      {
         ERR("failed: tdm_output_wait_vblank\n");
         return EINA_FALSE;
      }
-#endif
 
    return EINA_TRUE;
 }
 
-
-#ifdef TDM_DISPLAY_HANDLE_EVENT
 static Eina_Bool
-_e_comp_hwc_drm_device_cb_event(void *data, Ecore_Fd_Handler *hdlr EINA_UNUSED)
+_e_comp_hwc_ec_wait_vblank(E_Comp_Hwc *hwc)
 {
-   E_Comp_Hwc *hwc;
-   tdm_error err = TDM_ERROR_NONE;
+   tdm_error error = TDM_ERROR_NONE;
 
-   if (!(hwc = data)) return ECORE_CALLBACK_RENEW;
-
-   err = tdm_display_handle_events(hwc->tdisplay);
-   if (err != TDM_ERROR_NONE)
+   /* If not DPMS_ON, we call vblank handler directory to do post-process
+    * for video frame buffer handling.
+    */
+   if (ecore_drm_output_dpms_get(hwc->output) == HWC_DRM_MODE_DPMS_OFF)
      {
-        printf("\ttdm_display_handle_events fail(%d)\n", err);
+        WRN("warning : DRM_MODE_DPMS_OFF\n");
+        return EINA_FALSE;
      }
 
-   return ECORE_CALLBACK_RENEW;
+   error = tdm_output_wait_vblank(hwc->output, 1, 0, _e_comp_hwc_ec_wait_vblank_handler, hwc);
+   if (error != TDM_ERROR_NONE)
+     {
+        ERR("failed: tdm_output_wait_vblank\n");
+        return EINA_FALSE;
+     }
+   return EINA_TRUE;
 }
-#endif
 
 Evas_Engine_Info_GL_Drm *
 _e_comp_hwc_get_evas_engine_info_gl_drm(E_Comp_Hwc *hwc)
@@ -280,47 +231,6 @@ _e_comp_hwc_get_tdm_layer(E_Comp_Hwc *hwc)
    EINA_SAFETY_ON_NULL_RETURN_VAL(hwc->einfo, NULL);
 
    return hwc->ee_tlayer;
-}
-
-static Eina_Bool
-_e_comp_hwc_render_ec(E_Comp_Hwc *hwc, E_Client *ec)
-{
-   Evas_Engine_Info_GL_Drm *einfo = NULL;
-   E_Pixmap *pixmap = ec->pixmap;
-   E_Comp_Wl_Buffer *buffer = e_pixmap_resource_get(pixmap);
-   tbm_surface_h tsurface = NULL;
-   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
-   tdm_layer *layer  = NULL;
-
-   EINA_SAFETY_ON_NULL_RETURN_VAL(buffer != NULL, EINA_FALSE);
-
-   /* get the evas_engine_gl_drm information */
-   einfo = _e_comp_hwc_get_evas_engine_info_gl_drm(hwc);
-   if (!einfo) return EINA_FALSE;
-
-   tsurface = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(tsurface != 0, EINA_FALSE);
-
-   layer = _e_comp_hwc_get_tdm_layer(hwc);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(layer != 0, EINA_FALSE);
-
-   INF("HWC: display E_Client");
-
-   if (!_e_comp_hwc_set_layer(hwc, layer, tsurface))
-     {
-        ERR("fail to _e_comp_hwc_set_layer");
-        return EINA_FALSE;
-     }
-
-   hwc->nocomp_ec = ec;
-
-   if (!_e_comp_hwc_ec_wait_vblank(hwc))
-     {
-        WRN("fail to _e_comp_hwc_ec_wait_vblank");
-        return EINA_FALSE;
-     }
-
-   return EINA_TRUE;
 }
 
 static void
@@ -405,6 +315,47 @@ _e_comp_hwc_render_ee(E_Comp_Hwc *hwc)
    return;
 }
 
+static Eina_Bool
+_e_comp_hwc_render_ec(E_Comp_Hwc *hwc, E_Client *ec)
+{
+   Evas_Engine_Info_GL_Drm *einfo = NULL;
+   E_Pixmap *pixmap = ec->pixmap;
+   E_Comp_Wl_Buffer *buffer = e_pixmap_resource_get(pixmap);
+   tbm_surface_h tsurface = NULL;
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+   tdm_layer *layer  = NULL;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(buffer != NULL, EINA_FALSE);
+
+   /* get the evas_engine_gl_drm information */
+   einfo = _e_comp_hwc_get_evas_engine_info_gl_drm(hwc);
+   if (!einfo) return EINA_FALSE;
+
+   tsurface = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(tsurface != NULL, EINA_FALSE);
+
+   layer = _e_comp_hwc_get_tdm_layer(hwc);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(layer != NULL, EINA_FALSE);
+
+   INF("HWC: display E_Client");
+
+   if (!_e_comp_hwc_set_layer(hwc, layer, tsurface))
+     {
+        ERR("fail to _e_comp_hwc_set_layer");
+        return EINA_FALSE;
+     }
+
+   hwc->nocomp_ec = ec;
+
+   if (!_e_comp_hwc_ec_wait_vblank(hwc))
+     {
+        WRN("fail to _e_comp_hwc_ec_wait_vblank");
+        return EINA_FALSE;
+     }
+
+   return EINA_TRUE;
+}
+
 static Ecore_Drm_Output*
 _e_comp_hwc_drm_output_find(int x, int y, int w, int h)
 {
@@ -441,31 +392,6 @@ _e_comp_hwc_canvas_render_post(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void
    _e_comp_hwc_render_ee(hwc);
 }
 
-static int
-_e_comp_hwc_drm_fd_get(void)
-{
-   int fd;
-   Eina_List *devs;
-   Ecore_Drm_Device *dev;
-
-   devs = eina_list_clone(ecore_drm_devices_get());
-   EINA_SAFETY_ON_NULL_RETURN_VAL(devs, -1);
-
-   if ((dev = eina_list_nth(devs, 0)))
-     {
-        fd = ecore_drm_device_fd_get(dev);
-        if (fd >= 0)
-          {
-             eina_list_free(devs);
-             return fd;
-          }
-     }
-
-   eina_list_free(devs);
-   return -1;
-}
-
-
 EINTERN Eina_Bool
 e_comp_hwc_init(void)
 {
@@ -490,17 +416,6 @@ e_comp_hwc_init(void)
 
    hwc = E_NEW(E_Comp_Hwc, 1);
    EINA_SAFETY_ON_NULL_RETURN_VAL(hwc, EINA_FALSE);
-
-   hwc->drm_fd = _e_comp_hwc_drm_fd_get();
-   if (!hwc->drm_fd)
-     {
-        ERR("fail to get tdm_display\n");
-        free(hwc);
-        return EINA_FALSE;
-     }
-
-   /* this helper drm_fd help setting up the tdm display init with it */
-   tdm_helper_drm_fd = hwc->drm_fd;
 
    hwc->tdisplay = tdm_display_init(&error);
    if (error != TDM_ERROR_NONE)
@@ -556,11 +471,6 @@ e_comp_hwc_init(void)
 
    evas_event_callback_add(e_comp->evas, EVAS_CALLBACK_RENDER_POST, _e_comp_hwc_canvas_render_post, hwc);
 
-#ifdef TDM_DISPLAY_HANDLE_EVENT
-   /* This handler works when tdm mode setting has to be set up */
-   hwc->drm_hdlr = ecore_main_fd_handler_add(hwc->drm_fd, ECORE_FD_READ, _e_comp_hwc_drm_device_cb_event, hwc, NULL, NULL);
-#endif
-
    /* set hwc to g_hwc */
    g_hwc = hwc;
 
@@ -575,17 +485,8 @@ e_comp_hwc_shutdown(void)
 
    if (!g_hwc)
      {
-        tdm_helper_drm_fd = -1;
-
-#ifdef TDM_DISPLAY_HANDLE_EVENT
-        if (g_hwc->drm_hdlr) ecore_main_fd_handler_del(g_hwc->drm_hdlr);
-        g_hwc->drm_hdlr = NULL;
-#endif
         if (g_hwc->tdisplay)
           tdm_display_deinit(g_hwc->tdisplay);
-
-        if (g_hwc->drm_fd >= 0)
-          close(g_hwc->drm_fd);
 
         free(g_hwc);
         g_hwc = NULL;
