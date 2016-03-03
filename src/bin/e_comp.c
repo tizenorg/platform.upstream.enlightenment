@@ -539,7 +539,8 @@ _e_comp_cb_update(void)
     */
 nocomp:
 #ifdef HAVE_HWC
-   if (e_comp->hwc)
+// soolim : hwc default on...
+//   if (e_comp->hwc)
      {
         ec = e_comp_hwc_fullscreen_check();
         if (ec)
