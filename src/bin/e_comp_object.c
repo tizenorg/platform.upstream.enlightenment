@@ -1,5 +1,9 @@
 #include "e.h"
 
+#ifdef HAVE_HWC
+# include "e_comp_hwc.h"
+#endif
+
 /* data keys:
 
    = keys that return objects =
@@ -259,6 +263,11 @@ _e_comp_object_cb_mirror_show(void *data, Evas *e EINA_UNUSED, Evas_Object *obj 
    if ((!cw->force_visible) && (!e_object_is_del(E_OBJECT(cw->ec))))
      evas_object_smart_callback_call(cw->smart_obj, "visibility_force", cw->ec);
    cw->force_visible++;
+
+#if HAVE_HWC
+   if (e_comp->hwc && e_comp->nocomp_ec != cw->ec)
+     e_comp_hwc_set_full_composite("_e_comp_object_cb_mirror_show");
+#endif
 }
 
 static void
@@ -991,6 +1000,11 @@ _e_comp_intercept_move(void *data, Evas_Object *obj, int x, int y)
    E_Comp_Object *cw = data;
    int ix, iy, fx, fy;
 
+#if HAVE_HWC
+   if (e_comp->hwc && e_comp->nocomp_ec != cw->ec)
+     e_comp_hwc_set_full_composite("_e_comp_intercept_move");
+#endif
+
    if (!e_util_strcmp("wl_pointer-cursor", cw->ec->icccm.window_role))
      {
         cw->ec->client.x = x, cw->ec->client.y = y;
@@ -1076,6 +1090,11 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
 {
    E_Comp_Object *cw = data;
    int pw = 0, ph = 0, fw, fh, iw, ih, prev_w, prev_h, x, y;
+
+#if HAVE_HWC
+   if (e_comp->hwc &&e_comp->nocomp_ec != cw->ec)
+     e_comp_hwc_set_full_composite("_e_comp_intercept_resize");
+#endif
 
    if ((!e_util_strcmp("wl_pointer-cursor", cw->ec->icccm.window_role)) ||
        (!e_util_strcmp("input_panel_surface", cw->ec->icccm.window_role)))

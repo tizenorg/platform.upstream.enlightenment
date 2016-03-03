@@ -20,6 +20,10 @@ E_API int E_EVENT_WAYLAND_GLOBAL_ADD = -1;
 # define EGL_WIDTH			0x3057
 #endif
 
+#ifdef HAVE_HWC
+# include "e_comp_hwc.h"
+#endif
+
 /* Resource Data Mapping: (wl_resource_get_user_data)
  *
  * wl_surface == e_pixmap
@@ -2380,6 +2384,18 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
         /* clear input tiler */
         eina_tiler_clear(state->input);
      }
+
+#ifdef HAVE_HWC
+   /* HWC: if the compositor fall into the nocomposite mode,
+          the compositor display e_client on the hw layer directly */
+   if (e_comp->hwc &&
+       e_comp->nocomp &&
+       e_comp->nocomp_ec == ec &&
+       buffer)
+     {
+        e_comp_hwc_update_ec(ec);
+     }
+#endif
 
    if (!state->buffer_viewport.changed &&
        (buffer && buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO) &&
