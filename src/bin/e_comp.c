@@ -3,6 +3,10 @@
 # include "e_comp_wl.h"
 #endif
 
+#ifdef HAVE_HWC
+# include "e_comp_hwc.h"
+#endif
+
 #define OVER_FLOW 1
 //#define SHAPE_DEBUG
 //#define BORDER_ZOOMAPS
@@ -534,6 +538,34 @@ _e_comp_cb_update(void)
       }
     */
 nocomp:
+#ifdef HAVE_HWC
+   if (e_comp->hwc)
+     {
+        ec = e_comp_hwc_fullscreen_check();
+        if (ec)
+          {
+             if (e_comp->nocomp && e_comp->nocomp_ec != ec)
+               {
+                  INF("HWC: NOCOMPOSITE Change ec");
+                  e_comp->nocomp_ec = ec;
+               }
+             else
+               {
+                  INF("HWC: NOCOMPOSITE Begin");
+                  e_comp->nocomp = EINA_TRUE;
+                  e_comp->nocomp_ec = ec;
+               }
+          }
+        else
+          {
+             INF("HWC: NOCOMPOSITE End");
+             e_comp->nocomp = EINA_FALSE;
+             e_comp->nocomp_ec = NULL;
+          }
+     }
+
+   INF("HWC: COMP UPDATE");
+#else
    ec = _e_comp_fullscreen_check();
    if (ec)
      {
@@ -569,6 +601,7 @@ nocomp:
      }
    else
      _e_comp_nocomp_end();
+#endif
 
    TRACE_DS_END();
 
@@ -1234,6 +1267,16 @@ out:
    elm_win_fullscreen_set(e_comp->elm, 1);
    evas_object_show(e_comp->elm);
 #endif
+
+#ifdef HAVE_HWC
+   if (conf->hwc)
+     {
+        e_comp->hwc = e_comp_hwc_init();
+        if (!e_comp->hwc)
+          WRN("fail to init hwc.");
+     }
+#endif
+
    e_util_env_set("HYBRIS_EGLPLATFORM", NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_ON, _e_comp_screensaver_on, NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_OFF, _e_comp_screensaver_off, NULL);
@@ -1463,6 +1506,11 @@ e_comp_shutdown(void)
      {
         _e_launchscreen_free(e_comp->launchscrn);
      }
+
+#ifdef HAVE_HWC
+   if (e_comp->hwc)
+     e_comp_hwc_shutdown();
+#endif
 
 #ifdef HAVE_WAYLAND
    e_comp_wl_shutdown();

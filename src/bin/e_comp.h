@@ -173,6 +173,7 @@ struct _E_Comp
    Eina_Bool       saver : 1;
    Eina_Bool       shape_queue_blocked : 1;
    Eina_Bool       calc_fps : 1;
+   Eina_Bool       hwc : 1;
 
    Eina_List      *connected_clients;
 };
