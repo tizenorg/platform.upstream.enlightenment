@@ -30,18 +30,16 @@ struct _E_Comp_Hwc_Update_Data {
 struct _E_Comp_Hwc {
    Evas_Engine_Info_GL_Drm *einfo;
 
-   Ecore_Drm_Output *drm_output;
-
    struct gbm_surface *gsurface;
    struct gbm_bo *cur_gbo;
 
    tdm_display *tdisplay;
-   int num_outputs;
    tdm_output *output;
    tdm_layer *ee_tlayer;
+
+   int num_outputs;
    int output_w;
    int output_h;
-   Eina_Bool ee_wait_vblank;
 
    E_Client *nocomp_ec;
 
@@ -62,7 +60,6 @@ _e_comp_hwc_ee_wait_vblank_handler(tdm_output *output, unsigned int sequence,
 
    if (!hwc) return;
 
-   hwc->ee_wait_vblank = EINA_FALSE;
    hwc->einfo->info.wait_for_showup = EINA_FALSE;
 
    gbm_surface_release_buffer(hwc->gsurface, hwc->cur_gbo);
@@ -240,12 +237,6 @@ _e_comp_hwc_render_ee(E_Comp_Hwc *hwc)
    tbm_surface_h tsurface = NULL;
    tdm_layer *layer = NULL;
 
-   if (hwc->ee_wait_vblank)
-     {
-        INF("ee_wait_vblank is TRUE... pending.");
-        return;
-     }
-
    /* get the evas_engine_gl_drm information */
    einfo = _e_comp_hwc_get_evas_engine_info_gl_drm(hwc);
    if (!einfo) return;
@@ -307,8 +298,6 @@ _e_comp_hwc_render_ee(E_Comp_Hwc *hwc)
         return;
      }
 
-   hwc->ee_wait_vblank = EINA_TRUE;
-
    /* block the next update of ecore_evas until the current update is done */
    einfo->info.wait_for_showup = EINA_TRUE;
 
@@ -354,32 +343,6 @@ _e_comp_hwc_render_ec(E_Comp_Hwc *hwc, E_Client *ec)
      }
 
    return EINA_TRUE;
-}
-
-static Ecore_Drm_Output*
-_e_comp_hwc_drm_output_find(int x, int y, int w, int h)
-{
-   Ecore_Drm_Device *dev;
-   Ecore_Drm_Output *output;
-   Eina_List *devs;
-   Eina_List *l, *ll;
-
-   devs = eina_list_clone(ecore_drm_devices_get());
-   EINA_LIST_FOREACH(devs, l, dev)
-   EINA_LIST_FOREACH(dev->outputs, ll, output)
-     {
-        int ox, oy, ow, oh;
-        ecore_drm_output_position_get(output, &ox, &oy);
-        ecore_drm_output_current_resolution_get(output, &ow, &oh, NULL);
-        if (ox <= x && oy <= y && x < ox + ow && y < oy + oh)
-          {
-             eina_list_free(devs);
-             return output;
-          }
-     }
-   eina_list_free(devs);
-
-   return NULL;
 }
 
 static void
@@ -457,10 +420,6 @@ e_comp_hwc_init(void)
    /* temp code */
    hwc->output_w = e_comp->w;
    hwc->output_h = e_comp->h;
-
-   /* temp : only get the primary output */
-   hwc->drm_output = _e_comp_hwc_drm_output_find( 1, 1, 1, 1);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(hwc->drm_output, EINA_FALSE);
 
    /* get the evas_engine_gl_drm information */
    einfo = _e_comp_hwc_get_evas_engine_info_gl_drm(hwc);
