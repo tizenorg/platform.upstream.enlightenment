@@ -541,27 +541,7 @@ nocomp:
 #ifdef HAVE_HWC
    if (e_comp->hwc)
      {
-        ec = e_comp_hwc_fullscreen_check();
-        if (ec)
-          {
-             if (e_comp->nocomp && e_comp->nocomp_ec != ec)
-               {
-                  INF("HWC: NOCOMPOSITE Change ec");
-                  e_comp->nocomp_ec = ec;
-               }
-             else
-               {
-                  INF("HWC: NOCOMPOSITE Begin");
-                  e_comp->nocomp = EINA_TRUE;
-                  e_comp->nocomp_ec = ec;
-               }
-          }
-        else
-          {
-             INF("HWC: NOCOMPOSITE End");
-             e_comp->nocomp = EINA_FALSE;
-             e_comp->nocomp_ec = NULL;
-          }
+        e_comp_hwc_mode_update();
      }
 
    INF("HWC: COMP UPDATE");
