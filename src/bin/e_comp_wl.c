@@ -2393,7 +2393,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
        e_comp->nocomp_ec == ec &&
        buffer)
      {
-        e_comp_hwc_update_ec(ec);
+        e_comp_hwc_display_client(ec);
      }
 #endif
 
