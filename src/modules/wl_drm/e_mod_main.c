@@ -104,7 +104,6 @@ _e_mod_drm_cb_input_device_add(void *data, int type, void *event)
 
    if (!(e = event)) goto end;
 
-	e_config->use_cursor_timer = 1;
    if (e->caps & EVDEV_SEAT_POINTER)
      {
         if (comp->wl_comp_data->ptr.num_devices == 0)
