@@ -212,15 +212,15 @@ _e_comp_hwc_output_commit_handler(tdm_output *output, unsigned int sequence,
 
         // release buffer
         gbm_surface_release_buffer(hwc_layer->gsurface, hwc_layer->cur_gbo);
-	INF("HWC: Canvas commit is done. Layer # is %d", hwc_layer->index);
+        INF("HWC: Canvas commit is done. Layer # is %d", hwc_layer->index);
      }
    else
      {
-       ec = hwc_layer->disp_ec;
-
-       // release buffer
-       e_pixmap_image_clear(ec->pixmap, 1);
-       INF("HWC: E_Client commit is done. Layer # is %d", hwc_layer->index);
+        ec = hwc_layer->disp_ec;
+ 
+        // release buffer
+        e_pixmap_image_clear(ec->pixmap, 1);
+        INF("HWC: E_Client commit is done. Layer # is %d", hwc_layer->index);
      }
 }
 
@@ -348,7 +348,7 @@ _e_comp_hwc_display_canvas(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void *ev
 
         /* block the next update of ecore_evas until the current update is done */
         einfo->info.wait_for_showup = EINA_TRUE;
-	INF("HWC: Display Canvas");
+        INF("HWC: Display Canvas");
      }
 }
 
@@ -367,8 +367,8 @@ _e_comp_hwc_display_client(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_
 
    if (!_e_comp_hwc_output_commit(hwc_output, hwc_layer, tsurface))
      {
-	ERR("fail to _e_comp_hwc_output_commit");
-	return;
+        ERR("fail to _e_comp_hwc_output_commit");
+        return;
      }
 
    hwc_layer->disp_ec = ec;
@@ -473,11 +473,11 @@ e_comp_hwc_init(void)
         hwc_output->toutput = toutput;
 
         tdm_output_get_layer_count(toutput, &num_layers);
-	if (num_layers < 1)
-	  {
-	     ERR("fail to get tdm_output_get_layer_count\n");
-	     goto fail;
-	  }
+        if (num_layers < 1)
+          {
+             ERR("fail to get tdm_output_get_layer_count\n");
+             goto fail;
+          }
         hwc_output->num_layers = num_layers;
 
         for (j = 0; j < num_layers; j++)
@@ -593,28 +593,28 @@ e_comp_hwc_mode_update(void)
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
         // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
         if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
-	/* make the policy to configure the layers with the client candidates */
-	ec = _e_comp_hwc_fullscreen_check();
-	if (ec)
-	  {
-	     if (e_comp->nocomp && e_comp->nocomp_ec != ec)
+        /* make the policy to configure the layers with the client candidates */
+        ec = _e_comp_hwc_fullscreen_check();
+        if (ec)
+          {
+             if (e_comp->nocomp && e_comp->nocomp_ec != ec)
                INF("HWC: NOCOMPOSITE Mode ec(%p) ==> ec(%p)", e_comp->nocomp_ec, ec);
-	     else
+             else
                INF("HWC: NOCOMPOSITE Mode ec(%p)", ec);
-
+             
              hwc_output->mode = E_HWC_MODE_NO_COMPOSITE;
              hwc_output->primary_layer->ec = ec;
-	     e_comp->nocomp = EINA_TRUE;
+             e_comp->nocomp = EINA_TRUE;
              e_comp->nocomp_ec = ec;
-	  }
-	else
-	  {
-	     INF("HWC: COMPOSITE Mode");
+          }
+        else
+          {
+             INF("HWC: COMPOSITE Mode");
              hwc_output->mode = E_HWC_MODE_COMPOSITE;
              hwc_output->primary_layer->ec = NULL;
-	     e_comp->nocomp = EINA_FALSE;
-	     e_comp->nocomp_ec = NULL;
-	  }
+             e_comp->nocomp = EINA_FALSE;
+             e_comp->nocomp_ec = NULL;
+          }
      }
 }
 
