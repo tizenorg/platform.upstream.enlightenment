@@ -112,10 +112,8 @@ _e_fm_main_eeze_mount_point_set(E_Volume *v)
         eeze_disk_mount_point_set(v->disk, NULL);
         return;
      }
-   /* here we arbitrarily mount everything to /media/$devnode regardless of fstab */
    eina_stringshare_del(v->mount_point);
-   snprintf(path, sizeof(path), "/media%s", str);
-   v->mount_point = _mount_point_escape(path);
+   v->mount_point = _mount_point_escape(str);
    eeze_disk_mount_point_set(v->disk, v->mount_point);
 }
 
@@ -366,7 +364,7 @@ _e_fm_main_eeze_volume_add(const char *syspath,
    if ((type == EEZE_DISK_TYPE_INTERNAL) || (type == EEZE_DISK_TYPE_UNKNOWN))
      {
         str = eeze_disk_mount_point_get(v->disk);
-        if ((type != EEZE_DISK_TYPE_INTERNAL) || (str && (strncmp(str, "/media/", 7))))
+        if ((type != EEZE_DISK_TYPE_INTERNAL) || str)
           {
              INF("VOL is %s, ignoring", (type == EEZE_DISK_TYPE_INTERNAL) ? "internal" : "unknown");
              eeze_disk_free(v->disk);

@@ -303,21 +303,21 @@ main(int argc,
              struct stat s;
 
              mp = argv[5];
-             if (stat("/media", &s))
+             if (stat("media", &s))
                {
                   mode_t um;
 
                   um = umask(0);
-                  if (mkdir("/media", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH))
+                  if (mkdir("media", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH))
                     {
-                       printf("ERROR: COULD NOT CREATE DIRECTORY /media\n");
+                       printf("ERROR: COULD NOT CREATE DIRECTORY media\n");
                        exit(40);
                     }
                   umask(um);
                }
              else if (!S_ISDIR(s.st_mode))
                {
-                  printf("ERROR: NOT A DIRECTORY: /media\n");
+                  printf("ERROR: NOT A DIRECTORY: media\n");
                   exit(40);
                }
 
@@ -354,7 +354,7 @@ main(int argc,
 
              mp = strrchr(argv[2], '/');
              if (!mp) return ret;
-             snprintf(path, sizeof(path), "/media%s", mp);
+             snprintf(path, sizeof(path), "media%s", mp);
              if (stat(path, &st)) return ret;
              if (!S_ISDIR(st.st_mode)) return ret;
              it = eina_file_ls(path);
@@ -457,7 +457,7 @@ mount_args_check(int argc, char **argv, const char *action)
    if (!strcmp(action, "mount"))
      {
         /* will ALWAYS be:
-           /path/to/mount -o nosuid,uid=XYZ,[utf8,] UUID=XXXX-XXXX[-XXXX-XXXX] /media/$devnode
+           /path/to/mount -o nosuid,uid=XYZ,[utf8,] UUID=XXXX-XXXX[-XXXX-XXXX] media/$devnode
          */
         if (argc != 6) return EINA_FALSE;
         if (argv[2][0] == '-')
@@ -499,7 +499,7 @@ mount_args_check(int argc, char **argv, const char *action)
         /* this is good, but it prevents umounting user-mounted removable media;
          * need to figure out a better way...
          *
-           snprintf(buf, sizeof(buf), "/media%s", node);
+           snprintf(buf, sizeof(buf), "media%s", node);
            if (stat(buf, &st)) return EINA_FALSE;
            if (!S_ISDIR(st.st_mode)) return EINA_FALSE;
          */
