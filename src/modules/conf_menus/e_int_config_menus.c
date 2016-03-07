@@ -107,15 +107,6 @@ get_menus(Eina_List **menus)
    char buf[PATH_MAX];
    const char *dirs[] =
      {
-        "/etc/xdg",
-        "/usr/etc/xdg",
-        "/usr/local/etc/xdg",
-        "/usr/opt/etc/xdg",
-        "/usr/opt/xdg",
-        "/usr/local/opt/etc/xdg",
-        "/usr/local/opt/xdg",
-        "/opt/etc/xdg",
-        "/opt/xdg",
         // FIXME: add more "known locations"
         NULL
      };
