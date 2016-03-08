@@ -22,7 +22,6 @@
 static Eina_List *handlers = NULL;
 static Eina_List *hooks = NULL;
 E_API E_Comp *e_comp = NULL;
-E_API E_Comp_X_Data *e_comp_x = NULL;
 E_API E_Comp_Wl_Data *e_comp_wl = NULL;
 static Eina_Hash *ignores = NULL;
 static Eina_List *actions = NULL;
@@ -281,7 +280,6 @@ _e_comp_cb_nocomp_end(void)
    if (!e_comp->nocomp) return;
 
    INF("COMP RESUME!");
-   //ecore_evas_manual_render_set(e_comp->ee, EINA_FALSE);
    ecore_evas_show(e_comp->ee);
    E_CLIENT_FOREACH(ec)
      {
@@ -289,9 +287,6 @@ _e_comp_cb_nocomp_end(void)
         if (ec->visible && (!ec->input_only))
           e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
      }
-#ifndef HAVE_WAYLAND_ONLY
-   e_comp_x_nocomp_end();
-#endif
    e_comp_render_queue();
    e_comp_shape_queue_block(0);
    ecore_event_add(E_EVENT_COMPOSITOR_ENABLE, NULL, NULL, NULL);
@@ -341,7 +336,6 @@ _e_comp_client_update(E_Client *ec)
      }
    if ((!e_comp->saver) && e_pixmap_size_get(ec->pixmap, &pw, &ph))
      {
-        //INF("PX DIRTY: PX(%dx%d) CLI(%dx%d)", pw, ph, ec->client.w, ec->client.h);
         e_pixmap_image_refresh(ec->pixmap);
         e_comp_object_dirty(ec->frame);
         if (e_pixmap_is_x(ec->pixmap) && (!ec->override))
@@ -363,12 +357,7 @@ _e_comp_nocomp_end(void)
         fs = e_comp->nocomp_ec->fullscreen;
         e_comp->nocomp_ec->fullscreen = 0;
         if (fs)
-          {
-             if (!e_config->allow_above_fullscreen)
-               layer = E_LAYER_CLIENT_FULLSCREEN;
-             else if (e_config->mode.presentation)
-               layer = E_LAYER_CLIENT_TOP;
-          }
+          layer = E_LAYER_CLIENT_FULLSCREEN;
         evas_object_layer_set(e_comp->nocomp_ec->frame, layer);
         e_comp->nocomp_ec->fullscreen = fs;
      }
@@ -509,30 +498,6 @@ _e_comp_cb_update(void)
      }
    if (e_comp->updates && (!e_comp->update_job))
      ecore_animator_thaw(e_comp->render_animator);
-   /*
-      if (doframeinfo == -1)
-      {
-      doframeinfo = 0;
-      if (getenv("DFI")) doframeinfo = 1;
-      }
-      if (doframeinfo)
-      {
-      static double t0 = 0.0;
-      double td, t;
-
-      t = ecore_time_get();
-      td = t - t0;
-      if (td > 0.0)
-      {
-      int fps, i;
-
-      fps = 1.0 / td;
-      for (i = 0; i < fps; i+= 2) putchar('=');
-      printf(" : %3.3f", 1.0 / td);
-      }
-      t0 = t;
-      }
-    */
 nocomp:
    ec = _e_comp_fullscreen_check();
    if (ec)
@@ -551,7 +516,7 @@ nocomp:
                        if (!ec->visible) continue;
                        if (evas_object_data_get(ec->frame, "comp_skip")) continue;
                        if (e_object_is_del(E_OBJECT(ec)) || (!e_client_util_desk_visible(ec, e_desk_current_get(ec->zone)))) continue;
-                       if (ec->override || (e_config->allow_above_fullscreen && (!e_config->mode.presentation)))
+                       if (ec->override)
                          {
                             _e_comp_nocomp_end();
                             break;
@@ -978,67 +943,6 @@ _e_comp_screensaver_off(void *data EINA_UNUSED, int type EINA_UNUSED, void *even
    return ECORE_CALLBACK_PASS_ON;
 }
 
-static Evas_Object *
-_e_comp_act_opacity_obj_finder(E_Object *obj)
-{
-   E_Client *ec;
-
-   switch (obj->type)
-     {
-      case E_CLIENT_TYPE:
-        return ((E_Client*)obj)->frame;
-      case E_ZONE_TYPE:
-      case E_COMP_TYPE:
-      case E_MENU_TYPE:
-        ec = e_client_focused_get();
-        return ec ? ec->frame : NULL;
-     }
-   if (e_obj_is_win(obj))
-     {
-        ec = e_win_client_get((Evas_Object *)obj);
-        return ec ? ec->frame : NULL;
-     }
-   ec = e_client_focused_get();
-   return ec ? ec->frame : NULL;
-}
-
-static void
-_e_comp_act_opacity_change_go(E_Object *obj, const char *params)
-{
-   int opacity, cur;
-   Evas_Object *o;
-
-   if ((!params) || (!params[0])) return;
-   o = _e_comp_act_opacity_obj_finder(obj);
-   if (!o) return;
-   opacity = atoi(params);
-   opacity = E_CLAMP(opacity, -255, 255);
-   evas_object_color_get(o, NULL, NULL, NULL, &cur);
-   opacity += cur;
-   opacity = E_CLAMP(opacity, 0, 255);
-   evas_object_color_set(o, opacity, opacity, opacity, opacity);
-}
-
-static void
-_e_comp_act_opacity_set_go(E_Object * obj EINA_UNUSED, const char *params)
-{
-   int opacity;
-   Evas_Object *o;
-
-   if ((!params) || (!params[0])) return;
-   o = _e_comp_act_opacity_obj_finder(obj);
-   if (!o) return;
-   opacity = atoi(params);
-   opacity = E_CLAMP(opacity, 0, 255);
-   evas_object_color_set(o, opacity, opacity, opacity, opacity);
-}
-
-static void
-_e_comp_act_redirect_toggle_go(E_Object * obj EINA_UNUSED, const char *params EINA_UNUSED)
-{
-   e_comp_client_redirect_toggle(e_client_focused_get());
-}
-
 static void
 _e_launchscreen_free(E_Launch_Screen *plscrn)
 {
@@ -1081,6 +985,8 @@ error:
 EINTERN Eina_Bool
 e_comp_init(void)
 {
+   E_Module *_mod;
+
    _e_comp_log_dom = eina_log_domain_register("e_comp", EINA_COLOR_YELLOW);
    eina_log_domain_level_set("e_comp", EINA_LOG_LEVEL_INFO);
 
@@ -1094,15 +1000,20 @@ e_comp_init(void)
 
    ignores = eina_hash_pointer_new(NULL);
 
+   e_main_ts("\tE_Comp_Data Init");
    e_comp_cfdata_edd_init(&conf_edd, &conf_match_edd);
+   e_main_ts("\tE_Comp_Data Init Done");
+
+   e_main_ts("\tE_Comp_Data Load");
    conf = e_config_domain_load("e_comp", conf_edd);
-   if (conf)
+   e_main_ts("\tE_Comp_Data Load Done");
+
+   if (!conf)
      {
-        conf->max_unmapped_pixels = 32 * 1024;
-        conf->keep_unmapped = 1;
+        e_main_ts("\tE_Comp_Data New");
+        conf = e_comp_cfdata_config_new();
+        e_main_ts("\tE_Comp_Data New Done");
      }
-   else
-     conf = e_comp_cfdata_config_new();
 
    // comp config versioning - add this in. over time add epochs etc. if
    // necessary, but for now a simple version number will do
@@ -1121,309 +1032,29 @@ e_comp_init(void)
         conf->version = E_COMP_VERSION;
      }
 
-   {
-      E_Action *act;
-
-      if ((act = e_action_add("opacity_change")))
-        {
-           act->func.go = _e_comp_act_opacity_change_go;
-           e_action_predef_name_set(N_("Compositor"),
-                                    N_("Change current window opacity"), "opacity_change",
-                                    NULL, "syntax: +/- the amount to change opacity by (>0 for more opaque)", 1);
-           actions = eina_list_append(actions, act);
-        }
-
-      if ((act = e_action_add("opacity_set")))
-        {
-           act->func.go = _e_comp_act_opacity_set_go;
-           e_action_predef_name_set(N_("Compositor"),
-                                    N_("Set current window opacity"), "opacity_set",
-                                    "255", "syntax: number between 0-255 to set for transparent-opaque", 1);
-           actions = eina_list_append(actions, act);
-        }
-
-      if ((act = e_action_add("redirect_toggle")))
-        {
-           act->func.go = _e_comp_act_redirect_toggle_go;
-           e_action_predef_name_set(N_("Compositor"),
-                                    N_("Toggle focused client's redirect state"), "redirect_toggle",
-                                    NULL, NULL, 0);
-           actions = eina_list_append(actions, act);
-        }
-   }
-
    e_comp_new();
-   e_comp->comp_type = E_PIXMAP_TYPE_NONE;
 
-   {
-      const char *gl;
+   _mod = e_module_new("wl_drm");
+   EINA_SAFETY_ON_NULL_RETURN_VAL(_mod, EINA_FALSE);
 
-      gl = getenv("E_COMP_ENGINE");
-      if (gl)
-        {
-           int val;
+   e_comp->comp_type = E_PIXMAP_TYPE_WL;
 
-           val = strtol(gl, NULL, 10);
-           if ((val == E_COMP_ENGINE_SW) || (val == E_COMP_ENGINE_GL))
-             e_comp_config_get()->engine = val;
-           else if (!strcmp(gl, "gl"))
-             e_comp_config_get()->engine = E_COMP_ENGINE_GL;
-           else if (!strcmp(gl, "sw"))
-             e_comp_config_get()->engine = E_COMP_ENGINE_SW;
-        }
-   }
-   {
-      const char *eng;
-      
-      eng = getenv("E_WL_FORCE");
-      if (eng)
-        {
-           char buf[128];
-
-           snprintf(buf, sizeof(buf), "wl_%s", eng);
-           if (e_module_enable(e_module_new(buf)))
-             {
-                e_comp->comp_type = E_PIXMAP_TYPE_WL;
-                goto out;
-             }
-        }
-   }
-
-#ifndef HAVE_WAYLAND_ONLY
-   if (e_comp_x_init())
-     e_comp->comp_type = E_PIXMAP_TYPE_X;
-   else
-#endif
+   if (!e_module_enable(_mod))
      {
-        const char **test, *eng[] =
-        {
-#ifdef HAVE_WL_DRM
-           "wl_drm",
-#endif
-/* probably add other engines here; fb should be last? */
-#ifdef HAVE_WL_FB
-           "wl_fb",
-#endif
-           "wl_desktop_shell",
-           NULL
-        };
-
-        e_util_env_set("HYBRIS_EGLPLATFORM", "wayland");
-        for (test = eng; *test; test++)
-          {
-             if (e_module_enable(e_module_new(*test)))
-               {
-                  e_comp->comp_type = E_PIXMAP_TYPE_WL;
-                  goto out;
-               }
-          }
+        ERR("Fail to enable wl_drm module");
         return EINA_FALSE;
      }
-//#ifdef HAVE_WAYLAND_CLIENTS
-   //e_comp_wl_init();
-//#endif
-   if (e_comp->comp_type == E_PIXMAP_TYPE_NONE) return EINA_FALSE;
-out:
-   if (e_comp->comp_type == E_PIXMAP_TYPE_WL)
-     {
-        e_comp_canvas_fake_layers_init();
-        e_screensaver_update();
-     }
-#ifndef ENABLE_QUICK_INIT
-   e_comp->elm = elm_win_fake_add(e_comp->ee);
-   elm_win_fullscreen_set(e_comp->elm, 1);
-   evas_object_show(e_comp->elm);
-#endif
-   e_util_env_set("HYBRIS_EGLPLATFORM", NULL);
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_ON, _e_comp_screensaver_on, NULL);
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_OFF, _e_comp_screensaver_off, NULL);
 
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN, _e_comp_key_down, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_SIGNAL_USER, _e_comp_signal_user, NULL);
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD, _e_comp_object_add, NULL);
+   e_comp_canvas_fake_layers_init();
+   e_screensaver_update();
+
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_ON,  _e_comp_screensaver_on,  NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_OFF, _e_comp_screensaver_off, NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN,    _e_comp_key_down,        NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_SIGNAL_USER, _e_comp_signal_user,     NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD, _e_comp_object_add,      NULL);
 
    return EINA_TRUE;
-}
-
-static Eina_Bool
-_style_demo(void *data)
-{
-   Eina_List *style_shadows, *l;
-   int demo_state;
-   const E_Comp_Demo_Style_Item *it;
-
-   demo_state = (long)evas_object_data_get(data, "style_demo_state");
-   demo_state = (demo_state + 1) % 4;
-   evas_object_data_set(data, "style_demo_state", (void *)(long)demo_state);
-
-   style_shadows = evas_object_data_get(data, "style_shadows");
-   EINA_LIST_FOREACH(style_shadows, l, it)
-     {
-        Evas_Object *ob = it->preview;
-        Evas_Object *of = it->frame;
-
-        switch (demo_state)
-          {
-           case 0:
-             edje_object_signal_emit(ob, "e,state,visible", "e");
-             edje_object_signal_emit(ob, "e,state,focused", "e");
-             edje_object_part_text_set(of, "e.text.label", _("Visible"));
-             break;
-
-           case 1:
-             edje_object_signal_emit(ob, "e,state,unfocused", "e");
-             edje_object_part_text_set(of, "e.text.label", _("Focus-Out"));
-             break;
-
-           case 2:
-             edje_object_signal_emit(ob, "e,state,focused", "e");
-             edje_object_part_text_set(of, "e.text.label", _("Focus-In"));
-             break;
-
-           case 3:
-             edje_object_signal_emit(ob, "e,state,hidden", "e");
-             edje_object_part_text_set(of, "e.text.label", _("Hidden"));
-             break;
-
-           default:
-             break;
-          }
-     }
-   return ECORE_CALLBACK_RENEW;
-}
-
-static void
-_style_selector_del(void *data       EINA_UNUSED,
-                    Evas *e,
-                    Evas_Object *o,
-                    void *event_info EINA_UNUSED)
-{
-   Eina_List *style_shadows, *style_list;
-   Ecore_Timer *timer;
-   Evas_Object *orec0;
-
-   orec0 = evas_object_name_find(e, "style_shadows");
-   style_list = evas_object_data_get(orec0, "list");
-
-   style_shadows = evas_object_data_get(o, "style_shadows");
-   if (style_shadows)
-     {
-        E_Comp_Demo_Style_Item *ds_it;
-
-        EINA_LIST_FREE(style_shadows, ds_it)
-          {
-             style_list = eina_list_remove(style_list, ds_it);
-
-             evas_object_del(ds_it->frame);
-             evas_object_del(ds_it->livethumb);
-             free(ds_it);
-          }
-        evas_object_data_set(o, "style_shadows", NULL);
-     }
-
-   timer = evas_object_data_get(o, "style_timer");
-   if (timer)
-     {
-        ecore_timer_del(timer);
-        evas_object_data_set(o, "style_timer", NULL);
-     }
-
-   evas_object_data_set(orec0, "list", style_list);
-}
-
-EINTERN Evas_Object *
-e_comp_style_selector_create(Evas *evas, const char **source)
-{
-   Evas_Object *oi, *ob, *oo, *obd, *orec, *oly, *orec0;
-   Eina_List *styles, *l, *style_shadows = NULL, *style_list;
-   char *style;
-   const char *str;
-   int n, sel;
-   Evas_Coord wmw, wmh;
-   Ecore_Timer *timer;
-
-   orec0 = evas_object_name_find(evas, "style_shadows");
-   style_list = evas_object_data_get(orec0, "list");
-   oi = e_widget_ilist_add(evas, 80, 80, source);
-   evas_object_event_callback_add(oi, EVAS_CALLBACK_DEL,
-                                  _style_selector_del, oi);
-   sel = 0;
-   styles = e_theme_comp_frame_list();
-   n = 0;
-   EINA_LIST_FOREACH(styles, l, style)
-     {
-        E_Comp_Demo_Style_Item *ds_it;
-        char buf[4096];
-
-        ds_it = malloc(sizeof(E_Comp_Demo_Style_Item));
-
-        ob = e_livethumb_add(evas);
-        ds_it->livethumb = ob;
-        e_livethumb_vsize_set(ob, 240, 240);
-
-        oly = e_layout_add(e_livethumb_evas_get(ob));
-        ds_it->layout = ob;
-        e_layout_virtual_size_set(oly, 240, 240);
-        e_livethumb_thumb_set(ob, oly);
-        evas_object_show(oly);
-
-        oo = edje_object_add(e_livethumb_evas_get(ob));
-        ds_it->preview = oo;
-        snprintf(buf, sizeof(buf), "e/comp/frame/%s", style);
-        e_theme_edje_object_set(oo, "base/theme/borders", buf);
-        e_layout_pack(oly, oo);
-        e_layout_child_move(oo, 39, 39);
-        e_layout_child_resize(oo, 162, 162);
-        edje_object_signal_emit(oo, "e,state,visible", "e");
-        edje_object_signal_emit(oo, "e,state,focused", "e");
-        evas_object_show(oo);
-
-        ds_it->frame = edje_object_add(evas);
-        e_theme_edje_object_set
-          (ds_it->frame, "base/theme/comp", "e/comp/preview");
-        edje_object_part_swallow(ds_it->frame, "e.swallow.preview", ob);
-        evas_object_show(ds_it->frame);
-        style_shadows = eina_list_append(style_shadows, ds_it);
-
-        obd = edje_object_add(e_livethumb_evas_get(ob));
-        ds_it->border = obd;
-        e_theme_edje_object_set(obd, "base/theme/borders",
-                                "e/widgets/border/default/border");
-        edje_object_part_text_set(obd, "e.text.title", _("Title"));
-        edje_object_signal_emit(obd, "e,state,shadow,on", "e");
-        edje_object_part_swallow(oo, "e.swallow.content", obd);
-        evas_object_show(obd);
-
-        orec = evas_object_rectangle_add(e_livethumb_evas_get(ob));
-        ds_it->client = orec;
-        evas_object_color_set(orec, 0, 0, 0, 128);
-        edje_object_part_swallow(obd, "e.swallow.client", orec);
-        evas_object_show(orec);
-
-        e_widget_ilist_append(oi, ds_it->frame, style, NULL, NULL, style);
-        evas_object_show(ob);
-        if (*source)
-          {
-             if (!strcmp(*source, style)) sel = n;
-          }
-        n++;
-
-        style_list = eina_list_append(style_list, ds_it);
-     }
-   evas_object_data_set(orec0, "list", style_list);
-   evas_object_data_set(oi, "style_shadows", style_shadows);
-   timer = ecore_timer_add(3.0, _style_demo, oi);
-   evas_object_data_set(oi, "style_timer", timer);
-   evas_object_data_set(oi, "style_demo_state", (void *)1);
-   e_widget_size_min_get(oi, &wmw, &wmh);
-   e_widget_size_min_set(oi, 160, 100);
-   e_widget_ilist_selected_set(oi, sel);
-   e_widget_ilist_go(oi);
-
-   EINA_LIST_FREE(styles, str)
-     eina_stringshare_del(str);
-
-   return oi;
 }
 
 E_API E_Comp *
@@ -1464,9 +1095,7 @@ e_comp_shutdown(void)
         _e_launchscreen_free(e_comp->launchscrn);
      }
 
-#ifdef HAVE_WAYLAND
    e_comp_wl_shutdown();
-#endif
 
    e_object_del(E_OBJECT(e_comp));
    E_FREE_LIST(handlers, ecore_event_handler_del);
@@ -1490,31 +1119,37 @@ E_API void
 e_comp_deferred_job(void)
 {
    /* Add elm fake win */
-   e_comp->elm = elm_win_fake_add(e_comp->ee);
-   evas_object_show(e_comp->elm);
+   //e_comp->elm = elm_win_fake_add(e_comp->ee);
+   //evas_object_show(e_comp->elm);
 
    /* Bg update */
+   e_main_ts("\tE_BG_Zone Update");
    if (e_zone_current_get()->bg_object)
      e_bg_zone_update(e_zone_current_get(), E_BG_TRANSITION_DESK);
    else
      e_bg_zone_update(e_zone_current_get(), E_BG_TRANSITION_START);
+   e_main_ts("\tE_BG_Zone Update Done");
 
    /* Pointer setting */
+   e_main_ts("\tE_Pointer New");
    if (!e_comp->pointer)
      {
         e_comp->pointer = e_pointer_canvas_new(e_comp->ee, EINA_TRUE);
         e_pointer_hide(e_comp->pointer);
      }
+   e_main_ts("\tE_Pointer New Done");
 
    /* launchscreen setting */
+   e_main_ts("\tLaunchScrn New");
    if (!e_comp->launchscrn)
      {
         e_comp->launchscrn = _e_launchscreen_new(e_comp->ee);
      }
+   e_main_ts("\tLaunchScrn Done");
 
-#if defined(HAVE_WAYLAND_CLIENTS) || defined(HAVE_WAYLAND_ONLY)
+   e_main_ts("\tE_Comp_Wl_Deferred");
    e_comp_wl_deferred_job();
-#endif
+   e_main_ts("\tE_Comp_Wl_Deferred Done");
 }
 
 E_API void
@@ -1536,10 +1171,11 @@ e_comp_render_queue(void)
      }
 }
 
+// TODO: shoulde be removed - yigl
 E_API void
 e_comp_shape_queue(void)
 {
-   if ((e_comp->comp_type != E_PIXMAP_TYPE_X) && (!e_comp_util_has_x())) return;
+   if (e_comp->comp_type != E_PIXMAP_TYPE_X) return;
    if (!e_comp->shape_job)
      e_comp->shape_job = ecore_job_add(_e_comp_shapes_update_job, NULL);
 }
@@ -1658,34 +1294,6 @@ e_comp_override_add()
    if ((e_comp->nocomp_override > 0) && (e_comp->nocomp)) _e_comp_nocomp_end();
 }
 
-#if 0
-FIXME
-E_API void
-e_comp_block_window_add(void)
-{
-   e_comp->block_count++;
-   if (e_comp->block_win) return;
-   e_comp->block_win = ecore_x_window_new(e_comp->root, 0, 0, e_comp->w, e_comp->h);
-   INF("BLOCK WIN: %x", e_comp->block_win);
-   ecore_x_window_background_color_set(e_comp->block_win, 0, 0, 0);
-   e_comp_ignore_win_add(e_comp->block_win);
-   ecore_x_window_configure(e_comp->block_win,
-     ECORE_X_WINDOW_CONFIGURE_MASK_SIBLING | ECORE_X_WINDOW_CONFIGURE_MASK_STACK_MODE,
-     0, 0, 0, 0, 0, ((E_Comp_Win*)e_comp->wins)->win, ECORE_X_WINDOW_STACK_ABOVE);
-   ecore_x_window_show(e_comp->block_win);
-}
-
-E_API void
-e_comp_block_window_del(void)
-{
-   if (!e_comp->block_count) return;
-   e_comp->block_count--;
-   if (e_comp->block_count) return;
-   if (e_comp->block_win) ecore_x_window_free(e_comp->block_win);
-   e_comp->block_win = 0;
-}
-#endif
-
 E_API E_Comp *
 e_comp_find_by_window(Ecore_Window win)
 {
@@ -1706,23 +1314,12 @@ e_comp_override_timed_pop(void)
 E_API unsigned int
 e_comp_e_object_layer_get(const E_Object *obj)
 {
-   E_Gadcon *gc = NULL;
    E_Client *ec = NULL;
 
    if (!obj) return 0;
 
    switch (obj->type)
      {
-      case E_GADCON_CLIENT_TYPE:
-        gc = ((E_Gadcon_Client *)(obj))->gadcon;
-        EINA_SAFETY_ON_NULL_RETURN_VAL(gc, 0);
-        /* no break */
-      case E_GADCON_TYPE:
-        if (!gc) gc = (E_Gadcon *)obj;
-        if (gc->shelf) return gc->shelf->layer;
-        if (!gc->toolbar) return E_LAYER_DESKTOP;
-        return e_win_client_get(gc->toolbar->fwin)->layer;
-
       case E_ZONE_TYPE:
         return E_LAYER_DESKTOP;
 
@@ -1829,13 +1426,13 @@ e_comp_ungrab_input(Eina_Bool mouse, Eina_Bool kbd)
 E_API Eina_Bool
 e_comp_util_kbd_grabbed(void)
 {
-   return e_menu_grab_window_get() || e_client_action_get() || e_grabinput_key_win_get();
+   return e_client_action_get() || e_grabinput_key_win_get();
 }
 
 E_API Eina_Bool
 e_comp_util_mouse_grabbed(void)
 {
-   return e_menu_grab_window_get() || e_client_action_get() || e_grabinput_mouse_win_get();
+   return e_client_action_get() || e_grabinput_mouse_win_get();
 }
 
 E_API void

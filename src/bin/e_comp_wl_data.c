@@ -297,34 +297,16 @@ _e_comp_wl_data_device_drag_finished(E_Drag *drag, int dropped)
    e_screensaver_inhibit_toggle(0);
    if (e_comp_wl->selection.target && (!dropped))
      {
-#ifndef HAVE_WAYLAND_ONLY
-        if (e_client_has_xwindow(e_comp_wl->selection.target))
-          {
-             ecore_x_client_message32_send(e_client_util_win_get(e_comp_wl->selection.target),
-               ECORE_X_ATOM_XDND_DROP, ECORE_X_EVENT_MASK_NONE,
-               e_comp->cm_selection, 0, ecore_x_current_time_get(), 0, 0);
-          }
-        else
-#endif
-          {
-             struct wl_resource *res;
+        struct wl_resource *res;
 
-             res = e_comp_wl_data_find_for_client(wl_resource_get_client(e_comp_wl->selection.target->comp_data->surface));
-             if (res)
-               {
-                  wl_data_device_send_drop(res);
-                  wl_data_device_send_leave(res);
-               }
-#ifndef HAVE_WAYLAND_ONLY
-             if (e_comp_util_has_xwayland())
-               {
-                  ecore_x_selection_owner_set(0, ECORE_X_ATOM_SELECTION_XDND, ecore_x_current_time_get());
-                  ecore_x_window_hide(e_comp->cm_selection);
-               }
-#endif
-             e_comp_wl->selection.target = NULL;
-             e_comp_wl->drag_source = NULL;
+        res = e_comp_wl_data_find_for_client(wl_resource_get_client(e_comp_wl->selection.target->comp_data->surface));
+        if (res)
+          {
+             wl_data_device_send_drop(res);
+             wl_data_device_send_leave(res);
           }
+        e_comp_wl->selection.target = NULL;
+        e_comp_wl->drag_source = NULL;
      }
 }
 
@@ -376,13 +358,6 @@ _e_comp_wl_data_device_cb_drag_start(struct wl_client *client, struct wl_resourc
    if (ec)
      e_drag_object_set(e_comp_wl->drag, ec->frame);
    e_drag_start(e_comp_wl->drag, x, y);
-#ifndef HAVE_WAYLAND_ONLY
-   if (e_comp_util_has_xwayland())
-     {
-        ecore_x_window_show(e_comp->cm_selection);
-        ecore_x_selection_owner_set(e_comp->cm_selection, ECORE_X_ATOM_SELECTION_XDND, ecore_x_current_time_get());
-     }
-#endif
    if (e_comp_wl->ptr.ec)
      e_comp_wl_data_device_send_enter(e_comp_wl->ptr.ec);
    e_screensaver_inhibit_toggle(1);
@@ -678,44 +653,6 @@ e_comp_wl_data_device_send_enter(E_Client *ec)
    e_comp_wl->selection.target = ec;
    evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_DEL, _e_comp_wl_data_device_target_del, ec);
 
-#ifndef HAVE_WAYLAND_ONLY
-   if (e_client_has_xwindow(ec))
-     {
-        int d1 = 0x5UL, d2, d3, d4;
-        E_Comp_Wl_Data_Source *source;
-
-        d2 = d3 = d4 = 0;
-        source = e_comp_wl->drag_source;
-
-        if (eina_array_count(source->mime_types) > 3)
-          {
-             const char *type, *types[eina_array_count(source->mime_types)];
-             int i = 0;
-             Eina_Iterator *it;
-
-             d1 |= 0x1UL;
-             it = eina_array_iterator_new(source->mime_types);
-             EINA_ITERATOR_FOREACH(it, type)
-               types[i++] = type;
-             eina_iterator_free(it);
-             ecore_x_dnd_types_set(e_comp->cm_selection, types, i);
-          }
-        else if (source->mime_types)
-          {
-             if (eina_array_count(source->mime_types))
-               d2 = ecore_x_atom_get(eina_array_data_get(source->mime_types, 0));
-             if (eina_array_count(source->mime_types) > 1)
-               d3 = ecore_x_atom_get(eina_array_data_get(source->mime_types, 1));
-             if (eina_array_count(source->mime_types) > 2)
-               d4 = ecore_x_atom_get(eina_array_data_get(source->mime_types, 2));
-          }
-
-        ecore_x_client_message32_send(e_client_util_win_get(ec),
-          ECORE_X_ATOM_XDND_ENTER, ECORE_X_EVENT_MASK_NONE,
-          e_comp->cm_selection, d1, d2, d3, d4);
-        return;
-     }
-#endif
    x = wl_fixed_to_int(e_comp_wl->ptr.x) - e_comp_wl->selection.target->client.x;
    y = wl_fixed_to_int(e_comp_wl->ptr.y) - e_comp_wl->selection.target->client.y;
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
@@ -732,15 +669,6 @@ e_comp_wl_data_device_send_leave(E_Client *ec)
    evas_object_event_callback_del_full(ec->frame, EVAS_CALLBACK_DEL, _e_comp_wl_data_device_target_del, ec);
    if (e_comp_wl->selection.target == ec)
      e_comp_wl->selection.target = NULL;
-#ifndef HAVE_WAYLAND_ONLY
-   if (e_client_has_xwindow(ec))
-     {
-        ecore_x_client_message32_send(e_client_util_win_get(ec),
-               ECORE_X_ATOM_XDND_LEAVE, ECORE_X_EVENT_MASK_NONE,
-               e_comp->cm_selection, 0, 0, 0, 0);
-        return;
-     }
-#endif
    res = e_comp_wl_data_find_for_client(wl_resource_get_client(ec->comp_data->surface));
    if (res)
      wl_data_device_send_leave(res);
@@ -780,23 +708,6 @@ e_comp_wl_data_device_keyboard_focus_set(void)
      }
    source = (E_Comp_Wl_Data_Source*)e_comp_wl->selection.data_source;
 
-#ifndef HAVE_WAYLAND_ONLY
-   do
-     {
-        if (!e_comp_util_has_xwayland()) break;
-        if (e_comp_wl->clipboard.xwl_owner)
-          {
-             if (e_client_has_xwindow(e_client_focused_get())) return;
-             break;
-          }
-        else if (source && e_client_has_xwindow(e_client_focused_get()))
-          {
-             /* wl -> x11 */
-             ecore_x_selection_owner_set(e_comp->cm_selection, ECORE_X_ATOM_SELECTION_CLIPBOARD, ecore_x_current_time_get());
-             return;
-          }
-     } while (0);
-#endif
    data_device_res =
       e_comp_wl_data_find_for_client(wl_resource_get_client(focus));
    if (!data_device_res) return;

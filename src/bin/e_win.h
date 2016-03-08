@@ -37,7 +37,9 @@ e_obj_is_win(const void *obj)
    return type && !strcmp(type, "elm_win");
 }
 
-E_API Evas_Object *e_elm_win_add(Evas_Object *parent, const char *name, Elm_Win_Type type);
+// FIXME
+//E_API Evas_Object *e_elm_win_add(Evas_Object *parent, const char *name, Elm_Win_Type type);
+E_API Evas_Object *e_elm_win_add(Evas_Object *parent, const char *name, int type);
 
 #define elm_win_add(X, Y, Z) \
    e_elm_win_add((X), (Y), (Z))
