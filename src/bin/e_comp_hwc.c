@@ -31,7 +31,8 @@ struct _E_Comp_Hwc_Layer {
    int index;
    tdm_layer *tlayer;
    struct gbm_surface *gsurface;
-   struct gbm_bo *cur_gbo;
+   tbm_surface_queue_h tqueue;
+   tbm_surface_h tsurface;
    int zpos;
    E_Client *ec;
    E_Client *disp_ec;
@@ -65,6 +66,28 @@ struct _E_Comp_Hwc {
 
 // Global variable.
 static E_Comp_Hwc *g_hwc = NULL;
+
+static tbm_surface_h
+_e_comp_hwc_queue_aquire(tbm_surface_queue_h tqueue)
+{
+   tbm_surface_h tsurface = NULL;
+   int num_duty;
+
+   if ((num_duty = tbm_surface_queue_can_acquire(tqueue, 0)))
+     {
+        if (tbm_surface_queue_acquire(tqueue, &tsurface) != TBM_SURFACE_QUEUE_ERROR_NONE)
+          return NULL;
+     }
+
+   return tsurface;
+}
+
+static void
+_e_comp_hwc_queue_release(tbm_surface_queue_h tqueue, tbm_surface_h tbm_surface)
+{
+   tbm_surface_queue_release(tqueue, tbm_surface);
+}
+
 
 Evas_Engine_Info_GL_Drm *
 _e_comp_hwc_get_evas_engine_info_gl_drm(E_Comp_Hwc *hwc)
@@ -210,14 +233,13 @@ _e_comp_hwc_output_commit_handler(tdm_output *output, unsigned int sequence,
      {
         hwc_layer->hwc->einfo->info.wait_for_showup = EINA_FALSE;
 
-        // release buffer
-        gbm_surface_release_buffer(hwc_layer->gsurface, hwc_layer->cur_gbo);
+        _e_comp_hwc_queue_release(hwc_layer->tqueue, hwc_layer->tsurface);
         INF("HWC: Canvas commit is done. Layer # is %d", hwc_layer->index);
      }
    else
      {
         ec = hwc_layer->disp_ec;
- 
+
         // release buffer
         e_pixmap_image_clear(ec->pixmap, 1);
         INF("HWC: E_Client commit is done. Layer # is %d", hwc_layer->index);
@@ -286,7 +308,6 @@ _e_comp_hwc_display_canvas(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void *ev
    E_Comp_Hwc_Layer *hwc_layer;
    Eina_List *l_o, *ll_o;
    tdm_output_conn_status conn_status;
-   tbm_surface_h tsurface = NULL;
 
    if (!hwc) return;
 
@@ -323,25 +344,26 @@ _e_comp_hwc_display_canvas(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void *ev
           }
         hwc_layer = hwc_output->primary_layer;
         if (hwc_layer->gsurface != einfo->info.surface)
-           hwc_layer->gsurface = einfo->info.surface;
-
-        hwc_layer->cur_gbo = gbm_surface_lock_front_buffer(hwc_layer->gsurface);
-        if (!hwc_layer->cur_gbo)
           {
-             ERR("hwc_layer->cur_gbo is NULL");
-             continue;
-          }
-        tsurface = gbm_tbm_get_surface(hwc_layer->cur_gbo);
-        if (!tsurface)
-          {
-             gbm_surface_release_buffer(hwc_layer->gsurface, hwc_layer->cur_gbo);
-             ERR("fail to get tsurface");
-             continue;
+             hwc_layer->gsurface = einfo->info.surface;
+             hwc_layer->tqueue = gbm_tbm_get_surface_queue(hwc_layer->gsurface);
+             if (hwc_layer->tqueue)
+               {
+                  ERR("no hwc_layer->tqueue");
+                  continue;
+               }
           }
 
-        if (!_e_comp_hwc_output_commit(hwc_output, hwc_layer, tsurface))
+        hwc_layer->tsurface = _e_comp_hwc_queue_aquire(hwc_layer->tqueue);
+        if (!hwc_layer->tsurface)
           {
-             gbm_surface_release_buffer(hwc_layer->gsurface, hwc_layer->cur_gbo);
+             ERR("hwc_layer->tsurface is NULL");
+             continue;
+          }
+
+        if (!_e_comp_hwc_output_commit(hwc_output, hwc_layer, hwc_layer->tsurface))
+          {
+             _e_comp_hwc_queue_release(hwc_layer->tqueue, hwc_layer->tsurface);
              ERR("fail to _e_comp_hwc_output_commit");
              continue;
           }
@@ -601,7 +623,7 @@ e_comp_hwc_mode_update(void)
                INF("HWC: NOCOMPOSITE Mode ec(%p) ==> ec(%p)", e_comp->nocomp_ec, ec);
              else
                INF("HWC: NOCOMPOSITE Mode ec(%p)", ec);
-             
+
              hwc_output->mode = E_HWC_MODE_NO_COMPOSITE;
              hwc_output->primary_layer->ec = ec;
              e_comp->nocomp = EINA_TRUE;
