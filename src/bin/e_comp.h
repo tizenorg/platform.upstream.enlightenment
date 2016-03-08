@@ -95,7 +95,7 @@ struct _E_Comp
    Ecore_Window  root;
    Ecore_Evas     *ee;
    Ecore_Window  ee_win;
-   Evas_Object    *elm;
+   //Evas_Object    *elm;
    Evas           *evas;
    Evas_Object    *bg_blank_object;
    Eina_List      *zones;
@@ -204,7 +204,6 @@ typedef enum
 } E_Comp_Engine;
 
 extern E_API E_Comp *e_comp;
-extern E_API E_Comp_X_Data *e_comp_x;
 extern E_API E_Comp_Wl_Data *e_comp_wl;
 
 EINTERN Eina_Bool e_comp_init(void);
@@ -225,8 +224,6 @@ E_API void e_comp_ignore_win_del(E_Pixmap_Type type, Ecore_Window win);
 E_API Eina_Bool e_comp_ignore_win_find(Ecore_Window win);
 E_API void e_comp_override_del(void);
 E_API void e_comp_override_add(void);
-E_API void e_comp_block_window_add(void);
-E_API void e_comp_block_window_del(void);
 E_API E_Comp *e_comp_find_by_window(Ecore_Window win);
 E_API void e_comp_override_timed_pop(void);
 E_API unsigned int e_comp_e_object_layer_get(const E_Object *obj);
@@ -241,11 +238,6 @@ E_API void e_comp_button_bindings_ungrab_all(void);
 E_API void e_comp_client_redirect_toggle(E_Client *ec);
 E_API Eina_Bool e_comp_util_object_is_above_nocomp(Evas_Object *obj);
 
-EINTERN Evas_Object *e_comp_style_selector_create(Evas *evas, const char **source);
-E_API E_Config_Dialog *e_int_config_comp(Evas_Object *parent, const char *params);
-E_API E_Config_Dialog *e_int_config_comp_match(Evas_Object *parent, const char *params);
-
-
 E_API Eina_Bool e_comp_util_kbd_grabbed(void);
 E_API Eina_Bool e_comp_util_mouse_grabbed(void);
 
@@ -259,18 +251,6 @@ e_comp_util_client_is_fullscreen(const E_Client *ec)
        ((ec->client.h) >= e_comp->h) &&
        (!ec->argb) && (!ec->shaped)
        );
-}
-
-static inline Eina_Bool
-e_comp_util_has_x(void)
-{
-   return !!e_comp->root;
-}
-
-static inline Eina_Bool
-e_comp_util_has_xwayland(void)
-{
-   return (e_comp->comp_type != E_PIXMAP_TYPE_X) && e_comp_util_has_x();
 }
 
 E_API void e_comp_post_update_add(E_Client *ec);

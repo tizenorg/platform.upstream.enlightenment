@@ -735,7 +735,7 @@ static void
 _e_xdg_shell_surface_cb_window_menu_show(struct wl_client *client EINA_UNUSED, struct wl_resource *resource, struct wl_resource *seat_resource EINA_UNUSED, uint32_t serial EINA_UNUSED, int32_t x, int32_t y)
 {
    E_Client *ec;
-   double timestamp;
+   //double timestamp;
 
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
@@ -746,8 +746,8 @@ _e_xdg_shell_surface_cb_window_menu_show(struct wl_client *client EINA_UNUSED, s
         return;
      }
 
-   timestamp = ecore_loop_time_get();
-   e_int_client_menu_show(ec, x, y, 0, timestamp);
+   //timestamp = ecore_loop_time_get();
+   //e_int_client_menu_show(ec, x, y, 0, timestamp);
 }
 
 static void

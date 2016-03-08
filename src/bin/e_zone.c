@@ -13,7 +13,6 @@ static void        _e_zone_cb_bg_mouse_up(void *data,
                                           Evas *evas,
                                           Evas_Object *obj,
                                           void *event_info);
-static Eina_Bool   _e_zone_cb_edge_timer(void *data);
 static void        _e_zone_event_generic_free(void *data, void *ev);
 static void        _e_zone_object_del_attach(void *o);
 static E_Zone_Edge _e_zone_detect_edge(E_Zone *zone, Evas_Object *obj);
@@ -36,10 +35,10 @@ E_API int E_EVENT_ZONE_ROTATION_CHANGE_END = 0;
 #endif
 E_API int E_EVENT_ZONE_DISPLAY_STATE_CHANGE = 0;
 
-#define E_ZONE_FLIP_LEFT(zone)  (((e_config->desk_flip_wrap && ((zone)->desk_x_count > 1)) || ((zone)->desk_x_current > 0)) && (zone)->edge.left)
-#define E_ZONE_FLIP_RIGHT(zone) (((e_config->desk_flip_wrap && ((zone)->desk_x_count > 1)) || (((zone)->desk_x_current + 1) < (zone)->desk_x_count)) && (zone)->edge.right)
-#define E_ZONE_FLIP_UP(zone)    (((e_config->desk_flip_wrap && ((zone)->desk_y_count > 1)) || ((zone)->desk_y_current > 0)) && (zone)->edge.top)
-#define E_ZONE_FLIP_DOWN(zone)  (((e_config->desk_flip_wrap && ((zone)->desk_y_count > 1)) || (((zone)->desk_y_current + 1) < (zone)->desk_y_count)) && (zone)->edge.bottom)
+#define E_ZONE_FLIP_LEFT(zone)  (((((zone)->desk_x_count > 1)) || ((zone)->desk_x_current > 0)) && (zone)->edge.left)
+#define E_ZONE_FLIP_RIGHT(zone) (((((zone)->desk_x_count > 1)) || (((zone)->desk_x_current + 1) < (zone)->desk_x_count)) && (zone)->edge.right)
+#define E_ZONE_FLIP_UP(zone)    (((((zone)->desk_y_count > 1)) || ((zone)->desk_y_current > 0)) && (zone)->edge.top)
+#define E_ZONE_FLIP_DOWN(zone)  (((((zone)->desk_y_count > 1)) || (((zone)->desk_y_current + 1) < (zone)->desk_y_count)) && (zone)->edge.bottom)
 
 #define E_ZONE_CORNER_RATIO 0.025;
 
@@ -209,12 +208,6 @@ e_zone_new(int num, int id, int x, int y, int w, int h)
    zone->h = h;
    zone->num = num;
    zone->id = id;
-
-   zone->useful_geometry.dirty = 1;
-   zone->useful_geometry.x = -1;
-   zone->useful_geometry.y = -1;
-   zone->useful_geometry.w = -1;
-   zone->useful_geometry.h = -1;
 
    zone->display_state = E_ZONE_DISPLAY_STATE_ON;
 
@@ -444,15 +437,6 @@ e_zone_flip_coords_handle(E_Zone *zone,
                           int x,
                           int y)
 {
-   E_Event_Zone_Edge *zev;
-   E_Binding_Edge *binding;
-   E_Zone_Edge edge;
-   Eina_List *l;
-   E_Shelf *es;
-   int ok = 0;
-   int one_row = 1;
-   int one_col = 1;
-
    E_OBJECT_CHECK(zone);
    E_OBJECT_TYPE_CHECK(zone, E_ZONE_TYPE);
 
@@ -522,126 +506,6 @@ e_zone_flip_coords_handle(E_Zone *zone,
              default: break;
           }
         if (zone->flip.switching) return;
-     }
-
-   if (!e_config->edge_flip_dragging) return;
-   /* if we have only 1 row we can flip up/down even if we have xinerama */
-   if (eina_list_count(e_comp->zones) > 1)
-     {
-        Eina_List *zones;
-        E_Zone *next_zone;
-        int cx, cy;
-
-        zones = e_comp->zones;
-        next_zone = (E_Zone *)eina_list_data_get(zones);
-        cx = next_zone->x;
-        cy = next_zone->y;
-        zones = eina_list_next(zones);
-        EINA_LIST_FOREACH(eina_list_next(zones), zones, next_zone)
-          {
-             if (next_zone->x != cx) one_col = 0;
-             if (next_zone->y != cy) one_row = 0;
-          }
-     }
-   if (!E_INSIDE(x, y, zone->x, zone->y, zone->w, zone->h))
-     goto noflip;
-   if ((one_row) && (y == 0))
-     edge = E_ZONE_EDGE_TOP;
-   else if ((one_col) && (x == (zone->w - 1)))
-     edge = E_ZONE_EDGE_RIGHT;
-   else if ((one_row) && (y == (zone->h - 1)))
-     edge = E_ZONE_EDGE_BOTTOM;
-   else if ((one_col) && (x == 0))
-     edge = E_ZONE_EDGE_LEFT;
-   else
-     {
-noflip:
-        if (zone->flip.es)
-          e_shelf_toggle(zone->flip.es, 0);
-        zone->flip.es = NULL;
-        return;
-     }
-   EINA_LIST_FOREACH(e_shelf_list(), l, es)
-     {
-        if (es->zone != zone) continue;
-        switch (es->gadcon->orient)
-          {
-           case E_GADCON_ORIENT_TOP:
-           case E_GADCON_ORIENT_CORNER_TL:
-           case E_GADCON_ORIENT_CORNER_TR:
-             if (edge == E_ZONE_EDGE_TOP) ok = 1;
-             break;
-
-           case E_GADCON_ORIENT_BOTTOM:
-           case E_GADCON_ORIENT_CORNER_BL:
-           case E_GADCON_ORIENT_CORNER_BR:
-             if (edge == E_ZONE_EDGE_BOTTOM) ok = 1;
-             break;
-
-           case E_GADCON_ORIENT_LEFT:
-           case E_GADCON_ORIENT_CORNER_LT:
-           case E_GADCON_ORIENT_CORNER_LB:
-             if (edge == E_ZONE_EDGE_LEFT) ok = 1;
-             break;
-
-           case E_GADCON_ORIENT_RIGHT:
-           case E_GADCON_ORIENT_CORNER_RT:
-           case E_GADCON_ORIENT_CORNER_RB:
-             if (edge == E_ZONE_EDGE_RIGHT) ok = 1;
-             break;
-
-           default:
-             ok = 0;
-             break;
-          }
-
-        if (!ok) continue;
-        if (!E_INSIDE(x, y, es->x, es->y, es->w, es->h))
-          continue;
-
-        if (zone->flip.es)
-          e_shelf_toggle(zone->flip.es, 0);
-
-        zone->flip.es = es;
-        e_shelf_toggle(es, 1);
-     }
-   ok = 0;
-   switch (edge)
-     {
-      case E_ZONE_EDGE_LEFT:
-        if (E_ZONE_FLIP_LEFT(zone)) ok = 1;
-        break;
-
-      case E_ZONE_EDGE_TOP:
-        if (E_ZONE_FLIP_UP(zone)) ok = 1;
-        break;
-
-      case E_ZONE_EDGE_RIGHT:
-        if (E_ZONE_FLIP_RIGHT(zone)) ok = 1;
-        break;
-
-      case E_ZONE_EDGE_BOTTOM:
-        if (E_ZONE_FLIP_DOWN(zone)) ok = 1;
-        break;
-
-      default:
-        ok = 0;
-        break;
-     }
-   if (!ok) return;
-   binding = e_bindings_edge_get("desk_flip_in_direction", edge, 0);
-   if (!binding) binding = e_bindings_edge_get("desk_flip_by", edge, 0);
-   if (binding && (!binding->timer))
-     {
-        zev = E_NEW(E_Event_Zone_Edge, 1);
-        zev->zone = zone;
-        zev->x = x;
-        zev->y = y;
-        zev->edge = edge;
-        zone->flip.ev = zev;
-        zone->flip.bind = binding;
-        zone->flip.switching = edge;
-        binding->timer = ecore_timer_add(((double)binding->delay), _e_zone_cb_edge_timer, zone);
      }
 }
 
@@ -797,22 +661,13 @@ e_zone_desk_flip_to(E_Zone *zone,
    E_OBJECT_CHECK(zone);
    E_OBJECT_TYPE_CHECK(zone, E_ZONE_TYPE);
 
-   if (e_config->desk_flip_wrap)
-     {
-        x = x % zone->desk_x_count;
-        y = y % zone->desk_y_count;
-        if (x < 0) x += zone->desk_x_count;
-        if (y < 0) y += zone->desk_y_count;
-     }
-   else
-     {
-        if (x < 0) x = 0;
-        else if (x >= zone->desk_x_count)
-          x = zone->desk_x_count - 1;
-        if (y < 0) y = 0;
-        else if (y >= zone->desk_y_count)
-          y = zone->desk_y_count - 1;
-     }
+   if (x < 0) x = 0;
+   else if (x >= zone->desk_x_count)
+     x = zone->desk_x_count - 1;
+   if (y < 0) y = 0;
+   else if (y >= zone->desk_y_count)
+     y = zone->desk_y_count - 1;
+
    desk = e_desk_at_xy_get(zone, x, y);
    if (!desk) return;
    e_desk_show(desk);
@@ -828,8 +683,7 @@ e_zone_desk_linear_flip_by(E_Zone *zone,
 
    dx = zone->desk_x_current +
      (zone->desk_y_current * zone->desk_x_count) + dx;
-   if ((!e_config->desk_flip_wrap) &&
-     ((dx < 0) || (dx >= zone->desk_x_count * zone->desk_y_count))) return;
+   if (((dx < 0) || (dx >= zone->desk_x_count * zone->desk_y_count))) return;
    dx = dx % (zone->desk_x_count * zone->desk_y_count);
    while (dx < 0)
      dx += (zone->desk_x_count * zone->desk_y_count);
@@ -1035,13 +889,13 @@ e_zone_edge_flip_eval(E_Zone *zone)
 
    lf = rf = tf = bf = EINA_TRUE;
    if (zone->desk_x_count <= 1) lf = rf = EINA_FALSE;
-   else if (!e_config->desk_flip_wrap)
+   else
      {
         if (zone->desk_x_current == 0) lf = EINA_FALSE;
         if (zone->desk_x_current == (zone->desk_x_count - 1)) rf = EINA_FALSE;
      }
    if (zone->desk_y_count <= 1) tf = bf = EINA_FALSE;
-   else if (!e_config->desk_flip_wrap)
+   else
      {
         if (zone->desk_y_current == 0) tf = EINA_FALSE;
         if (zone->desk_y_current == (zone->desk_y_count - 1)) bf = EINA_FALSE;
@@ -1114,10 +968,7 @@ e_zone_edge_new(E_Zone_Edge edge)
              break;
            default: continue;
           }
-        if (e_config->fullscreen_flip)
-          e_zone_edge_win_layer_set(zone, E_LAYER_CLIENT_EDGE_FULLSCREEN);
-        else
-          e_zone_edge_win_layer_set(zone, E_LAYER_CLIENT_EDGE);
+        e_zone_edge_win_layer_set(zone, E_LAYER_CLIENT_EDGE_FULLSCREEN);
      }
 }
 
@@ -1207,125 +1058,6 @@ E_API void
 e_zone_fade_handle(E_Zone *zone, int out, double tim)
 {
    EINA_SAFETY_ON_NULL_RETURN(zone);
-   if (out == 1)
-     {
-        if ((e_backlight_exists()) && (!e_comp_config_get()->nofade))
-          {
-             e_backlight_update();
-             zone->bloff = EINA_TRUE;
-             zone->bl = e_backlight_level_get(zone);
-             e_backlight_level_set(zone, 0.0, tim);
-          }
-     }
-   else
-     {
-        if ((e_backlight_exists()) && (!e_comp_config_get()->nofade))
-          {
-             zone->bloff = EINA_FALSE;
-             e_backlight_update();
-             if (e_backlight_mode_get(zone) != E_BACKLIGHT_MODE_NORMAL)
-               e_backlight_mode_set(zone, E_BACKLIGHT_MODE_NORMAL);
-             else
-               e_backlight_level_set(zone, e_config->backlight.normal, tim);
-          }
-     }
-}
-
-static void
-_e_zone_useful_geometry_calc(const E_Zone *zone, int dx, int dy, int *x, int *y, int *w, int *h)
-{
-   const E_Shelf *shelf;
-   Eina_List *shelves;
-   int x0, x1, yy0, yy1;
-
-   x0 = 0;
-   yy0 = 0;
-   x1 = zone->w;
-   yy1 = zone->h;
-   shelves = e_shelf_list_all();
-   EINA_LIST_FREE(shelves, shelf)
-     {
-        E_Config_Shelf_Desk *sd;
-        E_Gadcon_Orient orient;
-        Eina_List *ll;
-        int skip_shelf = 0;
-
-        if (shelf->zone != zone)
-          continue;
-
-        if (shelf->cfg)
-          {
-             if (shelf->cfg->overlap)
-               continue;
-
-             if (shelf->cfg->autohide)
-               continue;
-             orient = shelf->cfg->orient;
-
-             if (shelf->cfg->desk_show_mode)
-               {
-                  skip_shelf = 1;
-                  EINA_LIST_FOREACH(shelf->cfg->desk_list, ll, sd)
-                    {
-                       if (!sd) continue;
-                       if ((sd->x == dx) && (sd->y == dy))
-                         {
-                            skip_shelf = 0;
-                            break;
-                         }
-                    }
-                  if (skip_shelf)
-                    continue;
-               }
-          }
-        else
-          orient = shelf->gadcon->orient;
-
-        switch (orient)
-          {
-           /* these are non-edje orientations */
-           case E_GADCON_ORIENT_FLOAT:
-           case E_GADCON_ORIENT_HORIZ:
-           case E_GADCON_ORIENT_VERT:
-             break;
-
-           case E_GADCON_ORIENT_TOP:
-           case E_GADCON_ORIENT_CORNER_TL:
-           case E_GADCON_ORIENT_CORNER_TR:
-             if (yy0 < shelf->h)
-               yy0 = shelf->h;
-             break;
-
-           case E_GADCON_ORIENT_BOTTOM:
-           case E_GADCON_ORIENT_CORNER_BL:
-           case E_GADCON_ORIENT_CORNER_BR:
-             if (yy1 > zone->h - shelf->h)
-               yy1 = zone->h - shelf->h;
-             break;
-
-           case E_GADCON_ORIENT_LEFT:
-           case E_GADCON_ORIENT_CORNER_LT:
-           case E_GADCON_ORIENT_CORNER_LB:
-             if (x0 < shelf->w)
-               x0 = shelf->w;
-             break;
-
-           case E_GADCON_ORIENT_RIGHT:
-           case E_GADCON_ORIENT_CORNER_RT:
-           case E_GADCON_ORIENT_CORNER_RB:
-             if (x1 > zone->w - shelf->w)
-               x1 = zone->w - shelf->w;
-             break;
-
-           default:
-             break;
-          }
-     }
-
-   if (x) *x = zone->x + x0;
-   if (y) *y = zone->y + yy0;
-   if (w) *w = x1 - x0;
-   if (h) *h = yy1 - yy0;
 }
 
 /**
@@ -1338,55 +1070,13 @@ e_zone_useful_geometry_get(E_Zone *zone,
                            int *w,
                            int *h)
 {
-   E_Shelf *shelf;
-   int zx, zy, zw, zh;
-   Eina_Bool calc = EINA_TRUE;
-
    E_OBJECT_CHECK(zone);
    E_OBJECT_TYPE_CHECK(zone, E_ZONE_TYPE);
 
-   if (!zone->useful_geometry.dirty)
-     {
-        Eina_List *l = e_shelf_list_all();
-        calc = EINA_FALSE;
-        EINA_LIST_FREE(l, shelf)
-          {
-             if (!shelf->cfg) continue;
-             if (shelf->cfg->desk_show_mode)
-               {
-                  _e_zone_useful_geometry_calc(zone, zone->desk_x_current, zone->desk_y_current, &zx, &zy, &zw, &zh);
-                  calc = EINA_TRUE;
-                  break;
-               }
-          }
-        eina_list_free(l);
-     }
-   else
-     _e_zone_useful_geometry_calc(zone, zone->desk_x_current, zone->desk_y_current, &zx, &zy, &zw, &zh);
-   zone->useful_geometry.dirty = 0;
-   if (calc)
-     {
-        zone->useful_geometry.x = zx;
-        zone->useful_geometry.y = zy;
-        zone->useful_geometry.w = zw;
-        zone->useful_geometry.h = zh;
-     }
-
-   if (x) *x = zone->useful_geometry.x;
-   if (y) *y = zone->useful_geometry.y;
-   if (w) *w = zone->useful_geometry.w;
-   if (h) *h = zone->useful_geometry.h;
-}
-
-E_API void
-e_zone_desk_useful_geometry_get(const E_Zone *zone, const E_Desk *desk, int *x, int *y, int *w, int *h)
-{
-   E_OBJECT_CHECK(zone);
-   E_OBJECT_TYPE_CHECK(zone, E_ZONE_TYPE);
-   E_OBJECT_CHECK(desk);
-   E_OBJECT_TYPE_CHECK(desk, E_DESK_TYPE);
-
-   _e_zone_useful_geometry_calc(zone, desk->x, desk->y, x, y, w, h);
+   if (x) *x = zone->x;
+   if (y) *y = zone->y;
+   if (w) *w = zone->w;
+   if (h) *h = zone->h;
 }
 
 /**
@@ -1406,12 +1096,6 @@ e_zone_useful_geometry_dirty(E_Zone *zone)
    ev->zone = zone;
    e_object_ref(E_OBJECT(ev->zone));
    ecore_event_add(E_EVENT_ZONE_MOVE_RESIZE, ev, _e_zone_event_generic_free, NULL);
-
-   zone->useful_geometry.dirty = 1;
-   zone->useful_geometry.x = -1;
-   zone->useful_geometry.y = -1;
-   zone->useful_geometry.w = -1;
-   zone->useful_geometry.h = -1;
 }
 
 E_API void
@@ -1517,15 +1201,6 @@ _e_zone_free(E_Zone *zone)
 
    evas_object_del(zone->base);
    evas_object_del(zone->over);
-   if ((!stopping) && (!e_comp_config_get()->nofade))
-     {
-        if (zone->bloff)
-          {
-             if (e_backlight_mode_get(zone) != E_BACKLIGHT_MODE_NORMAL)
-               e_backlight_mode_set(zone, E_BACKLIGHT_MODE_NORMAL);
-             e_backlight_level_set(zone, e_config->backlight.normal, 0.0);
-          }
-     }
 
    /* free desks */
    for (x = 0; x < zone->desk_x_count; x++)
@@ -1595,31 +1270,6 @@ _e_zone_cb_bg_mouse_up(void *data,
         e_bindings_mouse_up_event_handle(E_BINDING_CONTEXT_ZONE,
                                          E_OBJECT(zone), &event);
      }
-}
-
-static Eina_Bool
-_e_zone_cb_edge_timer(void *data)
-{
-   E_Zone *zone;
-   E_Action *act;
-
-   zone = data;
-   act = e_action_find(zone->flip.bind->action);
-   if (!act)
-     {
-        E_FREE(zone->flip.ev);
-        return ECORE_CALLBACK_CANCEL;
-     }
-
-   if (act->func.go_edge)
-     act->func.go_edge(E_OBJECT(zone), zone->flip.bind->params, zone->flip.ev);
-   else if (act->func.go)
-     act->func.go(E_OBJECT(zone), zone->flip.bind->params);
-
-   zone->flip.bind->timer = NULL;
-
-   E_FREE(zone->flip.ev);
-   return ECORE_CALLBACK_CANCEL;
 }
 
 static void

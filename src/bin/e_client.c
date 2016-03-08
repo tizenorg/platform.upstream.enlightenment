@@ -100,67 +100,9 @@ static Eina_Inlist *_e_client_hooks[] =
 
 ///////////////////////////////////////////
 
-#ifndef ENABLE_QUICK_INIT
-static Eina_Bool
-_e_client_cb_efreet_cache_update(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_UNUSED)
-{
-   const Eina_List *l;
-   E_Client *ec;
-
-   /* mark all clients for desktop/icon updates */
-   EINA_LIST_FOREACH(e_comp->clients, l, ec)
-     {
-        E_FREE_FUNC(ec->desktop, efreet_desktop_free);
-        if (e_object_is_del(E_OBJECT(ec))) continue;
-        ec->changes.icon = 1;
-        EC_CHANGED(ec);
-     }
-   return ECORE_CALLBACK_RENEW;
-}
-#endif
-
-static Eina_Bool
-_e_client_cb_config_icon_theme(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_UNUSED)
-{
-   const Eina_List *l;
-   E_Client *ec;
-
-   /* mark all clients for desktop/icon updates */
-   EINA_LIST_FOREACH(e_comp->clients, l, ec)
-     {
-        if (e_object_is_del(E_OBJECT(ec))) continue;
-        ec->changes.icon = 1;
-        EC_CHANGED(ec);
-     }
-   return ECORE_CALLBACK_RENEW;
-}
-
 static Eina_Bool
 _e_client_cb_config_mode(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_UNUSED)
 {
-   const Eina_List *l;
-   E_Client *ec;
-   E_Layer layer;
-
-   /* move fullscreen borders above everything */
-   
-   if (e_config->mode.presentation)
-     layer = E_LAYER_CLIENT_TOP;
-   else if (!e_config->allow_above_fullscreen)
-     layer = E_LAYER_CLIENT_FULLSCREEN;
-   else
-     return ECORE_CALLBACK_RENEW;
-
-   EINA_LIST_FOREACH(e_comp->clients, l, ec)
-     {
-        if (e_object_is_del(E_OBJECT(ec))) continue;
-        if ((ec->fullscreen) || (ec->need_fullscreen))
-          {
-             ec->fullscreen = 0;
-             evas_object_layer_set(ec->frame, layer);
-             ec->fullscreen = 1;
-          }
-     }
    return ECORE_CALLBACK_PASS_ON;
 }
 
@@ -257,7 +199,7 @@ _e_client_pointer_warp_to_center_timer(void *data EINA_UNUSED)
              goto cleanup;
           }
 
-        spd = e_config->pointer_warp_speed;
+        spd = 0.5;
         warp_x[1] = x = warp_x[0];
         warp_y[1] = y = warp_y[0];
         warp_x[0] = (x * (1.0 - spd)) + (warp_to_x * spd);
@@ -427,8 +369,8 @@ _e_client_action_finish(void)
    if (action_client)
      {
         action_client->keyboard_resizing = 0;
-        if (action_client->internal_elm_win)
-          ecore_event_window_ignore_events(elm_win_window_id_get(action_client->internal_elm_win), 0);
+        //if (action_client->internal_elm_win)
+        //  ecore_event_window_ignore_events(elm_win_window_id_get(action_client->internal_elm_win), 0);
      }
    action_client = NULL;
 }
@@ -648,7 +590,6 @@ _e_client_transform_resize_begin(E_Client *ec)
 {
    if (!ec->transformed) return;
 
-   e_moveresize_replace(EINA_FALSE);
    _e_client_transform_geometry_save(ec, (Evas_Map *)evas_object_map_get(ec->frame));
 }
 
@@ -664,14 +605,11 @@ _e_client_transform_resize_end(E_Client *ec)
    map = (Evas_Map*)evas_object_map_get(ec->frame);
    if (!map) return;
 
-   e_moveresize_replace(EINA_TRUE);
-
    if (!e_pixmap_size_get(ec->pixmap, &pw, &ph))
      {
         pw = ec->client.w;
         ph = ec->client.h;
      }
-
 
    cx = ec->client.x + pw / 2 + ec->transform.adjusted.x;
    cy = ec->client.y + ph / 2 + ec->transform.adjusted.y;
@@ -755,13 +693,6 @@ _e_client_revert_focus(E_Client *ec)
         if (e_config->raise_on_revert_focus)
           evas_object_raise(ec->parent->frame);
      }
-   else if (e_config->focus_revert_on_hide_or_close)
-     {
-        Eina_Bool unlock = ec->lock_focus_out;
-        ec->lock_focus_out = 1;
-        e_desk_last_focused_focus(desk);
-        ec->lock_focus_out = unlock;
-     }
    else if (e_config->focus_policy == E_FOCUS_MOUSE)
      {
         pec = e_client_under_pointer_get(desk, ec);
@@ -820,7 +751,6 @@ _e_client_free(E_Client *ec)
           tmp->e.state.video_parent_client = NULL;
      }
    E_FREE_FUNC(ec->internal_elm_win, evas_object_del);
-   E_FREE_FUNC(ec->desktop, efreet_desktop_free);
    E_FREE_FUNC(ec->post_job, ecore_idle_enterer_del);
 
    E_FREE_FUNC(ec->kill_timer, ecore_timer_del);
@@ -869,7 +799,6 @@ _e_client_free(E_Client *ec)
    focus_stack = eina_list_remove(focus_stack, ec);
    raise_stack = eina_list_remove(raise_stack, ec);
 
-   e_hints_client_list_set();
    if (ec->e.state.profile.wait_desk)
      {
         e_object_delfn_del(E_OBJECT(ec->e.state.profile.wait_desk),
@@ -897,18 +826,6 @@ _e_client_del(E_Client *ec)
    ec->changed = 0;
    focus_stack = eina_list_remove(focus_stack, ec);
    raise_stack = eina_list_remove(raise_stack, ec);
-   if (ec->exe_inst)
-     {
-        if (ec->exe_inst->phony && (eina_list_count(ec->exe_inst->clients) == 1))
-          e_exec_phony_del(ec->exe_inst);
-        else
-          {
-             if (!ec->exe_inst->deleted)
-               ec->exe_inst->clients = eina_list_remove(ec->exe_inst->clients, ec);
-          }
-        if (!ec->exe_inst->deleted)
-          ec->exe_inst = NULL;
-     }
 
    if (ec->cur_mouse_action)
      {
@@ -929,20 +846,14 @@ _e_client_del(E_Client *ec)
         e_object_del(E_OBJECT(client_drag));
         client_drag = NULL;
      }
-   if (ec->border_menu) e_menu_deactivate(ec->border_menu);
    if (!stopping)
      {
         e_client_comp_hidden_set(ec, 1);
         evas_object_pass_events_set(ec->frame, 1);
      }
 
-   E_FREE_FUNC(ec->border_locks_dialog, e_object_del);
-   E_FREE_FUNC(ec->border_remember_dialog, e_object_del);
-   E_FREE_FUNC(ec->border_border_dialog, e_object_del);
    E_FREE_FUNC(ec->border_prop_dialog, e_object_del);
    E_FREE_FUNC(ec->color_editor, evas_object_del);
-   e_int_client_menu_del(ec);
-   E_FREE_FUNC(ec->raise_timer, ecore_timer_del);
 
    if (ec->internal_elm_win)
      evas_object_hide(ec->internal_elm_win);
@@ -1074,12 +985,12 @@ _e_client_action_init(E_Client *ec)
    if (action_client)
      {
         action_client->keyboard_resizing = 0;
-        if (action_client->internal_elm_win)
-          ecore_event_window_ignore_events(elm_win_window_id_get(action_client->internal_elm_win), 0);
+        //if (action_client->internal_elm_win)
+        //  ecore_event_window_ignore_events(elm_win_window_id_get(action_client->internal_elm_win), 0);
      }
    action_client = ec;
-   if (ec->internal_elm_win)
-     ecore_event_window_ignore_events(elm_win_window_id_get(ec->internal_elm_win), 1);
+   //if (ec->internal_elm_win)
+   //  ecore_event_window_ignore_events(elm_win_window_id_get(ec->internal_elm_win), 1);
 }
 
 static void
@@ -1659,41 +1570,7 @@ _e_client_move_lost_window_to_center(E_Client *ec)
                      zh - (2 * loss_overlap),
                      ec->x, ec->y, ec->w, ec->h))
      {
-        if (e_config->edge_flip_dragging)
-          {
-             Eina_Bool lf, rf, tf, bf;
-
-             lf = rf = tf = bf = EINA_TRUE;
-
-             if (ec->zone->desk_x_count <= 1) lf = rf = EINA_FALSE;
-             else if (!e_config->desk_flip_wrap)
-               {
-                  if (ec->zone->desk_x_current == 0) lf = EINA_FALSE;
-                  if (ec->zone->desk_x_current == (ec->zone->desk_x_count - 1)) rf = EINA_FALSE;
-               }
-
-             if (ec->zone->desk_y_count <= 1) tf = bf = EINA_FALSE;
-             else if (!e_config->desk_flip_wrap)
-               {
-                  if (ec->zone->desk_y_current == 0) tf = EINA_FALSE;
-                  if (ec->zone->desk_y_current == (ec->zone->desk_y_count - 1)) bf = EINA_FALSE;
-               }
-
-             if (!(lf) && (ec->x <= loss_overlap) && !(ec->zone->flip.switching))
-               _e_client_reset_lost_window(ec);
-
-             if (!(rf) && (ec->x >= (ec->zone->w - loss_overlap)) && !(ec->zone->flip.switching))
-               _e_client_reset_lost_window(ec);
-
-             if (!(tf) && (ec->y <= loss_overlap) && !(ec->zone->flip.switching))
-               _e_client_reset_lost_window(ec);
-
-             if (!(bf) && (ec->y >= (ec->zone->h - loss_overlap)) && !(ec->zone->flip.switching))
-               _e_client_reset_lost_window(ec);
-          }
-
-        if (!e_config->edge_flip_dragging)
-          _e_client_reset_lost_window(ec);
+        _e_client_reset_lost_window(ec);
      }
 }
 
@@ -2468,108 +2345,7 @@ _e_client_eval(E_Client *ec)
 
    if (ec->changes.icon)
      {
-#ifndef ENABLE_QUICK_INIT
-        if (!ec->new_client)
-          E_FREE_FUNC(ec->desktop, efreet_desktop_free);
-        if (ec->remember && ec->remember->prop.desktop_file)
-          {
-             Efreet_Desktop *d;
-             const char *desktop = ec->remember->prop.desktop_file;
-
-             d = efreet_desktop_get(desktop);
-             if (!d)
-               d = efreet_util_desktop_name_find(desktop);
-             if (d)
-               {
-                  efreet_desktop_free(ec->desktop);
-                  ec->desktop = d;
-               }
-          }
-        if (!ec->desktop)
-          {
-             E_Exec_Instance *inst;
-
-             inst = e_exec_startup_id_pid_instance_find(ec->netwm.startup_id,
-                                                        ec->netwm.pid);
-             if (inst && inst->clients)
-               {
-                  E_Client *ec2 = eina_list_data_get(inst->clients);
-
-                  if (ec2->netwm.pid == ec->netwm.pid)
-                    ec->desktop = inst->desktop;
-               }
-             else if (inst)
-               ec->desktop = inst->desktop;
-             if (ec->desktop) efreet_desktop_ref(ec->desktop);
-          }
-        if (!ec->desktop)
-          {
-             if (ec->internal && (ec->icccm.class && (!strncmp(ec->icccm.class, "e_fwin::", 8))))
-               ec->desktop = efreet_util_desktop_exec_find("enlightenment_filemanager");
-          }
-        if (!ec->desktop)
-          {
-             if ((ec->icccm.name) || (ec->icccm.class))
-               ec->desktop = efreet_util_desktop_wm_class_find(ec->icccm.name,
-                                                               ec->icccm.class);
-          }
-        if (!ec->desktop && ec->icccm.command.argv && (ec->icccm.command.argc > 0))
-          {
-             ec->desktop = efreet_util_desktop_exec_find(ec->icccm.command.argv[0]);
-          }
-        if (!ec->desktop)
-          {
-             /* libreoffice and maybe others match window class
-                with .desktop file name */
-             if (ec->icccm.class)
-               {
-                  char buf[4096] = {0};
-                  snprintf(buf, sizeof(buf), "%s.desktop", ec->icccm.class);
-                  ec->desktop = efreet_util_desktop_file_id_find(buf);
-                  if (!ec->desktop)
-                    {
-                       char *s;
-
-                       strncpy(buf, ec->icccm.class, sizeof(buf) - 1);
-                       s = buf;
-                       eina_str_tolower(&s);
-                       if (strcmp(s, ec->icccm.class))
-                         ec->desktop = efreet_util_desktop_exec_find(s);
-                    }
-               }
-          }
-        if (!ec->desktop && ec->icccm.name)
-          {
-             /* this works for most cases as fallback. useful when app is
-                run from a shell  */
-             ec->desktop = efreet_util_desktop_exec_find(ec->icccm.name);
-          }
-        if (!ec->desktop && ec->parent)
-          {
-             E_Client *ec2 = ec->parent;
-             if (ec2->desktop)
-               {
-                  efreet_desktop_ref(ec2->desktop);
-                  ec->desktop = ec2->desktop;
-               }
-          }
-
-        e_comp_object_frame_icon_update(ec->frame);
-        if (ec->desktop)
-          {
-             if (!ec->exe_inst)
-               e_exec_phony(ec);
-             if (!ec->exe_inst->desktop)
-               {
-                  efreet_desktop_ref(ec->desktop);
-                  ec->exe_inst->desktop = ec->desktop;
-               }
-          }
         ec->changes.icon = 0;
-        prop |= E_CLIENT_PROPERTY_ICON;
-#else
-        ec->changes.icon = 0;
-#endif
      }
 
    ec->new_client = 0;
@@ -3074,20 +2850,9 @@ e_client_init(void)
    clients_hash[0] = eina_hash_pointer_new(NULL);
    clients_hash[1] = eina_hash_pointer_new(NULL);
 
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_POINTER_WARP,
-                         _e_client_cb_pointer_warp, NULL);
-#ifndef ENABLE_QUICK_INIT
-   E_LIST_HANDLER_APPEND(handlers, EFREET_EVENT_DESKTOP_CACHE_UPDATE,
-                         _e_client_cb_efreet_cache_update, NULL);
-   E_LIST_HANDLER_APPEND(handlers, EFREET_EVENT_ICON_CACHE_UPDATE,
-                         _e_client_cb_efreet_cache_update, NULL);
-#endif
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_CONFIG_ICON_THEME,
-                         _e_client_cb_config_icon_theme, NULL);
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_CONFIG_MODE_CHANGED,
-                         _e_client_cb_config_mode, NULL);
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_DESK_WINDOW_PROFILE_CHANGE,
-                         _e_client_cb_desk_window_profile_change, NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_POINTER_WARP, _e_client_cb_pointer_warp, NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_CONFIG_MODE_CHANGED, _e_client_cb_config_mode, NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_DESK_WINDOW_PROFILE_CHANGE, _e_client_cb_desk_window_profile_change, NULL);
 
    E_EVENT_CLIENT_ADD = ecore_event_type_new();
    E_EVENT_CLIENT_REMOVE = ecore_event_type_new();
@@ -3126,7 +2891,6 @@ e_client_shutdown(void)
 
    E_FREE_LIST(handlers, ecore_event_handler_del);
 
-   e_int_client_menu_hooks_clear();
    E_FREE_FUNC(warp_timer, ecore_timer_del);
    warp_client = NULL;
 }
@@ -3174,15 +2938,11 @@ e_client_new(E_Pixmap *cp, int first_map, int internal)
    ec->resize_mode = E_POINTER_RESIZE_NONE;
    ec->layer = E_LAYER_CLIENT_NORMAL;
 
-   /* printf("##- ON MAP CLIENT 0x%x SIZE %ix%i %i:%i\n",
-    *     ec->win, ec->w, ec->h, att->x, att->y); */
-
    /* FIXME: if first_map is 1 then we should ignore the first hide event
     * or ensure the window is already hidden and events flushed before we
     * create a border for it */
    if (first_map)
      {
-        // printf("##- FIRST MAP\n");
         ec->changes.pos = 1;
         ec->re_manage = 1;
         // needed to be 1 for internal windw and on restart.
@@ -3298,8 +3058,6 @@ e_client_new(E_Pixmap *cp, int first_map, int internal)
         else
           focus_stack = eina_list_append(focus_stack, ec);
      }
-
-   e_hints_client_list_set();
 
 #ifdef _F_E_CLIENT_NEW_CLIENT_POST_HOOK_
    _e_client_hook_call(E_CLIENT_HOOK_NEW_CLIENT_POST, ec);
@@ -3522,8 +3280,6 @@ e_client_mouse_wheel(E_Client *ec, Evas_Point *output, E_Binding_Event_Wheel *ev
    if (action_client) return;
    ec->mouse.current.mx = output->x;
    ec->mouse.current.my = output->y;
-   if ((!ec->cur_mouse_action) && (!e_client_util_ignored_get(ec)))
-     e_bindings_wheel_event_handle(E_BINDING_CONTEXT_WINDOW, E_OBJECT(ec), ev);
 }
 
 E_API void
@@ -3555,21 +3311,6 @@ e_client_mouse_down(E_Client *ec, int button, Evas_Point *output, E_Binding_Even
    ec->mouse.current.my = output->y;
    pfocus = e_client_focused_get();
    player = ec->layer;
-   if (!ec->cur_mouse_action)
-     {
-        ec->cur_mouse_action =
-          e_bindings_mouse_down_event_handle(E_BINDING_CONTEXT_WINDOW,
-                                             E_OBJECT(ec), ev);
-        if (ec->cur_mouse_action)
-          {
-             did_act = EINA_TRUE;
-             if ((!ec->cur_mouse_action->func.end_mouse) &&
-                 (!ec->cur_mouse_action->func.end))
-               ec->cur_mouse_action = NULL;
-             if (ec->cur_mouse_action)
-               e_object_ref(E_OBJECT(ec->cur_mouse_action));
-          }
-     }
    if ((!did_act) || (((pfocus == e_client_focused_get()) || (ec == e_client_focused_get())) && (ec->layer >= player)))
      e_focus_event_mouse_down(ec);
    if ((button >= 1) && (button <= 3))
@@ -3619,8 +3360,7 @@ e_client_mouse_up(E_Client *ec, int button, Evas_Point *output, E_Binding_Event_
      }
    else
      {
-        if (!e_bindings_mouse_up_event_handle(E_BINDING_CONTEXT_WINDOW, E_OBJECT(ec), ev))
-          e_focus_event_mouse_up(ec);
+        e_focus_event_mouse_up(ec);
      }
    if ((button >= 1) && (button <= 3))
      {
@@ -3697,19 +3437,17 @@ e_client_mouse_move(E_Client *ec, Evas_Point *output)
 
              dx = ec->drag.x - output->x;
              dy = ec->drag.y - output->y;
-             if (((dx * dx) + (dy * dy)) >
-                 (e_config->drag_resist * e_config->drag_resist))
+             if (((dx * dx) + (dy * dy)) > (16 * 16))
                {
                   /* start drag! */
-                  if (ec->netwm.icons || ec->desktop || ec->internal_icon)
+                  if (ec->netwm.icons || ec->internal_icon)
                     {
                        Evas_Object *o = NULL;
-                       int x, y, w, h;
+                       int x = 0, y = 0, w = 0, h = 0;
                        const char *drag_types[] = { "enlightenment/border" };
 
                        REFD(ec, 1);
                        e_object_ref(E_OBJECT(ec));
-                       e_comp_object_frame_icon_geometry_get(ec->frame, &x, &y, &w, &h);
 
                        client_drag = e_drag_new(output->x, output->y,
                                                 drag_types, 1, ec, -1,
@@ -3718,13 +3456,9 @@ e_client_mouse_move(E_Client *ec, Evas_Point *output)
                        client_drag->button_mask = evas_pointer_button_down_mask_get(e_comp->evas);
                        e_drag_resize(client_drag, w, h);
 
-                       o = e_client_icon_add(ec, client_drag->evas);
-                       if (!o)
-                         {
-                            /* FIXME: fallback icon for drag */
-                            o = evas_object_rectangle_add(client_drag->evas);
-                            evas_object_color_set(o, 255, 255, 255, 255);
-                         }
+                       /* FIXME: fallback icon for drag */
+                       o = evas_object_rectangle_add(client_drag->evas);
+                       evas_object_color_set(o, 255, 255, 255, 255);
 
                        e_drag_object_set(client_drag, o);
                        e_drag_start(client_drag,
@@ -4162,21 +3896,6 @@ e_client_focus_set_with_pointer(E_Client *ec)
         return;
      }
 
-   if (e_config->focus_policy == E_FOCUS_SLOPPY)
-     {
-        E_Client *pec;
-        pec = e_client_under_pointer_get(ec->desk, ec);
-        /* Do not slide pointer when disabled (probably breaks focus
-         * on sloppy/mouse focus but requested by users). */
-        if (e_config->pointer_slide && pec && (pec != ec))
-          e_client_pointer_warp_to_center(ec);
-     }
-   else
-     {
-        if (e_config->pointer_slide)
-          e_client_pointer_warp_to_center(ec);
-     }
-
    TRACE_DS_END();
 }
 
@@ -4196,24 +3915,21 @@ e_client_focused_set(E_Client *ec)
      {
         ec->focused = 1;
         e_client_urgent_set(ec, 0);
-        if (!e_config->allow_above_fullscreen)
-          {
-             int x, total = ec->zone->desk_x_count * ec->zone->desk_y_count;
+        int x, total = ec->zone->desk_x_count * ec->zone->desk_y_count;
 
-             for (x = 0; x < total; x++)
+        for (x = 0; x < total; x++)
+          {
+             E_Desk *desk = ec->zone->desks[x];
+             /* if there's any fullscreen non-parents on this desk, unfullscreen them */
+             EINA_LIST_FOREACH_SAFE(desk->fullscreen_clients, l, ll, ec2)
                {
-                  E_Desk *desk = ec->zone->desks[x];
-                  /* if there's any fullscreen non-parents on this desk, unfullscreen them */
-                  EINA_LIST_FOREACH_SAFE(desk->fullscreen_clients, l, ll, ec2)
+                  if (ec2 == ec) continue;
+                  if (e_object_is_del(E_OBJECT(ec2))) continue;
+                  /* but only if it's the same desk or one of the clients is sticky */
+                  if ((desk == ec->desk) || (ec->sticky || ec2->sticky))
                     {
-                       if (ec2 == ec) continue;
-                       if (e_object_is_del(E_OBJECT(ec2))) continue;
-                       /* but only if it's the same desk or one of the clients is sticky */
-                       if ((desk == ec->desk) || (ec->sticky || ec2->sticky))
-                         {
-                            if (!eina_list_data_find(ec->transients, ec2))
-                              e_client_unfullscreen(ec2);
-                         }
+                       if (!eina_list_data_find(ec->transients, ec2))
+                         e_client_unfullscreen(ec2);
                     }
                }
           }
@@ -4227,11 +3943,8 @@ e_client_focused_set(E_Client *ec)
         if (ec_unfocus->mouse.in)
           e_client_mouse_out(ec_unfocus, ec_unfocus->x - 1, ec_unfocus->y - 1);
 
-        E_FREE_FUNC(ec_unfocus->raise_timer, ecore_timer_del);
-
         /* if there unfocus client is fullscreen and visible */
-        if ((!e_config->allow_above_fullscreen) &&
-            (ec_unfocus->fullscreen) && (!ec_unfocus->iconic) && (!ec_unfocus->hidden) &&
+        if ((ec_unfocus->fullscreen) && (!ec_unfocus->iconic) && (!ec_unfocus->hidden) &&
             (ec_unfocus->zone == e_zone_current_get()) &&
             ((ec_unfocus->desk == e_desk_current_get(ec_unfocus->zone)) || (ec_unfocus->sticky)))
           {
@@ -4304,38 +4017,19 @@ e_client_activate(E_Client *ec, Eina_Bool just_do_it)
 
         if (ec->iconic)
           {
-             if (e_config->clientlist_warp_to_iconified_desktop == 1)
-               e_desk_show(ec->desk);
-
              if (!ec->lock_user_iconify)
                e_client_uniconify(ec);
           }
         if ((!ec->iconic) && (!ec->sticky))
           {
-             int val = e_config->focus_last_focused_per_desktop;
-
-             /* prevent infinite focus loops during refocus */
-             if (!ec->lock_focus_out)
-               e_config->focus_last_focused_per_desktop = 0;
              e_desk_show(ec->desk);
-             e_config->focus_last_focused_per_desktop = val;
           }
         if (!ec->lock_user_stacking)
           evas_object_raise(ec->frame);
         if (ec->shaded || ec->shading)
           e_client_unshade(ec, ec->shade_dir);
         if (!ec->lock_focus_out)
-          {
-             /* XXX ooffice does send this request for
-                config dialogs when the main window gets focus.
-                causing the pointer to jump back and forth.  */
-             if ((e_config->focus_policy != E_FOCUS_CLICK) && (!ec->new_client) &&
-                 (!e_config->disable_all_pointer_warps) &&
-                 (!e_util_strcmp(ec->icccm.name, "VCLSalFrame")))
-               ecore_evas_pointer_warp(e_comp->ee,
-                                    ec->x + (ec->w / 2), ec->y + (ec->h / 2));
-             evas_object_focus_set(ec->frame, 1);
-          }
+          evas_object_focus_set(ec->frame, 1);
      }
 
    TRACE_DS_END();
@@ -4410,15 +4104,7 @@ e_client_shade(E_Client *ec, E_Direction dir)
    ec->shading = 1;
    ec->shade_dir = dir;
 
-   if (e_config->border_shade_animate && (!ec->new_client))
-     {
-        ec->changes.shading = 1;
-        EC_CHANGED(ec);
-
-        evas_object_smart_callback_call(ec->frame, "shading", (uintptr_t*)dir);
-     }
-   else
-     evas_object_smart_callback_call(ec->frame, "shaded", (uintptr_t*)dir);
+   evas_object_smart_callback_call(ec->frame, "shaded", (uintptr_t*)dir);
 
    e_remember_update(ec);
 }
@@ -4436,15 +4122,7 @@ e_client_unshade(E_Client *ec, E_Direction dir)
    ec->shading = 1;
    ec->shade_dir = 0;
 
-   if (e_config->border_shade_animate)
-     {
-        ec->changes.shading = 1;
-        EC_CHANGED(ec);
-
-        evas_object_smart_callback_call(ec->frame, "unshading", (uintptr_t*)dir);
-     }
-   else
-     evas_object_smart_callback_call(ec->frame, "unshaded", (uintptr_t*)dir);
+   evas_object_smart_callback_call(ec->frame, "unshaded", (uintptr_t*)dir);
 
    e_remember_update(ec);
 }
@@ -4640,7 +4318,7 @@ e_client_fullscreen(E_Client *ec, E_Fullscreen policy)
    _e_client_hook_call(E_CLIENT_HOOK_FULLSCREEN_PRE, ec);
 
    if (ec->skip_fullscreen) return;
-   if ((!e_config->allow_above_fullscreen) && (!ec->desk->visible)) return;
+   if (!ec->desk->visible) return;
    if (ec->new_client)
      {
         ec->need_fullscreen = 1;
@@ -4679,19 +4357,11 @@ e_client_fullscreen(E_Client *ec, E_Fullscreen policy)
    e_hints_window_size_set(ec);
 
    ec->saved.layer = ec->layer;
-   if (!e_config->allow_above_fullscreen)
-     evas_object_layer_set(ec->frame, E_LAYER_CLIENT_FULLSCREEN);
-   else if (e_config->mode.presentation)
-     evas_object_layer_set(ec->frame, E_LAYER_CLIENT_TOP);
+   evas_object_layer_set(ec->frame, E_LAYER_CLIENT_FULLSCREEN);
 
    ec->fullscreen = 1;
-#ifndef HAVE_WAYLAND_ONLY
-   if ((eina_list_count(e_comp->zones) > 1) ||
-       (policy == E_FULLSCREEN_RESIZE) || (!ecore_x_randr_query()))
-#else
    if ((eina_list_count(e_comp->zones) > 1) || 
        (policy == E_FULLSCREEN_RESIZE))
-#endif
      {
         evas_object_geometry_set(ec->frame, ec->zone->x, ec->zone->y, ec->zone->w, ec->zone->h);
      }
@@ -4859,13 +4529,6 @@ e_client_urgent_set(E_Client *ec, Eina_Bool urgent)
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
 
-   if (urgent && e_screensaver_on_get() && e_config->screensaver_wake_on_urgent)
-     {
-        int x, y;
-        ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
-        ecore_evas_pointer_warp(e_comp->ee, x, y);
-        e_screensaver_notidle();
-     }
    if (!ec->zone) return;
 
    urgent = !!urgent;
@@ -5193,16 +4856,6 @@ e_client_act_menu_begin(E_Client *ec, E_Binding_Event_Mouse_Button *ev, int key)
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
    if (!ec->zone) return;
-   if (ec->border_menu) return;
-   if (ev)
-     e_int_client_menu_show(ec, ev->canvas.x, ev->canvas.y, key, ev->timestamp);
-   else
-     {
-        int x, y;
-
-        evas_pointer_canvas_xy_get(e_comp->evas, &x, &y);
-        e_int_client_menu_show(ec, x, y, key, 0);
-     }
 }
 
 E_API void
@@ -5239,98 +4892,6 @@ e_client_act_kill_begin(E_Client *ec)
      }
    else
      evas_object_smart_callback_call(ec->frame, "kill_request", NULL);
-}
-
-////////////////////////////////////////////////
-
-
-E_API Evas_Object *
-e_client_icon_add(E_Client *ec, Evas *evas)
-{
-   Evas_Object *o;
-
-   E_OBJECT_CHECK_RETURN(ec, NULL);
-   E_OBJECT_TYPE_CHECK_RETURN(ec, E_CLIENT_TYPE, NULL);
-
-   o = NULL;
-   if (ec->internal)
-     {
-        if (!ec->internal_icon)
-          {
-             o = e_icon_add(evas);
-             e_util_icon_theme_set(o, "enlightenment");
-          }
-        else
-          {
-             if (!ec->internal_icon_key)
-               {
-                  char *ext;
-
-                  ext = strrchr(ec->internal_icon, '.');
-                  if ((ext) && ((!strcmp(ext, ".edj"))))
-                    {
-                       o = edje_object_add(evas);
-                       if (!edje_object_file_set(o, ec->internal_icon, "icon"))
-                         e_util_icon_theme_set(o, "enlightenment");
-                    }
-                  else if (ext)
-                    {
-                       o = e_icon_add(evas);
-                       e_icon_file_set(o, ec->internal_icon);
-                    }
-                  else
-                    {
-                       o = e_icon_add(evas);
-                       if (!e_util_icon_theme_set(o, ec->internal_icon))
-                         e_util_icon_theme_set(o, "enlightenment");
-                    }
-               }
-             else
-               {
-                  o = edje_object_add(evas);
-                  edje_object_file_set(o, ec->internal_icon,
-                                       ec->internal_icon_key);
-               }
-          }
-        return o;
-     }
-   if ((e_config->use_app_icon) && (ec->icon_preference != E_ICON_PREF_USER))
-     {
-        if (ec->netwm.icons)
-          {
-             o = e_icon_add(evas);
-             e_icon_data_set(o, ec->netwm.icons[0].data,
-                             ec->netwm.icons[0].width,
-                             ec->netwm.icons[0].height);
-             e_icon_alpha_set(o, 1);
-             return o;
-          }
-     }
-   if (!o)
-     {
-        if ((ec->desktop) && (ec->icon_preference != E_ICON_PREF_NETWM))
-          {
-             o = e_icon_add(evas);
-             if (o)
-               {
-                  e_icon_fdo_icon_set(o, ec->desktop->icon);
-                  return o;
-               }
-          }
-        else if (ec->netwm.icons)
-          {
-             o = e_icon_add(evas);
-             e_icon_data_set(o, ec->netwm.icons[0].data,
-                             ec->netwm.icons[0].width,
-                             ec->netwm.icons[0].height);
-             e_icon_alpha_set(o, 1);
-             return o;
-          }
-     }
-
-   o = e_icon_add(evas);
-   e_util_icon_theme_set(o, "unknown");
-   return o;
 }
 
 ////////////////////////////////////////////
@@ -5657,7 +5218,6 @@ e_client_under_pointer_get(E_Desk *desk, E_Client *exclude)
 E_API int
 e_client_pointer_warp_to_center_now(E_Client *ec)
 {
-   if (e_config->disable_all_pointer_warps) return 0;
    if (warp_client == ec)
      {
         ecore_evas_pointer_warp(e_comp->ee, warp_to_x, warp_to_y);
@@ -5679,7 +5239,6 @@ e_client_pointer_warp_to_center(E_Client *ec)
    E_Client *cec = NULL;
 
    if (!ec->zone) return 0;
-   if (e_config->disable_all_pointer_warps) return 0;
    /* Only warp the pointer if it is not already in the area of
     * the given border */
    ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
@@ -5752,14 +5311,8 @@ e_client_is_stacking(const E_Client *ec)
 E_API Eina_Bool
 e_client_has_xwindow(const E_Client *ec)
 {
-#ifdef HAVE_WAYLAND_ONLY
    (void)ec;
    return EINA_FALSE;
-#elif HAVE_WAYLAND
-   if (!e_pixmap_is_x(ec->pixmap))
-     return !!e_comp_wl_client_xwayland_pixmap(ec);
-#endif
-   return e_pixmap_is_x(ec->pixmap);
 }
 
 ////////////////////////////////////////////
@@ -5785,14 +5338,12 @@ E_API void e_client_transform_update(E_Client *ec)
 E_API void e_client_transform_apply(E_Client *ec, double angle, double zoom, int cx, int cy)
 {
    Evas_Map *map;
-#ifdef HAVE_WAYLAND_ONLY
    E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
    E_Client *subc;
    Eina_List *l;
 
    /* check if it's subsurface */
    if (cdata->sub.data) return;
-#endif
 
    /* check if it's different with current state */
    if ((ec->transform.angle == angle) &&
@@ -5832,7 +5383,6 @@ E_API void e_client_transform_apply(E_Client *ec, double angle, double zoom, int
    evas_object_map_set(ec->frame, map);
    evas_object_map_enable_set(ec->frame, EINA_TRUE);
 
-#ifdef HAVE_WAYLAND_ONLY
    if (cdata->sub.below_obj)
      {
         evas_object_map_set(cdata->sub.below_obj, map);
@@ -5843,7 +5393,6 @@ E_API void e_client_transform_apply(E_Client *ec, double angle, double zoom, int
      _e_client_transform_sub_apply(subc, ec, zoom);
    EINA_LIST_REVERSE_FOREACH(cdata->sub.below_list, l, subc)
      _e_client_transform_sub_apply(subc, ec, zoom);
-#endif
 
    evas_map_free(map);
 
@@ -5856,17 +5405,16 @@ E_API void e_client_transform_apply(E_Client *ec, double angle, double zoom, int
 
 ////////////////////////////////////////////
 
-E_API void e_client_transform_clear(E_Client *ec)
+E_API void
+e_client_transform_clear(E_Client *ec)
 {
- #ifdef HAVE_WAYLAND_ONLY
    E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
    E_Client *subc;
    Eina_List *l;
-#endif
+
    evas_object_map_enable_set(ec->frame, EINA_FALSE);
    evas_object_map_set(ec->frame, NULL);
 
-#ifdef HAVE_WAYLAND_ONLY
    if (cdata->sub.below_obj)
      {
         evas_object_map_enable_set(cdata->sub.below_obj, EINA_FALSE);
@@ -5877,7 +5425,6 @@ E_API void e_client_transform_clear(E_Client *ec)
      _e_client_transform_sub_apply(subc, ec, 1.0);
    EINA_LIST_REVERSE_FOREACH(cdata->sub.below_list, l, subc)
      _e_client_transform_sub_apply(subc, ec, 1.0);
-#endif
 
    ec->transform.zoom = 1.0;
    ec->transform.angle = 0.0;

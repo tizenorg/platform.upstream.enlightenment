@@ -58,8 +58,7 @@ _e_pointer_cb_idle_poller(void *data)
 
    if (!(ptr = data)) return ECORE_CALLBACK_RENEW;
 
-   if ((e_powersave_mode_get() >= E_POWERSAVE_MODE_MEDIUM) || 
-       (!e_config->idle_cursor))
+   if (!e_config->idle_cursor)
      {
         ptr->idle_poll = NULL;
         return ECORE_CALLBACK_CANCEL;
@@ -67,10 +66,6 @@ _e_pointer_cb_idle_poller(void *data)
 
    if (ptr->canvas)
      ecore_evas_pointer_xy_get(ptr->ee, &x, &y);
-#ifndef HAVE_WAYLAND_ONLY
-   else
-     ecore_x_pointer_xy_get(ptr->win, &x, &y);
-#endif
 
    if ((ptr->x != x) || (ptr->y != y))
      {
@@ -92,8 +87,7 @@ _e_pointer_cb_idle_wait(void *data)
 
    if (!(ptr = data)) return ECORE_CALLBACK_RENEW;
    ptr->idle_tmr = NULL;
-   if ((e_powersave_mode_get() >= E_POWERSAVE_MODE_MEDIUM) || 
-       (!e_config->idle_cursor))
+   if (!e_config->idle_cursor)
      {
         E_FREE_FUNC(ptr->idle_poll, ecore_poller_del);
         return ECORE_CALLBACK_CANCEL;
@@ -134,7 +128,6 @@ _e_pointer_active_handle(E_Pointer *ptr)
    else
      {
         E_FREE_FUNC(ptr->idle_poll, ecore_poller_del);
-        if (e_powersave_mode_get() >= E_POWERSAVE_MODE_MEDIUM) return;
         if (!e_config->idle_cursor) return;
         ptr->idle_tmr = ecore_timer_loop_add(1.0, _e_pointer_cb_idle_pre, ptr);
      }
@@ -149,11 +142,8 @@ _e_pointer_cb_mouse_down(void *data EINA_UNUSED, int type EINA_UNUSED, void *eve
    EINA_LIST_FOREACH(_ptrs, l, ptr)
      {
         _e_pointer_active_handle(ptr);
-        if (e_powersave_mode_get() < E_POWERSAVE_MODE_EXTREME)
-          {
-             if (ptr->o_ptr)
-               edje_object_signal_emit(ptr->o_ptr, "e,action,mouse,down", "e");
-          }
+        if (ptr->o_ptr)
+          edje_object_signal_emit(ptr->o_ptr, "e,action,mouse,down", "e");
      }
 
    return ECORE_CALLBACK_PASS_ON;
@@ -168,11 +158,8 @@ _e_pointer_cb_mouse_up(void *data EINA_UNUSED, int type EINA_UNUSED, void *event
    EINA_LIST_FOREACH(_ptrs, l, ptr)
      {
         _e_pointer_active_handle(ptr);
-        if (e_powersave_mode_get() < E_POWERSAVE_MODE_EXTREME)
-          {
-             if (ptr->o_ptr)
-               edje_object_signal_emit(ptr->o_ptr, "e,action,mouse,up", "e");
-          }
+        if (ptr->o_ptr)
+          edje_object_signal_emit(ptr->o_ptr, "e,action,mouse,up", "e");
      }
 
    return ECORE_CALLBACK_PASS_ON;
@@ -187,11 +174,8 @@ _e_pointer_cb_mouse_move(void *data EINA_UNUSED, int type EINA_UNUSED, void *eve
    EINA_LIST_FOREACH(_ptrs, l, ptr)
      {
         _e_pointer_active_handle(ptr);
-        if (e_powersave_mode_get() < E_POWERSAVE_MODE_HIGH)
-          {
-             if (ptr->o_ptr)
-               edje_object_signal_emit(ptr->o_ptr, "e,action,mouse,move", "e");
-          }
+        if (ptr->o_ptr)
+          edje_object_signal_emit(ptr->o_ptr, "e,action,mouse,move", "e");
      }
 
    return ECORE_CALLBACK_PASS_ON;
@@ -206,11 +190,8 @@ _e_pointer_cb_mouse_wheel(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev
    EINA_LIST_FOREACH(_ptrs, l, ptr)
      {
         _e_pointer_active_handle(ptr);
-        if (e_powersave_mode_get() < E_POWERSAVE_MODE_EXTREME)
-          {
-             if (ptr->o_ptr)
-               edje_object_signal_emit(ptr->o_ptr, "e,action,mouse,wheel", "e");
-          }
+        if (ptr->o_ptr)
+          edje_object_signal_emit(ptr->o_ptr, "e,action,mouse,wheel", "e");
      }
 
    return ECORE_CALLBACK_PASS_ON;
@@ -379,51 +360,6 @@ _e_pointer_x11_setup(E_Pointer *ptr, const char *cursor)
         return;
      }
    if (ptr->buffer_evas) _e_pointer_canvas_del(ptr);
-#ifndef HAVE_WAYLAND_ONLY
-   if (!e_comp_util_has_x()) return;
-   Ecore_X_Cursor curs = 0;
-
-   if (!strcmp(ptr->type, "move"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_FLEUR);
-# if 0
-   else if (!strcmp(ptr->type, "resize"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_SIZING);
-# endif
-   else if (!strcmp(ptr->type, "resize_tl"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_TOP_LEFT_CORNER);
-   else if (!strcmp(ptr->type, "resize_t"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_TOP_SIDE);
-   else if (!strcmp(ptr->type, "resize_tr"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_TOP_RIGHT_CORNER);
-   else if (!strcmp(ptr->type, "resize_r"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_RIGHT_SIDE);
-   else if (!strcmp(ptr->type, "resize_br"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_BOTTOM_RIGHT_CORNER);
-   else if (!strcmp(ptr->type, "resize_b"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_BOTTOM_SIDE);
-   else if (!strcmp(ptr->type, "resize_bl"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_BOTTOM_LEFT_CORNER);
-   else if (!strcmp(ptr->type, "resize_l"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_LEFT_SIDE);
-   else if (!strcmp(ptr->type, "entry"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_XTERM);
-   else if (!strcmp(ptr->type, "default"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_LEFT_PTR);
-   else if (!strcmp(ptr->type, "plus"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_PLUS);
-   else if (!strcmp(ptr->type, "hand"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_HAND1);
-   else if (!strcmp(ptr->type, "rotate"))
-     curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_EXCHANGE);
-   else
-     {
-        WRN("Unknown pointer ptr->type: %s\n", ptr->type);
-        curs = ecore_x_cursor_shape_get(ECORE_X_CURSOR_ARROW);
-     }
-   if (!curs) WRN("X Cursor for %s is missing\n", ptr->type);
-   ecore_x_window_cursor_set(ptr->win, curs);
-   if (curs) ecore_x_cursor_free(curs);
-#endif
 }
 
 static void 
@@ -574,10 +510,6 @@ e_pointers_size_set(int size)
              evas_object_resize(ptr->o_ptr, size, size);
           }
      }
-#ifndef HAVE_WAYLAND_ONLY
-   if (e_comp_util_has_x())
-     ecore_x_cursor_size_set(e_config->cursor_size * 3 / 4);
-#endif
 }
 
 E_API void 
