@@ -11,6 +11,8 @@ e_env_init(void)
 
    EINA_LIST_FOREACH(e_config->env_vars, l, evr)
      {
+        if (!((evr->var) && (evr->val))) continue;
+
         if (evr->unset)
           e_env_unset(evr->var);
         else
@@ -27,6 +29,8 @@ e_env_shutdown(void)
 
    EINA_LIST_FOREACH(e_config->env_vars, l, evr)
      {
+        if (!((evr->var) && (evr->val))) continue;
+
         e_env_unset(evr->var);
      }
    return 1;

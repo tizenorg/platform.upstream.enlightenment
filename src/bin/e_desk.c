@@ -214,8 +214,6 @@ e_desk_show(E_Desk *desk)
    E_Event_Desk_Before_Show *eev;
    E_Event_Desk_After_Show *eeev;
    Edje_Message_Float_Set *msg;
-   Eina_List *l;
-   E_Shelf *es;
    E_Desk *desk2;
    int dx = 0, dy = 0;
 
@@ -234,21 +232,6 @@ e_desk_show(E_Desk *desk)
    if (desk2->visible)
      {
         desk2->visible = 0;
-        if (e_config->desk_flip_wrap)
-          {
-             /* current desk (desk2) is last desk, switching to first desk (desk) */
-             if ((!desk->x) && (!desk->y) && (desk2->x + 1 == desk->zone->desk_x_count) && (desk2->y + 1 == desk->zone->desk_y_count))
-               {
-                  dx = (desk->x != desk2->x) ? 1 : 0;
-                  dy = (desk->y != desk2->y) ? 1 : 0;
-               }
-             /* current desk (desk2) is first desk, switching to last desk (desk) */
-             else if ((!desk2->x) && (!desk2->y) && (desk->x + 1 == desk->zone->desk_x_count) && (desk->y + 1 == desk->zone->desk_y_count))
-               {
-                  dx = (desk->x != desk2->x) ? -1 : 0;
-                  dy = (desk->y != desk2->y) ? -1 : 0;
-               }
-          }
         if ((!dx) && (!dy))
           {
              dx = desk->x - desk2->x;
@@ -265,7 +248,7 @@ e_desk_show(E_Desk *desk)
 
    msg = alloca(sizeof(Edje_Message_Float_Set) + (4 * sizeof(double)));
    msg->count = 5;
-   msg->val[0] = 0.2 * (!!e_config->desk_flip_animate_mode);//e_config->desk_flip_animate_time;
+   msg->val[0] = 0.0;
    msg->val[1] = desk->x;
    msg->val[2] = desk->zone->desk_x_count;
    msg->val[3] = desk->y;
@@ -291,23 +274,11 @@ e_desk_show(E_Desk *desk)
    e_object_ref(E_OBJECT(desk));
    ecore_event_add(E_EVENT_DESK_SHOW, ev, _e_desk_event_desk_show_free, NULL);
 
-   EINA_LIST_FOREACH(e_shelf_list(), l, es)
-     {
-        if (es->zone != desk->zone) continue;
-        if (e_shelf_desk_visible(es, desk))
-          e_shelf_show(es);
-        else
-          e_shelf_hide(es);
-     }
-
-   if (e_config->desk_flip_animate_mode == 0)
-     {
-        eeev = E_NEW(E_Event_Desk_After_Show, 1);
-        eeev->desk = e_desk_current_get(desk->zone);
-        e_object_ref(E_OBJECT(eeev->desk));
-        ecore_event_add(E_EVENT_DESK_AFTER_SHOW, eeev,
-                        _e_desk_event_desk_after_show_free, NULL);
-     }
+   eeev = E_NEW(E_Event_Desk_After_Show, 1);
+   eeev->desk = e_desk_current_get(desk->zone);
+   e_object_ref(E_OBJECT(eeev->desk));
+   ecore_event_add(E_EVENT_DESK_AFTER_SHOW, eeev,
+                   _e_desk_event_desk_after_show_free, NULL);
    e_zone_edge_flip_eval(desk->zone);
 }
 
@@ -659,7 +630,6 @@ e_desk_flip_end(E_Desk *desk)
                    _e_desk_event_desk_after_show_free, NULL);
 
    e_comp_shape_queue();
-   if (!e_config->focus_last_focused_per_desktop) return;
    if ((e_config->focus_policy == E_FOCUS_MOUSE) ||
        (e_config->focus_policy == E_FOCUS_SLOPPY))
      {
@@ -776,15 +746,9 @@ _e_desk_event_desk_window_profile_change_free(void *data EINA_UNUSED, void *even
 static Eina_Bool
 _e_desk_transition_setup(E_Client *ec, int dx, int dy, int state)
 {
-   e_comp_object_effect_set(ec->frame, e_config->desk_flip_animate_type ?: "none");
-   if (e_config->desk_flip_animate_type)
-     {
-        /* set geoms */
-        e_comp_object_effect_params_set(ec->frame, 1, (int[]){ec->x - ec->zone->x, ec->y - ec->zone->y, ec->w, ec->h, ec->zone->w, ec->zone->h, dx, dy}, 8);
-        e_comp_object_effect_params_set(ec->frame, 0, (int[]){state}, 1);
-     }
+   e_comp_object_effect_set(ec->frame, "none");
 
-   return !!e_config->desk_flip_animate_type;
+   return EINA_FALSE;
 }
 
 static void
@@ -822,11 +786,6 @@ _e_desk_show_begin(E_Desk *desk, int dx, int dy)
    if (dy > 0) dy = 1;
 
    desk->animate_count = 0;
-   if (_e_desk_flip_cb && e_config->desk_flip_animate_type)
-     {
-        _e_desk_flip_cb(_e_desk_flip_data, desk, dx, dy, 1);
-        return;
-     }
    E_CLIENT_FOREACH(ec)
      {
         if (e_client_util_ignored_get(ec) || (ec->desk->zone != desk->zone) || (ec->iconic)) continue;
@@ -849,8 +808,7 @@ _e_desk_show_begin(E_Desk *desk, int dx, int dy)
         e_client_comp_hidden_set(ec, ec->hidden || ec->shaded);
         evas_object_show(ec->frame);
      }
-   if ((!e_config->desk_flip_animate_type) || (!desk->animate_count))
-     e_desk_flip_end(desk);
+   e_desk_flip_end(desk);
 }
 
 static void
@@ -864,11 +822,6 @@ _e_desk_hide_begin(E_Desk *desk, int dx, int dy)
    if (dy > 0) dy = 1;
 
    desk->animate_count = 0;
-   if (_e_desk_flip_cb && e_config->desk_flip_animate_type)
-     {
-        _e_desk_flip_cb(_e_desk_flip_data, desk, dx, dy, 0);
-        return;
-     }
    E_CLIENT_FOREACH(ec)
      {
         if (e_client_util_ignored_get(ec) || (ec->desk->zone != desk->zone) || (ec->iconic)) continue;

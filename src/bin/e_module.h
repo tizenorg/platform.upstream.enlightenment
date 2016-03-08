@@ -7,8 +7,6 @@ typedef struct _E_Module_Api E_Module_Api;
 
 typedef struct _E_Event_Module_Update E_Event_Module_Update;
 
-typedef struct E_Module_Desktop E_Module_Desktop;
-
 #else
 #ifndef E_MODULE_H
 #define E_MODULE_H
@@ -48,12 +46,6 @@ struct _E_Module
    void                *data;
 };
 
-struct E_Module_Desktop
-{
-   Eina_Stringshare *dir;
-   Efreet_Desktop *desktop;
-};
-
 struct _E_Module_Api
 {
    int         version;
@@ -74,9 +66,6 @@ E_API int          e_module_enabled_get(E_Module *m);
 E_API int          e_module_save_all(void);
 E_API E_Module    *e_module_find(const char *name);
 E_API Eina_List   *e_module_list(void);
-E_API Eina_List   *e_module_desktop_list(void);
-E_API void         e_module_desktop_free(E_Module_Desktop *md);
-E_API void         e_module_dialog_show(E_Module *m, const char *title, const char *body);
 E_API void         e_module_delayed_set(E_Module *m, int delayed);
 E_API void         e_module_priority_set(E_Module *m, int priority);
 E_API Eina_Bool   e_module_loading_get(void);

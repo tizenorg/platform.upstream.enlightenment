@@ -5,6 +5,7 @@
 #ifdef HAVE_WAYLAND_ONLY
 #include <wayland-tbm-server.h>
 #include "e_comp_wl.h"
+void wl_map_for_each(struct wl_map *map, void *func, void *data);
 #endif
 
 #define BUS "org.enlightenment.wm"
