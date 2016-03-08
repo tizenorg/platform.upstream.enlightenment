@@ -80,15 +80,6 @@ typedef enum
    E_WINDOW_TYPE_REAL_UNKNOWN = 999
 } E_Window_Type;
 
-typedef enum _E_Urgency_Policy
-{
-   E_ACTIVEHINT_POLICY_IGNORE,
-   E_ACTIVEHINT_POLICY_ANIMATE,
-   E_ACTIVEHINT_POLICY_ACTIVATE,
-   E_ACTIVEHINT_POLICY_ACTIVATE_EXCLUDE,
-   E_ACTIVEHINT_POLICY_LAST,
-} E_Urgency_Policy;
-
 typedef enum _E_Focus_Setting
 {
    E_FOCUS_NONE,
@@ -113,6 +104,7 @@ typedef enum _E_Maximize
    E_MAXIMIZE_DIRECTION = 0x000000f0
 } E_Maximize;
 
+// TODO: should be removed - yigl
 typedef enum _E_Fullscreen
 {
    /* Resize window */
@@ -727,7 +719,7 @@ struct E_Client
    unsigned int       want_focus : 1;
    unsigned int       user_skip_winlist : 1;
    E_Maximize         maximized;
-   E_Fullscreen       fullscreen_policy;
+   E_Fullscreen       fullscreen_policy; // TODO: should be removed - yigl
    E_Transient        transient_policy;
    unsigned int       borderless : 1;
    unsigned char      offer_resistance : 1;
@@ -779,11 +771,7 @@ struct E_Client
    } shelf_fix;
 
    Eina_List       *stick_desks;
-   E_Menu          *border_menu;
    Evas_Object     *color_editor;
-   E_Config_Dialog *border_locks_dialog;
-   E_Config_Dialog *border_remember_dialog;
-   E_Config_Dialog *border_border_dialog;
    E_Dialog        *border_prop_dialog;
    Eina_List       *pending_resize;
 
@@ -793,12 +781,8 @@ struct E_Client
       int           x, y;
    } drag;
 
-   Ecore_Timer               *raise_timer;
    E_Client_Move_Intercept_Cb move_intercept_cb;
    E_Remember                *remember;
-
-   Efreet_Desktop            *desktop;
-   E_Exec_Instance           *exe_inst;
 
    unsigned char              comp_hidden   : 1;
 
@@ -986,5 +970,149 @@ E_API void e_client_transform_clear(E_Client *ec);
 
 YOLO E_API void e_client_focus_stack_set(Eina_List *l);
 
-#include "e_client.x"
+/**
+ * Move window to coordinates that do not account client decorations yet.
+ *
+ * This call will consider given position does not account client
+ * decoration, so these values (e_comp_object_frame) will be
+ * accounted automatically. This is specially useful when it is a new
+ * client and has not be evaluated yet, in this case
+ * the frame will be zeroed and no information is known. It
+ * will mark pending requests so client will be accounted on
+ * evalutation phase.
+ *
+ * @parm x horizontal position to place window.
+ * @parm y vertical position to place window.
+ *
+ * @see e_client_move()
+ */
+static inline void
+e_client_util_move_without_frame(E_Client *ec, int x, int y)
+{
+   if (!ec) return;
+   e_comp_object_frame_xy_adjust(ec->frame, x, y, &x, &y);
+   evas_object_move(ec->frame, x, y);
+}
+
+/**
+ * Resize window to values that do not account client decorations yet.
+ *
+ * This call will consider given size and does not for account client
+ * decoration, so these values (e_comp_object_frame) will be
+ * accounted for automatically. This is specially useful when it is a new
+ * client and has not been evaluated yet, in this case
+ * e_comp_object_frame will be zeroed and no information is known. It
+ * will mark pending requests so the client will be accounted for on
+ * evalutation phase.
+ *
+ * @parm w horizontal window size.
+ * @parm h vertical window size.
+ *
+ * @see e_client_resize()
+ */
+static inline void
+e_client_util_resize_without_frame(E_Client *ec, int w, int h)
+{
+   if (!ec) return;
+   e_comp_object_frame_wh_adjust(ec->frame, w, h, &w, &h);
+   evas_object_resize(ec->frame, w, h);
+}
+
+/**
+ * Move and resize window to values that do not account for client decorations yet.
+ *
+ * This call will consider given values already accounts client
+ * decorations, so it will not be considered later. This will just
+ * work properly with clients that have being evaluated and client
+ * decorations are known (e_comp_object_frame).
+ *
+ * @parm x horizontal position to place window.
+ * @parm y vertical position to place window.
+ * @parm w horizontal window size.
+ * @parm h vertical window size.
+ *
+ * @see e_client_move_resize()
+ */
+static inline void
+e_client_util_move_resize_without_frame(E_Client *ec, int x, int y, int w, int h)
+{
+   e_client_util_move_without_frame(ec, x, y);
+   e_client_util_resize_without_frame(ec, w, h);
+}
+
+static inline Eina_Bool
+e_client_util_ignored_get(const E_Client *ec)
+{
+   if (!ec) return EINA_TRUE;
+   return ec->override || ec->input_only || ec->ignored;
+}
+
+static inline Eina_Bool
+e_client_util_desk_visible(const E_Client *ec, const E_Desk *desk)
+{
+   if (!ec) return EINA_FALSE;
+   return !ec->desk || ec->sticky || (ec->desk == desk);
+}
+
+static inline Ecore_Window
+e_client_util_pwin_get(const E_Client *ec)
+{
+   if (!ec->pixmap) return 0;
+#if defined(HAVE_WAYLAND) && !defined(HAVE_WAYLAND_ONLY)
+   return e_pixmap_parent_window_get(e_comp_x_client_pixmap_get(ec));
+#else
+   return e_pixmap_parent_window_get(ec->pixmap);
+#endif
+}
+
+static inline Ecore_Window
+e_client_util_win_get(const E_Client *ec)
+{
+   if (!ec->pixmap) return 0;
+#if defined(HAVE_WAYLAND) && !defined(HAVE_WAYLAND_ONLY)
+   return e_pixmap_window_get(e_comp_x_client_pixmap_get(ec));
+#else
+   return e_pixmap_window_get(ec->pixmap);
+#endif
+}
+
+static inline Eina_Bool
+e_client_util_resizing_get(const E_Client *ec)
+{
+   if (!ec) return EINA_FALSE;
+   return (ec->resize_mode != E_POINTER_RESIZE_NONE);
+}
+
+static inline Eina_Bool
+e_client_util_borderless(const E_Client *ec)
+{
+   if (!ec) return EINA_FALSE;
+   return (ec->borderless || ec->mwm.borderless || (!ec->border.name) || (!strcmp(ec->border.name, "borderless")));
+}
+
+static inline Eina_Bool
+e_client_util_shadow_state_get(const E_Client *ec)
+{
+   Eina_Bool on;
+   if (ec->shaped) return EINA_FALSE;
+   if (ec->argb)
+     {
+        return (!ec->borderless) && (ec->bordername || (ec->border.name && strcmp(ec->border.name, "borderless")));
+     }
+   on = !ec->e.state.video;
+   if (on)
+     on = !ec->fullscreen;
+   return on;
+}
+
+static inline Eina_Stringshare *
+e_client_util_name_get(const E_Client *ec)
+{
+   if (!ec) return NULL;
+   if (ec->netwm.name)
+     return ec->netwm.name;
+   else if (ec->icccm.title)
+     return ec->icccm.title;
+   return NULL;
+}
 #endif

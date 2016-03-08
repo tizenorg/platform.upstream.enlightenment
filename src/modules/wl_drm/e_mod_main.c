@@ -593,7 +593,7 @@ _drm_randr_apply(void)
 
         EINA_LIST_FOREACH(e_randr2->screens, ll, s)
           {
-             int orient;
+             //int orient; // FIXME
              Ecore_Drm_Output_Mode *mode = NULL;
 
              printf("DRM RRR: find output for '%s'\n", s->info.name);
@@ -632,14 +632,15 @@ _drm_randr_apply(void)
                   else
                     printf("\tDRM RRR: No Valid Drm Mode Found\n");
 
-                  if (s->config.rotation == 0)
-                    orient = (1 << 0);
-                  else if (s->config.rotation == 90)
-                    orient = (1 << 1);
-                  else if (s->config.rotation == 180)
-                    orient = (1 << 2);
-                  else if (s->config.rotation == 270)
-                    orient = (1 << 3);
+                  // FIXME
+                  //if (s->config.rotation == 0)
+                  //  orient = (1 << 0);
+                  //else if (s->config.rotation == 90)
+                  //  orient = (1 << 1);
+                  //else if (s->config.rotation == 180)
+                  //  orient = (1 << 2);
+                  //else if (s->config.rotation == 270)
+                  //  orient = (1 << 3);
 
                   ecore_drm_output_mode_set(out, mode,
                                             s->config.geom.x, s->config.geom.y);
@@ -779,8 +780,9 @@ e_modapi_init(E_Module *m)
    const char *env_w, *env_h;
    struct xkb_context *ctx = NULL;
    struct xkb_keymap *map = NULL;
+   char buf[1024];
 
-   printf("LOAD WL_DRM MODULE\n");
+   e_main_ts("\twl_drm Init Begin");
 
    dont_set_ecore_drm_keymap = getenv("NO_ECORE_DRM_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
    dont_use_xkb_cache = getenv("NO_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
@@ -800,14 +802,12 @@ e_modapi_init(E_Module *m)
      }
 
    /* set gl available if we have ecore_evas support */
-   if (ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_WAYLAND_EGL) ||
-       ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_OPENGL_DRM))
+   if (ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_OPENGL_DRM))
      e_comp_gl_set(EINA_TRUE);
 
    env_w = getenv("E_SCREEN_WIDTH");
    if (env_w)
      {
-        char buf[8];
         snprintf(buf, sizeof(buf), "%s", env_w);
         scr_w = atoi(buf);
      }
@@ -815,7 +815,6 @@ e_modapi_init(E_Module *m)
    env_h = getenv("E_SCREEN_HEIGHT");
    if (env_h)
      {
-        char buf[8];
         snprintf(buf, sizeof(buf), "%s", env_h);
         scr_h = atoi(buf);
      }
@@ -827,13 +826,19 @@ e_modapi_init(E_Module *m)
        e_comp_gl_get(), e_comp_config_get()->engine, scr_w, scr_h);
 
    if (e_config->xkb.use_cache && !dont_use_xkb_cache)
-     _e_mod_drm_keymap_set(&ctx, &map);
+     {
+        e_main_ts("\tDRM Keymap Init");
+        _e_mod_drm_keymap_set(&ctx, &map);
+        e_main_ts("\tDRM Keymap Init Done");
+     }
 
    if ((e_comp_gl_get()) &&
        (e_comp_config_get()->engine == E_COMP_ENGINE_GL))
      {
+        e_main_ts("\tEE_GL_DRM New");
         comp->ee = ecore_evas_gl_drm_new(NULL, 0, 0, 0, scr_w, scr_h);
-        DBG("Create ecore_evas_gl_drm canvas:%p", comp->ee);
+        snprintf(buf, sizeof(buf), "\tEE_GL_DRM New Done %p %dx%d", comp->ee, scr_w, scr_h);
+        e_main_ts(buf);
 
         if (!comp->ee)
           e_comp_gl_set(EINA_FALSE);
@@ -842,6 +847,7 @@ e_modapi_init(E_Module *m)
              Evas_GL *evasgl = NULL;
              Evas_GL_API *glapi = NULL;
 
+             e_main_ts("\tEvas_GL New");
              evasgl = evas_gl_new(ecore_evas_get(comp->ee));
              if (evasgl)
                {
@@ -851,6 +857,11 @@ e_modapi_init(E_Module *m)
                        e_comp_gl_set(EINA_FALSE);
                        ecore_evas_free(comp->ee);
                        comp->ee = NULL;
+                       e_main_ts("\tEvas_GL New Failed 1");
+                    }
+                  else
+                    {
+                       e_main_ts("\tEvas_GL New Done");
                     }
                }
              else
@@ -858,6 +869,7 @@ e_modapi_init(E_Module *m)
                   e_comp_gl_set(EINA_FALSE);
                   ecore_evas_free(comp->ee);
                   comp->ee = NULL;
+                  e_main_ts("\tEvas_GL New Failed 2");
                }
              evas_gl_free(evasgl);
           }
@@ -866,26 +878,17 @@ e_modapi_init(E_Module *m)
    /* fallback to framebuffer drm (non-accel) */
    if (!comp->ee)
      {
+        e_main_ts("\tEE_DRM New");
         comp->ee = ecore_evas_drm_new(NULL, 0, 0, 0, scr_w, scr_h);
-        DBG("Create ecore_evas_drm canvas:%p", comp->ee);
+        snprintf(buf, sizeof(buf), "\tEE_DRM New Done %p %dx%d", comp->ee, scr_w, scr_h);
+        e_main_ts(buf);
      }
 
    if (!comp->ee)
      {
-        if ((e_comp->ee = ecore_evas_new("drm", 0, 0, 1, 1, NULL)))
-          {
-             e_comp_gl_set(EINA_FALSE);
-             elm_config_accel_preference_set("none");
-             elm_config_accel_preference_override_set(EINA_TRUE);
-             elm_config_all_flush();
-             elm_config_save();
-          }
-        else
-          {
-             fprintf(stderr, "Could not create ecore_evas_drm canvas");
-             TRACE_DS_END();
-             return NULL;
-          }
+        fprintf(stderr, "Could not create ecore_evas_drm canvas");
+        TRACE_DS_END();
+        return NULL;
      }
 
    ecore_evas_data_set(e_comp->ee, "comp", e_comp);
@@ -896,38 +899,51 @@ e_modapi_init(E_Module *m)
    /* resize the canvas */
    if (!((scr_w == w) && (scr_h == h)))
      {
-        DBG("Change ecore_evas canvas size %dx%d -> %dx%d", scr_w, scr_h, w, h);
+        snprintf(buf, sizeof(buf), "\tEE Resize %dx%d -> %dx%d", scr_w, scr_h, w, h);
+        e_main_ts(buf);
+
         ecore_evas_resize(comp->ee, w, h);
+
+        e_main_ts("\tEE Resize Done");
      }
 
    ecore_evas_callback_resize_set(e_comp->ee, _e_mod_drm_cb_ee_resize);
 
    e_comp->screen = &drmiface;
 
+   e_main_ts("\tE_Comp_Wl Init");
    if (!e_comp_wl_init())
      {
         TRACE_DS_END();
         return NULL;
      }
+   e_main_ts("\tE_Comp_Wl Init Done");
+
+   e_main_ts("\tE_Comp_Canvas Init");
    if (!e_comp_canvas_init(w, h))
      {
         TRACE_DS_END();
         return NULL;
      }
+   e_main_ts("\tE_Comp_Canvas Init Done");
 
    e_comp_wl->screenshooter.read_pixels = _drm_read_pixels;
 
-   ecore_evas_pointer_xy_get(e_comp->ee, &e_comp_wl->ptr.x,
+   ecore_evas_pointer_xy_get(e_comp->ee,
+                             &e_comp_wl->ptr.x,
                              &e_comp_wl->ptr.y);
+
    evas_event_feed_mouse_in(e_comp->evas, 0, NULL);
 
    /* comp->pointer =  */
    /*   e_pointer_window_new(ecore_evas_window_get(comp->ee), 1); */
+   e_main_ts("\tE_Pointer New");
    if ((comp->pointer = e_pointer_canvas_new(comp->ee, EINA_TRUE)))
      {
         comp->pointer->color = EINA_TRUE;
         e_pointer_hide(comp->pointer);
      }
+   e_main_ts("\tE_Pointer New Done");
 
    /* FIXME: We need a way to trap for user changing the keymap inside of E
     *        without the event coming from X11 */
@@ -939,16 +955,14 @@ e_modapi_init(E_Module *m)
 
    /* FIXME: This is just for testing at the moment....
     * happens to jive with what drm does */
+   e_main_ts("\tE_Comp_WL Keymap Init");
    e_comp_wl_input_keymap_set("evdev", "pc105", "us", ctx, map);
+   e_main_ts("\tE_Comp_WL Keymap Init Done");
 
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,
-                         _e_mod_drm_cb_activate, comp);
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_OUTPUT,
-                         _e_mod_drm_cb_output, comp);
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_ADD,
-                         _e_mod_drm_cb_input_device_add, comp);
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_DEL,
-                         _e_mod_drm_cb_input_device_del, comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,         _e_mod_drm_cb_activate,         comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_OUTPUT,           _e_mod_drm_cb_output,           comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_ADD, _e_mod_drm_cb_input_device_add, comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_DEL, _e_mod_drm_cb_input_device_del, comp);
 
    TRACE_DS_END();
 

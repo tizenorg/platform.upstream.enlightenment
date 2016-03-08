@@ -33,7 +33,6 @@ typedef struct _E_Binding_Key    E_Binding_Key;
 typedef struct _E_Binding_Edge   E_Binding_Edge;
 typedef struct _E_Binding_Signal E_Binding_Signal;
 typedef struct _E_Binding_Wheel  E_Binding_Wheel;
-typedef struct _E_Binding_Acpi   E_Binding_Acpi;
 
 typedef struct E_Binding_Event_Mouse_Button E_Binding_Event_Mouse_Button;
 typedef struct E_Binding_Event_Wheel E_Binding_Event_Wheel;
@@ -123,13 +122,6 @@ struct _E_Binding_Wheel
    const char *params;
 };
 
-struct _E_Binding_Acpi
-{
-   E_Binding_Context ctxt;
-   int type, status;
-   const char *action, *params;
-};
-
 EINTERN int         e_bindings_init(void);
 EINTERN int         e_bindings_shutdown(void);
 
@@ -188,11 +180,6 @@ E_API E_Action   *e_bindings_wheel_find(E_Binding_Context ctxt, E_Binding_Event_
 E_API E_Action   *e_bindings_wheel_event_handle(E_Binding_Context ctxt, E_Object *obj, E_Binding_Event_Wheel *ev);
 E_API E_Action   *e_bindings_wheel_evas_event_handle(E_Binding_Context ctxt, E_Object *obj, Evas_Event_Mouse_Wheel *ev);
 E_API E_Action   *e_bindings_wheel_ecore_event_handle(E_Binding_Context ctxt, E_Object *obj, Ecore_Event_Mouse_Wheel *ev);
-
-E_API void e_bindings_acpi_add(E_Binding_Context ctxt, int type, int status, const char *action, const char *params);
-E_API void e_bindings_acpi_del(E_Binding_Context ctxt, int type, int status, const char *action, const char *params);
-E_API E_Action *e_bindings_acpi_find(E_Binding_Context ctxt, E_Event_Acpi *ev, E_Binding_Acpi **bind_ret);
-E_API E_Action *e_bindings_acpi_event_handle(E_Binding_Context ctxt, E_Object *obj, E_Event_Acpi *ev);
 
 E_API int e_bindings_evas_modifiers_convert(Evas_Modifier *modifiers);
 E_API int e_bindings_modifiers_to_ecore_convert(E_Binding_Modifier modifiers);

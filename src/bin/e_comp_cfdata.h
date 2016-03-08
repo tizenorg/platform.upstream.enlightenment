@@ -13,7 +13,6 @@ struct _E_Comp_Config
    const char   *effect_file;
    const char   *effect_style;
    int           engine;
-   int           max_unmapped_pixels;
    int           max_unmapped_time;
    int           min_unmapped_time;
    int           fps_average_range;
@@ -25,7 +24,6 @@ struct _E_Comp_Config
    unsigned char grab;
    unsigned char vsync;
    unsigned char swap_mode;
-   unsigned char keep_unmapped;
    unsigned char send_flush;
    unsigned char send_dump;
    unsigned char nocomp_fs;

@@ -36,7 +36,6 @@ e_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd)
    E_CONFIG_VAL(D, T, engine, INT);
    E_CONFIG_VAL(D, T, effect_file, STR);
    E_CONFIG_VAL(D, T, effect_style, STR);
-   //E_CONFIG_VAL(D, T, max_unmapped_pixels, INT);
    E_CONFIG_VAL(D, T, max_unmapped_time, INT);
    E_CONFIG_VAL(D, T, min_unmapped_time, INT);
    E_CONFIG_VAL(D, T, fps_average_range, INT);
@@ -48,7 +47,6 @@ e_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd)
    E_CONFIG_VAL(D, T, grab, UCHAR);
    E_CONFIG_VAL(D, T, vsync, UCHAR);
    E_CONFIG_VAL(D, T, swap_mode, UCHAR);
-   //E_CONFIG_VAL(D, T, keep_unmapped, UCHAR);
    E_CONFIG_VAL(D, T, send_flush, UCHAR);
    E_CONFIG_VAL(D, T, send_dump, UCHAR);
    E_CONFIG_VAL(D, T, nocomp_fs, UCHAR);
@@ -63,6 +61,7 @@ e_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd)
    E_CONFIG_VAL(D, T, fast_borders, UCHAR);
    E_CONFIG_VAL(D, T, fast_menus, UCHAR);
    E_CONFIG_VAL(D, T, fast_overrides, UCHAR);
+   E_CONFIG_VAL(D, T, fast_objects, UCHAR);
    E_CONFIG_VAL(D, T, match.disable_popups, UCHAR);
    E_CONFIG_VAL(D, T, match.disable_borders, UCHAR);
    E_CONFIG_VAL(D, T, match.disable_overrides, UCHAR);
@@ -87,7 +86,6 @@ e_comp_cfdata_config_new(void)
    cfg->effect_file = NULL;
    cfg->effect_style = "none";
    cfg->engine = E_COMP_ENGINE_SW;
-   cfg->max_unmapped_pixels = 32 * 1024;  // implement
    cfg->max_unmapped_time = 10 * 3600; // implement
    cfg->min_unmapped_time = 5 * 60; // implement
    cfg->fps_average_range = 30;
@@ -103,7 +101,6 @@ e_comp_cfdata_config_new(void)
 #else
    cfg->swap_mode = 0;
 #endif
-   cfg->keep_unmapped = 1;
    cfg->send_flush = 1; // implement
    cfg->send_dump = 1; // implement
    cfg->nocomp_fs = 1;
@@ -234,4 +231,3 @@ e_comp_cfdata_config_free(E_Comp_Config *cfg)
 
    free(cfg);
 }
-
