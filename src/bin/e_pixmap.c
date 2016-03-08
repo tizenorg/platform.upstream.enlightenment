@@ -850,6 +850,8 @@ e_pixmap_image_refresh(E_Pixmap *cp)
            E_Comp_Wl_Buffer *buffer = cp->buffer;
            struct wl_shm_buffer *shm_buffer;
 
+           if (!buffer) return EINA_FALSE;
+
            shm_buffer = buffer->shm_buffer;
            if (cp->buffer_ref.buffer && (cp->buffer_ref.buffer != buffer))
              {
@@ -866,8 +868,6 @@ e_pixmap_image_refresh(E_Pixmap *cp)
 
            cp->w = cp->h = 0;
            cp->image_argb = EINA_FALSE;
-
-           if (!buffer) return EINA_FALSE;
 
            if (buffer->type == E_COMP_WL_BUFFER_TYPE_SHM)
              {
