@@ -3168,7 +3168,12 @@ _e_comp_wl_subsurface_commit_to_cache(E_Client *ec)
    sdata->cached.sx = cdata->pending.sx;
    sdata->cached.sy = cdata->pending.sy;
    /* sdata->cached.buffer = cdata->pending.buffer; */
-   sdata->cached.new_attach = cdata->pending.new_attach;
+
+   /* When subsurface is sync mode, the commit of subsurface can happen before
+    * a parent surface is committed. In this case, we can't show a attached
+    * buffer on screen.
+    */
+   //sdata->cached.new_attach = cdata->pending.new_attach;
 
    sdata->cached.buffer_viewport.changed |= cdata->pending.buffer_viewport.changed;
    sdata->cached.buffer_viewport.buffer =cdata->pending.buffer_viewport.buffer;
