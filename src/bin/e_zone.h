@@ -70,13 +70,13 @@ struct _E_Zone
    /* formerly E_Comp_Zone */
    Evas_Object *base;
    Evas_Object *over;
-   double       bl;
-   Eina_Bool    bloff;
+   //double       bl;    // backlight level
+   //Eina_Bool    bloff; // backlight is off
 
    struct
    {
       E_Zone_Edge        switching;
-      E_Shelf           *es;
+      //E_Shelf           *es;
       E_Event_Zone_Edge *ev;
       E_Binding_Edge    *bind;
    } flip;
@@ -95,11 +95,6 @@ struct _E_Zone
 
    int            id;
 
-   struct
-   {
-      int       x, y, w, h;
-      Eina_Bool dirty : 1;
-   } useful_geometry;
    Eina_Bool      stowed : 1;
 #ifdef _F_ZONE_WINDOW_ROTATION_
    struct
@@ -193,7 +188,6 @@ E_API void      e_zone_edge_win_layer_set(E_Zone *zone, E_Layer layer);
 
 E_API void      e_zone_useful_geometry_dirty(E_Zone *zone);
 E_API void      e_zone_useful_geometry_get(E_Zone *zone, int *x, int *y, int *w, int *h);
-E_API void      e_zone_desk_useful_geometry_get(const E_Zone *zone, const E_Desk *desk, int *x, int *y, int *w, int *h);
 E_API void      e_zone_stow(E_Zone *zone);
 E_API void      e_zone_unstow(E_Zone *zone);
 

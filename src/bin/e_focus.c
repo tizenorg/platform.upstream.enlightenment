@@ -1,7 +1,6 @@
 #include "e.h"
 
 /* local subsystem functions */
-static Eina_Bool _e_focus_raise_timer(void *data);
 
 /* local subsystem globals */
 
@@ -15,16 +14,10 @@ e_focus_event_mouse_in(E_Client *ec)
      {
         evas_object_focus_set(ec->frame, 1);
      }
-   E_FREE_FUNC(ec->raise_timer, ecore_timer_del);
    if (e_config->use_auto_raise)
      {
-        if (e_config->auto_raise_delay == 0.0)
-          {
-             if (!ec->lock_user_stacking)
-               evas_object_raise(ec->frame);
-          }
-        else
-          ec->raise_timer = ecore_timer_add(e_config->auto_raise_delay, _e_focus_raise_timer, ec);
+        if (!ec->lock_user_stacking)
+          evas_object_raise(ec->frame);
      }
 }
 
@@ -39,7 +32,6 @@ e_focus_event_mouse_out(E_Client *ec)
                evas_object_focus_set(ec->frame, 0);
           }
      }
-   E_FREE_FUNC(ec->raise_timer, ecore_timer_del);
 }
 
 E_API void
@@ -71,13 +63,4 @@ e_focus_event_focus_out(E_Client *ec EINA_UNUSED)
 }
 
 /* local subsystem functions */
-static Eina_Bool
-_e_focus_raise_timer(void *data)
-{
-   E_Client *ec = data;
-
-   if (!ec->lock_user_stacking) evas_object_raise(ec->frame);
-   ec->raise_timer = NULL;
-   return ECORE_CALLBACK_CANCEL;
-}
 

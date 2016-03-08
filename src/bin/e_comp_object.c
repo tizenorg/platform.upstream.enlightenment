@@ -82,7 +82,6 @@ typedef struct _E_Comp_Object
    Evas_Object         *input_obj; // input rect
    Evas_Object         *obj;  // composite object
    Evas_Object         *frame_object; // for client frames
-   Evas_Object         *frame_icon; // for client frames
    Evas_Object         *zoomobj; // zoomap
    Evas_Object         *shobj;  // shadow object
    Evas_Object         *effect_obj; // effects object
@@ -374,20 +373,6 @@ _e_comp_object_shadow(E_Comp_Object *cw)
    if (cw->frame_object)
      edje_object_signal_emit(cw->shobj, "e,state,shadow,off", "e");
    evas_object_smart_callback_call(cw->smart_obj, "shadow_change", cw->ec);
-}
-
-/* trigger e_binding from an edje signal on a client frame */
-static void
-_e_comp_object_cb_signal_bind(void *data, Evas_Object *obj EINA_UNUSED, const char *emission, const char *source)
-{
-   E_Comp_Object *cw = data;
-
-#ifndef HAVE_WAYLAND_ONLY
-   if (e_dnd_active()) return;
-#endif
-   if (cw->ec->iconic || cw->ec->cur_mouse_action) return;
-   e_bindings_signal_handle(E_BINDING_CONTEXT_WINDOW, E_OBJECT(cw->ec),
-                            emission, source);
 }
 
 /////////////////////////////////////
@@ -722,7 +707,6 @@ _e_comp_object_shadow_setup(E_Comp_Object *cw)
    if (cw->frame_object)
      {
         edje_object_part_swallow(cw->frame_object, "e.swallow.client", cw->obj);
-        edje_object_part_swallow(cw->frame_object, "e.swallow.icon", cw->frame_icon);
         if (cw->zoomap_disabled)
           edje_object_part_swallow(cw->shobj, "e.swallow.content", cw->frame_object);
         else
@@ -1924,127 +1908,6 @@ _e_comp_smart_cb_frame_recalc(void *data, Evas_Object *obj, void *event_info EIN
      evas_object_resize(cw->ec->frame, w, h);
 }
 
-static Eina_Bool
-_e_comp_object_shade_animator(void *data)
-{
-   E_Comp_Object *cw = data;
-   Eina_Bool move = EINA_FALSE;
-   int x, y, w, h;
-   double dt, val;
-   double dur;
-
-   dt = ecore_loop_time_get() - cw->shade.start;
-   dur = cw->ec->client.h / e_config->border_shade_speed;
-   val = dt / dur;
-
-   if (val < 0.0)
-     val = 0.0;
-   else if (val > 1.0)
-     val = 1.0;
-
-   if (e_config->border_shade_transition == E_TRANSITION_SINUSOIDAL)
-     {
-        cw->shade.val =
-          ecore_animator_pos_map(val, ECORE_POS_MAP_SINUSOIDAL, 0.0, 0.0);
-        if (!cw->ec->shaded) cw->shade.val = 1.0 - cw->shade.val;
-     }
-   else if (e_config->border_shade_transition == E_TRANSITION_DECELERATE)
-     {
-        cw->shade.val =
-          ecore_animator_pos_map(val, ECORE_POS_MAP_DECELERATE, 0.0, 0.0);
-        if (!cw->ec->shaded) cw->shade.val = 1.0 - cw->shade.val;
-     }
-   else if (e_config->border_shade_transition == E_TRANSITION_ACCELERATE)
-     {
-        cw->shade.val =
-          ecore_animator_pos_map(val, ECORE_POS_MAP_ACCELERATE, 0.0, 0.0);
-        if (!cw->ec->shaded) cw->shade.val = 1.0 - cw->shade.val;
-     }
-   else if (e_config->border_shade_transition == E_TRANSITION_LINEAR)
-     {
-        cw->shade.val =
-          ecore_animator_pos_map(val, ECORE_POS_MAP_LINEAR, 0.0, 0.0);
-        if (!cw->ec->shaded) cw->shade.val = 1.0 - cw->shade.val;
-     }
-   else if (e_config->border_shade_transition == E_TRANSITION_ACCELERATE_LOTS)
-     {
-        cw->shade.val =
-          ecore_animator_pos_map(val, ECORE_POS_MAP_ACCELERATE_FACTOR, 1.7, 0.0);
-        if (!cw->ec->shaded) cw->shade.val = 1.0 - cw->shade.val;
-     }
-   else if (e_config->border_shade_transition == E_TRANSITION_DECELERATE_LOTS)
-     {
-        cw->shade.val =
-          ecore_animator_pos_map(val, ECORE_POS_MAP_DECELERATE_FACTOR, 1.7, 0.0);
-        if (!cw->ec->shaded) cw->shade.val = 1.0 - cw->shade.val;
-     }
-   else if (e_config->border_shade_transition == E_TRANSITION_SINUSOIDAL_LOTS)
-     {
-        cw->shade.val =
-          ecore_animator_pos_map(val, ECORE_POS_MAP_SINUSOIDAL_FACTOR, 1.7, 0.0);
-        if (!cw->ec->shaded) cw->shade.val = 1.0 - cw->shade.val;
-     }
-   else if (e_config->border_shade_transition == E_TRANSITION_BOUNCE)
-     {
-        cw->shade.val =
-          ecore_animator_pos_map(val, ECORE_POS_MAP_BOUNCE, 1.2, 3.0);
-        if (!cw->ec->shaded) cw->shade.val = 1.0 - cw->shade.val;
-     }
-   else if (e_config->border_shade_transition == E_TRANSITION_BOUNCE_LOTS)
-     {
-        cw->shade.val =
-          ecore_animator_pos_map(val, ECORE_POS_MAP_BOUNCE, 1.2, 5.0);
-        if (!cw->ec->shaded) cw->shade.val = 1.0 - cw->shade.val;
-     }
-   else
-     {
-        cw->shade.val =
-          ecore_animator_pos_map(val, ECORE_POS_MAP_LINEAR, 0.0, 0.0);
-        if (!cw->ec->shaded) cw->shade.val = 1.0 - cw->shade.val;
-     }
-
-   /* due to M_PI's inaccuracy, cos(M_PI/2) != 0.0, so we need this */
-   if (cw->shade.val < 0.001) cw->shade.val = 0.0;
-   else if (cw->shade.val > .999)
-     cw->shade.val = 1.0;
-
-   x = cw->ec->x, y = cw->ec->y, w = cw->ec->w, h = cw->ec->h;
-   if (cw->shade.dir == E_DIRECTION_UP)
-     h = cw->client_inset.t + cw->ec->client.h * cw->shade.val;
-   else if (cw->shade.dir == E_DIRECTION_DOWN)
-     {
-        h = cw->client_inset.t + cw->ec->client.h * cw->shade.val;
-        y = cw->shade.y + cw->ec->client.h * (1 - cw->shade.val);
-        move = EINA_TRUE;
-     }
-   else if (cw->shade.dir == E_DIRECTION_LEFT)
-     w = cw->client_inset.t + cw->ec->client.w * cw->shade.val;
-   else if (cw->shade.dir == E_DIRECTION_RIGHT)
-     {
-        w = cw->client_inset.t + cw->ec->client.w * cw->shade.val;
-        x = cw->shade.x + cw->ec->client.w * (1 - cw->shade.val);
-        move = EINA_TRUE;
-     }
-
-   if (move) evas_object_move(cw->smart_obj, x, y);
-   evas_object_resize(cw->smart_obj, w, h);
-
-   /* we're done */
-   if (val == 1)
-     {
-        cw->shade.anim = NULL;
-
-        evas_object_smart_callback_call(cw->smart_obj, "shade_done", NULL);
-        if (cw->ec->shaded)
-          e_comp_object_signal_emit(cw->smart_obj, "e,state,shaded", "e");
-        else
-          e_comp_object_signal_emit(cw->smart_obj, "e,state,unshaded", "e");
-        edje_object_message_signal_process(cw->frame_object);
-        _e_comp_smart_cb_frame_recalc(cw, cw->smart_obj, NULL);
-     }
-   return cw->ec->shading;
-}
-
 static void
 _e_comp_smart_cb_shading(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
@@ -2056,9 +1919,6 @@ _e_comp_smart_cb_shading(void *data, Evas_Object *obj EINA_UNUSED, void *event_i
    cw->shade.x = cw->x;
    cw->shade.y = cw->y;
    e_comp_object_signal_emit(cw->smart_obj, "e,state,shading", "e");
-   cw->shade.start = ecore_loop_time_get();
-   cw->shade.dir = (E_Direction)event_info;
-   cw->shade.anim = ecore_animator_add(_e_comp_object_shade_animator, cw);
 }
 
 static void
@@ -2070,9 +1930,6 @@ _e_comp_smart_cb_shaded(void *data, Evas_Object *obj EINA_UNUSED, void *event_in
    E_FREE_FUNC(cw->shade.anim, ecore_timer_del);
 
    e_comp_object_signal_emit(cw->smart_obj, "e,state,shaded", "e");
-   cw->shade.start = -100;
-   cw->shade.dir = (E_Direction)event_info;
-   _e_comp_object_shade_animator(cw);
 }
 
 static void
@@ -2083,10 +1940,7 @@ _e_comp_smart_cb_unshading(void *data, Evas_Object *obj EINA_UNUSED, void *event
    if (!cw->ec) return; //NYI
    E_FREE_FUNC(cw->shade.anim, ecore_timer_del);
 
-   cw->shade.dir = (E_Direction)event_info;
    e_comp_object_signal_emit(cw->smart_obj, "e,state,unshading", "e");
-   cw->shade.start = ecore_loop_time_get();
-   cw->shade.anim = ecore_animator_add(_e_comp_object_shade_animator, cw);
 }
 
 static void
@@ -2097,21 +1951,7 @@ _e_comp_smart_cb_unshaded(void *data, Evas_Object *obj EINA_UNUSED, void *event_
    if (!cw->ec) return; //NYI
    E_FREE_FUNC(cw->shade.anim, ecore_timer_del);
 
-   cw->shade.dir = (E_Direction)event_info;
-   if (cw->shade.dir == E_DIRECTION_UP ||
-       cw->shade.dir == E_DIRECTION_LEFT)
-     {
-        cw->shade.x = cw->x;
-        cw->shade.y = cw->y;
-     }
-   else
-     {
-        cw->shade.x = cw->x - cw->w;
-        cw->shade.y = cw->y - cw->h;
-     }
    e_comp_object_signal_emit(cw->smart_obj, "e,state,unshaded", "e");
-   cw->shade.start = -100;
-   _e_comp_object_shade_animator(cw);
 }
 
 static void
@@ -2438,7 +2278,6 @@ _e_comp_smart_del(Evas_Object *obj)
    evas_object_del(cw->clip);
    evas_object_del(cw->effect_obj);
    evas_object_del(cw->shobj);
-   evas_object_del(cw->frame_icon);
    evas_object_del(cw->frame_object);
    evas_object_del(cw->zoomobj);
    evas_object_del(cw->input_obj);
@@ -3219,19 +3058,6 @@ e_comp_object_frame_allowed(Evas_Object *obj)
    return (!cw->ec->mwm.borderless) && (cw->frame_object || (!cw->client_inset.calc));
 }
 
-E_API void
-e_comp_object_frame_icon_geometry_get(Evas_Object *obj, int *x, int *y, int *w, int *h)
-{
-   API_ENTRY;
-
-   if (x) *x = 0;
-   if (y) *y = 0;
-   if (w) *w = 0;
-   if (h) *h = 0;
-   if (!cw->frame_icon) return;
-   evas_object_geometry_get(cw->frame_icon, x, y, w, h);
-}
-
 E_API Eina_Bool
 e_comp_object_frame_title_set(Evas_Object *obj, const char *name)
 {
@@ -3248,20 +3074,6 @@ e_comp_object_frame_exists(Evas_Object *obj)
 {
    API_ENTRY EINA_FALSE;
    return !!cw->frame_object;
-}
-
-E_API void
-e_comp_object_frame_icon_update(Evas_Object *obj)
-{
-   API_ENTRY;
-
-   E_FREE_FUNC(cw->frame_icon, evas_object_del);
-   if (!edje_object_part_exists(cw->frame_object, "e.swallow.icon"))
-     return;
-   cw->frame_icon = e_client_icon_add(cw->ec, e_comp->evas);
-   if (!cw->frame_icon) return;
-   if (!edje_object_part_swallow(cw->frame_object, "e.swallow.icon", cw->frame_icon))
-     E_FREE_FUNC(cw->frame_icon, evas_object_del);
 }
 
 E_API Eina_Bool
@@ -3301,7 +3113,6 @@ e_comp_object_frame_theme_set(Evas_Object *obj, const char *name)
    if ((!ok) && (!e_util_strcmp(name, "borderless")))
      {
         cw->frame_object = NULL;
-        E_FREE_FUNC(cw->frame_icon, evas_object_del);
         evas_object_del(o);
         eina_stringshare_del(cw->frame_theme);
         cw->frame_theme = theme;
@@ -3337,15 +3148,7 @@ e_comp_object_frame_theme_set(Evas_Object *obj, const char *name)
         if (cw->frame_name)
           edje_object_part_text_set(o, "e.text.title", cw->frame_name);
 
-        if (pbg)
-          {
-             if (cw->frame_icon)
-               {
-                  if (!edje_object_part_swallow(cw->frame_object, "e.swallow.icon", cw->frame_icon))
-                    E_FREE_FUNC(cw->frame_icon, evas_object_del);
-               }
-          }
-        else
+        if (!pbg)
           {
              cw->ec->changes.icon = 1;
              EC_CHANGED(cw->ec);
@@ -3355,7 +3158,6 @@ e_comp_object_frame_theme_set(Evas_Object *obj, const char *name)
      {
         CRI("USER IS USING A SHITTY THEME! ABORT!!!!");
         evas_object_del(o);
-        E_FREE_FUNC(cw->frame_icon, evas_object_del);
      }
 reshadow:
    if (cw->shobj)
@@ -3399,8 +3201,6 @@ reshadow:
    if (cw->frame_object)
      {
         cw->frame_extends = !!edje_object_data_get(cw->frame_object, "frame_extends");
-        edje_object_signal_callback_add(cw->frame_object, "*", "*",
-                                        _e_comp_object_cb_signal_bind, cw);
      }
    else
      cw->frame_extends = 0;
@@ -3417,8 +3217,6 @@ e_comp_object_signal_emit(Evas_Object *obj, const char *sig, const char *src)
    //INF("EMIT %p: %s %s", cw->ec, sig, src);
    edje_object_signal_emit(cw->shobj, sig, src);
    if (cw->frame_object) edje_object_signal_emit(cw->frame_object, sig, src);
-   if (cw->frame_icon && e_icon_edje_get(cw->frame_icon))
-     edje_object_signal_emit(e_icon_edje_get(cw->frame_icon), sig, src);
    if ((cw->ec->override && e_comp_config_get()->match.disable_overrides) ||
        ((!cw->ec->override) && e_comp_config_get()->match.disable_borders))
      return;
@@ -3924,7 +3722,7 @@ e_comp_object_render(Evas_Object *obj)
         /* set pixel data */
         if (e_comp->comp_type == E_PIXMAP_TYPE_WL)
           {
-#warning FIXME BROKEN WAYLAND SHM BUFFER PROTOCOL
+             // TODO: FIXME BROKEN WAYLAND SHM BUFFER PROTOCOL
              evas_object_image_data_copy_set(cw->obj, cw->blanked ? NULL : pix);
              pix = evas_object_image_data_get(cw->obj, 0);
              evas_object_image_data_set(cw->obj, pix);
