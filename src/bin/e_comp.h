@@ -241,11 +241,6 @@ E_API void e_comp_button_bindings_ungrab_all(void);
 E_API void e_comp_client_redirect_toggle(E_Client *ec);
 E_API Eina_Bool e_comp_util_object_is_above_nocomp(Evas_Object *obj);
 
-EINTERN Evas_Object *e_comp_style_selector_create(Evas *evas, const char **source);
-E_API E_Config_Dialog *e_int_config_comp(Evas_Object *parent, const char *params);
-E_API E_Config_Dialog *e_int_config_comp_match(Evas_Object *parent, const char *params);
-
-
 E_API Eina_Bool e_comp_util_kbd_grabbed(void);
 E_API Eina_Bool e_comp_util_mouse_grabbed(void);
 

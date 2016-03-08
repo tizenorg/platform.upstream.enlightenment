@@ -897,18 +897,6 @@ _e_client_del(E_Client *ec)
    ec->changed = 0;
    focus_stack = eina_list_remove(focus_stack, ec);
    raise_stack = eina_list_remove(raise_stack, ec);
-   if (ec->exe_inst)
-     {
-        if (ec->exe_inst->phony && (eina_list_count(ec->exe_inst->clients) == 1))
-          e_exec_phony_del(ec->exe_inst);
-        else
-          {
-             if (!ec->exe_inst->deleted)
-               ec->exe_inst->clients = eina_list_remove(ec->exe_inst->clients, ec);
-          }
-        if (!ec->exe_inst->deleted)
-          ec->exe_inst = NULL;
-     }
 
    if (ec->cur_mouse_action)
      {
@@ -929,19 +917,14 @@ _e_client_del(E_Client *ec)
         e_object_del(E_OBJECT(client_drag));
         client_drag = NULL;
      }
-   if (ec->border_menu) e_menu_deactivate(ec->border_menu);
    if (!stopping)
      {
         e_client_comp_hidden_set(ec, 1);
         evas_object_pass_events_set(ec->frame, 1);
      }
 
-   E_FREE_FUNC(ec->border_locks_dialog, e_object_del);
-   E_FREE_FUNC(ec->border_remember_dialog, e_object_del);
-   E_FREE_FUNC(ec->border_border_dialog, e_object_del);
    E_FREE_FUNC(ec->border_prop_dialog, e_object_del);
    E_FREE_FUNC(ec->color_editor, evas_object_del);
-   e_int_client_menu_del(ec);
    E_FREE_FUNC(ec->raise_timer, ecore_timer_del);
 
    if (ec->internal_elm_win)
@@ -2555,16 +2538,6 @@ _e_client_eval(E_Client *ec)
           }
 
         e_comp_object_frame_icon_update(ec->frame);
-        if (ec->desktop)
-          {
-             if (!ec->exe_inst)
-               e_exec_phony(ec);
-             if (!ec->exe_inst->desktop)
-               {
-                  efreet_desktop_ref(ec->desktop);
-                  ec->exe_inst->desktop = ec->desktop;
-               }
-          }
         ec->changes.icon = 0;
         prop |= E_CLIENT_PROPERTY_ICON;
 #else
@@ -3126,7 +3099,6 @@ e_client_shutdown(void)
 
    E_FREE_LIST(handlers, ecore_event_handler_del);
 
-   e_int_client_menu_hooks_clear();
    E_FREE_FUNC(warp_timer, ecore_timer_del);
    warp_client = NULL;
 }
@@ -5193,16 +5165,6 @@ e_client_act_menu_begin(E_Client *ec, E_Binding_Event_Mouse_Button *ev, int key)
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
    if (!ec->zone) return;
-   if (ec->border_menu) return;
-   if (ev)
-     e_int_client_menu_show(ec, ev->canvas.x, ev->canvas.y, key, ev->timestamp);
-   else
-     {
-        int x, y;
-
-        evas_pointer_canvas_xy_get(e_comp->evas, &x, &y);
-        e_int_client_menu_show(ec, x, y, key, 0);
-     }
 }
 
 E_API void

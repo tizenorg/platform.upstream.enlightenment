@@ -214,8 +214,6 @@ e_desk_show(E_Desk *desk)
    E_Event_Desk_Before_Show *eev;
    E_Event_Desk_After_Show *eeev;
    Edje_Message_Float_Set *msg;
-   Eina_List *l;
-   E_Shelf *es;
    E_Desk *desk2;
    int dx = 0, dy = 0;
 
@@ -290,15 +288,6 @@ e_desk_show(E_Desk *desk)
    ev->desk = desk;
    e_object_ref(E_OBJECT(desk));
    ecore_event_add(E_EVENT_DESK_SHOW, ev, _e_desk_event_desk_show_free, NULL);
-
-   EINA_LIST_FOREACH(e_shelf_list(), l, es)
-     {
-        if (es->zone != desk->zone) continue;
-        if (e_shelf_desk_visible(es, desk))
-          e_shelf_show(es);
-        else
-          e_shelf_hide(es);
-     }
 
    if (e_config->desk_flip_animate_mode == 0)
      {

@@ -70,7 +70,7 @@ _e_comp_canvas_cb_mouse_in(void *d EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object
    e_screensaver_notidle();
    if (e_client_action_get()) return;
    ec = e_client_focused_get();
-   if (ec && (!ec->border_menu)) e_focus_event_mouse_out(ec);
+   if (ec) e_focus_event_mouse_out(ec);
 }
 
 static void
@@ -101,13 +101,6 @@ static Eina_Bool
 _e_comp_cb_key_down(void *data EINA_UNUSED, int ev_type EINA_UNUSED, Ecore_Event_Key *ev)
 {
    e_screensaver_notidle();
-   if (e_menu_grab_window_get())
-     {
-#ifdef HAVE_WAYLAND
-        e_comp_wl_key_down(ev);
-#endif
-        return ECORE_CALLBACK_RENEW;
-     }
    if ((e_comp->comp_type == E_PIXMAP_TYPE_X) && (ev->event_window != e_comp->root))
      {
         E_Client *ec;
@@ -131,13 +124,6 @@ static Eina_Bool
 _e_comp_cb_key_up(void *data EINA_UNUSED, int ev_type EINA_UNUSED, Ecore_Event_Key *ev)
 {
    e_screensaver_notidle();
-   if (e_menu_grab_window_get())
-     {
-#ifdef HAVE_WAYLAND
-        e_comp_wl_key_up(ev);
-#endif
-        return ECORE_CALLBACK_RENEW;
-     }
    if ((e_comp->comp_type == E_PIXMAP_TYPE_X) && (ev->event_window != e_comp->root)) return ECORE_CALLBACK_PASS_ON;
    return !e_bindings_key_up_event_handle(E_BINDING_CONTEXT_MANAGER, E_OBJECT(e_comp), ev)
 #ifdef HAVE_WAYLAND
@@ -537,7 +523,6 @@ e_comp_canvas_update(void)
                   e_object_del(E_OBJECT(zone));
                }
           }
-        if (changed) e_shelf_config_update();
      }
    else
      {
@@ -547,7 +532,6 @@ e_comp_canvas_update(void)
         if (z)
           {
              changed |= e_zone_move_resize(z, 0, 0, e_comp->w, e_comp->h);
-             if (changed) e_shelf_zone_move_resize_handle(z);
           }
      }
 
@@ -562,15 +546,6 @@ e_comp_canvas_update(void)
      {
         E_FREE_FUNC(zone->base, evas_object_del);
         E_FREE_FUNC(zone->over, evas_object_del);
-        if (zone->bloff)
-          {
-             if (!e_comp_config_get()->nofade)
-               {
-                  if (e_backlight_mode_get(zone) != E_BACKLIGHT_MODE_NORMAL)
-                    e_backlight_mode_set(zone, E_BACKLIGHT_MODE_NORMAL);
-                  e_backlight_level_set(zone, e_config->backlight.normal, -1.0);
-               }
-          }
         e_comp_canvas_zone_update(zone);
      }
 
