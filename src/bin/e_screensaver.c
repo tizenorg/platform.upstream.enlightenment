@@ -23,7 +23,6 @@ static Ecore_Timer *_e_screensaver_suspend_timer = NULL;
 static Eina_Bool _e_screensaver_on = EINA_FALSE;
 
 static Ecore_Timer *screensaver_idle_timer = NULL;
-static Eina_Bool screensaver_dimmed = EINA_FALSE;
 
 #ifdef HAVE_WAYLAND
 static Ecore_Timer *_e_screensaver_timer;
@@ -207,8 +206,8 @@ _e_screensaver_ask_presentation_mode(void)
                        _e_screensaver_ask_presentation_no_forever, NULL);
 
    e_dialog_button_focus_num(dia, 0);
-   e_widget_list_homogeneous_set(dia->box_object, 0);
-   elm_win_center(dia->win, 1, 1);
+   //e_widget_list_homogeneous_set(dia->box_object, 0);
+   //elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
 
    evas_object_event_callback_add(dia->bg_object, EVAS_CALLBACK_KEY_DOWN,
@@ -217,9 +216,11 @@ _e_screensaver_ask_presentation_mode(void)
    _e_screensaver_ask_presentation_dia = dia;
 }
 
+/* TODO: remove this function */
 static Eina_Bool
 _e_screensaver_suspend_cb(void *data EINA_UNUSED)
 {
+#if 0
    _e_screensaver_suspend_timer = NULL;
    if (e_config->screensaver_suspend)
      {
@@ -227,6 +228,7 @@ _e_screensaver_suspend_cb(void *data EINA_UNUSED)
             (e_powersave_mode_get() > E_POWERSAVE_MODE_LOW))
           e_sys_action_do(E_SYS_SUSPEND, NULL);
      }
+#endif
    return EINA_FALSE;
 }
 
@@ -501,11 +503,6 @@ e_screensaver_eval(Eina_Bool saver_on)
              if (e_config->screensaver_enable)
                screensaver_idle_timer = ecore_timer_add
                    (t, _e_screensaver_idle_timer_cb, NULL);
-             if (e_backlight_mode_get(NULL) != E_BACKLIGHT_MODE_DIM)
-               {
-                  e_backlight_mode_set(NULL, E_BACKLIGHT_MODE_DIM);
-                  screensaver_dimmed = EINA_TRUE;
-               }
           }
         else
           {
@@ -517,18 +514,7 @@ e_screensaver_eval(Eina_Bool saver_on)
    if (screensaver_idle_timer)
      {
         E_FREE_FUNC(screensaver_idle_timer, ecore_timer_del);
-        if (e_config->backlight.idle_dim)
-          {
-             if (e_backlight_mode_get(NULL) != E_BACKLIGHT_MODE_NORMAL)
-               e_backlight_mode_set(NULL, E_BACKLIGHT_MODE_NORMAL);
-          }
         return;
-     }
-   if (screensaver_dimmed)
-     {
-        if (e_backlight_mode_get(NULL) != E_BACKLIGHT_MODE_NORMAL)
-          e_backlight_mode_set(NULL, E_BACKLIGHT_MODE_NORMAL);
-        screensaver_dimmed = EINA_FALSE;
      }
    if (e_screensaver_on_get())
      ecore_event_add(E_EVENT_SCREENSAVER_OFF, NULL, NULL, NULL);

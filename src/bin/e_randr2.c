@@ -1224,3 +1224,9 @@ out:
      }
    e_xinerama_screens_set(all_screens);
 }
+
+E_API Eina_Bool
+e_acpi_lid_is_closed(void)
+{
+   return EINA_FALSE;
+}

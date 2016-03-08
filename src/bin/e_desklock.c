@@ -8,7 +8,7 @@ typedef struct _E_Desklock_Run E_Desklock_Run;
 
 struct _E_Desklock_Run
 {
-   E_Order *desk_run;
+   //E_Order *desk_run;
    int      position;
 };
 
@@ -48,14 +48,9 @@ E_API int E_EVENT_DESKLOCK = 0;
 EINTERN int
 e_desklock_init(void)
 {
-   Eina_List *l;
-   E_Config_Desklock_Background *bg;
    /* A poller to tick every 256 ticks, watching for an idle user */
    _e_desklock_idle_poller = ecore_poller_add(ECORE_POLLER_CORE, 256,
                                               _e_desklock_cb_idle_poller, NULL);
-
-   EINA_LIST_FOREACH(e_config->desklock_backgrounds, l, bg)
-     e_filereg_register(bg->file);
 
    E_EVENT_DESKLOCK = ecore_event_type_new();
 
@@ -72,8 +67,6 @@ e_desklock_shutdown(void)
 {
    Eina_Bool waslocked = _e_desklock_state;
    E_Desklock_Run *task;
-   Eina_List *l;
-   E_Config_Desklock_Background *bg;
 
    desklock_ifaces = eina_list_free(desklock_ifaces);
    if (!x_fatal)
@@ -89,12 +82,9 @@ e_desklock_shutdown(void)
    if (job) ecore_job_del(job);
    job = NULL;
 
-   EINA_LIST_FOREACH(e_config->desklock_backgrounds, l, bg)
-     e_filereg_deregister(bg->file);
-
    EINA_LIST_FREE(tasks, task)
      {
-        e_object_del(E_OBJECT(task->desk_run));
+        //e_object_del(E_OBJECT(task->desk_run));
         free(task);
      }
 
@@ -222,15 +212,10 @@ e_desklock_show(Eina_Bool suspend)
 
    if (e_desklock_is_external() && e_config->desklock_custom_desklock_cmd && e_config->desklock_custom_desklock_cmd[0])
      {
-        e_menu_hide_all();
         _e_custom_desklock_exe_handler =
           ecore_event_handler_add(ECORE_EXE_EVENT_DEL,
                                   _e_desklock_cb_custom_desklock_exit, NULL);
-        if (e_config->desklock_language)
-          e_intl_language_set(e_config->desklock_language);
 
-        if (e_config->xkb.lock_layout)
-          e_xkb_layout_set(e_config->xkb.lock_layout);
         _e_custom_desklock_exe =
           ecore_exe_run(e_config->desklock_custom_desklock_cmd, NULL);
         _e_desklock_state = EINA_TRUE;
@@ -238,30 +223,24 @@ e_desklock_show(Eina_Bool suspend)
         return 1;
      }
 
-#ifndef HAVE_PAM
-   if (e_desklock_is_system())
-     {
-        e_util_dialog_show(_("Error - no PAM support"),
-                           _("No PAM support was built into Enlightenment, so<br>"
-                             "desk locking is disabled."));
-        return 0;
-     }
-#endif
+//#ifndef HAVE_PAM
+//   if (e_desklock_is_system())
+//     {
+//        e_util_dialog_show(_("Error - no PAM support"),
+//                           _("No PAM support was built into Enlightenment, so<br>"
+//                             "desk locking is disabled."));
+//        return 0;
+//     }
+//#endif
 
    if (e_desklock_is_personal())
      {
         if (!e_config->desklock_passwd)
           {
-             E_Zone *zone;
-
-             zone = e_zone_current_get();
-             if (zone)
-               e_configure_registry_call("screen/screen_lock", NULL, NULL);
              return 0;
           }
      }
 
-   e_menu_hide_all();
    EINA_LIST_FOREACH(show_hooks, l, show_cb)
      {
         if (!show_cb()) goto fail;
@@ -277,11 +256,6 @@ e_desklock_show(Eina_Bool suspend)
       evas_object_layer_set(o, E_LAYER_DESKLOCK);
       evas_object_show(o);
    }
-   if (e_config->desklock_language)
-     e_intl_language_set(e_config->desklock_language);
-
-   if (e_config->xkb.lock_layout)
-     e_xkb_layout_set(e_config->xkb.lock_layout);
 
    {
       E_Desklock_Interface *iface;
@@ -315,14 +289,6 @@ e_desklock_show(Eina_Bool suspend)
    _e_desklock_state = EINA_TRUE;
    return 1;
 lang_fail:
-   if (e_config->desklock_language)
-     e_intl_language_set(e_config->language);
-
-   if (e_config_xkb_layout_eq(e_config->xkb.current_layout, e_config->xkb.lock_layout))
-     {
-        if (e_config->xkb.sel_layout)
-          e_xkb_layout_set(e_config->xkb.sel_layout);
-     }
 fail:
    EINA_LIST_FOREACH(hide_hooks, l, hide_cb)
      hide_cb();
@@ -342,14 +308,6 @@ e_desklock_hide(void)
    e_comp_shape_queue();
    E_FREE_LIST(block_rects, evas_object_del);
    //e_comp_block_window_del();
-   if (e_config->desklock_language)
-     e_intl_language_set(e_config->language);
-
-   if (e_config_xkb_layout_eq(e_config->xkb.current_layout, e_config->xkb.lock_layout))
-     {
-        if (e_config->xkb.sel_layout)
-          e_xkb_layout_set(e_config->xkb.sel_layout);
-     }
 
    _e_desklock_state = EINA_FALSE;
    ev = E_NEW(E_Event_Desklock, 1);
@@ -555,8 +513,7 @@ _e_desklock_ask_presentation_mode(void)
                        _e_desklock_ask_presentation_no_forever, NULL);
 
    e_dialog_button_focus_num(dia, 0);
-   e_widget_list_homogeneous_set(dia->box_object, 0);
-   elm_win_center(dia->win, 1, 1);
+   //elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
 
    evas_object_event_callback_add(dia->bg_object, EVAS_CALLBACK_KEY_DOWN,
@@ -565,20 +522,10 @@ _e_desklock_ask_presentation_mode(void)
    _e_desklock_ask_presentation_dia = dia;
 }
 
+/* TODO: remove this function */
 static Eina_Bool
 _e_desklock_run(E_Desklock_Run *task)
 {
-   Efreet_Desktop *desktop;
-
-   desktop = eina_list_nth(task->desk_run->desktops, task->position++);
-   if (!desktop)
-     {
-        e_object_del(E_OBJECT(task->desk_run));
-        free(task);
-        return EINA_FALSE;
-     }
-
-   e_exec(NULL, desktop, NULL, NULL, NULL);
    return EINA_TRUE;
 }
 
@@ -602,7 +549,7 @@ _e_desklock_cb_run(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    E_Desklock_Run *task;
    E_Event_Desklock *ev = event;
-   E_Order *desk_run;
+   //E_Order *desk_run;
    char buf[PATH_MAX];
 
    if (!ev->suspend) return ECORE_CALLBACK_PASS_ON;
@@ -620,17 +567,17 @@ _e_desklock_cb_run(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
           e_prefix_data_concat_static(buf, "applications/desk-unlock/.order");
      }
 
-   desk_run = e_order_new(buf);
-   if (!desk_run) return ECORE_CALLBACK_PASS_ON;
+   //desk_run = e_order_new(buf);
+   //if (!desk_run) return ECORE_CALLBACK_PASS_ON;
 
    task = calloc(1, sizeof (E_Desklock_Run));
    if (!task)
      {
-        e_object_del(E_OBJECT(desk_run));
+        //e_object_del(E_OBJECT(desk_run));
         return ECORE_CALLBACK_PASS_ON;
      }
 
-   task->desk_run = desk_run;
+   //task->desk_run = desk_run;
    tasks = eina_list_append(tasks, task);
 
    if (!job) ecore_job_add(_e_desklock_job, NULL);

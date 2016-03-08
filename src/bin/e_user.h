@@ -17,8 +17,5 @@ E_API size_t      e_user_dir_snprintf(char *dst, size_t size, const char *fmt, .
 
 #define e_user_dir_concat_static(dst, path) e_user_dir_concat_len(dst, sizeof(dst), path,  (sizeof(path) > 0) ? sizeof(path) - 1 : 0)
 
-E_API const char *e_user_desktop_dir_get(void);
-E_API const char *e_user_icon_dir_get(void);
-
 #endif
 #endif

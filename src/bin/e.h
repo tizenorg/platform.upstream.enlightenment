@@ -84,10 +84,6 @@ void *alloca (size_t);
 # include <inttypes.h>
 # include <assert.h>
 
-# ifdef HAVE_GETTEXT
-#  include <libintl.h>
-# endif
-
 # ifndef _POSIX_HOST_NAME_MAX
 #  define _POSIX_HOST_NAME_MAX 255
 # endif
@@ -118,9 +114,9 @@ void *alloca (size_t);
 # endif
 
 /* egl.h must come before Evas_GL.h otherwise they will conflict */
-# ifdef HAVE_WAYLAND_EGL
-#  include <EGL/egl.h>
-# endif
+//# ifdef HAVE_WAYLAND_EGL
+//#  include <EGL/egl.h>
+//# endif
 
 # include <setjmp.h>
 # include <Eo.h>
@@ -129,20 +125,12 @@ void *alloca (size_t);
 # include <Evas.h>
 # include <Evas_Engine_Buffer.h>
 # include <Ecore.h>
-# include <Ecore_Getopt.h>
 # include <Ecore_Evas.h>
 # include <Ecore_Input.h>
-# include <Ecore_Input_Evas.h>
-# include <Ecore_Con.h>
-# include <Ecore_Ipc.h>
 # include <Ecore_File.h>
-# include <Efreet.h>
-# include <Efreet_Mime.h>
 # include <Edje.h>
 # include <Eldbus.h>
 # include <Eio.h>
-# include <Emotion.h>
-# include <Elementary.h>
 
 # ifdef HAVE_WAYLAND
 #  include <Ecore_Wayland.h>

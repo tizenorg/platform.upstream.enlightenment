@@ -88,37 +88,10 @@ _e_place_coverage_client_add(E_Desk *desk, Eina_List *skiplist, int ar, int x, i
    return ar;
 }
 
+/* TODO: remove this function */
 static int
 _e_place_coverage_shelf_add(E_Desk *desk, int ar, int x, int y, int w, int h)
 {
-   Eina_List *l;
-   E_Shelf *es;
-   int x2, y2, w2, h2;
-
-   l = e_shelf_list_all();
-   EINA_LIST_FREE(l, es)
-     {
-        if (!e_shelf_desk_visible(es, desk)) continue;
-        x2 = es->x; y2 = es->y; w2 = es->w; h2 = es->h;
-        if (E_INTERSECTS(x, y, w, h, x2, y2, w2, h2))
-          {
-             int x0, x00, yy0, y00;
-             int iw, ih;
-
-             if (!es->cfg->overlap) return 0x7fffffff;
-             x0 = x;
-             if (x < x2) x0 = x2;
-             x00 = (x + w);
-             if ((x2 + w2) < (x + w)) x00 = (x2 + w2);
-             yy0 = y;
-             if (y < y2) yy0 = y2;
-             y00 = (y + h);
-             if ((y2 + h2) < (y + h)) y00 = (y2 + h2);
-             iw = x00 - x0;
-             ih = y00 - yy0;
-             ar += (iw * ih);
-          }
-     }
    return ar;
 }
 
@@ -167,85 +140,6 @@ e_place_desk_region_smart(E_Desk *desk, Eina_List *skiplist, int x, int y, int w
    u_x[zw] = 1;
    u_y[0] = 1;
    u_y[zh] = 1;
-
-   if (e_config->window_placement_policy == E_WINDOW_PLACEMENT_SMART)
-     {
-        Eina_List *l;
-        E_Shelf *es;
-
-        l = e_shelf_list_all();
-        EINA_LIST_FREE(l, es)
-          {
-             int bx, by, bw, bh;
-
-             if (!e_shelf_desk_visible(es, desk)) continue;
-
-             bx = es->x;
-             by = es->y;
-             bw = es->w;
-             bh = es->h;
-             if (!E_INTERSECTS(bx, by, bw, bh, 0, 0, zw, zh)) continue;
-
-             if (bx < 0)
-               {
-                  bw += bx;
-                  bx = 0;
-               }
-             if ((bx + bw) > zw) bw = zw - bx;
-             if (bx >= zw) continue;
-             if (by < 0)
-               {
-                  bh += by;
-                  by = 0;
-               }
-             if ((by + bh) > zh) bh = zh - by;
-             if (by >= zh) continue;
-             if (!u_x[bx])
-               {
-                  a_w++;
-                  if (a_w > a_alloc_w)
-                    {
-                       a_alloc_w += 32;
-                       E_REALLOC(a_x, int, a_alloc_w);
-                    }
-                  a_x[a_w - 1] = bx;
-                  u_x[bx] = 1;
-               }
-             if (!u_x[bx + bw])
-               {
-                  a_w++;
-                  if (a_w > a_alloc_w)
-                    {
-                       a_alloc_w += 32;
-                       E_REALLOC(a_x, int, a_alloc_w);
-                    }
-                  a_x[a_w - 1] = bx + bw;
-                  u_x[bx + bw] = 1;
-               }
-             if (!u_y[by])
-               {
-                  a_h++;
-                  if (a_h > a_alloc_h)
-                    {
-                       a_alloc_h += 32;
-                       E_REALLOC(a_y, int, a_alloc_h);
-                    }
-                  a_y[a_h - 1] = by;
-                  u_y[by] = 1;
-               }
-             if (!u_y[by + bh])
-               {
-                  a_h++;
-                  if (a_h > a_alloc_h)
-                    {
-                       a_alloc_h += 32;
-                       E_REALLOC(a_y, int, a_alloc_h);
-                    }
-                  a_y[a_h - 1] = by + bh;
-                  u_y[by + bh] = 1;
-               }
-          }
-     }
 
    E_CLIENT_FOREACH(ec)
      {

@@ -95,7 +95,7 @@ struct _E_Comp
    Ecore_Window  root;
    Ecore_Evas     *ee;
    Ecore_Window  ee_win;
-   Evas_Object    *elm;
+   //Evas_Object    *elm;
    Evas           *evas;
    Evas_Object    *bg_blank_object;
    Eina_List      *zones;
@@ -204,7 +204,7 @@ typedef enum
 } E_Comp_Engine;
 
 extern E_API E_Comp *e_comp;
-extern E_API E_Comp_X_Data *e_comp_x;
+extern E_API E_Comp_X_Data *e_comp_x; // TODO: should be removed - yigl
 extern E_API E_Comp_Wl_Data *e_comp_wl;
 
 EINTERN Eina_Bool e_comp_init(void);
@@ -241,11 +241,6 @@ E_API void e_comp_button_bindings_ungrab_all(void);
 E_API void e_comp_client_redirect_toggle(E_Client *ec);
 E_API Eina_Bool e_comp_util_object_is_above_nocomp(Evas_Object *obj);
 
-EINTERN Evas_Object *e_comp_style_selector_create(Evas *evas, const char **source);
-E_API E_Config_Dialog *e_int_config_comp(Evas_Object *parent, const char *params);
-E_API E_Config_Dialog *e_int_config_comp_match(Evas_Object *parent, const char *params);
-
-
 E_API Eina_Bool e_comp_util_kbd_grabbed(void);
 E_API Eina_Bool e_comp_util_mouse_grabbed(void);
 
@@ -261,12 +256,14 @@ e_comp_util_client_is_fullscreen(const E_Client *ec)
        );
 }
 
+// TODO: should be removed - yigl
 static inline Eina_Bool
 e_comp_util_has_x(void)
 {
    return !!e_comp->root;
 }
 
+// TODO: should be removed - yigl
 static inline Eina_Bool
 e_comp_util_has_xwayland(void)
 {

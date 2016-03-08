@@ -3,22 +3,22 @@
 /* local subsystem functions */
 static void _e_bg_signal(void *data, Evas_Object *obj, const char *emission, const char *source);
 static void _e_bg_event_bg_update_free(void *data, void *event);
-static void e_bg_handler_set(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, const char *path);
-static int  e_bg_handler_test(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, const char *path);
-static void _e_bg_handler_image_imported(const char *image_path, void *data);
 
 /* local subsystem globals */
 E_API int E_EVENT_BG_UPDATE = 0;
-static E_Fm2_Mime_Handler *bg_hdl = NULL;
+//static E_Fm2_Mime_Handler *bg_hdl = NULL;
 
 /* externally accessible functions */
 EINTERN int
 e_bg_init(void)
 {
+   /*
    Eina_List *l = NULL;
    E_Config_Desktop_Background *cfbg = NULL;
+   */
 
    /* Register mime handler */
+   /*
    bg_hdl = e_fm2_mime_handler_new(_("Set As Background"),
                                    "preferences-desktop-wallpaper",
                                    e_bg_handler_set, NULL,
@@ -29,43 +29,29 @@ e_bg_init(void)
         e_fm2_mime_handler_mime_add(bg_hdl, "image/png");
         e_fm2_mime_handler_mime_add(bg_hdl, "image/jpeg");
      }
-
-   /* Register files in use */
-   if (e_config->desktop_default_background)
-     e_filereg_register(e_config->desktop_default_background);
-
-   EINA_LIST_FOREACH(e_config->desktop_backgrounds, l, cfbg)
-     {
-        if (!cfbg) continue;
-        e_filereg_register(cfbg->file);
-     }
+   */
 
    E_EVENT_BG_UPDATE = ecore_event_type_new();
+
    return 1;
 }
 
 EINTERN int
 e_bg_shutdown(void)
 {
+   /*
    Eina_List *l = NULL;
    E_Config_Desktop_Background *cfbg = NULL;
+   */
 
    /* Deregister mime handler */
+   /*
    if (bg_hdl)
      {
         e_fm2_mime_handler_glob_del(bg_hdl, "*.edj");
         e_fm2_mime_handler_free(bg_hdl);
      }
-
-   /* Deregister files in use */
-   if (e_config->desktop_default_background)
-     e_filereg_deregister(e_config->desktop_default_background);
-
-   EINA_LIST_FOREACH(e_config->desktop_backgrounds, l, cfbg)
-     {
-        if (!cfbg) continue;
-        e_filereg_deregister(cfbg->file);
-     }
+   */
 
    return 1;
 }
@@ -237,8 +223,11 @@ e_bg_zone_update(E_Zone *zone, E_Bg_Transition transition)
         /* FIXME: segv if zone is deleted while up??? */
         evas_object_data_set(o, "e_zone", zone);
         snprintf(buf, sizeof(buf), "e/transitions/%s", trans);
+        // TODO: edje e/transitions/vswipe - yigl
+#if 0
         e_theme_edje_object_set(o, "base/theme/transitions", buf);
         edje_object_signal_callback_add(o, "e,state,done", "*", _e_bg_signal, zone);
+#endif
         evas_object_move(o, zone->x, zone->y);
         evas_object_resize(o, zone->w, zone->h);
         evas_object_layer_set(o, E_LAYER_BG);
@@ -306,13 +295,11 @@ e_bg_default_set(const char *file)
 
    if (e_config->desktop_default_background)
      {
-        e_filereg_deregister(e_config->desktop_default_background);
         eina_stringshare_del(e_config->desktop_default_background);
      }
 
    if (file)
      {
-        e_filereg_register(file);
         e_config->desktop_default_background = file;
      }
    else
@@ -355,8 +342,6 @@ e_bg_add(int zone, int desk_x, int desk_y, const char *file)
    cfbg->file = file;
    e_config->desktop_backgrounds = eina_list_append(e_config->desktop_backgrounds, cfbg);
 
-   e_filereg_register(cfbg->file);
-
    ev = E_NEW(E_Event_Bg_Update, 1);
    ev->zone = zone;
    ev->desk_x = desk_x;
@@ -377,7 +362,6 @@ e_bg_del(int zone, int desk_x, int desk_y)
         if ((cfbg->zone == zone) && (cfbg->desk_x == desk_x) && (cfbg->desk_y == desk_y))
           {
              e_config->desktop_backgrounds = eina_list_remove_list(e_config->desktop_backgrounds, l);
-             e_filereg_deregister(cfbg->file);
              if (cfbg->file) eina_stringshare_del(cfbg->file);
              free(cfbg);
              break;
@@ -402,87 +386,6 @@ e_bg_update(void)
 }
 
 /* local subsystem functions */
-
-/**
- * Set background to image, as required in e_fm2_mime_handler_new()
- */
-static void
-e_bg_handler_set(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, const char *path)
-{
-   char buf[4096];
-   int copy = 1;
-
-   if (!path) return;
-
-   if (!eina_str_has_extension(path, "edj"))
-     {
-        e_import_config_dialog_show(NULL, path, (Ecore_End_Cb)_e_bg_handler_image_imported, NULL);
-        return;
-     }
-
-   /* if not in system dir or user dir, copy to user dir */
-   e_prefix_data_concat_static(buf, "data/backgrounds");
-   if (!strncmp(buf, path, strlen(buf)))
-     copy = 0;
-   if (copy)
-     {
-        e_user_dir_concat_static(buf, "backgrounds");
-        if (!strncmp(buf, path, strlen(buf)))
-          copy = 0;
-     }
-   if (copy)
-     {
-        const char *file;
-        char *name;
-
-        file = ecore_file_file_get(path);
-        name = ecore_file_strip_ext(file);
-
-        e_user_dir_snprintf(buf, sizeof(buf), "backgrounds/%s-%f.edj", name, ecore_time_unix_get());
-        free(name);
-
-        if (!ecore_file_exists(buf))
-          {
-             ecore_file_cp(path, buf);
-             e_bg_default_set(buf);
-          }
-        else
-          e_bg_default_set(path);
-     }
-   else
-     e_bg_default_set(path);
-
-   e_bg_update();
-   e_config_save_queue();
-}
-
-/**
- * Test if possible to set background to file, as required in
- * e_fm2_mime_handler_new()
- *
- * This handler tests for files that would be acceptable for setting
- * background.
- *
- * You should just register it with "*.edj" (glob matching extension)
- * or "image/" (mimetypes)that are acceptable with Evas loaders.
- *
- * Just edje files with "e/desktop/background" group are used.
- */
-static int
-e_bg_handler_test(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, const char *path)
-{
-   if (!path) return 0;
-
-   if (eina_str_has_extension(path, "edj"))
-     {
-        if (edje_file_group_exists(path, "e/desktop/background")) return 1;
-        return 0;
-     }
-
-   /* it's image/png or image/jpeg, we'll import it. */
-   return 1;
-}
-
 static void
 _e_bg_signal(void *data, Evas_Object *obj EINA_UNUSED, const char *emission EINA_UNUSED, const char *source EINA_UNUSED)
 {
@@ -503,12 +406,3 @@ _e_bg_event_bg_update_free(void *data EINA_UNUSED, void *event)
 {
    free(event);
 }
-
-static void
-_e_bg_handler_image_imported(const char *image_path, void *data EINA_UNUSED)
-{
-   e_bg_default_set(image_path);
-   e_bg_update();
-   e_config_save_queue();
-}
-

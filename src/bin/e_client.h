@@ -80,6 +80,7 @@ typedef enum
    E_WINDOW_TYPE_REAL_UNKNOWN = 999
 } E_Window_Type;
 
+// TODO: should be removed - yigl
 typedef enum _E_Urgency_Policy
 {
    E_ACTIVEHINT_POLICY_IGNORE,
@@ -113,6 +114,7 @@ typedef enum _E_Maximize
    E_MAXIMIZE_DIRECTION = 0x000000f0
 } E_Maximize;
 
+// TODO: should be removed - yigl
 typedef enum _E_Fullscreen
 {
    /* Resize window */
@@ -720,7 +722,7 @@ struct E_Client
    unsigned int       want_focus : 1;
    unsigned int       user_skip_winlist : 1;
    E_Maximize         maximized;
-   E_Fullscreen       fullscreen_policy;
+   E_Fullscreen       fullscreen_policy; // TODO: should be removed - yigl
    E_Transient        transient_policy;
    unsigned int       borderless : 1;
    unsigned char      offer_resistance : 1;
@@ -772,11 +774,7 @@ struct E_Client
    } shelf_fix;
 
    Eina_List       *stick_desks;
-   E_Menu          *border_menu;
    Evas_Object     *color_editor;
-   E_Config_Dialog *border_locks_dialog;
-   E_Config_Dialog *border_remember_dialog;
-   E_Config_Dialog *border_border_dialog;
    E_Dialog        *border_prop_dialog;
    Eina_List       *pending_resize;
 
@@ -789,9 +787,6 @@ struct E_Client
    Ecore_Timer               *raise_timer;
    E_Client_Move_Intercept_Cb move_intercept_cb;
    E_Remember                *remember;
-
-   Efreet_Desktop            *desktop;
-   E_Exec_Instance           *exe_inst;
 
    unsigned char              comp_hidden   : 1;
 

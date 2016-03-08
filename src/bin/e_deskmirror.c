@@ -656,18 +656,7 @@ _e_deskmirror_mirror_add(E_Smart_Data *sd, Evas_Object *obj)
      }
    else
      {
-        E_Shelf *es;
-
-        if (sd->pager || sd->taskbar) return NULL;
-        es = evas_object_data_get(obj, "E_Shelf");
-        if (es)
-          {
-             if (!e_shelf_desk_visible(es, sd->desk)) return NULL;
-          }
-        else
-          {
-             if (sd->desk != e_desk_current_get(sd->desk->zone)) return NULL;
-          }
+        if (sd->desk != e_desk_current_get(sd->desk->zone)) return NULL;
      }
    evas_object_geometry_get(obj, NULL, NULL, &w, &h);
    if ((w > 1) && (h > 1))
@@ -778,7 +767,7 @@ e_deskmirror_add(E_Desk *desk, Eina_Bool pager, Eina_Bool taskbar)
         evas_object_smart_member_add(sd->events, o);
         evas_object_show(sd->events);
      }
-   sd->bgpreview = e_widget_bgpreview_desk_add(e, desk->zone, desk->x, desk->y);
+   //sd->bgpreview = e_widget_bgpreview_desk_add(e, desk->zone, desk->x, desk->y);
    evas_object_pass_events_set(sd->bgpreview, 1);
    evas_object_clip_set(sd->bgpreview, sd->clip);
    evas_object_smart_member_add(sd->bgpreview, o);

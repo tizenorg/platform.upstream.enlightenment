@@ -100,25 +100,6 @@ static Eina_Inlist *_e_client_hooks[] =
 
 ///////////////////////////////////////////
 
-#ifndef ENABLE_QUICK_INIT
-static Eina_Bool
-_e_client_cb_efreet_cache_update(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_UNUSED)
-{
-   const Eina_List *l;
-   E_Client *ec;
-
-   /* mark all clients for desktop/icon updates */
-   EINA_LIST_FOREACH(e_comp->clients, l, ec)
-     {
-        E_FREE_FUNC(ec->desktop, efreet_desktop_free);
-        if (e_object_is_del(E_OBJECT(ec))) continue;
-        ec->changes.icon = 1;
-        EC_CHANGED(ec);
-     }
-   return ECORE_CALLBACK_RENEW;
-}
-#endif
-
 static Eina_Bool
 _e_client_cb_config_icon_theme(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_UNUSED)
 {
@@ -427,8 +408,8 @@ _e_client_action_finish(void)
    if (action_client)
      {
         action_client->keyboard_resizing = 0;
-        if (action_client->internal_elm_win)
-          ecore_event_window_ignore_events(elm_win_window_id_get(action_client->internal_elm_win), 0);
+        //if (action_client->internal_elm_win)
+        //  ecore_event_window_ignore_events(elm_win_window_id_get(action_client->internal_elm_win), 0);
      }
    action_client = NULL;
 }
@@ -820,7 +801,6 @@ _e_client_free(E_Client *ec)
           tmp->e.state.video_parent_client = NULL;
      }
    E_FREE_FUNC(ec->internal_elm_win, evas_object_del);
-   E_FREE_FUNC(ec->desktop, efreet_desktop_free);
    E_FREE_FUNC(ec->post_job, ecore_idle_enterer_del);
 
    E_FREE_FUNC(ec->kill_timer, ecore_timer_del);
@@ -897,18 +877,6 @@ _e_client_del(E_Client *ec)
    ec->changed = 0;
    focus_stack = eina_list_remove(focus_stack, ec);
    raise_stack = eina_list_remove(raise_stack, ec);
-   if (ec->exe_inst)
-     {
-        if (ec->exe_inst->phony && (eina_list_count(ec->exe_inst->clients) == 1))
-          e_exec_phony_del(ec->exe_inst);
-        else
-          {
-             if (!ec->exe_inst->deleted)
-               ec->exe_inst->clients = eina_list_remove(ec->exe_inst->clients, ec);
-          }
-        if (!ec->exe_inst->deleted)
-          ec->exe_inst = NULL;
-     }
 
    if (ec->cur_mouse_action)
      {
@@ -929,19 +897,14 @@ _e_client_del(E_Client *ec)
         e_object_del(E_OBJECT(client_drag));
         client_drag = NULL;
      }
-   if (ec->border_menu) e_menu_deactivate(ec->border_menu);
    if (!stopping)
      {
         e_client_comp_hidden_set(ec, 1);
         evas_object_pass_events_set(ec->frame, 1);
      }
 
-   E_FREE_FUNC(ec->border_locks_dialog, e_object_del);
-   E_FREE_FUNC(ec->border_remember_dialog, e_object_del);
-   E_FREE_FUNC(ec->border_border_dialog, e_object_del);
    E_FREE_FUNC(ec->border_prop_dialog, e_object_del);
    E_FREE_FUNC(ec->color_editor, evas_object_del);
-   e_int_client_menu_del(ec);
    E_FREE_FUNC(ec->raise_timer, ecore_timer_del);
 
    if (ec->internal_elm_win)
@@ -1074,12 +1037,12 @@ _e_client_action_init(E_Client *ec)
    if (action_client)
      {
         action_client->keyboard_resizing = 0;
-        if (action_client->internal_elm_win)
-          ecore_event_window_ignore_events(elm_win_window_id_get(action_client->internal_elm_win), 0);
+        //if (action_client->internal_elm_win)
+        //  ecore_event_window_ignore_events(elm_win_window_id_get(action_client->internal_elm_win), 0);
      }
    action_client = ec;
-   if (ec->internal_elm_win)
-     ecore_event_window_ignore_events(elm_win_window_id_get(ec->internal_elm_win), 1);
+   //if (ec->internal_elm_win)
+   //  ecore_event_window_ignore_events(elm_win_window_id_get(ec->internal_elm_win), 1);
 }
 
 static void
@@ -2468,108 +2431,7 @@ _e_client_eval(E_Client *ec)
 
    if (ec->changes.icon)
      {
-#ifndef ENABLE_QUICK_INIT
-        if (!ec->new_client)
-          E_FREE_FUNC(ec->desktop, efreet_desktop_free);
-        if (ec->remember && ec->remember->prop.desktop_file)
-          {
-             Efreet_Desktop *d;
-             const char *desktop = ec->remember->prop.desktop_file;
-
-             d = efreet_desktop_get(desktop);
-             if (!d)
-               d = efreet_util_desktop_name_find(desktop);
-             if (d)
-               {
-                  efreet_desktop_free(ec->desktop);
-                  ec->desktop = d;
-               }
-          }
-        if (!ec->desktop)
-          {
-             E_Exec_Instance *inst;
-
-             inst = e_exec_startup_id_pid_instance_find(ec->netwm.startup_id,
-                                                        ec->netwm.pid);
-             if (inst && inst->clients)
-               {
-                  E_Client *ec2 = eina_list_data_get(inst->clients);
-
-                  if (ec2->netwm.pid == ec->netwm.pid)
-                    ec->desktop = inst->desktop;
-               }
-             else if (inst)
-               ec->desktop = inst->desktop;
-             if (ec->desktop) efreet_desktop_ref(ec->desktop);
-          }
-        if (!ec->desktop)
-          {
-             if (ec->internal && (ec->icccm.class && (!strncmp(ec->icccm.class, "e_fwin::", 8))))
-               ec->desktop = efreet_util_desktop_exec_find("enlightenment_filemanager");
-          }
-        if (!ec->desktop)
-          {
-             if ((ec->icccm.name) || (ec->icccm.class))
-               ec->desktop = efreet_util_desktop_wm_class_find(ec->icccm.name,
-                                                               ec->icccm.class);
-          }
-        if (!ec->desktop && ec->icccm.command.argv && (ec->icccm.command.argc > 0))
-          {
-             ec->desktop = efreet_util_desktop_exec_find(ec->icccm.command.argv[0]);
-          }
-        if (!ec->desktop)
-          {
-             /* libreoffice and maybe others match window class
-                with .desktop file name */
-             if (ec->icccm.class)
-               {
-                  char buf[4096] = {0};
-                  snprintf(buf, sizeof(buf), "%s.desktop", ec->icccm.class);
-                  ec->desktop = efreet_util_desktop_file_id_find(buf);
-                  if (!ec->desktop)
-                    {
-                       char *s;
-
-                       strncpy(buf, ec->icccm.class, sizeof(buf) - 1);
-                       s = buf;
-                       eina_str_tolower(&s);
-                       if (strcmp(s, ec->icccm.class))
-                         ec->desktop = efreet_util_desktop_exec_find(s);
-                    }
-               }
-          }
-        if (!ec->desktop && ec->icccm.name)
-          {
-             /* this works for most cases as fallback. useful when app is
-                run from a shell  */
-             ec->desktop = efreet_util_desktop_exec_find(ec->icccm.name);
-          }
-        if (!ec->desktop && ec->parent)
-          {
-             E_Client *ec2 = ec->parent;
-             if (ec2->desktop)
-               {
-                  efreet_desktop_ref(ec2->desktop);
-                  ec->desktop = ec2->desktop;
-               }
-          }
-
-        e_comp_object_frame_icon_update(ec->frame);
-        if (ec->desktop)
-          {
-             if (!ec->exe_inst)
-               e_exec_phony(ec);
-             if (!ec->exe_inst->desktop)
-               {
-                  efreet_desktop_ref(ec->desktop);
-                  ec->exe_inst->desktop = ec->desktop;
-               }
-          }
         ec->changes.icon = 0;
-        prop |= E_CLIENT_PROPERTY_ICON;
-#else
-        ec->changes.icon = 0;
-#endif
      }
 
    ec->new_client = 0;
@@ -3074,20 +2936,10 @@ e_client_init(void)
    clients_hash[0] = eina_hash_pointer_new(NULL);
    clients_hash[1] = eina_hash_pointer_new(NULL);
 
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_POINTER_WARP,
-                         _e_client_cb_pointer_warp, NULL);
-#ifndef ENABLE_QUICK_INIT
-   E_LIST_HANDLER_APPEND(handlers, EFREET_EVENT_DESKTOP_CACHE_UPDATE,
-                         _e_client_cb_efreet_cache_update, NULL);
-   E_LIST_HANDLER_APPEND(handlers, EFREET_EVENT_ICON_CACHE_UPDATE,
-                         _e_client_cb_efreet_cache_update, NULL);
-#endif
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_CONFIG_ICON_THEME,
-                         _e_client_cb_config_icon_theme, NULL);
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_CONFIG_MODE_CHANGED,
-                         _e_client_cb_config_mode, NULL);
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_DESK_WINDOW_PROFILE_CHANGE,
-                         _e_client_cb_desk_window_profile_change, NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_POINTER_WARP, _e_client_cb_pointer_warp, NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_CONFIG_ICON_THEME, _e_client_cb_config_icon_theme, NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_CONFIG_MODE_CHANGED, _e_client_cb_config_mode, NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_DESK_WINDOW_PROFILE_CHANGE, _e_client_cb_desk_window_profile_change, NULL);
 
    E_EVENT_CLIENT_ADD = ecore_event_type_new();
    E_EVENT_CLIENT_REMOVE = ecore_event_type_new();
@@ -3126,7 +2978,6 @@ e_client_shutdown(void)
 
    E_FREE_LIST(handlers, ecore_event_handler_del);
 
-   e_int_client_menu_hooks_clear();
    E_FREE_FUNC(warp_timer, ecore_timer_del);
    warp_client = NULL;
 }
@@ -3174,15 +3025,11 @@ e_client_new(E_Pixmap *cp, int first_map, int internal)
    ec->resize_mode = E_POINTER_RESIZE_NONE;
    ec->layer = E_LAYER_CLIENT_NORMAL;
 
-   /* printf("##- ON MAP CLIENT 0x%x SIZE %ix%i %i:%i\n",
-    *     ec->win, ec->w, ec->h, att->x, att->y); */
-
    /* FIXME: if first_map is 1 then we should ignore the first hide event
     * or ensure the window is already hidden and events flushed before we
     * create a border for it */
    if (first_map)
      {
-        // printf("##- FIRST MAP\n");
         ec->changes.pos = 1;
         ec->re_manage = 1;
         // needed to be 1 for internal windw and on restart.
@@ -3701,7 +3548,7 @@ e_client_mouse_move(E_Client *ec, Evas_Point *output)
                  (e_config->drag_resist * e_config->drag_resist))
                {
                   /* start drag! */
-                  if (ec->netwm.icons || ec->desktop || ec->internal_icon)
+                  if (ec->netwm.icons || ec->internal_icon)
                     {
                        Evas_Object *o = NULL;
                        int x, y, w, h;
@@ -4304,9 +4151,6 @@ e_client_activate(E_Client *ec, Eina_Bool just_do_it)
 
         if (ec->iconic)
           {
-             if (e_config->clientlist_warp_to_iconified_desktop == 1)
-               e_desk_show(ec->desk);
-
              if (!ec->lock_user_iconify)
                e_client_uniconify(ec);
           }
@@ -5193,16 +5037,6 @@ e_client_act_menu_begin(E_Client *ec, E_Binding_Event_Mouse_Button *ev, int key)
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
    if (!ec->zone) return;
-   if (ec->border_menu) return;
-   if (ev)
-     e_int_client_menu_show(ec, ev->canvas.x, ev->canvas.y, key, ev->timestamp);
-   else
-     {
-        int x, y;
-
-        evas_pointer_canvas_xy_get(e_comp->evas, &x, &y);
-        e_int_client_menu_show(ec, x, y, key, 0);
-     }
 }
 
 E_API void
@@ -5294,26 +5128,16 @@ e_client_icon_add(E_Client *ec, Evas *evas)
           }
         return o;
      }
-   if ((e_config->use_app_icon) && (ec->icon_preference != E_ICON_PREF_USER))
-     {
-        if (ec->netwm.icons)
-          {
-             o = e_icon_add(evas);
-             e_icon_data_set(o, ec->netwm.icons[0].data,
-                             ec->netwm.icons[0].width,
-                             ec->netwm.icons[0].height);
-             e_icon_alpha_set(o, 1);
-             return o;
-          }
-     }
    if (!o)
      {
-        if ((ec->desktop) && (ec->icon_preference != E_ICON_PREF_NETWM))
+        // FIXME:
+        //if ((ec->desktop) && (ec->icon_preference != E_ICON_PREF_NETWM))
+        if (ec->icon_preference != E_ICON_PREF_NETWM)
           {
              o = e_icon_add(evas);
              if (o)
                {
-                  e_icon_fdo_icon_set(o, ec->desktop->icon);
+                  //e_icon_fdo_icon_set(o, ec->desktop->icon);
                   return o;
                }
           }

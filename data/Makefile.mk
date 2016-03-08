@@ -1,12 +1,8 @@
 include data/images/Makefile.mk
 include data/tools/Makefile.mk
-include data/xsession/Makefile.mk
 include data/input_methods/Makefile.mk
-include data/etc/Makefile.mk
 include data/icons/Makefile.mk
 include data/backgrounds/Makefile.mk
 include data/flags/Makefile.mk
 include data/favorites/Makefile.mk
-include data/desktop/Makefile.mk
-include data/units/Makefile.mk
 include data/dbus/Makefile.mk
