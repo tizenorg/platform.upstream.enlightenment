@@ -211,7 +211,7 @@ _e_util_icon_fdo_set(Evas_Object *obj, const char *icon)
    if (size < 16) size = 16;
    size = e_util_icon_size_normalize(size * e_scale);
 
-   path = efreet_icon_path_find(e_config->icon_theme, icon, size);
+   //path = efreet_icon_path_find(e_config->icon_theme, icon, size);
    if (!path) return 0;
 
    e_icon_file_set(obj, path);
@@ -244,34 +244,6 @@ e_util_icon_theme_set(Evas_Object *obj, const char *icon)
      }
 }
 
-int
-_e_util_menu_item_edje_icon_set(E_Menu_Item *mi, const char *name, Eina_Bool fallback)
-{
-   const char *file;
-   char buf[4096];
-
-   if ((!name) || (!name[0])) return 0;
-
-   if ((!fallback) && (name[0] == '/') && ecore_file_exists(name))
-     {
-        e_menu_item_icon_edje_set(mi, name, "icon");
-        return 1;
-     }
-   snprintf(buf, sizeof(buf), "e/icons/%s", name);
-
-   if (fallback)
-     file = e_theme_edje_icon_fallback_file_get(buf);
-   else
-     file = e_theme_edje_file_get("base/theme/icons", buf);
-
-   if (file[0])
-     {
-        e_menu_item_icon_edje_set(mi, file, buf);
-        return 1;
-     }
-   return 0;
-}
-
 E_API unsigned int
 e_util_icon_size_normalize(unsigned int desired)
 {
@@ -285,59 +257,6 @@ e_util_icon_size_normalize(unsigned int desired)
        return *itr;
 
    return 256; /* largest know size? */
-}
-
-static int
-_e_util_menu_item_fdo_icon_set(E_Menu_Item *mi, const char *icon)
-{
-   const char *path = NULL;
-   unsigned int size;
-
-   if ((!icon) || (!icon[0])) return 0;
-   size = e_util_icon_size_normalize(24 * e_scale);
-   path = efreet_icon_path_find(e_config->icon_theme, icon, size);
-   if (!path) return 0;
-   e_menu_item_icon_file_set(mi, path);
-   return 1;
-}
-
-E_API int
-e_util_menu_item_theme_icon_set(E_Menu_Item *mi, const char *icon)
-{
-   if (e_config->icon_theme_overrides)
-     {
-        if (_e_util_menu_item_fdo_icon_set(mi, icon))
-          return 1;
-        if (_e_util_menu_item_edje_icon_set(mi, icon, EINA_FALSE))
-          return 1;
-        return _e_util_menu_item_edje_icon_set(mi, icon, EINA_TRUE);
-     }
-   else
-     {
-        if (_e_util_menu_item_edje_icon_set(mi, icon, EINA_FALSE))
-          return 1;
-        if (_e_util_menu_item_fdo_icon_set(mi, icon))
-          return 1;
-        return _e_util_menu_item_edje_icon_set(mi, icon, EINA_TRUE);
-     }
-}
-
-E_API const char *
-e_util_mime_icon_get(const char *mime, unsigned int size)
-{
-   char buf[1024];
-   const char *file = NULL;
-
-   if (e_config->icon_theme_overrides)
-     file = efreet_mime_type_icon_get(mime, e_config->icon_theme, e_util_icon_size_normalize(size));
-   if (file) return file;
-
-   if (snprintf(buf, sizeof(buf), "e/icons/fileman/mime/%s", mime) >= (int)sizeof(buf))
-     return NULL;
-
-   file = e_theme_edje_file_get("base/theme/icons", buf);
-   if (file && file[0]) return file;
-   return efreet_mime_type_icon_get(mime, e_config->icon_theme, e_util_icon_size_normalize(size));
 }
 
 E_API E_Client *
@@ -399,7 +318,7 @@ e_util_dialog_internal(const char *title, const char *txt)
    e_dialog_icon_set(dia, "dialog-error", 64);
    e_dialog_button_add(dia, _("OK"), NULL, NULL, NULL);
    e_dialog_button_focus_num(dia, 0);
-   elm_win_center(dia->win, 1, 1);
+   //elm_win_center(dia->win, 1, 1);
    e_dialog_show(dia);
    return dia;
 }
@@ -440,6 +359,7 @@ e_util_filename_escape(const char *filename)
 }
 
 
+#if 0
 E_API char *
 e_util_shell_env_path_eval(const char *path)
 {
@@ -541,6 +461,7 @@ e_util_shell_env_path_eval(const char *path)
    *pd = 0;
    return strdup(buf);
 }
+#endif
 
 E_API char *
 e_util_size_string_get(off_t size)
@@ -634,12 +555,14 @@ e_util_icon_add(const char *path, Evas *evas)
    return _e_util_icon_add(path, evas, 64);
 }
 
+#if 0
 E_API Evas_Object *
 e_util_desktop_icon_add(Efreet_Desktop *desktop, unsigned int size, Evas *evas)
 {
    if ((!desktop) || (!desktop->icon)) return NULL;
    return e_util_icon_theme_icon_add(desktop->icon, size, evas);
 }
+#endif
 
 E_API Evas_Object *
 e_util_icon_theme_icon_add(const char *icon_name, unsigned int size, Evas *evas)
@@ -649,9 +572,9 @@ e_util_icon_theme_icon_add(const char *icon_name, unsigned int size, Evas *evas)
    else
      {
         Evas_Object *obj;
-        const char *path;
+        const char *path = NULL;
 
-        path = efreet_icon_path_find(e_config->icon_theme, icon_name, size);
+        //path = efreet_icon_path_find(e_config->icon_theme, icon_name, size);
         if (path)
           {
              obj = _e_util_icon_add(path, evas, size);
@@ -659,33 +582,6 @@ e_util_icon_theme_icon_add(const char *icon_name, unsigned int size, Evas *evas)
           }
      }
    return NULL;
-}
-
-E_API void
-e_util_desktop_menu_item_icon_add(Efreet_Desktop *desktop, unsigned int size, E_Menu_Item *mi)
-{
-   const char *path = NULL;
-
-   if ((!desktop) || (!desktop->icon)) return;
-
-   if (desktop->icon[0] == '/') path = desktop->icon;
-   else path = efreet_icon_path_find(e_config->icon_theme, desktop->icon, size);
-
-   if (path)
-     {
-        const char *ext;
-
-        ext = strrchr(path, '.');
-        if (ext)
-          {
-             if (strcmp(ext, ".edj") == 0)
-               e_menu_item_icon_edje_set(mi, path, "icon");
-             else
-               e_menu_item_icon_file_set(mi, path);
-          }
-        else
-          e_menu_item_icon_file_set(mi, path);
-     }
 }
 
 E_API int
@@ -1079,6 +975,7 @@ e_util_string_list_free(Eina_List *l)
      free(s);
 }
 
+#if 0
 static Efreet_Desktop *
 _e_util_default_terminal_get(const char *defaults_list)
 {
@@ -1150,6 +1047,7 @@ e_util_terminal_desktop_get(void)
      }
    return tdesktop;
 }
+#endif
 
 E_API E_Config_Binding_Key *
 e_util_binding_match(const Eina_List *bindlist, Ecore_Event_Key *ev, unsigned int *num, const E_Config_Binding_Key *skip)
@@ -1183,124 +1081,6 @@ e_util_binding_match(const Eina_List *bindlist, Ecore_Event_Key *ev, unsigned in
      }
    if (num) *num = 0;
    return NULL;
-}
-
-E_API void
-e_util_gadcon_orient_icon_set(E_Gadcon_Orient orient, Evas_Object *obj)
-{
-   switch (orient)
-     {
-      case E_GADCON_ORIENT_LEFT:
-        e_util_icon_theme_set(obj, "preferences-position-left");
-        break;
-
-      case E_GADCON_ORIENT_RIGHT:
-        e_util_icon_theme_set(obj, "preferences-position-right");
-        break;
-
-      case E_GADCON_ORIENT_TOP:
-        e_util_icon_theme_set(obj, "preferences-position-top");
-        break;
-
-      case E_GADCON_ORIENT_BOTTOM:
-        e_util_icon_theme_set(obj, "preferences-position-bottom");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_TL:
-        e_util_icon_theme_set(obj, "preferences-position-top-left");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_TR:
-        e_util_icon_theme_set(obj, "preferences-position-top-right");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_BL:
-        e_util_icon_theme_set(obj, "preferences-position-bottom-left");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_BR:
-        e_util_icon_theme_set(obj, "preferences-position-bottom-right");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_LT:
-        e_util_icon_theme_set(obj, "preferences-position-left-top");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_RT:
-        e_util_icon_theme_set(obj, "preferences-position-right-top");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_LB:
-        e_util_icon_theme_set(obj, "preferences-position-left-bottom");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_RB:
-        e_util_icon_theme_set(obj, "preferences-position-right-bottom");
-        break;
-
-      default:
-        e_util_icon_theme_set(obj, "enlightenment");
-        break;
-     }
-}
-
-E_API void
-e_util_gadcon_orient_menu_item_icon_set(E_Gadcon_Orient orient, E_Menu_Item *mi)
-{
-   switch (orient)
-     {
-      case E_GADCON_ORIENT_LEFT:
-        e_util_menu_item_theme_icon_set(mi, "preferences-position-left");
-        break;
-
-      case E_GADCON_ORIENT_RIGHT:
-        e_util_menu_item_theme_icon_set(mi, "preferences-position-right");
-        break;
-
-      case E_GADCON_ORIENT_TOP:
-        e_util_menu_item_theme_icon_set(mi, "preferences-position-top");
-        break;
-
-      case E_GADCON_ORIENT_BOTTOM:
-        e_util_menu_item_theme_icon_set(mi, "preferences-position-bottom");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_TL:
-        e_util_menu_item_theme_icon_set(mi, "preferences-position-top-left");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_TR:
-        e_util_menu_item_theme_icon_set(mi, "preferences-position-top-right");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_BL:
-        e_util_menu_item_theme_icon_set(mi, "preferences-position-bottom-left");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_BR:
-        e_util_menu_item_theme_icon_set(mi, "preferences-position-bottom-right");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_LT:
-        e_util_menu_item_theme_icon_set(mi, "preferences-position-left-top");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_RT:
-        e_util_menu_item_theme_icon_set(mi, "preferences-position-right-top");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_LB:
-        e_util_menu_item_theme_icon_set(mi, "preferences-position-left-bottom");
-        break;
-
-      case E_GADCON_ORIENT_CORNER_RB:
-        e_util_menu_item_theme_icon_set(mi, "preferences-position-right-bottom");
-        break;
-
-      default:
-        e_util_menu_item_theme_icon_set(mi, "enlightenment");
-        break;
-     }
 }
 
 E_API char *

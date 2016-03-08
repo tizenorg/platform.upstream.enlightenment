@@ -20,11 +20,6 @@
 #   include "e_comp_x.h"
 #  endif
 
-/* #  ifdef HAVE_WAYLAND_EGL */
-/* #   include <EGL/egl.h> */
-/* #   define GL_GLEXT_PROTOTYPES */
-/* #  endif */
-
 #  ifdef __linux__
 #   include <linux/input.h>
 #  else
@@ -494,31 +489,5 @@ E_API Eina_Bool e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timest
 
 E_API extern int E_EVENT_WAYLAND_GLOBAL_ADD;
 
-# ifndef HAVE_WAYLAND_ONLY
-EINTERN void e_comp_wl_xwayland_client_queue(E_Client *ec);
-static inline E_Comp_X_Client_Data *
-e_comp_wl_client_xwayland_data(const E_Client *ec)
-{
-   return ec->comp_data ? ((E_Comp_Wl_Client_Data*)ec->comp_data)->xwayland_data : NULL;
-}
-
-static inline E_Pixmap *
-e_comp_wl_client_xwayland_pixmap(const E_Client *ec)
-{
-   return ec->comp_data ?  ((E_Comp_Wl_Client_Data*)ec->comp_data)->xwayland_pixmap : NULL;
-}
-
-static inline void
-e_comp_wl_client_xwayland_setup(E_Client *ec, E_Comp_X_Client_Data *cd, E_Pixmap *ep)
-{
-   if (cd && ep)
-     {
-        ((E_Comp_Wl_Client_Data*)ec->comp_data)->xwayland_data = cd;
-        ((E_Comp_Wl_Client_Data*)ec->comp_data)->xwayland_pixmap = ep;
-     }
-   if (e_comp_wl->xwl_pending)
-     e_comp_wl->xwl_pending = eina_list_remove(e_comp_wl->xwl_pending, ec);
-}
-#  endif
 # endif
 #endif

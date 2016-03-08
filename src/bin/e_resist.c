@@ -20,8 +20,7 @@ e_resist_client_position(Eina_List *skiplist,
    Eina_List *l, *rects = NULL;
    E_Resist_Rect *r;
    E_Client *ec;
-   E_Desk *desk;
-   E_Shelf *es;
+   //E_Desk *desk; // FIXME
    E_Zone *zone;
 
    if (!e_config->use_resist)
@@ -65,16 +64,8 @@ e_resist_client_position(Eina_List *skiplist,
           }
      }
 
-   desk = e_desk_current_get(e_zone_current_get());
-   l = e_shelf_list_all();
-   EINA_LIST_FREE(l, es)
-     {
-        if (e_shelf_desk_visible(es, desk))
-          {
-             OBSTACLE(es->x + es->zone->x, es->y + es->zone->y, es->w, es->h,
-                      e_config->gadget_resist);
-          }
-     }
+   // FIXME
+   //desk = e_desk_current_get(e_zone_current_get());
    if (rects)
      {
         _e_resist_rects(rects,
@@ -93,35 +84,11 @@ e_resist_gadman_position(Eina_List *skiplist EINA_UNUSED,
                                    int x, int y, int w, int h,
                                    int *rx, int *ry)
 {
-   Eina_List *l, *rects = NULL;
-   E_Resist_Rect *r;
-   E_Shelf *es;
-
    if (!e_config->use_resist)
      {
         *rx = x;
         *ry = y;
         return 0;
-     }
-
-   l = e_shelf_list_all();
-   EINA_LIST_FREE(l, es)
-     {
-        if (e_shelf_desk_visible(es, e_desk_current_get(es->zone)))
-          {
-             OBSTACLE(es->x + es->zone->x, es->y + es->zone->y, es->w, es->h,
-                      e_config->gadget_resist);
-          }
-     }
-
-   if (rects)
-     {
-        _e_resist_rects(rects,
-                        px, py, pw, ph,
-                        x, y, w, h,
-                        rx, ry, NULL, NULL);
-
-        E_FREE_LIST(rects, E_FREE);
      }
    return 1;
 }

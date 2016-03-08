@@ -6,7 +6,6 @@ static void               _e_bindings_key_free(E_Binding_Key *bind);
 static void               _e_bindings_edge_free(E_Binding_Edge *bind);
 static void               _e_bindings_signal_free(E_Binding_Signal *bind);
 static void               _e_bindings_wheel_free(E_Binding_Wheel *bind);
-static void               _e_bindings_acpi_free(E_Binding_Acpi *bind);
 static int                _e_bindings_context_match(E_Binding_Context bctxt, E_Binding_Context ctxt);
 static E_Binding_Modifier _e_bindings_modifiers(unsigned int modifiers);
 static Eina_Bool          _e_bindings_edge_cb_timer(void *data);
@@ -18,7 +17,6 @@ static Eina_List *key_bindings = NULL;
 static Eina_List *edge_bindings = NULL;
 static Eina_List *signal_bindings = NULL;
 static Eina_List *wheel_bindings = NULL;
-static Eina_List *acpi_bindings = NULL;
 
 typedef struct _E_Binding_Edge_Data E_Binding_Edge_Data;
 
@@ -40,7 +38,6 @@ e_bindings_init(void)
    E_Config_Binding_Wheel *ebw;
    E_Config_Binding_Edge *ebe;
    E_Config_Binding_Key *ebk;
-   E_Config_Binding_Acpi *eba;
    Eina_List *l;
 
    EINA_LIST_FOREACH(e_bindings->mouse_bindings, l, ebm)
@@ -80,10 +77,6 @@ e_bindings_init(void)
      e_bindings_wheel_add(ebw->context, ebw->direction, ebw->z, ebw->modifiers,
                           ebw->any_mod, ebw->action, ebw->params);
 
-   EINA_LIST_FOREACH(e_bindings->acpi_bindings, l, eba)
-     e_bindings_acpi_add(eba->context, eba->type, eba->status,
-                         eba->action, eba->params);
-
    return 1;
 }
 
@@ -95,7 +88,6 @@ e_bindings_shutdown(void)
    E_FREE_LIST(edge_bindings, _e_bindings_edge_free);
    E_FREE_LIST(signal_bindings, _e_bindings_signal_free);
    E_FREE_LIST(wheel_bindings, _e_bindings_wheel_free);
-   E_FREE_LIST(acpi_bindings, _e_bindings_acpi_free);
 
    return 1;
 }
@@ -253,19 +245,6 @@ e_bindings_signal_reset(void)
                                    ebs->any_mod, "pointer_resize_pop", params);
           }
      }
-}
-
-E_API void
-e_bindings_acpi_reset(void)
-{
-   E_Config_Binding_Acpi *eba;
-   Eina_List *l;
-
-   E_FREE_LIST(acpi_bindings, _e_bindings_acpi_free);
-
-   EINA_LIST_FOREACH(e_bindings->acpi_bindings, l, eba)
-     e_bindings_acpi_add(eba->context, eba->type, eba->status,
-                         eba->action, eba->params);
 }
 
 E_API void
@@ -1317,89 +1296,6 @@ e_bindings_wheel_ecore_event_handle(E_Binding_Context ctxt, E_Object *obj, Ecore
    return e_bindings_wheel_event_handle(ctxt, obj, &event);
 }
 
-E_API void
-e_bindings_acpi_add(E_Binding_Context ctxt, int type, int status, const char *action, const char *params)
-{
-   E_Binding_Acpi *binding;
-
-   binding = E_NEW(E_Binding_Acpi, 1);
-   binding->ctxt = ctxt;
-   binding->type = type;
-   binding->status = status;
-   if (action) binding->action = eina_stringshare_add(action);
-   if (params) binding->params = eina_stringshare_add(params);
-   acpi_bindings = eina_list_append(acpi_bindings, binding);
-}
-
-E_API void
-e_bindings_acpi_del(E_Binding_Context ctxt, int type, int status, const char *action, const char *params)
-{
-   E_Binding_Acpi *binding;
-   Eina_List *l;
-
-   EINA_LIST_FOREACH(acpi_bindings, l, binding)
-     {
-        if ((binding->ctxt == ctxt) &&
-            (binding->type == type) && (binding->status == status) &&
-            (((binding->action) && (action) && (!strcmp(binding->action, action))) ||
-             ((!binding->action) && (!action))) &&
-            (((binding->params) && (params) && (!strcmp(binding->params, params))) ||
-             ((!binding->params) && (!params))))
-          {
-             _e_bindings_acpi_free(binding);
-             acpi_bindings = eina_list_remove_list(acpi_bindings, l);
-             break;
-          }
-     }
-}
-
-E_API E_Action *
-e_bindings_acpi_find(E_Binding_Context ctxt, E_Event_Acpi *ev, E_Binding_Acpi **bind_ret)
-{
-   E_Binding_Acpi *binding;
-   Eina_List *l;
-
-   EINA_LIST_FOREACH(acpi_bindings, l, binding)
-     {
-        if (binding->type == ev->type)
-          {
-             /* if binding status is -1, then we don't compare event status */
-             if (binding->status != -1)
-               {
-                  /* binding status is set to something, compare event status */
-                  if (binding->status != ev->status) continue;
-               }
-             if (_e_bindings_context_match(binding->ctxt, ctxt))
-               {
-                  E_Action *act;
-
-                  act = e_action_find(binding->action);
-                  if (bind_ret) *bind_ret = binding;
-                  return act;
-               }
-          }
-     }
-   return NULL;
-}
-
-E_API E_Action *
-e_bindings_acpi_event_handle(E_Binding_Context ctxt, E_Object *obj, E_Event_Acpi *ev)
-{
-   E_Action *act;
-   E_Binding_Acpi *binding;
-
-   act = e_bindings_acpi_find(ctxt, ev, &binding);
-   if (act)
-     {
-        if (act->func.go_acpi)
-          act->func.go_acpi(obj, binding->params, ev);
-        else if (act->func.go)
-          act->func.go(obj, binding->params);
-        return act;
-     }
-   return act;
-}
-
 static void
 _e_bindings_mouse_free(E_Binding_Mouse *binding)
 {
@@ -1448,14 +1344,6 @@ _e_bindings_wheel_free(E_Binding_Wheel *binding)
    if (binding->action) eina_stringshare_del(binding->action);
    if (binding->params) eina_stringshare_del(binding->params);
    free(binding);
-}
-
-static void
-_e_bindings_acpi_free(E_Binding_Acpi *binding)
-{
-   if (binding->action) eina_stringshare_del(binding->action);
-   if (binding->params) eina_stringshare_del(binding->params);
-   E_FREE(binding);
 }
 
 static int

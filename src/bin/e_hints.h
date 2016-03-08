@@ -3,10 +3,9 @@
 #ifndef E_HINTS_H
 #define E_HINTS_H
 
-EINTERN void e_hints_init(Ecore_Window win, Ecore_Window propwin);
-//EINTERN void e_hints_manager_init(E_Manager *man);
-E_API void e_hints_client_list_set(void);
-E_API void e_hints_client_stacking_set(void);
+EINTERN void e_hints_init(Ecore_Window win, Ecore_Window propwin); // TODO: should be removed - yigl
+E_API void e_hints_client_list_set(void); // TODO: should be removed - yigl
+E_API void e_hints_client_stacking_set(void); // TODO: should be removed - yigl
 
 E_API void e_hints_active_window_set(E_Client *ec);
 
@@ -39,9 +38,6 @@ E_API void e_hints_window_e_state_get(E_Client *ec);
 
 E_API void e_hints_window_e_opaque_get(E_Client *ec);
 
-E_API void e_hints_window_qtopia_soft_menu_get(E_Client *ec);
-E_API void e_hints_window_qtopia_soft_menus_get(E_Client *ec);
-
 E_API void e_hints_window_virtual_keyboard_state_get(E_Client *ec);
 E_API void e_hints_window_virtual_keyboard_get(E_Client *ec);
 
@@ -60,17 +56,5 @@ EAPI Eina_Bool e_hints_aux_hint_change_with_pixmap(E_Pixmap *cp, int32_t id, con
 EAPI Eina_Bool e_hints_aux_hint_del_with_pixmap(E_Pixmap *cp, int32_t id);
 EAPI const char * e_hints_aux_hint_value_get_with_pixmap(E_Pixmap *cp, const char *name);
 
-#ifdef E_COMP_X_H
-E_API void e_hints_window_state_update(E_Client *ec, int state, int action);
-extern E_API Ecore_X_Atom ATM__QTOPIA_SOFT_MENU;
-extern E_API Ecore_X_Atom ATM__QTOPIA_SOFT_MENUS;
-extern E_API Ecore_X_Atom ATM_GNOME_SM_PROXY;
-extern E_API Ecore_X_Atom ATM_ENLIGHTENMENT_COMMS;
-extern E_API Ecore_X_Atom ATM_ENLIGHTENMENT_VERSION;
-extern E_API Ecore_X_Atom ATM_ENLIGHTENMENT_SCALE;
-extern E_API Ecore_X_Atom ATM_NETWM_SHOW_WINDOW_MENU;
-extern E_API Ecore_X_Atom ATM_NETWM_PERFORM_BUTTON_ACTION;
-extern E_API Ecore_X_Atom ATM_GTK_FRAME_EXTENTS;
-#endif
 #endif
 #endif

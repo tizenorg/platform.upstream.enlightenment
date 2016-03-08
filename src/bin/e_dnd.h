@@ -132,7 +132,6 @@ E_API void            e_drag_key_up_cb_set(E_Drag *drag, void (*func)(E_Drag *dr
 E_API int             e_drag_start(E_Drag *drag, int x, int y);
 E_API int             e_drag_xdnd_start(E_Drag *drag, int x, int y);
 
-E_API void e_drop_xds_update(Eina_Bool enable, const char *value);
 E_API void e_drop_handler_xds_set(E_Drop_Handler *handler, Eina_Bool (*cb)(void *data, const char *type));
 E_API E_Drop_Handler *e_drop_handler_add(E_Object *obj, Evas_Object *win,
                                         void *data,

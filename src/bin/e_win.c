@@ -3,6 +3,8 @@
 /* intercept elm_win operations so we talk directly to e_client */
 #undef elm_win_add
 
+// FIXME
+#if 0
 typedef struct _Elm_Win_Trap_Ctx
 {
    E_Client      *client;
@@ -477,11 +479,16 @@ e_win_no_reopen_set(Evas_Object *obj, Eina_Bool no_reopen)
      ctx->client->internal_no_reopen = !!no_reopen;
 }
 
+// FIXME
 E_API Evas_Object *
-e_elm_win_add(Evas_Object *parent, const char *name, Elm_Win_Type type)
+//e_elm_win_add(Evas_Object *parent, const char *name, Elm_Win_Type type)
+e_elm_win_add(Evas_Object *parent, const char *name, int type);
 {
+   Evas_Object *o = NULL;
+
+   // FIXME
+#if 0
    char *eng;
-   Evas_Object *o;
 
    if (type == ELM_WIN_INLINED_IMAGE) return elm_win_add(parent, name, type);
    eng = eina_strdup(getenv("ELM_ACCEL"));
@@ -490,5 +497,79 @@ e_elm_win_add(Evas_Object *parent, const char *name, Elm_Win_Type type)
    e_util_env_set("ELM_ACCEL", eng);
    elm_win_alpha_set(o, 1);
    free(eng);
+#endif
    return o;
 }
+#else
+EINTERN int
+e_win_init(void)
+{
+   return 1;
+}
+
+EINTERN int
+e_win_shutdown(void)
+{
+   return 1;
+}
+
+E_API E_Client *
+e_win_client_get(Evas_Object *obj)
+{
+   return NULL;
+}
+
+E_API Ecore_Evas *
+e_win_ee_get(Evas_Object *obj)
+{
+   return NULL;
+}
+
+E_API E_Pointer *
+e_win_pointer_get(Evas_Object *obj)
+{
+   return NULL;
+}
+
+E_API Eina_Bool
+e_win_centered_get(Evas_Object *obj)
+{
+   return EINA_FALSE;
+}
+
+E_API void
+e_win_client_icon_set(Evas_Object *win, const char *icon)
+{
+   return;
+}
+
+E_API void
+e_win_client_icon_key_set(Evas_Object *win, const char *key)
+{
+   return;
+}
+
+E_API void
+e_win_placed_set(Evas_Object *win, Eina_Bool placed)
+{
+   return;
+}
+
+E_API void
+e_win_no_remember_set(Evas_Object *win, Eina_Bool no_rem)
+{
+   return;
+}
+
+E_API void
+e_win_no_reopen_set(Evas_Object *win, Eina_Bool no_reopen)
+{
+   return;
+}
+
+E_API Evas_Object *
+e_elm_win_add(Evas_Object *parent, const char *name, int type)
+{
+   return NULL;
+}
+#endif
