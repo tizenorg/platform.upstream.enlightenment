@@ -1984,6 +1984,37 @@ _e_comp_wl_cb_mouse_move(void *d EINA_UNUSED, int t EINA_UNUSED, Ecore_Event_Mou
    return ECORE_CALLBACK_RENEW;
 }
 
+static Eina_Bool
+_e_comp_wl_cb_mouse_button_cancel(void *d EINA_UNUSED, int t EINA_UNUSED, Ecore_Event_Mouse_Button *ev)
+{
+   E_Client *ec;
+   Eina_List *l;
+   struct wl_resource *res;
+   struct wl_client *wc;
+
+   ERR("[jeon][%s:%d] ...\n", __FUNCTION__, __LINE__);
+
+   if (!(ec = e_comp_wl->ptr.ec)) return ECORE_CALLBACK_PASS_ON;
+   if (e_object_is_del(E_OBJECT(ec))) return ECORE_CALLBACK_PASS_ON;
+   if (!ec->comp_data->surface) return ECORE_CALLBACK_PASS_ON;
+   if (ec->ignored) return ECORE_CALLBACK_PASS_ON;
+
+   wc = wl_resource_get_client(ec->comp_data->surface);
+
+   EINA_LIST_FOREACH(e_comp->wl_comp_data->touch.resources, l, res)
+     {
+        if (wl_resource_get_client(res) != wc) continue;
+        if (!e_comp_wl_input_touch_check(res)) continue;
+
+        ERR("[jeon][%s:%d] ...send cancel to wc: %p(ec: %p)\n", __FUNCTION__, __LINE__, wc, ec);
+
+        wl_touch_send_cancel(res);
+     }
+
+   return ECORE_CALLBACK_PASS_ON;
+}
+
+
 static void
 _e_comp_wl_subsurface_restack(E_Client *ec)
 {
@@ -4496,6 +4527,8 @@ e_comp_wl_init(void)
 
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_MOVE,
                          _e_comp_wl_cb_mouse_move, NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_CANCEL,
+                         _e_comp_wl_cb_mouse_button_cancel, NULL);
 
    /* add hooks to catch e_client events */
    e_client_hook_add(E_CLIENT_HOOK_NEW_CLIENT, _e_comp_wl_client_cb_new, NULL);
