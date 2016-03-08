@@ -123,5 +123,6 @@ E_API    void      e_randr2_screeninfo_update(void);
 E_API void e_randr2_screen_refresh_queue(Eina_Bool lid_event);
 E_API E_Config_Randr2_Screen *e_randr2_config_screen_find(E_Randr2_Screen *s, E_Config_Randr2 *cfg);
 E_API void e_randr2_screens_setup(int rw, int rh);
+E_API Eina_Bool e_acpi_lid_is_closed(void);
 #endif
 #endif

@@ -1,10 +1,7 @@
 #include "e.h"
 
-#define REMEMBER_HIERARCHY 1
-#define REMEMBER_SIMPLE    0
-
 E_API int E_EVENT_REMEMBER_UPDATE = -1;
-E_API E_Config_DD *e_remember_edd = NULL; //created in e_config.c
+E_API E_Config_DD *e_remember_edd = NULL; // created in e_config.c
 
 typedef struct _E_Remember_List E_Remember_List;
 
@@ -18,7 +15,6 @@ static void        _e_remember_free(E_Remember *rem);
 static void        _e_remember_update(E_Client *ec, E_Remember *rem);
 static E_Remember *_e_remember_find(E_Client *ec, int check_usable);
 static void        _e_remember_cb_hook_pre_post_fetch(void *data, E_Client *ec);
-static void        _e_remember_cb_hook_eval_post_new_client(void *data, E_Client *ec);
 static void        _e_remember_init_edd(void);
 static Eina_Bool   _e_remember_restore_cb(void *data, int type, void *event);
 
@@ -30,40 +26,16 @@ static Eina_List *handlers = NULL;
 static Ecore_Idler *remember_idler = NULL;
 static Eina_List *remember_idler_list = NULL;
 
-/* static Eina_List *e_remember_restart_list = NULL; */
-
 /* externally accessible functions */
 EINTERN int
-e_remember_init(E_Startup_Mode mode)
+e_remember_init(void)
 {
-   Eina_List *l = NULL;
-   E_Remember *rem;
    E_Client_Hook *h;
 
-   if (mode == E_STARTUP_START)
-     {
-        EINA_LIST_FOREACH(e_config->remembers, l, rem)
-          {
-             if ((rem->apply & E_REMEMBER_APPLY_RUN) && (rem->prop.command))
-               {
-                  if (!ecore_exe_run(rem->prop.command, NULL))
-                    {
-                       e_util_dialog_show(_("Run Error"),
-                                          _("Enlightenment was unable to fork a child process:<br>"
-                                            "<br>"
-                                            "%s<br>"),
-                                          rem->prop.command);
-                    }
-               }
-          }
-     }
    E_EVENT_REMEMBER_UPDATE = ecore_event_type_new();
 
    h = e_client_hook_add(E_CLIENT_HOOK_EVAL_PRE_POST_FETCH,
                          _e_remember_cb_hook_pre_post_fetch, NULL);
-   if (h) hooks = eina_list_append(hooks, h);
-   h = e_client_hook_add(E_CLIENT_HOOK_EVAL_POST_NEW_CLIENT,
-                         _e_remember_cb_hook_eval_post_new_client, NULL);
    if (h) hooks = eina_list_append(hooks, h);
 
    _e_remember_init_edd();
@@ -175,10 +147,10 @@ _e_remember_restore_idler_cb(void *d EINA_UNUSED)
              else
                snprintf(path, sizeof(path), "%s", p);
 
-             if (e_configure_registry_exists(path))
-               {
-                  e_configure_registry_call(path, NULL, param);
-               }
+             //if (e_configure_registry_exists(path))
+             //  {
+             //     e_configure_registry_call(path, NULL, param);
+             //  }
           }
         else if (!strcmp(rem->class, "_configure"))
           {
@@ -215,7 +187,6 @@ e_remember_new(void)
 
    rem = E_NEW(E_Remember, 1);
    if (!rem) return NULL;
-   e_config->remembers = eina_list_prepend(e_config->remembers, rem);
    return rem;
 }
 
@@ -289,37 +260,7 @@ e_remember_find(E_Client *ec)
 E_API void
 e_remember_match_update(E_Remember *rem)
 {
-   int max_count = 0;
-
-   if (rem->match & E_REMEMBER_MATCH_NAME) max_count += 2;
-   if (rem->match & E_REMEMBER_MATCH_CLASS) max_count += 2;
-   if (rem->match & E_REMEMBER_MATCH_TITLE) max_count += 2;
-   if (rem->match & E_REMEMBER_MATCH_ROLE) max_count += 2;
-   if (rem->match & E_REMEMBER_MATCH_TYPE) max_count += 2;
-   if (rem->match & E_REMEMBER_MATCH_TRANSIENT) max_count += 2;
-   if (rem->apply_first_only) max_count++;
-
-   if (max_count != rem->max_score)
-     {
-        /* The number of matches for this remember has changed so we
-         * need to remove from list and insert back into the appropriate
-         * location. */
-        Eina_List *l = NULL;
-        E_Remember *r;
-
-        rem->max_score = max_count;
-        e_config->remembers = eina_list_remove(e_config->remembers, rem);
-
-        EINA_LIST_FOREACH(e_config->remembers, l, r)
-          {
-             if (r->max_score <= rem->max_score) break;
-          }
-
-        if (l)
-          e_config->remembers = eina_list_prepend_relative_list(e_config->remembers, rem, l);
-        else
-          e_config->remembers = eina_list_append(e_config->remembers, rem);
-     }
+   ;
 }
 
 E_API int
@@ -508,107 +449,12 @@ _e_remember_update(E_Client *ec, E_Remember *rem)
 static E_Remember *
 _e_remember_find(E_Client *ec, int check_usable)
 {
-   Eina_List *l = NULL;
-   E_Remember *rem;
-
-#if REMEMBER_SIMPLE
-   EINA_LIST_FOREACH(e_config->remembers, l, rem)
-     {
-        int required_matches;
-        int matches;
-        const char *title = "";
-
-        matches = 0;
-        required_matches = 0;
-        if (rem->match & E_REMEMBER_MATCH_NAME) required_matches++;
-        if (rem->match & E_REMEMBER_MATCH_CLASS) required_matches++;
-        if (rem->match & E_REMEMBER_MATCH_TITLE) required_matches++;
-        if (rem->match & E_REMEMBER_MATCH_ROLE) required_matches++;
-        if (rem->match & E_REMEMBER_MATCH_TYPE) required_matches++;
-        if (rem->match & E_REMEMBER_MATCH_TRANSIENT) required_matches++;
-
-        if (ec->netwm.name) title = ec->netwm.name;
-        else title = ec->icccm.title;
-
-        if ((rem->match & E_REMEMBER_MATCH_NAME) &&
-            ((!e_util_strcmp(rem->name, ec->icccm.name)) ||
-             (e_util_both_str_empty(rem->name, ec->icccm.name))))
-          matches++;
-        if ((rem->match & E_REMEMBER_MATCH_CLASS) &&
-            ((!e_util_strcmp(rem->class, ec->icccm.class)) ||
-             (e_util_both_str_empty(rem->class, ec->icccm.class))))
-          matches++;
-        if ((rem->match & E_REMEMBER_MATCH_TITLE) &&
-            ((!e_util_strcmp(rem->title, title)) ||
-             (e_util_both_str_empty(rem->title, title))))
-          matches++;
-        if ((rem->match & E_REMEMBER_MATCH_ROLE) &&
-            ((!e_util_strcmp(rem->role, ec->icccm.window_role)) ||
-             (e_util_both_str_empty(rem->role, ec->icccm.window_role))))
-          matches++;
-        if ((rem->match & E_REMEMBER_MATCH_TYPE) &&
-            (rem->type == ec->netwm.type))
-          matches++;
-        if ((rem->match & E_REMEMBER_MATCH_TRANSIENT) &&
-            (((rem->transient) && (ec->icccm.transient_for != 0)) ||
-             ((!rem->transient) && (ec->icccm.transient_for == 0))))
-          matches++;
-        if (matches >= required_matches)
-          return rem;
-     }
    return NULL;
-#endif
-#if REMEMBER_HIERARCHY
-   /* This search method finds the best possible match available and is
-    * based on the fact that the list is sorted, with those remembers
-    * with the most possible matches at the start of the list. This
-    * means, as soon as a valid match is found, it is a match
-    * within the set of best possible matches. */
-   EINA_LIST_FOREACH(e_config->remembers, l, rem)
-     {
-        const char *title = "";
-
-        if ((check_usable) && (!e_remember_usable_get(rem)))
-          continue;
-
-        if (ec->netwm.name) title = ec->netwm.name;
-        else title = ec->icccm.title;
-
-        /* For each type of match, check whether the match is
-         * required, and if it is, check whether there's a match. If
-         * it fails, then go to the next remember */
-        if (rem->match & E_REMEMBER_MATCH_NAME &&
-            !e_util_glob_match(ec->icccm.name, rem->name))
-          continue;
-        if (rem->match & E_REMEMBER_MATCH_CLASS &&
-            !e_util_glob_match(ec->icccm.class, rem->class))
-          continue;
-        if (rem->match & E_REMEMBER_MATCH_TITLE &&
-            !e_util_glob_match(title, rem->title))
-          continue;
-        if (rem->match & E_REMEMBER_MATCH_ROLE &&
-            e_util_strcmp(rem->role, ec->icccm.window_role) &&
-            !e_util_both_str_empty(rem->role, ec->icccm.window_role))
-          continue;
-        if (rem->match & E_REMEMBER_MATCH_TYPE &&
-            rem->type != (int)ec->netwm.type)
-          continue;
-        if (rem->match & E_REMEMBER_MATCH_TRANSIENT &&
-            !(rem->transient && ec->icccm.transient_for != 0) &&
-            !(!rem->transient) && (ec->icccm.transient_for == 0))
-          continue;
-
-        return rem;
-     }
-
-   return NULL;
-#endif
 }
 
 static void
 _e_remember_free(E_Remember *rem)
 {
-   e_config->remembers = eina_list_remove(e_config->remembers, rem);
    if (rem->name) eina_stringshare_del(rem->name);
    if (rem->class) eina_stringshare_del(rem->class);
    if (rem->title) eina_stringshare_del(rem->title);
@@ -617,42 +463,6 @@ _e_remember_free(E_Remember *rem)
    if (rem->prop.command) eina_stringshare_del(rem->prop.command);
    if (rem->prop.desktop_file) eina_stringshare_del(rem->prop.desktop_file);
    free(rem);
-}
-
-static void
-_e_remember_cb_hook_eval_post_new_client(void *data EINA_UNUSED, E_Client *ec)
-{
-   // remember only when window was modified
-   // if (!ec->new_client) return;
-   if (e_client_util_ignored_get(ec)) return;
-   if ((ec->internal) && (!ec->remember) &&
-       (e_config->remember_internal_windows) &&
-       (!ec->internal_no_remember) &&
-       (ec->icccm.class && ec->icccm.class[0]))
-     {
-        E_Remember *rem;
-
-        if (!strncmp(ec->icccm.class, "e_fwin", 6))
-          {
-             if (!e_config->remember_internal_fm_windows) return;
-          }
-        else
-          {
-             if (!e_config->remember_internal_windows)
-               return;
-          }
-
-        rem = e_remember_new();
-        if (!rem) return;
-
-        e_remember_default_match_set(rem, ec);
-
-        rem->apply = E_REMEMBER_APPLY_POS | E_REMEMBER_APPLY_SIZE | E_REMEMBER_APPLY_BORDER;
-
-        e_remember_use(rem);
-        e_remember_update(ec);
-        ec->remember = rem;
-     }
 }
 
 static void
@@ -714,8 +524,6 @@ _e_remember_cb_hook_pre_post_fetch(void *data EINA_UNUSED, E_Client *ec)
              if (ec->desk != desk)
                ec->hidden = 0;
              e_client_desk_set(ec, desk);
-             if (e_config->desk_auto_switch)
-               e_desk_show(desk);
           }
      }
    if (rem->apply & E_REMEMBER_APPLY_SIZE)
@@ -856,10 +664,6 @@ _e_remember_cb_hook_pre_post_fetch(void *data EINA_UNUSED, E_Client *ec)
                       ((ec->y + ec->h) > ec->zone->h))
                ec->y = ec->zone->h - ec->h;
           }
-        //		  if (ec->zone->w != rem->prop.res_x)
-        //		    ec->x = (rem->prop.pos_x * ec->zone->w) / rem->prop.res_x;
-        //		  if (ec->zone->h != rem->prop.res_y)
-        //		    ec->y = (rem->prop.pos_y * ec->zone->h) / rem->prop.res_y;
         if (
           /* upper left */
           (!E_INSIDE(ec->x, ec->y, 0, 0, ec->zone->w, ec->zone->h)) &&
