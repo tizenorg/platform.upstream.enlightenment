@@ -41,7 +41,6 @@ typedef struct _E_Comp_Wl_Transform_Context
    int degree;
 } E_Comp_Wl_Transform_Context;
 
-/* static Eina_Hash *clients_win_hash = NULL; */
 static Eina_Hash *clients_buffer_hash = NULL;
 static Eina_List *handlers = NULL;
 static double _last_event_time = 0.0;
@@ -49,242 +48,6 @@ static E_Client *cursor_timer_ec = NULL;
 static Eina_Bool need_send_leave = EINA_TRUE;
 
 /* local functions */
-static void
-_e_comp_wl_transform_stay_within_canvas(E_Client *ec, int x, int y, int *new_x, int *new_y)
-{
-   int new_x_max, new_y_max;
-   int zw, zh;
-   Eina_Bool lw, lh;
-
-   if (!ec->zone)
-     {
-        if (new_x) *new_x = x;
-        if (new_y) *new_y = y;
-        return;
-     }
-
-   zw = ec->zone->w;
-   zh = ec->zone->h;
-
-   new_x_max = zw - ec->w;
-   new_y_max = zh - ec->h;
-   lw = ec->w > zw ? EINA_TRUE : EINA_FALSE;
-   lh = ec->h > zh ? EINA_TRUE : EINA_FALSE;
-
-   if (new_x)
-     {
-        if (lw)
-          {
-             if (x <= new_x_max)
-               *new_x = new_x_max;
-             else if (x >= 0)
-               *new_x = 0;
-          }
-        else
-          {
-             if (x >= new_x_max)
-               *new_x = new_x_max;
-             else if (x <= 0)
-               *new_x = 0;
-          }
-     }
-
-   if (new_y)
-     {
-        if (lh)
-          {
-             if (y <= new_y_max)
-               *new_y = new_y_max;
-             else if (y >= 0)
-               *new_y = 0;
-          }
-        else
-          {
-             if (y >= new_y_max)
-               *new_y = new_y_max;
-             else if (y <= 0)
-               *new_y = 0;
-          }
-     }
-}
-
-static void
-_e_comp_wl_transform_pull_del(void *data,
-                              Elm_Transit *trans EINA_UNUSED)
-{
-   E_Client *ec = data;
-   if (!ec) return;
-
-   e_object_unref(E_OBJECT(ec));
-}
-
-static void
-_e_comp_wl_transform_pull(E_Client *ec)
-{
-   Elm_Transit *trans;
-   int new_x, new_y;
-
-   new_x = ec->client.x;
-   new_y = ec->client.y;
-
-   _e_comp_wl_transform_stay_within_canvas(ec,
-                                           ec->client.x, ec->client.y,
-                                           &new_x, &new_y);
-
-   if ((ec->client.x == new_x) && (ec->client.y == new_y))
-     return;
-
-   e_object_ref(E_OBJECT(ec));
-
-   trans = elm_transit_add();
-   elm_transit_del_cb_set(trans, _e_comp_wl_transform_pull_del, ec);
-   elm_transit_tween_mode_set(trans, ELM_TRANSIT_TWEEN_MODE_DECELERATE);
-   elm_transit_effect_translation_add(trans,
-                                      0, 0,
-                                      new_x - ec->client.x,
-                                      new_y - ec->client.y);
-   elm_transit_object_add(trans, ec->frame);
-   elm_transit_objects_final_state_keep_set(trans, EINA_TRUE);
-   elm_transit_duration_set(trans, 0.4);
-   elm_transit_go(trans);
-}
-
-static void
-_e_comp_wl_transform_effect_end(Elm_Transit_Effect *context,
-                                Elm_Transit *trans)
-{
-   E_Client *ec = NULL;
-   E_Comp_Wl_Transform_Context *ctxt = context;
-
-   if (!ctxt) return;
-   ec = ctxt->ec;
-
-   if ((ec) && (!e_object_is_del(E_OBJECT(ec))))
-     {
-        ec->comp_data->transform.start = 0;
-        ec->comp_data->transform.cur_degree += ctxt->degree * ctxt->direction;
-        if (ec->comp_data->transform.cur_degree < 0)
-          ec->comp_data->transform.cur_degree += 360;
-        else
-          ec->comp_data->transform.cur_degree %= 360;
-        ec->comp_data->transform.scount = 0;
-        ec->comp_data->transform.stime = 0;
-     }
-
-   E_FREE(ctxt);
-}
-
-static void
-_e_comp_wl_transform_effect_del(void *data,
-                                Elm_Transit *trans EINA_UNUSED)
-{
-   E_Client *ec = data;
-   if (!ec) return;
-   if (e_object_is_del(E_OBJECT(ec))) return;
-
-   e_client_transform_apply(ec, ec->comp_data->transform.cur_degree, -1.0, -1, -1);
-}
-
-static void
-_e_comp_wl_transform_effect_run(Elm_Transit_Effect *context,
-                                Elm_Transit *trans EINA_UNUSED,
-                                double progress)
-{
-   E_Comp_Wl_Transform_Context *ctxt = context;
-   E_Client *ec = NULL;
-   int cx, cy;
-
-   ec = ctxt->ec;
-   if (!ec) return;
-   if (e_object_is_del(E_OBJECT(ec))) return;
-
-   cx = ec->client.x + ec->client.w / 2;
-   cy = ec->client.y + ec->client.h / 2;
-
-   e_client_transform_apply(ec, ec->comp_data->transform.cur_degree + ctxt->degree * ctxt->direction * progress, -1.0, cx, cy);
-}
-
-static void
-_e_comp_wl_transform_unset(E_Client *ec)
-{
-
-   Elm_Transit *trans;
-   E_Comp_Wl_Transform_Context *ctxt;
-   ctxt = E_NEW(E_Comp_Wl_Transform_Context, 1);
-   if (!ctxt) return;
-
-   ec->comp_data->transform.start = 1;
-   ctxt->direction = 1;
-   ctxt->ec = ec;
-   ctxt->degree = 360 - ec->comp_data->transform.cur_degree;
-
-   trans = elm_transit_add();
-   elm_transit_del_cb_set(trans, _e_comp_wl_transform_effect_del, ec);
-   elm_transit_tween_mode_set(trans, ELM_TRANSIT_TWEEN_MODE_ACCELERATE);
-   elm_transit_object_add(trans, ec->frame);
-   elm_transit_effect_add(trans,
-                          _e_comp_wl_transform_effect_run,
-                          (void*)ctxt,
-                          _e_comp_wl_transform_effect_end);
-   elm_transit_duration_set(trans, 0.45);
-   elm_transit_go(trans);
-}
-
-static Eina_Bool
-_e_comp_wl_transform_set(E_Client *ec, 
-                         int direction,
-                         int count,
-                         unsigned int time)
-{
-   Elm_Transit *trans;
-   E_Comp_Wl_Transform_Context *ctxt;
-   int degree;
-
-   switch (count)
-     {
-      case 3:
-         if (time <= 50)
-           return EINA_FALSE;
-         else if (time <= 100)
-           degree = 100;
-         else
-           degree = 50;
-         break;
-      case 4:
-         if (time <= 50)
-           degree = 350;
-         else if (time <= 100)
-           degree = 250;
-         else
-           degree = 150;
-         break;
-      default:
-         return EINA_FALSE;
-     }
-
-   ctxt = E_NEW(E_Comp_Wl_Transform_Context, 1);
-   if (!ctxt) return EINA_FALSE;
-
-   ec->comp_data->transform.start = 1;
-
-   ctxt->direction = direction / abs(direction);
-   ctxt->ec = ec;
-   ctxt->degree = degree;
-
-   trans = elm_transit_add();
-   elm_transit_del_cb_set(trans, _e_comp_wl_transform_effect_del, ec);
-   elm_transit_tween_mode_set(trans, ELM_TRANSIT_TWEEN_MODE_DECELERATE);
-   elm_transit_object_add(trans, ec->frame);
-   elm_transit_effect_add(trans,
-                          _e_comp_wl_transform_effect_run,
-                          (void*)ctxt,
-                          _e_comp_wl_transform_effect_end);
-   elm_transit_duration_set(trans, (double)count/10.0);
-   elm_transit_go(trans);
-
-   return EINA_TRUE;
-}
-
 static void
 _e_comp_wl_configure_send(E_Client *ec, Eina_Bool edges)
 {
@@ -300,13 +63,9 @@ _e_comp_wl_configure_send(E_Client *ec, Eina_Bool edges)
 }
 
 static void
-_e_comp_wl_focus_down_set(E_Client *ec)
+_e_comp_wl_focus_down_set(E_Client *ec EINA_UNUSED)
 {
-   Ecore_Window win = 0;
-
-   win = e_client_util_pwin_get(ec);
-   e_bindings_mouse_grab(E_BINDING_CONTEXT_WINDOW, win);
-   e_bindings_wheel_grab(E_BINDING_CONTEXT_WINDOW, win);
+   // do nothing
 }
 
 static void
@@ -340,35 +99,6 @@ _e_comp_wl_cb_prepare(void *data EINA_UNUSED, Ecore_Fd_Handler *hdlr EINA_UNUSED
 {
    /* flush pending client events */
    wl_display_flush_clients(e_comp_wl->wl.disp);
-}
-
-static Eina_Bool
-_e_comp_wl_cb_module_idle(void *data EINA_UNUSED)
-{
-   const char **m, *mods[] =
-   {
-      "wl_desktop_shell",
-      NULL
-   };
-
-   /* check if we are still loading modules */
-   if (e_module_loading_get()) return ECORE_CALLBACK_RENEW;
-
-   for (m = mods; *m; m++)
-     {
-        E_Module *mod = e_module_find(*m);
-
-        if (!mod)
-          mod = e_module_new(*m);
-
-        if (mod)
-          e_module_enable(mod);
-     }
-
-   /* FIXME: NB:
-    * Do we need to dispatch pending wl events here ?? */
-
-   return ECORE_CALLBACK_CANCEL;
 }
 
 static void
@@ -932,7 +662,6 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    if (!ec->comp_data->surface) return;
-   if (ec->comp_data->transform.start) return;
 
    e_comp_wl->ptr.ec = ec;
    if (e_comp_wl->drag)
@@ -1020,7 +749,6 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    if (!ec->comp_data->surface) return;
-   if (ec->comp_data->transform.start) return;
 
    if (e_comp_wl->drag)
      {
@@ -1146,7 +874,7 @@ _e_comp_wl_evas_handle_mouse_button_to_touch(E_Client *ec, uint32_t timestamp, i
    struct wl_resource *res;
    wl_fixed_t x, y;
 
-   if (ec->cur_mouse_action || ec->border_menu || e_comp_wl->drag) return;
+   if (ec->cur_mouse_action || e_comp_wl->drag) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (!ec->comp_data->surface) return;
    if (ec->ignored) return;
@@ -1274,27 +1002,6 @@ _e_comp_wl_evas_cb_mouse_wheel(void *data, Evas *evas EINA_UNUSED, Evas_Object *
      dir = wl_fixed_from_int(ev->z);
 
    if (!ec->comp_data->surface) return;
-   if (ec->comp_data->transform.start) return;
-
-   if (ec->comp_data->transform.enabled)
-     {
-        if (ec->comp_data->transform.stime == 0)
-          {
-             ec->comp_data->transform.stime = ev->timestamp;
-             return;
-          }
-
-        if (_e_comp_wl_transform_set(ec, ev->z,
-                                     ++ec->comp_data->transform.scount,
-                                     ev->timestamp - ec->comp_data->transform.stime))
-          {
-             ec->comp_data->transform.scount = 0;
-             ec->comp_data->transform.stime = 0;
-          }
-
-        /* do not send wheel event to client */
-        return;
-     }
 
    wc = wl_resource_get_client(ec->comp_data->surface);
    EINA_LIST_FOREACH(e_comp_wl->ptr.resources, l, res)
@@ -3046,32 +2753,6 @@ _e_comp_wl_compositor_cb_bind(struct wl_client *client, void *data EINA_UNUSED, 
 }
 
 static void
-_e_comp_wl_compositor_cb_del(void *data EINA_UNUSED)
-{
-   E_Comp_Wl_Output *output;
-
-   if (e_comp_wl->screenshooter.global)
-     wl_global_destroy(e_comp_wl->screenshooter.global);
-
-   EINA_LIST_FREE(e_comp_wl->outputs, output)
-     {
-        if (output->id) eina_stringshare_del(output->id);
-        if (output->make) eina_stringshare_del(output->make);
-        if (output->model) eina_stringshare_del(output->model);
-        free(output);
-     }
-
-   /* delete fd handler */
-   if (e_comp_wl->fd_hdlr) ecore_main_fd_handler_del(e_comp_wl->fd_hdlr);
-
-   E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
-   cursor_timer_ec = NULL;
-
-   /* free allocated data structure */
-   free(e_comp_wl);
-}
-
-static void
 _e_comp_wl_subsurface_destroy(struct wl_resource *resource)
 {
    E_Client *ec;
@@ -3770,10 +3451,6 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
    ec->comp_data->fetch.layer = p_cdata->fetch.layer;
    ec->comp_data->video_client = p_cdata->video_client;
 
-   /* add this client to the hash */
-   /* eina_hash_add(clients_win_hash, &win, ec); */
-   e_hints_client_list_set();
-
    e_pixmap_cdata_set(ec->pixmap, ec->comp_data);
 
    TRACE_DS_END();
@@ -3876,87 +3553,6 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
    TRACE_DS_END();
 }
 
-#if 0
-static void
-_e_comp_wl_client_cb_pre_frame(void *data EINA_UNUSED, E_Client *ec)
-{
-   Ecore_Window parent;
-
-   if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
-   if (!ec->comp_data->need_reparent) return;
-
-   DBG("Client Pre Frame: %d", wl_resource_get_id(ec->comp_data->surface));
-
-   parent = e_client_util_pwin_get(ec);
-
-   /* set pixmap parent window */
-   e_pixmap_parent_window_set(ec->pixmap, parent);
-
-   ec->border_size = 0;
-   ec->border.changed = EINA_TRUE;
-   ec->changes.shape = EINA_TRUE;
-   ec->changes.shape_input = EINA_TRUE;
-   EC_CHANGED(ec);
-
-   if (ec->visible)
-     {
-        if ((ec->comp_data->set_win_type) && (ec->internal_elm_win))
-          {
-             int type = ECORE_WL_WINDOW_TYPE_TOPLEVEL;
-
-             switch (ec->netwm.type)
-               {
-                case E_WINDOW_TYPE_DIALOG:
-                  /* NB: If there is No transient set, then dialogs get
-                   * treated as Normal Toplevel windows */
-                  if (ec->icccm.transient_for)
-                    type = ECORE_WL_WINDOW_TYPE_TRANSIENT;
-                  break;
-                case E_WINDOW_TYPE_DESKTOP:
-                  type = ECORE_WL_WINDOW_TYPE_FULLSCREEN;
-                  break;
-                case E_WINDOW_TYPE_DND:
-                  type = ECORE_WL_WINDOW_TYPE_DND;
-                  break;
-                case E_WINDOW_TYPE_MENU:
-                case E_WINDOW_TYPE_DROPDOWN_MENU:
-                case E_WINDOW_TYPE_POPUP_MENU:
-                  type = ECORE_WL_WINDOW_TYPE_MENU;
-                  break;
-                case E_WINDOW_TYPE_NORMAL:
-                default:
-                    break;
-               }
-
-             ecore_evas_wayland_type_set(e_win_ee_get(ec->internal_elm_win), type);
-             ec->comp_data->set_win_type = EINA_FALSE;
-          }
-     }
-
-   e_bindings_mouse_grab(E_BINDING_CONTEXT_WINDOW, parent);
-   e_bindings_wheel_grab(E_BINDING_CONTEXT_WINDOW, parent);
-
-   _e_comp_wl_client_evas_init(ec);
-
-   /* if ((ec->netwm.ping) && (!ec->ping_poller)) */
-   /*   e_client_ping(ec); */
-
-   if (ec->visible) evas_object_show(ec->frame);
-
-   ec->comp_data->need_reparent = EINA_FALSE;
-   ec->redirected = EINA_TRUE;
-
-   if (ec->comp_data->change_icon)
-     {
-        ec->comp_data->change_icon = EINA_FALSE;
-        ec->changes.icon = EINA_TRUE;
-        EC_CHANGED(ec);
-     }
-
-   ec->comp_data->reparented = EINA_TRUE;
-}
-#endif
-
 static void
 _e_comp_wl_client_cb_focus_set(void *data EINA_UNUSED, E_Client *ec)
 {
@@ -3968,15 +3564,6 @@ _e_comp_wl_client_cb_focus_set(void *data EINA_UNUSED, E_Client *ec)
         if (ec->comp_data->shell.surface)
           _e_comp_wl_configure_send(ec, 0);
      }
-
-   //if ((ec->icccm.take_focus) && (ec->icccm.accepts_focus))
-     //e_grabinput_focus(e_client_util_win_get(ec),
-                       //E_FOCUS_METHOD_LOCALLY_ACTIVE);
-   //else if (!ec->icccm.accepts_focus)
-     //e_grabinput_focus(e_client_util_win_get(ec),
-                       //E_FOCUS_METHOD_GLOBALLY_ACTIVE);
-   //else if (!ec->icccm.take_focus)
-     //e_grabinput_focus(e_client_util_win_get(ec), E_FOCUS_METHOD_PASSIVE);
 
    e_comp_wl->kbd.focus = ec->comp_data->surface;
 }
@@ -4061,9 +3648,6 @@ _e_comp_wl_client_cb_move_end(void *data EINA_UNUSED, E_Client *ec)
 {
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
-
-   if (ec->comp_data->transform.enabled)
-     _e_comp_wl_transform_pull(ec);
 }
 
 static void
@@ -4149,6 +3733,7 @@ _e_comp_wl_cb_output_bind(struct wl_client *client, void *data, uint32_t version
 static void
 _e_comp_wl_gl_init(void *data EINA_UNUSED)
 {
+   Evas *evas = NULL;
    Evas_GL *evasgl = NULL;
    Evas_GL_API *glapi = NULL;
    Evas_GL_Context *ctx = NULL;
@@ -4164,7 +3749,17 @@ _e_comp_wl_gl_init(void *data EINA_UNUSED)
    if (strcmp(name, "gl_drm")) return;
 
    /* create dummy evas gl to bind wayland display of enlightenment to egl display */
-   evasgl = evas_gl_new(e_comp->evas);
+   e_main_ts("\tE_Comp_Wl_GL Init");
+
+   /* if wl_drm module doesn't call e_comp_canvas_init yet,
+    * then we should get evas from ecore_evas.
+    */
+   if (e_comp->evas)
+     evas = e_comp->evas;
+   else
+     evas = ecore_evas_get(e_comp->ee);
+
+   evasgl = evas_gl_new(evas);
    EINA_SAFETY_ON_NULL_GOTO(evasgl, err);
 
    glapi = evas_gl_api_get(evasgl);
@@ -4197,6 +3792,8 @@ _e_comp_wl_gl_init(void *data EINA_UNUSED)
    /* for native surface */
    e_comp->gl = 1;
 
+   e_main_ts("\tE_Comp_Wl_GL Init Done");
+
    return;
 
 err:
@@ -4207,6 +3804,8 @@ err:
    evas_gl_free(evasgl);
 }
 
+// FIXME
+#if 0
 static void
 _e_comp_wl_gl_popup_cb_close(void *data,
                              Evas_Object *obj EINA_UNUSED,
@@ -4222,6 +3821,7 @@ _e_comp_wl_gl_popup_cb_focus(void *data,
 {
    elm_object_focus_set(data, EINA_TRUE);
 }
+#endif
 
 static Eina_Bool
 _e_comp_wl_gl_idle(void *data)
@@ -4229,6 +3829,8 @@ _e_comp_wl_gl_idle(void *data)
    if (!e_comp->gl)
      {
         /* show warning window to notify failure of gl init */
+        // TODO: yigl
+#if 0
         Evas_Object *win, *bg, *popup, *btn;
 
         win = elm_win_add(NULL, "compositor warning", ELM_WIN_BASIC);
@@ -4260,12 +3862,11 @@ _e_comp_wl_gl_idle(void *data)
 
         evas_object_show(popup);
         evas_object_show(win);
+#endif
      }
 
    return ECORE_CALLBACK_CANCEL;
 }
-
-
 
 static Eina_Bool
 _e_comp_wl_compositor_create(void)
@@ -4273,10 +3874,7 @@ _e_comp_wl_compositor_create(void)
    E_Comp_Wl_Data *cdata;
    const char *name;
    int fd = 0;
-
-   /* check for existing compositor. create if needed */
-   if (e_comp->comp_type == E_PIXMAP_TYPE_NONE)
-     E_OBJECT_DEL_SET(e_comp, _e_comp_wl_compositor_cb_del);
+   E_Module *_mod;
 
    /* create new compositor data */
    if (!(cdata = E_NEW(E_Comp_Wl_Data, 1)))
@@ -4369,46 +3967,8 @@ _e_comp_wl_compositor_create(void)
         goto input_err;
      }
 
-   _e_comp_wl_gl_init(NULL);
-
-#ifndef HAVE_WAYLAND_ONLY
-   if (e_comp_util_has_x())
-     {
-        E_Config_XKB_Layout *ekbd;
-        Ecore_X_Atom xkb = 0;
-        Ecore_X_Window root = 0;
-        int len = 0;
-        unsigned char *dat;
-        char *rules = NULL, *model = NULL, *layout = NULL;
-
-        if ((ekbd = e_xkb_layout_get()))
-          {
-             model = strdup(ekbd->model);
-             layout = strdup(ekbd->name);
-          }
-
-        root = ecore_x_window_root_first_get();
-        xkb = ecore_x_atom_get("_XKB_RULES_NAMES");
-        ecore_x_window_prop_property_get(root, xkb, ECORE_X_ATOM_STRING,
-                                         1024, &dat, &len);
-        if ((dat) && (len > 0))
-          {
-             rules = (char *)dat;
-             dat += strlen((const char *)dat) + 1;
-             if (!model) model = strdup((const char *)dat);
-             dat += strlen((const char *)dat) + 1;
-             if (!layout) layout = strdup((const char *)dat);
-          }
-
-        /* fallback */
-        if (!rules) rules = strdup("evdev");
-        if (!model) model = strdup("pc105");
-        if (!layout) layout = strdup("us");
-
-        /* update compositor keymap */
-        e_comp_wl_input_keymap_set(rules, model, layout, NULL, NULL);
-     }
-#endif
+   if (e_comp_gl_get())
+     _e_comp_wl_gl_init(NULL);
 
    /* get the wayland display loop */
    cdata->wl.loop = wl_display_get_event_loop(cdata->wl.disp);
@@ -4423,19 +3983,14 @@ _e_comp_wl_compositor_create(void)
    ecore_main_fd_handler_prepare_callback_set(cdata->fd_hdlr,
                                               _e_comp_wl_cb_prepare, cdata);
 
-   /* setup module idler to load shell mmodule */
-   ecore_idler_add(_e_comp_wl_cb_module_idle, cdata);
+   /* load shell module */
+   _mod = e_module_new("wl_desktop_shell");
+   EINA_SAFETY_ON_NULL_GOTO(_mod, input_err);
 
-#ifndef ENABLE_QUICK_INIT
-   /* check if gl init succeded */
-   ecore_idler_add(_e_comp_wl_gl_idle, cdata);
-
-#endif
-   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
+   if (!e_module_enable(_mod))
      {
-        e_comp_wl_input_pointer_enabled_set(EINA_TRUE);
-        e_comp_wl_input_keyboard_enabled_set(EINA_TRUE);
-        e_comp_wl_input_touch_enabled_set(EINA_TRUE);
+        ERR("Fail to enable wl_desktop_shell module");
+        goto input_err;
      }
 
    return EINA_TRUE;
@@ -4450,18 +4005,6 @@ sock_err:
 disp_err:
    free(cdata);
    return EINA_FALSE;
-}
-
-static Eina_Bool
-_e_comp_wl_desklock_show(void)
-{
-   return e_comp_grab_input(1, 1);
-}
-
-static void
-_e_comp_wl_desklock_hide(void)
-{
-   e_comp_ungrab_input(1, 1);
 }
 
 static void
@@ -4496,11 +4039,6 @@ e_comp_wl_init(void)
 {
    TRACE_DS_BEGIN(COMP_WL:INIT);
 
-   /* set gl available if we have ecore_evas support */
-   if (ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_WAYLAND_EGL) ||
-       ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_OPENGL_DRM))
-     e_comp_gl_set(EINA_TRUE);
-
    /* try to create a wayland compositor */
    if (!_e_comp_wl_compositor_create())
      {
@@ -4511,57 +4049,37 @@ e_comp_wl_init(void)
 
    ecore_wl_server_mode_set(1);
 
-   /* create hash to store clients */
-   /* clients_win_hash = eina_hash_int64_new(NULL); */
+   /* create hash to store client's buffer */
    clients_buffer_hash = eina_hash_pointer_new(NULL);
 
 #ifdef HAVE_WAYLAND_TBM
    e_comp_wl_tbm_init();
 #endif
 
-   /* add event handlers to catch E events */
-   if (e_comp->comp_type != E_PIXMAP_TYPE_X)
+   if (!e_randr2_init())
      {
-        if (e_randr2_init())
-          e_randr2_screens_setup(-1, -1);
-        elm_config_preferred_engine_set("wayland_shm");
+        e_error_message_show(_("Enlightenment cannot initialize randr2!\n"));
+        TRACE_DS_END();
+        return EINA_FALSE;
      }
-   e_util_env_set("ELM_DISPLAY", "wl");
-   if (e_comp_gl_get())
-     ecore_job_add(_e_comp_wl_gl_init, NULL);
 
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_RANDR_CHANGE,
-                                _e_comp_wl_cb_randr_change, NULL);
+   e_randr2_screens_setup(-1, -1);
 
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD,
-                         _e_comp_wl_cb_comp_object_add, NULL);
-
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_MOVE,
-                         _e_comp_wl_cb_mouse_move, NULL);
+   /* add event handlers to catch E events */
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_RANDR_CHANGE,    _e_comp_wl_cb_randr_change,    NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD, _e_comp_wl_cb_comp_object_add, NULL);
+   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_MOVE,  _e_comp_wl_cb_mouse_move,      NULL);
 
    /* add hooks to catch e_client events */
-   e_client_hook_add(E_CLIENT_HOOK_NEW_CLIENT, _e_comp_wl_client_cb_new, NULL);
-   e_client_hook_add(E_CLIENT_HOOK_DEL, _e_comp_wl_client_cb_del, NULL);
-
-   /* e_client_hook_add(E_CLIENT_HOOK_EVAL_PRE_FRAME_ASSIGN,  */
-   /*                   _e_comp_wl_client_cb_pre_frame, NULL); */
-
-   e_client_hook_add(E_CLIENT_HOOK_FOCUS_SET,
-                     _e_comp_wl_client_cb_focus_set, NULL);
-   e_client_hook_add(E_CLIENT_HOOK_FOCUS_UNSET,
-                     _e_comp_wl_client_cb_focus_unset, NULL);
-
-   e_client_hook_add(E_CLIENT_HOOK_RESIZE_BEGIN,
-                     _e_comp_wl_client_cb_resize_begin, NULL);
-   e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,
-                     _e_comp_wl_client_cb_resize_end, NULL);
-
-   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,             _e_comp_wl_client_cb_move_end,     NULL);
-   e_client_hook_add(E_CLIENT_HOOK_ICONIFY,              _e_comp_wl_client_cb_iconify,    NULL);
-   e_client_hook_add(E_CLIENT_HOOK_UNICONIFY,            _e_comp_wl_client_cb_uniconify,    NULL);
-
-   e_desklock_show_hook_add(_e_comp_wl_desklock_show);
-   e_desklock_hide_hook_add(_e_comp_wl_desklock_hide);
+   e_client_hook_add(E_CLIENT_HOOK_NEW_CLIENT,   _e_comp_wl_client_cb_new,          NULL);
+   e_client_hook_add(E_CLIENT_HOOK_DEL,          _e_comp_wl_client_cb_del,          NULL);
+   e_client_hook_add(E_CLIENT_HOOK_FOCUS_SET,    _e_comp_wl_client_cb_focus_set,    NULL);
+   e_client_hook_add(E_CLIENT_HOOK_FOCUS_UNSET,  _e_comp_wl_client_cb_focus_unset,  NULL);
+   e_client_hook_add(E_CLIENT_HOOK_RESIZE_BEGIN, _e_comp_wl_client_cb_resize_begin, NULL);
+   e_client_hook_add(E_CLIENT_HOOK_RESIZE_END,   _e_comp_wl_client_cb_resize_end,   NULL);
+   e_client_hook_add(E_CLIENT_HOOK_MOVE_END,     _e_comp_wl_client_cb_move_end,     NULL);
+   e_client_hook_add(E_CLIENT_HOOK_ICONIFY,      _e_comp_wl_client_cb_iconify,      NULL);
+   e_client_hook_add(E_CLIENT_HOOK_UNICONIFY,    _e_comp_wl_client_cb_uniconify,    NULL);
 
    E_EVENT_WAYLAND_GLOBAL_ADD = ecore_event_type_new();
 
@@ -4619,6 +4137,31 @@ e_comp_wl_shutdown(void)
 
 #ifdef HAVE_WAYLAND_TBM
    e_comp_wl_tbm_shutdown();
+#endif
+
+   // TODO: yigl
+#if 0
+   E_Comp_Wl_Output *output;
+
+   if (e_comp_wl->screenshooter.global)
+     wl_global_destroy(e_comp_wl->screenshooter.global);
+
+   EINA_LIST_FREE(e_comp_wl->outputs, output)
+     {
+        if (output->id) eina_stringshare_del(output->id);
+        if (output->make) eina_stringshare_del(output->make);
+        if (output->model) eina_stringshare_del(output->model);
+        free(output);
+     }
+
+   /* delete fd handler */
+   if (e_comp_wl->fd_hdlr) ecore_main_fd_handler_del(e_comp_wl->fd_hdlr);
+
+   E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
+   cursor_timer_ec = NULL;
+
+   /* free allocated data structure */
+   free(e_comp_wl);
 #endif
 }
 
@@ -5065,8 +4608,7 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
           }
      }
 
-   if ((!e_client_action_get()) && (!e_comp->input_key_grabs) &&
-       (!e_menu_grab_window_get()))
+   if ((!e_client_action_get()) && (!e_comp->input_key_grabs))
      {
         ec = e_client_focused_get();
         if (ec && ec->comp_data->surface && e_comp_wl->kbd.focused)
@@ -5139,8 +4681,7 @@ e_comp_wl_key_up(Ecore_Event_Key *ev)
 
    /* If a key down event have been sent to clients, send a key up event to client for garantee key event sequence pair. (down/up) */
    if ((delivered_key) ||
-       ((!e_client_action_get()) && (!e_comp->input_key_grabs) &&
-        (!e_menu_grab_window_get())))
+       ((!e_client_action_get()) && (!e_comp->input_key_grabs)))
      {
         ec = e_client_focused_get();
 
@@ -5171,37 +4712,22 @@ e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t bu
    uint32_t serial, btn;
    struct wl_resource *res;
 
-   if (ec->cur_mouse_action || ec->border_menu || e_comp_wl->drag)
+   if (ec->cur_mouse_action || e_comp_wl->drag)
      return EINA_FALSE;
    if (e_object_is_del(E_OBJECT(ec))) return EINA_FALSE;
    if (ec->ignored) return EINA_FALSE;
 
    switch (button_id)
      {
-      case 1:
-        btn = BTN_LEFT;
-        break;
-      case 2:
-        btn = BTN_MIDDLE;
-        break;
-      case 3:
-        btn = BTN_RIGHT;
-        break;
-      default:
-        btn = button_id;
-        break;
+      case 1:  btn = BTN_LEFT;   break;
+      case 2:  btn = BTN_MIDDLE; break;
+      case 3:  btn = BTN_RIGHT;  break;
+      default: btn = button_id;  break;
      }
 
    e_comp_wl->ptr.button = btn;
 
    if (!ec->comp_data->surface) return EINA_FALSE;
-
-   if ((ec->comp_data->transform.cur_degree != 0) &&
-       (btn == BTN_MIDDLE))
-     {
-        _e_comp_wl_transform_unset(ec);
-        return EINA_TRUE;
-     }
 
    if (!eina_list_count(e_comp_wl->ptr.resources))
      return EINA_TRUE;
@@ -5218,10 +4744,4 @@ e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t bu
         TRACE_INPUT_END();
      }
    return EINA_TRUE;
-}
-
-EINTERN void
-e_comp_wl_xwayland_client_queue(E_Client *ec)
-{
-   e_comp_wl->xwl_pending = eina_list_append(e_comp_wl->xwl_pending, ec);
 }

@@ -88,38 +88,6 @@ e_user_homedir_snprintf(char *dst, size_t size, const char *fmt, ...)
    return ret;
 }
 
-/**
- * Return the directory where user .desktop files should be stored.
- * If the directory does not exist, it will be created. If it cannot be
- * created, a dialog will be displayed an NULL will be returned
- */
-E_API const char *
-e_user_desktop_dir_get(void)
-{
-   static char dir[PATH_MAX] = "";
-
-   if (!dir[0])
-     snprintf(dir, sizeof(dir), "%s/applications", efreet_data_home_get());
-
-   return dir;
-}
-
-/**
- * Return the directory where user .icon files should be stored.
- * If the directory does not exist, it will be created. If it cannot be
- * created, a dialog will be displayed an NULL will be returned
- */
-E_API const char *
-e_user_icon_dir_get(void)
-{
-   static char dir[PATH_MAX] = "";
-
-   if (!dir[0])
-     snprintf(dir, sizeof(dir), "%s/icons", efreet_data_home_get());
-
-   return dir;
-}
-
 static const char *_e_user_dir = NULL;
 static size_t _e_user_dir_len = 0;
 

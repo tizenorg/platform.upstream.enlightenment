@@ -30,86 +30,23 @@ e_dpms_update(void)
 {
    unsigned int standby = 0, suspend = 0, off = 0;
    int enabled;
-#ifndef HAVE_WAYLAND_ONLY
-   Eina_Bool changed = EINA_FALSE;
-#endif
 
-   enabled = ((e_config->screensaver_enable) &&
-              (!e_config->mode.presentation) &&
-              ((!e_util_fullscreen_current_any()) &&
-                  (!e_config->no_dpms_on_fullscreen)));
-   if (_e_dpms_enabled != enabled)
-     {
-        _e_dpms_enabled = enabled;
-#ifndef HAVE_WAYLAND_ONLY
-        if (e_comp->comp_type == E_PIXMAP_TYPE_X)
-          ecore_x_dpms_enabled_set(enabled);
-#endif
-     }
+   enabled = 0;
+   if (_e_dpms_enabled != enabled) _e_dpms_enabled = enabled;
    if (!enabled) return;
 
-   if (e_config->screensaver_enable)
-     {
-        off = suspend = standby = e_screensaver_timeout_get(EINA_FALSE);
-        standby += STANDBY;
-        suspend += SUSPEND;
-        off += OFF;
-     }
-   if (_e_dpms_timeout_standby != standby)
-     {
-        _e_dpms_timeout_standby = standby;
-#ifndef HAVE_WAYLAND_ONLY
-        changed = EINA_TRUE;
-#endif
-     }
-   if (_e_dpms_timeout_suspend != suspend)
-     {
-        _e_dpms_timeout_suspend = suspend;
-#ifndef HAVE_WAYLAND_ONLY
-        changed = EINA_TRUE;
-#endif
-     }
-   if (_e_dpms_timeout_off != off)
-     {
-        _e_dpms_timeout_off = off;
-#ifndef HAVE_WAYLAND_ONLY
-        changed = EINA_TRUE;
-#endif
-     }
-#ifndef HAVE_WAYLAND_ONLY
-   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
-     {
-        if (changed) ecore_x_dpms_timeouts_set(standby, suspend, off);
-     }
-#endif
+   if (_e_dpms_timeout_standby != standby) _e_dpms_timeout_standby = standby;
+   if (_e_dpms_timeout_suspend != suspend) _e_dpms_timeout_suspend = suspend;
+   if (_e_dpms_timeout_off != off) _e_dpms_timeout_off = off;
 }
 
 E_API void
 e_dpms_force_update(void)
 {
-   unsigned int standby = 0, suspend = 0, off = 0;
    int enabled;
 
-   enabled = ((e_config->screensaver_enable) &&
-              (!e_config->mode.presentation));
-#ifndef HAVE_WAYLAND_ONLY
-   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
-     ecore_x_dpms_enabled_set(enabled);
-#endif
+   enabled = 0;
    if (!enabled) return;
-
-   if (e_config->screensaver_enable)
-     {
-        off = suspend = standby = e_screensaver_timeout_get(EINA_FALSE);
-        standby += STANDBY;
-        suspend += SUSPEND;
-        off += OFF;
-     }
-#ifndef HAVE_WAYLAND_ONLY
-   if (e_comp->comp_type != E_PIXMAP_TYPE_X) return;
-   ecore_x_dpms_timeouts_set(standby + 10, suspend + 10, off + 10);
-   ecore_x_dpms_timeouts_set(standby, suspend, off);
-#endif
 }
 
 static Eina_Bool

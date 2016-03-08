@@ -28,7 +28,8 @@ e_obj_dialog_new(char *title, char *class_name, char *class_class)
 
    od = E_OBJECT_ALLOC(E_Obj_Dialog, E_OBJ_DIALOG_TYPE, _e_obj_dialog_free);
    if (!od) return NULL;
-   od->win = elm_win_add(NULL, NULL, ELM_WIN_DIALOG_BASIC);
+   // FIXME
+   //od->win = elm_win_add(NULL, NULL, ELM_WIN_DIALOG_BASIC);
    if (!od->win)
      {
         free(od);
@@ -36,13 +37,13 @@ e_obj_dialog_new(char *title, char *class_name, char *class_class)
      }
    evas_object_event_callback_add(od->win, EVAS_CALLBACK_DEL, (Evas_Object_Event_Cb)_e_obj_dialog_cb_delete, od);
    ecore_evas_name_class_set(e_win_ee_get(od->win), class_name, class_class);
-   elm_win_title_set(od->win, title);
+   //elm_win_title_set(od->win, title);
 
    o = edje_object_add(evas_object_evas_get(od->win));
-   elm_win_resize_object_add(od->win, o);
+   //elm_win_resize_object_add(od->win, o);
    od->bg_object = o;
 
-   elm_win_center(od->win, 1, 1);
+   //elm_win_center(od->win, 1, 1);
    od->cb_delete = NULL;
 
    mask = 0;
@@ -73,7 +74,7 @@ E_API void
 e_obj_dialog_show(E_Obj_Dialog *od)
 {
    Evas_Coord w, h, mw, mh;
-   const char *s;
+   //const char *s;
 
    E_OBJECT_CHECK(od);
    E_OBJECT_TYPE_CHECK(od, E_OBJ_DIALOG_TYPE);
@@ -90,9 +91,10 @@ e_obj_dialog_show(E_Obj_Dialog *od)
         if (h < mh) h = mh;
         evas_object_size_hint_max_set(od->win, w, h);
      }
-   s = edje_object_data_get(od->bg_object, "borderless");
-   if (s && (!strcmp(s, "1")))
-     elm_win_borderless_set(od->win, 1);
+   // FIXME
+   //s = edje_object_data_get(od->bg_object, "borderless");
+   //if (s && (!strcmp(s, "1")))
+   //  elm_win_borderless_set(od->win, 1);
    evas_object_show(od->win);
 }
 

@@ -425,7 +425,7 @@ E_API Eina_Bool
 e_icon_fdo_icon_set(Evas_Object *obj, const char *icon)
 {
    E_Smart_Data *sd;
-   const char *path;
+   const char *path = NULL;
    int len;
 
    if (!icon) return EINA_FALSE;
@@ -446,13 +446,13 @@ e_icon_fdo_icon_set(Evas_Object *obj, const char *icon)
    eina_stringshare_replace(&sd->fdo, icon);
    if (!sd->fdo) return EINA_FALSE;
 
-   path = efreet_icon_path_find(e_config->icon_theme, sd->fdo, sd->size);
-   if (!path)
-     {
-        if (e_util_strcmp(e_config->icon_theme, "hicolor"))
-          path = efreet_icon_path_find("hicolor", sd->fdo, sd->size);
+   //path = efreet_icon_path_find(e_config->icon_theme, sd->fdo, sd->size);
+   //if (!path)
+   //  {
+   //     if (e_util_strcmp(e_config->icon_theme, "hicolor"))
+   //       path = efreet_icon_path_find("hicolor", sd->fdo, sd->size);
         if (!path) return EINA_FALSE;
-     }
+   //  }
 
    len = strlen(icon);
    if ((len > 4) && (!strcasecmp(icon + len - 4, ".edj")))
@@ -908,17 +908,17 @@ static Eina_Bool
 _e_icon_fdo_reload(void *data)
 {
    E_Smart_Data *sd = data;
-   const char *path;
+   const char *path = NULL;
 
    sd->fdo_reload_timer = NULL;
    sd->size = MAX(sd->w, sd->h);
-   path = efreet_icon_path_find(e_config->icon_theme, sd->fdo, sd->size);
-   if (!path)
-     {
-        if (e_util_strcmp(e_config->icon_theme, "hicolor"))
-          path = efreet_icon_path_find("hicolor", sd->fdo, sd->size);
+   //path = efreet_icon_path_find(e_config->icon_theme, sd->fdo, sd->size);
+   //if (!path)
+   //  {
+   //     if (e_util_strcmp(e_config->icon_theme, "hicolor"))
+   //       path = efreet_icon_path_find("hicolor", sd->fdo, sd->size);
         if (!path) return EINA_FALSE;
-     }
+   //  }
 
 
    /* smart code here */
