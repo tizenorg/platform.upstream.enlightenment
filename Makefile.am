@@ -74,19 +74,13 @@ include src/Makefile.mk
 filesdir = $(datadir)/enlightenment/
 files_DATA = AUTHORS COPYING 
 
-if HAVE_FREEBSD
-pkgconfigdir = $(libdir)data/pkgconfig
-else
 pkgconfigdir = $(libdir)/pkgconfig
-endif
 
 pkgconfig_DATA = enlightenment.pc
 
-include doc/Makefile.mk
-
 .PHONY: $(PHONIES)
 
-clean-local: doc-clean
+clean-local:
 	rm -rf config/*.cfg config/*~
 	rm -rf config/standard/*.cfg config/standard/*~
 	rm -rf config/tiling/*.cfg config/tiling/*~

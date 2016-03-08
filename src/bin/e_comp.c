@@ -989,7 +989,6 @@ _e_comp_act_opacity_obj_finder(E_Object *obj)
         return ((E_Client*)obj)->frame;
       case E_ZONE_TYPE:
       case E_COMP_TYPE:
-      case E_MENU_TYPE:
         ec = e_client_focused_get();
         return ec ? ec->frame : NULL;
      }
@@ -1243,187 +1242,6 @@ out:
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD, _e_comp_object_add, NULL);
 
    return EINA_TRUE;
-}
-
-static Eina_Bool
-_style_demo(void *data)
-{
-   Eina_List *style_shadows, *l;
-   int demo_state;
-   const E_Comp_Demo_Style_Item *it;
-
-   demo_state = (long)evas_object_data_get(data, "style_demo_state");
-   demo_state = (demo_state + 1) % 4;
-   evas_object_data_set(data, "style_demo_state", (void *)(long)demo_state);
-
-   style_shadows = evas_object_data_get(data, "style_shadows");
-   EINA_LIST_FOREACH(style_shadows, l, it)
-     {
-        Evas_Object *ob = it->preview;
-        Evas_Object *of = it->frame;
-
-        switch (demo_state)
-          {
-           case 0:
-             edje_object_signal_emit(ob, "e,state,visible", "e");
-             edje_object_signal_emit(ob, "e,state,focused", "e");
-             edje_object_part_text_set(of, "e.text.label", _("Visible"));
-             break;
-
-           case 1:
-             edje_object_signal_emit(ob, "e,state,unfocused", "e");
-             edje_object_part_text_set(of, "e.text.label", _("Focus-Out"));
-             break;
-
-           case 2:
-             edje_object_signal_emit(ob, "e,state,focused", "e");
-             edje_object_part_text_set(of, "e.text.label", _("Focus-In"));
-             break;
-
-           case 3:
-             edje_object_signal_emit(ob, "e,state,hidden", "e");
-             edje_object_part_text_set(of, "e.text.label", _("Hidden"));
-             break;
-
-           default:
-             break;
-          }
-     }
-   return ECORE_CALLBACK_RENEW;
-}
-
-static void
-_style_selector_del(void *data       EINA_UNUSED,
-                    Evas *e,
-                    Evas_Object *o,
-                    void *event_info EINA_UNUSED)
-{
-   Eina_List *style_shadows, *style_list;
-   Ecore_Timer *timer;
-   Evas_Object *orec0;
-
-   orec0 = evas_object_name_find(e, "style_shadows");
-   style_list = evas_object_data_get(orec0, "list");
-
-   style_shadows = evas_object_data_get(o, "style_shadows");
-   if (style_shadows)
-     {
-        E_Comp_Demo_Style_Item *ds_it;
-
-        EINA_LIST_FREE(style_shadows, ds_it)
-          {
-             style_list = eina_list_remove(style_list, ds_it);
-
-             evas_object_del(ds_it->frame);
-             evas_object_del(ds_it->livethumb);
-             free(ds_it);
-          }
-        evas_object_data_set(o, "style_shadows", NULL);
-     }
-
-   timer = evas_object_data_get(o, "style_timer");
-   if (timer)
-     {
-        ecore_timer_del(timer);
-        evas_object_data_set(o, "style_timer", NULL);
-     }
-
-   evas_object_data_set(orec0, "list", style_list);
-}
-
-EINTERN Evas_Object *
-e_comp_style_selector_create(Evas *evas, const char **source)
-{
-   Evas_Object *oi, *ob, *oo, *obd, *orec, *oly, *orec0;
-   Eina_List *styles, *l, *style_shadows = NULL, *style_list;
-   char *style;
-   const char *str;
-   int n, sel;
-   Evas_Coord wmw, wmh;
-   Ecore_Timer *timer;
-
-   orec0 = evas_object_name_find(evas, "style_shadows");
-   style_list = evas_object_data_get(orec0, "list");
-   oi = e_widget_ilist_add(evas, 80, 80, source);
-   evas_object_event_callback_add(oi, EVAS_CALLBACK_DEL,
-                                  _style_selector_del, oi);
-   sel = 0;
-   styles = e_theme_comp_frame_list();
-   n = 0;
-   EINA_LIST_FOREACH(styles, l, style)
-     {
-        E_Comp_Demo_Style_Item *ds_it;
-        char buf[4096];
-
-        ds_it = malloc(sizeof(E_Comp_Demo_Style_Item));
-
-        ob = e_livethumb_add(evas);
-        ds_it->livethumb = ob;
-        e_livethumb_vsize_set(ob, 240, 240);
-
-        oly = e_layout_add(e_livethumb_evas_get(ob));
-        ds_it->layout = ob;
-        e_layout_virtual_size_set(oly, 240, 240);
-        e_livethumb_thumb_set(ob, oly);
-        evas_object_show(oly);
-
-        oo = edje_object_add(e_livethumb_evas_get(ob));
-        ds_it->preview = oo;
-        snprintf(buf, sizeof(buf), "e/comp/frame/%s", style);
-        e_theme_edje_object_set(oo, "base/theme/borders", buf);
-        e_layout_pack(oly, oo);
-        e_layout_child_move(oo, 39, 39);
-        e_layout_child_resize(oo, 162, 162);
-        edje_object_signal_emit(oo, "e,state,visible", "e");
-        edje_object_signal_emit(oo, "e,state,focused", "e");
-        evas_object_show(oo);
-
-        ds_it->frame = edje_object_add(evas);
-        e_theme_edje_object_set
-          (ds_it->frame, "base/theme/comp", "e/comp/preview");
-        edje_object_part_swallow(ds_it->frame, "e.swallow.preview", ob);
-        evas_object_show(ds_it->frame);
-        style_shadows = eina_list_append(style_shadows, ds_it);
-
-        obd = edje_object_add(e_livethumb_evas_get(ob));
-        ds_it->border = obd;
-        e_theme_edje_object_set(obd, "base/theme/borders",
-                                "e/widgets/border/default/border");
-        edje_object_part_text_set(obd, "e.text.title", _("Title"));
-        edje_object_signal_emit(obd, "e,state,shadow,on", "e");
-        edje_object_part_swallow(oo, "e.swallow.content", obd);
-        evas_object_show(obd);
-
-        orec = evas_object_rectangle_add(e_livethumb_evas_get(ob));
-        ds_it->client = orec;
-        evas_object_color_set(orec, 0, 0, 0, 128);
-        edje_object_part_swallow(obd, "e.swallow.client", orec);
-        evas_object_show(orec);
-
-        e_widget_ilist_append(oi, ds_it->frame, style, NULL, NULL, style);
-        evas_object_show(ob);
-        if (*source)
-          {
-             if (!strcmp(*source, style)) sel = n;
-          }
-        n++;
-
-        style_list = eina_list_append(style_list, ds_it);
-     }
-   evas_object_data_set(orec0, "list", style_list);
-   evas_object_data_set(oi, "style_shadows", style_shadows);
-   timer = ecore_timer_add(3.0, _style_demo, oi);
-   evas_object_data_set(oi, "style_timer", timer);
-   evas_object_data_set(oi, "style_demo_state", (void *)1);
-   e_widget_size_min_get(oi, &wmw, &wmh);
-   e_widget_size_min_set(oi, 160, 100);
-   e_widget_ilist_selected_set(oi, sel);
-   e_widget_ilist_go(oi);
-
-   EINA_LIST_FREE(styles, str)
-     eina_stringshare_del(str);
-
-   return oi;
 }
 
 E_API E_Comp *
@@ -1706,23 +1524,12 @@ e_comp_override_timed_pop(void)
 E_API unsigned int
 e_comp_e_object_layer_get(const E_Object *obj)
 {
-   E_Gadcon *gc = NULL;
    E_Client *ec = NULL;
 
    if (!obj) return 0;
 
    switch (obj->type)
      {
-      case E_GADCON_CLIENT_TYPE:
-        gc = ((E_Gadcon_Client *)(obj))->gadcon;
-        EINA_SAFETY_ON_NULL_RETURN_VAL(gc, 0);
-        /* no break */
-      case E_GADCON_TYPE:
-        if (!gc) gc = (E_Gadcon *)obj;
-        if (gc->shelf) return gc->shelf->layer;
-        if (!gc->toolbar) return E_LAYER_DESKTOP;
-        return e_win_client_get(gc->toolbar->fwin)->layer;
-
       case E_ZONE_TYPE:
         return E_LAYER_DESKTOP;
 
@@ -1829,13 +1636,13 @@ e_comp_ungrab_input(Eina_Bool mouse, Eina_Bool kbd)
 E_API Eina_Bool
 e_comp_util_kbd_grabbed(void)
 {
-   return e_menu_grab_window_get() || e_client_action_get() || e_grabinput_key_win_get();
+   return e_client_action_get() || e_grabinput_key_win_get();
 }
 
 E_API Eina_Bool
 e_comp_util_mouse_grabbed(void)
 {
-   return e_menu_grab_window_get() || e_client_action_get() || e_grabinput_mouse_win_get();
+   return e_client_action_get() || e_grabinput_mouse_win_get();
 }
 
 E_API void

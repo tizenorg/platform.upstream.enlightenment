@@ -463,9 +463,9 @@ _drm_randr_create(void)
              s->info.connector = rtype[type];
              s->info.is_lid = ((type == DRM_MODE_CONNECTOR_LVDS) || 
                                (type == DRM_MODE_CONNECTOR_eDP));
-             s->info.lid_closed = (s->info.is_lid && e_acpi_lid_is_closed());
-             printf("DRM RRR: ...... lid_closed = %i (%i && %i)\n",
-                    s->info.lid_closed, s->info.is_lid, e_acpi_lid_is_closed());
+             s->info.lid_closed = (s->info.is_lid);
+             printf("DRM RRR: ...... lid_closed = %i (%i)\n",
+                    s->info.lid_closed, s->info.is_lid);
 
              s->info.backlight = ecore_drm_output_backlight_get(output);
 

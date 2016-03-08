@@ -1124,7 +1124,7 @@ _e_comp_wl_evas_handle_mouse_button_to_touch(E_Client *ec, uint32_t timestamp, i
    struct wl_resource *res;
    wl_fixed_t x, y;
 
-   if (ec->cur_mouse_action || ec->border_menu || e_comp_wl->drag) return;
+   if (ec->cur_mouse_action || e_comp_wl->drag) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (!ec->comp_data->surface) return;
    if (ec->ignored) return;
@@ -3802,87 +3802,6 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
    TRACE_DS_END();
 }
 
-#if 0
-static void
-_e_comp_wl_client_cb_pre_frame(void *data EINA_UNUSED, E_Client *ec)
-{
-   Ecore_Window parent;
-
-   if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
-   if (!ec->comp_data->need_reparent) return;
-
-   DBG("Client Pre Frame: %d", wl_resource_get_id(ec->comp_data->surface));
-
-   parent = e_client_util_pwin_get(ec);
-
-   /* set pixmap parent window */
-   e_pixmap_parent_window_set(ec->pixmap, parent);
-
-   ec->border_size = 0;
-   ec->border.changed = EINA_TRUE;
-   ec->changes.shape = EINA_TRUE;
-   ec->changes.shape_input = EINA_TRUE;
-   EC_CHANGED(ec);
-
-   if (ec->visible)
-     {
-        if ((ec->comp_data->set_win_type) && (ec->internal_elm_win))
-          {
-             int type = ECORE_WL_WINDOW_TYPE_TOPLEVEL;
-
-             switch (ec->netwm.type)
-               {
-                case E_WINDOW_TYPE_DIALOG:
-                  /* NB: If there is No transient set, then dialogs get
-                   * treated as Normal Toplevel windows */
-                  if (ec->icccm.transient_for)
-                    type = ECORE_WL_WINDOW_TYPE_TRANSIENT;
-                  break;
-                case E_WINDOW_TYPE_DESKTOP:
-                  type = ECORE_WL_WINDOW_TYPE_FULLSCREEN;
-                  break;
-                case E_WINDOW_TYPE_DND:
-                  type = ECORE_WL_WINDOW_TYPE_DND;
-                  break;
-                case E_WINDOW_TYPE_MENU:
-                case E_WINDOW_TYPE_DROPDOWN_MENU:
-                case E_WINDOW_TYPE_POPUP_MENU:
-                  type = ECORE_WL_WINDOW_TYPE_MENU;
-                  break;
-                case E_WINDOW_TYPE_NORMAL:
-                default:
-                    break;
-               }
-
-             ecore_evas_wayland_type_set(e_win_ee_get(ec->internal_elm_win), type);
-             ec->comp_data->set_win_type = EINA_FALSE;
-          }
-     }
-
-   e_bindings_mouse_grab(E_BINDING_CONTEXT_WINDOW, parent);
-   e_bindings_wheel_grab(E_BINDING_CONTEXT_WINDOW, parent);
-
-   _e_comp_wl_client_evas_init(ec);
-
-   /* if ((ec->netwm.ping) && (!ec->ping_poller)) */
-   /*   e_client_ping(ec); */
-
-   if (ec->visible) evas_object_show(ec->frame);
-
-   ec->comp_data->need_reparent = EINA_FALSE;
-   ec->redirected = EINA_TRUE;
-
-   if (ec->comp_data->change_icon)
-     {
-        ec->comp_data->change_icon = EINA_FALSE;
-        ec->changes.icon = EINA_TRUE;
-        EC_CHANGED(ec);
-     }
-
-   ec->comp_data->reparented = EINA_TRUE;
-}
-#endif
-
 static void
 _e_comp_wl_client_cb_focus_set(void *data EINA_UNUSED, E_Client *ec)
 {
@@ -3894,15 +3813,6 @@ _e_comp_wl_client_cb_focus_set(void *data EINA_UNUSED, E_Client *ec)
         if (ec->comp_data->shell.surface)
           _e_comp_wl_configure_send(ec, 0);
      }
-
-   //if ((ec->icccm.take_focus) && (ec->icccm.accepts_focus))
-     //e_grabinput_focus(e_client_util_win_get(ec),
-                       //E_FOCUS_METHOD_LOCALLY_ACTIVE);
-   //else if (!ec->icccm.accepts_focus)
-     //e_grabinput_focus(e_client_util_win_get(ec),
-                       //E_FOCUS_METHOD_GLOBALLY_ACTIVE);
-   //else if (!ec->icccm.take_focus)
-     //e_grabinput_focus(e_client_util_win_get(ec), E_FOCUS_METHOD_PASSIVE);
 
    e_comp_wl->kbd.focus = ec->comp_data->surface;
 }
@@ -5004,8 +4914,7 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
           }
      }
 
-   if ((!e_client_action_get()) && (!e_comp->input_key_grabs) &&
-       (!e_menu_grab_window_get()))
+   if ((!e_client_action_get()) && (!e_comp->input_key_grabs))
      {
         ec = e_client_focused_get();
         if (ec && ec->comp_data->surface && e_comp_wl->kbd.focused)
@@ -5078,8 +4987,7 @@ e_comp_wl_key_up(Ecore_Event_Key *ev)
 
    /* If a key down event have been sent to clients, send a key up event to client for garantee key event sequence pair. (down/up) */
    if ((delivered_key) ||
-       ((!e_client_action_get()) && (!e_comp->input_key_grabs) &&
-        (!e_menu_grab_window_get())))
+       ((!e_client_action_get()) && (!e_comp->input_key_grabs)))
      {
         ec = e_client_focused_get();
 
@@ -5110,7 +5018,7 @@ e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t bu
    uint32_t serial, btn;
    struct wl_resource *res;
 
-   if (ec->cur_mouse_action || ec->border_menu || e_comp_wl->drag)
+   if (ec->cur_mouse_action || e_comp_wl->drag)
      return EINA_FALSE;
    if (e_object_is_del(E_OBJECT(ec))) return EINA_FALSE;
    if (ec->ignored) return EINA_FALSE;

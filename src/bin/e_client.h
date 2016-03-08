@@ -772,11 +772,7 @@ struct E_Client
    } shelf_fix;
 
    Eina_List       *stick_desks;
-   E_Menu          *border_menu;
    Evas_Object     *color_editor;
-   E_Config_Dialog *border_locks_dialog;
-   E_Config_Dialog *border_remember_dialog;
-   E_Config_Dialog *border_border_dialog;
    E_Dialog        *border_prop_dialog;
    Eina_List       *pending_resize;
 
@@ -791,7 +787,6 @@ struct E_Client
    E_Remember                *remember;
 
    Efreet_Desktop            *desktop;
-   E_Exec_Instance           *exe_inst;
 
    unsigned char              comp_hidden   : 1;
 

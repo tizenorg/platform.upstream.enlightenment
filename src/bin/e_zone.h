@@ -70,13 +70,13 @@ struct _E_Zone
    /* formerly E_Comp_Zone */
    Evas_Object *base;
    Evas_Object *over;
-   double       bl;
-   Eina_Bool    bloff;
+   //double       bl;    // backlight level
+   //Eina_Bool    bloff; // backlight is off
 
    struct
    {
       E_Zone_Edge        switching;
-      E_Shelf           *es;
+      //E_Shelf           *es;
       E_Event_Zone_Edge *ev;
       E_Binding_Edge    *bind;
    } flip;

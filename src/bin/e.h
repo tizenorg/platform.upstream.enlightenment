@@ -118,9 +118,9 @@ void *alloca (size_t);
 # endif
 
 /* egl.h must come before Evas_GL.h otherwise they will conflict */
-# ifdef HAVE_WAYLAND_EGL
-#  include <EGL/egl.h>
-# endif
+//# ifdef HAVE_WAYLAND_EGL
+//#  include <EGL/egl.h>
+//# endif
 
 # include <setjmp.h>
 # include <Eo.h>
@@ -133,11 +133,9 @@ void *alloca (size_t);
 # include <Ecore_Evas.h>
 # include <Ecore_Input.h>
 # include <Ecore_Input_Evas.h>
-# include <Ecore_Con.h>
 # include <Ecore_Ipc.h>
 # include <Ecore_File.h>
 # include <Efreet.h>
-# include <Efreet_Mime.h>
 # include <Edje.h>
 # include <Eldbus.h>
 # include <Eio.h>

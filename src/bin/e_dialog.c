@@ -43,8 +43,8 @@ _e_dialog_internal_new(Evas_Object *parent, const char *name, const char *class,
                            "e/widgets/dialog/main");
    evas_object_show(o);
 
-   o = e_widget_list_add(evas_object_evas_get(dia->win), 1, 1);
-   e_widget_on_focus_hook_set(o, _e_dialog_cb_wid_on_focus, dia);
+   //o = e_widget_list_add(evas_object_evas_get(dia->win), 1, 1);
+   //e_widget_on_focus_hook_set(o, _e_dialog_cb_wid_on_focus, dia);
    dia->box_object = o;
    elm_object_part_content_set(dia->bg_object, "e.swallow.buttons", o);
    elm_layout_signal_emit(dia->bg_object, "e,state,no_resizable", "e");
@@ -95,8 +95,8 @@ e_dialog_button_add(E_Dialog *dia, const char *label, const char *icon, E_Dialog
    Evas_Object *o;
 
    if (!func) func = _e_dialog_del_func_cb;
-   o = e_widget_button_add(evas_object_evas_get(dia->win), label, icon, (void (*)(void *, void *))func, data, dia);
-   e_widget_list_object_append(dia->box_object, o, 1, 0, 0.5);
+   //o = e_widget_button_add(evas_object_evas_get(dia->win), label, icon, (void (*)(void *, void *))func, data, dia);
+   //e_widget_list_object_append(dia->box_object, o, 1, 0, 0.5);
    dia->buttons = eina_list_append(dia->buttons, o);
 }
 
@@ -106,7 +106,7 @@ e_dialog_button_focus_num(E_Dialog *dia, int button)
    Evas_Object *o;
 
    o = eina_list_nth(dia->buttons, button);
-   if (o) e_widget_focus_steal(o);
+   //if (o) e_widget_focus_steal(o);
    return 1;
 }
 
@@ -116,7 +116,7 @@ e_dialog_button_disable_num_set(E_Dialog *dia, int button, int disabled)
    Evas_Object *o;
 
    o = eina_list_nth(dia->buttons, button);
-   if (o) e_widget_disabled_set(o, disabled);
+   //if (o) e_widget_disabled_set(o, disabled);
    return 1;
 }
 
@@ -127,7 +127,7 @@ e_dialog_button_disable_num_get(E_Dialog *dia, int button)
    int ret = 0;
 
    o = eina_list_nth(dia->buttons, button);
-   if (o) ret = e_widget_disabled_get(o);
+   //if (o) ret = e_widget_disabled_get(o);
    return ret;
 }
 
@@ -203,7 +203,7 @@ e_dialog_content_set(E_Dialog *dia, Evas_Object *obj, Evas_Coord minw, Evas_Coor
 {
    int mw, mh;
    dia->content_object = obj;
-   e_widget_on_focus_hook_set(obj, _e_dialog_cb_wid_on_focus, dia);
+   //e_widget_on_focus_hook_set(obj, _e_dialog_cb_wid_on_focus, dia);
    evas_object_size_hint_min_set(obj, minw, minh);
    elm_object_part_content_set(dia->bg_object, "e.swallow.content", obj);
    elm_layout_sizing_eval(dia->bg_object);
@@ -266,8 +266,8 @@ e_dialog_show(E_Dialog *dia)
      }
    evas_object_show(dia->win);
 
-   if (!e_widget_focus_get(dia->box_object))
-     e_widget_focus_set(dia->box_object, 1);
+   //if (!e_widget_focus_get(dia->box_object))
+   //  e_widget_focus_set(dia->box_object, 1);
 }
 
 /* local subsystem functions */
@@ -299,6 +299,7 @@ _e_dialog_cb_key_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNU
 
    ev = event;
    dia = data;
+#if 0
    if (!strcmp(ev->key, "Tab"))
      {
         if (evas_key_modifier_is_set(evas_key_modifier_get(evas_object_evas_get(dia->win)), "Shift"))
@@ -359,6 +360,7 @@ _e_dialog_cb_key_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNU
      }
    else if (!strcmp(ev->key, "Escape"))
      e_object_del(E_OBJECT(dia));
+#endif
 }
 
 static void
@@ -373,9 +375,10 @@ _e_dialog_cb_wid_on_focus(void *data, Evas_Object *obj)
    E_Dialog *dia;
 
    dia = data;
+#if 0
    if (obj == dia->content_object)
      e_widget_focused_object_clear(dia->box_object);
    else if (dia->content_object)
      e_widget_focused_object_clear(dia->content_object);
+#endif
 }
-

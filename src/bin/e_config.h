@@ -14,15 +14,8 @@ typedef struct _E_Config_Desktop_Background E_Config_Desktop_Background;
 typedef struct _E_Config_Desklock_Background E_Config_Desklock_Background;
 typedef struct _E_Config_Desktop_Name       E_Config_Desktop_Name;
 typedef struct _E_Config_Desktop_Window_Profile E_Config_Desktop_Window_Profile;
-typedef struct _E_Config_Gadcon             E_Config_Gadcon;
-typedef struct _E_Config_Gadcon_Client      E_Config_Gadcon_Client;
-typedef struct _E_Config_Shelf              E_Config_Shelf;
-typedef struct _E_Config_Shelf_Desk         E_Config_Shelf_Desk;
-typedef struct _E_Config_Mime_Icon          E_Config_Mime_Icon;
 typedef struct _E_Config_Syscon_Action      E_Config_Syscon_Action;
 typedef struct _E_Config_Env_Var            E_Config_Env_Var;
-typedef struct _E_Config_XKB_Layout         E_Config_XKB_Layout;
-typedef struct _E_Config_XKB_Option         E_Config_XKB_Option;
 typedef struct _E_Config_Client_Type        E_Config_Client_Type;
 
 typedef struct _E_Event_Config_Icon_Theme   E_Event_Config_Icon_Theme;
@@ -298,7 +291,7 @@ struct _E_Config
    int                       device_desktop; // GUI
    int                       device_auto_mount; // GUI
    int                       device_auto_open; // GUI
-   Efm_Mode                  device_detect_mode; /* not saved, display-only */
+   //Efm_Mode                  device_detect_mode; /* not saved, display-only */
    unsigned char             filemanager_copy; // GUI
    unsigned char             filemanager_secure_rm; // GUI
 
@@ -370,7 +363,7 @@ struct _E_Config
       double        timer; // GUI
       const char   *sysdev; // GUI
       unsigned char idle_dim; // GUI
-      E_Backlight_Mode mode; /* not saved, display-only */
+      //E_Backlight_Mode mode; /* not saved, display-only */
    } backlight;
 
    struct
@@ -420,9 +413,6 @@ struct _E_Config
       int         only_label;
       const char *default_model;
       int         cur_group;
-      E_Config_XKB_Layout *current_layout;
-      E_Config_XKB_Layout *sel_layout;
-      E_Config_XKB_Layout *lock_layout;
       Eina_Bool dont_touch_my_damn_keyboard;
       Eina_Bool use_cache;
       unsigned int delay_held_key_input_to_focus;
@@ -441,7 +431,6 @@ struct _E_Config
       int repeat_rate;//the rate of repeating keys in characters per second
    } keyboard;
 
-   Eina_List  *menu_applications;
    unsigned char exe_always_single_instance; // GUI
    int           use_desktop_window_profile; // GUI
 #ifdef _F_ZONE_WINDOW_ROTATION_
@@ -578,81 +567,9 @@ struct _E_Config_Desktop_Window_Profile
    const char *profile;
 };
 
-struct _E_Config_Gadcon
-{
-   const char  *name;
-   int          id;
-   unsigned int zone;
-   Eina_List   *clients;
-};
-
-struct _E_Config_Gadcon_Client
-{
-   const char   *name;
-   const char   *id;
-   struct
-   {
-      int    pos, size, res; //gadcon
-      double pos_x, pos_y, size_w, size_h;  //gadman
-   } geom;
-   struct
-   {
-      int seq, flags;
-   } state_info;
-   const char   *style;
-   int           orient;
-   unsigned char autoscroll;
-   unsigned char resizable;
-   const char   *theme;
-};
-
-struct _E_Config_Shelf
-{
-   const char   *name;
-   int           id;
-   int           zone;
-   int           layer; //E_Layer
-   unsigned char popup; //DEAD
-   int           orient;
-   unsigned char fit_along;
-   unsigned char fit_size;
-   const char   *style;
-   int           size;
-   int           overlap;
-   int           autohide;
-   int           autohide_show_action;
-   float         hide_timeout;
-   float         hide_duration;
-   int           desk_show_mode;
-   Eina_List    *desk_list;
-};
-
-struct _E_Config_Shelf_Desk
-{
-   int x, y;
-};
-
-struct _E_Config_Mime_Icon
-{
-   const char *mime;
-   const char *icon;
-};
-
 struct _E_Event_Config_Icon_Theme
 {
    const char *icon_theme;
-};
-
-struct _E_Config_XKB_Layout
-{
-   const char *name;
-   const char *model;
-   const char *variant;
-};
-
-struct _E_Config_XKB_Option
-{
-   const char *name;
 };
 
 struct _E_Config_Client_Type

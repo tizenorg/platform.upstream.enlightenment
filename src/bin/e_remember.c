@@ -34,26 +34,23 @@ static Eina_List *remember_idler_list = NULL;
 
 /* externally accessible functions */
 EINTERN int
-e_remember_init(E_Startup_Mode mode)
+e_remember_init(void)
 {
    Eina_List *l = NULL;
    E_Remember *rem;
    E_Client_Hook *h;
 
-   if (mode == E_STARTUP_START)
+   EINA_LIST_FOREACH(e_config->remembers, l, rem)
      {
-        EINA_LIST_FOREACH(e_config->remembers, l, rem)
+        if ((rem->apply & E_REMEMBER_APPLY_RUN) && (rem->prop.command))
           {
-             if ((rem->apply & E_REMEMBER_APPLY_RUN) && (rem->prop.command))
+             if (!ecore_exe_run(rem->prop.command, NULL))
                {
-                  if (!ecore_exe_run(rem->prop.command, NULL))
-                    {
-                       e_util_dialog_show(_("Run Error"),
-                                          _("Enlightenment was unable to fork a child process:<br>"
-                                            "<br>"
-                                            "%s<br>"),
-                                          rem->prop.command);
-                    }
+                  e_util_dialog_show(_("Run Error"),
+                                     _("Enlightenment was unable to fork a child process:<br>"
+                                       "<br>"
+                                       "%s<br>"),
+                                     rem->prop.command);
                }
           }
      }
@@ -175,10 +172,10 @@ _e_remember_restore_idler_cb(void *d EINA_UNUSED)
              else
                snprintf(path, sizeof(path), "%s", p);
 
-             if (e_configure_registry_exists(path))
-               {
-                  e_configure_registry_call(path, NULL, param);
-               }
+             //if (e_configure_registry_exists(path))
+             //  {
+             //     e_configure_registry_call(path, NULL, param);
+             //  }
           }
         else if (!strcmp(rem->class, "_configure"))
           {

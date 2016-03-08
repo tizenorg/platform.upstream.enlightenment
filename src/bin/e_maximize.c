@@ -123,26 +123,11 @@ e_maximize_client_dock_fit(E_Client *ec, int *x1, int *yy1, int *x2, int *y2)
    if (y2) *y2 = cy2;
 }
 
+/* TODO: remove this function */
 E_API void
 e_maximize_client_shelf_fill(E_Client *ec, int *x1, int *yy1, int *x2, int *y2, E_Maximize dir)
 {
-   Eina_List *l, *rects = NULL;
-   E_Shelf *es;
-   E_Maximize_Rect *r;
-
-   l = e_shelf_list_all();
-   EINA_LIST_FREE(l, es)
-     {
-        if (es->cfg->overlap) continue;
-        if (!e_shelf_desk_visible(es, ec->desk)) continue;
-        OBSTACLE(es->x + es->zone->x, es->y + es->zone->y,
-                 es->x + es->zone->x + es->w, es->y + es->zone->y + es->h);
-     }
-   if (rects)
-     {
-        _e_maximize_client_rects_fill(ec, rects, x1, yy1, x2, y2, dir);
-        E_FREE_LIST(rects, free);
-     }
+   ;
 }
 
 E_API void

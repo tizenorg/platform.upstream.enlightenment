@@ -156,7 +156,7 @@ static Eina_Bool
 _screen_closed(E_Randr2_Screen *s)
 {
    printf("RRR: check lid for %s...\n", s->info.name);
-   if (!e_acpi_lid_is_closed()) return EINA_FALSE;
+   //if (!e_acpi_lid_is_closed()) return EINA_FALSE;
    if (s->info.is_lid)
      {
         printf("RRR:   is closed lid\n");

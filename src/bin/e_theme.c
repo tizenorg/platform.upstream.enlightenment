@@ -3,29 +3,31 @@
 static void       e_theme_handler_set(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, const char *path);
 static int        e_theme_handler_test(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, const char *path);
 
-static E_Fm2_Mime_Handler *theme_hdl = NULL;
-
 /* externally accessible functions */
 
 EINTERN int
 e_theme_init(void)
 {
    /* Register mime handler */
+#if 0
    theme_hdl = e_fm2_mime_handler_new(_("Set As Theme"), "preferences-desktop-theme",
                                       e_theme_handler_set, NULL,
                                       e_theme_handler_test, NULL);
    if (theme_hdl) e_fm2_mime_handler_glob_add(theme_hdl, "*.edj");
+#endif
    return 1;
 }
 
 EINTERN int
 e_theme_shutdown(void)
 {
+#if 0
    if (theme_hdl)
      {
         e_fm2_mime_handler_glob_del(theme_hdl, "*.edj");
         e_fm2_mime_handler_free(theme_hdl);
      }
+#endif
    return 1;
 }
 
