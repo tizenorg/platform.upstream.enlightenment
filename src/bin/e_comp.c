@@ -1141,6 +1141,16 @@ e_comp_render_queue(void)
      }
 }
 
+E_API void
+e_comp_client_post_update_add(E_Client *ec)
+{
+   if (ec->on_post_updates) return;
+   ec->on_post_updates = EINA_TRUE;
+   e_comp->post_updates = eina_list_append(e_comp->post_updates, ec);
+   REFD(ec, 111);
+   e_object_ref(E_OBJECT(ec));
+}
+
 // TODO: shoulde be removed - yigl
 E_API void
 e_comp_shape_queue(void)
