@@ -31,6 +31,7 @@ E_API int E_EVENT_WAYLAND_GLOBAL_ADD = -1;
 static void _e_comp_wl_subsurface_parent_commit(E_Client *ec, Eina_Bool parent_synchronized);
 static void _e_comp_wl_subsurface_restack(E_Client *ec);
 static void _e_comp_wl_subsurface_restack_bg_rectangle(E_Client *ec);
+static void _e_comp_wl_subsurface_check_below_bg_rectangle(E_Client *ec);
 
 /* local variables */
 typedef struct _E_Comp_Wl_Transform_Context
@@ -575,6 +576,26 @@ _e_comp_wl_topmost_parent_get(E_Client *ec)
      }
 
    return ec;
+}
+
+static Eina_Bool
+_e_comp_wl_video_client_has(E_Client *ec)
+{
+   E_Client *subc;
+   Eina_List *l;
+
+   if (ec->comp_data->video_client)
+     return EINA_TRUE;
+
+   EINA_LIST_FOREACH(ec->comp_data->sub.below_list_pending, l, subc)
+     if (_e_comp_wl_video_client_has(subc))
+        return EINA_TRUE;
+
+   EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
+     if (_e_comp_wl_video_client_has(subc))
+        return EINA_TRUE;
+
+   return EINA_FALSE;
 }
 
 static void
@@ -2413,6 +2434,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
         eina_tiler_clear(state->input);
      }
 
+   _e_comp_wl_subsurface_check_below_bg_rectangle(ec);
+
    if (!state->buffer_viewport.changed &&
        (buffer && buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO) &&
        e_comp->wl_comp_data->available_hw_accel.underlay)
@@ -3113,12 +3136,17 @@ _e_comp_wl_subsurface_bg_evas_cb_resize(void *data, Evas *evas EINA_UNUSED, Evas
 }
 
 static void
-_e_comp_wl_subsurface_create_below_bg_rectangle(E_Client *ec)
+_e_comp_wl_subsurface_check_below_bg_rectangle(E_Client *ec)
 {
+   Eina_Bool has_video_client;
    short layer;
 
    if (ec->comp_data->sub.below_obj) return;
+   if (ec->comp_data->sub.data) return;
+   if (!ec->comp_data->sub.below_list && !ec->comp_data->sub.below_list_pending) return;
+   if (ec->argb) return;
 
+   /* create a bg rectangle if topmost window is 24 depth window */
    ec->comp_data->sub.below_obj = evas_object_rectangle_add(e_comp->evas);
    EINA_SAFETY_ON_NULL_RETURN(ec->comp_data->sub.below_obj);
 
@@ -3132,6 +3160,13 @@ _e_comp_wl_subsurface_create_below_bg_rectangle(E_Client *ec)
 
    evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_RESIZE,
                                   _e_comp_wl_subsurface_bg_evas_cb_resize, ec);
+
+   has_video_client = _e_comp_wl_video_client_has(ec);
+   ELOGF("COMP", "         |bg_rectangle|video_client:%d", NULL, ec, has_video_client);
+
+   /* set alpha only if SW path */
+   if (!has_video_client)
+     e_comp_object_alpha_set(ec->frame, EINA_TRUE);
 
    _e_comp_wl_subsurface_restack(ec);
    _e_comp_wl_subsurface_restack_bg_rectangle(ec);
@@ -3443,6 +3478,8 @@ e_comp_wl_subsurface_create(E_Client *ec, E_Client *epc, uint32_t id, struct wl_
    ec->netwm.state.skip_pager = EINA_TRUE;
    ec->no_shape_cut = EINA_TRUE;
    ec->border_size = 0;
+
+   ELOGF("COMP", "         |subsurface_parent:%p", NULL, ec, epc);
 
    if (epc)
      {
@@ -4632,6 +4669,7 @@ e_comp_wl_surface_commit(E_Client *ec)
 {
    Eina_Bool ignored;
    Eina_Bool need_restack = EINA_FALSE;
+   E_Client *topmost = NULL;
 
    _e_comp_wl_surface_state_commit(ec, &ec->comp_data->pending);
    if (!e_comp_object_damage_exists(ec->frame))
@@ -4648,19 +4686,6 @@ e_comp_wl_surface_commit(E_Client *ec)
         E_Client *topmost = _e_comp_wl_topmost_parent_get(ec);
         _e_comp_wl_subsurface_restack(topmost);
         _e_comp_wl_subsurface_restack_bg_rectangle(topmost);
-     }
-
-   if (ec->comp_data->sub.below_list || ec->comp_data->sub.below_list_pending)
-     {
-        //temporarily only check if below_obj is null.
-        if (!ec->comp_data->sub.below_obj)
-//        if (!ec->argb && !ec->comp_data->video_client && !ec->comp_data->sub.below_obj)
-          {
-            e_comp_object_alpha_set(ec->frame, EINA_TRUE);
-
-            if (e_pixmap_resource_get(ec->pixmap))
-              _e_comp_wl_subsurface_create_below_bg_rectangle(ec);
-          }
      }
 
    if (!e_pixmap_usable_get(ec->pixmap))
