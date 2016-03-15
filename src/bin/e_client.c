@@ -4911,7 +4911,106 @@ e_client_ping(E_Client *ec)
                                       _e_client_cb_ping_poller, ec);
 }
 
+static void
+_e_client_map_transform(int width, int height, uint32_t transform,
+                         int sx, int sy, int *dx, int *dy)
+{
+   switch (transform)
+     {
+      case WL_OUTPUT_TRANSFORM_NORMAL:
+      default:
+        *dx = sx, *dy = sy;
+        break;
+      case WL_OUTPUT_TRANSFORM_90:
+        *dx = height - sy, *dy = sx;
+        break;
+      case WL_OUTPUT_TRANSFORM_180:
+        *dx = width - sx, *dy = height - sy;
+        break;
+      case WL_OUTPUT_TRANSFORM_270:
+        *dx = sy, *dy = width - sx;
+        break;
+     }
+}
+
 ////////////////////////////////////////////
+E_API void
+e_client_cursor_map_apply(E_Client *ec, int rotation, int x, int y)
+{
+   Evas_Map *map;
+   int x1, y1, x2, y2, dx, dy;
+   int32_t width, height;
+   int cursor_w, cursor_h;
+   uint32_t transform;
+   int rot_x = x, rot_y = y;
+   int zone_w = ec->zone->w;
+   int zone_h = ec->zone->h;
+   double awh = ((double)zone_w / (double)zone_h);
+   double ahw = ((double)zone_h / (double)zone_w);
+
+   evas_object_geometry_get(ec->frame, NULL, NULL, &cursor_w, &cursor_h);
+   width = cursor_w;
+   height = cursor_h;
+
+   switch(rotation)
+     {
+      case 90:
+         rot_x = y * awh;
+         rot_y = ahw * (zone_w - x);
+         transform = WL_OUTPUT_TRANSFORM_90;
+         width = cursor_h;
+         height = cursor_w;
+         break;
+      case 180:
+         rot_x = zone_w - x;
+         rot_y = zone_h - y;
+         transform = WL_OUTPUT_TRANSFORM_180;
+         break;
+      case 270:
+         rot_x = awh * (zone_h - y);
+         rot_y = ahw * x;
+         transform = WL_OUTPUT_TRANSFORM_270;
+         width = cursor_h;
+         height = cursor_w;
+         break;
+      default:
+         transform = WL_OUTPUT_TRANSFORM_NORMAL;
+         break;
+     }
+   ec->client.x = rot_x, ec->client.y = rot_y;
+   ec->x = rot_x, ec->y = rot_y;
+
+   map = evas_map_new(4);
+   evas_map_util_points_populate_from_geometry(map,
+                                               ec->x, ec->y,
+                                               width, height, 0);
+
+   x1 = 0.0;
+   y1 = 0.0;
+   x2 = width;
+   y2 = height;
+
+   _e_client_map_transform(width, height, transform,
+                            x1, y1, &dx, &dy);
+   evas_map_point_image_uv_set(map, 0, dx, dy);
+
+   _e_client_map_transform(width, height, transform,
+                            x2, y1, &dx, &dy);
+   evas_map_point_image_uv_set(map, 1, dx, dy);
+
+   _e_client_map_transform(width, height, transform,
+                            x2, y2, &dx, &dy);
+   evas_map_point_image_uv_set(map, 2, dx, dy);
+
+   _e_client_map_transform(width, height, transform,
+                            x1, y2, &dx, &dy);
+   evas_map_point_image_uv_set(map, 3, dx, dy);
+
+   evas_object_map_set(ec->frame, map);
+   evas_object_map_enable_set(ec->frame, map ? EINA_TRUE : EINA_FALSE);
+
+   evas_map_free(map);
+}
 
 E_API void
 e_client_move_cancel(void)
