@@ -1081,7 +1081,7 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
      {
         dev = ev->dev;
 
-        if (dev && (dev_name = evas_device_name_get(dev)))
+        if (dev && (dev_name = evas_device_description_get(dev)))
           _e_comp_wl_device_send_event_device(dev_name, evas_device_class_get(dev), ec, ev->timestamp);
 
         if (dev && (evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH))
@@ -1181,7 +1181,7 @@ _e_comp_wl_evas_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
 
    dev = ev->dev;
 
-   if (dev  && (dev_name = evas_device_name_get(dev)))
+   if (dev  && (dev_name = evas_device_description_get(dev)))
      _e_comp_wl_device_send_event_device(dev_name, evas_device_class_get(dev), ec, ev->timestamp);
 
    if (dev &&  (evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH))
@@ -1216,7 +1216,7 @@ _e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
 
    dev = ev->dev;
 
-   if (dev && (dev_name = evas_device_name_get(dev)))
+   if (dev && (dev_name = evas_device_description_get(dev)))
      _e_comp_wl_device_send_event_device(dev_name, evas_device_class_get(dev), ec, ev->timestamp);
 
    if (dev && (evas_device_class_get(dev) == EVAS_DEVICE_CLASS_TOUCH))
@@ -1352,7 +1352,7 @@ _e_comp_wl_evas_cb_multi_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
 
    dev = ev->dev;
 
-   if (dev && (dev_name = evas_device_name_get(dev)))
+   if (dev && (dev_name = evas_device_description_get(dev)))
      {
        dev_class = evas_device_class_get(dev);
         _e_comp_wl_device_send_event_device(dev_name, dev_class, ec, ev->timestamp);
@@ -1398,7 +1398,7 @@ _e_comp_wl_evas_cb_multi_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
 
    dev = ev->dev;
 
-   if (dev && (dev_name = evas_device_name_get(dev)))
+   if (dev && (dev_name = evas_device_description_get(dev)))
      {
        dev_class = evas_device_class_get(dev);
         _e_comp_wl_device_send_event_device(dev_name, dev_class, ec, ev->timestamp);
@@ -1440,7 +1440,7 @@ _e_comp_wl_evas_cb_multi_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
 
    dev = ev->dev;
 
-   if (dev && (dev_name = evas_device_name_get(dev)))
+   if (dev && (dev_name = evas_device_description_get(dev)))
      {
        dev_class = evas_device_class_get(dev);
         _e_comp_wl_device_send_event_device(dev_name, dev_class, ec, ev->timestamp);
