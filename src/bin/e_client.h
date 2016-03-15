@@ -176,6 +176,13 @@ typedef enum _E_Visibility
    E_VISIBILITY_FULLY_OBSCURED = 2
 } E_Visibility;
 
+typedef enum _E_Changable_Layer_Type
+{
+   E_CHANGABLE_LAYER_TYPE_TRANSIENT = 0,
+   E_CHANGABLE_LAYER_TYPE_ABOVE_NOTIFICATION = 1,
+   E_CHANGABLE_LAYER_TYPE_MAX
+} E_Changable_Layer_Type;
+
 typedef struct E_Client E_Client;
 
 typedef struct E_Event_Client E_Event_Client;
@@ -830,6 +837,13 @@ struct E_Client
       unsigned char not_raise : 1;
       unsigned char skip_iconify : 1;
    } exp_iconify;
+
+   struct
+   {
+      Eina_Bool set;
+      Eina_Bool saved;
+      E_Layer   saved_layer; // original layer
+   } changable_layer[E_CHANGABLE_LAYER_TYPE_MAX];
 };
 
 #define e_client_focus_policy_click(ec) \
