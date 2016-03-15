@@ -939,12 +939,6 @@ e_pixmap_image_refresh(E_Pixmap *cp)
                       break;
                   }
                 cp->data = NULL;
-
-                if (wl_comp_data->available_hw_accel.underlay)
-                  {
-                     cp->client->argb = EINA_FALSE;
-                     e_comp_object_mask_set(cp->client->frame, EINA_TRUE);
-                  }
              }
            else
              {
