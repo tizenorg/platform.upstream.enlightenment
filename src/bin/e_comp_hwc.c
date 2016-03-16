@@ -849,16 +849,30 @@ e_comp_hwc_mode_nocomp(E_Client *ec)
         // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
         if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
         /* make the policy to configure the layers with the client candidates */
-        
+
         if (ec)
           {
-#if USE_FIXED_SCANOUT
-#endif
-
              if (e_comp->nocomp && e_comp->nocomp_ec != ec)
                INF("HWC: NOCOMPOSITE Mode ec(%p) ==> ec(%p)", e_comp->nocomp_ec, ec);
              else
                INF("HWC: NOCOMPOSITE Mode ec(%p)", ec);
+
+#if USE_FIXED_SCANOUT
+             struct wl_resource *wl_surface = NULL;
+             wl_surface = _e_comp_hwc_wl_surface_get(ec);
+             if (!wl_surface)
+               {
+                  ERR("no wl_surface");
+                  continue;
+               }
+
+             /* set this server queue to associated with wl_surface in order to share surfaces with client */
+             if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, wl_surface, 0))
+               {
+                  ERR("no wl_surface");
+                  continue;
+               }
+#endif
 
              hwc_output->mode = E_HWC_MODE_NO_COMPOSITE;
              hwc_output->primary_layer->ec = ec;
@@ -867,6 +881,12 @@ e_comp_hwc_mode_nocomp(E_Client *ec)
           {
              INF("HWC: COMPOSITE Mode");
 #if USE_FIXED_SCANOUT
+             /* unset server queue */
+             if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, NULL, 0))
+               {
+                  ERR("no wl_surface");
+                  continue;
+               }
 #endif
              hwc_output->mode = E_HWC_MODE_COMPOSITE;
              hwc_output->primary_layer->ec = NULL;
