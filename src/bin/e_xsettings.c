@@ -573,7 +573,6 @@ _e_xsettings_cursor_path_set(void)
      }
    else
      {
-        snprintf(env, sizeof(env), "%s:%s", buf, "/usr/share/icons");
         path = env;
      }
    e_env_set("XCURSOR_PATH", path);

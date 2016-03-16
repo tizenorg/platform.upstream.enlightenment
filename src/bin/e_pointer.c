@@ -435,7 +435,7 @@ _e_pointer_type_set(E_Pointer *ptr, const char *type)
    eina_stringshare_replace(&ptr->type, type);
 
    /* don't show cursor if in hidden mode */
-   if (!e_config->show_cursor)
+   if ((!e_config->show_cursor) || (!e_comp_wl->ptr.enabled))
      {
         e_pointer_hide(ptr);
         return;
@@ -748,7 +748,7 @@ e_pointer_idler_before(void)
    Eina_List *l;
    E_Pointer *ptr;
 
-   if (!e_config->show_cursor) return;
+   if ((!e_config->show_cursor) || (!e_comp_wl->ptr.enabled)) return;
 
    EINA_LIST_FOREACH(_ptrs, l, ptr)
      {
@@ -788,7 +788,7 @@ e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
    EINA_SAFETY_ON_NULL_RETURN(ptr);
 
    /* don't show cursor if in hidden mode */
-   if (!e_config->show_cursor)
+   if ((!e_config->show_cursor) || (!e_comp_wl->ptr.enabled))
      {
         if (obj) evas_object_hide(obj);
         return;

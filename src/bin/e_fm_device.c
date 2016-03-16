@@ -258,14 +258,6 @@ e_fm2_device_volume_add(E_Volume *v)
              v->mount_point = NULL;
              id = "disk";
              if ((v->uuid) && (v->uuid[0])) id = v->uuid;
-             if (ecore_file_is_dir("/media"))
-               snprintf(buf, sizeof(buf), "/media/%s", id);
-             else if (ecore_file_is_dir("/mnt"))
-               snprintf(buf, sizeof(buf), "/mnt/%s", id);
-             else if (ecore_file_is_dir("/tmp"))
-               snprintf(buf, sizeof(buf), "/tmp/%s", id);
-             else
-               buf[0] = 0;
              v->mount_point = eina_stringshare_add(buf);
           }
      }
@@ -422,15 +414,15 @@ e_fm2_device_volume_mountpoint_get(E_Volume *v)
      return NULL;
 
    if (v->label && v->label[0] != '\0')
-     snprintf(buf, sizeof(buf) - 1, "/media/%s", v->label);
+     snprintf(buf, sizeof(buf) - 1, "%s", v->label);
    else if (v->uuid && v->uuid[0] != '\0')
-     snprintf(buf, sizeof(buf) - 1, "/media/%s", v->uuid);
+     snprintf(buf, sizeof(buf) - 1, "%s", v->uuid);
    else if ((v->storage) && (v->storage->serial) && v->storage->serial[0] != '\0')
-     snprintf(buf, sizeof(buf) - 1, "/media/%s", v->storage->serial);
+     snprintf(buf, sizeof(buf) - 1, "%s", v->storage->serial);
    else
      {
         static int mount_count = 1;
-        snprintf(buf, sizeof(buf) - 1, "/media/unknown-%i", mount_count++);
+        snprintf(buf, sizeof(buf) - 1, "unknown-%i", mount_count++);
      }
 //   printf("GET MOUNTPOINT = %s\n", buf);
    return eina_stringshare_add(buf);
