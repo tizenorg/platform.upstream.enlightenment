@@ -46,6 +46,8 @@ static Eina_List *handlers = NULL;
 static double _last_event_time = 0.0;
 static E_Client *cursor_timer_ec = NULL;
 static Eina_Bool need_send_leave = EINA_TRUE;
+static Eina_Bool need_send_released = EINA_FALSE;
+static Eina_Bool need_send_motion = EINA_TRUE;
 
 /* local functions */
 static void
@@ -518,6 +520,30 @@ _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (ec->comp_data->sub.restacking) return;
 
+   if (e_comp_wl->ptr.ec && need_send_released)
+     {
+        E_Client *ec;
+        Eina_List *l;
+        struct wl_resource *res;
+        struct wl_client *wc;
+
+        if (!(ec = e_comp_wl->ptr.ec)) return ECORE_CALLBACK_PASS_ON;
+        if (e_object_is_del(E_OBJECT(ec))) return ECORE_CALLBACK_PASS_ON;
+        if (!ec->comp_data->surface) return ECORE_CALLBACK_PASS_ON;
+        if (ec->ignored) return ECORE_CALLBACK_PASS_ON;
+
+        wc = wl_resource_get_client(ec->comp_data->surface);
+
+        EINA_LIST_FOREACH(e_comp->wl_comp_data->touch.resources, l, res)
+          {
+             if (wl_resource_get_client(res) != wc) continue;
+             if (!e_comp_wl_input_touch_check(res)) continue;
+
+             wl_touch_send_cancel(res);
+          }
+        need_send_released = EINA_FALSE;
+        need_send_motion = EINA_FALSE;
+     }
    /* return if ec isn't both a parent of a subsurface and a subsurface itself */
    if (!ec->comp_data->sub.list && !ec->comp_data->sub.below_list && !ec->comp_data->sub.data)
      {
@@ -746,6 +772,8 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
         cursor_timer_ec = NULL;
      }
 
+   if (e_comp_wl->ptr.ec == ec)
+     e_comp_wl->ptr.ec = NULL;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    if (!ec->comp_data->surface) return;
@@ -824,6 +852,8 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (ec->ignored) return;
    if (!ec->comp_data->surface) return;
+
+   if (!need_send_motion && !need_send_released) return;
 
    if ((!e_comp_wl->drag_client) ||
        (!e_client_has_xwindow(e_comp_wl->drag_client)))
@@ -939,6 +969,8 @@ _e_comp_wl_evas_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
      e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
                                         WL_POINTER_BUTTON_STATE_PRESSED);
 
+   need_send_released = EINA_TRUE;
+
    focused = e_client_focused_get();
    if ((focused) && (ec != focused))
      {
@@ -963,6 +995,12 @@ _e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
+   if (!need_send_released)
+     {
+        need_send_motion = EINA_TRUE;
+        return;
+     }
+
    dev = ev->dev;
 
    if (dev && (dev_name = evas_device_description_get(dev)))
@@ -973,6 +1011,7 @@ _e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    else
      e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
                                         WL_POINTER_BUTTON_STATE_RELEASED);
+   need_send_released = EINA_FALSE;
 }
 
 static void
