@@ -266,7 +266,7 @@ _e_comp_object_cb_mirror_show(void *data, Evas *e EINA_UNUSED, Evas_Object *obj 
 
 #if HAVE_HWC
    if (e_comp->hwc && e_comp->nocomp_ec != cw->ec)
-     e_comp_hwc_set_full_composite("_e_comp_object_cb_mirror_show");
+     e_comp_nocomp_end(__FUNCTION__); //juylee
 #endif
 }
 
@@ -1002,7 +1002,7 @@ _e_comp_intercept_move(void *data, Evas_Object *obj, int x, int y)
 
 #if HAVE_HWC
    if (e_comp->hwc && e_comp->nocomp_ec != cw->ec)
-     e_comp_hwc_set_full_composite("_e_comp_intercept_move");
+     e_comp_nocomp_end("_e_comp_intercept_move");
 #endif
 
    if (!e_util_strcmp("wl_pointer-cursor", cw->ec->icccm.window_role))
@@ -1093,7 +1093,7 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
 
 #if HAVE_HWC
    if (e_comp->hwc &&e_comp->nocomp_ec != cw->ec)
-     e_comp_hwc_set_full_composite("_e_comp_intercept_resize");
+     e_comp_nocomp_end("_e_comp_intercept_resize");
 #endif
 
    if ((!e_util_strcmp("wl_pointer-cursor", cw->ec->icccm.window_role)) ||

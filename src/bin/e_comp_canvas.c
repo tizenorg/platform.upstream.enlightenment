@@ -309,6 +309,8 @@ e_comp_canvas_clear(void)
 
    E_FREE_FUNC(e_comp->fps_fg, evas_object_del);
    E_FREE_FUNC(e_comp->fps_bg, evas_object_del);
+   E_FREE_FUNC(e_comp->debug_fg, evas_object_del);
+   E_FREE_FUNC(e_comp->debug_bg, evas_object_del);
    E_FREE_FUNC(e_comp->autoclose.rect, evas_object_del);
    E_FREE_FUNC(e_comp->shape_job, ecore_job_del);
    E_FREE_FUNC(e_comp->pointer, e_object_del);

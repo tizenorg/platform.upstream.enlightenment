@@ -727,6 +727,7 @@ e_comp_hwc_display_client(E_Client *ec)
    tdm_output_conn_status conn_status;
 
    EINA_SAFETY_ON_NULL_RETURN(ec);
+   EINA_SAFETY_ON_NULL_RETURN(hwc);
 
    EINA_LIST_FOREACH_SAFE(hwc->hwc_outputs, l_o, ll_o, hwc_output)
      {
@@ -833,14 +834,53 @@ e_comp_hwc_mode_update(void)
           }
      }
 }
+EINTERN void
+e_comp_hwc_mode_nocomp(E_Client *ec)
+{
+   E_Comp_Hwc *hwc = g_hwc;
+   E_Comp_Hwc_Output *hwc_output;
+   Eina_List *l_o, *ll_o;
+   tdm_output_conn_status conn_status;
+
+   EINA_LIST_FOREACH_SAFE(hwc->hwc_outputs, l_o, ll_o, hwc_output)
+     {
+        if (!hwc_output) continue;
+        tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
+        // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
+        if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
+        /* make the policy to configure the layers with the client candidates */
+        
+        if (ec)
+          {
+#if USE_FIXED_SCANOUT
+#endif
+
+             if (e_comp->nocomp && e_comp->nocomp_ec != ec)
+               INF("HWC: NOCOMPOSITE Mode ec(%p) ==> ec(%p)", e_comp->nocomp_ec, ec);
+             else
+               INF("HWC: NOCOMPOSITE Mode ec(%p)", ec);
+
+             hwc_output->mode = E_HWC_MODE_NO_COMPOSITE;
+             hwc_output->primary_layer->ec = ec;
+          }
+        else
+          {
+             INF("HWC: COMPOSITE Mode");
+#if USE_FIXED_SCANOUT
+#endif
+             hwc_output->mode = E_HWC_MODE_COMPOSITE;
+             hwc_output->primary_layer->ec = NULL;
+          }
+     }
+}
 
 EINTERN void
 e_comp_hwc_set_full_composite(char *location)
 {
-   if (!e_comp->nocomp) return;
+   //if (!e_comp->nocomp) return;
 
-   e_comp->nocomp = EINA_FALSE;
-   e_comp->nocomp_ec = NULL;
+   //e_comp->nocomp = EINA_FALSE;
+   //e_comp->nocomp_ec = NULL;
 
 #if USE_FIXED_SCANOUT
    E_Comp_Hwc *hwc = g_hwc;

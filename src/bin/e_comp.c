@@ -184,20 +184,30 @@ _e_comp_fullscreen_check(void)
      {
         Evas_Object *o = ec->frame;
 
+        // check clients to skip in nocomp condition
         if (ec->ignored || ec->input_only || (!evas_object_visible_get(ec->frame)))
-          continue;
-        if (!e_comp_util_client_is_fullscreen(ec))
+             continue;
+
+        if (!E_INTERSECTS(0, 0, e_comp->w, e_comp->h,
+                          ec->client.x, ec->client.y, ec->client.w, ec->client.h))
           {
-             if (evas_object_data_get(ec->frame, "comp_skip")) continue;
-             return NULL;
+             continue;
           }
-        while (o)
+
+        if (evas_object_data_get(ec->frame, "comp_skip"))
+             continue;
+
+        if ((ec->client.x == 0) && (ec->client.y == 0) &&
+            ((ec->client.w) >= e_comp->w) &&
+            ((ec->client.h) >= e_comp->h) &&
+            (!ec->argb) &&
+            (!ec->shaped))
           {
-             if (_e_comp_visible_object_is_above
-                 (o, 0, 0, e_comp->w, e_comp->h)) return NULL;
-             o = evas_object_smart_parent_get(o);
+printf("(LEGACY FULL) >>>> - %s  (is okay. let's return)\n", ec->icccm.title); //jylee
+             return ec;
           }
-        return ec;
+        else
+          break;
      }
    return NULL;
 }
@@ -232,6 +242,27 @@ _e_comp_fps_update(void)
      }
 }
 
+static int red = 10;
+static void
+_e_comp_debug_update(void)
+{
+   red += 50;
+   if (red >= 0xff) red = 10;
+   if(1) //if (conf->hwc_msg_show)
+     {
+        if (!e_comp->debug_bg) {
+           e_comp->debug_bg = evas_object_rectangle_add(e_comp->evas);
+		   evas_object_layer_set(e_comp->debug_bg, E_LAYER_MAX);
+		   evas_object_name_set(e_comp->debug_bg, "e_comp->debug_bg");
+		   evas_object_move(e_comp->debug_bg, 20, 20);
+		   evas_object_resize(e_comp->debug_bg, 30, 30);
+        }
+        evas_object_color_set(e_comp->debug_bg, red, 0, 0, 128);
+        //evas_object_lower(e_comp->debug_bg);
+        evas_object_show(e_comp->debug_bg);
+     }
+}
+#if 0
 static void
 _e_comp_cb_nocomp_begin(void)
 {
@@ -313,6 +344,108 @@ _e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
    return EINA_FALSE;
 }
 
+static void
+_e_comp_nocomp_end(void)
+{
+   e_comp->nocomp_want = 0;
+   E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
+   _e_comp_cb_nocomp_end();
+   if (e_comp->nocomp_ec)
+     {
+        E_Layer layer = MAX(e_comp->nocomp_ec->saved.layer, E_LAYER_CLIENT_NORMAL);
+        Eina_Bool fs;
+
+        fs = e_comp->nocomp_ec->fullscreen;
+        e_comp->nocomp_ec->fullscreen = 0;
+        if (fs)
+          {
+             if (!e_config->allow_above_fullscreen)
+               layer = E_LAYER_CLIENT_FULLSCREEN;
+             else if (e_config->mode.presentation)
+               layer = E_LAYER_CLIENT_TOP;
+          }
+        evas_object_layer_set(e_comp->nocomp_ec->frame, layer);
+        e_comp->nocomp_ec->fullscreen = fs;
+     }
+   e_comp->nocomp_ec = NULL;
+}
+
+#else
+static void
+_e_comp_cb_nocomp_begin(void)
+{
+   E_Client *ec;
+
+   if (e_comp->nocomp) return;
+   E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
+
+   ec = _e_comp_fullscreen_check();
+   if (!ec) return;
+
+   e_comp->nocomp_ec = ec;
+   e_comp->nocomp = 1;
+   e_comp_hwc_mode_nocomp(ec); // to do
+
+   INF("HWC NOCOMP %s: obj %x", ec->icccm.title, ec->frame);
+
+   INF("JOB2...");
+   e_comp_render_queue();
+   e_comp_shape_queue_block(1);
+   ecore_event_add(E_EVENT_COMPOSITOR_DISABLE, NULL, NULL, NULL);
+}
+
+static void
+_e_comp_cb_nocomp_end(void)
+{
+   E_Client *ec;
+
+   if (!e_comp->nocomp) return;
+
+   INF("COMP RESUME!!!!!!!!!!!!");
+   if (e_comp->hwc)
+   {
+      e_comp_hwc_mode_nocomp(NULL); // to do ???
+      //      e_comp_hwc_set_full_composite();
+   }
+   E_CLIENT_FOREACH(ec)
+     {
+        if (ec->visible && (!ec->input_only))
+          e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
+
+     }
+#ifndef HAVE_WAYLAND_ONLY
+   e_comp_x_nocomp_end();
+#endif
+   e_comp->nocomp = 0;
+   e_comp_render_queue();
+   e_comp_shape_queue_block(0);
+   ecore_event_add(E_EVENT_COMPOSITOR_ENABLE, NULL, NULL, NULL);
+}
+
+static Eina_Bool
+_e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
+{
+   e_comp->nocomp_delay_timer = NULL;
+
+   //if (e_comp->nocomp_override == 0)
+     {
+        if (_e_comp_fullscreen_check()) e_comp->nocomp_want = 1;
+        _e_comp_cb_nocomp_begin();
+     }
+   return EINA_FALSE;
+}
+
+E_API void
+e_comp_nocomp_end(char *location)
+{
+   e_comp->nocomp_want = 0;
+   if (e_comp->nocomp_delay_timer) E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
+   printf("HWC : NOCOMP_END -----------------  at %s\n", location); // jylee
+   _e_comp_cb_nocomp_end();
+   e_comp->nocomp_ec = NULL;
+}
+
+#endif
 
 static void
 _e_comp_client_update(E_Client *ec)
@@ -353,32 +486,6 @@ _e_comp_client_update(E_Client *ec)
      }
 }
 
-static void
-_e_comp_nocomp_end(void)
-{
-   e_comp->nocomp_want = 0;
-   E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
-   _e_comp_cb_nocomp_end();
-   if (e_comp->nocomp_ec)
-     {
-        E_Layer layer = MAX(e_comp->nocomp_ec->saved.layer, E_LAYER_CLIENT_NORMAL);
-        Eina_Bool fs;
-
-        fs = e_comp->nocomp_ec->fullscreen;
-        e_comp->nocomp_ec->fullscreen = 0;
-        if (fs)
-          {
-             if (!e_config->allow_above_fullscreen)
-               layer = E_LAYER_CLIENT_FULLSCREEN;
-             else if (e_config->mode.presentation)
-               layer = E_LAYER_CLIENT_TOP;
-          }
-        evas_object_layer_set(e_comp->nocomp_ec->frame, layer);
-        e_comp->nocomp_ec->fullscreen = fs;
-     }
-   e_comp->nocomp_ec = NULL;
-}
-
 static Eina_Bool
 _e_comp_cb_update(void)
 {
@@ -413,6 +520,7 @@ _e_comp_cb_update(void)
         e_comp_object_render_update_del(ec->frame);
         _e_comp_client_update(ec);
      }
+   _e_comp_debug_update();
    _e_comp_fps_update();
    if (conf->fps_show)
      {
@@ -538,7 +646,8 @@ _e_comp_cb_update(void)
       }
     */
 nocomp:
-#ifdef HAVE_HWC
+//#ifdef HAVE_HWC
+#if 0
    if (e_comp->hwc)
      {
         e_comp_hwc_mode_update();
@@ -546,41 +655,45 @@ nocomp:
 
    INF("HWC: COMP UPDATE");
 #else
+   // TO DO :
+   // query if selective HWC plane can be used
+   if (!e_comp_gl_get() && !e_comp->hwc)
+     {
+        TRACE_DS_END();
+        return ECORE_CALLBACK_RENEW;
+     }
+
    ec = _e_comp_fullscreen_check();
    if (ec)
      {
-        if (conf->nocomp_fs)
+        if (1)//if (conf->nocomp_fs) jylee
           {
              if (e_comp->nocomp && e_comp->nocomp_ec)
                {
-                  E_Client *nec = NULL;
-                  for (ec = e_client_top_get(), nec = e_client_below_get(ec);
-                       (ec && nec) && (ec != nec); ec = nec, nec = e_client_below_get(ec))
-                    {
-                       if (ec == e_comp->nocomp_ec) break;
-                       if (evas_object_layer_get(ec->frame) < evas_object_layer_get(e_comp->nocomp_ec->frame)) break;
-                       if (e_client_is_stacking(ec)) continue;
-                       if (!ec->visible) continue;
-                       if (evas_object_data_get(ec->frame, "comp_skip")) continue;
-                       if (e_object_is_del(E_OBJECT(ec)) || (!e_client_util_desk_visible(ec, e_desk_current_get(ec->zone)))) continue;
-                       if (ec->override || (e_config->allow_above_fullscreen && (!e_config->mode.presentation)))
-                         {
-                            _e_comp_nocomp_end();
-                            break;
-                         }
-                       else
-                         evas_object_stack_below(ec->frame, e_comp->nocomp_ec->frame);
-                    }
+                  if (ec != e_comp->nocomp_ec)
+                     {
+                        e_comp_nocomp_end("_e_comp_cb_update : nocomp_ec != ec");
+                     }
                }
              else if ((!e_comp->nocomp) && (!e_comp->nocomp_override))
                {
-                  if (!e_comp->nocomp_delay_timer)
-                    e_comp->nocomp_delay_timer = ecore_timer_add(1.0, _e_comp_cb_nocomp_begin_timeout, NULL);
+                  if (1) // if (conf->nocomp_use_timer)
+                  	{
+					  if (!e_comp->nocomp_delay_timer){
+						e_comp->nocomp_delay_timer = ecore_timer_add(3.0, _e_comp_cb_nocomp_begin_timeout, NULL);
+						}
+                  	}
+                  else
+                  	{
+					  e_comp->nocomp_want = 1;
+                      _e_comp_cb_nocomp_begin();
+                  	}
+                  	
                }
           }
      }
    else
-     _e_comp_nocomp_end();
+     e_comp_nocomp_end("_e_comp_cb_update : ec is not fullscreen");
 #endif
 
    TRACE_DS_END();
@@ -921,9 +1034,9 @@ _e_comp_free(E_Comp *c)
 static Eina_Bool
 _e_comp_object_add(void *d EINA_UNUSED, int t EINA_UNUSED, E_Event_Comp_Object *ev)
 {
-   if ((!e_comp->nocomp) || (!e_comp->nocomp_ec)) return ECORE_CALLBACK_RENEW;
-   if (evas_object_layer_get(ev->comp_object) > MAX(e_comp->nocomp_ec->saved.layer, E_LAYER_CLIENT_NORMAL))
-     _e_comp_nocomp_end();
+	//if ((!e_comp->nocomp) || (!e_comp->nocomp_ec)) return ECORE_CALLBACK_RENEW;
+	//if (evas_object_layer_get(ev->comp_object) > MAX(e_comp->nocomp_ec->saved.layer, E_LAYER_CLIENT_NORMAL))
+	//  _e_comp_nocomp_end();
    return ECORE_CALLBACK_RENEW;
 }
 
@@ -1684,7 +1797,10 @@ E_API void
 e_comp_override_add()
 {
    e_comp->nocomp_override++;
-   if ((e_comp->nocomp_override > 0) && (e_comp->nocomp)) _e_comp_nocomp_end();
+   if ((e_comp->nocomp_override > 0) && (e_comp->nocomp)) 
+   	{
+   	e_comp_nocomp_end("e_comp_override_add");
+   	}
 }
 
 #if 0
