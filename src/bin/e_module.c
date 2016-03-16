@@ -769,6 +769,8 @@ _e_module_dialog_disable_show(const char *title, const char *body, E_Module *m)
    snprintf(buf, sizeof(buf), "%s<br>%s", body,
             _("What action should be taken with this module?<br>"));
 
+   if (!dia) return;
+
    e_dialog_title_set(dia, title);
    e_dialog_icon_set(dia, "enlightenment", 64);
    e_dialog_text_set(dia, buf);
