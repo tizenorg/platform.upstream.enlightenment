@@ -257,26 +257,6 @@ _e_comp_fps_update(void)
      }
 }
 
-static int red = 10;
-static void
-_e_comp_debug_update(void)
-{
-   red += 50;
-   if (red >= 0xff) red = 10;
-   if(1) //if (conf->hwc_msg_show)
-     {
-        if (!e_comp->debug_bg) {
-           e_comp->debug_bg = evas_object_rectangle_add(e_comp->evas);
-		   evas_object_layer_set(e_comp->debug_bg, E_LAYER_MAX);
-		   evas_object_name_set(e_comp->debug_bg, "e_comp->debug_bg");
-		   evas_object_move(e_comp->debug_bg, 20, 20);
-		   evas_object_resize(e_comp->debug_bg, 30, 30);
-        }
-        evas_object_color_set(e_comp->debug_bg, red, 0, 0, 128);
-        //evas_object_lower(e_comp->debug_bg);
-        evas_object_show(e_comp->debug_bg);
-     }
-}
 
 #ifdef LEGACY_NOCOMP
 static void
@@ -543,7 +523,6 @@ _e_comp_cb_update(void)
         e_comp_object_render_update_del(ec->frame);
         _e_comp_client_update(ec);
      }
-   _e_comp_debug_update();
    _e_comp_fps_update();
    if (conf->fps_show)
      {
@@ -1240,7 +1219,7 @@ e_comp_init(void)
      {
         conf->max_unmapped_pixels = 32 * 1024;
         conf->keep_unmapped = 1;
-        conf->hwc = 1;
+        //conf->hwc = 1;
         conf->nocomp_use_timer = 1;
         conf->nocomp_begin_timeout = 2.0;
      }
