@@ -1240,6 +1240,9 @@ e_comp_init(void)
      {
         conf->max_unmapped_pixels = 32 * 1024;
         conf->keep_unmapped = 1;
+        conf->hwc = 1;
+        conf->nocomp_use_timer = 1;
+        conf->nocomp_begin_timeout = 2.0;
      }
    else
      conf = e_comp_cfdata_config_new();
@@ -1376,8 +1379,8 @@ out:
 #endif
 
 #ifdef HAVE_HWC
-   // soolim : hwc default on...
-   //if (conf->hwc)
+   // TO DO : check hwc init condition
+   if (conf->hwc)
      {
         e_comp->hwc = e_comp_hwc_init();
         if (!e_comp->hwc)
