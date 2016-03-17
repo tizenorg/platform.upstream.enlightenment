@@ -1,9 +1,5 @@
 #include "e.h"
 
-#ifdef HAVE_HWC
-# include "e_comp_hwc.h"
-#endif
-
 /* data keys:
 
    = keys that return objects =

@@ -52,6 +52,8 @@ e_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd)
    E_CONFIG_VAL(D, T, send_flush, UCHAR);
    E_CONFIG_VAL(D, T, send_dump, UCHAR);
    E_CONFIG_VAL(D, T, nocomp_fs, UCHAR);
+   E_CONFIG_VAL(D, T, nocomp_use_timer, UCHAR);
+   E_CONFIG_VAL(D, T, nocomp_begin_timeout, DOUBLE);
    E_CONFIG_VAL(D, T, hwc, UCHAR);
    E_CONFIG_VAL(D, T, nofade, UCHAR);
    E_CONFIG_VAL(D, T, smooth_windows, UCHAR);
@@ -108,6 +110,8 @@ e_comp_cfdata_config_new(void)
    cfg->send_flush = 1; // implement
    cfg->send_dump = 1; // implement
    cfg->nocomp_fs = 1;
+   cfg->nocomp_use_timer = 1;
+   cfg->nocomp_begin_timeout = 2.0;
    cfg->hwc = 1;
    cfg->nofade = 0;
    cfg->smooth_windows = 0; // 1 if gl, 0 if not

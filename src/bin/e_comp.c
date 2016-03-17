@@ -277,7 +277,8 @@ _e_comp_debug_update(void)
         evas_object_show(e_comp->debug_bg);
      }
 }
-#if 0
+
+#ifdef LEGACY_NOCOMP
 static void
 _e_comp_cb_nocomp_begin(void)
 {
@@ -416,12 +417,14 @@ _e_comp_cb_nocomp_end(void)
 
    if (!e_comp->nocomp) return;
 
-   INF("COMP RESUME!!!!!!!!!!!!");
    if (e_comp->hwc)
    {
       e_comp_hwc_mode_nocomp(NULL); // to do ???
       //      e_comp_hwc_set_full_composite();
    }
+
+   INF("COMP RESUME!");
+
    E_CLIENT_FOREACH(ec)
      {
         if (ec->visible && (!ec->input_only))
@@ -454,8 +457,8 @@ E_API void
 e_comp_nocomp_end(char *location)
 {
    e_comp->nocomp_want = 0;
-   if (e_comp->nocomp_delay_timer) E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
-   printf("HWC : NOCOMP_END -----------------  at %s\n", location); // jylee
+   E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
+   INF("HWC : NOCOMP_END at %s\n", location);
    _e_comp_cb_nocomp_end();
    e_comp->nocomp_ec = NULL;
 }
@@ -660,16 +663,8 @@ _e_comp_cb_update(void)
       t0 = t;
       }
     */
-nocomp:
-//#ifdef HAVE_HWC
-#if 0
-   if (e_comp->hwc)
-     {
-        e_comp_hwc_mode_update();
-     }
 
-   INF("HWC: COMP UPDATE");
-#else
+nocomp:
    // TO DO :
    // query if selective HWC plane can be used
    if (!e_comp_gl_get() && !e_comp->hwc)
@@ -686,30 +681,29 @@ nocomp:
              if (e_comp->nocomp && e_comp->nocomp_ec)
                {
                   if (ec != e_comp->nocomp_ec)
-                     {
-                        e_comp_nocomp_end("_e_comp_cb_update : nocomp_ec != ec");
-                     }
+                    e_comp_nocomp_end("_e_comp_cb_update : nocomp_ec != ec");
                }
              else if ((!e_comp->nocomp) && (!e_comp->nocomp_override))
                {
-                  if (1) // if (conf->nocomp_use_timer)
-                  	{
-					  if (!e_comp->nocomp_delay_timer){
-						e_comp->nocomp_delay_timer = ecore_timer_add(3.0, _e_comp_cb_nocomp_begin_timeout, NULL);
-						}
-                  	}
+                  if (conf->nocomp_use_timer)
+                  {
+                       if (!e_comp->nocomp_delay_timer)
+                       {
+                            e_comp->nocomp_delay_timer = ecore_timer_add(conf->nocomp_begin_timeout,
+                                                                         _e_comp_cb_nocomp_begin_timeout,
+                                                                         NULL);
+                       }
+                    }
                   else
-                  	{
-					  e_comp->nocomp_want = 1;
-                      _e_comp_cb_nocomp_begin();
-                  	}
-                  	
+                    {
+                       e_comp->nocomp_want = 1;
+                       _e_comp_cb_nocomp_begin();
+                    }
                }
           }
      }
    else
      e_comp_nocomp_end("_e_comp_cb_update : ec is not fullscreen");
-#endif
 
    TRACE_DS_END();
 
