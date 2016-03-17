@@ -1825,6 +1825,9 @@ _e_comp_wl_buffer_cb_destroy(struct wl_listener *listener, void *data EINA_UNUSE
              ec->frame = NULL;
           }
         e_object_unref(E_OBJECT(ec));
+
+        if (e_pixmap_resource_get(ec->pixmap) == buffer)
+          e_pixmap_resource_set(ec->pixmap, NULL);
      }
 
    wl_signal_emit(&buffer->destroy_signal, buffer);
