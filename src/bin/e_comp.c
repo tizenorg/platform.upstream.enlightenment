@@ -183,10 +183,12 @@ _e_comp_fullscreen_check(void)
    E_CLIENT_REVERSE_FOREACH(ec)
      {
         Evas_Object *o = ec->frame;
+        E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+        int ow, oh, vw, vh;
 
         // check clients to skip in nocomp condition
         if (ec->ignored || ec->input_only || (!evas_object_visible_get(ec->frame)))
-             continue;
+          continue;
 
         if (!E_INTERSECTS(0, 0, e_comp->w, e_comp->h,
                           ec->client.x, ec->client.y, ec->client.w, ec->client.h))
@@ -195,15 +197,28 @@ _e_comp_fullscreen_check(void)
           }
 
         if (evas_object_data_get(ec->frame, "comp_skip"))
-             continue;
+          continue;
+
+
+        if ((!cdata->buffer_ref.buffer) &&
+            (cdata->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_NATIVE))
+          break;
+
+        ow = cdata->width_from_buffer;
+        oh = cdata->height_from_buffer;
+        vw = cdata->width_from_viewport;
+        vh = cdata->height_from_viewport;
 
         if ((ec->client.x == 0) && (ec->client.y == 0) &&
             ((ec->client.w) >= e_comp->w) &&
             ((ec->client.h) >= e_comp->h) &&
+            (ow >= e_comp->w) &&
+            (oh >= e_comp->h) &&
+            (vw == ow) &&
+            (vh == oh) &&
             (!ec->argb) &&
             (!ec->shaped))
           {
-printf("(LEGACY FULL) >>>> - %s  (is okay. let's return)\n", ec->icccm.title); //jylee
              return ec;
           }
         else
