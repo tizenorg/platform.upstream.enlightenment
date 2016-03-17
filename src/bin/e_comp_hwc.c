@@ -767,7 +767,7 @@ e_comp_hwc_display_client(E_Client *ec)
      }
 }
 
-EINTERN void
+EINTERN Eina_Bool
 e_comp_hwc_mode_update(void)
 {
    E_Comp_Hwc *hwc = g_hwc;
@@ -800,15 +800,17 @@ e_comp_hwc_mode_update(void)
              wl_surface = _e_comp_hwc_wl_surface_get(ec);
              if (!wl_surface)
                {
+                  // TODO: check wl_surface sanity
                   ERR("no wl_surface");
-                  continue;
+                  return EINA_FALSE;
                }
 
              /* set this server queue to associated with wl_surface in order to share surfaces with client */
              if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, wl_surface, 0))
                {
+                  // TODO: check wl_surface sanity
                   ERR("no wl_surface");
-                  continue;
+                  return EINA_FALSE;
                }
 #endif
              hwc_output->mode = E_HWC_MODE_NO_COMPOSITE;
@@ -823,8 +825,9 @@ e_comp_hwc_mode_update(void)
              /* unset server queue */
              if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, NULL, 0))
                {
+                  // TODO: check wl_surface sanity
                   ERR("no wl_surface");
-                  continue;
+                  return EINA_FALSE;
                }
 #endif
              hwc_output->mode = E_HWC_MODE_COMPOSITE;
@@ -833,8 +836,10 @@ e_comp_hwc_mode_update(void)
              e_comp->nocomp_ec = NULL;
           }
      }
+   return EINA_TRUE;
 }
-EINTERN void
+
+EINTERN Eina_Bool
 e_comp_hwc_mode_nocomp(E_Client *ec)
 {
    E_Comp_Hwc *hwc = g_hwc;
@@ -862,15 +867,17 @@ e_comp_hwc_mode_nocomp(E_Client *ec)
              wl_surface = _e_comp_hwc_wl_surface_get(ec);
              if (!wl_surface)
                {
+                  // TODO: check wl_surface sanity
                   ERR("no wl_surface");
-                  continue;
+                  return EINA_FALSE;
                }
 
              /* set this server queue to associated with wl_surface in order to share surfaces with client */
              if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, wl_surface, 0))
                {
+                  // TODO: check wl_surface sanity
                   ERR("no wl_surface");
-                  continue;
+                  return EINA_FALSE;
                }
 #endif
 
@@ -884,46 +891,14 @@ e_comp_hwc_mode_nocomp(E_Client *ec)
              /* unset server queue */
              if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, NULL, 0))
                {
+                  // TODO: check wl_surface sanity
                   ERR("no wl_surface");
-                  continue;
+                  return EINA_FALSE;
                }
 #endif
              hwc_output->mode = E_HWC_MODE_COMPOSITE;
              hwc_output->primary_layer->ec = NULL;
           }
      }
+   return EINA_TRUE;
 }
-
-EINTERN void
-e_comp_hwc_set_full_composite(char *location)
-{
-   //if (!e_comp->nocomp) return;
-
-   //e_comp->nocomp = EINA_FALSE;
-   //e_comp->nocomp_ec = NULL;
-
-#if USE_FIXED_SCANOUT
-   E_Comp_Hwc *hwc = g_hwc;
-   E_Comp_Hwc_Output *hwc_output;
-   Eina_List *l_o, *ll_o;
-   tdm_output_conn_status conn_status;
-
-   EINA_LIST_FOREACH_SAFE(hwc->hwc_outputs, l_o, ll_o, hwc_output)
-     {
-        if (!hwc_output) continue;
-        tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
-        // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
-        if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
-
-        /* unset server queue */
-        if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, NULL, 0))
-          {
-             ERR("no wl_surface");
-             continue;
-          }
-     }
-#endif
-
-   INF("NOCOMP END at %s", location);
-}
-

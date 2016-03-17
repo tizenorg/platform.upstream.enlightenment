@@ -391,18 +391,22 @@ static void
 _e_comp_cb_nocomp_begin(void)
 {
    E_Client *ec;
+   Eina_Bool mode_set = EINA_FALSE;
 
+   if (!e_comp->hwc) return;
    if (e_comp->nocomp) return;
    E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
 
    ec = _e_comp_fullscreen_check();
    if (!ec) return;
 
+#ifdef HAVE_HWC
+   mode_set = e_comp_hwc_mode_nocomp(ec);
+#endif
+   if (!mode_set) return;
+
    e_comp->nocomp_ec = ec;
    e_comp->nocomp = 1;
-   e_comp_hwc_mode_nocomp(ec); // to do
-
-   INF("HWC NOCOMP %s: obj %x", ec->icccm.title, ec->frame);
 
    INF("JOB2...");
    e_comp_render_queue();
@@ -414,14 +418,15 @@ static void
 _e_comp_cb_nocomp_end(void)
 {
    E_Client *ec;
+   Eina_Bool mode_set = EINA_FALSE;
 
    if (!e_comp->nocomp) return;
+   if (!e_comp->hwc) return;
 
-   if (e_comp->hwc)
-   {
-      e_comp_hwc_mode_nocomp(NULL); // to do ???
-      //      e_comp_hwc_set_full_composite();
-   }
+#ifdef HAVE_HWC
+   mode_set = e_comp_hwc_mode_nocomp(NULL);
+#endif
+   if (!mode_set) return;
 
    INF("COMP RESUME!");
 
@@ -445,7 +450,7 @@ _e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
 {
    e_comp->nocomp_delay_timer = NULL;
 
-   //if (e_comp->nocomp_override == 0)
+   if (e_comp->nocomp_override == 0)
      {
         if (_e_comp_fullscreen_check()) e_comp->nocomp_want = 1;
         _e_comp_cb_nocomp_begin();
@@ -458,7 +463,7 @@ e_comp_nocomp_end(char *location)
 {
    e_comp->nocomp_want = 0;
    E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
-   INF("HWC : NOCOMP_END at %s\n", location);
+   INF("HWC : NOCOMP_END at %s\n", location); 
    _e_comp_cb_nocomp_end();
    e_comp->nocomp_ec = NULL;
 }
@@ -686,7 +691,7 @@ nocomp:
              else if ((!e_comp->nocomp) && (!e_comp->nocomp_override))
                {
                   if (conf->nocomp_use_timer)
-                  {
+                    {
                        if (!e_comp->nocomp_delay_timer)
                        {
                             e_comp->nocomp_delay_timer = ecore_timer_add(conf->nocomp_begin_timeout,
@@ -1806,10 +1811,10 @@ E_API void
 e_comp_override_add()
 {
    e_comp->nocomp_override++;
-   if ((e_comp->nocomp_override > 0) && (e_comp->nocomp)) 
-   	{
-   	e_comp_nocomp_end("e_comp_override_add");
-   	}
+   if ((e_comp->nocomp_override > 0) && (e_comp->nocomp))
+     {
+        e_comp_nocomp_end(__FUNCTION__);
+     }
 }
 
 #if 0
@@ -1944,7 +1949,7 @@ e_comp_grab_input(Eina_Bool mouse, Eina_Bool kbd)
      mwin = e_comp->ee_win;
    if (kbd || e_comp->input_mouse_grabs)
      kwin = e_comp->ee_win;
-   e_comp_override_add();
+   //e_comp_override_add();
    if ((e_comp->input_mouse_grabs && e_comp->input_key_grabs) ||
        e_grabinput_get(mwin, 0, kwin))
      {
@@ -1970,7 +1975,7 @@ e_comp_ungrab_input(Eina_Bool mouse, Eina_Bool kbd)
      mwin = e_comp->ee_win;
    if (kbd && (!e_comp->input_key_grabs))
      kwin = e_comp->ee_win;
-   e_comp_override_timed_pop();
+   //e_comp_override_timed_pop();
    if ((!mwin) && (!kwin)) return;
    e_grabinput_release(mwin, kwin);
    evas_event_feed_mouse_out(e_comp->evas, 0, NULL);
