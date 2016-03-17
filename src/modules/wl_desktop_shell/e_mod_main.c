@@ -541,11 +541,6 @@ _e_shell_cb_shell_surface_get(struct wl_client *client, struct wl_resource *reso
         return;
      }
 
-   EC_CHANGED(ec);
-   ec->new_client = ec->netwm.ping = EINA_TRUE;
-   e_comp->new_clients++;
-   e_client_unignore(ec);
-
    /* get the client data */
    if (!(cdata = ec->comp_data))
      {
@@ -553,6 +548,15 @@ _e_shell_cb_shell_surface_get(struct wl_client *client, struct wl_resource *reso
                                WL_DISPLAY_ERROR_INVALID_OBJECT,
                                "No Data For Client");
         return;
+     }
+
+   /* if first creation */
+   if (!cdata->shell.map)
+     {
+        EC_CHANGED(ec);
+        ec->new_client = ec->netwm.ping = EINA_TRUE;
+        e_comp->new_clients++;
+        e_client_unignore(ec);
      }
 
    /* check for existing shell surface */
@@ -1138,11 +1142,6 @@ _e_xdg_shell_cb_surface_get(struct wl_client *client, struct wl_resource *resour
         return;
      }
 
-   EC_CHANGED(ec);
-   ec->new_client = ec->netwm.ping = EINA_TRUE;
-   e_comp->new_clients++;
-   e_client_unignore(ec);
-
    /* get the client data */
    if (!(cdata = ec->comp_data))
      {
@@ -1150,6 +1149,15 @@ _e_xdg_shell_cb_surface_get(struct wl_client *client, struct wl_resource *resour
                                WL_DISPLAY_ERROR_INVALID_OBJECT,
                                "No Data For Client");
         return;
+     }
+
+   /* if first creation */
+   if (!cdata->shell.map)
+     {
+        EC_CHANGED(ec);
+        ec->new_client = ec->netwm.ping = EINA_TRUE;
+        e_comp->new_clients++;
+        e_client_unignore(ec);
      }
 
    /* check for existing shell surface */
