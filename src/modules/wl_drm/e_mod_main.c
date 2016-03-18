@@ -113,12 +113,12 @@ _e_mod_drm_cb_input_device_add(void *data, int type, void *event)
           }
         comp->wl_comp_data->ptr.num_devices++;
      }
-   else if (e->caps & EVDEV_SEAT_KEYBOARD)
+   if (e->caps & EVDEV_SEAT_KEYBOARD)
      {
         comp->wl_comp_data->kbd.num_devices++;
         e_comp_wl_input_keyboard_enabled_set(EINA_TRUE);
      }
-   else if (e->caps & EVDEV_SEAT_TOUCH)
+   if (e->caps & EVDEV_SEAT_TOUCH)
      {
         e_comp_wl_input_touch_enabled_set(EINA_TRUE);
         comp->wl_comp_data->touch.num_devices++;
