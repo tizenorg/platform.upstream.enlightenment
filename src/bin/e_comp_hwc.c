@@ -15,7 +15,7 @@
 #define CLEAR(x) memset(&(x), 0, sizeof (x))
 #endif
 
-#define USE_FIXED_SCANOUT 0
+#define USE_FIXED_SCANOUT 1
 
 typedef struct _E_Comp_Hwc E_Comp_Hwc;
 typedef struct _E_Comp_Hwc_Output E_Comp_Hwc_Output;
