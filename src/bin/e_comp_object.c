@@ -262,6 +262,7 @@ _e_comp_object_cb_mirror_show(void *data, Evas *e EINA_UNUSED, Evas_Object *obj 
 
    if (e_comp->hwc && e_comp->nocomp_ec != cw->ec)
      e_comp_nocomp_end(__FUNCTION__);
+}
 
 static void
 _e_comp_object_cb_mirror_hide(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
@@ -590,7 +591,7 @@ _e_comp_object_shadow_setup(E_Comp_Object *cw)
                  ((name) && (m->name) && (!e_util_glob_match(name, m->name))))
                continue;
              if (!_e_comp_object_shadow_client_match(cw->ec, m)) continue;
-             
+
              focus = m->focus;
              urgent = m->urgent;
              no_shadow = m->no_shadow;
@@ -1411,7 +1412,7 @@ _e_comp_intercept_stack_helper(E_Comp_Object *cw, Evas_Object *stack, E_Comp_Obj
           }
         if (!o)
           /* top client layer window hasn't been stacked yet. this probably shouldn't happen?
-           * return here since the top client layer window 
+           * return here since the top client layer window
            */
           {
              E_Client *ec;
@@ -2677,7 +2678,7 @@ _e_comp_object_util_show(void *data EINA_UNUSED, Evas_Object *obj)
      }
    else
      e_comp_shape_queue();
-   
+
    evas_object_show(obj);
    if (ref)
      {
@@ -2738,7 +2739,7 @@ _e_comp_object_util_moveresize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj
         evas_object_geometry_get(obj, NULL, NULL, &w, &h);
         e_zoomap_child_resize(data, w, h);
      }
-     
+
    if (evas_object_visible_get(obj))
      e_comp_shape_queue();
 }
