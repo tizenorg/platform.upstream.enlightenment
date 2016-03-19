@@ -191,46 +191,6 @@ _e_comp_hwc_get_evas_engine_info_gl_drm(E_Comp_Hwc *hwc)
    return hwc->einfo;
 }
 
-static E_Client *
-_e_comp_hwc_fullscreen_check(void)
-{
-   E_Client *ec;
-   Evas_Object *o;
-
-   for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
-     {
-        ec = evas_object_data_get(o, "E_Client");
-        if (!ec) continue;
-        if (ec->ignored || ec->input_only || (!evas_object_visible_get(ec->frame)))
-        continue;
-
-        if (e_comp_object_mirror_visibility_check(ec->frame))
-          {
-             break;
-          }
-
-        if (!E_INTERSECTS(0, 0, e_comp->w, e_comp->h,ec->client.x, ec->client.y, ec->client.w, ec->client.h))
-          {
-             continue;
-          }
-
-        if ((ec->client.x == 0) && (ec->client.y == 0) &&
-            ((ec->client.w) >= e_comp->w) &&
-            ((ec->client.h) >= e_comp->h) &&
-            (!ec->argb) &&
-            (!ec->shaped))
-          {
-             return ec;
-          }
-        else
-          {
-             break;
-          }
-     }
-
-   return NULL;
-}
-
 E_Comp_Hwc_Output *_e_comp_hwc_find_hwc_output(Ecore_Drm_Output *drm_output)
 {
    E_Comp_Hwc_Output * hwc_output = NULL;
@@ -765,78 +725,6 @@ e_comp_hwc_display_client(E_Client *ec)
              break;
           }
      }
-}
-
-EINTERN Eina_Bool
-e_comp_hwc_mode_update(void)
-{
-   E_Comp_Hwc *hwc = g_hwc;
-   E_Client *ec = NULL;
-   E_Comp_Hwc_Output *hwc_output;
-   Eina_List *l_o, *ll_o;
-   tdm_output_conn_status conn_status;
-
-   EINA_LIST_FOREACH_SAFE(hwc->hwc_outputs, l_o, ll_o, hwc_output)
-     {
-        if (!hwc_output) continue;
-        tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
-        // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
-        if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
-        /* make the policy to configure the layers with the client candidates */
-        ec = _e_comp_hwc_fullscreen_check();
-        if (ec)
-          {
-             if (e_comp->nocomp && e_comp->nocomp_ec != ec)
-               {
-                  INF("HWC: NOCOMPOSITE Mode ec(%p) ==> ec(%p)", e_comp->nocomp_ec, ec);
-               }
-             else
-               {
-                  INF("HWC: NOCOMPOSITE Mode ec(%p)", ec);
-               }
-
-#if USE_FIXED_SCANOUT
-             struct wl_resource *wl_surface = NULL;
-             wl_surface = _e_comp_hwc_wl_surface_get(ec);
-             if (!wl_surface)
-               {
-                  // TODO: check wl_surface sanity
-                  ERR("no wl_surface");
-                  return EINA_FALSE;
-               }
-
-             /* set this server queue to associated with wl_surface in order to share surfaces with client */
-             if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, wl_surface, 0))
-               {
-                  // TODO: check wl_surface sanity
-                  ERR("no wl_surface");
-                  return EINA_FALSE;
-               }
-#endif
-             hwc_output->mode = E_HWC_MODE_NO_COMPOSITE;
-             hwc_output->primary_layer->ec = ec;
-             e_comp->nocomp = EINA_TRUE;
-             e_comp->nocomp_ec = ec;
-          }
-        else
-          {
-             INF("HWC: COMPOSITE Mode");
-#if USE_FIXED_SCANOUT
-             /* unset server queue */
-             if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, NULL, 0))
-               {
-                  // TODO: check wl_surface sanity
-                  ERR("no wl_surface");
-                  return EINA_FALSE;
-               }
-#endif
-             hwc_output->mode = E_HWC_MODE_COMPOSITE;
-             hwc_output->primary_layer->ec = NULL;
-             e_comp->nocomp = EINA_FALSE;
-             e_comp->nocomp_ec = NULL;
-          }
-     }
-   return EINA_TRUE;
 }
 
 EINTERN Eina_Bool
