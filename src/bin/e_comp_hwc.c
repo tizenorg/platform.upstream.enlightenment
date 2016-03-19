@@ -300,7 +300,7 @@ _e_comp_hwc_find_primary_layer(E_Comp_Hwc_Output *hwc_output)
         if (!hwc_layer) continue;
         tdm_layer_get_capabilities(hwc_layer->tlayer, &capa);
 
-        if (capa & (TDM_LAYER_CAPABILITY_PRIMARY|TDM_LAYER_CAPABILITY_GRAPHIC))
+        if (capa & (TDM_LAYER_CAPABILITY_PRIMARY))
           {
              printf ("\tTDM_LAYER_CAPABILITY_PRIMARY layer found : %d\n", hwc_layer->index);
              return hwc_layer;
