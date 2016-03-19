@@ -15,6 +15,8 @@
 #define CLEAR(x) memset(&(x), 0, sizeof (x))
 #endif
 
+#define HWC_SURFACE_TYPE_PRIMARY 7777;
+
 #define USE_FIXED_SCANOUT 1
 
 typedef struct _E_Comp_Hwc E_Comp_Hwc;
@@ -106,15 +108,137 @@ _e_comp_hwc_wl_surface_get(E_Client *ec)
    struct wl_resource *wl_surface = NULL;
 
    cdata = (E_Comp_Wl_Client_Data *)e_pixmap_cdata_get(ec->pixmap);
-   if (!cdata)
-     {
-        ERR("no cdata");
-        return NULL;
-     }
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cdata, NULL);
+
    wl_surface = cdata->wl_surface;
    if (!wl_surface) return NULL;
 
    return wl_surface;
+}
+
+static void
+_e_comp_hwc_client_queue_buffer_destroy_cb(struct wl_client *client, struct wl_resource *wl_buffer)
+{
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+   tbm_surface_h tsurface = NULL;
+   //struct wl_tbm_buffer *buffer = wl_resource_get_user_data(wl_buffer);
+
+   EINA_SAFETY_ON_NULL_RETURN(wl_comp_data);
+
+   tsurface = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, wl_buffer);
+   EINA_SAFETY_ON_NULL_RETURN(tsurface);
+
+   // TODO: do something
+
+   // When NOCOMP A ==> COMP
+   // 1. find the surface queue of the hwc layers which contains the tbm surface
+   // 2. enqueue the tbm surface to the surface queue
+
+   // when NOCOMP A ==> NOCOMP B
+   // 1. export the tbm_surface to the B
+}
+
+static const struct wl_buffer_interface _e_comp_hwc_client_queue_buffer_impementation = {
+	_e_comp_hwc_client_queue_buffer_destroy_cb
+};
+
+static Eina_Bool
+_e_comp_hwc_client_can_activate(E_Client * ec, E_Comp_Hwc_Layer *hwc_layer)
+{
+	struct wayland_tbm_client_queue * cqueue = NULL;
+	struct wl_resource *wl_surface = NULL;
+	E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+
+	EINA_SAFETY_ON_NULL_RETURN_VAL(wl_comp_data, EINA_FALSE);
+
+	wl_surface = _e_comp_hwc_wl_surface_get(ec);
+	EINA_SAFETY_ON_NULL_RETURN_VAL(wl_surface, EINA_FALSE);
+
+	cqueue = wayland_tbm_server_client_queue_get(wl_comp_data->tbm.server, wl_surface);
+	EINA_SAFETY_ON_NULL_RETURN_VAL(cqueue, EINA_FALSE);
+
+   /* check if the layer queue is dequeueable */
+	if(!tbm_surface_queue_can_dequeue(hwc_layer->tqueue, 0))
+	  {
+		 WRN("fail to tbm_surface_queue_can_dequeue");
+         return EINA_FALSE;
+	  }
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_e_comp_hwc_client_activate(E_Client *ec, E_Comp_Hwc_Layer *hwc_layer)
+{
+   struct wayland_tbm_client_queue * cqueue = NULL;
+   struct wl_resource *wl_surface = NULL;
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+   tbm_surface_h tsurface = NULL;
+   tbm_surface_queue_error_e tsq_err = TBM_SURFACE_QUEUE_ERROR_NONE;
+   wl_resource *wl_buffer = NULL;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_comp_data, EINA_FALSE);
+
+   wl_surface = _e_comp_hwc_wl_surface_get(ec);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_surface, EINA_FALSE);
+
+   cqueue = wayland_tbm_server_client_queue_get(wl_comp_data->tbm.server, wl_surface);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cqueue, EINA_FALSE);
+
+   /* activate the client queue */
+   if (!wayland_tbm_server_client_queue_active(cqueue, 0))
+     {
+        ERR("fail to wayland_tbm_server_client_queue_active");
+        return EINA_FALSE;
+     }
+
+// all dequeue the surface????
+
+   /* dequeue the tbm_surface from the layer queue */
+   tsq_err = tbm_surface_queue_dequeue(hwc_layer->tqueue, ,&tsurface);
+   if (tsq_err != TBM_SURFACE_QUEUE_ERROR_NONE)
+	 {
+		ERR("fail to tbm_surface_queue_dequeue");
+        return EINA_FALSE;
+	 }
+
+   /* export the tbm_surface(wl_buffer) to the client_queue */
+   wl_buffer = wayland_tbm_server_client_queue_export_buffer(cqueue, tsurface, HWC_SURFACE_TYPE_PRIMARY);
+   if (!wl_buffer)
+   {
+      ERR("fail to get export buffer");
+      tbm_surface_queue_dequeue(hwc_layer->tqueue, tsurface);
+      return EINA_FALSE;
+   }
+
+   /* set the action when the buffer destroy */
+   wayland_tbm_server_set_buffer_implementation(wl_buffer, _e_comp_hwc_client_queue_buffer_impementation, NULL);
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_e_comp_hwc_client_deactivate(E_Client *ec)
+{
+   struct wayland_tbm_client_queue * cqueue = NULL;
+   struct wl_resource *wl_surface = NULL;
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_comp_data, EINA_FALSE);
+
+   wl_surface = _e_comp_hwc_wl_surface_get(ec);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_surface, EINA_FALSE);
+
+   cqueue = wayland_tbm_server_client_queue_get(wl_comp_data->tbm.server, wl_surface);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cqueue, EINA_FALSE);
+
+   if (!wayland_tbm_server_client_queue_deactive(cqueue, 0))
+     {
+        ERR("fail to wayland_tbm_server_client_queue_deactive");
+        return EINA_FALSE;
+     }
+
+   return EINA_TRUE;
 }
 
 static Eina_Bool
@@ -136,7 +260,6 @@ _e_comp_hwc_queue_dequeue(tbm_surface_queue_h tqueue)
    tbm_surface_h tsurface = NULL;
    tbm_surface_queue_error_e tsq_err = 0;
 
-   tsq_err = tbm_surface_queue_dequeue(tqueue, &tsurface);
    if (!tsurface
        && tbm_surface_queue_can_dequeue(tqueue, 1) == 1)
      {
@@ -433,18 +556,6 @@ _e_comp_hwc_display_canvas(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void *ev
                   ERR("no hwc_layer->tqueue");
                   continue;
                }
-#if USE_FIXED_SCANOUT
-             if (!hwc_layer->tserver_queue)
-               {
-                  // TODO: destory?
-                  hwc_layer->tserver_queue = wayland_tbm_server_create_queue(e_comp->wl_comp_data->tbm.server, hwc_layer->tqueue, 7777);
-                  if (!hwc_layer->tserver_queue)
-                    {
-						ERR("no hwc_layer->tserver_queue");
-						continue;
-                    }
-               }
-#endif
           }
 
 		/* aquire */
@@ -745,27 +856,35 @@ e_comp_hwc_mode_nocomp(E_Client *ec)
 
         if (ec)
           {
-             if (e_comp->nocomp && e_comp->nocomp_ec != ec)
-               INF("HWC: NOCOMPOSITE Mode ec(%p) ==> ec(%p)", e_comp->nocomp_ec, ec);
-             else
-               INF("HWC: NOCOMPOSITE Mode ec(%p)", ec);
-
 #if USE_FIXED_SCANOUT
-             struct wl_resource *wl_surface = NULL;
-             wl_surface = _e_comp_hwc_wl_surface_get(ec);
-             if (!wl_surface)
+             if (!_e_comp_hwc_client_can_activate(ec, hwc_output->primary_layer))
+				 {
+					ERR("fail to _e_comp_hwc_client_activate");
+					goto fail;
+				 }
+#endif
+
+             if (e_comp->nocomp && e_comp->nocomp_ec != ec)
                {
-                  // TODO: check wl_surface sanity
-                  ERR("no wl_surface");
-                  return EINA_FALSE;
+                  INF("HWC: CHANGE NOCOMPOSITE Mode ec(%p) ==> ec(%p)", e_comp->nocomp_ec, ec);
+#if USE_FIXED_SCANOUT
+                  /* activate the wl client queue */
+                  if (!_e_comp_hwc_client_deactivate(e_comp->nocomp_ec))
+                    {
+                       ERR("fail to _e_comp_hwc_client_activate");
+                       goto fail;
+                    }
+#endif
                }
 
-             /* set this server queue to associated with wl_surface in order to share surfaces with client */
-             if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, wl_surface, 0))
+             INF("HWC: NOCOMPOSITE Mode ec(%p)", ec);
+
+#if USE_FIXED_SCANOUT
+             /* activate the wl client queue */
+             if (!_e_comp_hwc_client_activate(ec))
                {
-                  // TODO: check wl_surface sanity
-                  ERR("no wl_surface");
-                  return EINA_FALSE;
+                  ERR("fail to _e_comp_hwc_client_activate");
+                  goto fail;
                }
 #endif
 
@@ -776,12 +895,11 @@ e_comp_hwc_mode_nocomp(E_Client *ec)
           {
              INF("HWC: COMPOSITE Mode");
 #if USE_FIXED_SCANOUT
-             /* unset server queue */
-             if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, NULL, 0))
+             /* activate the wl client queue */
+             if (!_e_comp_hwc_client_deactivate(e_comp->nocomp_ec))
                {
-                  // TODO: check wl_surface sanity
-                  ERR("no wl_surface");
-                  return EINA_FALSE;
+                  ERR("fail to _e_comp_hwc_client_activate");
+                  goto fail;
                }
 #endif
              hwc_output->mode = E_HWC_MODE_COMPOSITE;
@@ -789,4 +907,10 @@ e_comp_hwc_mode_nocomp(E_Client *ec)
           }
      }
    return EINA_TRUE;
+#if USE_FIXED_SCANOUT
+fail:
+   // TODO: sanity check
+
+   return EINA_FALSE;
+#endif
 }
