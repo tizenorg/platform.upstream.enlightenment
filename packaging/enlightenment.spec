@@ -31,6 +31,8 @@ BuildRequires:  pkgconfig(screenshooter-client)
 BuildRequires:  pkgconfig(tizen-extension-server)
 BuildRequires:  pkgconfig(wayland-tbm-server)
 BuildRequires:  pkgconfig(ecore-drm)
+BuildRequires:  pkgconfig(libtdm)
+BuildRequires:  pkgconfig(gbm)
 Requires:       libwayland-extension-server
 
 %description
