@@ -3,6 +3,10 @@
 # include "e_comp_wl.h"
 #endif
 
+#ifdef HAVE_HWC
+# include "e_comp_hwc.h"
+#endif
+
 #define OVER_FLOW 1
 //#define SHAPE_DEBUG
 //#define BORDER_ZOOMAPS
@@ -178,21 +182,46 @@ _e_comp_fullscreen_check(void)
    E_CLIENT_REVERSE_FOREACH(ec)
      {
         Evas_Object *o = ec->frame;
+        E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+        int ow, oh, vw, vh;
 
+        // check clients to skip in nocomp condition
         if (ec->ignored || ec->input_only || (!evas_object_visible_get(ec->frame)))
           continue;
-        if (!e_comp_util_client_is_fullscreen(ec))
+
+        if (!E_INTERSECTS(0, 0, e_comp->w, e_comp->h,
+                          ec->client.x, ec->client.y, ec->client.w, ec->client.h))
           {
-             if (evas_object_data_get(ec->frame, "comp_skip")) continue;
-             return NULL;
+             continue;
           }
-        while (o)
+
+        if (evas_object_data_get(ec->frame, "comp_skip"))
+          continue;
+
+
+        if ((!cdata->buffer_ref.buffer) &&
+            (cdata->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_NATIVE))
+          break;
+
+        ow = cdata->width_from_buffer;
+        oh = cdata->height_from_buffer;
+        vw = cdata->width_from_viewport;
+        vh = cdata->height_from_viewport;
+
+        if ((ec->client.x == 0) && (ec->client.y == 0) &&
+            ((ec->client.w) >= e_comp->w) &&
+            ((ec->client.h) >= e_comp->h) &&
+            (ow >= e_comp->w) &&
+            (oh >= e_comp->h) &&
+            (vw == ow) &&
+            (vh == oh) &&
+            (!ec->argb) &&
+            (!ec->shaped))
           {
-             if (_e_comp_visible_object_is_above
-                 (o, 0, 0, e_comp->w, e_comp->h)) return NULL;
-             o = evas_object_smart_parent_get(o);
+             return ec;
           }
-        return ec;
+        else
+          break;
      }
    return NULL;
 }
@@ -227,6 +256,8 @@ _e_comp_fps_update(void)
      }
 }
 
+
+#ifdef LEGACY_NOCOMP
 static void
 _e_comp_cb_nocomp_begin(void)
 {
@@ -304,6 +335,106 @@ _e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
    return EINA_FALSE;
 }
 
+static void
+_e_comp_nocomp_end(void)
+{
+   e_comp->nocomp_want = 0;
+   E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
+   _e_comp_cb_nocomp_end();
+   if (e_comp->nocomp_ec)
+     {
+        E_Layer layer = MAX(e_comp->nocomp_ec->saved.layer, E_LAYER_CLIENT_NORMAL);
+        Eina_Bool fs;
+
+        fs = e_comp->nocomp_ec->fullscreen;
+        e_comp->nocomp_ec->fullscreen = 0;
+        if (fs)
+          layer = E_LAYER_CLIENT_FULLSCREEN;
+        evas_object_layer_set(e_comp->nocomp_ec->frame, layer);
+        e_comp->nocomp_ec->fullscreen = fs;
+     }
+   e_comp->nocomp_ec = NULL;
+}
+
+#else
+static void
+_e_comp_cb_nocomp_begin(void)
+{
+   E_Client *ec;
+   Eina_Bool mode_set = EINA_FALSE;
+   if (!e_comp->hwc) return;
+   if (e_comp->nocomp) return;
+   E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
+
+   ec = _e_comp_fullscreen_check();
+   if (!ec) return;
+
+#ifdef HAVE_HWC
+   mode_set = e_comp_hwc_mode_nocomp(ec);
+#endif
+   if (!mode_set) return;
+
+   e_comp->nocomp_ec = ec;
+   e_comp->nocomp = 1;
+
+   INF("JOB2...");
+   e_comp_render_queue();
+   e_comp_shape_queue_block(1);
+   ecore_event_add(E_EVENT_COMPOSITOR_DISABLE, NULL, NULL, NULL);
+}
+
+static void
+_e_comp_cb_nocomp_end(void)
+{
+   E_Client *ec;
+   Eina_Bool mode_set = EINA_FALSE;
+
+   if (!e_comp->nocomp) return;
+   if (!e_comp->hwc) return;
+
+#ifdef HAVE_HWC
+   mode_set = e_comp_hwc_mode_nocomp(NULL);
+#endif
+   if (!mode_set) return;
+
+   INF("COMP RESUME!");
+
+   E_CLIENT_FOREACH(ec)
+     {
+        if (ec->visible && (!ec->input_only))
+          e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
+
+     }
+   e_comp->nocomp = 0;
+   e_comp_render_queue();
+   e_comp_shape_queue_block(0);
+   ecore_event_add(E_EVENT_COMPOSITOR_ENABLE, NULL, NULL, NULL);
+}
+
+static Eina_Bool
+_e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
+{
+   e_comp->nocomp_delay_timer = NULL;
+
+   if (e_comp->nocomp_override == 0)
+     {
+        if (_e_comp_fullscreen_check()) e_comp->nocomp_want = 1;
+        _e_comp_cb_nocomp_begin();
+     }
+   return EINA_FALSE;
+}
+
+E_API void
+e_comp_nocomp_end(char *location)
+{
+   e_comp->nocomp_want = 0;
+   E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
+   INF("HWC : NOCOMP_END at %s\n", location);
+   _e_comp_cb_nocomp_end();
+   e_comp->nocomp_ec = NULL;
+}
+
+#endif
 
 static void
 _e_comp_client_update(E_Client *ec)
@@ -341,27 +472,6 @@ _e_comp_client_update(E_Client *ec)
         if (e_pixmap_is_x(ec->pixmap) && (!ec->override))
           evas_object_resize(ec->frame, ec->w, ec->h);
      }
-}
-
-static void
-_e_comp_nocomp_end(void)
-{
-   e_comp->nocomp_want = 0;
-   E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
-   _e_comp_cb_nocomp_end();
-   if (e_comp->nocomp_ec)
-     {
-        E_Layer layer = MAX(e_comp->nocomp_ec->saved.layer, E_LAYER_CLIENT_NORMAL);
-        Eina_Bool fs;
-
-        fs = e_comp->nocomp_ec->fullscreen;
-        e_comp->nocomp_ec->fullscreen = 0;
-        if (fs)
-          layer = E_LAYER_CLIENT_FULLSCREEN;
-        evas_object_layer_set(e_comp->nocomp_ec->frame, layer);
-        e_comp->nocomp_ec->fullscreen = fs;
-     }
-   e_comp->nocomp_ec = NULL;
 }
 
 static Eina_Bool
@@ -499,6 +609,14 @@ _e_comp_cb_update(void)
    if (e_comp->updates && (!e_comp->update_job))
      ecore_animator_thaw(e_comp->render_animator);
 nocomp:
+   // TO DO :
+   // query if selective HWC plane can be used
+   if (!e_comp_gl_get() && !e_comp->hwc)
+     {
+        TRACE_DS_END();
+        return ECORE_CALLBACK_RENEW;
+     }
+
    ec = _e_comp_fullscreen_check();
    if (ec)
      {
@@ -506,34 +624,30 @@ nocomp:
           {
              if (e_comp->nocomp && e_comp->nocomp_ec)
                {
-                  E_Client *nec = NULL;
-                  for (ec = e_client_top_get(), nec = e_client_below_get(ec);
-                       (ec && nec) && (ec != nec); ec = nec, nec = e_client_below_get(ec))
-                    {
-                       if (ec == e_comp->nocomp_ec) break;
-                       if (evas_object_layer_get(ec->frame) < evas_object_layer_get(e_comp->nocomp_ec->frame)) break;
-                       if (e_client_is_stacking(ec)) continue;
-                       if (!ec->visible) continue;
-                       if (evas_object_data_get(ec->frame, "comp_skip")) continue;
-                       if (e_object_is_del(E_OBJECT(ec)) || (!e_client_util_desk_visible(ec, e_desk_current_get(ec->zone)))) continue;
-                       if (ec->override)
-                         {
-                            _e_comp_nocomp_end();
-                            break;
-                         }
-                       else
-                         evas_object_stack_below(ec->frame, e_comp->nocomp_ec->frame);
-                    }
+                  if (ec != e_comp->nocomp_ec)
+                    e_comp_nocomp_end("_e_comp_cb_update : nocomp_ec != ec");
                }
              else if ((!e_comp->nocomp) && (!e_comp->nocomp_override))
                {
-                  if (!e_comp->nocomp_delay_timer)
-                    e_comp->nocomp_delay_timer = ecore_timer_add(1.0, _e_comp_cb_nocomp_begin_timeout, NULL);
+                  if (conf->nocomp_use_timer)
+                    {
+                       if (!e_comp->nocomp_delay_timer)
+                         {
+                            e_comp->nocomp_delay_timer = ecore_timer_add(conf->nocomp_begin_timeout,
+                                                                         _e_comp_cb_nocomp_begin_timeout,
+                                                                         NULL);
+                         }
+                    }
+                  else
+                    {
+                       e_comp->nocomp_want = 1;
+                       _e_comp_cb_nocomp_begin();
+                    }
                }
           }
      }
    else
-     _e_comp_nocomp_end();
+     e_comp_nocomp_end("_e_comp_cb_update : ec is not fullscreen");
 
    TRACE_DS_END();
 
@@ -873,9 +987,9 @@ _e_comp_free(E_Comp *c)
 static Eina_Bool
 _e_comp_object_add(void *d EINA_UNUSED, int t EINA_UNUSED, E_Event_Comp_Object *ev)
 {
-   if ((!e_comp->nocomp) || (!e_comp->nocomp_ec)) return ECORE_CALLBACK_RENEW;
-   if (evas_object_layer_get(ev->comp_object) > MAX(e_comp->nocomp_ec->saved.layer, E_LAYER_CLIENT_NORMAL))
-     _e_comp_nocomp_end();
+   //if ((!e_comp->nocomp) || (!e_comp->nocomp_ec)) return ECORE_CALLBACK_RENEW;
+   //if (evas_object_layer_get(ev->comp_object) > MAX(e_comp->nocomp_ec->saved.layer, E_LAYER_CLIENT_NORMAL))
+   //  e_comp_nocomp_end();
    return ECORE_CALLBACK_RENEW;
 }
 
@@ -1048,6 +1162,16 @@ e_comp_init(void)
    e_comp_canvas_fake_layers_init();
    e_screensaver_update();
 
+#ifdef HAVE_HWC
+   // TO DO : check hwc init condition
+   if (conf->hwc)
+     {
+        e_comp->hwc = e_comp_hwc_init();
+        if (!e_comp->hwc)
+          WRN("fail to init hwc.");
+     }
+#endif
+
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_ON,  _e_comp_screensaver_on,  NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_OFF, _e_comp_screensaver_off, NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN,    _e_comp_key_down,        NULL);
@@ -1094,6 +1218,11 @@ e_comp_shutdown(void)
      {
         _e_launchscreen_free(e_comp->launchscrn);
      }
+
+#ifdef HAVE_HWC
+   if (e_comp->hwc)
+     e_comp_hwc_shutdown();
+#endif
 
    e_comp_wl_shutdown();
 
@@ -1291,7 +1420,7 @@ E_API void
 e_comp_override_add()
 {
    e_comp->nocomp_override++;
-   if ((e_comp->nocomp_override > 0) && (e_comp->nocomp)) _e_comp_nocomp_end();
+   if ((e_comp->nocomp_override > 0) && (e_comp->nocomp)) e_comp_nocomp_end(__FUNCTION__);
 }
 
 E_API E_Comp *
@@ -1387,7 +1516,7 @@ e_comp_grab_input(Eina_Bool mouse, Eina_Bool kbd)
      mwin = e_comp->ee_win;
    if (kbd || e_comp->input_mouse_grabs)
      kwin = e_comp->ee_win;
-   e_comp_override_add();
+   //e_comp_override_add(); //nocomp condition
    if ((e_comp->input_mouse_grabs && e_comp->input_key_grabs) ||
        e_grabinput_get(mwin, 0, kwin))
      {
@@ -1413,7 +1542,7 @@ e_comp_ungrab_input(Eina_Bool mouse, Eina_Bool kbd)
      mwin = e_comp->ee_win;
    if (kbd && (!e_comp->input_key_grabs))
      kwin = e_comp->ee_win;
-   e_comp_override_timed_pop();
+   //e_comp_override_timed_pop(); //nocomp condition
    if ((!mwin) && (!kwin)) return;
    e_grabinput_release(mwin, kwin);
    evas_event_feed_mouse_out(e_comp->evas, 0, NULL);

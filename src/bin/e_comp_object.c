@@ -258,6 +258,9 @@ _e_comp_object_cb_mirror_show(void *data, Evas *e EINA_UNUSED, Evas_Object *obj 
    if ((!cw->force_visible) && (!e_object_is_del(E_OBJECT(cw->ec))))
      evas_object_smart_callback_call(cw->smart_obj, "visibility_force", cw->ec);
    cw->force_visible++;
+
+   if (e_comp->hwc && e_comp->nocomp_ec != cw->ec)
+     e_comp_nocomp_end(__FUNCTION__);
 }
 
 static void
@@ -1488,6 +1491,7 @@ _e_comp_intercept_lower(void *data, Evas_Object *obj)
    evas_object_lower(obj);
    evas_object_data_del(obj, "client_restack");
    if (!cw->visible) goto end;
+   if (e_comp->hwc &&e_comp->nocomp_ec == cw->ec) e_comp_nocomp_end(__FUNCTION__);
    e_comp_render_queue();
    e_comp_shape_queue();
 
@@ -1537,6 +1541,8 @@ _e_comp_intercept_raise(void *data, Evas_Object *obj)
           e_client_raise_latest_set(cw->ec); //modify raise list if necessary
      }
    if (!cw->visible) goto end;
+   if (e_comp->hwc &&e_comp->nocomp_ec != cw->ec)
+      e_comp_nocomp_end(__FUNCTION__);
    e_comp_render_queue();
    e_comp_shape_queue();
 
@@ -1593,6 +1599,7 @@ _e_comp_intercept_hide(void *data, Evas_Object *obj)
                e_comp_object_effect_set(obj, NULL);
           }
      }
+   if (e_comp->hwc &&e_comp->nocomp_ec == cw->ec) e_comp_nocomp_end(__FUNCTION__);
    if (cw->animating) return;
    /* if we have no animations running, go ahead and hide */
    cw->defer_hide = 0;

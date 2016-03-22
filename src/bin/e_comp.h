@@ -173,6 +173,7 @@ struct _E_Comp
    Eina_Bool       saver : 1;
    Eina_Bool       shape_queue_blocked : 1;
    Eina_Bool       calc_fps : 1;
+   Eina_Bool       hwc : 1;
 
    Eina_List      *connected_clients;
 };
@@ -240,6 +241,8 @@ E_API Eina_Bool e_comp_util_object_is_above_nocomp(Evas_Object *obj);
 
 E_API Eina_Bool e_comp_util_kbd_grabbed(void);
 E_API Eina_Bool e_comp_util_mouse_grabbed(void);
+
+E_API void e_comp_nocomp_end(char *location);
 
 static inline Eina_Bool
 e_comp_util_client_is_fullscreen(const E_Client *ec)

@@ -27,6 +27,9 @@ struct _E_Comp_Config
    unsigned char send_flush;
    unsigned char send_dump;
    unsigned char nocomp_fs;
+   unsigned char nocomp_use_timer;
+   double        nocomp_begin_timeout;
+   unsigned char hwc;
    unsigned char smooth_windows;
    unsigned char nofade;
    double        first_draw_delay;
