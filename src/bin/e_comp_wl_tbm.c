@@ -2,6 +2,21 @@
 #include "e.h"
 #include <Ecore_Drm.h>
 #include <wayland-tbm-server.h>
+#include <tbm_bufmgr.h>
+
+int
+_e_comp_wl_tbm_bind_wl_display(tbm_bufmgr bufmgr, struct wl_display *display)
+{
+   EINA_SAFETY_ON_FALSE_RETURN_VAL(bufmgr, EINA_FALSE);
+
+   if (!tbm_bufmgr_bind_native_display(bufmgr, (void *)display))
+     {
+	e_error_message_show(_("Enlightenment cannot bind native Display TBM!\n"));
+        return EINA_FALSE;
+     }
+
+   return EINA_TRUE;
+}
 
 EINTERN Eina_Bool
 e_comp_wl_tbm_init(void)
@@ -11,6 +26,7 @@ e_comp_wl_tbm_init(void)
    Ecore_Drm_Device *dev;
    int drm_fd = -1;
    const char *dev_name;
+   tbm_bufmgr bufmgr = NULL;
 
    if (!e_comp)
      {
@@ -44,6 +60,11 @@ e_comp_wl_tbm_init(void)
 
    e_comp->wl_comp_data->tbm.server = (void *)tbm_server;
 
+   bufmgr = wayland_tbm_server_get_bufmgr(tbm_server);
+   EINA_SAFETY_ON_FALSE_RETURN_VAL(bufmgr, EINA_FALSE);
+
+   _e_comp_wl_tbm_bind_wl_display(bufmgr, e_comp->wl_comp_data->wl.disp);
+
    return EINA_TRUE;
 }
 
@@ -63,5 +84,4 @@ e_comp_wl_tbm_shutdown(void)
 
    e_comp->wl_comp_data->tbm.server = NULL;
 }
-
 
