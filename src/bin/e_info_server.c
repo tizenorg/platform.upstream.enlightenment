@@ -22,7 +22,7 @@ typedef struct _E_Info_Server
 
 static E_Info_Server e_info_server;
 
-#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbs"
+#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbis"
 #define VALUE_TYPE_REQUEST_RESLIST "ui"
 #define VALUE_TYPE_REPLY_RESLIST "ssi"
 #define VALUE_TYPE_FOR_INPUTDEV "ssi"
@@ -44,6 +44,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
         uint32_t res_id = 0;
         pid_t pid = -1;
         char layer_name[32];
+        int hwc = -1;
 
         ec = evas_object_data_get(o, "E_Client");
         if (!ec) continue;
@@ -62,6 +63,17 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
                wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
           }
 #endif
+        if (e_comp->hwc)
+          {
+             // TODO: print plane number
+             if (!e_comp->nocomp_ec)
+                hwc = 1; // comp mode
+             else if (e_comp->nocomp_ec == ec)
+                hwc = 2; // a client occupied scanout buff
+             else 
+			 	hwc = 0;
+          }
+
         eldbus_message_iter_arguments_append(array_of_ec, "("VALUE_TYPE_FOR_TOPVWINS")", &struct_of_ec);
 
         eldbus_message_iter_arguments_append
@@ -71,7 +83,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
             pid,
             e_client_util_name_get(ec) ?: "NO NAME",
             ec->x, ec->y, ec->w, ec->h, ec->layer,
-            ec->visible, ec->argb, ec->visibility.opaque, ec->visibility.obscured, ec->iconic, ec->focused, layer_name);
+            ec->visible, ec->argb, ec->visibility.opaque, ec->visibility.obscured, ec->iconic, ec->focused, hwc, layer_name);
 
         eldbus_message_iter_container_close(array_of_ec, struct_of_ec);
      }
