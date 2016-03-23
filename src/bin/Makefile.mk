@@ -78,7 +78,8 @@ src/bin/e_utils.h \
 src/bin/e_win.h \
 src/bin/e_xinerama.h \
 src/bin/e_zoomap.h \
-src/bin/e_zone.h
+src/bin/e_zone.h \
+src/bin/e_util_transform.h
 
 if HAVE_WAYLAND
 ENLIGHTENMENTHEADERS += \
@@ -146,6 +147,7 @@ src/bin/e_win.c \
 src/bin/e_xinerama.c \
 src/bin/e_zoomap.c \
 src/bin/e_zone.c \
+src/bin/e_util_transform.c \
 $(ENLIGHTENMENTHEADERS)
 
 if HAVE_WAYLAND

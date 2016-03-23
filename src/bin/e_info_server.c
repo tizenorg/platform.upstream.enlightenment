@@ -20,12 +20,27 @@ typedef struct _E_Info_Server
    Eldbus_Service_Interface *iface;
 } E_Info_Server;
 
+typedef struct _E_Info_Transform
+{
+   E_Client         *ec;
+   E_Util_Transform *transform;
+   int               id;
+   int               enable;
+} E_Info_Transform;
+
 static E_Info_Server e_info_server;
+static Eina_List    *e_info_transform_list = NULL;
 
 #define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbs"
 #define VALUE_TYPE_REQUEST_RESLIST "ui"
 #define VALUE_TYPE_REPLY_RESLIST "ssi"
 #define VALUE_TYPE_FOR_INPUTDEV "ssi"
+
+static E_Info_Transform *_e_info_transform_new(E_Client *ec, int id, int enable, int x, int y, int sx, int sy, int degree, int keep_ratio);
+static E_Info_Transform *_e_info_transform_find(E_Client *ec, int id);
+static void              _e_info_transform_set(E_Info_Transform *transform, int enable, int x, int y, int sx, int sy, int degree, int keep_ratio);
+static void              _e_info_transform_del(E_Info_Transform *transform);
+static void              _e_info_transform_del_with_id(E_Client *ec, int id);
 
 static void
 _msg_clients_append(Eldbus_Message_Iter *iter)
@@ -405,7 +420,34 @@ _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
    __WINDOW_PROP_ARG_APPEND("Maximize_override", target_ec->maximize_override ? char_True : char_False);
    __WINDOW_PROP_ARG_APPEND("Transformed", target_ec->transformed ? char_True : char_False);
    __WINDOW_PROP_ARG_APPEND_TYPE("Ignore_first_unmap", "%c", target_ec->ignore_first_unmap);
+   __WINDOW_PROP_ARG_APPEND_TYPE("Transform_count", "%d", e_client_transform_core_transform_count_get(target_ec));
+   if (e_client_transform_core_transform_count_get(target_ec) > 0)
+     {
+        int i;
+        int count = e_client_transform_core_transform_count_get(target_ec);
 
+        __WINDOW_PROP_ARG_APPEND(" ", "[id] [move] [scale] [rotation] [keep_ratio]");
+        for (i = 0 ; i < count ; ++i)
+          {
+             double dx, dy, dsx, dsy, drz;
+             int x, y, rz;
+             int keep_ratio;
+
+             E_Util_Transform *transform = e_client_transform_core_transform_get(target_ec, i);
+             if (!transform) continue;
+
+             e_util_transform_move_get(transform, &dx, &dy, NULL);
+             e_util_transform_scale_get(transform, &dsx, &dsy, NULL);
+             e_util_transform_rotation_get(transform, NULL, NULL, &drz);
+             keep_ratio = e_util_transform_keep_ratio_get(transform);
+
+             x = (int)(dx + 0.5);
+             y = (int)(dy + 0.5);
+             rz = (int)(drz + 0.5);
+
+             __WINDOW_PROP_ARG_APPEND_TYPE("Transform", "[%d] [%d, %d] [%2.1f, %2.1f] [%d] [%d]", i, x, y, dsx, dsy, rz, keep_ratio);
+          }
+     }
 #undef __WINDOW_PROP_ARG_APPEND
 #undef __WINDOW_PROP_ARG_APPEND_TYPE
 }
@@ -724,6 +766,63 @@ _e_info_server_cb_fps_info_get(const Eldbus_Service_Interface *iface EINA_UNUSED
    return reply;
 }
 
+static Eldbus_Message *
+e_info_server_cb_transform_message(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   uint32_t enable, transform_id;
+   uint32_t x, y, sx, sy, degree;
+   uint32_t keep_ratio;
+   const char *value = NULL;
+   int32_t value_number;
+   Evas_Object *o;
+   E_Client *ec;
+
+   if (!eldbus_message_arguments_get(msg, "siiiiiiii", &value, &transform_id, &enable, &x, &y, &sx, &sy, &degree, &keep_ratio))
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   if (strlen(value) >= 2 && value[0] == '0' && value[1] == 'x')
+      sscanf(value, "%x", &value_number);
+   else
+      sscanf(value, "%d", &value_number);
+
+   for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
+     {
+        ec = evas_object_data_get(o, "E_Client");
+        Ecore_Window win;
+        E_Info_Transform *transform_info;
+
+        if (!ec) continue;
+
+        win = e_client_util_win_get(ec);
+
+        if (win != value_number) continue;
+        transform_info = _e_info_transform_find(ec, transform_id);
+
+        if (transform_info)
+          {
+             _e_info_transform_set(transform_info, enable, x, y, sx, sy, degree, keep_ratio);
+
+             if (!enable)
+                _e_info_transform_del_with_id(ec, transform_id);
+          }
+        else
+          {
+             if (enable)
+               {
+                  _e_info_transform_new(ec, transform_id, enable, x, y, sx, sy, degree, keep_ratio);
+               }
+          }
+
+        break;
+     }
+
+   return reply;
+}
+
 static const Eldbus_Method methods[] = {
    { "get_window_info", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_TOPVWINS")", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, 0 },
@@ -736,6 +835,7 @@ static const Eldbus_Method methods[] = {
    { "get_res_lists", ELDBUS_ARGS({VALUE_TYPE_REQUEST_RESLIST, "client resource"}), ELDBUS_ARGS({"a("VALUE_TYPE_REPLY_RESLIST")", "array of client resources"}), _e_info_server_cb_res_lists_get, 0 },
    { "get_input_devices", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_INPUTDEV")", "array of input"}), _e_info_server_cb_input_device_info_get, 0},
    { "get_fps_info", NULL, ELDBUS_ARGS({"s", "fps request"}), _e_info_server_cb_fps_info_get, 0},
+   { "transform_message", ELDBUS_ARGS({"siiiiiiii", "transform_message"}), NULL, e_info_server_cb_transform_message, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 
@@ -778,6 +878,20 @@ e_info_server_shutdown(void)
      {
         eldbus_connection_unref(e_info_server.conn);
         e_info_server.conn = NULL;
+     }
+
+   if (e_info_transform_list)
+     {
+        E_Info_Transform *info;
+        Eina_List *l, *l_next;
+
+        EINA_LIST_FOREACH_SAFE(e_info_transform_list, l, l_next, info)
+          {
+             _e_info_transform_del(info);
+          }
+
+        eina_list_free(e_info_transform_list);
+        e_info_transform_list = NULL;
      }
 
    eldbus_shutdown();
@@ -855,4 +969,87 @@ e_info_server_dump_client(E_Client *ec, char *fname)
 
    if (img) evas_object_del(img);
    if (ee) ecore_evas_free(ee);
+}
+
+
+static E_Info_Transform*
+_e_info_transform_new(E_Client *ec, int id, int enable, int x, int y, int sx, int sy, int degree, int keep_ratio)
+{
+   E_Info_Transform *result = NULL;
+   result = _e_info_transform_find(ec, id);
+
+   if (!result)
+     {
+        result = (E_Info_Transform*)malloc(sizeof(E_Info_Transform));
+        memset(result, 0, sizeof(E_Info_Transform));
+        result->id = id;
+        result->ec = ec;
+        result->transform = e_util_transform_new();
+        _e_info_transform_set(result, enable, x, y, sx, sy, degree, keep_ratio);
+        e_info_transform_list = eina_list_append(e_info_transform_list, result);
+
+     }
+
+   return result;
+}
+
+static E_Info_Transform*
+_e_info_transform_find(E_Client *ec, int id)
+{
+   Eina_List *l;
+   E_Info_Transform *transform;
+   E_Info_Transform *result = NULL;
+
+   EINA_LIST_FOREACH(e_info_transform_list, l, transform)
+     {
+        if (transform->ec == ec && transform->id == id)
+          {
+             result =  transform;
+             break;
+          }
+     }
+
+   return result;
+}
+
+static void
+_e_info_transform_set(E_Info_Transform *transform, int enable, int x, int y, int sx, int sy, int degree, int keep_ratio)
+{
+   if (!transform) return;
+   if (!transform->transform) return;
+
+   e_util_transform_move(transform->transform, (double)x, (double)y, 0.0);
+   e_util_transform_scale(transform->transform, (double)sx / 100.0, (double)sy / 100.0, 1.0);
+   e_util_transform_rotation(transform->transform, 0.0, 0.0, degree);
+   e_util_transform_keep_ratio_set(transform->transform, keep_ratio);
+
+   if (enable)
+      e_client_transform_core_add(transform->ec, transform->transform);
+   else
+      e_client_transform_core_remove(transform->ec, transform->transform);
+
+   e_client_transform_core_update(transform->ec);
+}
+
+static void
+_e_info_transform_del(E_Info_Transform *transform)
+{
+   if (!transform) return;
+
+   e_info_transform_list = eina_list_remove(e_info_transform_list, transform);
+   e_client_transform_core_remove(transform->ec, transform->transform);
+   e_util_transform_del(transform->transform);
+   free(transform);
+}
+
+static void
+_e_info_transform_del_with_id(E_Client *ec, int id)
+{
+   E_Info_Transform *transform = NULL;
+   if (!ec) return;
+
+   transform = _e_info_transform_find(ec, id);
+
+   if (transform)
+      _e_info_transform_del(transform);
 }

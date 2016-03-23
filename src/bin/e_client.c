@@ -898,6 +898,18 @@ _e_client_del(E_Client *ec)
      e_pixmap_client_set(ec->pixmap, NULL);
    ec->pixmap = NULL;
 
+   if (ec->transform_core.transform_list)
+     {
+        E_Util_Transform *transform;
+
+        EINA_LIST_FREE(ec->transform_core.transform_list, transform)
+          {
+             e_util_transform_unref(transform);
+          }
+     }
+
+   ec->transform_core.result.enable = EINA_FALSE;
+
    e_client_visibility_calculate();
 }
 
@@ -2438,6 +2450,7 @@ _e_client_eval(E_Client *ec)
      }
 #endif
 
+   e_client_transform_core_update(ec);
    _e_client_hook_call(E_CLIENT_HOOK_EVAL_END, ec);
 
    TRACE_DS_END();
@@ -2589,6 +2602,10 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
    Eina_Iterator *it;
    Eina_Bool canvas_vis = EINA_TRUE;
    Eina_Bool ec_vis, ec_opaque, changed;
+   int x = 0;
+   int y = 0;
+   int w = 0;
+   int h = 0;
    const int edge = 1;
 
    if (!zone) return;
@@ -2618,6 +2635,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         /* check if external animation is running */
         if (evas_object_data_get(ec->frame, "effect_running")) continue;
 
+        e_client_geometry_get(ec, &x, &y, &w, &h);
         ec_vis = ec_opaque = changed = EINA_FALSE;
 
         ////////////////////////////////////////////////////////////////////////
@@ -2640,7 +2658,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
                   it = eina_tiler_iterator_new(t);
                   EINA_ITERATOR_FOREACH(it, _r)
                     {
-                       if (E_INTERSECTS(ec->x, ec->y, ec->w, ec->h,
+                       if (E_INTERSECTS(x, y, w, h,
                                         _r->x, _r->y, _r->w, _r->h))
                          {
                             ec_vis = EINA_TRUE;
@@ -2675,10 +2693,10 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
                   if ((!ec->argb) || (ec_opaque))
                     {
                        EINA_RECTANGLE_SET(&r,
-                                          ec->x,
-                                          ec->y,
-                                          ec->w + edge,
-                                          ec->h + edge);
+                                          x,
+                                          y,
+                                          w + edge,
+                                          h + edge);
                        eina_tiler_rect_del(t, &r);
 
                        if (eina_tiler_empty(t))
@@ -2728,8 +2746,200 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
              evas_object_focus_set(focus_ec->frame, 1);
           }
      }
-
    TRACE_DS_END();
+}
+
+
+static Eina_Bool
+_e_client_transform_core_check_change(E_Client *ec)
+{
+   Eina_Bool check = EINA_FALSE;
+
+   if (!ec) return EINA_FALSE;
+
+   // check client position or size change
+   if (ec->x != ec->transform_core.backup.client_x ||
+       ec->y != ec->transform_core.backup.client_y ||
+       ec->w != ec->transform_core.backup.client_w ||
+       ec->h != ec->transform_core.backup.client_h)
+     {
+        check = EINA_TRUE;
+        ec->transform_core.backup.client_x = ec->x;
+        ec->transform_core.backup.client_y = ec->y;
+        ec->transform_core.backup.client_w = ec->w;
+        ec->transform_core.backup.client_h = ec->h;
+     }
+
+   // check new transform or del transform
+   if (ec->transform_core.changed)
+     {
+        check = EINA_TRUE;
+        ec->transform_core.changed = EINA_FALSE;
+     }
+
+   // check each transform change
+   if (ec->transform_core.transform_list)
+     {
+        Eina_List *l;
+        Eina_List *l_next;
+        E_Util_Transform *transform;
+
+        EINA_LIST_FOREACH_SAFE(ec->transform_core.transform_list, l, l_next, transform)
+          {
+             // del transform check
+             if (e_util_transform_ref_count_get(transform) <= 1)
+               {
+                  ec->transform_core.transform_list = eina_list_remove(ec->transform_core.transform_list, transform);
+                  e_util_transform_unref(transform);
+                  check = EINA_TRUE;
+                  continue;
+               }
+
+             // transform change test
+             if (e_util_transform_change_get(transform))
+               {
+                  check = EINA_TRUE;
+                  e_util_transform_change_unset(transform);
+               }
+          }
+     }
+
+   // check parent matrix change
+#ifdef HAVE_WAYLAND_ONLY
+   if (ec->comp_data)
+     {
+        E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+
+        if (cdata->sub.data)
+          {
+             E_Client *parent = cdata->sub.data->parent;
+
+             if (parent && parent->transform_core.result.enable)
+               {
+                  ec->transform_core.parent.enable = EINA_TRUE;
+
+                  if (!e_util_transform_matrix_equal_check(&ec->transform_core.parent.matrix,
+                                                           &parent->transform_core.result.matrix))
+                    {
+                       check = EINA_TRUE;
+                       ec->transform_core.parent.matrix = parent->transform_core.result.matrix;
+                    }
+               }
+             else if (ec->transform_core.parent.enable)
+               {
+                  ec->transform_core.parent.enable = EINA_FALSE;
+                  e_util_transform_matrix_load_identity(&ec->transform_core.parent.matrix);
+                  check = EINA_TRUE;
+               }
+          }
+     }
+#endif
+
+   return check;
+}
+
+static void
+_e_client_transform_core_boundary_update(E_Client *ec,  E_Util_Transform_Rect_Vertex *vertices)
+{
+   double minx, miny;
+   double maxx, maxy;
+   double initValue = 99999;
+   int i;
+
+   if (!ec) return;
+   if (!ec->frame) return;
+   if (!ec->transform_core.result.enable) return;
+   if (!vertices) return;
+
+   minx = initValue;
+   miny = initValue;
+   maxx = -initValue;
+   maxy = -initValue;
+
+   for (i = 0 ; i < 4 ; ++i)
+     {
+        double x = 0.0;
+        double y = 0.0;
+        e_util_transform_vertices_pos_get(vertices, i, &x, &y, 0, 0);
+
+        if (x < minx) minx = x;
+        if (y < miny) miny = y;
+        if (x > maxx) maxx = x;
+        if (y > maxy) maxy = y;
+     }
+
+   ec->transform_core.result.boundary.x = (int)(minx + 0.5);
+   ec->transform_core.result.boundary.y = (int)(miny + 0.5);
+   ec->transform_core.result.boundary.w = (int)(maxx - minx + 0.5);
+   ec->transform_core.result.boundary.h = (int)(maxy - miny + 0.5);
+
+   ELOGF("COMP", "[Transform][boundary][%d %d %d %d]", ec->pixmap, ec,
+         ec->transform_core.result.boundary.x, ec->transform_core.result.boundary.y,
+         ec->transform_core.result.boundary.w, ec->transform_core.result.boundary.h);
+}
+
+static void
+_e_client_transform_core_vertices_apply(E_Client *ec EINA_UNUSED, Evas_Object *obj, E_Util_Transform_Rect_Vertex *vertices)
+{
+   if (!obj) return;
+
+   if (vertices)
+     {
+        Evas_Map *map = evas_map_new(4);
+
+        if (map)
+          {
+             int i;
+             evas_map_util_points_populate_from_object_full(map, obj, 0);
+             evas_map_util_points_color_set(map, 255, 255, 255, 255);
+
+             for (i = 0 ; i < 4 ; ++i)
+               {
+                  double dx = 0.0;
+                  double dy = 0.0;
+                  int x = 0;
+                  int y = 0;
+
+                  e_util_transform_vertices_pos_get(vertices, i, &dx, &dy, 0, 0);
+
+                  x = (int)(dx + 0.5);
+                  y = (int)(dy + 0.5);
+
+                  evas_map_point_coord_set(map, i, x, y, 1.0);
+               }
+
+             evas_object_map_set(obj, map);
+             evas_object_map_enable_set(obj, EINA_TRUE);
+
+             evas_map_free(map);
+          }
+     }
+   else
+      evas_object_map_enable_set(obj, EINA_FALSE);
+}
+
+static void
+_e_client_transform_core_sub_update(E_Client *ec, E_Util_Transform_Rect_Vertex *vertices)
+{
+#ifdef HAVE_WAYLAND_ONLY
+   Eina_List *l;
+   E_Client *subc;
+   E_Comp_Wl_Client_Data *cdata;
+
+   if (!ec) return;
+   if (!ec->comp_data) return;
+
+   cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+
+   if (cdata->sub.below_obj)
+      _e_client_transform_core_vertices_apply(ec, cdata->sub.below_obj, vertices);
+
+   EINA_LIST_FOREACH(cdata->sub.list, l, subc)
+      e_client_transform_core_update(subc);
+
+   EINA_LIST_FOREACH(cdata->sub.below_list, l, subc)
+      e_client_transform_core_update(subc);
+#endif
 }
 
 E_API void
@@ -3631,18 +3841,40 @@ e_client_zone_set(E_Client *ec, E_Zone *zone)
 E_API void
 e_client_geometry_get(E_Client *ec, int *x, int *y, int *w, int *h)
 {
+   int gx = 0;
+   int gy = 0;
+   int gw = 0;
+   int gh = 0;
+
    E_OBJECT_CHECK(ec);
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
 
-   if (ec->frame)
-     evas_object_geometry_get(ec->frame, x, y, w, h);
+   if (e_client_transform_core_enable_get(ec))
+     {
+        gx = ec->transform_core.result.boundary.x;
+        gy = ec->transform_core.result.boundary.y;
+        gw = ec->transform_core.result.boundary.w;
+        gh = ec->transform_core.result.boundary.h;
+     }
    else
      {
-        if (x) *x = ec->x;
-        if (y) *y = ec->y;
-        if (w) *w = ec->w;
-        if (h) *h = ec->h;
+        if (ec->frame)
+          {
+             evas_object_geometry_get(ec->frame, &gx, &gy, &gw, &gh);
+          }
+        else
+          {
+             gx = ec->x;
+             gy = ec->y;
+             gw = ec->w;
+             gh = ec->h;
+          }
      }
+
+   if (x) *x = gx;
+   if (y) *y = gy;
+   if (w) *w = gw;
+   if (h) *h = gh;
 }
 
 E_API E_Client *
@@ -5528,4 +5760,150 @@ e_client_transform_clear(E_Client *ec)
    ec->transform.zoom = 1.0;
    ec->transform.angle = 0.0;
    ec->transformed = EINA_FALSE;
+}
+
+E_API Eina_Bool e_client_transform_core_enable_get(E_Client *ec)
+{
+   if (!ec) return EINA_FALSE;
+   return ec->transform_core.result.enable;
+}
+
+E_API void e_client_transform_core_add(E_Client *ec, E_Util_Transform *transform)
+{
+   if (!ec) return;
+   if (!transform) return;
+
+   // duplication check
+   if (ec->transform_core.transform_list &&
+       eina_list_data_find(ec->transform_core.transform_list, transform) == transform)
+     {
+        return;
+     }
+
+   ec->transform_core.transform_list = eina_list_append(ec->transform_core.transform_list, transform);
+   ec->transform_core.changed = EINA_TRUE;
+   e_util_transform_ref(transform);
+   e_client_transform_core_update(ec);
+}
+
+E_API void e_client_transform_core_remove(E_Client *ec, E_Util_Transform *transform)
+{
+   if (!ec) return;
+   if (!transform) return;
+
+   if (ec->transform_core.transform_list &&
+       eina_list_data_find(ec->transform_core.transform_list, transform) == transform)
+     {
+        ec->transform_core.transform_list = eina_list_remove(ec->transform_core.transform_list, transform);
+        e_util_transform_unref(transform);
+        ec->transform_core.changed = EINA_TRUE;
+     }
+
+   e_client_transform_core_update(ec);
+}
+
+E_API void e_client_transform_core_update(E_Client *ec)
+{
+   if (!ec) return;
+   if (ec->new_client) return;
+   if (!_e_client_transform_core_check_change(ec)) return;
+
+   if (ec->transform_core.transform_list || ec->transform_core.parent.enable)
+     {
+        E_Util_Transform_Rect source_rect;
+        E_Util_Transform_Matrix matrix, boundary_matrix;
+        Eina_List *l;
+        Eina_Bool keep_ratio = EINA_FALSE;
+        E_Util_Transform *temp_trans;
+
+        // 1. init state
+        ec->transform_core.result.enable = EINA_TRUE;
+        e_util_transform_rect_client_rect_get(&source_rect, ec);
+        e_util_transform_init(&ec->transform_core.result.transform);
+
+        // 2. merge transform
+        EINA_LIST_FOREACH(ec->transform_core.transform_list, l, temp_trans)
+          {
+             ec->transform_core.result.transform = e_util_transform_merge(&ec->transform_core.result.transform, temp_trans);
+          }
+
+        // 3. covert to matrix and apply keep_ratio
+        boundary_matrix = e_util_transform_convert_to_matrix(&ec->transform_core.result.transform, &source_rect);
+        keep_ratio = e_util_transform_keep_ratio_get(&ec->transform_core.result.transform);
+
+        if (keep_ratio)
+          {
+             ec->transform_core.result.transform = e_util_transform_keep_ratio_apply(&ec->transform_core.result.transform, ec->w, ec->h);
+             matrix = e_util_transform_convert_to_matrix(&ec->transform_core.result.transform, &source_rect);
+          }
+        else
+           matrix = boundary_matrix;
+
+        if (keep_ratio != ec->transform_core.keep_ratio)
+          {
+             if (keep_ratio)
+               {
+                  e_comp_object_transform_bg_set(ec->frame, EINA_TRUE);
+               }
+             else
+               {
+                  e_comp_object_transform_bg_set(ec->frame, EINA_FALSE);
+               }
+
+             ec->transform_core.keep_ratio = keep_ratio;
+          }
+
+        // 3.5 parent matrix multiply
+        if (ec->transform_core.parent.enable)
+          {
+             matrix = e_util_transform_matrix_multiply(&ec->transform_core.parent.matrix,
+                                                       &matrix);
+             boundary_matrix = e_util_transform_matrix_multiply(&ec->transform_core.parent.matrix,
+                                                                &boundary_matrix);
+          }
+
+        // 4. apply matrix to vertices
+        ec->transform_core.result.matrix = matrix;
+        ec->transform_core.result.vertices = e_util_transform_rect_to_vertices(&source_rect);
+        ec->transform_core.result.boundary.vertices = e_util_transform_rect_to_vertices(&source_rect);
+        ec->transform_core.result.vertices = e_util_transform_matrix_multiply_rect_vertex(&matrix,
+                                                                                          &ec->transform_core.result.vertices);
+        ec->transform_core.result.boundary.vertices = e_util_transform_matrix_multiply_rect_vertex(&boundary_matrix,
+                                                                                                   &ec->transform_core.result.boundary.vertices);
+
+        // 5. apply vertices
+        e_comp_object_transform_bg_vertices_set(ec->frame, &ec->transform_core.result.boundary.vertices);
+        _e_client_transform_core_boundary_update(ec, &ec->transform_core.result.boundary.vertices);
+        _e_client_transform_core_vertices_apply(ec, ec->frame, &ec->transform_core.result.vertices);
+
+        // 6. subsurface update'
+        _e_client_transform_core_sub_update(ec, &ec->transform_core.result.vertices);
+     }
+   else
+     {
+        ec->transform_core.result.enable = EINA_FALSE;
+        _e_client_transform_core_vertices_apply(ec, ec->frame, NULL);
+        _e_client_transform_core_sub_update(ec, NULL);
+     }
+
+   e_client_visibility_calculate();
+}
+
+E_API int
+e_client_transform_core_transform_count_get(E_Client *ec)
+{
+   if (!ec) return 0;
+   if (!ec->transform_core.transform_list) return 0;
+   return eina_list_count(ec->transform_core.transform_list);
+}
+
+E_API E_Util_Transform*
+e_client_transform_core_transform_get(E_Client *ec, int index)
+{
+   if (!ec) return NULL;
+   if (!ec->transform_core.transform_list) return NULL;
+   if (index < 0 || index >= e_client_transform_core_transform_count_get(ec))
+      return NULL;
+
+   return (E_Util_Transform*)eina_list_nth(ec->transform_core.transform_list, index);
 }
