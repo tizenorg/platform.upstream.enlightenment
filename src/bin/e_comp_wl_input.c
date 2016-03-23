@@ -489,7 +489,7 @@ _e_comp_wl_input_keymap_update(struct xkb_keymap *keymap, const char *keymap_pat
         return;
      }
 
-   strncpy(e_comp_wl->xkb.area, e_comp_wl->xkb.size - 1);
+   strncpy(e_comp_wl->xkb.area, tmp, e_comp_wl->xkb.size - 1);
    free(tmp);
 
    /* send updated keymap */
