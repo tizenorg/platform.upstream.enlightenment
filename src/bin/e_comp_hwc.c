@@ -110,7 +110,6 @@ _e_comp_hwc_update_client_fps()
              time = 0.0;
           }
      }
-
 }
 
 static E_Comp_Hwc_Commit_Data *

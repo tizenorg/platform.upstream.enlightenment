@@ -281,7 +281,7 @@ _e_comp_cb_nocomp_begin(void)
    mode_set = e_comp_hwc_mode_nocomp(ec);
 #endif
    if (!mode_set) return;
-   
+
    if (e_comp->calc_fps) e_comp->frametimes[0] = 0;
    e_comp->nocomp_ec = ec;
    e_comp->nocomp = 1;
