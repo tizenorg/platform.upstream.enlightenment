@@ -421,6 +421,7 @@ _drm_randr_create(void)
              int priority;
              Eina_Bool ok = EINA_FALSE;
              Eina_Bool possible = EINA_FALSE;
+             int len = 0;
 
              s = E_NEW(E_Randr2_Screen, 1);
              if (!s) continue;
@@ -445,9 +446,10 @@ _drm_randr_create(void)
                   free(s);
                   continue;
                }
-             strncpy(s->id, s->info.name, strlen(s->info.name));
+             len = strlen(s->info.name);
+             strncpy(s->id, s->info.name, len + 1);
              strncat(s->id, "/", 1);
-             if (s->info.edid) strcat(s->id, s->info.edid);
+             if (s->info.edid) strncat(s->id, s->info.edid, strlen(s->info.edid));
 
              printf("DRM RRR: Created Screen: %s\n", s->id);
 

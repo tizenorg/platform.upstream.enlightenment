@@ -370,19 +370,23 @@ _e_comp_wl_input_keymap_fd_get(off_t size)
 
    blen = sizeof(tmp) - 1;
 
-   if (!(path = getenv("XDG_RUNTIME_DIR")))
-     return -1;
+   if (!(path = getenv("XDG_RUNTIME_DIR"))) return -1;
 
    len = strlen(path);
    if (len < blen)
      {
-        strncpy(tmp, path, len);
+        strncpy(tmp, path, len + 1);
         strncat(tmp, "/e-wl-keymap-XXXXXX", 19);
      }
    else
-     return -1;
+     {
+        return -1;
+     }
 
-   if ((fd = mkstemp(tmp)) < 0) return -1;
+   if ((fd = mkstemp(tmp)) < 0)
+     {
+        return -1;
+     }
 
    flags = fcntl(fd, F_GETFD);
    if (flags < 0)
@@ -489,7 +493,7 @@ _e_comp_wl_input_keymap_update(struct xkb_keymap *keymap, const char *keymap_pat
         return;
      }
 
-   strncpy(e_comp_wl->xkb.area, tmp, e_comp_wl->xkb.size - 1);
+   strncpy(e_comp_wl->xkb.area, tmp, e_comp_wl->xkb.size);
    free(tmp);
 
    /* send updated keymap */
