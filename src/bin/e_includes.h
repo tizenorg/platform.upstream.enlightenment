@@ -8,6 +8,7 @@
 #include "e_randr2.h"
 #include "e_pixmap.h"
 #include "e_comp_object.h"
+#include "e_util_transform.h"
 #include "e_client.h"
 #include "e_pointer.h"
 #include "e_config.h"

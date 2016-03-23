@@ -885,6 +885,39 @@ _e_info_client_proc_fps_info(int argc, char **argv)
    while (keepRunning);
 }
 
+static void
+_e_info_client_proc_transform_set(int argc, char **argv)
+{
+   int32_t id_enable_xy_sxsy_angle[8];
+   int i;
+
+   if (argc < 5)
+     {
+        printf("Error Check Args: enlightenment_info -transform [windowID] [transform id] [enable] [x] [y] [scale_x(percent)] [scale_y(percent)] [degree] [keep_ratio]\n");
+        return;
+     }
+
+   id_enable_xy_sxsy_angle[0] = 0;      // transform id
+   id_enable_xy_sxsy_angle[1] = 1;      // enable
+   id_enable_xy_sxsy_angle[2] = 0;      // move x
+   id_enable_xy_sxsy_angle[3] = 0;      // move y
+   id_enable_xy_sxsy_angle[4] = 100;    // scale x percent
+   id_enable_xy_sxsy_angle[5] = 100;    // scale y percent
+   id_enable_xy_sxsy_angle[6] = 0;      // rotation degree
+   id_enable_xy_sxsy_angle[7] = 0;      // keep ratio
+
+   for (i = 0 ; i < 8 &&  i+3 < argc; ++i)
+      id_enable_xy_sxsy_angle[i] = atoi(argv[i+3]);
+
+   if (!_e_info_client_eldbus_message_with_args("transform_message", NULL, "siiiiiiii",
+                                                argv[2], id_enable_xy_sxsy_angle[0] , id_enable_xy_sxsy_angle[1], id_enable_xy_sxsy_angle[2],
+                                                id_enable_xy_sxsy_angle[3], id_enable_xy_sxsy_angle[4], id_enable_xy_sxsy_angle[5],
+                                                id_enable_xy_sxsy_angle[6], id_enable_xy_sxsy_angle[7]))
+     {
+        printf("_e_info_client_eldbus_message_with_args error");
+        return;
+     }
+}
 static struct
 {
    const char *option;
@@ -944,7 +977,13 @@ static struct
       "fps", NULL,
       "Print FPS in every sec",
       _e_info_client_proc_fps_info
-   }
+   },
+   {
+      "transform",
+      "[id enable x y w h angle keep_ratio]",
+      "Set transform in runtime",
+      _e_info_client_proc_transform_set
+   },
 };
 
 static void
