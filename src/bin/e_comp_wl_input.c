@@ -376,8 +376,8 @@ _e_comp_wl_input_keymap_fd_get(off_t size)
    len = strlen(path);
    if (len < blen)
      {
-        strcpy(tmp, path);
-        strcat(tmp, "/e-wl-keymap-XXXXXX");
+        strncpy(tmp, path, len);
+        strncat(tmp, "/e-wl-keymap-XXXXXX", 19);
      }
    else
      return -1;
@@ -489,7 +489,7 @@ _e_comp_wl_input_keymap_update(struct xkb_keymap *keymap, const char *keymap_pat
         return;
      }
 
-   strcpy(e_comp_wl->xkb.area, tmp);
+   strncpy(e_comp_wl->xkb.area, e_comp_wl->xkb.size - 1);
    free(tmp);
 
    /* send updated keymap */

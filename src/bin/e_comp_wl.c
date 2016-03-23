@@ -3395,7 +3395,7 @@ _e_comp_wl_screenshooter_cb_shoot(struct wl_client *client EINA_UNUSED, struct w
    E_Comp_Wl_Buffer *buffer;
    struct wl_shm_buffer *shm_buffer;
    int stride;
-   void *pixels, *d;
+   void *pixels = NULL, *d;
 
    output = wl_resource_get_user_data(output_resource);
    buffer = e_comp_wl_buffer_get(buffer_resource, NULL);
@@ -3430,6 +3430,7 @@ _e_comp_wl_screenshooter_cb_shoot(struct wl_client *client EINA_UNUSED, struct w
    if (!shm_buffer)
      {
         ERR("Could not get shm_buffer from resource");
+        free(pixels);
         return;
      }
 
@@ -3438,6 +3439,7 @@ _e_comp_wl_screenshooter_cb_shoot(struct wl_client *client EINA_UNUSED, struct w
    if (!d)
      {
         ERR("Could not get buffer data");
+        free(pixels);
         return;
      }
 

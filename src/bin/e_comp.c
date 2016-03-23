@@ -1070,12 +1070,13 @@ _e_launchscreen_new(Ecore_Evas *ee)
    E_Launch_Screen *plscrn = NULL;
 
    EINA_SAFETY_ON_NULL_GOTO(ee, error);
+   EINA_SAFETY_ON_NULL_GOTO(conf, error);
 
-   if ((conf) && (conf->launch_file))
+   if (conf->launch_file)
      {
-        if(!edje_file_group_exists(conf->launch_file, "e/comp/effects/launch"))
-           goto error;
-   }
+        if (!edje_file_group_exists(conf->launch_file, "e/comp/effects/launch"))
+          goto error;
+     }
 
    plscrn = E_NEW(E_Launch_Screen, 1);
    EINA_SAFETY_ON_NULL_GOTO(plscrn, error);

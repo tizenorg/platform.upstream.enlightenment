@@ -40,8 +40,8 @@ e_path_default_path_append(E_Path *ep, const char *path)
              return;
           }
 
-        strcpy(new_path, home_dir);
-        strcat(new_path, path + 1);
+        strncpy(new_path, home_dir, len1);
+        strncat(new_path, path + 1, len1 + len2);
         epd->dir = eina_stringshare_add(new_path);
         free(new_path);
         ep->default_dir_list = eina_list_append(ep->default_dir_list, epd);
@@ -93,8 +93,8 @@ e_path_user_path_append(E_Path *ep, const char *path)
              return;
           }
 
-        strcpy(new_path, home_dir);
-        strcat(new_path, path + 1);
+        strncpy(new_path, home_dir, len1);
+        strncat(new_path, path + 1, len1 + len2);
         epd->dir = eina_stringshare_add(new_path);
         free(new_path);
         *(ep->user_dir_list) = eina_list_append(*(ep->user_dir_list), epd);
@@ -136,8 +136,8 @@ e_path_user_path_prepend(E_Path *ep, const char *path)
              return;
           }
 
-        strcpy(new_path, home_dir);
-        strcat(new_path, path + 1);
+        strncpy(new_path, home_dir, len1);
+        strncat(new_path, path + 1, len1 + len2);
         epd->dir = eina_stringshare_add(new_path);
         free(new_path);
         *(ep->user_dir_list) = eina_list_prepend(*(ep->user_dir_list), epd);
@@ -174,8 +174,8 @@ e_path_user_path_remove(E_Path *ep, const char *path)
         len2 = strlen(path);
         new_path = malloc(len1 + len2 + 1);
         if (!new_path) return;
-        strcpy(new_path, home_dir);
-        strcat(new_path, path + 1);
+        strncpy(new_path, home_dir, len1);
+        strncat(new_path, path + 1, len1 + len2);
         EINA_LIST_FOREACH(*(ep->user_dir_list), l, epd)
           {
              if (epd->dir)

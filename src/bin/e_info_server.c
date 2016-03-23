@@ -313,7 +313,7 @@ _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
           {
              char temp[16];
              snprintf(temp, sizeof(temp), "0x%x", e_client_util_win_get(child));
-             strncat( transients, temp, sizeof(transients) - strlen(transients));
+             strncat(transients, temp, sizeof(transients) - strlen(transients));
           }
      }
 
@@ -325,7 +325,7 @@ _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
              char temp[32];
              snprintf(temp, sizeof(temp), "[%d,%d,%d,%d] ", target_ec->shape_rects[i].x, target_ec->shape_rects[i].y,
                       target_ec->shape_rects[i].w, target_ec->shape_rects[i].h);
-             strncat( shape_rects, temp, sizeof(shape_rects) - strlen(shape_rects));
+             strncat(shape_rects, temp, sizeof(shape_rects) - strlen(shape_rects));
           }
      }
 
@@ -337,7 +337,7 @@ _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
              char temp[32];
              snprintf(temp, sizeof(temp), "[%d,%d,%d,%d] ", target_ec->shape_input_rects[i].x, target_ec->shape_input_rects[i].y,
                       target_ec->shape_input_rects[i].w, target_ec->shape_input_rects[i].h);
-             strncat( shape_input, temp, sizeof(shape_input) - strlen(shape_input));
+             strncat(shape_input, temp, sizeof(shape_input) - strlen(shape_input));
           }
      }
 
@@ -655,7 +655,7 @@ _e_info_server_cb_rotation_message(const Eldbus_Service_Interface *iface EINA_UN
    if (rot_msg == E_INFO_ROTATION_MESSAGE_SET)
      {
         /* check if rval is valid */
-        if ((rval < 0) || (rval > 270) || (rval % 90 != 0))
+        if ((rval > 270) || (rval % 90 != 0))
           return reply;
      }
 

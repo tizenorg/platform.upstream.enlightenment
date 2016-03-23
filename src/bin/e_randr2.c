@@ -669,7 +669,7 @@ _screen_fuzzy_fallback_find(E_Config_Randr2 *cfg, const char *id)
    // and fall back to finding just the output name in the rel
    // to identifier, rather than the specific screen id
    name = alloca(strlen(id) + 1);
-   strcpy(name, id);
+   strncpy(name, id, strlen(id));
    if ((p = strchr(name, '/'))) *p = 0;
 
    s = _screen_id_find(id);
@@ -695,7 +695,7 @@ _config_screen_clone_resolve(E_Config_Randr2 *cfg, const char *id, int *x, int *
    if (!cs) return NULL;
 
    name = alloca(strlen(cs->id) + 1);
-   strcpy(name, cs->id);
+   strncpy(name, cs->id, strlen(cs->id));
    if ((p = strchr(name, '/'))) *p = 0;
 
    s = _screen_id_find(cs->id);

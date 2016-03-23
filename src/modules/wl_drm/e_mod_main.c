@@ -445,8 +445,8 @@ _drm_randr_create(void)
                   free(s);
                   continue;
                }
-             strcpy(s->id, s->info.name);
-             strcat(s->id, "/");
+             strncpy(s->id, s->info.name, strlen(s->info.name));
+             strncat(s->id, "/", 1);
              if (s->info.edid) strcat(s->id, s->info.edid);
 
              printf("DRM RRR: Created Screen: %s\n", s->id);

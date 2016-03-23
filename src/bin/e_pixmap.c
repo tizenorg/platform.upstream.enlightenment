@@ -338,6 +338,8 @@ e_pixmap_new(E_Pixmap_Type type, ...)
         else
           pixmaps[type] = eina_hash_int32_new((Eina_Free_Cb)_e_pixmap_free);
         cp = _e_pixmap_new(type);
+        EINA_SAFETY_ON_NULL_RETURN_VAL(cp, NULL);
+
         cp->win = xwin;
         eina_hash_add(pixmaps[type], &xwin, cp);
 #endif
@@ -361,6 +363,8 @@ e_pixmap_new(E_Pixmap_Type type, ...)
           }
 
         cp = _e_pixmap_new(type);
+        EINA_SAFETY_ON_NULL_RETURN_VAL(cp, NULL);
+
         cp->win = id;
         eina_hash_add(pixmaps[type], &id, cp);
         uuid_generate(cp->uuid);
