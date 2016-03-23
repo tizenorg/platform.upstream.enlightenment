@@ -589,6 +589,13 @@ _e_comp_wl_device_send_event_device(const char *dev_name, Evas_Device_Class dev_
    uint32_t serial;
    Eina_List *l, *ll;
 
+   if (!ec) return;
+   if (ec->cur_mouse_action || ec->border_menu || e_comp_wl->drag)
+     return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (ec->ignored) return;
+   if (!ec->comp_data->surface) return;
+
    last_dev_name = e_comp_wl->input_device_manager.last_device_name;
    if (!last_dev_name || (last_dev_name && (strcmp(last_dev_name, dev_name))))
      {
@@ -609,6 +616,33 @@ _e_comp_wl_device_send_event_device(const char *dev_name, Evas_Device_Class dev_
                   if (wl_resource_get_client(dev_res) != wc) continue;
                   tizen_input_device_send_event_device(dev_res, serial, input_dev->identifier, timestamp);
                }
+          }
+     }
+}
+
+static void
+_e_comp_wl_device_send_last_event_device(E_Client *ec, uint32_t timestamp)
+{
+   E_Comp_Wl_Input_Device *input_dev;
+   struct wl_resource *dev_res;
+   struct wl_client *wc;
+   uint32_t serial;
+   Eina_List *l, *ll;
+
+   if (!ec->comp_data->surface) return;
+
+   serial = wl_display_next_serial(e_comp_wl->wl.disp);
+   wc = wl_resource_get_client(ec->comp_data->surface);
+   EINA_LIST_FOREACH(e_comp_wl->input_device_manager.device_list, l, input_dev)
+     {
+        if ((strcmp(input_dev->identifier, e_comp_wl->input_device_manager.last_device_name)) ||
+             (input_dev->capability != e_comp_wl->input_device_manager.last_device_cap))
+          continue;
+
+        EINA_LIST_FOREACH(input_dev->resources, ll, dev_res)
+          {
+             if (wl_resource_get_client(dev_res) != wc) continue;
+             tizen_input_device_send_event_device(dev_res, serial, input_dev->identifier, timestamp);
           }
      }
 }
@@ -681,11 +715,10 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
 {
    E_Client *ec;
    Evas_Event_Mouse_In *ev;
-   struct wl_resource *res, *dev_res;
+   struct wl_resource *res;
    struct wl_client *wc;
-   Eina_List *l, *ll;
+   Eina_List *l;
    uint32_t serial;
-   E_Comp_Wl_Input_Device *input_dev;
 
    ev = event;
    if (!(ec = data)) return;
@@ -723,21 +756,9 @@ _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
                               wl_fixed_from_int(ev->canvas.y - ec->client.y));
      }
 
-   if (e_comp_wl->input_device_manager.last_device_name)
-     {
-        EINA_LIST_FOREACH(e_comp_wl->input_device_manager.device_list, l, input_dev)
-          {
-             if ((strcmp(input_dev->identifier, e_comp_wl->input_device_manager.last_device_name)) ||
-                 (input_dev->capability != e_comp_wl->input_device_manager.last_device_cap))
-               continue;
-
-             EINA_LIST_FOREACH(input_dev->resources, ll, dev_res)
-               {
-                  if (wl_resource_get_client(dev_res) != wc) continue;
-                  tizen_input_device_send_event_device(dev_res, serial, input_dev->identifier, ev->timestamp);
-               }
-          }
-     }
+      if ((e_comp_wl->input_device_manager.last_device_name) &&
+          (_e_comp_wl_device_cap_to_class(e_comp_wl->input_device_manager.last_device_cap) == EVAS_DEVICE_CLASS_MOUSE))
+     _e_comp_wl_device_send_last_event_device(ec, ev->timestamp);
 }
 
 static void
@@ -1313,6 +1334,10 @@ _e_comp_wl_evas_cb_focus_in_timer(E_Client *ec)
    if (!e_comp_wl->kbd.focused) return EINA_FALSE;
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
    t = ecore_time_unix_get();
+   if ((e_comp_wl->input_device_manager.last_device_name) &&
+       (_e_comp_wl_device_cap_to_class(e_comp_wl->input_device_manager.last_device_cap) == EVAS_DEVICE_CLASS_KEYBOARD))
+     _e_comp_wl_device_send_last_event_device(ec, t);
+
    EINA_LIST_FOREACH(e_comp_wl->kbd.focused, l, res)
       wl_array_for_each(k, &e_comp_wl->kbd.keys)
       wl_keyboard_send_key(res, serial, t,
@@ -1382,6 +1407,10 @@ _e_comp_wl_evas_cb_focus_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
    /* send keyboard_leave to all keyboard resources */
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
    t = ecore_time_unix_get();
+   if ((e_comp_wl->input_device_manager.last_device_name) &&
+       (_e_comp_wl_device_cap_to_class(e_comp_wl->input_device_manager.last_device_cap) == EVAS_DEVICE_CLASS_KEYBOARD))
+     _e_comp_wl_device_send_last_event_device(ec, t);
+
    EINA_LIST_FOREACH_SAFE(e_comp_wl->kbd.focused, l, ll, res)
      {
         wl_array_for_each(k, &e_comp_wl->kbd.keys)
@@ -4704,6 +4733,9 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
              struct wl_resource *res;
              Eina_List *l;
 
+             if (ev->dev_name)
+               _e_comp_wl_device_send_event_device(ev->dev_name, EVAS_DEVICE_CLASS_KEYBOARD, ec, ev->timestamp);
+
              serial = wl_display_next_serial(e_comp_wl->wl.disp);
              EINA_LIST_FOREACH(e_comp_wl->kbd.focused, l, res)
                {
@@ -4775,6 +4807,9 @@ e_comp_wl_key_up(Ecore_Event_Key *ev)
 
         if (e_comp_wl->kbd.focused)
           {
+             if (ev->dev_name)
+               _e_comp_wl_device_send_event_device(ev->dev_name, EVAS_DEVICE_CLASS_KEYBOARD, ec, ev->timestamp);
+
              serial = wl_display_next_serial(e_comp_wl->wl.disp);
              EINA_LIST_FOREACH(e_comp_wl->kbd.focused, l, res)
                {
