@@ -531,10 +531,10 @@ _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
         struct wl_resource *res;
         struct wl_client *wc;
 
-        if (!(ec = e_comp_wl->ptr.ec)) return ECORE_CALLBACK_PASS_ON;
-        if (e_object_is_del(E_OBJECT(ec))) return ECORE_CALLBACK_PASS_ON;
-        if (!ec->comp_data->surface) return ECORE_CALLBACK_PASS_ON;
-        if (ec->ignored) return ECORE_CALLBACK_PASS_ON;
+        if (!(ec = e_comp_wl->ptr.ec)) return;
+        if (e_object_is_del(E_OBJECT(ec))) return;
+        if (!ec->comp_data->surface) return;
+        if (ec->ignored) return;
 
         wc = wl_resource_get_client(ec->comp_data->surface);
 
