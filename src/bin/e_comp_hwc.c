@@ -78,6 +78,41 @@ struct _E_Comp_Hwc {
 // Global variable.
 static E_Comp_Hwc *g_hwc = NULL;
 
+static void
+_e_comp_hwc_update_client_fps()
+{
+   static double time = 0.0;
+   static double lapse = 0.0;
+   static int cframes = 0;
+   static int flapse = 0;
+
+   if (e_comp->calc_fps)
+     {
+        double dt;
+        double tim = ecore_time_get();
+
+        dt = tim - e_comp->frametimes[0];
+        e_comp->frametimes[0] = tim;
+
+        time += dt;
+        cframes++;
+
+        if (lapse == 0.0)
+          {
+             lapse = tim;
+             flapse = cframes;
+          }
+        else if ((tim - lapse) >= 1.0)
+          {
+             e_comp->fps = (cframes - flapse) / (tim - lapse);
+             lapse = tim;
+             flapse = cframes;
+             time = 0.0;
+          }
+     }
+
+}
+
 static E_Comp_Hwc_Commit_Data *
 _e_comp_hwc_commit_data_create(void)
 {
@@ -506,6 +541,9 @@ _e_comp_hwc_display_client(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_
 #else
    hwc_layer->tserver_surface = tsurface;
 #endif
+
+   /* update fps */
+   _e_comp_hwc_update_client_fps();
 
    /* commit */
    if (!_e_comp_hwc_output_commit(hwc_output, hwc_layer, hwc_layer->tserver_surface, EINA_TRUE))
