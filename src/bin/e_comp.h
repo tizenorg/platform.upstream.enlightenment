@@ -242,7 +242,7 @@ E_API Eina_Bool e_comp_util_object_is_above_nocomp(Evas_Object *obj);
 E_API Eina_Bool e_comp_util_kbd_grabbed(void);
 E_API Eina_Bool e_comp_util_mouse_grabbed(void);
 
-E_API void e_comp_nocomp_end(char *location);
+E_API void e_comp_nocomp_end(const char *location);
 
 static inline Eina_Bool
 e_comp_util_client_is_fullscreen(const E_Client *ec)

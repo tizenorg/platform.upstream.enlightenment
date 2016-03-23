@@ -83,97 +83,6 @@ E_API int E_EVENT_COMPOSITOR_FPS_UPDATE = -1;
 #define CRI(f, x ...)
 #endif
 
-static Eina_Bool
-_e_comp_visible_object_clip_is(Evas_Object *obj)
-{
-   Evas_Object *clip;
-   int a;
-   
-   clip = evas_object_clip_get(obj);
-   if (!evas_object_visible_get(clip)) return EINA_FALSE;
-   evas_object_color_get(clip, NULL, NULL, NULL, &a);
-   if (a <= 0) return EINA_FALSE;
-   if (evas_object_clip_get(clip))
-     return _e_comp_visible_object_clip_is(clip);
-   return EINA_TRUE;
-}
-
-static Eina_Bool
-_e_comp_visible_object_is(Evas_Object *obj, Evas_Coord x, Evas_Coord y, Evas_Coord w, Evas_Coord h)
-{
-   const char *type = evas_object_type_get(obj);
-   Evas_Coord xx, yy, ww, hh;
-
-   if ((!type) || (!e_util_strcmp(type, "e_comp_object"))) return EINA_FALSE;
-   if (evas_object_data_get(obj, "comp_skip")) return EINA_FALSE;
-   evas_object_geometry_get(obj, &xx, &yy, &ww, &hh);
-   if (E_INTERSECTS(x, y, w, h, xx, yy, ww, hh))
-     {
-        if ((evas_object_visible_get(obj))
-            && (!evas_object_clipees_get(obj))
-           )
-          {
-             int a;
-             
-             evas_object_color_get(obj, NULL, NULL, NULL, &a);
-             if (a > 0)
-               {
-                  if ((!strcmp(type, "rectangle")) ||
-                      (!strcmp(type, "image")) ||
-                      (!strcmp(type, "text")) ||
-                      (!strcmp(type, "textblock")) ||
-                      (!strcmp(type, "textgrid")) ||
-                      (!strcmp(type, "polygon")) ||
-                      (!strcmp(type, "line")))
-                    {
-                       if (evas_object_clip_get(obj))
-                         return _e_comp_visible_object_clip_is(obj);
-                       return EINA_TRUE;
-                    }
-                  else
-                    {
-                       Eina_List *children;
-                       
-                       if ((children = evas_object_smart_members_get(obj)))
-                         {
-                            Eina_List *l;
-                            Evas_Object *o;
-                            
-                            EINA_LIST_FOREACH(children, l, o)
-                              {
-                                 if (_e_comp_visible_object_is(o, x, y, w, h))
-                                   {
-                                      if (evas_object_clip_get(o))
-                                        {
-                                           eina_list_free(children);
-                                           return _e_comp_visible_object_clip_is(o);
-                                        }
-                                      eina_list_free(children);
-                                      return !!evas_object_data_get(o, "comp_skip");
-                                   }
-                              }
-                            eina_list_free(children);
-                         }
-                    }
-               }
-          }
-     }
-   return EINA_FALSE;
-}
-
-static Eina_Bool
-_e_comp_visible_object_is_above(Evas_Object *obj, Evas_Coord x, Evas_Coord y, Evas_Coord w, Evas_Coord h)
-{
-   Evas_Object *above;
-   
-   for (above = evas_object_above_get(obj); above;
-        above = evas_object_above_get(above))
-     {
-        if (_e_comp_visible_object_is(above, x, y, w, h)) return EINA_TRUE;
-     }
-   return EINA_FALSE;
-}
-
 static E_Client *
 _e_comp_fullscreen_check(void)
 {
@@ -181,7 +90,6 @@ _e_comp_fullscreen_check(void)
 
    E_CLIENT_REVERSE_FOREACH(ec)
      {
-        Evas_Object *o = ec->frame;
         E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
         int ow, oh, vw, vh;
 
@@ -425,7 +333,7 @@ _e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
 }
 
 E_API void
-e_comp_nocomp_end(char *location)
+e_comp_nocomp_end(const char *location)
 {
    e_comp->nocomp_want = 0;
    E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
