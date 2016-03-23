@@ -828,6 +828,39 @@ struct E_Client
       Eina_Bool saved;
       E_Layer   saved_layer; // original layer
    } changable_layer[E_CHANGABLE_LAYER_TYPE_MAX];
+
+ struct
+   {
+       Eina_List *transform_list;
+       Eina_Bool  keep_ratio;
+       Eina_Bool  changed;
+
+       struct
+       {
+           int client_x, client_y, client_w, client_h;
+       } backup;
+
+       struct
+       {
+           Eina_Bool                    enable;
+           E_Util_Transform_Matrix      matrix;
+           E_Util_Transform_Rect_Vertex vertices;
+           E_Util_Transform             transform;
+
+           struct
+           {
+               E_Util_Transform_Rect_Vertex vertices;
+               int x, y, w, h;
+           } boundary;
+
+       } result;
+
+       struct
+       {
+           Eina_Bool               enable;
+           E_Util_Transform_Matrix matrix;
+       } parent;
+   } transform_core;
 };
 
 #define e_client_focus_policy_click(ec) \
@@ -970,6 +1003,13 @@ E_API void e_client_transform_clear(E_Client *ec);
 E_API void e_client_cursor_map_apply(E_Client *ec, int rotation, int x, int y);
 
 YOLO E_API void e_client_focus_stack_set(Eina_List *l);
+
+E_API Eina_Bool         e_client_transform_core_enable_get(E_Client *ec);
+E_API void              e_client_transform_core_add(E_Client *ec, E_Util_Transform *transform);
+E_API void              e_client_transform_core_remove(E_Client *ec, E_Util_Transform *transform);
+E_API void              e_client_transform_core_update(E_Client *ec);
+E_API int               e_client_transform_core_transform_count_get(E_Client *ec);
+E_API E_Util_Transform *e_client_transform_core_transform_get(E_Client *ec, int index);
 
 /**
  * Move window to coordinates that do not account client decorations yet.
