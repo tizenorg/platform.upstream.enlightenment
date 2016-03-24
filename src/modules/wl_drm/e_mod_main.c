@@ -55,9 +55,11 @@ end:
 static Eina_Bool
 _e_mod_drm_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
-   const Eina_List *l;
+   const Eina_List *l, *ll;
    E_Randr2_Screen *screen;
    Ecore_Drm_Event_Output *e;
+   Ecore_Drm_Device *dev;
+   Ecore_Drm_Output *o;
 
    if (!(e = event)) goto end;
 
@@ -83,6 +85,47 @@ _e_mod_drm_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
                e_comp_wl_output_remove(screen->id);
 
              break;
+          }
+     }
+
+   /* TODO: add #ifdef TIZEN_EXTERNAL_OUTPUT?
+    * As I understand we must notify wl_comp here that there has been
+    * added external output. wl_comp will create global object
+    * for that output and clients will be able to interact with one
+    * by wayland protocol
+    */
+   EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
+     {
+        EINA_LIST_FOREACH(dev->external_outputs, ll, o)
+          {
+             if (!strcmp(ecore_drm_output_name_get(o), e->name))
+               {
+                  if (e->plug)
+                    {
+                       if (!e_comp_wl_output_init(e->name, e->make,
+                                                  e->model, e->x, e->y,
+                                                  e->w, e->h, e->phys_width,
+                                                  e->phys_height, e->refresh,
+                                                  e->subpixel_order,
+                                                  e->transform))
+                         {
+                            ERR("WL_DRM: Could not setup new output: %s",
+                                e->name);
+                         }
+                       else
+                        {
+                           DBG("WL_DRM: Created external output: "
+                               "%s  x=%d y=%d  mode:%dx%d "
+                               "phys_size:%dx%d  refresh:%d\n",
+                               e->name,
+                               e->x, e->y, e->w, e->h,
+                               e->phys_width, e->phys_height,
+                               e->refresh );
+                        }
+                    }
+                  else
+                    e_comp_wl_output_remove(e->name);
+               }
           }
      }
 
