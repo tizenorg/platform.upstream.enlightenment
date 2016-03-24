@@ -590,7 +590,7 @@ _e_comp_wl_device_send_event_device(const char *dev_name, Evas_Device_Class dev_
    Eina_List *l, *ll;
 
    if (!ec) return;
-   if (ec->cur_mouse_action || ec->border_menu || e_comp_wl->drag)
+   if (ec->cur_mouse_action || e_comp_wl->drag)
      return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (ec->ignored) return;
