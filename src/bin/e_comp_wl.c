@@ -1989,7 +1989,18 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    E_Comp_Wl_Buffer *buffer;
 
    first = !e_pixmap_usable_get(ec->pixmap);
-   ignored = ec->ignored;
+#ifndef HAVE_WAYLAND_ONLY
+   if (first && e_client_has_xwindow(ec))
+     first = !e_pixmap_usable_get(e_comp_x_client_pixmap_get(ec));
+#endif
+
+   if (ec->ignored && (ec->comp_data->shell.surface || ec->internal))
+     {
+        EC_CHANGED(ec);
+        ec->new_client = 1;
+        e_comp->new_clients++;
+        e_client_unignore(ec);
+     }
 
    ec->comp_data->scaler.buffer_viewport = state->buffer_viewport;
 
@@ -2029,7 +2040,9 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
           {
              if ((ec->comp_data->shell.surface) && (ec->comp_data->shell.unmap))
                ec->comp_data->shell.unmap(ec->comp_data->shell.surface);
-             else
+             else if (e_client_has_xwindow(ec) || ec->internal ||
+                      (ec->comp_data->sub.data && ec->comp_data->sub.data->parent->comp_data->mapped) ||
+                      (ec == e_comp_wl->drag_client))
                {
                   ec->visible = EINA_FALSE;
                   evas_object_hide(ec->frame);
@@ -2046,7 +2059,9 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
           {
              if ((ec->comp_data->shell.surface) && (ec->comp_data->shell.map))
                ec->comp_data->shell.map(ec->comp_data->shell.surface);
-             else
+             else if (e_client_has_xwindow(ec) || ec->internal ||
+                      (ec->comp_data->sub.data && ec->comp_data->sub.data->parent->comp_data->mapped) ||
+                      (ec == e_comp_wl->drag_client))
                {
                   ec->visible = EINA_TRUE;
                   ec->ignored = 0;
@@ -2106,12 +2121,9 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
           }
 
         if (ec->new_client)
-          ec->placed = placed;
-        else if ((first) && (ec->placed) && (!ec->internal) && (!ec->override) && (ec->lock_client_location))
           {
-             ec->x = ec->y = 0;
-             ec->placed = EINA_FALSE;
-             ec->new_client = EINA_TRUE;
+             ec->placed = placed;
+             ec->want_focus |= ec->icccm.accepts_focus && (!ec->override);
           }
      }
 
@@ -2131,9 +2143,6 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    ec->comp_data->frames = eina_list_merge(ec->comp_data->frames,
                                            state->frames);
    state->frames = NULL;
-
-   ec->ignored = ignored;
-   if (!ec->comp_data->mapped) goto unmapped;
 
    buffer = e_pixmap_resource_get(ec->pixmap);
 
@@ -2253,13 +2262,6 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    state->buffer_viewport.changed = 0;
 
    return;
-
-unmapped:
-   state->buffer_viewport.changed = 0;
-
-   /* clear pending damages */
-   EINA_LIST_FREE(state->damages, dmg)
-     eina_rectangle_free(dmg);
 }
 
 static void
