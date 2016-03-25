@@ -3237,6 +3237,28 @@ e_comp_wl_subsurface_create(E_Client *ec, E_Client *epc, uint32_t id, struct wl_
         return EINA_FALSE;
      }
 
+   // check parent relationship is a cycle
+     {
+        E_Client *parent = epc;
+
+        while(parent)
+          {
+             if (ec == parent)
+               {
+                  ERR("Subsurface parent relationship is a cycle : [child win : %x, %s], [parent win : %x, %s]",
+                      e_client_util_win_get(ec), e_client_util_name_get(ec),
+                      e_client_util_win_get(epc), e_client_util_name_get(epc));
+
+                  return EINA_FALSE;
+               }
+
+             if (parent->comp_data->sub.data)
+                parent = parent->comp_data->sub.data->parent;
+             else
+                break;
+          }
+     }
+
    /* try to allocate subsurface data */
    if (!(sdata = E_NEW(E_Comp_Wl_Subsurf_Data, 1)))
      {
