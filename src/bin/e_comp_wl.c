@@ -4732,9 +4732,14 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
           {
              struct wl_resource *res;
              Eina_List *l;
+             const char *name;
 
-             if (ev->dev_name)
-               _e_comp_wl_device_send_event_device(ev->dev_name, EVAS_DEVICE_CLASS_KEYBOARD, ec, ev->timestamp);
+             if (ev->dev)
+               {
+                  name = ecore_device_identifier_get(ev->dev);
+                  if (name)
+                    _e_comp_wl_device_send_event_device(name, ECORE_DEVICE_CLASS_KEYBOARD, ec, ev->timestamp);
+               }
 
              serial = wl_display_next_serial(e_comp_wl->wl.disp);
              EINA_LIST_FOREACH(e_comp_wl->kbd.focused, l, res)
@@ -4807,8 +4812,14 @@ e_comp_wl_key_up(Ecore_Event_Key *ev)
 
         if (e_comp_wl->kbd.focused)
           {
-             if (ev->dev_name)
-               _e_comp_wl_device_send_event_device(ev->dev_name, EVAS_DEVICE_CLASS_KEYBOARD, ec, ev->timestamp);
+             const char *name;
+
+             if (ev->dev)
+               {
+                  name = ecore_device_identifier_get(ev->dev);
+                  if (name)
+                    _e_comp_wl_device_send_event_device(name, EVAS_DEVICE_CLASS_KEYBOARD, ec, ev->timestamp);
+               }
 
              serial = wl_display_next_serial(e_comp_wl->wl.disp);
              EINA_LIST_FOREACH(e_comp_wl->kbd.focused, l, res)
