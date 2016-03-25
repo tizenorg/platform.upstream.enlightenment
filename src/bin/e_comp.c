@@ -107,7 +107,7 @@ _e_comp_fullscreen_check(void)
           continue;
 
 
-        if ((!cdata->buffer_ref.buffer) &&
+        if ((!cdata->buffer_ref.buffer) ||
             (cdata->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_NATIVE))
           break;
 
