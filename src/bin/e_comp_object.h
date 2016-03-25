@@ -115,7 +115,8 @@ E_API unsigned int e_comp_object_is_animating(Evas_Object *obj);
 E_API void e_comp_object_alpha_set(Evas_Object *obj, Eina_Bool alpha);
 E_API void e_comp_object_mask_set(Evas_Object *obj, Eina_Bool set);
 E_API void e_comp_object_size_update(Evas_Object *obj, int w, int h);
-
+E_API void e_comp_object_transform_bg_set(Evas_Object *obj, Eina_Bool set);
+E_API void e_comp_object_transform_bg_vertices_set(Evas_Object *obj, E_Util_Transform_Rect_Vertex *vertices);
 #endif
 #endif
 
