@@ -137,25 +137,95 @@ _e_comp_fullscreen_check(void)
 static void
 _e_comp_fps_update(void)
 {
+   static double rtime = 0.0;
+   static double rlapse = 0.0;
+   static int frames = 0;
+   static int flapse = 0;
+   double dt;
+   double tim = ecore_time_get();
+
+   /* calculate fps */
+   dt = tim - e_comp->frametimes[0];
+   e_comp->frametimes[0] = tim;
+
+   rtime += dt;
+   frames++;
+
+   if (rlapse == 0.0)
+     {
+        rlapse = tim;
+        flapse = frames;
+     }
+   else if ((tim - rlapse) >= 1.0)
+     {
+        e_comp->fps = (frames - flapse) / (tim - rlapse);
+        rlapse = tim;
+        flapse = frames;
+        rtime = 0.0;
+     }
+
    if (conf->fps_show)
      {
-        if (e_comp->fps_bg) return;
+        if (e_comp->fps_bg && e_comp->fps_fg)
+          {
+             char buf[128];
+             Evas_Coord x = 0, y = 0, w = 0, h = 0;
+             E_Zone *z;
 
-        e_comp->fps_bg = evas_object_rectangle_add(e_comp->evas);
-        evas_object_color_set(e_comp->fps_bg, 0, 0, 0, 128);
-        evas_object_layer_set(e_comp->fps_bg, E_LAYER_MAX);
-        evas_object_name_set(e_comp->fps_bg, "e_comp->fps_bg");
-        evas_object_lower(e_comp->fps_bg);
-        evas_object_show(e_comp->fps_bg);
+             if (e_comp->fps > 0.0) snprintf(buf, sizeof(buf), "FPS: %1.1f", e_comp->fps);
+             else snprintf(buf, sizeof(buf), "N/A");
+             evas_object_text_text_set(e_comp->fps_fg, buf);
 
-        e_comp->fps_fg = evas_object_text_add(e_comp->evas);
-        evas_object_text_font_set(e_comp->fps_fg, "Sans", 10);
-        evas_object_text_text_set(e_comp->fps_fg, "???");
-        evas_object_color_set(e_comp->fps_fg, 255, 255, 255, 255);
-        evas_object_layer_set(e_comp->fps_fg, E_LAYER_MAX);
-        evas_object_name_set(e_comp->fps_bg, "e_comp->fps_fg");
-        evas_object_stack_above(e_comp->fps_fg, e_comp->fps_bg);
-        evas_object_show(e_comp->fps_fg);
+             evas_object_geometry_get(e_comp->fps_fg, NULL, NULL, &w, &h);
+             w += 8;
+             h += 8;
+             z = e_zone_current_get();
+             if (z)
+               {
+                  switch (conf->fps_corner)
+                    {
+                     case 3: // bottom-right
+                        x = z->x + z->w - w;
+                        y = z->y + z->h - h;
+                        break;
+
+                     case 2: // bottom-left
+                        x = z->x;
+                        y = z->y + z->h - h;
+                        break;
+
+                     case 1: // top-right
+                        x = z->x + z->w - w;
+                        y = z->y;
+                        break;
+                     default: // 0 // top-left
+                        x = z->x;
+                        y = z->y;
+                        break;
+                    }
+               }
+             evas_object_move(e_comp->fps_bg, x, y);
+             evas_object_resize(e_comp->fps_bg, w, h);
+             evas_object_move(e_comp->fps_fg, x + 4, y + 4);
+          }
+        else
+          {
+             e_comp->fps_bg = evas_object_rectangle_add(e_comp->evas);
+             evas_object_color_set(e_comp->fps_bg, 0, 0, 0, 128);
+             evas_object_layer_set(e_comp->fps_bg, E_LAYER_MAX);
+             evas_object_name_set(e_comp->fps_bg, "e_comp->fps_bg");
+             evas_object_lower(e_comp->fps_bg);
+             evas_object_show(e_comp->fps_bg);
+
+             e_comp->fps_fg = evas_object_text_add(e_comp->evas);
+             evas_object_text_font_set(e_comp->fps_fg, "Sans", 10);
+             evas_object_text_text_set(e_comp->fps_fg, "???");
+             evas_object_color_set(e_comp->fps_fg, 255, 255, 255, 255);
+             evas_object_layer_set(e_comp->fps_fg, E_LAYER_MAX);
+             evas_object_name_set(e_comp->fps_bg, "e_comp->fps_fg");
+             evas_object_stack_above(e_comp->fps_fg, e_comp->fps_bg);
+             evas_object_show(e_comp->fps_fg);
+          }
      }
    else
      {
@@ -163,7 +233,6 @@ _e_comp_fps_update(void)
         E_FREE_FUNC(e_comp->fps_bg, evas_object_del);
      }
 }
-
 
 #ifdef LEGACY_NOCOMP
 static void
@@ -389,11 +458,6 @@ _e_comp_cb_update(void)
    E_Client *ec;
    Eina_List *l;
 
-   static double rtime = 0.0;
-   static double rlapse = 0.0;
-   static int frames = 0;
-   static int flapse = 0;
-
    if (!e_comp) return EINA_FALSE;
 
    TRACE_DS_BEGIN(COMP:UPDATE CB);
@@ -417,93 +481,12 @@ _e_comp_cb_update(void)
         e_comp_object_render_update_del(ec->frame);
         _e_comp_client_update(ec);
      }
-   _e_comp_fps_update();
-   if (conf->fps_show)
+
+   if (conf->fps_show || e_comp->calc_fps)
      {
-        char buf[128];
-        double fps = 0.0, t, dt;
-        int i;
-        Evas_Coord x = 0, y = 0, w = 0, h = 0;
-        E_Zone *z;
-
-        t = ecore_time_get();
-        if (conf->fps_average_range < 1)
-          conf->fps_average_range = 30;
-        else if (conf->fps_average_range > 120)
-          conf->fps_average_range = 120;
-        dt = t - e_comp->frametimes[conf->fps_average_range - 1];
-        if (dt > 0.0) fps = (double)conf->fps_average_range / dt;
-        else fps = 0.0;
-        if (fps > 0.0) snprintf(buf, sizeof(buf), "FPS: %1.1f", fps);
-        else snprintf(buf, sizeof(buf), "N/A");
-        for (i = 121; i >= 1; i--)
-          e_comp->frametimes[i] = e_comp->frametimes[i - 1];
-        e_comp->frametimes[0] = t;
-        e_comp->frameskip++;
-        if (e_comp->frameskip >= conf->fps_average_range)
-          {
-             e_comp->frameskip = 0;
-             evas_object_text_text_set(e_comp->fps_fg, buf);
-          }
-        evas_object_geometry_get(e_comp->fps_fg, NULL, NULL, &w, &h);
-        w += 8;
-        h += 8;
-        z = e_zone_current_get();
-        if (z)
-          {
-             switch (conf->fps_corner)
-               {
-                case 3: // bottom-right
-                  x = z->x + z->w - w;
-                  y = z->y + z->h - h;
-                  break;
-
-                case 2: // bottom-left
-                  x = z->x;
-                  y = z->y + z->h - h;
-                  break;
-
-                case 1: // top-right
-                  x = z->x + z->w - w;
-                  y = z->y;
-                  break;
-                default: // 0 // top-left
-                  x = z->x;
-                  y = z->y;
-                  break;
-               }
-          }
-        evas_object_move(e_comp->fps_bg, x, y);
-        evas_object_resize(e_comp->fps_bg, w, h);
-        evas_object_move(e_comp->fps_fg, x + 4, y + 4);
+        _e_comp_fps_update();
      }
-   else
-     {
-        if (e_comp->calc_fps)
-          {
-             double dt;
-             double tim = ecore_time_get();
 
-             dt = tim - e_comp->frametimes[0];
-             e_comp->frametimes[0] = tim;
-
-             rtime += dt;
-             frames++;
-
-             if (rlapse == 0.0)
-               {
-                  rlapse = tim;
-                  flapse = frames;
-               }
-             else if ((tim - rlapse) >= 1.0)
-               {
-                  e_comp->fps = (frames - flapse) / (tim - rlapse);
-                  rlapse = tim;
-                  flapse = frames;
-                  rtime = 0.0;
-               }
-          }
-     }
    if (conf->lock_fps)
      {
         DBG("MANUAL RENDER...");
