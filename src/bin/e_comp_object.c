@@ -86,6 +86,7 @@ typedef struct _E_Comp_Object
    Evas_Object         *shobj;  // shadow object
    Evas_Object         *effect_obj; // effects object
    Evas_Object         *mask_obj; // mask object: transparent parts of this comp object allow to copy the alpha to current H/W plane.
+   Evas_Object         *transform_bg_obj; // transform backgroung with keep_ratio option
    unsigned int         layer; //e_comp_canvas_layer_map(cw->ec->layer)
    Eina_List           *obj_mirror;  // extra mirror objects
    Eina_Tiler          *updates; //render update regions
@@ -271,6 +272,24 @@ _e_comp_object_cb_mirror_hide(void *data, Evas *e EINA_UNUSED, Evas_Object *obj 
    cw->force_visible--;
    if ((!cw->force_visible) && (!e_object_is_del(E_OBJECT(cw->ec))))
      evas_object_smart_callback_call(cw->smart_obj, "visibility_normal", cw->ec);
+}
+
+/////////////////////////////////////
+
+static void
+_e_comp_object_transform_bg_stack_update(Evas_Object *obj)
+{
+    API_ENTRY;
+    EINA_SAFETY_ON_NULL_RETURN(cw->ec);
+    if (cw->ec->input_only) return;
+    if (!cw->transform_bg_obj) return;
+
+    if (evas_object_layer_get(obj) != evas_object_layer_get(cw->transform_bg_obj))
+    {
+        int layer = evas_object_layer_get(obj);
+        evas_object_layer_set(cw->transform_bg_obj, layer);
+    }
+    evas_object_stack_below(cw->transform_bg_obj, obj);
 }
 
 /////////////////////////////////////
@@ -1453,6 +1472,7 @@ _e_comp_intercept_stack_above(void *data, Evas_Object *obj, Evas_Object *above)
 
    TRACE_DS_BEGIN(COMP:INTERCEPT STACK ABOVE);
    _e_comp_intercept_stack_helper(data, above, evas_object_stack_above);
+   _e_comp_object_transform_bg_stack_update(obj);
    TRACE_DS_END();
 }
 
@@ -1464,6 +1484,7 @@ _e_comp_intercept_stack_below(void *data, Evas_Object *obj, Evas_Object *below)
 
    TRACE_DS_BEGIN(COMP:INTERCEPT STACK BELOW);
    _e_comp_intercept_stack_helper(data, below, evas_object_stack_below);
+   _e_comp_object_transform_bg_stack_update(obj);
    TRACE_DS_END();
 }
 
@@ -1494,6 +1515,7 @@ _e_comp_intercept_lower(void *data, Evas_Object *obj)
    if (e_comp->hwc &&e_comp->nocomp_ec == cw->ec) e_comp_nocomp_end(__FUNCTION__);
    e_comp_render_queue();
    e_comp_shape_queue();
+   _e_comp_object_transform_bg_stack_update(obj);
 
 end:
    TRACE_DS_END();
@@ -1545,6 +1567,7 @@ _e_comp_intercept_raise(void *data, Evas_Object *obj)
       e_comp_nocomp_end(__FUNCTION__);
    e_comp_render_queue();
    e_comp_shape_queue();
+   _e_comp_object_transform_bg_stack_update(obj);
 
 end:
    TRACE_DS_END();
@@ -1769,6 +1792,9 @@ _e_comp_intercept_show(void *data, Evas_Object *obj EINA_UNUSED)
        cw->input_rect.w, cw->input_rect.h);
    if (cw->mask_obj)
      evas_object_resize(cw->mask_obj, cw->w, cw->h);
+
+   if (cw->transform_bg_obj)
+      evas_object_resize(cw->transform_bg_obj, cw->w, cw->h);
 
    _e_comp_intercept_show_helper(cw);
 }
@@ -2157,6 +2183,7 @@ _e_comp_smart_hide(Evas_Object *obj)
    evas_object_hide(cw->clip);
    if (cw->input_obj) evas_object_hide(cw->input_obj);
    evas_object_hide(cw->effect_obj);
+   if (cw->transform_bg_obj) evas_object_hide(cw->transform_bg_obj);
    if (cw->ec->dead)
      {
         Evas_Object *o;
@@ -2230,6 +2257,7 @@ _e_comp_smart_show(Evas_Object *obj)
    if (cw->ec->internal_elm_win && (!evas_object_visible_get(cw->ec->internal_elm_win)))
      evas_object_show(cw->ec->internal_elm_win);
    if (cw->mask_obj) evas_object_show(cw->mask_obj);
+   if (cw->transform_bg_obj) evas_object_show(cw->transform_bg_obj);
    e_comp_render_queue();
    if (cw->ec->input_only)
      {
@@ -2296,6 +2324,7 @@ _e_comp_smart_del(Evas_Object *obj)
    evas_object_del(cw->input_obj);
    evas_object_del(cw->obj);
    evas_object_del(cw->mask_obj);
+   evas_object_del(cw->transform_bg_obj);
    e_comp_shape_queue();
    eina_stringshare_del(cw->frame_theme);
    eina_stringshare_del(cw->frame_name);
@@ -2372,6 +2401,8 @@ _e_comp_smart_resize(Evas_Object *obj, int w, int h)
             cw->input_rect.w, cw->input_rect.h);
         if (cw->mask_obj)
           evas_object_resize(cw->mask_obj, w, h);
+        if (cw->transform_bg_obj)
+          evas_object_resize(cw->transform_bg_obj, w, h);
         /* resize render update tiler */
         if (!first)
           {
@@ -3624,6 +3655,7 @@ e_comp_object_dirty(Evas_Object *obj)
      evas_object_image_data_set(cw->obj, NULL);
    evas_object_image_size_set(cw->obj, w, h);
    if (cw->mask_obj) evas_object_resize(cw->mask_obj, w, h);
+   if (cw->transform_bg_obj) evas_object_resize(cw->transform_bg_obj, w, h);
 
    RENDER_DEBUG("SIZE [%p]: %dx%d", cw->ec, w, h);
    if (cw->pending_updates)
@@ -4275,4 +4307,82 @@ e_comp_object_size_update(Evas_Object *obj, int w, int h)
    API_ENTRY;
 
    evas_object_image_size_set(cw->obj, w, h);
+}
+
+E_API void
+e_comp_object_transform_bg_set(Evas_Object *obj, Eina_Bool set)
+{
+   Eina_Bool transform_set = EINA_FALSE;
+   API_ENTRY;
+   EINA_SAFETY_ON_NULL_RETURN(cw->ec);
+   if (cw->ec->input_only) return;
+
+   transform_set = !!set;
+
+   if (transform_set)
+     {
+        if (!cw->transform_bg_obj)
+          {
+             Evas_Object *o = evas_object_rectangle_add(e_comp->evas);
+             evas_object_move(o, 0, 0);
+             evas_object_resize(o, cw->w, cw->h);
+             evas_object_render_op_set(o, EVAS_RENDER_COPY);
+             evas_object_color_set(o, 0, 0, 0, 255);
+             if (cw->visible) evas_object_show(o);
+
+             cw->transform_bg_obj = o;
+          }
+        _e_comp_object_transform_bg_stack_update(obj);
+     }
+   else
+     {
+        if (cw->transform_bg_obj)
+          {
+             evas_object_smart_member_del(cw->transform_bg_obj);
+             E_FREE_FUNC(cw->transform_bg_obj, evas_object_del);
+          }
+     }
+}
+
+E_API void
+e_comp_object_transform_bg_vertices_set(Evas_Object *obj, E_Util_Transform_Rect_Vertex *vertices)
+{
+   API_ENTRY;
+   EINA_SAFETY_ON_NULL_RETURN(cw->ec);
+   if (cw->ec->input_only) return;
+   if (!cw->transform_bg_obj) return;
+
+   if (vertices)
+     {
+        Evas_Map *map = evas_map_new(4);
+
+        if (map)
+          {
+             int i;
+             evas_map_util_points_populate_from_object_full(map, cw->transform_bg_obj, 0);
+             evas_map_util_points_color_set(map, 255, 255, 255, 255);
+
+             for (i = 0 ; i < 4 ; ++i)
+               {
+                  double dx, dy;
+                  int x, y;
+
+                  e_util_transform_vertices_pos_get(vertices, i, &dx, &dy, 0, 0);
+
+                  x = (int)(dx + 0.5);
+                  y = (int)(dy + 0.5);
+
+                  evas_map_point_coord_set(map, i, x, y, 1.0);
+               }
+
+             evas_object_map_set(cw->transform_bg_obj, map);
+             evas_object_map_enable_set(cw->transform_bg_obj, EINA_TRUE);
+
+             evas_map_free(map);
+          }
+     }
+   else
+     {
+        evas_object_map_enable_set(cw->transform_bg_obj, EINA_FALSE);
+     }
 }
