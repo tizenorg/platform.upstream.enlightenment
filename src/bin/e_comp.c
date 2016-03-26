@@ -529,6 +529,8 @@ nocomp:
    ec = _e_comp_fullscreen_check();
    if (ec)
      {
+         // soolim :temp
+         conf->nocomp_fs = 1;
         if (conf->nocomp_fs)
           {
              if (e_comp->nocomp && e_comp->nocomp_ec)
@@ -1074,6 +1076,8 @@ e_comp_init(void)
 
 #ifdef HAVE_HWC
    // TO DO : check hwc init condition
+   // soolim :temp
+   conf->hwc = 1;
    if (conf->hwc)
      {
         e_comp->hwc = e_comp_hwc_init();
