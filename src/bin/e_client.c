@@ -1628,6 +1628,8 @@ _e_client_cb_evas_hide(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UN
 
    if (ec->new_client || ec->iconic) return;
    _e_client_event_simple(ec, E_EVENT_CLIENT_HIDE);
+
+   EC_CHANGED(ec);
 }
 
 static void
@@ -1729,7 +1731,9 @@ _e_client_cb_evas_resize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_
 static void
 _e_client_cb_evas_show(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
+   E_Client *ec = data;
    _e_client_event_simple(data, E_EVENT_CLIENT_SHOW);
+   EC_CHANGED(ec);
 }
 
 static void
@@ -2614,7 +2618,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         /* TODO: need to check whether window intersects with entire screen, not zone. */
         /* if (!E_INTERSECTS(ec->x, ec->y, ec->w, ec->h, zone->x, zone->y, zone->w, zone->h)) continue; */
         /* check if internal animation is running */
-        if (e_comp_object_is_animating(ec->frame)) continue;
+        //if (e_comp_object_is_animating(ec->frame)) continue;
         /* check if external animation is running */
         if (evas_object_data_get(ec->frame, "effect_running")) continue;
 
@@ -2813,6 +2817,7 @@ e_client_idler_before(void)
    if (_e_client_layout_cb)
      _e_client_layout_cb();
 
+   Eina_Bool calc_visibility = EINA_FALSE;
    // pass 3 - hide windows needing hide and eval (main eval)
    E_CLIENT_FOREACH(ec)
      {
@@ -2827,9 +2832,7 @@ e_client_idler_before(void)
         if (ec->changed)
           {
              _e_client_eval(ec);
-
-             /* calculate visibility of clients */
-             e_client_visibility_calculate();
+             calc_visibility = EINA_TRUE;
           }
 
         if ((ec->changes.visible) && (ec->visible) && (!ec->changed))
@@ -2837,7 +2840,14 @@ e_client_idler_before(void)
              evas_object_show(ec->frame);
              ec->changes.visible = !evas_object_visible_get(ec->frame);
              ec->changed = ec->changes.visible;
+             calc_visibility = EINA_TRUE;
           }
+     }
+
+   if (calc_visibility)
+     {
+        /* calculate visibility of clients */
+        e_client_visibility_calculate();
      }
 
    TRACE_DS_END();
