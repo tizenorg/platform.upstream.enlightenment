@@ -312,75 +312,61 @@ e_pixmap_new(E_Pixmap_Type type, ...)
 {
    E_Pixmap *cp = NULL;
    va_list l;
-#ifndef HAVE_WAYLAND_ONLY
-   Ecore_X_Window xwin;
-#endif
-#ifdef HAVE_WAYLAND
    uintptr_t id;
-#endif
 
-   EINA_SAFETY_ON_TRUE_RETURN_VAL((type != E_PIXMAP_TYPE_WL) && (type != E_PIXMAP_TYPE_X), NULL);
+   EINA_SAFETY_ON_TRUE_RETURN_VAL(type != E_PIXMAP_TYPE_WL, NULL);
+
    va_start(l, type);
+
    switch (type)
      {
-      case E_PIXMAP_TYPE_X:
-#ifndef HAVE_WAYLAND_ONLY
-        xwin = va_arg(l, uint32_t);
-        if (pixmaps[type])
-          {
-             cp = eina_hash_find(pixmaps[type], &xwin);
-             if (cp)
-               {
-                  cp->refcount++;
-                  break;
-               }
-          }
-        else
-          pixmaps[type] = eina_hash_int32_new((Eina_Free_Cb)_e_pixmap_free);
-        cp = _e_pixmap_new(type);
-        EINA_SAFETY_ON_NULL_RETURN_VAL(cp, NULL);
-
-        cp->win = xwin;
-        eina_hash_add(pixmaps[type], &xwin, cp);
-#endif
-        break;
       case E_PIXMAP_TYPE_WL:
-#ifdef HAVE_WAYLAND
-        id = va_arg(l, uintptr_t);
-        if (pixmaps[type])
-          {
-             cp = eina_hash_find(pixmaps[type], &id);
-             if (cp)
-               {
-                  cp->refcount++;
-                  break;
-               }
-          }
-        else
-          {
-             pixmaps[type] = eina_hash_pointer_new(NULL);
-             deleted[type] = eina_hash_pointer_new((Eina_Free_Cb)_e_pixmap_free);
-          }
 
-        cp = _e_pixmap_new(type);
-        EINA_SAFETY_ON_NULL_RETURN_VAL(cp, NULL);
+         id = va_arg(l, uintptr_t);
 
-        cp->win = id;
-        eina_hash_add(pixmaps[type], &id, cp);
-        uuid_generate(cp->uuid);
+         if (pixmaps[type])
+           {
+              cp = eina_hash_find(pixmaps[type], &id);
+              if (cp)
+                {
+                   cp->refcount++;
+                   break;
+                }
+           }
+         else
+           {
+              pixmaps[type] = eina_hash_pointer_new(NULL);
+              deleted[type] = eina_hash_pointer_new((Eina_Free_Cb)_e_pixmap_free);
+           }
 
-        if (!res_ids)
-          res_ids = eina_hash_int32_new(NULL);
-        cp->res_id = res_id;
-        eina_hash_add(res_ids, &res_id, cp);
-        res_id++;
-        ELOG("PIXMAP NEW", cp, cp->client);
-#endif
-        break;
-      default: break;
+         cp = _e_pixmap_new(type);
+         if (!cp)
+           {
+              va_end(l);
+              ELOGF("PIXMAP", "NEW failed id:%p", NULL, NULL, (void *)id);
+              return NULL;
+           }
+
+         cp->win = id;
+         eina_hash_add(pixmaps[type], &id, cp);
+         uuid_generate(cp->uuid);
+
+         if (!res_ids)
+           res_ids = eina_hash_int32_new(NULL);
+         cp->res_id = res_id;
+         eina_hash_add(res_ids, &res_id, cp);
+         res_id++;
+         ELOG("PIXMAP NEW", cp, cp->client);
+         break;
+
+      default:
+         break;
      }
+
    va_end(l);
+
    _e_pixmap_hook_call(E_PIXMAP_HOOK_NEW, cp);
+
    return cp;
 }
 

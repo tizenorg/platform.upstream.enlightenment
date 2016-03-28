@@ -1128,7 +1128,7 @@ _e_client_move_key_down(void *data EINA_UNUSED, int type EINA_UNUSED, void *even
    return ECORE_CALLBACK_PASS_ON;
 
 stop:
-   _e_client_move_end(action_client);
+   if (action_client) _e_client_move_end(action_client);
    _e_client_action_finish();
    return ECORE_CALLBACK_DONE;
 }
@@ -1141,7 +1141,7 @@ _e_client_move_mouse_down(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev
    if (!action_client)
      ERR("no action_client!");
 
-   _e_client_move_end(action_client);
+   if (action_client) _e_client_move_end(action_client);
    _e_client_action_finish();
    return ECORE_CALLBACK_DONE;
 }
@@ -1379,7 +1379,7 @@ _e_client_resize_key_down(void *data EINA_UNUSED, int type EINA_UNUSED, void *ev
    return ECORE_CALLBACK_PASS_ON;
 
 stop:
-   _e_client_resize_end(action_client);
+   if (action_client) _e_client_resize_end(action_client);
    _e_client_action_finish();
    return ECORE_CALLBACK_DONE;
 }
@@ -1392,7 +1392,7 @@ _e_client_resize_mouse_down(void *data EINA_UNUSED, int type EINA_UNUSED, void *
    if (!action_client)
      ERR("no action_client!");
 
-   _e_client_resize_end(action_client);
+   if (action_client) _e_client_resize_end(action_client);
    _e_client_action_finish();
    return ECORE_CALLBACK_DONE;
 }

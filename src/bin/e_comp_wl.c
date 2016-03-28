@@ -3477,6 +3477,8 @@ _e_comp_wl_screenshooter_cb_shoot(struct wl_client *client EINA_UNUSED, struct w
    wl_shm_buffer_end_access(shm_buffer);
 
    screenshooter_send_done(resource);
+
+   free(pixels);
 }
 
 static const struct screenshooter_interface _e_screenshooter_interface =
