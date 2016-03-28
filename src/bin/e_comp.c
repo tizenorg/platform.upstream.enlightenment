@@ -43,6 +43,14 @@ static double ecore_frametime = 0;
 
 static int _e_comp_log_dom = -1;
 
+static int _e_comp_hooks_delete = 0;
+static int _e_comp_hooks_walking = 0;
+
+static Eina_Inlist *_e_comp_hooks[] =
+{
+   [E_COMP_HOOK_BEFORE_RENDER] = NULL,
+};
+
 E_API int E_EVENT_COMPOSITOR_RESIZE = -1;
 E_API int E_EVENT_COMPOSITOR_DISABLE = -1;
 E_API int E_EVENT_COMPOSITOR_ENABLE = -1;
@@ -82,6 +90,39 @@ E_API int E_EVENT_COMPOSITOR_FPS_UPDATE = -1;
 #define ERR(f, x ...)
 #define CRI(f, x ...)
 #endif
+
+static void
+_e_comp_hooks_clean(void)
+{
+   Eina_Inlist *l;
+   E_Comp_Hook *ch;
+   unsigned int x;
+
+   for (x = 0; x < E_COMP_HOOK_LAST; x++)
+     EINA_INLIST_FOREACH_SAFE(_e_comp_hooks[x], l, ch)
+       {
+          if (!ch->delete_me) continue;
+          _e_comp_hooks[x] = eina_inlist_remove(_e_comp_hooks[x],
+                                                EINA_INLIST_GET(ch));
+          free(ch);
+       }
+}
+
+static void
+_e_comp_hook_call(E_Comp_Hook_Point hookpoint, E_Comp *c)
+{
+   E_Comp_Hook *ch;
+
+   _e_comp_hooks_walking++;
+   EINA_INLIST_FOREACH(_e_comp_hooks[hookpoint], ch)
+     {
+        if (ch->delete_me) continue;
+        ch->func(ch->data, c);
+     }
+   _e_comp_hooks_walking--;
+   if ((_e_comp_hooks_walking == 0) && (_e_comp_hooks_delete > 0))
+     _e_comp_hooks_clean();
+}
 
 static E_Client *
 _e_comp_fullscreen_check(void)
@@ -508,7 +549,9 @@ nocomp:
         TRACE_DS_END();
         return ECORE_CALLBACK_RENEW;
      }
-
+#ifdef MULTI_PLANE_HWC
+   _e_comp_hook_call(E_COMP_HOOK_BEFORE_RENDER, e_comp);
+#else
    ec = _e_comp_fullscreen_check();
    if (ec)
      {
@@ -539,8 +582,11 @@ nocomp:
           }
      }
    else
-     e_comp_nocomp_end("_e_comp_cb_update : ec is not fullscreen");
-
+      {
+        if (e_comp->nocomp && e_comp->nocomp_ec)
+           e_comp_nocomp_end("_e_comp_cb_update : ec is not fullscreen");
+      }
+#endif
    TRACE_DS_END();
 
    return ECORE_CALLBACK_RENEW;
@@ -1519,4 +1565,34 @@ e_comp_util_object_is_above_nocomp(Evas_Object *obj)
    else
      return EINA_TRUE;
    return EINA_FALSE;
+}
+
+E_API E_Comp_Hook *
+e_comp_hook_add(E_Comp_Hook_Point hookpoint, E_Comp_Hook_Cb func, const void *data)
+{
+   E_Comp_Hook *ch;
+
+   EINA_SAFETY_ON_TRUE_RETURN_VAL(hookpoint >= E_COMP_HOOK_LAST, NULL);
+   ch = E_NEW(E_Comp_Hook, 1);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ch, NULL);
+   ch->hookpoint = hookpoint;
+   ch->func = func;
+   ch->data = (void*)data;
+   _e_comp_hooks[hookpoint] = eina_inlist_append(_e_comp_hooks[hookpoint],
+                                                 EINA_INLIST_GET(ch));
+   return ch;
+}
+
+E_API void
+e_comp_hook_del(E_Comp_Hook *ch)
+{
+   ch->delete_me = 1;
+   if (_e_comp_hooks_walking == 0)
+     {
+        _e_comp_hooks[ch->hookpoint] = eina_inlist_remove(_e_comp_hooks[ch->hookpoint],
+                                                          EINA_INLIST_GET(ch));
+        free(ch);
+     }
+   else
+     _e_comp_hooks_delete++;
 }

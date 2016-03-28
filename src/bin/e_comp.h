@@ -86,6 +86,25 @@ typedef struct _E_Launch_Screen
    Ecore_Timer    *timeout;
 } E_Launch_Screen;
 
+typedef struct _E_Comp_Hook E_Comp_Hook;
+
+typedef enum _E_Comp_Hook_Point
+{
+   E_COMP_HOOK_BEFORE_RENDER,
+   E_COMP_HOOK_LAST
+} E_Comp_Hook_Point;
+
+typedef void (*E_Comp_Hook_Cb)(void *data, E_Comp *c);
+
+struct _E_Comp_Hook
+{
+   EINA_INLIST;
+   E_Comp_Hook_Point hookpoint;
+   E_Comp_Hook_Cb    func;
+   void               *data;
+   unsigned char       delete_me : 1;
+};
+
 struct _E_Comp
 {
    E_Object e_obj_inherit;
@@ -258,5 +277,8 @@ e_comp_util_client_is_fullscreen(const E_Client *ec)
 
 E_API void e_comp_post_update_add(E_Client *ec);
 E_API void e_comp_post_update_purge(E_Client *ec);
+
+E_API E_Comp_Hook *e_comp_hook_add(E_Comp_Hook_Point hookpoint, E_Comp_Hook_Cb func, const void *data);
+E_API void e_comp_hook_del(E_Comp_Hook *ph);
 #endif
 #endif
