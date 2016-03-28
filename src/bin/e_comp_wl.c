@@ -515,6 +515,29 @@ _e_comp_wl_evas_cb_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
 }
 
 static void
+_e_comp_wl_send_touch_cancel(E_Client *ec)
+{
+   Eina_List *l;
+   struct wl_resource *res;
+   struct wl_client *wc;
+
+   if (!ec) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
+   if (!ec->comp_data->surface) return;
+   if (ec->ignored) return;
+
+   wc = wl_resource_get_client(ec->comp_data->surface);
+
+   EINA_LIST_FOREACH(e_comp->wl_comp_data->touch.resources, l, res)
+     {
+        if (wl_resource_get_client(res) != wc) continue;
+        if (!e_comp_wl_input_touch_check(res)) continue;
+
+        wl_touch_send_cancel(res);
+     }
+}
+
+static void
 _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Client *ec;
@@ -526,25 +549,8 @@ _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
 
    if (e_comp_wl->ptr.ec && need_send_released)
      {
-        E_Client *ec;
-        Eina_List *l;
-        struct wl_resource *res;
-        struct wl_client *wc;
+        _e_comp_wl_send_touch_cancel(e_comp_wl->ptr.ec);
 
-        if (!(ec = e_comp_wl->ptr.ec)) return;
-        if (e_object_is_del(E_OBJECT(ec))) return;
-        if (!ec->comp_data->surface) return;
-        if (ec->ignored) return;
-
-        wc = wl_resource_get_client(ec->comp_data->surface);
-
-        EINA_LIST_FOREACH(e_comp->wl_comp_data->touch.resources, l, res)
-          {
-             if (wl_resource_get_client(res) != wc) continue;
-             if (!e_comp_wl_input_touch_check(res)) continue;
-
-             wl_touch_send_cancel(res);
-          }
         need_send_released = EINA_FALSE;
         need_send_motion = EINA_FALSE;
      }
@@ -1023,7 +1029,6 @@ _e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    if (!need_send_released)
      {
         need_send_motion = EINA_TRUE;
-        return;
      }
 
    dev = ev->dev;
@@ -1790,29 +1795,24 @@ _e_comp_wl_cb_mouse_move(void *d EINA_UNUSED, int t EINA_UNUSED, Ecore_Event_Mou
 static Eina_Bool
 _e_comp_wl_cb_mouse_button_cancel(void *d EINA_UNUSED, int t EINA_UNUSED, Ecore_Event_Mouse_Button *ev)
 {
-   E_Client *ec;
-   Eina_List *l;
-   struct wl_resource *res;
-   struct wl_client *wc;
-
-   if (!(ec = e_comp_wl->ptr.ec)) return ECORE_CALLBACK_PASS_ON;
-   if (e_object_is_del(E_OBJECT(ec))) return ECORE_CALLBACK_PASS_ON;
-   if (!ec->comp_data->surface) return ECORE_CALLBACK_PASS_ON;
-   if (ec->ignored) return ECORE_CALLBACK_PASS_ON;
-
-   wc = wl_resource_get_client(ec->comp_data->surface);
-
-   EINA_LIST_FOREACH(e_comp->wl_comp_data->touch.resources, l, res)
-     {
-        if (wl_resource_get_client(res) != wc) continue;
-        if (!e_comp_wl_input_touch_check(res)) continue;
-
-        wl_touch_send_cancel(res);
-     }
+   if (e_comp_wl->ptr.ec)
+     _e_comp_wl_send_touch_cancel(e_comp_wl->ptr.ec);
 
    return ECORE_CALLBACK_PASS_ON;
 }
 
+static Eina_Bool
+_e_comp_wl_cb_zone_display_state_change(void *d EINA_UNUSED, int t EINA_UNUSED, E_Event_Zone_Display_State_Change *ev EINA_UNUSED)
+{
+   if (e_comp_wl->ptr.ec && need_send_released)
+     {
+        _e_comp_wl_send_touch_cancel(e_comp_wl->ptr.ec);
+
+        need_send_released = EINA_FALSE;
+      }
+
+    return ECORE_CALLBACK_PASS_ON;
+ }
 
 static void
 _e_comp_wl_subsurface_restack(E_Client *ec)
@@ -4188,6 +4188,7 @@ e_comp_wl_init(void)
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD,         _e_comp_wl_cb_comp_object_add,     NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_MOVE,          _e_comp_wl_cb_mouse_move,          NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_CANCEL, _e_comp_wl_cb_mouse_button_cancel, NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_ZONE_DISPLAY_STATE_CHANGE, _e_comp_wl_cb_zone_display_state_change, NULL);
 
    /* add hooks to catch e_client events */
    e_client_hook_add(E_CLIENT_HOOK_NEW_CLIENT,   _e_comp_wl_client_cb_new,          NULL);
