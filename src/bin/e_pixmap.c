@@ -371,9 +371,10 @@ e_pixmap_new(E_Pixmap_Type type, ...)
 
         if (!res_ids)
           res_ids = eina_hash_int32_new(NULL);
+
+        res_id++;
         cp->res_id = res_id;
         eina_hash_add(res_ids, &res_id, cp);
-        res_id++;
         ELOG("PIXMAP NEW", cp, cp->client);
 #endif
         break;
