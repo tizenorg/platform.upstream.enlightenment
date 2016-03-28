@@ -1,6 +1,6 @@
 MDIR = $(libdir)/enlightenment/modules
 MOD_LDFLAGS = -module -avoid-version
-MOD_CPPFLAGS = -I. \
+MOD_CPPFLAGS = -I. -DE_LOGGING=1 \
 -I$(top_srcdir) \
 -I$(top_srcdir)/src/bin \
 -I$(top_builddir)/src/bin \
