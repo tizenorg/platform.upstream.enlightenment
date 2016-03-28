@@ -421,6 +421,9 @@ static const struct wl_shell_surface_interface _e_shell_surface_interface =
 static void
 _e_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges, int32_t width, int32_t height)
 {
+   if (!resource)
+     return;
+
    wl_shell_surface_send_configure(resource, edges, width, height);
 }
 
@@ -431,6 +434,9 @@ _e_shell_surface_configure(struct wl_resource *resource, Evas_Coord x, Evas_Coor
 
    /* DBG("WL_SHELL: Surface Configure: %d \t%d %d %d %d",  */
    /*     wl_resource_get_id(resource), x, y, w, h); */
+
+   if (!resource)
+     return;
 
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
@@ -467,6 +473,9 @@ _e_shell_surface_ping(struct wl_resource *resource)
    E_Client *ec;
    uint32_t serial;
 
+   if (!resource)
+     return;
+
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
      {
@@ -484,6 +493,9 @@ static void
 _e_shell_surface_map(struct wl_resource *resource)
 {
    E_Client *ec;
+
+   if (!resource)
+     return;
 
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
@@ -508,6 +520,9 @@ static void
 _e_shell_surface_unmap(struct wl_resource *resource)
 {
    E_Client *ec;
+
+   if (!resource)
+     return;
 
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
@@ -610,6 +625,9 @@ _e_xdg_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges
 
    /* DBG("XDG_SHELL: Surface Configure Send: %d \t%d %d\tEdges: %d", */
    /*     wl_resource_get_id(resource), width, height, edges); */
+
+   if (!resource)
+     return;
 
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
@@ -1009,6 +1027,9 @@ _e_xdg_shell_surface_configure(struct wl_resource *resource, Evas_Coord x, Evas_
    /* DBG("XDG_SHELL: Surface Configure: %d \t%d %d %d %d",  */
    /*     wl_resource_get_id(resource), x, y, w, h); */
 
+   if (!resource)
+     return;
+
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
      {
@@ -1045,6 +1066,9 @@ _e_xdg_shell_surface_ping(struct wl_resource *resource)
    E_Client *ec;
    uint32_t serial;
 
+   if (!resource)
+     return;
+
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
      {
@@ -1065,6 +1089,9 @@ static void
 _e_xdg_shell_surface_map(struct wl_resource *resource)
 {
    E_Client *ec;
+
+   if (!resource)
+     return;
 
    /* DBG("XDG_SHELL: Map Surface: %d", wl_resource_get_id(resource)); */
 
@@ -1102,6 +1129,9 @@ _e_xdg_shell_surface_unmap(struct wl_resource *resource)
    E_Client *ec;
 
    /* DBG("XDG_SHELL: Unmap Surface: %d", wl_resource_get_id(resource)); */
+
+   if (!resource)
+     return;
 
    TRACE_DS_BEGIN(SHELL:UNMAP);
 
