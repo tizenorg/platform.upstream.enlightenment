@@ -64,12 +64,10 @@ e_grabinput_release(Ecore_Window mouse_win, Ecore_Window key_win)
 {
    if (mouse_win == grab_mouse_win)
      {
-        ecore_wl_input_ungrab(ecore_wl_input_get());
         grab_mouse_win = 0;
      }
    if (key_win == grab_key_win)
      {
-        ecore_wl_input_ungrab(ecore_wl_input_get());
         grab_key_win = 0;
         if (focus_win != 0)
           {
