@@ -4,6 +4,8 @@ E_API double e_scale = 1.0;
 static Eina_Bool _initted = EINA_FALSE;
 static int _dpi = -1;
 
+#define BASE_DPI 75
+
 EINTERN int
 e_scale_init(void)
 {
@@ -31,7 +33,7 @@ e_scale_update(void)
    if (e_config->scale.use_dpi)
      {
         if (e_comp->comp_type == E_PIXMAP_TYPE_WL)
-          e_scale = (double)ecore_wl_dpi_get() / (double)e_config->scale.base_dpi;
+          e_scale = (double)BASE_DPI / (double)e_config->scale.base_dpi;
 
         if (e_scale > e_config->scale.max) e_scale = e_config->scale.max;
         else if (e_scale < e_config->scale.min)

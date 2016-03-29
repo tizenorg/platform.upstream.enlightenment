@@ -4165,8 +4165,6 @@ e_comp_wl_init(void)
         return EINA_FALSE;
      }
 
-   ecore_wl_server_mode_set(1);
-
    /* create hash to store client's buffer */
    clients_buffer_hash = eina_hash_pointer_new(NULL);
 
@@ -4250,9 +4248,6 @@ e_comp_wl_shutdown(void)
      }
    if (e_comp_wl->wl.shm) wl_shm_destroy(e_comp_wl->wl.shm);
    _e_comp_wl_gl_shutdown();
-
-   /* shutdown ecore_wayland */
-   ecore_wl_shutdown();
 
 #ifdef HAVE_WAYLAND_TBM
    e_comp_wl_tbm_shutdown();
