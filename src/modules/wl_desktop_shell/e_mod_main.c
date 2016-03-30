@@ -1111,15 +1111,18 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
      {
         int pw = 0;
         int ph = 0;
+        int cw = ec->w;
+        int ch = ec->h;
         e_pixmap_size_get(ec->pixmap, &pw, &ph);
-        if (pw != ec->w || ph != ec->h)
+        e_client_geometry_get(ec, NULL, NULL, &cw, &ch);
+        if (pw != cw || ph != ch)
           {
              // skip. because the pixmap's size doesnot same to ec's size
              ELOGF("SHELL",
-                   "Deny Map |win:0x%08x|ec_size:%d,%d|pix_size:%d,%d",
+                   "Deny Map |win:0x%08x|ec_size:%d,%d|get_size:%d,%d|pix_size:%d,%d",
                    ec->pixmap, ec,
                    (unsigned int)e_client_util_win_get(ec),
-                   ec->w, ec->h, pw, ph);
+                   ec->w, ec->h, cw, ch, pw, ph);
           }
         else
           {

@@ -62,6 +62,8 @@ static Eina_Rectangle action_orig = {0, 0, 0, 0};
 
 static E_Client_Layout_Cb _e_client_layout_cb = NULL;
 
+static Eina_Bool _e_calc_visibility = EINA_FALSE;
+
 EINTERN void e_client_focused_set(E_Client *ec);
 
 static Eina_Inlist *_e_client_hooks[] =
@@ -2605,12 +2607,17 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
    Eina_Rectangle r, *_r;
    Eina_Iterator *it;
    Eina_Bool canvas_vis = EINA_TRUE;
-   Eina_Bool ec_vis, ec_opaque, changed;
+   Eina_Bool ec_vis, ec_opaque, changed, calc_region;
    int x = 0;
    int y = 0;
    int w = 0;
    int h = 0;
    const int edge = 1;
+#ifdef HAVE_WAYLAND_ONLY
+   E_Comp_Wl_Client_Data *cdata;
+#endif
+   Eina_List *changed_list = NULL;
+   Eina_List *l = NULL;
 
    if (!zone) return;
 
@@ -2619,8 +2626,11 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
    t = eina_tiler_new(zone->w + edge, zone->h + edge);
    eina_tiler_tile_size_set(t, 1, 1);
 
-   EINA_RECTANGLE_SET(&r, zone->x, zone->y, zone->w, zone->h);
-   eina_tiler_rect_add(t, &r);
+   if (zone->display_state != E_ZONE_DISPLAY_STATE_OFF)
+     {
+        EINA_RECTANGLE_SET(&r, zone->x, zone->y, zone->w, zone->h);
+        eina_tiler_rect_add(t, &r);
+     }
 
    o = evas_object_top_get(e_comp->evas);
    for (; o; o = evas_object_below_get(o))
@@ -2632,47 +2642,81 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         if (e_object_is_del(E_OBJECT(ec))) continue;
         if (e_client_util_ignored_get(ec)) continue;
         if (ec->zone != zone) continue;
+        if (!ec->frame) continue;
+#ifdef HAVE_WAYLAND_ONLY
+        /* if ec is subsurface, skip this */
+        cdata = (E_Comp_Wl_Client_Data *)ec->comp_data;
+        if (cdata && cdata->sub.data) continue;
+#endif
+
         /* TODO: need to check whether window intersects with entire screen, not zone. */
         /* if (!E_INTERSECTS(ec->x, ec->y, ec->w, ec->h, zone->x, zone->y, zone->w, zone->h)) continue; */
+#if 0 // TODO: How do we handle the window when it is running animation & effect
         /* check if internal animation is running */
-        //if (e_comp_object_is_animating(ec->frame)) continue;
+        if (e_comp_object_is_animating(ec->frame)) continue;
         /* check if external animation is running */
         if (evas_object_data_get(ec->frame, "effect_running")) continue;
-
+#endif
         e_client_geometry_get(ec, &x, &y, &w, &h);
         ec_vis = ec_opaque = changed = EINA_FALSE;
+        calc_region = EINA_TRUE;
 
-        ////////////////////////////////////////////////////////////////////////
-        /* check some visible state */
-        if ((!ec->visible) ||
-            (ec->iconic) ||
-            (!evas_object_visible_get(ec->frame))
-#ifndef HAVE_WAYLAND_ONLY
-            /* check if it entered to hide process. TODO: support for wayland */
-            || (ec->icccm.state == ECORE_X_WINDOW_STATE_HINT_WITHDRAWN)
-#endif
-           )
+        if (!ec->visible)
           {
-             ; /* do nothing */
+
+             if (ec->visibility.obscured == E_VISIBILITY_UNOBSCURED)
+               calc_region = EINA_FALSE;
+             else
+               continue;
           }
         else
           {
-             if (canvas_vis)
+             if (!evas_object_visible_get(ec->frame))
                {
-                  it = eina_tiler_iterator_new(t);
-                  EINA_ITERATOR_FOREACH(it, _r)
+                  if (cdata && !cdata->mapped)
                     {
-                       if (E_INTERSECTS(x, y, w, h,
-                                        _r->x, _r->y, _r->w, _r->h))
+                       calc_region = EINA_FALSE;
+                       if (ec->visibility.obscured == E_VISIBILITY_UNOBSCURED)
+                         calc_region = EINA_FALSE;
+                       else
+                         continue;
+                    }
+
+                  if (!ec->iconic)
+                    {
+                       calc_region = EINA_FALSE;
+                       if (ec->visibility.obscured == E_VISIBILITY_UNOBSCURED)
+                         calc_region = EINA_FALSE;
+                       else
+                         continue;
+                    }
+                  else
+                    {
+                       if (ec->exp_iconify.by_client)
                          {
-                            ec_vis = EINA_TRUE;
-                            break;
+                            if (ec->visibility.obscured == E_VISIBILITY_UNOBSCURED)
+                              calc_region = EINA_FALSE;
+                            else
+                              continue;
                          }
                     }
-                  eina_iterator_free(it);
                }
           }
-        ////////////////////////////////////////////////////////////////////////
+
+        if (canvas_vis && calc_region)
+          {
+             it = eina_tiler_iterator_new(t);
+             EINA_ITERATOR_FOREACH(it, _r)
+               {
+                  if (E_INTERSECTS(x, y, w, h,
+                                   _r->x, _r->y, _r->w, _r->h))
+                    {
+                       ec_vis = EINA_TRUE;
+                       break;
+                    }
+               }
+             eina_iterator_free(it);
+          }
 
         if (ec_vis)
           {
@@ -2732,11 +2776,21 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
                }
           }
 
-        if (changed)
-          _e_client_event_simple(ec, E_EVENT_CLIENT_VISIBILITY_CHANGE);
+        changed_list = eina_list_append(changed_list, ec);
+     }
 
-        _e_client_hook_call(E_CLIENT_HOOK_EVAL_VISIBILITY, ec);
-        ec->visibility.changed = 0;
+   if (changed_list)
+     {
+        EINA_LIST_FOREACH(changed_list, l, ec)
+          {
+             if (changed)
+               _e_client_event_simple(ec, E_EVENT_CLIENT_VISIBILITY_CHANGE);
+
+             _e_client_hook_call(E_CLIENT_HOOK_EVAL_VISIBILITY, ec);
+             ec->visibility.changed = 0;
+          }
+        eina_list_free(changed_list);
+        changed_list = NULL;
      }
 
    eina_tiler_free(t);
@@ -2950,13 +3004,7 @@ _e_client_transform_core_sub_update(E_Client *ec, E_Util_Transform_Rect_Vertex *
 E_API void
 e_client_visibility_calculate(void)
 {
-   E_Zone *zone;
-   Eina_List *zl;
-
-   EINA_LIST_FOREACH(e_comp->zones, zl, zone)
-     {
-        _e_client_visibility_zone_calculate(zone);
-     }
+   _e_calc_visibility = EINA_TRUE;
 }
 
 ////////////////////////////////////////////////
@@ -3028,7 +3076,6 @@ e_client_idler_before(void)
    if (_e_client_layout_cb)
      _e_client_layout_cb();
 
-   Eina_Bool calc_visibility = EINA_FALSE;
    // pass 3 - hide windows needing hide and eval (main eval)
    E_CLIENT_FOREACH(ec)
      {
@@ -3043,7 +3090,7 @@ e_client_idler_before(void)
         if (ec->changed)
           {
              _e_client_eval(ec);
-             calc_visibility = EINA_TRUE;
+             e_client_visibility_calculate();
           }
 
         if ((ec->changes.visible) && (ec->visible) && (!ec->changed))
@@ -3051,14 +3098,19 @@ e_client_idler_before(void)
              evas_object_show(ec->frame);
              ec->changes.visible = !evas_object_visible_get(ec->frame);
              ec->changed = ec->changes.visible;
-             calc_visibility = EINA_TRUE;
+             e_client_visibility_calculate();
           }
      }
 
-   if (calc_visibility)
+   if (_e_calc_visibility)
      {
-        /* calculate visibility of clients */
-        e_client_visibility_calculate();
+        E_Zone *zone;
+        Eina_List *zl;
+        EINA_LIST_FOREACH(e_comp->zones, zl, zone)
+          {
+             _e_client_visibility_zone_calculate(zone);
+          }
+        _e_calc_visibility = EINA_FALSE;
      }
 
    TRACE_DS_END();
