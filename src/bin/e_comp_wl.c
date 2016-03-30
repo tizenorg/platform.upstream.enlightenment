@@ -4251,8 +4251,6 @@ e_comp_wl_init(void)
         return EINA_FALSE;
      }
 
-   ecore_wl_server_mode_set(1);
-
    /* create hash to store client's buffer */
    clients_buffer_hash = eina_hash_pointer_new(NULL);
 
