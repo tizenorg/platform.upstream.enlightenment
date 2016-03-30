@@ -3872,6 +3872,13 @@ e_client_geometry_get(E_Client *ec, int *x, int *y, int *w, int *h)
         if (ec->frame)
           {
              evas_object_geometry_get(ec->frame, &gx, &gy, &gw, &gh);
+             if (gx == 0 && gy == 0 && gw == 0 && gh == 0)
+               {
+                  gx = ec->x;
+                  gy = ec->y;
+                  gw = ec->w;
+                  gh = ec->h;
+               }
           }
         else
           {
