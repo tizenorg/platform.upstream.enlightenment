@@ -275,106 +275,6 @@ _e_comp_fps_update(void)
      }
 }
 
-#ifdef LEGACY_NOCOMP
-static void
-_e_comp_cb_nocomp_begin(void)
-{
-   E_Client *ec, *ecf;
-
-   if (e_comp->nocomp) return;
-
-   E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
-
-   ecf = _e_comp_fullscreen_check();
-   if (!ecf) return;
-   e_comp->nocomp_ec = ecf;
-   E_CLIENT_FOREACH(ec)
-     if (ec != ecf) e_client_redirected_set(ec, 0);
-
-   INF("NOCOMP %p: frame %p", ecf, ecf->frame);
-   e_comp->nocomp = 1;
-
-   {
-      Eina_Bool fs;
-
-      fs = e_comp->nocomp_ec->fullscreen;
-      if (!fs)
-        e_comp->nocomp_ec->saved.layer = e_comp->nocomp_ec->layer;
-      e_comp->nocomp_ec->fullscreen = 0;
-      e_comp->nocomp_ec->layer = E_LAYER_CLIENT_PRIO;
-      evas_object_layer_set(e_comp->nocomp_ec->frame, E_LAYER_CLIENT_PRIO);
-      e_comp->nocomp_ec->fullscreen = fs;
-   }
-   e_client_redirected_set(ecf, 0);
-
-   //ecore_evas_manual_render_set(e_comp->ee, EINA_TRUE);
-   ecore_evas_hide(e_comp->ee);
-   edje_file_cache_flush();
-   edje_collection_cache_flush();
-   evas_image_cache_flush(e_comp->evas);
-   evas_font_cache_flush(e_comp->evas);
-   evas_render_dump(e_comp->evas);
-
-   DBG("JOB2...");
-   e_comp_render_queue();
-   e_comp_shape_queue_block(1);
-   ecore_event_add(E_EVENT_COMPOSITOR_DISABLE, NULL, NULL, NULL);
-}
-
-static void
-_e_comp_cb_nocomp_end(void)
-{
-   E_Client *ec;
-
-   if (!e_comp->nocomp) return;
-
-   INF("COMP RESUME!");
-   ecore_evas_show(e_comp->ee);
-   E_CLIENT_FOREACH(ec)
-     {
-        e_client_redirected_set(ec, 1);
-        if (ec->visible && (!ec->input_only))
-          e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
-     }
-   e_comp_render_queue();
-   e_comp_shape_queue_block(0);
-   ecore_event_add(E_EVENT_COMPOSITOR_ENABLE, NULL, NULL, NULL);
-}
-
-static Eina_Bool
-_e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
-{
-   e_comp->nocomp_delay_timer = NULL;
-   if (e_comp->nocomp_override == 0)
-     {
-        if (_e_comp_fullscreen_check()) e_comp->nocomp_want = 1;
-        _e_comp_cb_nocomp_begin();
-     }
-   return EINA_FALSE;
-}
-
-static void
-_e_comp_nocomp_end(void)
-{
-   e_comp->nocomp_want = 0;
-   E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
-   _e_comp_cb_nocomp_end();
-   if (e_comp->nocomp_ec)
-     {
-        E_Layer layer = MAX(e_comp->nocomp_ec->saved.layer, E_LAYER_CLIENT_NORMAL);
-        Eina_Bool fs;
-
-        fs = e_comp->nocomp_ec->fullscreen;
-        e_comp->nocomp_ec->fullscreen = 0;
-        if (fs)
-          layer = E_LAYER_CLIENT_FULLSCREEN;
-        evas_object_layer_set(e_comp->nocomp_ec->frame, layer);
-        e_comp->nocomp_ec->fullscreen = fs;
-     }
-   e_comp->nocomp_ec = NULL;
-}
-
-#else
 static void
 _e_comp_cb_nocomp_begin(void)
 {
@@ -452,8 +352,6 @@ e_comp_nocomp_end(const char *location)
    _e_comp_cb_nocomp_end();
    e_comp->nocomp_ec = NULL;
 }
-
-#endif
 
 static void
 _e_comp_client_update(E_Client *ec)
