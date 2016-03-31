@@ -23,7 +23,7 @@ static const int key_renderer_state;
 #define USE_FIXED_SCANOUT 1
 
 // trace debug
-const Eina_Bool trace_debug = 1;
+const Eina_Bool trace_debug = 0;
 
 typedef struct _E_Comp_Hwc E_Comp_Hwc;
 typedef struct _E_Comp_Hwc_Output E_Comp_Hwc_Output;
@@ -71,6 +71,7 @@ struct _E_Comp_Hwc_Layer {
 
    int index;
    tdm_layer *tlayer;
+   tdm_info_layer info;
    int zpos;
    Eina_Bool primary;
 
@@ -812,7 +813,8 @@ _e_comp_hwc_output_commit_handler(tdm_output *output, unsigned int sequence,
 #if USE_FIXED_SCANOUT
    /* send the done surface to the client  */
    /* , only when the renderer state is active(no composite) */
-   if (hwc_renderer->state == E_HWC_RENDERER_STATE_ACTIVATE)
+   if (hwc_renderer->activated_ec &&
+       hwc_renderer->state == E_HWC_RENDERER_STATE_ACTIVATE)
      {
         /* dequeue */
         send_tsurface = _e_comp_hwc_renderer_dequeue(hwc_renderer);
@@ -830,28 +832,12 @@ _e_comp_hwc_output_commit_handler(tdm_output *output, unsigned int sequence,
 static Eina_Bool
 _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_layer, tbm_surface_h tsurface, Eina_Bool is_canvas)
 {
-   tdm_info_layer info;
    tbm_surface_info_s surf_info;
    tdm_error error;
    tdm_output *toutput = hwc_output->toutput;
    tdm_layer *tlayer = hwc_layer->tlayer;
    E_Comp_Hwc_Renderer *hwc_renderer = hwc_layer->hwc_renderer;
    E_Comp_Hwc_Commit_Data *data = NULL;
-
-   tbm_surface_get_info(tsurface, &surf_info);
-
-   CLEAR(info);
-   info.src_config.size.h = surf_info.planes[0].stride;
-   info.src_config.size.v = surf_info.height;
-   info.src_config.pos.x = 0;
-   info.src_config.pos.y = 0;
-   info.src_config.pos.w = surf_info.width;
-   info.src_config.pos.h = surf_info.height;
-   info.dst_pos.x = hwc_output->x;
-   info.dst_pos.y = hwc_output->y;
-   info.dst_pos.w = hwc_output->w;
-   info.dst_pos.h = hwc_output->h;
-   info.transform = TDM_TRANSFORM_NORMAL;
 
    data = _e_comp_hwc_commit_data_create();
    if (!data) return EINA_FALSE;
@@ -864,20 +850,50 @@ _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_l
      data->ec = hwc_renderer->activated_ec;
    data->is_canvas = is_canvas;
 
-   if (hwc_layer->hwc->trace_debug)
-     ELOGF("HWC", "Commit  Layer(%p)      tbm_surface(%p) (%dx%d,[%d,%d,%d,%d]=>[%d,%d,%d,%d]) is_canvas(%d) data(%p)",
-  		 NULL, NULL, hwc_layer, tsurface,
-           info.src_config.size.h, info.src_config.size.h,
-           info.src_config.pos.x, info.src_config.pos.y, info.src_config.pos.w, info.src_config.pos.h,
-           info.dst_pos.x, info.dst_pos.y, info.dst_pos.w, info.dst_pos.h, is_canvas, data);
-
-   error = tdm_layer_set_info(tlayer, &info);
-   if (error != TDM_ERROR_NONE)
+   /* set layer when the layer infomation is different from the previous one */
+   tbm_surface_get_info(tsurface, &surf_info);
+   if (hwc_layer->info.src_config.size.h != surf_info.planes[0].stride ||
+       hwc_layer->info.src_config.size.v != surf_info.height ||
+       hwc_layer->info.src_config.pos.x != 0 ||
+       hwc_layer->info.src_config.pos.y != 0 ||
+       hwc_layer->info.src_config.pos.w != surf_info.width ||
+       hwc_layer->info.src_config.pos.h != surf_info.height ||
+       hwc_layer->info.dst_pos.x != hwc_output->x ||
+       hwc_layer->info.dst_pos.y != hwc_output->y ||
+       hwc_layer->info.dst_pos.w != hwc_output->w ||
+       hwc_layer->info.dst_pos.h != hwc_output->h ||
+       hwc_layer->info.transform != TDM_TRANSFORM_NORMAL)
      {
-        _e_comp_hwc_commit_data_destroy(data);
-        ERR("fail to tdm_layer_set_info");
-        return EINA_FALSE;
+        hwc_layer->info.src_config.size.h = surf_info.planes[0].stride;
+        hwc_layer->info.src_config.size.v = surf_info.height;
+        hwc_layer->info.src_config.pos.x = 0;
+        hwc_layer->info.src_config.pos.y = 0;
+        hwc_layer->info.src_config.pos.w = surf_info.width;
+        hwc_layer->info.src_config.pos.h = surf_info.height;
+        hwc_layer->info.dst_pos.x = hwc_output->x;
+        hwc_layer->info.dst_pos.y = hwc_output->y;
+        hwc_layer->info.dst_pos.w = hwc_output->w;
+        hwc_layer->info.dst_pos.h = hwc_output->h;
+        hwc_layer->info.transform = TDM_TRANSFORM_NORMAL;
+
+		if (hwc_layer->hwc->trace_debug)
+          ELOGF("HWC", "Commit	Layer(%p)       tbm_surface(%p) (%dx%d,[%d,%d,%d,%d]=>[%d,%d,%d,%d]) is_canvas(%d) data(%p)",
+                NULL, NULL, hwc_layer, tsurface,
+                hwc_layer->info.src_config.size.h, hwc_layer->info.src_config.size.h,
+                hwc_layer->info.src_config.pos.x, hwc_layer->info.src_config.pos.y,
+                hwc_layer->info.src_config.pos.w, hwc_layer->info.src_config.pos.h,
+                hwc_layer->info.dst_pos.x, hwc_layer->info.dst_pos.y,
+                hwc_layer->info.dst_pos.w, hwc_layer->info.dst_pos.h, is_canvas, data);
+
+        error = tdm_layer_set_info(tlayer, &hwc_layer->info);
+        if (error != TDM_ERROR_NONE)
+          {
+             _e_comp_hwc_commit_data_destroy(data);
+             ERR("fail to tdm_layer_set_info");
+             return EINA_FALSE;
+          }
      }
+
    error = tdm_layer_set_buffer(tlayer, tsurface);
    if (error != TDM_ERROR_NONE)
      {
