@@ -1628,6 +1628,8 @@ _e_client_cb_evas_hide(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UN
 
    if (ec->new_client || ec->iconic) return;
    _e_client_event_simple(ec, E_EVENT_CLIENT_HIDE);
+
+   EC_CHANGED(ec);
 }
 
 static void
