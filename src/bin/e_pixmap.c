@@ -106,7 +106,7 @@ _e_pixmap_hook_call(E_Pixmap_Hook_Point hookpoint, E_Pixmap *cp)
 }
 
 #ifdef HAVE_WAYLAND
-static void 
+static void
 _e_pixmap_cb_buffer_destroy(struct wl_listener *listener, void *data EINA_UNUSED)
 {
    E_Pixmap *cp;
@@ -141,7 +141,7 @@ _e_pixmap_clear(E_Pixmap *cp, Eina_Bool cache)
         ELOG("PIXMAP CLEAR", cp, cp->client);
 #endif
         break;
-      default: 
+      default:
         break;
      }
 }
@@ -231,7 +231,7 @@ _e_pixmap_find(E_Pixmap_Type type, va_list *l)
    uintptr_t id;
 #endif
    E_Pixmap *cp;
-   
+
    if (!pixmaps[type]) return NULL;
    switch (type)
      {
@@ -788,6 +788,8 @@ e_pixmap_image_clear(E_Pixmap *cp, Eina_Bool cache)
              cd = (E_Comp_Wl_Client_Data *)cp->client->comp_data;
              EINA_LIST_FOREACH_SAFE(cd->frames, l, ll, cb)
                {
+				  printf("### soolim(%s): wl_frame:%p send_done\n", __func__, cb);
+
                   wl_callback_send_done(cb, ecore_time_unix_get() * 1000);
                   wl_resource_destroy(cb);
                }
@@ -1121,7 +1123,7 @@ e_pixmap_validate_check(const E_Pixmap *cp)
    return success;
 }
 
-E_API void 
+E_API void
 e_pixmap_image_draw_done(E_Pixmap *cp)
 {
    EINA_SAFETY_ON_NULL_RETURN(cp);
