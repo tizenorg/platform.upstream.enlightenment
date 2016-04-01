@@ -1963,8 +1963,10 @@ _e_comp_wl_surface_state_finish(E_Comp_Wl_Surface_State *state)
    Eina_Rectangle *dmg;
 
    EINA_LIST_FREE(state->frames, cb)
-     wl_resource_destroy(cb);
-
+     {
+        printf("### soolim(%s): wl_frame:%p\n", __func__, cb);
+        wl_resource_destroy(cb);
+     }
    EINA_LIST_FREE(state->damages, dmg)
      eina_rectangle_free(dmg);
 
@@ -2305,6 +2307,8 @@ _e_comp_wl_surface_cb_attach(struct wl_client *client EINA_UNUSED, struct wl_res
         eina_hash_add(clients_buffer_hash, &buffer_resource, ec);
      }
 
+   printf("### soolim(%s): wl_surface:%p wl_buffer:%p attach\n", __func__, resource, buffer_resource);
+
    _e_comp_wl_surface_state_buffer_set(&ec->comp_data->pending, buffer);
 
    ec->comp_data->pending.sx = sx;
@@ -2323,6 +2327,8 @@ _e_comp_wl_surface_cb_damage(struct wl_client *client EINA_UNUSED, struct wl_res
 
    if (!(dmg = eina_rectangle_new(x, y, w, h))) return;
 
+   printf("### soolim(%s): wl_surface:%p\n", __func__, resource);
+
    ec->comp_data->pending.damages =
      eina_list_append(ec->comp_data->pending.damages, dmg);
 }
@@ -2334,6 +2340,8 @@ _e_comp_wl_frame_cb_destroy(struct wl_resource *resource)
 
    if (!(ec = wl_resource_get_user_data(resource))) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
+
+   printf("### soolim(%s): wl_frame:%p\n", __func__, resource);
 
    ec->comp_data->frames =
      eina_list_remove(ec->comp_data->frames, resource);
@@ -2360,6 +2368,8 @@ _e_comp_wl_surface_cb_frame(struct wl_client *client, struct wl_resource *resour
      }
 
    wl_resource_set_implementation(res, NULL, ec, _e_comp_wl_frame_cb_destroy);
+
+   printf("### soolim(%s): wl_surface:%p wl_frame:%p \n", __func__, resource, res);
 
    ec->comp_data->pending.frames =
      eina_list_prepend(ec->comp_data->pending.frames, res);
@@ -2443,6 +2453,8 @@ _e_comp_wl_surface_cb_commit(struct wl_client *client EINA_UNUSED, struct wl_res
 
    if (!(ec = wl_resource_get_user_data(resource))) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
+
+   printf("### soolim(%s): wl_surface:%p\n", __func__, resource);
 
    if (e_comp_wl_subsurface_commit(ec)) return;
 
@@ -3636,7 +3648,11 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
    e_comp_wl_buffer_reference(&ec->comp_data->buffer_ref, NULL);
 
    EINA_LIST_FREE(ec->comp_data->frames, cb)
+   {
+     printf("### soolim(%s): wl_frame:%p\n", __func__, cb);
+
      wl_resource_destroy(cb);
+   }
 
    if (ec->comp_data->surface)
      wl_resource_set_user_data(ec->comp_data->surface, NULL);
@@ -4445,12 +4461,19 @@ e_comp_wl_subsurface_commit(E_Client *ec)
 E_API void
 e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
 {
+	printf("### soolim(%s): wl_buffer:%p.. ref_wl_buffer:%p release\n", __func__,
+		   buffer?buffer->resource:NULL, ref->buffer?ref->buffer->resource:NULL);
+
    if ((ref->buffer) && (buffer != ref->buffer))
      {
         ref->buffer->busy--;
         if (ref->buffer->busy == 0)
           {
              if (!wl_resource_get_client(ref->buffer->resource)) return;
+
+			 printf("### soolim(%s): send release ref_wl_buffer:%p\n", __func__,
+                    ref->buffer->resource);
+
              wl_buffer_send_release(ref->buffer->resource);
           }
         wl_list_remove(&ref->destroy_listener.link);
@@ -4464,6 +4487,10 @@ e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
 
    ref->buffer = buffer;
    ref->destroy_listener.notify = _e_comp_wl_buffer_reference_cb_destroy;
+
+   printf("### soolim(%s): ref_wl_buffer:%p \n", __func__,
+   	   buffer?buffer->resource:NULL);
+
 }
 
 /**
@@ -4619,7 +4646,7 @@ e_comp_wl_output_init(const char *id, const char *make, const char *model,
 
         e_comp_wl->outputs = eina_list_append(e_comp_wl->outputs, output);
 
-        output->global = 
+        output->global =
           wl_global_create(e_comp_wl->wl.disp, &wl_output_interface,
                            2, output, _e_comp_wl_cb_output_bind);
 
