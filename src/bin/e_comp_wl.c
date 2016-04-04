@@ -4707,6 +4707,31 @@ e_comp_wl_output_remove(const char *id)
      }
 }
 
+EAPI void
+e_comp_wl_key_send_to_focus(int keycode, int timestamp, Eina_Bool pressed)
+{
+   E_Client *ec = NULL;
+   int serial;
+
+   if (!e_comp) return;
+   if (e_comp->comp_type != E_PIXMAP_TYPE_WL) return;
+   if (!(e_comp_wl = e_comp->wl_comp_data)) return;
+
+   ec = e_client_focused_get();
+   if (ec && ec->comp_data->surface && e_comp_wl->kbd.focused)
+     {
+        struct wl_resource *res;
+        Eina_List *l;
+
+        serial = wl_display_next_serial(e_comp_wl->wl.disp);
+        EINA_LIST_FOREACH(e_comp_wl->kbd.focused, l, res)
+          {
+             wl_keyboard_send_key(res, serial, timestamp, keycode,
+                                  pressed ? WL_KEYBOARD_KEY_STATE_PRESSED : WL_KEYBOARD_KEY_STATE_RELEASED);
+          }
+     }
+}
+
 EINTERN Eina_Bool
 e_comp_wl_key_down(Ecore_Event_Key *ev)
 {
