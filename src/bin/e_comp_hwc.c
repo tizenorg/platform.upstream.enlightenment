@@ -235,12 +235,16 @@ _e_comp_hwc_layer_queue_acquire(E_Comp_Hwc_Layer *hwc_layer, Eina_Bool is_canvas
    tbm_surface_queue_h tqueue = hwc_layer->tqueue;
    tbm_surface_h tsurface = NULL;
    tbm_surface_queue_error_e tsq_err = TBM_SURFACE_QUEUE_ERROR_NONE;
+   int num_duty = 0;
 
-   tsq_err = tbm_surface_queue_acquire(tqueue, &tsurface);
-   if (tsq_err != TBM_SURFACE_QUEUE_ERROR_NONE)
+   if ((num_duty = tbm_surface_queue_can_acquire(tqueue, 1)))
      {
-        ERR("Failed to acquire tbm_surface from tbm_surface_queue(%p): tsq_err = %d", tqueue, tsq_err);
-        return NULL;
+        tsq_err = tbm_surface_queue_acquire(tqueue, &tsurface);
+        if (tsq_err != TBM_SURFACE_QUEUE_ERROR_NONE)
+          {
+             ERR("Failed to acquire tbm_surface from tbm_surface_queue(%p): tsq_err = %d", tqueue, tsq_err);
+             return NULL;
+          }
      }
 
    /* set the current renderer_state to the tbm_surface user_data */
@@ -820,7 +824,6 @@ _e_comp_hwc_output_commit_handler(tdm_output *output, unsigned int sequence,
    E_Comp_Hwc_Commit_Data *data = user_data;
    E_Comp_Hwc_Layer *hwc_layer = NULL;
    E_Comp_Hwc_Renderer *hwc_renderer = NULL;
-   E_Client *ec = NULL;
    tbm_surface_h tsurface = NULL;
 
    if (!data) return;
@@ -1036,6 +1039,26 @@ _e_comp_hwc_output_display_client(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Laye
         ERR("fail to _e_comp_hwc_renderer_enqueue");
         return;
      }
+
+   /* aquire */
+   tsurface = _e_comp_hwc_layer_queue_acquire(hwc_layer, EINA_FALSE);
+   if (!tsurface)
+     {
+        ERR("fail _e_comp_hwc_layer_queue_acquire");
+        return;
+     }
+
+   /* fps check */
+   _e_comp_hwc_update_client_fps();
+
+   /* commit */
+   if (!_e_comp_hwc_output_commit(hwc_layer->hwc_output, hwc_layer, tsurface, EINA_FALSE))
+      {
+         _e_comp_hwc_layer_queue_release(hwc_layer, tsurface, hwc_renderer->activated_ec);
+         e_pixmap_image_clear(hwc_renderer->activated_ec->pixmap, EINA_TRUE);
+         ERR("fail to _e_comp_hwc_output_commit");
+         return;
+      }
 #else
    E_Pixmap *pixmap = ec->pixmap;
    E_Comp_Wl_Buffer *buffer = e_pixmap_resource_get(pixmap);
@@ -1068,6 +1091,7 @@ _e_comp_hwc_get_evas_engine_info_gl_drm(E_Comp_Hwc *hwc)
    return hwc->einfo;
 }
 
+#if 0
 static void
 _e_comp_hwc_layer_queue_acquirable_cb(tbm_surface_queue_h surface_queue, void *data)
 {
@@ -1114,6 +1138,7 @@ _e_comp_hwc_layer_queue_acquirable_cb(tbm_surface_queue_h surface_queue, void *d
    if (is_canvas)
      einfo->info.wait_for_showup = EINA_TRUE;
 }
+#endif
 
 static void
 _e_comp_hwc_renderer_queue_dequeuable_cb(tbm_surface_queue_h surface_queue, void *data)
@@ -1191,31 +1216,31 @@ _e_comp_hwc_display_canvas(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void *ev
                }
              hwc_layer->tqueue = hwc_renderer->tqueue;
 
-             tbm_surface_queue_add_acquirable_cb(hwc_layer->tqueue, _e_comp_hwc_layer_queue_acquirable_cb, hwc_layer);
+             //tbm_surface_queue_add_acquirable_cb(hwc_layer->tqueue, _e_comp_hwc_layer_queue_acquirable_cb, hwc_layer);
              tbm_surface_queue_add_dequeuable_cb(hwc_renderer->tqueue, _e_comp_hwc_renderer_queue_dequeuable_cb, hwc_renderer);
+          }
+        if (hwc_layer->hwc->trace_debug)
+        ELOGF("HWC", "Display Canvas Layer(%p)", NULL, NULL, hwc_layer);
 
-			 if (hwc_layer->hwc->trace_debug)
-			   ELOGF("HWC", "Display Canvas Layer(%p)", NULL, NULL, hwc_layer);
+        /* aquire */
+        tsurface = _e_comp_hwc_layer_queue_acquire(hwc_layer, EINA_TRUE);
+        if (!tsurface)
+           {
+              ERR("tsurface is NULL");
+              continue;
+           }
 
-			 /* aquire */
-			 tsurface = _e_comp_hwc_layer_queue_acquire(hwc_layer, EINA_TRUE);
-			 if (!tsurface)
-			   {
-				  ERR("tsurface is NULL");
-				  continue;
-			   }
+        /* commit */
+        if (!_e_comp_hwc_output_commit(hwc_output, hwc_layer, tsurface, EINA_TRUE))
+           {
+              _e_comp_hwc_layer_queue_release(hwc_layer, tsurface, NULL);
+              ERR("fail to _e_comp_hwc_output_commit");
+              continue;
+           }
 
-           /* commit */
-           if (!_e_comp_hwc_output_commit(hwc_output, hwc_layer, tsurface, EINA_TRUE))
-             {
-                _e_comp_hwc_layer_queue_release(hwc_layer, tsurface, NULL);
-                ERR("fail to _e_comp_hwc_output_commit");
-                continue;
-             }
+        /* block the next update of ecore_evas until the current update is done */
+        einfo->info.wait_for_showup = EINA_TRUE;
 
-           /* block the next update of ecore_evas until the current update is done */
-           einfo->info.wait_for_showup = EINA_TRUE;
-        }
      }
 }
 
