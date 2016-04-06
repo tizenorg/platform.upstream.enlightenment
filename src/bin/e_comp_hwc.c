@@ -15,11 +15,18 @@
 #define CLEAR(x) memset(&(x), 0, sizeof (x))
 #endif
 
-#define USE_FIXED_SCANOUT 0
+#define HWC_SURFACE_TYPE_PRIMARY 7777
+
+static const int key_renderer_state;
+#define KEY_RENDERER_STATE ((unsigned long)&key_renderer_state)
+
+// trace debug
+const Eina_Bool trace_debug = 0;
 
 typedef struct _E_Comp_Hwc E_Comp_Hwc;
 typedef struct _E_Comp_Hwc_Output E_Comp_Hwc_Output;
 typedef struct _E_Comp_Hwc_Layer E_Comp_Hwc_Layer;
+typedef struct _E_Comp_Hwc_Renderer E_Comp_Hwc_Renderer;
 typedef struct _E_Comp_Hwc_Commit_Data E_Comp_Hwc_Commit_Data;
 
 typedef enum _E_Hwc_Mode
@@ -32,24 +39,40 @@ typedef enum _E_Hwc_Mode
 
 struct _E_Comp_Hwc_Commit_Data {
    E_Comp_Hwc_Layer *hwc_layer;
-   Eina_Bool is_client;
+   tbm_surface_h tsurface;
+   E_Client *ec;
+   Eina_Bool is_canvas;
+};
+
+struct _E_Comp_Hwc_Renderer {
+   tbm_surface_queue_h tqueue;
+
+   E_Client *activated_ec;
+
+   struct gbm_surface *gsurface;
+   Eina_List *disp_surfaces;
+   Eina_List *sent_surfaces;
+
+   E_Comp_Hwc_Layer *hwc_layer;
 };
 
 struct _E_Comp_Hwc_Layer {
+   tbm_surface_queue_h tqueue;
+
    int index;
    tdm_layer *tlayer;
-   struct gbm_surface *gsurface;
-   tbm_surface_queue_h tqueue;
-   struct wayland_tbm_server_queue *tserver_queue;
-   tbm_surface_h tsurface;
-   tbm_surface_h tserver_surface;
-
+   tdm_info_layer info;
    int zpos;
-   E_Client *ec;
-   E_Client *disp_ec;
    Eina_Bool primary;
-   E_Client *release_ec;
+   Eina_Bool reserved_memory;
 
+   Eina_Bool pending;
+   Eina_List *pending_tsurfaces;
+   tbm_surface_h pending_tsurface;
+   tbm_surface_h tsurface;
+
+   E_Comp_Hwc_Renderer *hwc_renderer;
+   E_Comp_Hwc_Output *hwc_output;
    E_Comp_Hwc *hwc;
 };
 
@@ -65,6 +88,8 @@ struct _E_Comp_Hwc_Output {
    int num_layers;
    Eina_List *hwc_layers;
    E_Comp_Hwc_Layer *primary_layer;
+
+   E_Comp_Hwc *hwc;
 };
 
 struct _E_Comp_Hwc {
@@ -73,10 +98,15 @@ struct _E_Comp_Hwc {
 
    int num_outputs;
    Eina_List *hwc_outputs;
+
+   Eina_Bool trace_debug;
 };
 
 // Global variable.
 static E_Comp_Hwc *g_hwc = NULL;
+
+static Eina_Bool _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_layer, tbm_surface_h tsurface, Eina_Bool is_canvas);
+
 
 static void
 _e_comp_hwc_update_client_fps()
@@ -131,8 +161,125 @@ _e_comp_hwc_commit_data_destroy(E_Comp_Hwc_Commit_Data *data)
    free(data);
 }
 
+static struct wl_resource *
+_get_wl_buffer(E_Client *ec)
+{
+   E_Pixmap *pixmap = ec->pixmap;
+   E_Comp_Wl_Buffer *buffer = e_pixmap_resource_get(pixmap);
 
-#if USE_FIXED_SCANOUT
+   if (!buffer) return NULL;
+
+   return buffer->resource;
+}
+
+static struct wl_resource *
+_get_wl_buffer_ref(E_Client *ec)
+{
+   E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+   if (!cdata) return NULL;
+
+   E_Comp_Wl_Buffer_Ref *buffer_ref = &cdata ->buffer_ref;
+   if (!buffer_ref) return NULL;
+
+   if (!buffer_ref->buffer) return NULL;
+
+   return buffer_ref->buffer->resource;
+}
+
+static Eina_Bool
+_e_comp_hwc_renderer_find_disp_surface(E_Comp_Hwc_Renderer *hwc_renderer, tbm_surface_h tsurface)
+{
+   Eina_List *l_s, *ll_s;
+   tbm_surface_h tmp_tsurface = NULL;
+
+   EINA_LIST_FOREACH_SAFE(hwc_renderer->disp_surfaces, l_s, ll_s, tmp_tsurface)
+     {
+        if (!tmp_tsurface) continue;
+        if (tmp_tsurface == tsurface) return EINA_TRUE;
+     }
+
+   return EINA_FALSE;
+}
+
+static Eina_Bool
+_e_comp_hwc_renderer_find_sent_surface(E_Comp_Hwc_Renderer *hwc_renderer, tbm_surface_h tsurface)
+{
+   Eina_List *l_s, *ll_s;
+   tbm_surface_h tmp_tsurface = NULL;
+
+   EINA_LIST_FOREACH_SAFE(hwc_renderer->sent_surfaces, l_s, ll_s, tmp_tsurface)
+     {
+        if (!tmp_tsurface) continue;
+        if (tmp_tsurface == tsurface) return EINA_TRUE;
+     }
+
+   return EINA_FALSE;
+}
+
+static tbm_surface_h
+_e_comp_hwc_layer_queue_acquire(E_Comp_Hwc_Layer *hwc_layer)
+{
+   tbm_surface_queue_h tqueue = hwc_layer->tqueue;
+   tbm_surface_h tsurface = NULL;
+   tbm_surface_queue_error_e tsq_err = TBM_SURFACE_QUEUE_ERROR_NONE;
+   int num_duty = 0;
+   E_Comp_Hwc_Renderer *hwc_renderer = hwc_layer->hwc_renderer;
+
+   if ((num_duty = tbm_surface_queue_can_acquire(tqueue, 1)))
+     {
+        tsq_err = tbm_surface_queue_acquire(tqueue, &tsurface);
+        if (tsq_err != TBM_SURFACE_QUEUE_ERROR_NONE)
+          {
+             ERR("Failed to acquire tbm_surface from tbm_surface_queue(%p): tsq_err = %d", tqueue, tsq_err);
+             return NULL;
+          }
+     }
+
+   /* if not exist, add the surface to the renderer */
+   if (!_e_comp_hwc_renderer_find_disp_surface(hwc_renderer, tsurface))
+     hwc_renderer->disp_surfaces = eina_list_append(hwc_renderer->disp_surfaces, tsurface);
+
+   /* debug */
+   if (hwc_layer->hwc->trace_debug)
+     {
+        E_Client *ec = hwc_renderer->activated_ec;
+        if (ec)
+          ELOGF("HWC", "Acquire Layer(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
+                ec->pixmap, ec, hwc_layer, _get_wl_buffer(ec), tsurface, tqueue, _get_wl_buffer_ref(ec));
+        else
+          ELOGF("HWC", "Acquire Layer(%p)  tsurface(%p) tqueue(%p)",
+                 NULL, NULL, hwc_layer, tsurface, tqueue);
+     }
+   return tsurface;
+}
+
+static void
+_e_comp_hwc_layer_queue_release(E_Comp_Hwc_Layer *hwc_layer, tbm_surface_h tsurface)
+{
+   tbm_surface_queue_h tqueue = hwc_layer->tqueue;
+   tbm_surface_queue_error_e tsq_err = TBM_SURFACE_QUEUE_ERROR_NONE;
+   E_Comp_Hwc_Renderer *hwc_renderer = hwc_layer->hwc_renderer;
+
+   /* debug */
+   if (hwc_layer->hwc->trace_debug)
+     {
+        E_Client *ec = hwc_renderer->activated_ec;
+        if (ec)
+          ELOGF("HWC", "Release Layer(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
+                ec->pixmap, ec, hwc_layer, _get_wl_buffer(ec), tsurface, hwc_layer->tqueue, _get_wl_buffer_ref(ec));
+        else
+          ELOGF("HWC", "Release Layer(%p)  tsurface(%p) tqueue(%p)",
+                NULL, NULL, hwc_layer, tsurface, hwc_layer->tqueue);
+     }
+
+   tsq_err = tbm_surface_queue_release(tqueue, tsurface);
+   if (tsq_err != TBM_SURFACE_QUEUE_ERROR_NONE)
+     {
+        ERR("Failed to release tbm_surface(%p) from tbm_surface_queue(%p): tsq_err = %d", tsurface, tqueue, tsq_err);
+        return;
+     }
+}
+
 static struct wl_resource *
 _e_comp_hwc_wl_surface_get(E_Client *ec)
 {
@@ -140,22 +287,48 @@ _e_comp_hwc_wl_surface_get(E_Client *ec)
    struct wl_resource *wl_surface = NULL;
 
    cdata = (E_Comp_Wl_Client_Data *)e_pixmap_cdata_get(ec->pixmap);
-   if (!cdata)
-     {
-        ERR("no cdata");
-        return NULL;
-     }
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cdata, NULL);
+
    wl_surface = cdata->wl_surface;
    if (!wl_surface) return NULL;
 
    return wl_surface;
 }
 
-static Eina_Bool
-_e_comp_hwc_queue_enqueue(tbm_surface_queue_h tqueue, tbm_surface_h tsurface)
+struct wayland_tbm_client_queue *
+_e_comp_hwc_wayland_tbm_client_queue_get(E_Client *ec)
 {
-   INF("HWC:(%s) tbm_surface_queue(%p) tbm_surface(%p)", __func__, tqueue, tsurface);
-   if (tbm_surface_queue_enqueue(tqueue, tsurface) != TBM_SURFACE_QUEUE_ERROR_NONE)
+   struct wayland_tbm_client_queue * cqueue = NULL;
+   struct wl_resource *wl_surface = NULL;
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_comp_data, NULL);
+
+   wl_surface = _e_comp_hwc_wl_surface_get(ec);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_surface, NULL);
+
+   cqueue = wayland_tbm_server_client_queue_get(wl_comp_data->tbm.server, wl_surface);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cqueue, NULL);
+
+   return cqueue;
+}
+
+static Eina_Bool
+_e_comp_hwc_renderer_enqueue(E_Comp_Hwc_Renderer *hwc_renderer, tbm_surface_h tsurface)
+{
+   tbm_surface_queue_h tqueue = hwc_renderer->tqueue;
+   tbm_surface_queue_error_e tsq_err = TBM_SURFACE_QUEUE_ERROR_NONE;
+
+   /* debug */
+   if (hwc_renderer->hwc_layer->hwc->trace_debug)
+    {
+        E_Client *ec = hwc_renderer->activated_ec;
+        ELOGF("HWC", "Enqueue Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
+              ec->pixmap, ec, hwc_renderer, _get_wl_buffer(ec), tsurface, hwc_renderer->tqueue, _get_wl_buffer_ref(ec));
+    }
+
+   tsq_err = tbm_surface_queue_enqueue(tqueue, tsurface);
+   if (tsq_err != TBM_SURFACE_QUEUE_ERROR_NONE)
      {
         ERR("tbm_surface_queue_enqueue failed. tbm_surface_queue(%p) tbm_surface(%p)", tqueue, tsurface);
         return EINA_FALSE;
@@ -165,66 +338,271 @@ _e_comp_hwc_queue_enqueue(tbm_surface_queue_h tqueue, tbm_surface_h tsurface)
 }
 
 static tbm_surface_h
-_e_comp_hwc_queue_dequeue(tbm_surface_queue_h tqueue)
+_e_comp_hwc_renderer_dequeue(E_Comp_Hwc_Renderer *hwc_renderer)
 {
+   tbm_surface_queue_h tqueue = hwc_renderer->tqueue;
    tbm_surface_h tsurface = NULL;
-   tbm_surface_queue_error_e tsq_err = 0;
+   tbm_surface_queue_error_e tsq_err = TBM_SURFACE_QUEUE_ERROR_NONE;
 
    tsq_err = tbm_surface_queue_dequeue(tqueue, &tsurface);
-   if (!tsurface && tbm_surface_queue_can_dequeue(tqueue, 1) == 1)
+   if (tsq_err != TBM_SURFACE_QUEUE_ERROR_NONE)
      {
-        tsq_err = tbm_surface_queue_dequeue(tqueue, &tsurface);
-        if (!tsurface)
-          {
-             ERR("Failed to get tbm_surface from tbm_surface_queue | tsq_err = %d", tsq_err);
-             return NULL;
-          }
+        ERR("fail to tbm_surface_queue_dequeue");
+        return NULL;
      }
 
-   INF("HWC:(%s) tbm_surface_queue(%p) tbm_surface(%p)", __func__, tqueue, tsurface);
-
+   /* debug */
+   if (hwc_renderer->hwc_layer->hwc->trace_debug)
+     {
+         E_Client *ec = hwc_renderer->activated_ec;
+         if (ec)
+           ELOGF("HWC", "Dequeue Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
+                 ec->pixmap, ec, hwc_renderer, _get_wl_buffer(ec), tsurface, hwc_renderer->tqueue, _get_wl_buffer_ref(ec));
+         else
+           ELOGF("HWC", "Dequeue Renderer(%p)  tsurface(%p) tqueue(%p)",
+                 NULL, NULL, hwc_renderer, tsurface, hwc_renderer->tqueue);
+     }
    return tsurface;
 }
-#endif
+
+static void
+_e_comp_hwc_renderer_release_all_disp_surfaces(E_Comp_Hwc_Renderer *hwc_renderer)
+{
+   Eina_List *l_s, *ll_s;
+   tbm_surface_h tsurface = NULL;
+
+   EINA_LIST_FOREACH_SAFE(hwc_renderer->disp_surfaces, l_s, ll_s, tsurface)
+     {
+        if (!tsurface) continue;
+
+        /* release the surface to the layer_queue */
+        _e_comp_hwc_layer_queue_release(hwc_renderer->hwc_layer, tsurface);
+     }
+}
+
+static void
+_e_comp_hwc_renderer_surface_destroy_cb(tbm_surface_h tsurface, void *data)
+{
+   E_Comp_Hwc_Renderer *hwc_renderer = NULL;
+
+   EINA_SAFETY_ON_NULL_RETURN(tsurface);
+   EINA_SAFETY_ON_NULL_RETURN(data);
+
+   hwc_renderer = (E_Comp_Hwc_Renderer *)data;
+
+   if (hwc_renderer->hwc_layer->hwc->trace_debug)
+     ELOGF("HWC", "Destroy Renderer(%p)  tsurface(%p) tqueue(%p)",
+           NULL, NULL, hwc_renderer, tsurface, hwc_renderer->tqueue);
+}
+
+static void
+_e_comp_hwc_renderer_export_all_disp_surfaces(E_Comp_Hwc_Renderer *hwc_renderer, E_Client *ec)
+{
+   struct wayland_tbm_client_queue * cqueue = NULL;
+   Eina_List *l_s, *ll_s;
+   tbm_surface_h tsurface = NULL;
+   struct wl_resource *wl_buffer = NULL;
+
+   cqueue = _e_comp_hwc_wayland_tbm_client_queue_get(ec);
+   EINA_SAFETY_ON_NULL_RETURN(cqueue);
+
+   EINA_LIST_FOREACH_SAFE(hwc_renderer->disp_surfaces, l_s, ll_s, tsurface)
+     {
+        if (!tsurface) continue;
+
+        /* export the tbm_surface(wl_buffer) to the client_queue */
+        wl_buffer = wayland_tbm_server_client_queue_export_buffer(cqueue, tsurface,
+                               HWC_SURFACE_TYPE_PRIMARY, _e_comp_hwc_renderer_surface_destroy_cb,
+                               (void *)hwc_renderer);
+
+        /* add a sent surface to the sent list in renderer if it is not in the list */
+        if (!_e_comp_hwc_renderer_find_sent_surface(hwc_renderer, tsurface))
+           hwc_renderer->sent_surfaces = eina_list_append(hwc_renderer->sent_surfaces, tsurface);
+
+        if (wl_buffer && hwc_renderer->hwc_layer->hwc->trace_debug)
+          ELOGF("HWC", "Export  Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p)",
+                ec->pixmap, ec, hwc_renderer, wl_buffer, tsurface, hwc_renderer->tqueue);
+
+     }
+}
 
 static tbm_surface_h
-_e_comp_hwc_queue_aquire(tbm_surface_queue_h tqueue)
+_e_comp_hwc_renderer_recieve_surface(E_Comp_Hwc_Renderer *hwc_renderer, E_Client *ec)
 {
    tbm_surface_h tsurface = NULL;
-   int num_duty;
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+   E_Pixmap *pixmap = ec->pixmap;
+   uint32_t flags = 0;
+   E_Comp_Wl_Buffer *buffer = NULL;
 
-   if ((num_duty = tbm_surface_queue_can_acquire(tqueue, 0)))
+   if (hwc_renderer->activated_ec != ec)
      {
-        if (tbm_surface_queue_acquire(tqueue, &tsurface) != TBM_SURFACE_QUEUE_ERROR_NONE)
-          return NULL;
+        ERR("Renderer(%p)  activated_ec(%p) != ec(%p)", hwc_renderer, hwc_renderer->activated_ec, ec);
+        return NULL;
      }
 
-   INF("HWC:(%s) tbm_surface_queue(%p) tbm_surface(%p)", __func__, tqueue, tsurface);
+   buffer = e_pixmap_resource_get(pixmap);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(buffer, NULL);
+
+   tsurface = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(tsurface, NULL);
+
+   flags = wayland_tbm_server_get_buffer_flags(wl_comp_data->tbm.server, buffer->resource);
+
+   if (hwc_renderer->hwc_layer->hwc->trace_debug)
+     {
+        E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)hwc_renderer->activated_ec->comp_data;
+        E_Comp_Wl_Buffer_Ref *buffer_ref = &cdata ->buffer_ref;
+
+        ELOGF("HWC", "Receive Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p) flags(%d)",
+        ec->pixmap, ec, hwc_renderer, buffer->resource, tsurface, hwc_renderer->tqueue, buffer_ref->buffer->resource, flags);
+     }
+   if (flags != HWC_SURFACE_TYPE_PRIMARY)
+     {
+        ERR("the flags of the enqueuing surface is %d. need flags(%d).", flags, HWC_SURFACE_TYPE_PRIMARY);
+        return NULL;
+     }
+
+   /* remove a recieved surface from the sent list in renderer */
+   hwc_renderer->sent_surfaces = eina_list_remove(hwc_renderer->sent_surfaces, (const void *)tsurface);
 
    return tsurface;
 }
 
 static void
-_e_comp_hwc_queue_release(tbm_surface_queue_h tqueue, tbm_surface_h tsurface)
+_e_comp_hwc_renderer_send_surface(E_Comp_Hwc_Renderer *hwc_renderer, E_Client *ec, tbm_surface_h tsurface)
 {
-   INF("HWC:(%s) tbm_surface_queue(%p) tbm_surface(%p)", __func__, tqueue, tsurface);
+   /* debug */
+   if (hwc_renderer->hwc_layer->hwc->trace_debug)
+     ELOGF("HWC", "Send    Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
+           ec->pixmap, ec, hwc_renderer, _get_wl_buffer(ec), tsurface, hwc_renderer->tqueue, _get_wl_buffer_ref(ec));
 
-   tbm_surface_queue_release(tqueue, tsurface);
+   /* wl_buffer release */
+   e_pixmap_image_clear(ec->pixmap, 1);
+
+   /* add a sent surface to the sent list in renderer if it is not in the list */
+   if (!_e_comp_hwc_renderer_find_sent_surface(hwc_renderer, tsurface))
+     hwc_renderer->sent_surfaces = eina_list_append(hwc_renderer->sent_surfaces, tsurface);
 }
 
-
-Evas_Engine_Info_GL_Drm *
-_e_comp_hwc_get_evas_engine_info_gl_drm(E_Comp_Hwc *hwc)
+static Eina_Bool
+_e_comp_hwc_renderer_can_activate(E_Comp_Hwc_Renderer *hwc_renderer, E_Client *ec)
 {
-   if (hwc->einfo) return hwc->einfo;
+   struct wayland_tbm_client_queue * cqueue = NULL;
+   struct wl_resource *wl_surface = NULL;
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
 
-   hwc->einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(hwc->einfo, NULL);
+   if (hwc_renderer->hwc_layer->hwc->trace_debug)
+     ELOGF("HWC", "Check Activate", ec->pixmap, ec);
 
-   return hwc->einfo;
+   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_comp_data, EINA_FALSE);
+
+   wl_surface = _e_comp_hwc_wl_surface_get(ec);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_surface, EINA_FALSE);
+
+   cqueue = wayland_tbm_server_client_queue_get(wl_comp_data->tbm.server, wl_surface);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cqueue, EINA_FALSE);
+
+   /* check if the layer queue is dequeueable */
+   if(!tbm_surface_queue_can_dequeue(hwc_renderer->tqueue, 0))
+     {
+        WRN("fail to tbm_surface_queue_can_dequeue");
+        return EINA_FALSE;
+     }
+
+   return EINA_TRUE;
 }
 
-E_Comp_Hwc_Output *_e_comp_hwc_find_hwc_output(Ecore_Drm_Output *drm_output)
+static Eina_Bool
+_e_comp_hwc_renderer_activate(E_Comp_Hwc_Renderer *hwc_renderer, E_Client *ec)
+{
+   struct wayland_tbm_client_queue * cqueue = NULL;
+   tbm_surface_h tsurface = NULL;
+   tbm_surface_queue_h tqueue = hwc_renderer->tqueue;
+
+   if (hwc_renderer->hwc_layer->hwc->trace_debug)
+     ELOGF("HWC", "Activate", ec->pixmap, ec);
+
+   /* deactivate the client of the layer before this call*/
+   if (hwc_renderer->activated_ec)
+     {
+        ERR("Previous activated client must be decativated.");
+        return EINA_FALSE;
+     }
+
+   cqueue = _e_comp_hwc_wayland_tbm_client_queue_get(ec);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cqueue, EINA_FALSE);
+
+   /* activate the client queue */
+   wayland_tbm_server_client_queue_activate(cqueue, 0);
+
+   /* dequeue the surfaces if the qeueue is available */
+   /* add the surface to the disp_surfaces list, if it is not in the disp_surfaces */
+   while (tbm_surface_queue_can_dequeue(tqueue, 0))
+     {
+        /* dequeue */
+        tsurface = _e_comp_hwc_renderer_dequeue(hwc_renderer);
+        if (!tsurface)
+          {
+            ERR("fail to dequeue surface");
+            return EINA_FALSE;
+          }
+        /* if not exist, add the surface to the renderer */
+        if (!_e_comp_hwc_renderer_find_disp_surface(hwc_renderer, tsurface))
+          hwc_renderer->disp_surfaces = eina_list_append(hwc_renderer->disp_surfaces, tsurface);
+     }
+
+   _e_comp_hwc_renderer_export_all_disp_surfaces(hwc_renderer, ec);
+
+   /* wl_buffer release */
+   e_pixmap_image_clear(ec->pixmap, 1);
+
+   hwc_renderer->activated_ec = ec;
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_e_comp_hwc_renderer_deactivate(E_Comp_Hwc_Renderer *hwc_renderer)
+{
+   struct wayland_tbm_client_queue * cqueue = NULL;
+   struct wl_resource *wl_surface = NULL;
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+   E_Client *ec = NULL;
+
+   if (!hwc_renderer->activated_ec)
+     {
+        if (hwc_renderer->hwc_layer->hwc->trace_debug)
+          ELOGF("HWC", "Deactivate Client is gone before.", NULL, NULL);
+        goto done;
+     }
+
+   ec = hwc_renderer->activated_ec;
+
+   if (hwc_renderer->hwc_layer->hwc->trace_debug)
+     ELOGF("HWC", "Deactivate", ec->pixmap, ec);
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_comp_data, EINA_FALSE);
+
+   wl_surface = _e_comp_hwc_wl_surface_get(ec);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_surface, EINA_FALSE);
+
+   cqueue = wayland_tbm_server_client_queue_get(wl_comp_data->tbm.server, wl_surface);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cqueue, EINA_FALSE);
+
+   /* deactive */
+   wayland_tbm_server_client_queue_deactivate(cqueue);
+
+done:
+   hwc_renderer->activated_ec = NULL;
+
+   /* enqueue the tsurfaces to the layer queue */
+   _e_comp_hwc_renderer_release_all_disp_surfaces(hwc_renderer);
+
+   return EINA_TRUE;
+}
+
+E_Comp_Hwc_Output *_e_comp_hwc_output_find(Ecore_Drm_Output *drm_output)
 {
    E_Comp_Hwc_Output * hwc_output = NULL;
    const Eina_List *l;
@@ -241,7 +619,7 @@ E_Comp_Hwc_Output *_e_comp_hwc_find_hwc_output(Ecore_Drm_Output *drm_output)
 }
 
 static void
-_e_comp_hwc_update_output_geom(E_Comp_Hwc_Output *hwc_output)
+_e_comp_hwc_output_update_geom(E_Comp_Hwc_Output *hwc_output)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *drm_output;
@@ -253,7 +631,8 @@ _e_comp_hwc_update_output_geom(E_Comp_Hwc_Output *hwc_output)
      {
         EINA_LIST_FOREACH(e_randr2->screens, ll, s)
           {
-             INF("HWC: find output for '%s'\n", s->info.name);
+             ELOGF("HWC", "find output for '%s'", NULL, NULL, s->info.name);
+
              if (!s->config.enabled) continue;
              drm_output = ecore_drm_device_output_name_find(dev, s->info.name);
              if (!drm_output) continue;
@@ -262,7 +641,7 @@ _e_comp_hwc_update_output_geom(E_Comp_Hwc_Output *hwc_output)
              ecore_drm_output_crtc_size_get(drm_output, &w, &h);
              if (w <= 0 || h <= 0) continue;
 
-             hwc_output = _e_comp_hwc_find_hwc_output(drm_output);
+             hwc_output = _e_comp_hwc_output_find(drm_output);
              if (!hwc_output)
                {
                   ERR("could not find hwc_output");
@@ -273,34 +652,82 @@ _e_comp_hwc_update_output_geom(E_Comp_Hwc_Output *hwc_output)
              hwc_output->w = w;
              hwc_output->h = h;
 
-             INF("HWC: %s %d,%d,%d,%d", s->info.name, x, y, w, h);
+             ELOGF("HWC", "%s %d,%d,%d,%d", NULL, NULL, s->info.name, x, y, w, h);
           }
      }
 }
 
-static E_Comp_Hwc_Layer *
-_e_comp_hwc_find_primary_layer(E_Comp_Hwc_Output *hwc_output)
+static void
+_e_comp_hwc_output_commit_handler_reserved_memory(tdm_output *output, unsigned int sequence,
+                                  unsigned int tv_sec, unsigned int tv_usec,
+                                  void *user_data)
 {
+   E_Comp_Hwc_Commit_Data *data = user_data;
    E_Comp_Hwc_Layer *hwc_layer = NULL;
-   tdm_layer_capability capa;
-   Eina_List *l_l, *ll_l;
+   E_Comp_Hwc_Renderer *hwc_renderer = NULL;
+   tbm_surface_h tsurface = NULL;
+   E_Client *ec = NULL;
+   tbm_surface_h send_tsurface = NULL;
 
-   /* find the primary layer and get the geometry of the layer
-    * The geometry from the primary layer is the geometry of the output.
-    */
-   EINA_LIST_FOREACH_SAFE(hwc_output->hwc_layers, l_l, ll_l, hwc_layer)
+   if (!data) return;
+   if (!data->hwc_layer) return;
+
+   hwc_layer = data->hwc_layer;
+   hwc_renderer = hwc_layer->hwc_renderer;
+   tsurface = data->tsurface;
+   ec = data->ec;
+
+   if (hwc_layer->tsurface == tsurface)
+     WRN("the same tsurface(%p) as the current tsurface(%p) of the hwc_layer.", tsurface, hwc_layer->tsurface);
+
+   if (data->is_canvas && hwc_layer->primary)
      {
-        if (!hwc_layer) continue;
-        tdm_layer_get_capabilities(hwc_layer->tlayer, &capa);
+        /* debug */
+        if (hwc_layer->hwc->trace_debug)
+          ELOGF("HWC", "Done    Layer(%p)  tsurface(%p) tqueue(%p) data(%p)::Canvas",
+               NULL, NULL, hwc_layer, tsurface, hwc_layer->tqueue, data);
 
-        if (capa & (TDM_LAYER_CAPABILITY_PRIMARY))
+        if (!hwc_renderer->activated_ec)
+          hwc_layer->hwc->einfo->info.wait_for_showup = EINA_FALSE;
+
+        /* initial setting of tsurface to the layer */
+        if (hwc_layer->tsurface == NULL)
+         hwc_layer->tsurface = tsurface;
+        else
           {
-             printf ("\tTDM_LAYER_CAPABILITY_PRIMARY layer found : %d\n", hwc_layer->index);
-             return hwc_layer;
+             _e_comp_hwc_layer_queue_release(hwc_layer, hwc_layer->tsurface);
+             hwc_layer->tsurface = tsurface;
+          }
+     }
+   else
+     {
+        /* debug */
+        if (hwc_layer->hwc->trace_debug)
+           ELOGF("HWC", "Done    Layer(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) data(%p) wl_buffer_ref(%p) ::Client",
+             ec->pixmap, ec, hwc_layer, _get_wl_buffer(ec), tsurface, hwc_layer->tqueue, data, _get_wl_buffer_ref(ec));
+
+        /* release */
+        if (hwc_layer->tsurface)
+          {
+             _e_comp_hwc_layer_queue_release(hwc_layer, tsurface);
+             hwc_layer->tsurface = tsurface;
           }
      }
 
-   return NULL;
+   /* send the done surface to the client  */
+   /* , only when the renderer state is active(no composite) */
+   if (hwc_renderer->activated_ec)
+     {
+        /* dequeue */
+        send_tsurface = _e_comp_hwc_renderer_dequeue(hwc_renderer);
+        if (!send_tsurface)
+          ERR("fail to dequeue surface");
+        _e_comp_hwc_renderer_send_surface(hwc_renderer, hwc_renderer->activated_ec, send_tsurface);
+     }
+
+   tbm_surface_internal_unref(tsurface);
+   _e_comp_hwc_commit_data_destroy(data);
+
 }
 
 static void
@@ -310,118 +737,282 @@ _e_comp_hwc_output_commit_handler(tdm_output *output, unsigned int sequence,
 {
    E_Comp_Hwc_Commit_Data *data = user_data;
    E_Comp_Hwc_Layer *hwc_layer = NULL;
+   tbm_surface_h tsurface = NULL;
    E_Client *ec = NULL;
 
    if (!data) return;
    if (!data->hwc_layer) return;
 
    hwc_layer = data->hwc_layer;
+   tsurface = data->tsurface;
+   ec = data->ec;
 
-   if (!data->is_client && hwc_layer->primary)
+   if (hwc_layer->tsurface == tsurface)
+     WRN("the same tsurface(%p) as the current tsurface(%p) of the hwc_layer.", tsurface, hwc_layer->tsurface);
+
+   if (data->is_canvas && hwc_layer->primary)
      {
+        /* debug */
+        if (hwc_layer->hwc->trace_debug)
+           ELOGF("HWC", "Done    Layer(%p)  tsurface(%p) tqueue(%p) data(%p)::Canvas",
+                 NULL, NULL, hwc_layer, tsurface, hwc_layer->tqueue, data);
+
         hwc_layer->hwc->einfo->info.wait_for_showup = EINA_FALSE;
 
-        /* release */
-        _e_comp_hwc_queue_release(hwc_layer->tqueue, hwc_layer->tsurface);
-        INF("HWC: Canvas commit is done. Layer # is %d", hwc_layer->index);
+        /* initial setting of tsurface to the layer */
+        if (hwc_layer->tsurface == NULL)
+          hwc_layer->tsurface = tsurface;
+        else
+          {
+             _e_comp_hwc_layer_queue_release(hwc_layer, hwc_layer->tsurface);
+             hwc_layer->tsurface = tsurface;
+          }
+
+        tbm_surface_internal_unref(tsurface);
+        _e_comp_hwc_commit_data_destroy(data);
+
      }
    else
      {
-        ec = hwc_layer->disp_ec;
+        /* debug */
+        if (hwc_layer->hwc->trace_debug)
+           ELOGF("HWC", "Done    Layer(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) data(%p) wl_buffer_ref(%p) ::Client",
+             ec->pixmap, ec, hwc_layer, _get_wl_buffer(ec), tsurface, hwc_layer->tqueue, data, _get_wl_buffer_ref(ec));
 
-        /* release */
+        /* release wl_buffer */
         e_pixmap_image_clear(ec->pixmap, 1);
-#if USE_FIXED_SCANOUT
-        struct wl_resource *wl_surface = NULL;
 
-        _e_comp_hwc_queue_release(hwc_layer->tqueue, hwc_layer->tserver_surface);
-
-        /* dequeue */
-        hwc_layer->tserver_surface = _e_comp_hwc_queue_dequeue(hwc_layer->tqueue);
-
-        wl_surface = _e_comp_hwc_wl_surface_get(ec);
-        if (!wl_surface)
-          {
-             ERR("no wl_surface");
-             return;
-          }
-#endif
-        INF("HWC: E_Client commit is done. Layer # is %d", hwc_layer->index);
+        tbm_surface_internal_unref(tsurface);
+        _e_comp_hwc_commit_data_destroy(data);
      }
-
-   _e_comp_hwc_commit_data_destroy(data);
-
 }
 
 static Eina_Bool
-_e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_layer, tbm_surface_h surface, Eina_Bool is_client)
+_e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_layer, tbm_surface_h tsurface, Eina_Bool is_canvas)
 {
-   tdm_info_layer info;
    tbm_surface_info_s surf_info;
    tdm_error error;
    tdm_output *toutput = hwc_output->toutput;
    tdm_layer *tlayer = hwc_layer->tlayer;
+   E_Comp_Hwc_Renderer *hwc_renderer = hwc_layer->hwc_renderer;
    E_Comp_Hwc_Commit_Data *data = NULL;
+   tdm_output_dpms dpms_value;
 
-   tbm_surface_get_info(surface, &surf_info);
-
-   CLEAR(info);
-   info.src_config.size.h = surf_info.planes[0].stride;
-   info.src_config.size.v = surf_info.height;
-   info.src_config.pos.x = 0;
-   info.src_config.pos.y = 0;
-   info.src_config.pos.w = surf_info.width;
-   info.src_config.pos.h = surf_info.height;
-   info.dst_pos.x = hwc_output->x;
-   info.dst_pos.y = hwc_output->y;
-   info.dst_pos.w = hwc_output->w;
-   info.dst_pos.h = hwc_output->h;
-   info.transform = TDM_TRANSFORM_NORMAL;
-
-   error = tdm_layer_set_info(tlayer, &info);
+   error = tdm_output_get_dpms(toutput, &dpms_value);
    if (error != TDM_ERROR_NONE)
      {
-        ERR("fail to tdm_layer_set_info");
-        return EINA_FALSE;
-     }
-   error = tdm_layer_set_buffer(tlayer, surface);
-   if (error != TDM_ERROR_NONE)
-     {
-        ERR("fail to tdm_layer_set_buffer");
+        ERR("fail to get tdm_output_dpms value");
         return EINA_FALSE;
      }
 
-
-   INF("HWC: (%dx%d,[%d,%d,%d,%d]=>[%d,%d,%d,%d])\n",
-       info.src_config.size.h, info.src_config.size.h,
-       info.src_config.pos.x, info.src_config.pos.y, info.src_config.pos.w, info.src_config.pos.h,
-       info.dst_pos.x, info.dst_pos.y, info.dst_pos.w, info.dst_pos.h);
+   /* check if the output is off */
+   if (dpms_value != TDM_OUTPUT_DPMS_ON)
+     {
+        WRN("DPMS IS NOT ON");
+        return EINA_FALSE;
+     }
 
    data = _e_comp_hwc_commit_data_create();
    if (!data) return EINA_FALSE;
    data->hwc_layer = hwc_layer;
-   data->is_client = is_client;
+   tbm_surface_internal_ref(tsurface);
+   data->tsurface = tsurface;
+   /* hwc_renderer->activated_ec can be changed at the time of commit handler
+      , so we stores the current activated_ec at data */
+   if (hwc_renderer->activated_ec)
+     data->ec = hwc_renderer->activated_ec;
+   data->is_canvas = is_canvas;
 
-   error = tdm_output_commit(toutput, 0, _e_comp_hwc_output_commit_handler, data);
+   /* set layer when the layer infomation is different from the previous one */
+   tbm_surface_get_info(tsurface, &surf_info);
+   if (hwc_layer->info.src_config.size.h != surf_info.planes[0].stride ||
+       hwc_layer->info.src_config.size.v != surf_info.height ||
+       hwc_layer->info.src_config.pos.x != 0 ||
+       hwc_layer->info.src_config.pos.y != 0 ||
+       hwc_layer->info.src_config.pos.w != surf_info.width ||
+       hwc_layer->info.src_config.pos.h != surf_info.height ||
+       hwc_layer->info.dst_pos.x != hwc_output->x ||
+       hwc_layer->info.dst_pos.y != hwc_output->y ||
+       hwc_layer->info.dst_pos.w != hwc_output->w ||
+       hwc_layer->info.dst_pos.h != hwc_output->h ||
+       hwc_layer->info.transform != TDM_TRANSFORM_NORMAL)
+     {
+        hwc_layer->info.src_config.size.h = surf_info.planes[0].stride;
+        hwc_layer->info.src_config.size.v = surf_info.height;
+        hwc_layer->info.src_config.pos.x = 0;
+        hwc_layer->info.src_config.pos.y = 0;
+        hwc_layer->info.src_config.pos.w = surf_info.width;
+        hwc_layer->info.src_config.pos.h = surf_info.height;
+        hwc_layer->info.dst_pos.x = hwc_output->x;
+        hwc_layer->info.dst_pos.y = hwc_output->y;
+        hwc_layer->info.dst_pos.w = hwc_output->w;
+        hwc_layer->info.dst_pos.h = hwc_output->h;
+        hwc_layer->info.transform = TDM_TRANSFORM_NORMAL;
+
+        error = tdm_layer_set_info(tlayer, &hwc_layer->info);
+        if (error != TDM_ERROR_NONE)
+          {
+             _e_comp_hwc_commit_data_destroy(data);
+             ERR("fail to tdm_layer_set_info");
+             return EINA_FALSE;
+          }
+     }
+
+   if (hwc_layer->hwc->trace_debug)
+     {
+        E_Client *ec = hwc_renderer->activated_ec;
+        if (is_canvas)
+          ELOGF("HWC", "Commit  Layer(%p)  tsurface(%p) (%dx%d,[%d,%d,%d,%d]=>[%d,%d,%d,%d]) data(%p)",
+                NULL, NULL, hwc_layer, tsurface,
+                hwc_layer->info.src_config.size.h, hwc_layer->info.src_config.size.h,
+                hwc_layer->info.src_config.pos.x, hwc_layer->info.src_config.pos.y,
+                hwc_layer->info.src_config.pos.w, hwc_layer->info.src_config.pos.h,
+                hwc_layer->info.dst_pos.x, hwc_layer->info.dst_pos.y,
+                hwc_layer->info.dst_pos.w, hwc_layer->info.dst_pos.h, data);
+         else
+           ELOGF("HWC", "Commit  Layer(%p)     wl_buffer(%p) tsurface(%p) (%dx%d,[%d,%d,%d,%d]=>[%d,%d,%d,%d]) data(%p) wl_buffer_ref(%p)",
+                 ec->pixmap, ec, hwc_layer, _get_wl_buffer(ec), tsurface,
+                 hwc_layer->info.src_config.size.h, hwc_layer->info.src_config.size.h,
+                 hwc_layer->info.src_config.pos.x, hwc_layer->info.src_config.pos.y,
+                 hwc_layer->info.src_config.pos.w, hwc_layer->info.src_config.pos.h,
+                 hwc_layer->info.dst_pos.x, hwc_layer->info.dst_pos.y,
+                 hwc_layer->info.dst_pos.w, hwc_layer->info.dst_pos.h, data, _get_wl_buffer_ref(ec));
+      }
+
+   error = tdm_layer_set_buffer(tlayer, tsurface);
    if (error != TDM_ERROR_NONE)
      {
-        ERR("fail to tdm_output_commit");
         _e_comp_hwc_commit_data_destroy(data);
+        ERR("fail to tdm_layer_set_buffer");
         return EINA_FALSE;
+     }
+
+   /* fps check at no composite */
+   if (!is_canvas)
+      _e_comp_hwc_update_client_fps();
+
+   /* commit handler is different */
+   if (hwc_layer->reserved_memory)
+     {
+        error = tdm_output_commit(toutput, 0, _e_comp_hwc_output_commit_handler_reserved_memory, data);
+        if (error != TDM_ERROR_NONE)
+          {
+             _e_comp_hwc_commit_data_destroy(data);
+             ERR("fail to tdm_output_commit");
+             return EINA_FALSE;
+          }
+     }
+   else
+     {
+        error = tdm_output_commit(toutput, 0, _e_comp_hwc_output_commit_handler, data);
+        if (error != TDM_ERROR_NONE)
+          {
+             _e_comp_hwc_commit_data_destroy(data);
+             ERR("fail to tdm_output_commit");
+             return EINA_FALSE;
+          }
      }
 
    return EINA_TRUE;
 }
 
 static void
-_e_comp_hwc_display_canvas(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void *event_info EINA_UNUSED)
+_e_comp_hwc_output_display_client_reserved_memory(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_layer, E_Client *ec)
+{
+   E_Comp_Hwc_Renderer *hwc_renderer = hwc_layer->hwc_renderer;
+   E_Pixmap *pixmap = ec->pixmap;
+   tbm_surface_h tsurface = NULL;
+
+   if (hwc_layer->hwc->trace_debug)
+     ELOGF("HWC", "Display Client", ec->pixmap, ec);
+
+   /* acquire the surface from the client_queue */
+   tsurface = _e_comp_hwc_renderer_recieve_surface(hwc_renderer, ec);
+   if (!tsurface)
+     {
+        e_pixmap_image_clear(pixmap, 1);
+        ERR("fail to _e_comp_hwc_renderer_recieve_surface");
+        return;
+     }
+
+   /* enqueue the surface to the layer_queue */
+   if (!_e_comp_hwc_renderer_enqueue(hwc_renderer, tsurface))
+     {
+        _e_comp_hwc_renderer_send_surface(hwc_renderer, ec, tsurface);
+        ERR("fail to _e_comp_hwc_renderer_enqueue");
+        return;
+     }
+
+   /* aquire */
+   tsurface = _e_comp_hwc_layer_queue_acquire(hwc_layer);
+   if (!tsurface)
+     {
+        _e_comp_hwc_renderer_send_surface(hwc_renderer, ec, tsurface);
+        ERR("fail _e_comp_hwc_layer_queue_acquire");
+        return;
+     }
+
+   /* commit */
+   if (!_e_comp_hwc_output_commit(hwc_layer->hwc_output, hwc_layer, tsurface, EINA_FALSE))
+      {
+         _e_comp_hwc_layer_queue_release(hwc_layer, tsurface);
+         e_pixmap_image_clear(hwc_renderer->activated_ec->pixmap, EINA_TRUE);
+         ERR("fail to _e_comp_hwc_output_commit");
+         return;
+      }
+}
+
+
+static void
+_e_comp_hwc_output_display_client(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_layer, E_Client *ec)
+{
+   E_Pixmap *pixmap = ec->pixmap;
+   E_Comp_Wl_Buffer *buffer = e_pixmap_resource_get(pixmap);
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+   tbm_surface_h tsurface = NULL;
+
+   if (hwc_layer->hwc->trace_debug)
+     ELOGF("HWC", "Display Client", ec->pixmap, ec);
+
+   EINA_SAFETY_ON_NULL_RETURN(buffer);
+
+   tsurface = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
+   if (!tsurface)
+     {
+        ERR("fail to _e_comp_hwc_renderer_recieve_surface");
+        return;
+     }
+
+   /* commit */
+   if (!_e_comp_hwc_output_commit(hwc_output, hwc_layer, tsurface, EINA_FALSE))
+     {
+        ERR("fail to _e_comp_hwc_output_commit");
+        return;
+     }
+}
+
+Evas_Engine_Info_GL_Drm *
+_e_comp_hwc_get_evas_engine_info_gl_drm(E_Comp_Hwc *hwc)
+{
+   if (hwc->einfo) return hwc->einfo;
+
+   hwc->einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(hwc->einfo, NULL);
+
+   return hwc->einfo;
+}
+
+static void
+_e_comp_hwc_canvas_render_post(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Comp_Hwc *hwc = data;
    Evas_Engine_Info_GL_Drm *einfo = NULL;
-   E_Comp_Hwc_Output *hwc_output;
-   E_Comp_Hwc_Layer *hwc_layer;
+   E_Comp_Hwc_Output *hwc_output = NULL;;
+   E_Comp_Hwc_Layer *hwc_layer = NULL;;
+   E_Comp_Hwc_Renderer *hwc_renderer = NULL;
    Eina_List *l_o, *ll_o;
    tdm_output_conn_status conn_status;
+   tbm_surface_h tsurface = NULL;
 
    if (!hwc) return;
 
@@ -438,7 +1029,8 @@ _e_comp_hwc_display_canvas(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void *ev
    /* check outbuf flushed or ont */
    if (!einfo->info.outbuf_flushed)
      {
-        INF("evas outbuf flush nothing!. nothing draws.\n");
+        if (hwc->trace_debug)
+          ELOGF("HWC", "Commit Canvas outbuf flush nothing!. Nothing Display.", NULL, NULL);
         return;
      }
 
@@ -457,111 +1049,63 @@ _e_comp_hwc_display_canvas(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void *ev
              continue;
           }
         hwc_layer = hwc_output->primary_layer;
-        if (hwc_layer->gsurface != einfo->info.surface)
+        hwc_renderer = hwc_layer->hwc_renderer;
+        if (hwc_renderer->gsurface != einfo->info.surface)
           {
-             hwc_layer->gsurface = einfo->info.surface;
-             hwc_layer->tqueue = gbm_tbm_get_surface_queue(hwc_layer->gsurface);
-             if (!hwc_layer->tqueue)
+             hwc_renderer->gsurface = einfo->info.surface;
+             hwc_renderer->tqueue = gbm_tbm_get_surface_queue(hwc_renderer->gsurface);
+             if (!hwc_renderer->tqueue)
                {
-                  ERR("no hwc_layer->tqueue");
+                  ERR("no hwc_renderer->tqueue");
                   continue;
                }
-#if USE_FIXED_SCANOUT
-             if (!hwc_layer->tserver_queue)
+             hwc_layer->tqueue = hwc_renderer->tqueue;
+
+             /* dequeue the surfaces if the qeueue is available */
+             /* add the surface to the disp_surfaces list, if it is not in the disp_surfaces */
+             while (tbm_surface_queue_can_dequeue(hwc_layer->tqueue, 0))
                {
-                  // TODO: destory?
-                  hwc_layer->tserver_queue = wayland_tbm_server_create_queue(e_comp->wl_comp_data->tbm.server, hwc_layer->tqueue, 7777);
-                  if (!hwc_layer->tserver_queue)
+                  /* dequeue */
+                  tsurface = _e_comp_hwc_renderer_dequeue(hwc_renderer);
+                  if (!tsurface)
                     {
-                       ERR("no hwc_layer->tserver_queue");
+                       ERR("fail to dequeue surface");
                        continue;
                     }
+                  /* if not exist, add the surface to the renderer */
+                  if (!_e_comp_hwc_renderer_find_disp_surface(hwc_renderer, tsurface))
+                  hwc_renderer->disp_surfaces = eina_list_append(hwc_renderer->disp_surfaces, tsurface);
                }
-#endif
+               _e_comp_hwc_renderer_release_all_disp_surfaces(hwc_renderer);
+
           }
+
+        if (hwc_layer->hwc->trace_debug)
+          ELOGF("HWC", "Display Canvas Layer(%p)", NULL, NULL, hwc_layer);
 
         /* aquire */
-        hwc_layer->tsurface = _e_comp_hwc_queue_aquire(hwc_layer->tqueue);
-        if (!hwc_layer->tsurface)
-          {
-             ERR("hwc_layer->tsurface is NULL");
-             continue;
-          }
+        tsurface = _e_comp_hwc_layer_queue_acquire(hwc_layer);
+        if (!tsurface)
+           {
+              ERR("tsurface is NULL");
+              continue;
+           }
 
         /* commit */
-        if (!_e_comp_hwc_output_commit(hwc_output, hwc_layer, hwc_layer->tsurface, EINA_FALSE))
-          {
-             _e_comp_hwc_queue_release(hwc_layer->tqueue, hwc_layer->tsurface);
-             ERR("fail to _e_comp_hwc_output_commit");
-             continue;
-          }
+        if (!_e_comp_hwc_output_commit(hwc_output, hwc_layer, tsurface, EINA_TRUE))
+           {
+              _e_comp_hwc_layer_queue_release(hwc_layer, tsurface);
+              ERR("fail to _e_comp_hwc_output_commit");
+              continue;
+           }
 
         /* block the next update of ecore_evas until the current update is done */
         einfo->info.wait_for_showup = EINA_TRUE;
-        INF("HWC: Display Canvas");
      }
 }
 
 static void
-_e_comp_hwc_display_client(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_layer, E_Client *ec)
-{
-   E_Pixmap *pixmap = ec->pixmap;
-   E_Comp_Wl_Buffer *buffer = e_pixmap_resource_get(pixmap);
-   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
-   tbm_surface_h tsurface = NULL;
-
-   EINA_SAFETY_ON_NULL_RETURN(buffer);
-
-   tsurface = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
-   EINA_SAFETY_ON_NULL_RETURN(tsurface);
-
-#if USE_FIXED_SCANOUT
-   uint32_t flags = 0;
-
-   flags = wayland_tbm_server_get_flags(wl_comp_data->tbm.server, buffer->resource);
-   INF("flags=%d", flags);
-
-   /* enqueue */
-   if (!_e_comp_hwc_queue_enqueue(hwc_output->primary_layer->tqueue, tsurface))
-     {
-       e_pixmap_image_clear(ec->pixmap, 1);
-       ERR("fail to _e_comp_hwc_queue_enqueue");
-       return;
-     }
-
-   /* aquire */
-   hwc_layer->tserver_surface = _e_comp_hwc_queue_aquire(hwc_layer->tqueue);
-   if (!hwc_layer->tserver_surface)
-     {
-        e_pixmap_image_clear(ec->pixmap, 1);
-        ERR("hwc_layer->tsurface is NULL");
-        return;
-     }
-#else
-   hwc_layer->tserver_surface = tsurface;
-#endif
-
-   /* update fps */
-   _e_comp_hwc_update_client_fps();
-
-   /* commit */
-   if (!_e_comp_hwc_output_commit(hwc_output, hwc_layer, hwc_layer->tserver_surface, EINA_TRUE))
-     {
-        e_pixmap_image_clear(ec->pixmap, 1);
-#if USE_FIXED_SCANOUT
-        _e_comp_hwc_queue_release(hwc_layer->tqueue, hwc_layer->tserver_surface);
-#endif
-        ERR("fail to _e_comp_hwc_output_commit");
-        return;
-     }
-
-   hwc_layer->disp_ec = ec;
-
-   INF("HWC: Display E_Client");
-}
-
-static void
-_e_comp_hwc_remove_hwc(E_Comp_Hwc *hwc)
+_e_comp_hwc_remove(E_Comp_Hwc *hwc)
 {
    E_Comp_Hwc_Output *hwc_output = NULL;
    E_Comp_Hwc_Layer *hwc_layer = NULL;
@@ -580,12 +1124,12 @@ _e_comp_hwc_remove_hwc(E_Comp_Hwc *hwc)
           {
              if (!hwc_layer) continue;
              hwc_output->hwc_layers = eina_list_remove_list(hwc_output->hwc_layers, l_l);
+             if (hwc_layer->hwc_renderer) free(hwc_layer->hwc_renderer);
              free(hwc_layer);
           }
         hwc->hwc_outputs = eina_list_remove_list(hwc->hwc_outputs, l_o);
         free(hwc_output);
      }
-
 
    if (tdisplay) tdm_display_deinit(tdisplay);
    if (hwc) free(hwc);
@@ -599,10 +1143,13 @@ e_comp_hwc_init(void)
    E_Comp_Hwc *hwc = NULL;
    E_Comp_Hwc_Output *hwc_output = NULL;
    E_Comp_Hwc_Layer *hwc_layer = NULL;
+   E_Comp_Hwc_Renderer *hwc_renderer = NULL;
+
 
    tdm_output *tdisplay = NULL;
    tdm_output *toutput = NULL;
    tdm_layer *tlayer = NULL;
+   tdm_layer_capability layer_capabilities;
    tdm_error error = TDM_ERROR_NONE;
 
    Evas_Engine_Info_GL_Drm *einfo;
@@ -645,6 +1192,9 @@ e_comp_hwc_init(void)
      }
    hwc->num_outputs = num_outputs;
 
+   // TODO: trigger this flag at the e_info
+   hwc->trace_debug = trace_debug;
+
    /* initialize outputs */
    for (i = 0; i < num_outputs; i++)
      {
@@ -677,15 +1227,35 @@ e_comp_hwc_init(void)
 
              tdm_layer_get_zpos(tlayer, &zpos);
              hwc_layer->zpos = zpos;
+             hwc_layer->hwc_output = hwc_output;
              hwc_layer->hwc = hwc;
+
+             CLEAR(layer_capabilities);
+             tdm_layer_get_capabilities(hwc_layer->tlayer, &layer_capabilities);
+             /* check the layer is the primary layer */
+             if (layer_capabilities&TDM_LAYER_CAPABILITY_PRIMARY)
+               {
+                  hwc_layer->primary = EINA_TRUE;
+                  hwc_output->primary_layer = hwc_layer; /* register the primary layer */
+                  INF("HWC: hwc_layer(%p) is the primary layer.", hwc_layer);
+               }
+             /* check that the layer uses the reserved memory */
+             if (layer_capabilities&TDM_LAYER_CAPABILITY_RESEVED_MEMORY)
+               {
+                 hwc_layer->reserved_memory = EINA_TRUE;
+                 INF("HWC: TDM layer(%p) uses the reserved memory.", hwc_layer);
+               }
+
+             hwc_renderer = E_NEW(E_Comp_Hwc_Renderer, 1);
+             if (!hwc_renderer) goto fail;
+             hwc_renderer->hwc_layer = hwc_layer;
+             hwc_layer->hwc_renderer = hwc_renderer;
           }
 
-        hwc_layer = _e_comp_hwc_find_primary_layer(hwc_output);
-        hwc_layer->primary = EINA_TRUE;
-        hwc_output->primary_layer = hwc_layer; /* register the primary layer */
+        hwc_output->hwc = hwc;
      }
 
-   _e_comp_hwc_update_output_geom(hwc_output);
+   _e_comp_hwc_output_update_geom(hwc_output);
 
    /* get the evas_engine_gl_drm information */
    einfo = _e_comp_hwc_get_evas_engine_info_gl_drm(hwc);
@@ -694,12 +1264,12 @@ e_comp_hwc_init(void)
    /* enable hwc to evas engine gl_drm */
    einfo->info.hwc_enable = EINA_TRUE;
 
-   evas_event_callback_add(e_comp->evas, EVAS_CALLBACK_RENDER_POST, _e_comp_hwc_display_canvas, hwc);
+   evas_event_callback_add(e_comp->evas, EVAS_CALLBACK_RENDER_POST, _e_comp_hwc_canvas_render_post, hwc);
 
    return EINA_TRUE;
 
 fail:
-   _e_comp_hwc_remove_hwc(hwc);
+   _e_comp_hwc_remove(hwc);
 
    return EINA_FALSE;
 }
@@ -709,7 +1279,7 @@ e_comp_hwc_shutdown(void)
 {
    if (!e_comp) return;
 
-   _e_comp_hwc_remove_hwc(g_hwc);
+   _e_comp_hwc_remove(g_hwc);
 }
 
 
@@ -743,7 +1313,10 @@ e_comp_hwc_display_client(E_Client *ec)
              if (hwc_output->primary_layer)
                {
                   hwc_layer = hwc_output->primary_layer;
-                  _e_comp_hwc_display_client(hwc_output, hwc_layer, ec);
+                  if (hwc_layer->reserved_memory)
+                    _e_comp_hwc_output_display_client_reserved_memory(hwc_output, hwc_layer, ec);
+                  else
+                    _e_comp_hwc_output_display_client(hwc_output, hwc_layer, ec);
                }
              else
                ERR("no primary layer");
@@ -770,6 +1343,8 @@ e_comp_hwc_mode_nocomp(E_Client *ec)
    E_Comp_Hwc_Output *hwc_output;
    Eina_List *l_o, *ll_o;
    tdm_output_conn_status conn_status;
+   E_Comp_Hwc_Renderer *hwc_renderer = NULL;
+
 
    EINA_LIST_FOREACH_SAFE(hwc->hwc_outputs, l_o, ll_o, hwc_output)
      {
@@ -779,50 +1354,70 @@ e_comp_hwc_mode_nocomp(E_Client *ec)
         if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
         /* make the policy to configure the layers with the client candidates */
 
+        hwc_renderer = hwc_output->primary_layer->hwc_renderer;
+
         if (ec)
           {
-             if (e_comp->nocomp && e_comp->nocomp_ec != ec)
-               INF("HWC: NOCOMPOSITE Mode ec(%p) ==> ec(%p)", e_comp->nocomp_ec, ec);
+             if (hwc_renderer->hwc_layer->reserved_memory)
+               {
+                  if (!_e_comp_hwc_renderer_can_activate(hwc_renderer, ec))
+                    {
+                       ERR("fail to _e_comp_hwc_renderer_can_activate");
+                       goto fail;
+                    }
+
+                  /* activate the wl client queue */
+                  if (!_e_comp_hwc_renderer_activate(hwc_renderer, ec))
+                    {
+                       ERR("fail to _e_comp_hwc_renderer_activate");
+                       goto fail;
+                    }
+               }
              else
-               INF("HWC: NOCOMPOSITE Mode ec(%p)", ec);
-
-#if USE_FIXED_SCANOUT
-             struct wl_resource *wl_surface = NULL;
-             wl_surface = _e_comp_hwc_wl_surface_get(ec);
-             if (!wl_surface)
-               {
-                  // TODO: check wl_surface sanity
-                  ERR("no wl_surface");
-                  return EINA_FALSE;
-               }
-
-             /* set this server queue to associated with wl_surface in order to share surfaces with client */
-             if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, wl_surface, 0))
-               {
-                  // TODO: check wl_surface sanity
-                  ERR("no wl_surface");
-                  return EINA_FALSE;
-               }
-#endif
+               hwc_renderer->activated_ec = ec;
 
              hwc_output->mode = E_HWC_MODE_NO_COMPOSITE;
-             hwc_output->primary_layer->ec = ec;
+
+             /* do not Canvas(ecore_evas) render */
+             hwc->einfo->info.wait_for_showup = EINA_TRUE;
+
+             /* debug */
+             if (hwc_renderer->hwc_layer->hwc->trace_debug)
+               ELOGF("HWC", "NOCOMPOSITE Mode", ec->pixmap, ec);
           }
         else
           {
-             INF("HWC: COMPOSITE Mode");
-#if USE_FIXED_SCANOUT
-             /* unset server queue */
-             if (!wayland_tbm_server_queue_set_surface(hwc_output->primary_layer->tserver_queue, NULL, 0))
+             if (hwc_renderer->hwc_layer->reserved_memory)
                {
-                  // TODO: check wl_surface sanity
-                  ERR("no wl_surface");
-                  return EINA_FALSE;
+                  /* activate the wl client queue */
+                  if (!_e_comp_hwc_renderer_deactivate(hwc_renderer))
+                    ERR("fail to _e_comp_hwc_renderer_deactivate");
                }
-#endif
+             else
+               hwc_renderer->activated_ec = ec;
+
              hwc_output->mode = E_HWC_MODE_COMPOSITE;
-             hwc_output->primary_layer->ec = NULL;
+
+             /* do not Canvas(ecore_evas) render */
+             hwc->einfo->info.wait_for_showup = EINA_FALSE;
+
+             /* debug */
+             if (hwc_renderer->hwc_layer->hwc->trace_debug)
+               ELOGF("HWC", "COMPOSITE Mode", NULL, NULL);
           }
      }
    return EINA_TRUE;
+fail:
+   // TODO: sanity check
+
+   return EINA_FALSE;
 }
+
+void
+e_comp_hwc_trace_debug(Eina_Bool onoff)
+{
+   if (onoff == g_hwc->trace_debug) return;
+   g_hwc->trace_debug = onoff;
+   INF("HWC: hwc trace_debug is %s", onoff?"ON":"OFF");
+}
+
