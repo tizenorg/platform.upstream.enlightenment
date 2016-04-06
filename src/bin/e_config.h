@@ -126,9 +126,13 @@ struct _E_Config
    int cursor_timer_interval;
    Eina_List *client_types;
    const char *comp_shadow_file;
-   const char*  wayland_socket_owner;
-   const char*  wayland_socket_group;
-   unsigned int wayland_socket_permissions;
+   struct
+   {
+      unsigned char use;
+      const char   *owner;
+      const char   *group;
+      unsigned int  permissions;
+   } wl_sock_access;
 };
 
 struct _E_Config_Desklock_Background

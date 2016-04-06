@@ -196,9 +196,10 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, cursor_timer_interval, INT);
    E_CONFIG_LIST(D, T, client_types, _e_config_client_type_edd);
    E_CONFIG_VAL(D, T, comp_shadow_file, STR);
-   E_CONFIG_VAL(D, T, wayland_socket_owner, STR);
-   E_CONFIG_VAL(D, T, wayland_socket_group, STR);
-   E_CONFIG_VAL(D, T, wayland_socket_permissions, INT);
+   E_CONFIG_VAL(D, T, wl_sock_access.use, UCHAR);
+   E_CONFIG_VAL(D, T, wl_sock_access.owner, STR);
+   E_CONFIG_VAL(D, T, wl_sock_access.group, STR);
+   E_CONFIG_VAL(D, T, wl_sock_access.permissions, INT);
 }
 
 /* externally accessible functions */
@@ -768,6 +769,8 @@ _e_config_free(E_Config *ecf)
      }
 
    eina_stringshare_del(ecf->xkb.default_model);
+   eina_stringshare_del(ecf->wl_sock_access.owner);
+   eina_stringshare_del(ecf->wl_sock_access.group);
 
    EINA_LIST_FREE(ecf->modules, em)
      {
