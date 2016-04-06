@@ -91,6 +91,7 @@ E_API int E_EVENT_COMPOSITOR_FPS_UPDATE = -1;
 #define CRI(f, x ...)
 #endif
 
+#ifdef MULTI_PLANE_HWC
 static void
 _e_comp_hooks_clean(void)
 {
@@ -108,7 +109,6 @@ _e_comp_hooks_clean(void)
        }
 }
 
-#ifdef MULTI_PLANE_HWC
 static void
 _e_comp_hook_call(E_Comp_Hook_Point hookpoint, E_Comp *c)
 {
