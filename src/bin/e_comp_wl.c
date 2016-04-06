@@ -4015,7 +4015,6 @@ _e_comp_wl_compositor_create(void)
    const char *name;
    int fd = 0;
    E_Module *_mod;
-   const char *runtime_dir;
 
    /* create new compositor data */
    if (!(cdata = E_NEW(E_Comp_Wl_Data, 1)))
@@ -4044,32 +4043,52 @@ _e_comp_wl_compositor_create(void)
         goto sock_err;
      }
 
-   runtime_dir = getenv("XDG_RUNTIME_DIR");
-   if (runtime_dir &&
-       e_config->wayland_socket_owner &&
-       e_config->wayland_socket_group) {
-     struct group *g;
-     struct passwd *u;
-     uid_t uid;
-     gid_t gid;
+   if (e_config->wl_sock_access.use)
+     {
+        const char *dir = getenv("XDG_RUNTIME_DIR");
+        if ((dir) &&
+            (e_config->wl_sock_access.owner) &&
+            (e_config->wl_sock_access.group))
+          {
+             char socket_path[108];
+             struct passwd *u;
+             struct group *g;
+             uid_t uid;
+             gid_t gid;
+			 int res;
 
-     char socket_path[108]; // sun_path is 108 bytes see <sys/un.h>
-     snprintf(socket_path, sizeof(socket_path), "%s/%s", runtime_dir, name);
+             snprintf(socket_path, sizeof(socket_path), "%s/%s", dir, name);
 
-     u = getpwnam(e_config->wayland_socket_owner);
-     uid = (u !=NULL) ? u->pw_uid : 0;
+             u = getpwnam(e_config->wl_sock_access.owner);
+             uid = u ? u->pw_uid : 0;
 
-     g = getgrnam(e_config->wayland_socket_group);
-     gid = (g != NULL) ? g->gr_gid : 0;
+             g = getgrnam(e_config->wl_sock_access.group);
+             gid = g ? g->gr_gid : 0;
 
-     DBG("socket path: %s owner: %s (%d) group: %s (%d) permissions: %o",
-	 e_config->wayland_socket_owner, uid,
-	 e_config->wayland_socket_group, gid,
-	 e_config->wayland_socket_permissions);
+             DBG("socket path: %s owner: %s (%d) group: %s (%d) permissions: %o",
+                 socket_path,
+                 e_config->wl_sock_access.owner, uid,
+                 e_config->wl_sock_access.group, gid,
+                 e_config->wl_sock_access.permissions);
 
-     chmod(socket_path, e_config->wayland_socket_permissions);
-     chown(socket_path, uid, gid);
-   }
+             res = chmod(socket_path, e_config->wl_sock_access.permissions);
+             if (res < 0)
+               {
+                  ERR("Could not change modes of socket file:%s (%s)",
+                      socket_path,
+                      strerror(errno));
+               }
+
+             res = chown(socket_path, uid, gid);
+             if (res < 0)
+               {
+                  ERR("Could not change owner of socket file:%s (%s)",
+                      socket_path,
+                      strerror(errno));
+               }
+          }
+     }
+
    /* set wayland display environment variable */
    e_env_set("WAYLAND_DISPLAY", name);
 
