@@ -538,6 +538,21 @@ _e_comp_wl_send_touch_cancel(E_Client *ec)
 }
 
 static void
+_e_comp_wl_touch_cancel(void)
+{
+   if (!e_comp_wl->ptr.ec)
+     return;
+
+   if (!need_send_released)
+     return;
+
+   _e_comp_wl_send_touch_cancel(e_comp_wl->ptr.ec);
+
+   need_send_released = EINA_FALSE;
+   need_send_motion = EINA_FALSE;
+}
+
+static void
 _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Client *ec;
@@ -547,13 +562,8 @@ _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (ec->comp_data->sub.restacking) return;
 
-   if (e_comp_wl->ptr.ec && need_send_released)
-     {
-        _e_comp_wl_send_touch_cancel(e_comp_wl->ptr.ec);
+   _e_comp_wl_touch_cancel();
 
-        need_send_released = EINA_FALSE;
-        need_send_motion = EINA_FALSE;
-     }
    /* return if ec isn't both a parent of a subsurface and a subsurface itself */
    if (!ec->comp_data->sub.list && !ec->comp_data->sub.below_list && !ec->comp_data->sub.data)
      {
@@ -4971,4 +4981,10 @@ e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t bu
         TRACE_INPUT_END();
      }
    return EINA_TRUE;
+}
+
+E_API void
+e_comp_wl_touch_cancel(void)
+{
+   _e_comp_wl_touch_cancel();
 }
