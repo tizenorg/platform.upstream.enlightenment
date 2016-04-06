@@ -1109,28 +1109,10 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
 
    if ((!ec->comp_data->mapped) && (e_pixmap_usable_get(ec->pixmap)))
      {
-        int pw = 0;
-        int ph = 0;
-        int cw = ec->w;
-        int ch = ec->h;
-        e_pixmap_size_get(ec->pixmap, &pw, &ph);
-        e_client_geometry_get(ec, NULL, NULL, &cw, &ch);
-        if (pw != cw || ph != ch)
-          {
-             // skip. because the pixmap's size doesnot same to ec's size
-             ELOGF("SHELL",
-                   "Deny Map |win:0x%08x|ec_size:%d,%d|get_size:%d,%d|pix_size:%d,%d",
-                   ec->pixmap, ec,
-                   (unsigned int)e_client_util_win_get(ec),
-                   ec->w, ec->h, cw, ch, pw, ph);
-          }
-        else
-          {
-             /* map this surface if needed */
-             ec->visible = EINA_TRUE;
-             evas_object_show(ec->frame);
-             ec->comp_data->mapped = EINA_TRUE;
-          }
+        /* map this surface if needed */
+        ec->visible = EINA_TRUE;
+        evas_object_show(ec->frame);
+        ec->comp_data->mapped = EINA_TRUE;
 
         /* FIXME: sometimes popup surfaces Do Not raise above their
          * respective parents... */
