@@ -108,6 +108,7 @@ _e_comp_hooks_clean(void)
        }
 }
 
+#ifdef MULTI_PLANE_HWC
 static void
 _e_comp_hook_call(E_Comp_Hook_Point hookpoint, E_Comp *c)
 {
@@ -123,6 +124,7 @@ _e_comp_hook_call(E_Comp_Hook_Point hookpoint, E_Comp *c)
    if ((_e_comp_hooks_walking == 0) && (_e_comp_hooks_delete > 0))
      _e_comp_hooks_clean();
 }
+#endif
 
 static E_Client *
 _e_comp_fullscreen_check(void)
