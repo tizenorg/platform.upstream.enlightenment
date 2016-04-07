@@ -326,6 +326,7 @@ _e_comp_cb_nocomp_end(void)
           e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
 
      }
+   e_comp->nocomp_ec = NULL;
    e_comp->nocomp = 0;
    e_comp_render_queue();
    e_comp_shape_queue_block(0);
@@ -352,7 +353,6 @@ e_comp_nocomp_end(const char *location)
    E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
    INF("HWC : NOCOMP_END at %s\n", location);
    _e_comp_cb_nocomp_end();
-   e_comp->nocomp_ec = NULL;
 }
 
 static void
