@@ -7,6 +7,9 @@
 #include "e_comp_wl.h"
 void wl_map_for_each(struct wl_map *map, void *func, void *data);
 #endif
+#ifdef HAVE_HWC
+#include "e_comp_hwc.h"
+#endif
 
 #define BUS "org.enlightenment.wm"
 #define PATH "/org/enlightenment/wm"
@@ -838,6 +841,26 @@ e_info_server_cb_transform_message(const Eldbus_Service_Interface *iface EINA_UN
    return reply;
 }
 
+#ifdef HAVE_HWC
+static Eldbus_Message *
+e_info_server_cb_hwc_trace_message(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   uint32_t onoff;
+
+   if (!eldbus_message_arguments_get(msg, "i", &onoff))
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   if (onoff == 1 || onoff == 0)
+     e_comp_hwc_trace_debug(onoff);
+
+   return reply;
+}
+#endif
+
 static const Eldbus_Method methods[] = {
    { "get_window_info", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_TOPVWINS")", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, 0 },
@@ -851,6 +874,9 @@ static const Eldbus_Method methods[] = {
    { "get_input_devices", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_INPUTDEV")", "array of input"}), _e_info_server_cb_input_device_info_get, 0},
    { "get_fps_info", NULL, ELDBUS_ARGS({"s", "fps request"}), _e_info_server_cb_fps_info_get, 0},
    { "transform_message", ELDBUS_ARGS({"siiiiiiii", "transform_message"}), NULL, e_info_server_cb_transform_message, 0},
+#ifdef HAVE_HWC
+   { "hwc_trace_message", ELDBUS_ARGS({"i", "hwc_trace_message"}), NULL, e_info_server_cb_hwc_trace_message, 0},
+#endif
    { NULL, NULL, NULL, NULL, 0 }
 };
 

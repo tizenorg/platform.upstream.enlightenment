@@ -918,6 +918,34 @@ _e_info_client_proc_transform_set(int argc, char **argv)
         return;
      }
 }
+
+#ifdef HAVE_HWC
+static void
+_e_info_client_proc_hwc_trace(int argc, char **argv)
+{
+   uint32_t onoff;
+
+   if (argc < 3)
+     {
+        printf("Error Check Args: enlightenment_info -hwc_trace [0/1]\n");
+        return;
+     }
+
+   onoff = atoi(argv[2]);
+
+   if (onoff == 1 || onoff == 0)
+     {
+        if (!_e_info_client_eldbus_message_with_args("hwc_trace_message", NULL, "i", onoff))
+          {
+             printf("_e_info_client_eldbus_message_with_args error");
+             return;
+          }
+     }
+   else
+     printf("Error Check Args: enlightenment_info -hwc_trace [0/1]\n");
+}
+#endif
+
 static struct
 {
    const char *option;
@@ -984,6 +1012,14 @@ static struct
       "Set transform in runtime",
       _e_info_client_proc_transform_set
    },
+#ifdef HAVE_HWC
+   {
+      "hwc_trace",
+      "[on: 1, off: 0]",
+      "Show the hwc trace log",
+      _e_info_client_proc_hwc_trace
+   },
+#endif
 };
 
 static void
