@@ -1008,6 +1008,8 @@ e_comp_init(void)
         e_comp->hwc = e_comp_hwc_init();
         if (!e_comp->hwc)
           WRN("fail to init hwc.");
+
+        E_LIST_FOREACH(e_comp->zones, e_comp_hwc_plane_init);
      }
 #endif
 
