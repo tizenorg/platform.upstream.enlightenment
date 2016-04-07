@@ -51,6 +51,7 @@
 #include "e_comp_canvas.h"
 #include "e_utils.h"
 #include "e_hints.h"
+#include "e_plane.h"
 
 #ifdef HAVE_WAYLAND
 # include "e_comp_wl.h"
