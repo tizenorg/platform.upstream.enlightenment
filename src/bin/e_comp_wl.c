@@ -85,12 +85,6 @@ _e_comp_wl_focus_check(void)
      e_grabinput_focus(e_comp->ee_win, E_FOCUS_METHOD_PASSIVE);
 }
 
-static void
-_e_comp_wl_log_cb_print(const char *format, va_list args)
-{
-   EINA_LOG_DOM_INFO(e_log_dom, format, args);
-}
-
 static Eina_Bool
 _e_comp_wl_cb_read(void *data EINA_UNUSED, Ecore_Fd_Handler *hdlr EINA_UNUSED)
 {
@@ -4034,9 +4028,6 @@ _e_comp_wl_compositor_create(void)
 
    /* set compositor wayland data */
    e_comp_wl = e_comp->wl_comp_data = cdata;
-
-   /* set wayland log handler */
-   wl_log_set_handler_server(_e_comp_wl_log_cb_print);
 
    /* try to create a wayland display */
    if (!(cdata->wl.disp = wl_display_create()))
