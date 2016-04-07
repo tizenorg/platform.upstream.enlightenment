@@ -574,6 +574,7 @@ main(int argc, char **argv)
     */
    e_zone_init();
    e_desk_init();
+   e_plane_init();
 
    TS("E_Screensaver Init");
    if (!e_screensaver_init())
@@ -1105,6 +1106,7 @@ _e_main_screens_shutdown(void)
    e_comp_shutdown();
    e_client_shutdown();
 
+   e_plane_shutdown();
    e_desk_shutdown();
    e_zone_shutdown();
    return 1;
