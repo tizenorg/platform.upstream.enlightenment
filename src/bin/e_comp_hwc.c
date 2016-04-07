@@ -1421,3 +1421,53 @@ e_comp_hwc_trace_debug(Eina_Bool onoff)
    INF("HWC: hwc trace_debug is %s", onoff?"ON":"OFF");
 }
 
+EINTERN Eina_Bool
+e_comp_hwc_plane_init(E_Zone *zone)
+{
+   E_Comp_Hwc_Output *hwc_output = NULL;
+   E_Comp_Hwc_Layer *hwc_layer;
+   Ecore_Drm_Device *dev;
+   Ecore_Drm_Output *drm_output;
+   E_Randr2_Screen *s;
+   const Eina_List *l, *ll;
+   tdm_layer_capability capa;
+
+   EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
+     {
+        EINA_LIST_FOREACH(e_randr2->screens, ll, s)
+          {
+             int len;
+
+             if (!s->config.enabled) continue;
+
+             drm_output = ecore_drm_device_output_name_find(dev, s->info.name);
+             if (!drm_output) continue;
+
+             len = strlen(zone->randr2_id);
+             if (strncmp(s->info.name, zone->randr2_id, len -1) != 0) continue;
+             // DSI-0/(randr2_id) DSI-0(s->info.name)
+
+             hwc_output = _e_comp_hwc_output_find(drm_output);
+             if (hwc_output) break;
+          }
+     }
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(hwc_output, EINA_FALSE);
+
+   EINA_LIST_FOREACH_SAFE(hwc_output->hwc_layers, l, ll, hwc_layer)
+     {
+        E_Plane *ep;
+        if (!hwc_layer) continue;
+
+        ep = e_plane_new(zone);
+
+        tdm_layer_get_capabilities(hwc_layer->tlayer, &capa);
+
+        if (capa & (TDM_LAYER_CAPABILITY_PRIMARY))
+          {
+             zone->primary_plane = ep;
+          }
+     }
+
+   return EINA_TRUE;
+}

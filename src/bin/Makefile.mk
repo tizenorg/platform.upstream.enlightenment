@@ -63,6 +63,7 @@ src/bin/e_object.h \
 src/bin/e_path.h \
 src/bin/e_pixmap.h \
 src/bin/e_place.h \
+src/bin/e_plane.h \
 src/bin/e_pointer.h \
 src/bin/e_prefix.h \
 src/bin/e_randr2.h \
@@ -136,6 +137,7 @@ src/bin/e_object.c \
 src/bin/e_path.c \
 src/bin/e_pixmap.c \
 src/bin/e_place.c \
+src/bin/e_plane.c \
 src/bin/e_pointer.c \
 src/bin/e_prefix.c \
 src/bin/e_randr2.c \
