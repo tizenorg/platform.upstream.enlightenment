@@ -582,13 +582,13 @@ _e_comp_hwc_renderer_deactivate(E_Comp_Hwc_Renderer *hwc_renderer)
    if (hwc_renderer->hwc_layer->hwc->trace_debug)
      ELOGF("HWC", "Deactivate", ec->pixmap, ec);
 
-   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_comp_data, EINA_FALSE);
+   EINA_SAFETY_ON_NULL_GOTO(wl_comp_data, done);
 
    wl_surface = _e_comp_hwc_wl_surface_get(ec);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_surface, EINA_FALSE);
+   EINA_SAFETY_ON_NULL_GOTO(wl_surface, done);
 
    cqueue = wayland_tbm_server_client_queue_get(wl_comp_data->tbm.server, wl_surface);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(cqueue, EINA_FALSE);
+   EINA_SAFETY_ON_NULL_GOTO(cqueue, done);
 
    /* deactive */
    wayland_tbm_server_client_queue_deactivate(cqueue);
@@ -727,6 +727,8 @@ _e_comp_hwc_output_commit_handler_reserved_memory(tdm_output *output, unsigned i
 
    tbm_surface_internal_unref(tsurface);
    _e_comp_hwc_commit_data_destroy(data);
+
+  hwc_layer->pending = EINA_FALSE;
 
 }
 
@@ -960,6 +962,8 @@ _e_comp_hwc_output_display_client_reserved_memory(E_Comp_Hwc_Output *hwc_output,
          ERR("fail to _e_comp_hwc_output_commit");
          return;
       }
+
+   hwc_layer->pending = EINA_TRUE;
 }
 
 
