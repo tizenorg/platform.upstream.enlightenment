@@ -1162,7 +1162,7 @@ static void
 _e_zone_free(E_Zone *zone)
 {
    int x, y;
-
+   E_Plane *ep;
    //printf("@@@@@@@@@@ e_zone_free: %i %i | %i %i %ix%i = %p\n", zone->num, zone->id, zone->x, zone->y, zone->w, zone->h, zone);
    /* Delete the edge windows if they exist */
    E_FREE_FUNC(zone->edge.top, evas_object_del);
@@ -1190,6 +1190,13 @@ _e_zone_free(E_Zone *zone)
 
    /* remove handlers */
    E_FREE_LIST(zone->handlers, ecore_event_handler_del);
+
+   /* remove planes */
+   EINA_LIST_FREE(zone->planes, ep)
+     {
+        if (!e_object_is_del(E_OBJECT(ep)))
+           e_object_free(E_OBJECT(ep));
+     }
 
    if (zone->name) eina_stringshare_del(zone->name);
    e_comp->zones = eina_list_remove(e_comp->zones, zone);
