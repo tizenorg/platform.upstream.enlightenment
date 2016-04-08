@@ -919,6 +919,19 @@ _e_info_client_proc_transform_set(int argc, char **argv)
      }
 }
 
+static void
+_e_info_client_proc_buffer_shot(int argc, char **argv)
+{
+   int dumprun = atoi(argv[2]);
+
+   if (!_e_info_client_eldbus_message_with_args("dump_buffers", NULL, "i", dumprun))
+     {
+        printf("_e_info_client_proc_buffer_shot fail (%d)\n", dumprun);
+        return;
+     }
+   printf("_e_info_client_proc_buffer_shot %s\n", (dumprun == 1 ? "start" : "stop"));
+}
+
 #ifdef HAVE_HWC
 static void
 _e_info_client_proc_hwc_trace(int argc, char **argv)
@@ -1011,6 +1024,11 @@ static struct
       "[id enable x y w h angle keep_ratio]",
       "Set transform in runtime",
       _e_info_client_proc_transform_set
+   },
+   {
+      "dump_buffers", "[start:1,stop:0]",
+      "Dump attach buffers (start:1,stop:0, path:/tmp/dump_xxx/)",
+      _e_info_client_proc_buffer_shot
    },
 #ifdef HAVE_HWC
    {

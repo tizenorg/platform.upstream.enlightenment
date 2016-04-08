@@ -34,6 +34,11 @@ typedef struct _E_Info_Transform
 static E_Info_Server e_info_server;
 static Eina_List    *e_info_transform_list = NULL;
 
+static Eina_List    *e_info_dump_hdlrs;
+static char         *e_info_dump_path;
+static int           e_info_dump_running;
+static int           e_info_dump_count;
+
 #define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbis"
 #define VALUE_TYPE_REQUEST_RESLIST "ui"
 #define VALUE_TYPE_REPLY_RESLIST "ssi"
@@ -841,6 +846,152 @@ e_info_server_cb_transform_message(const Eldbus_Service_Interface *iface EINA_UN
    return reply;
 }
 
+static Eina_Bool
+_e_info_server_cb_buffer_change(void *data, int type, void *event)
+{
+   E_Client *ec;
+   E_Event_Client *ev = event;
+   Ecore_Window event_win;
+   Evas_Object *o;
+   char path[PATH_MAX];
+   char fname[PATH_MAX];
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ev, ECORE_CALLBACK_PASS_ON);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ev->ec, ECORE_CALLBACK_PASS_ON);
+
+   snprintf(path, sizeof(path), "%s/%d/", e_info_dump_path, e_info_dump_count++);
+
+   if ((mkdir(path, 0755)) < 0)
+     {
+        printf("%s: mkdir '%s' fail\n", __func__, path);
+        return ECORE_CALLBACK_PASS_ON;
+     }
+
+   /* dump buffer change call event buffer */
+   ec = ev->ec;
+   if (e_object_is_del(E_OBJECT(ec)))
+     {
+        printf("%s: e_object_is_del(E_OBJECT(ec) return\n", __func__);
+        return ECORE_CALLBACK_PASS_ON;
+     }
+   if (e_client_util_ignored_get(ec))
+     {
+        printf("%s: e_client_util_ignored_get(ec) true. return\n", __func__);
+        return ECORE_CALLBACK_PASS_ON;
+     }
+   event_win = e_client_util_win_get(ec);
+   snprintf(fname, sizeof(fname), "%s/0x%08x_event.png", path, event_win);
+   e_info_server_dump_client(ec, fname);
+
+
+   /* dump all buffers */
+   for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
+     {
+        E_Client *ec = evas_object_data_get(o, "E_Client");
+        Ecore_Window win;
+
+        if (!ec) continue;
+        if (e_client_util_ignored_get(ec)) continue;
+
+        win = e_client_util_win_get(ec);
+
+        snprintf(fname, sizeof(fname), "%s/0x%08x.png", path, win);
+
+        e_info_server_dump_client(ec, fname);
+     }
+
+   return ECORE_CALLBACK_PASS_ON;
+}
+
+static char *
+_e_info_server_directory_make(void)
+{
+   char stamp[PATH_MAX];
+   char *fullpath;
+   time_t timer;
+   struct tm *t, *buf;
+
+   timer = time(NULL);
+
+   buf = calloc (1, sizeof (struct tm));
+   EINA_SAFETY_ON_NULL_RETURN_VAL(buf, NULL);
+   t = localtime_r(&timer, buf);
+   if (!t)
+     {
+        free(buf);
+        ERR("fail to get local time\n");
+        return NULL;
+     }
+
+   fullpath = (char *)calloc(1, PATH_MAX * sizeof(char));
+   if (!fullpath)
+     {
+        free(buf);
+        ERR("fail to alloc pathname memory\n");
+        return NULL;
+     }
+
+   snprintf(fullpath, PATH_MAX, "/tmp/dump_%04d%02d%02d.%02d%02d%02d",
+            t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
+
+   free(buf);
+
+   if ((mkdir(fullpath, 0755)) < 0)
+     {
+        free(fullpath);
+        ERR("%s: mkdir '%s' fail\n", __func__, fullpath);
+        return NULL;
+     }
+
+   return fullpath;
+}
+
+static Eldbus_Message *
+_e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   int start = 0;
+
+   if (!eldbus_message_arguments_get(msg, "i", &start))
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   if (start == 1)
+     {
+        if (e_info_dump_running == 1)
+          return reply;
+        e_info_dump_running = 1;
+        e_info_dump_count = 1;
+        e_info_dump_path = _e_info_server_directory_make();
+        if (e_info_dump_path == NULL)
+          {
+             e_info_dump_running = 0;
+             e_info_dump_count = 0;
+             ERR("dump_buffers start fail\n");
+          }
+        else
+          E_LIST_HANDLER_APPEND(e_info_dump_hdlrs, E_EVENT_CLIENT_BUFFER_CHANGE,
+                               _e_info_server_cb_buffer_change, NULL);
+     }
+   else
+     {
+        if (e_info_dump_running == 0)
+          return reply;
+        E_FREE_LIST(e_info_dump_hdlrs, ecore_event_handler_del);
+        e_info_dump_hdlrs = NULL;
+        if (e_info_dump_path)
+          {
+             free(e_info_dump_path);
+             e_info_dump_path = NULL;
+          }
+        e_info_dump_count = 0;
+        e_info_dump_running = 0;
+     }
+   return reply;
+}
+
 #ifdef HAVE_HWC
 static Eldbus_Message *
 e_info_server_cb_hwc_trace_message(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
@@ -874,6 +1025,7 @@ static const Eldbus_Method methods[] = {
    { "get_input_devices", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_INPUTDEV")", "array of input"}), _e_info_server_cb_input_device_info_get, 0},
    { "get_fps_info", NULL, ELDBUS_ARGS({"s", "fps request"}), _e_info_server_cb_fps_info_get, 0},
    { "transform_message", ELDBUS_ARGS({"siiiiiiii", "transform_message"}), NULL, e_info_server_cb_transform_message, 0},
+   { "dump_buffers", ELDBUS_ARGS({"i", "start"}), NULL, _e_info_server_cb_buffer_dump, 0 },
 #ifdef HAVE_HWC
    { "hwc_trace_message", ELDBUS_ARGS({"i", "hwc_trace_message"}), NULL, e_info_server_cb_hwc_trace_message, 0},
 #endif
@@ -934,6 +1086,19 @@ e_info_server_shutdown(void)
         eina_list_free(e_info_transform_list);
         e_info_transform_list = NULL;
      }
+
+   if (e_info_dump_hdlrs)
+     {
+        E_FREE_LIST(e_info_dump_hdlrs, ecore_event_handler_del);
+        e_info_dump_hdlrs = NULL;
+     }
+   if (e_info_dump_path)
+     {
+        free(e_info_dump_path);
+        e_info_dump_path = NULL;
+     }
+   e_info_dump_count = 0;
+   e_info_dump_running = 0;
 
    eldbus_shutdown();
 
