@@ -91,7 +91,7 @@ e_plane_new(E_Zone *zone)
 
 E_API void
 e_plane_name_set(E_Zone *zone,
-                const char *name)
+                 const char *name)
 {
    E_OBJECT_CHECK(zone);
    E_OBJECT_TYPE_CHECK(zone, E_PLANE_TYPE);
@@ -103,10 +103,10 @@ e_plane_name_set(E_Zone *zone,
 
 E_API Eina_Bool
 e_plane_resolution_set(E_Plane *plane,
-                   int x,
-                   int y,
-                   int w,
-                   int h)
+                       int x,
+                       int y,
+                       int w,
+                       int h)
 {
    int dx = 0, dy = 0, dw = 0, dh = 0;
 
