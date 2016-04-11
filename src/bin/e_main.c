@@ -888,14 +888,15 @@ static Eina_Bool
 _e_main_cb_signal_exit(void *data EINA_UNUSED, int ev_type EINA_UNUSED, void *ev EINA_UNUSED)
 {
    /* called on ctrl-c, kill (pid) (also SIGINT, SIGTERM and SIGQIT) */
-   //e_sys_action_do(E_SYS_EXIT, NULL);
+   ecore_main_loop_quit();
    return ECORE_CALLBACK_RENEW;
 }
 
 static Eina_Bool
 _e_main_cb_signal_hup(void *data EINA_UNUSED, int ev_type EINA_UNUSED, void *ev EINA_UNUSED)
 {
-   //e_sys_action_do(E_SYS_RESTART, NULL);
+   restart = 1;
+   ecore_main_loop_quit();
    return ECORE_CALLBACK_RENEW;
 }
 
