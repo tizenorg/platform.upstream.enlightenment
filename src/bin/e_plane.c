@@ -108,7 +108,7 @@ e_plane_resolution_set(E_Plane *plane,
                    int w,
                    int h)
 {
-   int dx, dy, dw, dh;
+   int dx = 0, dy = 0, dw = 0, dh = 0;
 
    E_OBJECT_CHECK_RETURN(plane, EINA_FALSE);
    E_OBJECT_TYPE_CHECK_RETURN(plane, E_PLANE_TYPE, EINA_FALSE);
