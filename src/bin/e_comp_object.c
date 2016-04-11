@@ -4278,7 +4278,7 @@ e_comp_object_mask_set(Evas_Object *obj, Eina_Bool set)
           {
              o = evas_object_rectangle_add(e_comp->evas);
              evas_object_color_set(o, 0, 0, 0, 0);
-             evas_object_clip_set(cw->input_obj, o);
+             evas_object_clip_set(o, cw->clip);
              evas_object_smart_member_add(o, obj);
              evas_object_move(o, 0, 0);
              evas_object_render_op_set(obj, EVAS_RENDER_COPY);
