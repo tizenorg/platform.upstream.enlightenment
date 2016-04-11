@@ -176,19 +176,22 @@ e_path_user_path_remove(E_Path *ep, const char *path)
         if (!new_path) return;
         strncpy(new_path, home_dir, len1 + 1);
         strncat(new_path, path + 1, len1 + len2);
-        EINA_LIST_FOREACH(*(ep->user_dir_list), l, epd)
+        if (ep->user_dir_list)
           {
-             if (epd->dir)
+             EINA_LIST_FOREACH(*(ep->user_dir_list), l, epd)
                {
-                  if (!strcmp(epd->dir, new_path))
+                  if (epd->dir)
                     {
-                       *(ep->user_dir_list) = eina_list_remove_list(
-                           *(ep->user_dir_list), l);
-                       eina_stringshare_del(epd->dir);
-                       free(epd);
-                       free(new_path);
-                       _e_path_cache_free(ep);
-                       return;
+                       if (!strcmp(epd->dir, new_path))
+                         {
+                            *(ep->user_dir_list) = eina_list_remove_list(
+                               *(ep->user_dir_list), l);
+                            eina_stringshare_del(epd->dir);
+                            free(epd);
+                            free(new_path);
+                            _e_path_cache_free(ep);
+                            return;
+                         }
                     }
                }
           }
@@ -196,18 +199,21 @@ e_path_user_path_remove(E_Path *ep, const char *path)
      }
    else
      {
-        EINA_LIST_FOREACH(*(ep->user_dir_list), l, epd)
+        if (ep->user_dir_list)
           {
-             if (epd->dir)
+             EINA_LIST_FOREACH(*(ep->user_dir_list), l, epd)
                {
-                  if (!strcmp(epd->dir, path))
+                  if (epd->dir)
                     {
-                       *(ep->user_dir_list) = eina_list_remove_list(
-                           *(ep->user_dir_list), l);
-                       eina_stringshare_del(epd->dir);
-                       free(epd);
-                       _e_path_cache_free(ep);
-                       return;
+                       if (!strcmp(epd->dir, path))
+                         {
+                            *(ep->user_dir_list) = eina_list_remove_list(
+                               *(ep->user_dir_list), l);
+                            eina_stringshare_del(epd->dir);
+                            free(epd);
+                            _e_path_cache_free(ep);
+                            return;
+                         }
                     }
                }
           }
@@ -260,20 +266,23 @@ e_path_find(E_Path *ep, const char *file)
           }
      }
    /* Look in the users dir list */
-   EINA_LIST_FOREACH(*(ep->user_dir_list), l, epd)
+   if (ep->user_dir_list)
      {
-        if (epd->dir)
+        EINA_LIST_FOREACH(*(ep->user_dir_list), l, epd)
           {
-             snprintf(buf, sizeof(buf), "%s/%s", epd->dir, file);
-             if (ecore_file_exists(buf))
+             if (epd->dir)
                {
-                  if (!ep->hash)
-                    ep->hash = eina_hash_string_superfast_new(NULL);
-                  if (eina_hash_population(ep->hash) >= 512)
-                    _e_path_cache_free(ep);
-                  ret = eina_stringshare_add(buf);
-                  eina_hash_add(ep->hash, file, ret);
-                  return eina_stringshare_ref(ret);
+                  snprintf(buf, sizeof(buf), "%s/%s", epd->dir, file);
+                  if (ecore_file_exists(buf))
+                    {
+                       if (!ep->hash)
+                         ep->hash = eina_hash_string_superfast_new(NULL);
+                       if (eina_hash_population(ep->hash) >= 512)
+                         _e_path_cache_free(ep);
+                       ret = eina_stringshare_add(buf);
+                       eina_hash_add(ep->hash, file, ret);
+                       return eina_stringshare_ref(ret);
+                    }
                }
           }
      }
