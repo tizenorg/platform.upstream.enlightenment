@@ -111,7 +111,7 @@ struct _E_Zone
    E_Zone_Display_State display_state;
    char *randr2_id; // same id we get from randr2 so look it up there
 
-   Eina_List   *planes;
+   E_Output    *output;
    E_Plane     *primary_plane;
 };
 
