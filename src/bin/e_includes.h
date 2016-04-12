@@ -61,4 +61,7 @@
 #ifdef HAVE_WAYLAND_TBM
 # include "e_comp_wl_tbm.h"
 #endif
+#ifdef HAVE_HWC
+# include "e_comp_hwc.h"
+#endif
 #endif
