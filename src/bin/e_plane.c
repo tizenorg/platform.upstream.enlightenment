@@ -1,7 +1,7 @@
 #include "e.h"
 
-/* E_Plane is a child object of E_Zone. There is one zone per screen
- * in a xinerama setup. Each zone has one or more planes.
+/* E_Plane is a child object of E_Output. There is one zone per screen
+ * in a screen setup. Each Output always links to a zone and a canvas
  */
 
 E_API int E_EVENT_PLANE_ADD = 0;
@@ -15,10 +15,8 @@ _e_plane_free(E_Plane *plane)
 {
    //printf("@@@@@@@@@@ e_plane_free: %i %i | %i %i %ix%i = %p\n", zone->num, zone->id, zone->x, zone->y, zone->w, zone->h, zone);
 
-   /* Delete the object event callbacks */
-
-   /* remove clients list */
-   eina_list_free(plane->clist);
+   if (!plane) return;
+   if (plane->output) plane->output->plane_count--;
 
    /* remove handlers */
    E_FREE_LIST(plane->handlers, ecore_event_handler_del);
@@ -31,14 +29,9 @@ _e_plane_free(E_Plane *plane)
 static void
 _e_plane_reconfigure_clients(E_Plane *plane, int dx, int dy, int dw, int dh)
 {
-   E_Client *ec;
+   EINA_SAFETY_ON_NULL_RETURN(plane->ec);
 
-   Eina_List *l, *ll;
-   EINA_LIST_FOREACH_SAFE(plane->clist, l, ll, ec)
-     {
-        if (!ec) break;
-        /* TODO: config ec refer to resolution */
-     }
+   /* TODO: config ec refer to resolution */
 }
 
 ///////////////////////////////////////////
@@ -59,47 +52,36 @@ e_plane_shutdown(void)
 }
 
 E_API E_Plane *
-e_plane_new(E_Zone *zone)
+e_plane_new(E_Output *output)
 {
    E_Plane *plane;
 
    char name[40];
 
-   if (!zone) return NULL;
+   if (!output) return NULL;
 
    plane = E_OBJECT_ALLOC(E_Plane, E_PLANE_TYPE, _e_plane_free);
    if (!plane) return NULL;
 
-   snprintf(name, sizeof(name), "Plane %d", zone->num);
+   snprintf(name, sizeof(name), "Plane %d", output->zone->num);
    plane->name = eina_stringshare_add(name);
 
    plane->type = E_PLANE_TYPE_INVALID;
-   plane->zone = zone;
+   plane->output = output;
 
-   /* config default resolution with zone size*/
-   plane->resolution.x = zone->x;
-   plane->resolution.y = zone->y;
-   plane->resolution.w = zone->w;
-   plane->resolution.h = zone->h;
+   /* config default resolution with output size*/
+   plane->resolution.x = output->geom.x;
+   plane->resolution.y = output->geom.y;
+   plane->resolution.w = output->geom.w;
+   plane->resolution.h = output->geom.h;
 
-   zone->planes = eina_list_append(zone->planes, plane);
+   output->planes = eina_list_append(output->planes, plane);
+   output->plane_count++;
 
-   printf("@@@@@@@@@@ e_plane_new: %s | %i %i %ix%i = %p\n", zone->randr2_id, plane->resolution.x , plane->resolution.y, plane->resolution.w, plane->resolution.h, zone);
+   printf("@@@@@@@@@@ e_plane_new: %s | %i %i %ix%i = %p\n", output->zone->randr2_id, plane->resolution.x , plane->resolution.y, plane->resolution.w, plane->resolution.h, output);
 
    return plane;
 }
-
-E_API void
-e_plane_name_set(E_Zone *zone,
-                 const char *name)
-{
-   E_OBJECT_CHECK(zone);
-   E_OBJECT_TYPE_CHECK(zone, E_PLANE_TYPE);
-
-   if (zone->name) eina_stringshare_del(zone->name);
-   zone->name = eina_stringshare_add(name);
-}
-
 
 E_API Eina_Bool
 e_plane_resolution_set(E_Plane *plane,

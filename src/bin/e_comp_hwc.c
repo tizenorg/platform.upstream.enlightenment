@@ -29,14 +29,6 @@ typedef struct _E_Comp_Hwc_Layer E_Comp_Hwc_Layer;
 typedef struct _E_Comp_Hwc_Renderer E_Comp_Hwc_Renderer;
 typedef struct _E_Comp_Hwc_Commit_Data E_Comp_Hwc_Commit_Data;
 
-typedef enum _E_Hwc_Mode
-{
-   E_HWC_MODE_COMPOSITE = 1,        /* display only canvas */
-   E_HWC_MODE_NO_COMPOSITE = 2,      /* display only one surface */
-   E_HWC_MODE_HWC_COMPOSITE = 3,    /* display one or more surfaces and a canvas */
-   E_HWC_MODE_HWC_NO_COMPOSITE = 4, /* display multi surfaces */
-} E_Hwc_Mode;
-
 struct _E_Comp_Hwc_Commit_Data {
    E_Comp_Hwc_Layer *hwc_layer;
    tbm_surface_h tsurface;
@@ -107,6 +99,24 @@ static E_Comp_Hwc *g_hwc = NULL;
 
 static Eina_Bool _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_layer, tbm_surface_h tsurface, Eina_Bool is_canvas);
 
+
+///////////////////////////////////////////
+
+/* local subsystem functions */
+static void
+_e_output_free(E_Output *output)
+{
+   E_Plane *ep;
+   /* Delete the object event callbacks */
+
+   /* remove planes */
+   EINA_LIST_FREE(output->planes, ep)
+     {
+        if (!e_object_is_del(E_OBJECT(ep)))
+           e_object_free(E_OBJECT(ep));
+     }
+   free(output);
+}
 
 static void
 _e_comp_hwc_update_client_fps()
@@ -1429,13 +1439,15 @@ EINTERN Eina_Bool
 e_comp_hwc_plane_init(E_Zone *zone)
 {
    E_Comp_Hwc_Output *hwc_output = NULL;
-   E_Comp_Hwc_Layer *hwc_layer;
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *drm_output;
    E_Randr2_Screen *s;
    const Eina_List *l, *ll;
-   tdm_layer_capability capa;
+   E_Output * eout = NULL;
 
+   EINA_SAFETY_ON_NULL_RETURN_VAL(zone, EINA_FALSE);
+
+   // TODO: canvas, zone shall match with one output
    EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
      {
         EINA_LIST_FOREACH(e_randr2->screens, ll, s)
@@ -1457,21 +1469,112 @@ e_comp_hwc_plane_init(E_Zone *zone)
      }
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(hwc_output, EINA_FALSE);
+   eout = e_output_new(zone);
 
-   EINA_LIST_FOREACH_SAFE(hwc_output->hwc_layers, l, ll, hwc_layer)
+   EINA_SAFETY_ON_NULL_RETURN_VAL(eout, EINA_FALSE);
+   zone->output = eout;
+
+   for (int i = 0; i < hwc_output->num_layers; i++)
      {
-        E_Plane *ep;
-        if (!hwc_layer) continue;
-
-        ep = e_plane_new(zone);
-
-        tdm_layer_get_capabilities(hwc_layer->tlayer, &capa);
-
-        if (capa & (TDM_LAYER_CAPABILITY_PRIMARY))
-          {
-             zone->primary_plane = ep;
-          }
+        e_plane_new(eout);
      }
 
    return EINA_TRUE;
 }
+
+E_API E_Output *
+e_output_new(E_Zone *zone)
+{
+   E_Output *output;
+
+   if (!zone) return NULL;
+
+   output = E_OBJECT_ALLOC(E_Output, E_OUTPUT_TYPE, _e_output_free);
+   if (!output) return NULL;
+
+   output->zone = zone;
+   output->geom.x = zone->x;
+   output->geom.y = zone->y;
+   output->geom.w = zone->w;
+   output->geom.h = zone->h;
+   output->plane_count = 0;
+
+   return output;
+}
+
+E_API Eina_Bool
+e_output_planes_clear(E_Output * output)
+{
+   Eina_List *l, *ll;
+   E_Plane *ep;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, EINA_FALSE);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output->planes, EINA_FALSE);
+
+   EINA_LIST_FOREACH_SAFE(output->planes, l, ll, ep)
+     {
+        ep->ec = NULL;
+     }
+   return EINA_TRUE;
+}
+
+E_API Eina_Bool
+e_output_planes_set(E_Output * output, E_Hwc_Mode mode, Eina_List* clist)
+{
+   Eina_List *l_p, *l_ec;
+   Eina_List *l, *ll;
+   E_Plane *ep;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, EINA_FALSE);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output->planes, EINA_FALSE);
+
+   l_p = eina_list_next(output->planes);
+   while (l_p)
+     {
+        E_Client 
+*ec;
+        E_Plane *ep;
+        if ((mode == E_HWC_MODE_NO_COMPOSITE) ||
+            (mode == E_HWC_MODE_HWC_NO_COMPOSITE))
+              {
+                 ep = eina_list_data_get(l_p);
+                 ep->ec = NULL;
+              }
+
+        l_p = eina_list_next(l_p);
+        if(!l_p) break;
+
+        l_ec = eina_list_next(clist);
+        ec = eina_list_data_get(l_ec);
+        if(ec)
+          {
+             ep = eina_list_data_get(l_p);
+             ep->ec = ec;
+          }
+        l_p = eina_list_next(l_p);
+     }
+
+
+   return EINA_TRUE;
+}
+
+E_API Eina_Bool
+e_output_update(E_Output * output)
+{
+
+   Eina_List *l, *ll;
+   E_Plane *ep;
+   E_Client *ec;
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, EINA_FALSE);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output->planes, EINA_FALSE);
+
+   EINA_LIST_FOREACH_SAFE(output->planes, l, ll, ep)
+     {
+        ec = ep->ec;
+        if (ec) printf("HWC:\t|---\t %s 0x%08x\n", ec->icccm.title, ec);
+     }
+
+   // TODO: hwc mode change
+   return EINA_FALSE; // SHALL BE EINA_TRUE after hwc multi plane implementation
+}
+

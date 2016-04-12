@@ -1191,13 +1191,6 @@ _e_zone_free(E_Zone *zone)
    /* remove handlers */
    E_FREE_LIST(zone->handlers, ecore_event_handler_del);
 
-   /* remove planes */
-   EINA_LIST_FREE(zone->planes, ep)
-     {
-        if (!e_object_is_del(E_OBJECT(ep)))
-           e_object_free(E_OBJECT(ep));
-     }
-
    if (zone->name) eina_stringshare_del(zone->name);
    e_comp->zones = eina_list_remove(e_comp->zones, zone);
    evas_object_del(zone->bg_event_object);
