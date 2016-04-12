@@ -90,7 +90,7 @@ typedef struct _E_Comp_Hook E_Comp_Hook;
 
 typedef enum _E_Comp_Hook_Point
 {
-   E_COMP_HOOK_BEFORE_RENDER,
+   E_COMP_HOOK_ASSIGN_PLANE,
    E_COMP_HOOK_LAST
 } E_Comp_Hook_Point;
 
@@ -165,12 +165,15 @@ struct _E_Comp
    Ecore_Job      *screen_job;
    Ecore_Timer    *nocomp_delay_timer;
    Ecore_Timer    *nocomp_override_timer;
+   Ecore_Timer    *selcomp_delay_timer;
+   Ecore_Timer    *selcomp_override_timer;
    int             animating;
    double          frametimes[122];
    int             frameskip;
    double          fps;
 
    int             nocomp_override; //number of times nocomp override has been requested
+   int             selcomp_override; //number of times selcomp override has been requested
    Ecore_Window block_win;
    int             block_count; //number of times block window has been requested
 
@@ -189,6 +192,8 @@ struct _E_Comp
    Eina_Bool       grabbed : 1;
    Eina_Bool       nocomp : 1;
    Eina_Bool       nocomp_want : 1;
+   Eina_Bool       selcomp : 1;
+   Eina_Bool       selcomp_want : 1;
    Eina_Bool       saver : 1;
    Eina_Bool       shape_queue_blocked : 1;
    Eina_Bool       calc_fps : 1;
