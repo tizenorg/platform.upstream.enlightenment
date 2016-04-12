@@ -48,7 +48,7 @@ static int _e_comp_hooks_walking = 0;
 
 static Eina_Inlist *_e_comp_hooks[] =
 {
-   [E_COMP_HOOK_BEFORE_RENDER] = NULL,
+   [E_COMP_HOOK_ASSIGN_PLANE] = NULL,
 };
 
 E_API int E_EVENT_COMPOSITOR_RESIZE = -1;
@@ -333,6 +333,7 @@ _e_comp_cb_nocomp_end(void)
    ecore_event_add(E_EVENT_COMPOSITOR_ENABLE, NULL, NULL, NULL);
 }
 
+#ifndef MULTI_PLANE_HWC
 static Eina_Bool
 _e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
 {
@@ -345,7 +346,7 @@ _e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
      }
    return EINA_FALSE;
 }
-
+#endif
 E_API void
 e_comp_nocomp_end(const char *location)
 {
@@ -354,6 +355,234 @@ e_comp_nocomp_end(const char *location)
    INF("HWC : NOCOMP_END at %s\n", location);
    _e_comp_cb_nocomp_end();
 }
+#ifdef MULTI_PLANE_HWC
+static Eina_Bool
+_e_comp_selcomp_check(void)
+{
+   Eina_List *l, *ll;
+   E_Zone *zone;
+   E_Client *ec;
+   int ret = 0;
+
+   // instead of zones, canvas list will be the condition of each output check
+   // TODO: e_comp->canvases
+   EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
+     {
+        int ly_total = 0, ly_cnt = 0;
+        E_Hwc_Mode mode = E_HWC_MODE_INVALID;
+
+        if (zone->output) ly_total = zone->output->plane_count;
+
+        E_CLIENT_REVERSE_FOREACH(ec)
+          {
+             E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+
+             // check clients to skip composite
+             if (ec->ignored || ec->input_only || (!evas_object_visible_get(ec->frame)) || (ec->zone != zone))
+               continue;
+
+             if (!E_INTERSECTS(0, 0, e_comp->w, e_comp->h,
+                               ec->client.x, ec->client.y, ec->client.w, ec->client.h))
+               {// check quick panel
+                  continue;
+               }
+
+             if (evas_object_data_get(ec->frame, "comp_skip"))
+               continue;
+
+             // check clients not able to use hwc
+             if ((!cdata->buffer_ref.buffer) ||
+                 (cdata->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_NATIVE) ||
+                 (cdata->width_from_buffer != cdata->width_from_viewport) ||
+                 (cdata->height_from_buffer != cdata->height_from_viewport))
+               {
+                  if (ly_cnt) mode = E_HWC_MODE_HWC_COMPOSITE;
+                  else mode = E_HWC_MODE_COMPOSITE;
+                  break;
+               }
+
+             ly_cnt++;
+          }
+        if (mode == E_HWC_MODE_INVALID)
+          {
+             if (ly_cnt == 1 ) mode = E_HWC_MODE_NO_COMPOSITE;
+             else if (ly_cnt <= ly_total && ly_cnt > 1) mode = E_HWC_MODE_HWC_NO_COMPOSITE;
+             else if (ly_cnt > ly_total) mode = E_HWC_MODE_HWC_COMPOSITE;
+          }
+
+        if((mode != E_HWC_MODE_COMPOSITE) && (mode != E_HWC_MODE_INVALID)) ret++;
+     }
+
+   return (ret > 0);
+}
+
+static Eina_Bool
+_e_comp_selcomp_assign_planes(void)
+{
+   Eina_List *l, *ll;
+   E_Zone *zone;
+
+   if (!e_comp->hwc) return EINA_FALSE;
+
+   // TODO: e_comp->canvases
+   EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
+     {
+        E_Client *ec;
+        E_Output *eout;
+        int mode = E_HWC_MODE_INVALID;
+        int num_of_ly = 0, ly_cnt = 0;
+        Eina_List *clist = NULL;
+
+        if (!zone && !zone->output) continue;
+
+        eout = zone->output;
+        printf("reassign all clients from zone %p\n", zone);
+        num_of_ly = eout->plane_count;
+
+        E_CLIENT_REVERSE_FOREACH(ec)
+          {
+             E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+
+             if (ec->zone != zone) continue;
+
+             // check clients to skip composite
+             if (ec->ignored || ec->input_only || (!evas_object_visible_get(ec->frame)))
+               continue;
+
+             if (!E_INTERSECTS(0, 0, e_comp->w, e_comp->h,
+                               ec->client.x, ec->client.y, ec->client.w, ec->client.h))
+               {// check quick panel
+                  continue;
+               }
+
+             if (evas_object_data_get(ec->frame, "comp_skip"))
+               continue;
+
+             // check clients not able to use hwc
+             if ((!cdata->buffer_ref.buffer) ||
+                 (cdata->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_NATIVE) ||
+                 (cdata->width_from_buffer != cdata->width_from_viewport) ||
+                 (cdata->height_from_buffer != cdata->height_from_viewport))
+               {
+                  if (ly_cnt) mode = E_HWC_MODE_HWC_COMPOSITE;
+                  else mode = E_HWC_MODE_COMPOSITE;
+                  break;
+               }
+
+             ly_cnt++;
+             clist = eina_list_append(clist, ec);
+          }
+        if (mode == E_HWC_MODE_INVALID)
+          {
+             if (ly_cnt == 1) mode = E_HWC_MODE_NO_COMPOSITE;
+             else if (ly_cnt <= num_of_ly && ly_cnt > 1) mode = E_HWC_MODE_HWC_NO_COMPOSITE;
+             else if (ly_cnt > num_of_ly) mode = E_HWC_MODE_HWC_COMPOSITE;
+          }
+
+#ifdef HAVE_HWC
+        // comepare clist with current and assign it to planes refer to core policy : FIXME
+        // ......
+        e_output_planes_clear(eout);
+        e_output_planes_set(eout, mode, clist);
+#endif
+       eina_list_free(clist);
+       clist = NULL;
+     }
+
+   return EINA_TRUE;
+}
+
+static void
+_e_comp_cb_selcomp_begin(void)
+{
+   Eina_List *l;
+   E_Zone *zone;
+   Eina_Bool mode_set = EINA_FALSE;
+
+   if (!e_comp->hwc) return;
+   E_FREE_FUNC(e_comp->selcomp_delay_timer, ecore_timer_del);
+
+   if (!_e_comp_selcomp_check()) return;
+   e_comp->selcomp_want = 1;
+
+#ifdef HAVE_HWC
+   // check core policy of plane assignment
+   _e_comp_selcomp_assign_planes();
+
+   // check extra policy
+   _e_comp_hook_call(E_COMP_HOOK_ASSIGN_PLANE, NULL);
+
+   EINA_LIST_FOREACH(e_comp->zones, l, zone)
+     {
+        if(zone->output) mode_set |= e_output_update(zone->output);
+     }
+#endif
+   if (!mode_set) return;
+
+   if (e_comp->calc_fps) e_comp->frametimes[0] = 0;
+
+   e_comp->selcomp = 1;
+   INF("JOB2...");
+
+   e_comp_render_queue();
+   e_comp_shape_queue_block(1);
+   ecore_event_add(E_EVENT_COMPOSITOR_DISABLE, NULL, NULL, NULL);
+}
+
+static Eina_Bool
+_e_comp_cb_selcomp_begin_timeout(void *data EINA_UNUSED)
+{
+   e_comp->selcomp_delay_timer = NULL;
+
+   if (e_comp->selcomp_override == 0)
+     {
+        _e_comp_cb_selcomp_begin();
+     }
+   return EINA_FALSE;
+}
+
+E_API void
+e_comp_selcomp_end(const char *location)
+{
+   Eina_Bool mode_set = EINA_FALSE;
+   E_Client *ec;
+   E_Zone *zone;
+   Eina_List *l, *ll;
+
+   if (!e_comp->hwc) return;
+   if (!e_comp->selcomp) return;
+
+   e_comp->selcomp_want = 0;
+   E_FREE_FUNC(e_comp->selcomp_delay_timer, ecore_timer_del);
+
+#ifdef HAVE_HWC
+   // e_comp->canvases will be replace e_comp->zones
+   EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
+     {
+        if (zone->output)
+          {
+             e_output_planes_clear(zone->output);
+             mode_set |= e_output_update(zone->output);
+          }
+     }
+#endif
+   if (!mode_set) return;
+
+   INF("HWC : selective comp _END at %s\n", location);
+   INF("COMP RESUME!");
+
+   E_CLIENT_FOREACH(ec)
+     {
+        if (ec->visible && (!ec->input_only))
+          e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
+
+     }
+   e_comp->selcomp = 0;
+   e_comp_render_queue();
+   e_comp_shape_queue_block(0);
+   ecore_event_add(E_EVENT_COMPOSITOR_ENABLE, NULL, NULL, NULL);
+}
+#endif
 
 static void
 _e_comp_client_update(E_Client *ec)
@@ -446,11 +675,30 @@ nocomp:
    // query if selective HWC plane can be used
    if (!e_comp_gl_get() && !e_comp->hwc)
      {
-        TRACE_DS_END();
-        return ECORE_CALLBACK_RENEW;
+        goto end;
      }
 #ifdef MULTI_PLANE_HWC
-   _e_comp_hook_call(E_COMP_HOOK_BEFORE_RENDER, e_comp);
+   if(_e_comp_selcomp_check())
+     {
+        // switch mode
+        if (conf->selcomp_use_timer)
+          {
+             if (!e_comp->selcomp_delay_timer)
+               {
+                  e_comp->selcomp_delay_timer = ecore_timer_add(conf->selcomp_begin_timeout,
+                                                                _e_comp_cb_selcomp_begin_timeout,
+                                                                NULL);
+               }
+          }
+        else
+          {
+             _e_comp_cb_selcomp_begin();
+          }
+     }
+   else
+     {
+        if (e_comp->selcomp) e_comp_selcomp_end(__FUNCTION__);
+     }
 #else
    ec = _e_comp_fullscreen_check();
    if (ec)
@@ -482,11 +730,14 @@ nocomp:
           }
      }
    else
-      {
+     {
         if (e_comp->nocomp && e_comp->nocomp_ec)
-           e_comp_nocomp_end("_e_comp_cb_update : ec is not fullscreen");
-      }
+          e_comp_nocomp_end("_e_comp_cb_update : ec is not fullscreen");
+     }
 #endif
+
+end:
+
    TRACE_DS_END();
 
    return ECORE_CALLBACK_RENEW;
@@ -815,6 +1066,8 @@ _e_comp_free(E_Comp *c)
    if (c->screen_job) ecore_job_del(c->screen_job);
    if (c->nocomp_delay_timer) ecore_timer_del(c->nocomp_delay_timer);
    if (c->nocomp_override_timer) ecore_timer_del(c->nocomp_override_timer);
+   if (c->selcomp_delay_timer) ecore_timer_del(c->selcomp_delay_timer);
+   if (c->selcomp_override_timer) ecore_timer_del(c->selcomp_override_timer);
    ecore_job_del(c->shape_job);
 
    free(c);
