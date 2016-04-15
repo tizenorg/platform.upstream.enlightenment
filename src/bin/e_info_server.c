@@ -906,7 +906,6 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
 static char *
 _e_info_server_directory_make(void)
 {
-   char stamp[PATH_MAX];
    char *fullpath;
    time_t timer;
    struct tm *t, *buf;
