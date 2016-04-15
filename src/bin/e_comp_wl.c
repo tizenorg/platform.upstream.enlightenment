@@ -165,36 +165,19 @@ _e_comp_wl_map_size_cal_from_viewport(E_Client *ec)
 }
 
 static void
-_e_comp_wl_map_transform(int width, int height, uint32_t transform, int32_t scale,
-                         int sx, int sy, int *dx, int *dy)
+_e_comp_wl_map_transform(int width, int height, uint32_t transform, int32_t scale, int sx, int sy, int *dx, int *dy)
 {
    switch (transform)
      {
+      case WL_OUTPUT_TRANSFORM_FLIPPED:     *dx = width  - sx, *dy = sy;          break;
+      case WL_OUTPUT_TRANSFORM_90:          *dx = height - sy, *dy = sx;          break;
+      case WL_OUTPUT_TRANSFORM_FLIPPED_90:  *dx = height - sy, *dy = width  - sx; break;
+      case WL_OUTPUT_TRANSFORM_180:         *dx = width  - sx, *dy = height - sy; break;
+      case WL_OUTPUT_TRANSFORM_FLIPPED_180: *dx = sx,          *dy = height - sy; break;
+      case WL_OUTPUT_TRANSFORM_270:         *dx = sy,          *dy = width - sx;  break;
+      case WL_OUTPUT_TRANSFORM_FLIPPED_270: *dx = sy,          *dy = sx;          break;
       case WL_OUTPUT_TRANSFORM_NORMAL:
-      default:
-        *dx = sx, *dy = sy;
-        break;
-      case WL_OUTPUT_TRANSFORM_FLIPPED:
-        *dx = width - sx, *dy = sy;
-        break;
-      case WL_OUTPUT_TRANSFORM_90:
-        *dx = height - sy, *dy = sx;
-        break;
-      case WL_OUTPUT_TRANSFORM_FLIPPED_90:
-        *dx = height - sy, *dy = width - sx;
-        break;
-      case WL_OUTPUT_TRANSFORM_180:
-        *dx = width - sx, *dy = height - sy;
-        break;
-      case WL_OUTPUT_TRANSFORM_FLIPPED_180:
-        *dx = sx, *dy = height - sy;
-        break;
-      case WL_OUTPUT_TRANSFORM_270:
-        *dx = sy, *dy = width - sx;
-        break;
-      case WL_OUTPUT_TRANSFORM_FLIPPED_270:
-        *dx = sy, *dy = sx;
-        break;
+      default:                              *dx = sx,          *dy = sy;          break;
      }
 
    *dx *= scale;
