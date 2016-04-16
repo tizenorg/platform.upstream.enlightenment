@@ -3320,7 +3320,7 @@ e_comp_object_damage(Evas_Object *obj, int x, int y, int w, int h)
         RENDER_DEBUG("IGNORED %p: %d,%d %dx%d", cw->ec, x, y, w, h);
         e_comp_object_render_update_add(obj);
 
-        if ((cw->ec->visible) && (!evas_object_visible_get(cw->smart_obj)))
+        if ((cw->ec->visible) && (!evas_object_visible_get(cw->smart_obj)) && (!cw->ec->iconic))
           evas_object_show(cw->smart_obj);
 
         return;
@@ -3364,7 +3364,7 @@ e_comp_object_damage(Evas_Object *obj, int x, int y, int w, int h)
    cw->updates_exist = 1;
    e_comp_object_render_update_add(obj);
 
-   if ((cw->ec->visible) && (!evas_object_visible_get(cw->smart_obj)))
+   if ((cw->ec->visible) && (!evas_object_visible_get(cw->smart_obj)) && (!cw->ec->iconic))
      evas_object_show(cw->smart_obj);
 }
 
