@@ -4075,8 +4075,15 @@ e_comp_object_effect_start(Evas_Object *obj, Edje_Signal_Cb end_cb, const void *
 E_API Eina_Bool
 e_comp_object_effect_stop(Evas_Object *obj, Edje_Signal_Cb end_cb)
 {
+   int ret = 0;
+   Edje_Signal_Cb end_cb_before = NULL;
+   void *end_data_before = NULL;
    API_ENTRY EINA_FALSE;
-   if (evas_object_data_get(cw->effect_obj, "_e_comp.end_cb") != end_cb) return EINA_TRUE;
+
+   end_cb_before   = evas_object_data_get(cw->effect_obj, "_e_comp.end_cb");
+   end_data_before = evas_object_data_get(cw->effect_obj, "_e_comp.end_data");
+
+   if (end_cb_before != end_cb) return EINA_TRUE;
    e_comp_object_effect_unclip(obj);
    if (cw->effect_clip)
      {
@@ -4093,7 +4100,12 @@ e_comp_object_effect_stop(Evas_Object *obj, Edje_Signal_Cb end_cb)
      }
 
    cw->effect_running = 0;
-   return _e_comp_object_animating_end(cw);
+   ret = _e_comp_object_animating_end(cw);
+
+   if ((ret) && (end_cb_before))
+      end_cb_before(end_data_before, cw->smart_obj, "e,action,done", "e");
+
+   return ret;
 }
 
 static int
