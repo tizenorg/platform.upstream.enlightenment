@@ -1812,7 +1812,12 @@ _e_comp_intercept_focus(void *data, Evas_Object *obj, Eina_Bool focus)
    /* be strict about accepting focus hint */
    /* be strict about accepting focus hint */
    if ((!ec->icccm.accepts_focus) &&
-       (!ec->icccm.take_focus)) return;
+       (!ec->icccm.take_focus))
+     {
+        if (!focus)
+           evas_object_focus_set(obj, EINA_FALSE);
+        return;
+     }
    if (focus && ec->lock_focus_out) return;
    if (e_object_is_del(E_OBJECT(ec)) && focus)
      CRI("CAN'T FOCUS DELETED CLIENT!");
