@@ -1082,6 +1082,9 @@ _e_comp_hwc_canvas_render_post(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void
                }
                _e_comp_hwc_renderer_release_all_disp_surfaces(hwc_renderer);
 
+               /* dpms on at the first */
+               if (tdm_output_set_dpms(hwc_output->toutput, TDM_OUTPUT_DPMS_ON) != TDM_ERROR_NONE)
+                 WRN("fail to set the dpms on.");
           }
 
         if (hwc_layer->hwc->trace_debug)
