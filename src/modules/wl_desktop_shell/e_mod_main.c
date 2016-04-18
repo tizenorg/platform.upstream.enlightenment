@@ -94,8 +94,6 @@ _e_shell_surface_destroy(struct wl_resource *resource)
 {
    E_Client *ec;
 
-   /* DBG("Shell Surface Destroy: %d", wl_resource_get_id(resource)); */
-
    /* get the client for this resource */
    if ((ec = wl_resource_get_user_data(resource)))
      {
@@ -124,8 +122,6 @@ _e_shell_surface_destroy(struct wl_resource *resource)
 static void
 _e_shell_surface_cb_destroy(struct wl_resource *resource)
 {
-   /* DBG("Shell Surface Destroy: %d", wl_resource_get_id(resource)); */
-
    _e_shell_surface_destroy(resource);
 }
 
@@ -201,8 +197,6 @@ _e_shell_surface_cb_resize(struct wl_client *client EINA_UNUSED, struct wl_resou
        ((edges & 3) == 3) || ((edges & 12) == 12)) return;
 
    if ((ec->maximized) || (ec->fullscreen)) return;
-
-   DBG("Comp Resize Edges Set: %d", edges);
 
    e_comp_wl->resize.resource = resource;
    e_comp_wl->resize.edges = edges;
@@ -338,8 +332,6 @@ _e_shell_surface_cb_maximized_set(struct wl_client *client EINA_UNUSED, struct w
 {
    E_Client *ec;
 
-   /* DBG("WL_SHELL: Surface Maximize: %d", wl_resource_get_id(resource)); */
-
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
      {
@@ -432,11 +424,7 @@ _e_shell_surface_configure(struct wl_resource *resource, Evas_Coord x, Evas_Coor
 {
    E_Client *ec;
 
-   /* DBG("WL_SHELL: Surface Configure: %d \t%d %d %d %d",  */
-   /*     wl_resource_get_id(resource), x, y, w, h); */
-
-   if (!resource)
-     return;
+   if (!resource) return;
 
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
@@ -623,11 +611,7 @@ _e_xdg_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges
    struct wl_array states;
    uint32_t serial;
 
-   /* DBG("XDG_SHELL: Surface Configure Send: %d \t%d %d\tEdges: %d", */
-   /*     wl_resource_get_id(resource), width, height, edges); */
-
-   if (!resource)
-     return;
+   if (!resource) return;
 
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
@@ -823,9 +807,6 @@ _e_xdg_shell_surface_cb_resize(struct wl_client *client EINA_UNUSED, struct wl_r
    E_Client *ec;
    E_Binding_Event_Mouse_Button ev;
 
-   /* DBG("XDG_SHELL: Surface Resize: %d\tEdges: %d",  */
-   /*     wl_resource_get_id(resource), edges); */
-
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
      {
@@ -892,7 +873,6 @@ _e_xdg_shell_surface_cb_window_geometry_set(struct wl_client *client EINA_UNUSED
         return;
      }
    EINA_RECTANGLE_SET(&ec->comp_data->shell.window, x, y, w, h);
-   //DBG("XDG_SHELL: Window Geom Set: %d \t%d %d, %d %d", wl_resource_get_id(resource), x, y, w, h);
 }
 
 static void
@@ -1024,11 +1004,7 @@ _e_xdg_shell_surface_configure(struct wl_resource *resource, Evas_Coord x, Evas_
 {
    E_Client *ec;
 
-   /* DBG("XDG_SHELL: Surface Configure: %d \t%d %d %d %d",  */
-   /*     wl_resource_get_id(resource), x, y, w, h); */
-
-   if (!resource)
-     return;
+   if (!resource) return;
 
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
@@ -1090,10 +1066,7 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
 {
    E_Client *ec;
 
-   if (!resource)
-     return;
-
-   /* DBG("XDG_SHELL: Map Surface: %d", wl_resource_get_id(resource)); */
+   if (!resource) return;
 
    TRACE_DS_BEGIN(SHELL:MAP);
 
@@ -1128,10 +1101,7 @@ _e_xdg_shell_surface_unmap(struct wl_resource *resource)
 {
    E_Client *ec;
 
-   /* DBG("XDG_SHELL: Unmap Surface: %d", wl_resource_get_id(resource)); */
-
-   if (!resource)
-     return;
+   if (!resource) return;
 
    TRACE_DS_BEGIN(SHELL:UNMAP);
 
@@ -1160,8 +1130,6 @@ _e_xdg_shell_cb_surface_get(struct wl_client *client, struct wl_resource *resour
 {
    E_Client *ec;
    E_Comp_Client_Data *cdata;
-
-   /* DBG("XDG_SHELL: Surface Get %d", wl_resource_get_id(surface_resource)); */
 
    /* get the pixmap from this surface so we can find the client */
    if (!(ec = wl_resource_get_user_data(surface_resource)))
@@ -1247,11 +1215,6 @@ _e_xdg_shell_cb_popup_get(struct wl_client *client, struct wl_resource *resource
 {
    E_Client *ec;
    E_Comp_Client_Data *cdata;
-
-   /* DBG("XDG_SHELL: Popup Get"); */
-   /* DBG("\tSurface: %d", wl_resource_get_id(surface_resource)); */
-   /* DBG("\tParent Surface: %d", wl_resource_get_id(parent_resource)); */
-   /* DBG("\tLocation: %d %d", x, y); */
 
    /* get the pixmap from this surface so we can find the client */
    if (!(ec = wl_resource_get_user_data(surface_resource)))
@@ -1473,8 +1436,6 @@ _e_tz_surf_cb_tz_res_get(struct wl_client *client, struct wl_resource *resource,
    /* find the window id for this pixmap */
    res_id = e_pixmap_res_id_get(ec->pixmap);
 
-   DBG("tizen resource id %" PRIu32, res_id);
-
    /* try to create a tizen_gid */
    if (!(res = wl_resource_create(client,
                                   &tizen_resource_interface,
@@ -1493,7 +1454,7 @@ _e_tz_surf_cb_tz_res_get(struct wl_client *client, struct wl_resource *resource,
    tizen_resource_send_resource_id(res, res_id);
 }
 
-static const struct tizen_surface_interface  _e_tz_surf_interface =
+static const struct tizen_surface_interface _e_tz_surf_interface =
 {
    _e_tz_surf_cb_tz_res_get,
 };
@@ -1523,9 +1484,6 @@ e_modapi_init(E_Module *m)
 {
    /* try to get the current compositor */
    if (!e_comp) return NULL;
-
-   /* make sure it's a wayland compositor */
-   /* if (e_comp->comp_type != E_PIXMAP_TYPE_WL) return NULL; */
 
    /* try to get the compositor data */
    if (!e_comp->wl_comp_data) return NULL;
