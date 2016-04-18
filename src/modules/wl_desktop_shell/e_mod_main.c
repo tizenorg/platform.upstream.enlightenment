@@ -581,7 +581,8 @@ _e_shell_cb_shell_surface_get(struct wl_client *client, struct wl_resource *reso
 
    wl_resource_set_implementation(cdata->shell.surface,
                                   &_e_shell_surface_interface,
-                                  ec, _e_shell_surface_cb_destroy);
+                                  ec,
+                                  _e_shell_surface_cb_destroy);
 
    e_object_ref(E_OBJECT(ec));
 
@@ -628,7 +629,7 @@ _e_xdg_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges
      {
         _e_xdg_surface_state_add(resource, &states, XDG_SURFACE_STATE_FULLSCREEN);
 
-        //send fullscreen size
+        // send fullscreen size
         if ((width == 0) && (height == 0))
           {
              width = ec->client.w && ec->client.h? ec->client.w : ec->w;
@@ -639,7 +640,7 @@ _e_xdg_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges
      {
         _e_xdg_surface_state_add(resource, &states, XDG_SURFACE_STATE_MAXIMIZED);
 
-        //send maximized size
+        // send maximized size
         if ((width == 0) && (height == 0))
           {
              width = ec->client.w && ec->client.h? ec->client.w : ec->w;
@@ -741,7 +742,6 @@ static void
 _e_xdg_shell_surface_cb_window_menu_show(struct wl_client *client EINA_UNUSED, struct wl_resource *resource, struct wl_resource *seat_resource EINA_UNUSED, uint32_t serial EINA_UNUSED, int32_t x, int32_t y)
 {
    E_Client *ec;
-   //double timestamp;
 
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
@@ -752,6 +752,7 @@ _e_xdg_shell_surface_cb_window_menu_show(struct wl_client *client EINA_UNUSED, s
         return;
      }
 
+   //double timestamp;
    //timestamp = ecore_loop_time_get();
    //e_int_client_menu_show(ec, x, y, 0, timestamp);
 }
@@ -777,24 +778,17 @@ _e_xdg_shell_surface_cb_move(struct wl_client *client EINA_UNUSED, struct wl_res
 
    switch (e_comp_wl->ptr.button)
      {
-      case BTN_LEFT:
-        ev.button = 1;
-        break;
-      case BTN_MIDDLE:
-        ev.button = 2;
-        break;
-      case BTN_RIGHT:
-        ev.button = 3;
-        break;
-      default:
-        ev.button = e_comp_wl->ptr.button;
-        break;
+      case BTN_LEFT:   ev.button = 1; break;
+      case BTN_MIDDLE: ev.button = 2; break;
+      case BTN_RIGHT:  ev.button = 3; break;
+      default:         ev.button = e_comp_wl->ptr.button; break;
      }
 
    e_comp_object_frame_xy_unadjust(ec->frame,
                                    wl_fixed_to_int(e_comp_wl->ptr.x),
                                    wl_fixed_to_int(e_comp_wl->ptr.y),
-                                   &ev.canvas.x, &ev.canvas.y);
+                                   &ev.canvas.x,
+                                   &ev.canvas.y);
 
    _e_shell_surface_mouse_down_helper(ec, &ev, EINA_TRUE);
 
@@ -830,24 +824,17 @@ _e_xdg_shell_surface_cb_resize(struct wl_client *client EINA_UNUSED, struct wl_r
 
    switch (e_comp_wl->ptr.button)
      {
-      case BTN_LEFT:
-        ev.button = 1;
-        break;
-      case BTN_MIDDLE:
-        ev.button = 2;
-        break;
-      case BTN_RIGHT:
-        ev.button = 3;
-        break;
-      default:
-        ev.button = e_comp_wl->ptr.button;
-        break;
+      case BTN_LEFT:   ev.button = 1; break;
+      case BTN_MIDDLE: ev.button = 2; break;
+      case BTN_RIGHT:  ev.button = 3; break;
+      default:         ev.button = e_comp_wl->ptr.button; break;
      }
 
    e_comp_object_frame_xy_unadjust(ec->frame,
                                    wl_fixed_to_int(e_comp_wl->ptr.x),
                                    wl_fixed_to_int(e_comp_wl->ptr.y),
-                                   &ev.canvas.x, &ev.canvas.y);
+                                   &ev.canvas.x,
+                                   &ev.canvas.y);
 
    _e_shell_surface_mouse_down_helper(ec, &ev, EINA_FALSE);
 
@@ -891,8 +878,8 @@ _e_xdg_shell_surface_cb_maximized_set(struct wl_client *client EINA_UNUSED, stru
 
    if (!ec->lock_user_maximize)
      {
-        e_client_maximize(ec, ((e_config->maximize_policy & E_MAXIMIZE_TYPE) |
-                               E_MAXIMIZE_BOTH));
+        e_client_maximize(ec,
+                          ((e_config->maximize_policy & E_MAXIMIZE_TYPE) | E_MAXIMIZE_BOTH));
      }
 }
 
@@ -1033,6 +1020,7 @@ _e_xdg_shell_surface_configure(struct wl_resource *resource, Evas_Coord x, Evas_
      }
 
    e_client_util_move_resize_without_frame(ec, x, y, w, h);
+
    /* TODO: ack configure ?? */
 }
 
@@ -1177,7 +1165,8 @@ _e_xdg_shell_cb_surface_get(struct wl_client *client, struct wl_resource *resour
      }
 
    wl_resource_set_implementation(cdata->shell.surface,
-                                  &_e_xdg_surface_interface, ec,
+                                  &_e_xdg_surface_interface,
+                                  ec,
                                   _e_shell_surface_cb_destroy);
 
    e_object_ref(E_OBJECT(ec));
@@ -1262,7 +1251,9 @@ _e_xdg_shell_cb_popup_get(struct wl_client *client, struct wl_resource *resource
      }
 
    wl_resource_set_implementation(cdata->shell.surface,
-                                  &_e_xdg_popup_interface, ec, NULL);
+                                  &_e_xdg_popup_interface,
+                                  ec,
+                                  NULL);
 
    e_object_ref(E_OBJECT(ec));
 
@@ -1299,7 +1290,6 @@ _e_xdg_shell_cb_popup_get(struct wl_client *client, struct wl_resource *resource
         cdata->popup.x = x;
         cdata->popup.y = y;
      }
-
 }
 
 static void
@@ -1368,7 +1358,8 @@ _e_xdg_shell_cb_dispatch(const void *implementation EINA_UNUSED, void *target, u
         return 0;
      }
 
-   wl_resource_set_implementation(res, &_e_xdg_shell_interface,
+   wl_resource_set_implementation(res,
+                                  &_e_xdg_shell_interface,
                                   e_comp->wl_comp_data,
                                   _e_xdg_shell_cb_unbind);
 
@@ -1393,7 +1384,8 @@ _e_shell_cb_bind(struct wl_client *client, void *data EINA_UNUSED, uint32_t vers
      }
 
    e_comp_wl->shell_interface.shell = res;
-   wl_resource_set_implementation(res, &_e_shell_interface,
+   wl_resource_set_implementation(res,
+                                  &_e_shell_interface,
                                   e_comp->wl_comp_data,
                                   _e_shell_cb_unbind);
 }
@@ -1410,8 +1402,11 @@ _e_xdg_shell_cb_bind(struct wl_client *client, void *data EINA_UNUSED, uint32_t 
      }
 
    e_comp_wl->shell_interface.xdg_shell = res;
-   wl_resource_set_dispatcher(res, _e_xdg_shell_cb_dispatch, NULL,
-                              e_comp->wl_comp_data, NULL);
+   wl_resource_set_dispatcher(res,
+                              _e_xdg_shell_cb_dispatch,
+                              NULL,
+                              e_comp->wl_comp_data,
+                              NULL);
 }
 
 static void
@@ -1429,9 +1424,6 @@ _e_tz_surf_cb_tz_res_get(struct wl_client *client, struct wl_resource *resource,
                                "No Pixmap Set On Surface");
         return;
      }
-
-   /* make sure it's a wayland pixmap */
-   if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_WL) return;
 
    /* find the window id for this pixmap */
    res_id = e_pixmap_res_id_get(ec->pixmap);
@@ -1474,7 +1466,10 @@ _e_tz_surf_cb_bind(struct wl_client *client, void *data, uint32_t version, uint3
         return;
      }
 
-   wl_resource_set_implementation(res, &_e_tz_surf_interface, e_comp->wl_comp_data, NULL);
+   wl_resource_set_implementation(res,
+                                  &_e_tz_surf_interface,
+                                  e_comp->wl_comp_data,
+                                  NULL);
 }
 
 E_API E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Wl_Desktop_Shell" };
@@ -1489,16 +1484,22 @@ e_modapi_init(E_Module *m)
    if (!e_comp->wl_comp_data) return NULL;
 
    /* try to create global shell interface */
-   if (!wl_global_create(e_comp_wl->wl.disp, &wl_shell_interface, 1,
-                         e_comp->wl_comp_data, _e_shell_cb_bind))
+   if (!wl_global_create(e_comp_wl->wl.disp,
+                         &wl_shell_interface,
+                         1,
+                         e_comp->wl_comp_data,
+                         _e_shell_cb_bind))
      {
         ERR("Could not create shell global: %m");
         return NULL;
      }
 
    /* try to create global xdg_shell interface */
-   if (!wl_global_create(e_comp_wl->wl.disp, &xdg_shell_interface, 1,
-                         e_comp->wl_comp_data, _e_xdg_shell_cb_bind))
+   if (!wl_global_create(e_comp_wl->wl.disp,
+                         &xdg_shell_interface,
+                         1,
+                         e_comp->wl_comp_data,
+                         _e_xdg_shell_cb_bind))
      {
         ERR("Could not create xdg_shell global: %m");
         return NULL;
