@@ -595,13 +595,13 @@ _e_shell_cb_shell_surface_get(struct wl_client *client, struct wl_resource *reso
 static void
 _e_xdg_surface_state_add(struct wl_resource *resource, struct wl_array *states, uint32_t state)
 {
-  uint32_t *s;
+   uint32_t *s;
 
    s = wl_array_add(states, sizeof(*s));
-  if (s)
-    *s = state;
-  else
-    wl_resource_post_no_memory(resource);
+   if (s)
+     *s = state;
+   else
+     wl_resource_post_no_memory(resource);
 }
 
 static void
@@ -869,7 +869,7 @@ _e_xdg_shell_surface_cb_window_geometry_set(struct wl_client *client EINA_UNUSED
    if (!ec)
      {
         wl_resource_post_error(resource, WL_DISPLAY_ERROR_INVALID_OBJECT,
-                                "No Client For Shell Surface");
+                               "No Client For Shell Surface");
         return;
      }
    EINA_RECTANGLE_SET(&ec->comp_data->shell.window, x, y, w, h);
