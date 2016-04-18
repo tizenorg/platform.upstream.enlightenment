@@ -1713,7 +1713,6 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
 
    if (cw->real_hid && w && h)
      {
-        DBG("  [%p] real hid - fix", cw->ec);
         cw->real_hid = 0;
         /* force comp theming in case it didn't happen already */
         e_comp_object_frame_theme_set(cw->smart_obj, E_COMP_OBJECT_FRAME_RESHADOW);
@@ -3467,7 +3466,6 @@ e_comp_object_shape_apply(Evas_Object *obj)
         unsigned char *spix, *sp;
 
         spix = calloc(w * h, sizeof(unsigned char));
-        DBG("SHAPE [%p] rects %i", cw->ec, cw->ec->shape_rects_num);
         for (i = 0; i < cw->ec->shape_rects_num; i++)
           {
              int rx, ry, rw, rh;
