@@ -4059,6 +4059,12 @@ e_comp_object_effect_start(Evas_Object *obj, Edje_Signal_Cb end_cb, const void *
    API_ENTRY EINA_FALSE;
    EINA_SAFETY_ON_NULL_RETURN_VAL(cw->ec, EINA_FALSE); //NYI
    if (!cw->effect_set) return EINA_FALSE;
+
+   if (cw->effect_running)
+     {
+        e_comp_object_effect_stop(obj, evas_object_data_get(cw->effect_obj, "_e_comp.end_cb"));
+     }
+
    e_comp_object_effect_clip(obj);
    edje_object_signal_callback_del(cw->effect_obj, "e,action,done", "e", _e_comp_object_effect_end_cb);
 
