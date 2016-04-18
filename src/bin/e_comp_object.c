@@ -4072,6 +4072,11 @@ e_comp_object_effect_start(Evas_Object *obj, Edje_Signal_Cb end_cb, const void *
    evas_object_data_set(cw->effect_obj, "_e_comp.end_data", end_data);
    evas_object_data_set(cw->smart_obj, "effect_running", (void*)1);
 
+   if (cw->effect_running)
+     {
+        e_comp_object_effect_stop(obj, evas_object_data_get(cw->effect_obj, "_e_comp.end_cb"));
+     }
+
    edje_object_signal_emit(cw->effect_obj, "e,action,go", "e");
    _e_comp_object_animating_begin(cw);
    cw->effect_running = 1;
