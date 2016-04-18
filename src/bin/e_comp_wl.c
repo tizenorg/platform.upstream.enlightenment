@@ -2243,8 +2243,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
      }
 #endif
 
-   if (!state->buffer_viewport.changed &&
-       (buffer && buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO) &&
+   if ((buffer && buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO) &&
        e_comp->wl_comp_data->available_hw_accel.underlay)
      e_pixmap_image_clear(ec->pixmap, 1);
 
