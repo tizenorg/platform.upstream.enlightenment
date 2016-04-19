@@ -861,6 +861,8 @@ struct E_Client
            E_Util_Transform_Matrix matrix;
        } parent;
    } transform_core;
+
+   Ecore_Timer *map_timer;
 };
 
 #define e_client_focus_policy_click(ec) \

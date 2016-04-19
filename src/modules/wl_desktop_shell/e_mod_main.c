@@ -1049,6 +1049,36 @@ _e_xdg_shell_surface_ping(struct wl_resource *resource)
      }
 }
 
+static Eina_Bool
+_e_xdg_shell_surface_map_cb_timer(void *data)
+{
+   E_Client *ec = data;
+
+   if (!ec) return ECORE_CALLBACK_CANCEL;
+   if (e_object_is_del(E_OBJECT(ec))) return ECORE_CALLBACK_CANCEL;
+
+   if ((!ec->comp_data->mapped) && (e_pixmap_usable_get(ec->pixmap)))
+     {
+        ELOGF("SHELL",
+              "Map window by map_timer |win:0x%08x|ec_size:%d,%d",
+              ec->pixmap, ec,
+              (unsigned int)e_client_util_win_get(ec),
+              ec->w, ec->h);
+
+        /* map this surface if needed */
+        ec->visible = EINA_TRUE;
+        evas_object_show(ec->frame);
+        ec->comp_data->mapped = EINA_TRUE;
+
+        /* FIXME: sometimes popup surfaces Do Not raise above their
+         * respective parents... */
+        /* if (ec->netwm.type == E_WINDOW_TYPE_POPUP_MENU) */
+        /*   e_client_raise_latest_set(ec); */
+     }
+   ec->map_timer = NULL;
+   return ECORE_CALLBACK_CANCEL;
+}
+
 static void
 _e_xdg_shell_surface_map(struct wl_resource *resource)
 {
@@ -1070,6 +1100,41 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
 
    if ((!ec->comp_data->mapped) && (e_pixmap_usable_get(ec->pixmap)))
      {
+        int pw = 0;
+        int ph = 0;
+        int cw = ec->w;
+        int ch = ec->h;
+        e_pixmap_size_get(ec->pixmap, &pw, &ph);
+        e_client_geometry_get(ec, NULL, NULL, &cw, &ch);
+
+        if (pw != cw || ph != ch)
+          {
+             if ((ec->changes.need_maximize) ||
+                 (ec->maximized & E_MAXIMIZE_BOTH == E_MAXIMIZE_BOTH))
+               {
+                  // skip. because the pixmap's size doesnot same to ec's size
+                  ELOGF("SHELL",
+                        "Deny Map |win:0x%08x|ec_size:%d,%d|get_size:%d,%d|pix_size:%d,%d",
+                        ec->pixmap, ec,
+                        (unsigned int)e_client_util_win_get(ec),
+                        ec->w, ec->h, cw, ch, pw, ph);
+
+                  if (!ec->map_timer)
+                    ec->map_timer = ecore_timer_add(3.0, _e_xdg_shell_surface_map_cb_timer, ec);
+
+                  TRACE_DS_END();
+                  return;
+               }
+          }
+
+        E_FREE_FUNC(ec->map_timer, ecore_timer_del);
+
+        ELOGF("SHELL",
+              "Map window  |win:0x%08x|ec_size:%d,%d",
+              ec->pixmap, ec,
+              (unsigned int)e_client_util_win_get(ec),
+              ec->w, ec->h);
+
         /* map this surface if needed */
         ec->visible = EINA_TRUE;
         evas_object_show(ec->frame);
@@ -1102,6 +1167,8 @@ _e_xdg_shell_surface_unmap(struct wl_resource *resource)
         TRACE_DS_END();
         return;
      }
+
+   E_FREE_FUNC(ec->map_timer, ecore_timer_del);
 
    if (ec->comp_data->mapped)
      {
