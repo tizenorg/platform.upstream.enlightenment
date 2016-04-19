@@ -1653,6 +1653,8 @@ _e_client_cb_evas_shade_done(void *data, Evas_Object *obj EINA_UNUSED, void *eve
 {
    E_Client *ec = data;
 
+   if (e_object_is_del(data)) return;
+
    ec->shading = 0;
    ec->shaded = !(ec->shaded);
    ec->changes.shaded = 1;
@@ -1665,6 +1667,8 @@ _e_client_cb_evas_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UN
 {
    E_Client *ec = data;
    Evas_Coord x, y;
+
+   if (e_object_is_del(data)) return;
 
    ec->pre_res_change.valid = 0;
    if (ec->internal_elm_win)
@@ -1708,6 +1712,8 @@ _e_client_cb_evas_resize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_
    E_Client *ec = data;
    Evas_Coord x, y, w, h;
 
+   if (e_object_is_del(data)) return;
+
    ec->pre_res_change.valid = 0;
 
    _e_client_event_simple(ec, E_EVENT_CLIENT_RESIZE);
@@ -1748,6 +1754,9 @@ static void
 _e_client_cb_evas_show(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    E_Client *ec = data;
+
+   if (e_object_is_del(data)) return;
+
    _e_client_event_simple(data, E_EVENT_CLIENT_SHOW);
    EC_CHANGED(ec);
 }
@@ -1757,6 +1766,7 @@ _e_client_cb_evas_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA
 {
    E_Client *ec = data;
 
+   if (e_object_is_del(data)) return;
    if (ec->layer_block) return;
    if (e_config->transient.raise && ec->transients)
      {
