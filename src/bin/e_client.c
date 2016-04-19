@@ -758,6 +758,8 @@ _e_client_free(E_Client *ec)
    E_FREE_FUNC(ec->kill_timer, ecore_timer_del);
    E_FREE_LIST(ec->pending_resize, free);
 
+   E_FREE_FUNC(ec->map_timer, ecore_timer_del);
+
    if (ec->remember)
      {
         E_Remember *rem;
