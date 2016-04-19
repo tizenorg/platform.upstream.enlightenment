@@ -1634,6 +1634,10 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
 {
    int w = 0, h = 0;
 
+#ifdef _F_E_COMP_OBJECT_INTERCEPT_HOOK_
+   if (!_e_comp_object_intercept_hook_call(E_COMP_OBJECT_INTERCEPT_HOOK_SHOW_HELPER, cw->ec)) return;
+#endif
+
    if (cw->ec->sticky)
      e_comp_object_signal_emit(cw->smart_obj, "e,state,sticky", "e");
    if (cw->visible)
@@ -1678,9 +1682,6 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
         cw->ec->visible = 1;
         EC_CHANGED(cw->ec);
 
-#ifdef _F_E_COMP_OBJECT_INTERCEPT_HOOK_
-        if (!_e_comp_object_intercept_hook_call(E_COMP_OBJECT_INTERCEPT_HOOK_SHOW_HELPER, cw->ec)) return;
-#endif
         return;
      }
    if (cw->ec->input_only)
