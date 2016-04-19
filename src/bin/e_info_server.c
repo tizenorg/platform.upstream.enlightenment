@@ -2,6 +2,7 @@
 #include "e.h"
 #include <tbm_bufmgr.h>
 #include <tbm_surface.h>
+#include <tdm_helper.h>
 #ifdef HAVE_WAYLAND_ONLY
 #include <wayland-tbm-server.h>
 #include "e_comp_wl.h"
@@ -853,38 +854,43 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
    E_Event_Client *ev = event;
    Ecore_Window event_win;
    Evas_Object *o;
-   char path[PATH_MAX];
    char fname[PATH_MAX];
+   int count;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(ev, ECORE_CALLBACK_PASS_ON);
    EINA_SAFETY_ON_NULL_RETURN_VAL(ev->ec, ECORE_CALLBACK_PASS_ON);
 
-   snprintf(path, sizeof(path), "%s/%d/", e_info_dump_path, e_info_dump_count++);
+   /* dump buffer change call event buffer */
+   ec = ev->ec;
+   if (e_object_is_del(E_OBJECT(ec)))
+     {
+        ERR("%s: e_object_is_del(E_OBJECT(ec) return\n", __func__);
+        return ECORE_CALLBACK_PASS_ON;
+     }
+   if (e_client_util_ignored_get(ec))
+     {
+        ERR("%s: e_client_util_ignored_get(ec) true. return\n", __func__);
+        return ECORE_CALLBACK_PASS_ON;
+     }
+   event_win = e_client_util_win_get(ec);
 
+   if (e_info_dump_count == 1000)
+     e_info_dump_count = 1;
+   count = e_info_dump_count++;
+   snprintf(fname, sizeof(fname), "%s/%03d_0x%08x.png", e_info_dump_path, count, event_win);
+   e_info_server_dump_client(ec, fname);
+
+#if 0
+   /* dump all buffers */
+   char path[PATH_MAX];
+
+   snprintf(path, sizeof(path), "%s/%d", e_info_dump_path, count);
    if ((mkdir(path, 0755)) < 0)
      {
         printf("%s: mkdir '%s' fail\n", __func__, path);
         return ECORE_CALLBACK_PASS_ON;
      }
 
-   /* dump buffer change call event buffer */
-   ec = ev->ec;
-   if (e_object_is_del(E_OBJECT(ec)))
-     {
-        printf("%s: e_object_is_del(E_OBJECT(ec) return\n", __func__);
-        return ECORE_CALLBACK_PASS_ON;
-     }
-   if (e_client_util_ignored_get(ec))
-     {
-        printf("%s: e_client_util_ignored_get(ec) true. return\n", __func__);
-        return ECORE_CALLBACK_PASS_ON;
-     }
-   event_win = e_client_util_win_get(ec);
-   snprintf(fname, sizeof(fname), "%s/0x%08x_event.png", path, event_win);
-   e_info_server_dump_client(ec, fname);
-
-
-   /* dump all buffers */
    for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
      {
         E_Client *ec = evas_object_data_get(o, "E_Client");
@@ -899,12 +905,14 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
 
         e_info_server_dump_client(ec, fname);
      }
+#endif
+   DBG("%d, %s dump excute\n", count, fname);
 
    return ECORE_CALLBACK_PASS_ON;
 }
 
 static char *
-_e_info_server_directory_make(void)
+_e_info_server_dump_directory_make(void)
 {
    char *fullpath;
    time_t timer;
@@ -937,8 +945,8 @@ _e_info_server_directory_make(void)
 
    if ((mkdir(fullpath, 0755)) < 0)
      {
-        free(fullpath);
         ERR("%s: mkdir '%s' fail\n", __func__, fullpath);
+        free(fullpath);
         return NULL;
      }
 
@@ -963,7 +971,7 @@ _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED,
           return reply;
         e_info_dump_running = 1;
         e_info_dump_count = 1;
-        e_info_dump_path = _e_info_server_directory_make();
+        e_info_dump_path = _e_info_server_dump_directory_make();
         if (e_info_dump_path == NULL)
           {
              e_info_dump_running = 0;
@@ -971,13 +979,17 @@ _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED,
              ERR("dump_buffers start fail\n");
           }
         else
-          E_LIST_HANDLER_APPEND(e_info_dump_hdlrs, E_EVENT_CLIENT_BUFFER_CHANGE,
+          {
+             tdm_helper_dump_start(e_info_dump_path, &e_info_dump_count);
+             E_LIST_HANDLER_APPEND(e_info_dump_hdlrs, E_EVENT_CLIENT_BUFFER_CHANGE,
                                _e_info_server_cb_buffer_change, NULL);
+          }
      }
    else
      {
         if (e_info_dump_running == 0)
           return reply;
+        tdm_helper_dump_stop();
         E_FREE_LIST(e_info_dump_hdlrs, ecore_event_handler_del);
         e_info_dump_hdlrs = NULL;
         if (e_info_dump_path)
@@ -1086,6 +1098,8 @@ e_info_server_shutdown(void)
         e_info_transform_list = NULL;
      }
 
+   if (e_info_dump_running == 1)
+     tdm_helper_dump_stop();
    if (e_info_dump_hdlrs)
      {
         E_FREE_LIST(e_info_dump_hdlrs, ecore_event_handler_del);
