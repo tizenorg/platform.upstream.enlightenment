@@ -1315,16 +1315,20 @@ _e_comp_wl_client_priority_normal(E_Client *ec)
 static Eina_Bool
 _e_comp_wl_evas_cb_focus_in_timer(E_Client *ec)
 {
+#ifdef _E_TEMPORARY_DISABLE_
    uint32_t serial, *k;
    struct wl_resource *res;
    Eina_List *l;
    double t;
+#endif
 
    if (e_object_is_del(E_OBJECT(ec))) return EINA_FALSE;
 
    ec->comp_data->on_focus_timer = NULL;
 
    if (!e_comp_wl->kbd.focused) return EINA_FALSE;
+
+#ifdef _E_TEMPORARY_DISABLE_
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
    t = ecore_time_unix_get();
    if (_e_comp_wl_device_cap_to_class(e_comp_wl->input_device_manager.last_device_cap) == EVAS_DEVICE_CLASS_KEYBOARD)
@@ -1334,6 +1338,7 @@ _e_comp_wl_evas_cb_focus_in_timer(E_Client *ec)
       wl_array_for_each(k, &e_comp_wl->kbd.keys)
       wl_keyboard_send_key(res, serial, t,
                            *k, WL_KEYBOARD_KEY_STATE_PRESSED);
+#endif
    return EINA_FALSE;
 }
 
@@ -1375,7 +1380,9 @@ _e_comp_wl_evas_cb_focus_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
    struct wl_resource *res;
    uint32_t serial, *k;
    Eina_List *l, *ll;
+#ifdef _E_TEMPORARY_DISABLE_
    double t;
+#endif
 
    if (!(ec = data)) return;
 
@@ -1398,6 +1405,7 @@ _e_comp_wl_evas_cb_focus_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
 
    /* send keyboard_leave to all keyboard resources */
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
+#ifdef _E_TEMPORARY_DISABLE_
    t = ecore_time_unix_get();
    if (_e_comp_wl_device_cap_to_class(e_comp_wl->input_device_manager.last_device_cap) == EVAS_DEVICE_CLASS_KEYBOARD)
      _e_comp_wl_device_send_last_event_device(ec, t);
@@ -1411,6 +1419,14 @@ _e_comp_wl_evas_cb_focus_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
         e_comp_wl->kbd.focused =
            eina_list_remove_list(e_comp_wl->kbd.focused, l);
      }
+#else
+   EINA_LIST_FOREACH_SAFE(e_comp_wl->kbd.focused, l, ll, res)
+     {
+        wl_keyboard_send_leave(res, serial, ec->comp_data->surface);
+        e_comp_wl->kbd.focused =
+           eina_list_remove_list(e_comp_wl->kbd.focused, l);
+     }
+#endif
 }
 
 static void
