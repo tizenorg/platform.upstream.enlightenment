@@ -927,6 +927,8 @@ _e_comp_wl_evas_handle_mouse_button_to_touch(E_Client *ec, uint32_t timestamp, i
    if (!ec->comp_data->surface) return;
    if (ec->ignored) return;
 
+   e_comp_wl->ptr.button = BTN_LEFT;
+
    wc = wl_resource_get_client(ec->comp_data->surface);
    serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
 
