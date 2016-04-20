@@ -1110,7 +1110,7 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
         if (pw != cw || ph != ch)
           {
              if ((ec->changes.need_maximize) ||
-                 (ec->maximized & E_MAXIMIZE_BOTH == E_MAXIMIZE_BOTH))
+                 ((ec->maximized & E_MAXIMIZE_BOTH) == E_MAXIMIZE_BOTH))
                {
                   // skip. because the pixmap's size doesnot same to ec's size
                   ELOGF("SHELL",
