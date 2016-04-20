@@ -3881,8 +3881,8 @@ e_comp_object_util_mirror_add(Evas_Object *obj)
                {
                   Evas_Native_Surface ns;
 
-                  e_pixmap_native_surface_init(cw->ec->pixmap, &ns);
-                  evas_object_image_native_surface_set(o, &ns);
+                  if (e_pixmap_native_surface_init(cw->ec->pixmap, &ns))
+                    evas_object_image_native_surface_set(o, &ns);
                }
           }
         else
