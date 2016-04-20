@@ -809,6 +809,7 @@ struct E_Client
    Eina_Bool transformed : 1;
    Eina_Bool keyboard_resizing : 1;
    Eina_Bool gesture_disable : 1;
+   Eina_Bool floating : 1; //client is set as floating mode
 
 #ifdef HAVE_WAYLAND
    uuid_t uuid;
