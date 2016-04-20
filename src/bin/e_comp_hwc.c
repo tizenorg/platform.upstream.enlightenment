@@ -65,6 +65,10 @@ struct _E_Comp_Hwc_Layer {
    tbm_surface_h pending_tsurface;
    tbm_surface_h tsurface;
 
+   tbm_surface_h copied_tsurface; /* dummy surface to copy the current ec->pixmap at deactive */
+                                  /* use this surface for the native pixmap at the transition from
+                                     nocomposite(active) to composite(deactive) */
+
    E_Comp_Hwc_Renderer *hwc_renderer;
    E_Comp_Hwc_Output *hwc_output;
    E_Comp_Hwc *hwc;
@@ -100,6 +104,45 @@ struct _E_Comp_Hwc {
 static E_Comp_Hwc *g_hwc = NULL;
 
 static Eina_Bool _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_layer, tbm_surface_h tsurface, Eina_Bool is_canvas);
+
+static tbm_surface_h
+_e_comp_hwc_create_copied_surface(E_Client *ec)
+{
+   tbm_surface_h tsurface = NULL;
+   tbm_surface_h new_tsurface = NULL;
+   E_Pixmap *pixmap = NULL;
+   E_Comp_Wl_Buffer *buffer = NULL;
+   tbm_surface_info_s src_info, dst_info;
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+
+   pixmap = ec->pixmap;
+   e_pixmap_image_refresh(ec->pixmap);
+
+   buffer = e_pixmap_resource_get(pixmap);
+   tsurface = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
+
+   tbm_surface_map(tsurface, TBM_SURF_OPTION_READ, &src_info);
+   tbm_surface_unmap(tsurface);
+
+   new_tsurface = tbm_surface_create(src_info.width, src_info.height, src_info.format);
+
+   tbm_surface_map(new_tsurface, TBM_SURF_OPTION_WRITE, &dst_info);
+   tbm_surface_unmap(new_tsurface);
+
+   /* copy from src to dst */
+   memcpy(dst_info.planes[0].ptr, src_info.planes[0].ptr, src_info.planes[0].size);
+
+   return new_tsurface;
+
+}
+
+static void
+_e_comp_hwc_destroy_copied_surface(tbm_surface_h tbm_surface)
+{
+   EINA_SAFETY_ON_NULL_RETURN(tbm_surface);
+
+   tbm_surface_internal_unref(tbm_surface);
+}
 
 
 ///////////////////////////////////////////
@@ -581,6 +624,7 @@ _e_comp_hwc_renderer_deactivate(E_Comp_Hwc_Renderer *hwc_renderer)
    struct wl_resource *wl_surface = NULL;
    E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
    E_Client *ec = NULL;
+   tbm_surface_h copied_tsurface;
 
    if (!hwc_renderer->activated_ec)
      {
@@ -604,6 +648,19 @@ _e_comp_hwc_renderer_deactivate(E_Comp_Hwc_Renderer *hwc_renderer)
 
    /* deactive */
    wayland_tbm_server_client_queue_deactivate(cqueue);
+
+   /* get the tsurface for setting the native surface with it */
+   copied_tsurface = _e_comp_hwc_create_copied_surface(ec);
+   if (!copied_tsurface)
+    WRN("fail to get the copied current surface from ec.");
+   else
+     {
+        /* set the native surface with tbm type for compositing */
+        e_comp_object_native_surface_tbm_surface_set(ec->frame, copied_tsurface);
+        hwc_renderer->hwc_layer->copied_tsurface = copied_tsurface;
+     }
+
+   e_comp->deactivated_ec = ec;
 
 done:
    hwc_renderer->activated_ec = NULL;
@@ -691,6 +748,12 @@ _e_comp_hwc_output_commit_handler_reserved_memory(tdm_output *output, unsigned i
 
    if (hwc_layer->tsurface == tsurface)
      WRN("the same tsurface(%p) as the current tsurface(%p) of the hwc_layer.", tsurface, hwc_layer->tsurface);
+
+   if (hwc_layer->copied_tsurface)
+     {
+        _e_comp_hwc_destroy_copied_surface(hwc_layer->copied_tsurface);
+        hwc_layer->copied_tsurface = NULL;
+     }
 
    if (data->is_canvas && hwc_layer->primary)
      {

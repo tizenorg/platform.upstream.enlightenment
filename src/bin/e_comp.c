@@ -589,6 +589,13 @@ _e_comp_client_update(E_Client *ec)
 {
    int pw, ph;
 
+   if (ec == e_comp->deactivated_ec)
+     {
+        WRN("##soolim: deactivated_ec,%p", ec);
+        e_comp->deactivated_ec = NULL;
+        return;
+     }
+
    DBG("UPDATE [%p] pm = %p", ec, ec->pixmap);
    if (e_object_is_del(E_OBJECT(ec))) return;
 
