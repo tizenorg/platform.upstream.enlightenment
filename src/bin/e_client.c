@@ -2802,8 +2802,11 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         ec = e_client_focused_get();
         if (ec != focus_ec)
           {
-             e_client_focused_set(focus_ec);
-             evas_object_focus_set(focus_ec->frame, 1);
+             if (!focus_ec->floating)
+               {
+                  e_client_focused_set(focus_ec);
+                  evas_object_focus_set(focus_ec->frame, 1);
+               }
           }
      }
 
