@@ -54,14 +54,20 @@ static Eina_Bool need_send_motion = EINA_TRUE;
 
 /* local functions */
 static void
-_e_comp_wl_configure_send(E_Client *ec, Eina_Bool edges)
+_e_comp_wl_configure_send(E_Client *ec, Eina_Bool edges, Eina_Bool send_size)
 {
    int w, h;
 
-   if (e_comp_object_frame_exists(ec->frame))
-     w = ec->client.w, h = ec->client.h;
+   if (send_size)
+     {
+        if (e_comp_object_frame_exists(ec->frame))
+          w = ec->client.w, h = ec->client.h;
+        else
+          w = ec->w, h = ec->h;
+     }
    else
-     w = ec->w, h = ec->h;
+     w = h = 0;
+
    ec->comp_data->shell.configure_send(ec->comp_data->shell.surface,
                                        edges * e_comp_wl->resize.edges,
                                        w, h);
@@ -1474,7 +1480,7 @@ _e_comp_wl_evas_cb_resize(void *data, Evas_Object *obj EINA_UNUSED, void *event 
      }
    else if ((!ec->fullscreen) && (!ec->maximized) &&
             (!ec->comp_data->maximize_pre))
-     _e_comp_wl_configure_send(ec, 1);
+     _e_comp_wl_configure_send(ec, 1, 1);
 
    if (ec->comp_data->sub.below_obj)
      evas_object_resize(ec->comp_data->sub.below_obj, ec->w, ec->h);
@@ -1490,7 +1496,7 @@ _e_comp_wl_evas_cb_state_update(void *data, Evas_Object *obj EINA_UNUSED, void *
    /* check for wayland pixmap */
 
    if (ec->comp_data->shell.configure_send)
-     _e_comp_wl_configure_send(ec, 0);
+     _e_comp_wl_configure_send(ec, 0, 1);
    ec->comp_data->maximize_pre = 0;
 }
 
@@ -3695,7 +3701,7 @@ _e_comp_wl_client_cb_focus_set(void *data EINA_UNUSED, E_Client *ec)
    if (ec->comp_data->shell.configure_send)
      {
         if (ec->comp_data->shell.surface)
-          _e_comp_wl_configure_send(ec, 0);
+          _e_comp_wl_configure_send(ec, 0, 0);
      }
 
    e_comp_wl->kbd.focus = ec->comp_data->surface;
@@ -3710,7 +3716,7 @@ _e_comp_wl_client_cb_focus_unset(void *data EINA_UNUSED, E_Client *ec)
    if (ec->comp_data->shell.configure_send)
      {
         if (ec->comp_data->shell.surface)
-          _e_comp_wl_configure_send(ec, 0);
+          _e_comp_wl_configure_send(ec, 0, 0);
      }
 
    _e_comp_wl_focus_check();
