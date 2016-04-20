@@ -595,7 +595,7 @@ _e_comp_object_shadow_setup(E_Comp_Object *cw)
                  ((name) && (m->name) && (!e_util_glob_match(name, m->name))))
                continue;
              if (!_e_comp_object_shadow_client_match(cw->ec, m)) continue;
-             
+
              focus = m->focus;
              urgent = m->urgent;
              no_shadow = m->no_shadow;
@@ -1421,7 +1421,7 @@ _e_comp_intercept_stack_helper(E_Comp_Object *cw, Evas_Object *stack, E_Comp_Obj
           }
         if (!o)
           /* top client layer window hasn't been stacked yet. this probably shouldn't happen?
-           * return here since the top client layer window 
+           * return here since the top client layer window
            */
           {
              E_Client *ec;
@@ -2558,7 +2558,7 @@ _e_comp_object_util_show(void *data EINA_UNUSED, Evas_Object *obj)
      }
    else
      e_comp_shape_queue();
-   
+
    evas_object_show(obj);
    if (ref)
      {
@@ -2619,7 +2619,7 @@ _e_comp_object_util_moveresize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj
         evas_object_geometry_get(obj, NULL, NULL, &w, &h);
         e_zoomap_child_resize(data, w, h);
      }
-     
+
    if (evas_object_visible_get(obj))
      e_comp_shape_queue();
 }
@@ -4405,3 +4405,17 @@ e_comp_object_transform_bg_vertices_set(Evas_Object *obj, E_Util_Transform_Rect_
         evas_object_map_enable_set(cw->transform_bg_obj, EINA_FALSE);
      }
 }
+
+E_API void
+e_comp_object_native_surface_tbm_surface_set(Evas_Object *obj, void *data)
+{
+   Evas_Native_Surface ns;
+   API_ENTRY;
+   EINA_SAFETY_ON_NULL_RETURN(cw->ec);
+
+   ns.version = EVAS_NATIVE_SURFACE_VERSION;
+   ns.type = EVAS_NATIVE_SURFACE_TBM;
+   ns.data.tbm.buffer = data;
+   evas_object_image_native_surface_set(cw->obj, &ns);
+}
+

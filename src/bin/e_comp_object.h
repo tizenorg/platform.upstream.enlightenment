@@ -117,6 +117,9 @@ E_API void e_comp_object_mask_set(Evas_Object *obj, Eina_Bool set);
 E_API void e_comp_object_size_update(Evas_Object *obj, int w, int h);
 E_API void e_comp_object_transform_bg_set(Evas_Object *obj, Eina_Bool set);
 E_API void e_comp_object_transform_bg_vertices_set(Evas_Object *obj, E_Util_Transform_Rect_Vertex *vertices);
+
+E_API void e_comp_object_native_surface_tbm_surface_set(Evas_Object *obj, void *data);
+
 #endif
 #endif
 
