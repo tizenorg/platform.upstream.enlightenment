@@ -3108,6 +3108,11 @@ _e_comp_wl_subsurface_cb_position_set(struct wl_client *client EINA_UNUSED, stru
    sdata->position.x = x;
    sdata->position.y = y;
    sdata->position.set = EINA_TRUE;
+
+#ifdef HAVE_HWC
+   /* set nocomp when there is a client which gets subsurface */
+   if (e_comp->hwc && e_comp->nocomp) e_comp_nocomp_end(__FUNCTION__);
+#endif
 }
 
 static void
