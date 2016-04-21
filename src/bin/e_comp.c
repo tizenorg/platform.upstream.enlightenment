@@ -1003,7 +1003,7 @@ e_comp_init(void)
 
 #ifdef HAVE_HWC
    // TO DO : check hwc init condition
-   if (conf->hwc)
+   if (conf->hwc && e_comp_gl_get())
      {
         e_comp->hwc = e_comp_hwc_init();
         if (!e_comp->hwc)
