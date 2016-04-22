@@ -47,7 +47,6 @@ typedef struct _E_Comp_Wl_Transform_Context
 
 static Eina_Hash *clients_buffer_hash = NULL;
 static Eina_List *handlers = NULL;
-static double _last_event_time = 0.0;
 static E_Client *cursor_timer_ec = NULL;
 static Eina_Bool need_send_leave = EINA_TRUE;
 static Eina_Bool need_send_released = EINA_FALSE;
@@ -1725,11 +1724,8 @@ _e_comp_wl_cb_comp_object_add(void *data EINA_UNUSED, int type EINA_UNUSED, E_Ev
 static Eina_Bool
 _e_comp_wl_cb_mouse_move(void *d EINA_UNUSED, int t EINA_UNUSED, Ecore_Event_Mouse_Move *ev)
 {
-   _last_event_time = ecore_loop_time_get();
-
    e_comp_wl->ptr.x = wl_fixed_from_int(ev->x);
    e_comp_wl->ptr.y = wl_fixed_from_int(ev->y);
-   e_screensaver_notidle();
    if (e_comp_wl->selection.target &&
        (!e_client_has_xwindow(e_comp_wl->selection.target)) &&
        e_comp_wl->drag)
@@ -4256,8 +4252,6 @@ e_comp_wl_init(void)
 
    E_EVENT_WAYLAND_GLOBAL_ADD = ecore_event_type_new();
 
-   _last_event_time = ecore_loop_time_get();
-
    TRACE_DS_END();
    return EINA_TRUE;
 }
@@ -4598,17 +4592,6 @@ err:
    return NULL;
 }
 
-/**
- * Computes the time since the last input event.
- *
- * @returns time in seconds.
- */
-E_API double
-e_comp_wl_idle_time_get(void)
-{
-   return (ecore_loop_time_get() - _last_event_time);
-}
-
 static E_Comp_Wl_Output *
 _e_comp_wl_output_get(Eina_List *outputs, const char *id)
 {
@@ -4774,7 +4757,6 @@ e_comp_wl_key_down(Ecore_Event_Key *ev)
      {
         return EINA_FALSE;
      }
-   _last_event_time = ecore_loop_time_get();
 
    keycode = (ev->keycode - 8);
    if (!(e_comp_wl = e_comp->wl_comp_data))
@@ -4859,8 +4841,6 @@ e_comp_wl_key_up(Ecore_Event_Key *ev)
      {
         return EINA_FALSE;
      }
-
-   _last_event_time = ecore_loop_time_get();
 
    keycode = (ev->keycode - 8);
    delivered_key = 0;
