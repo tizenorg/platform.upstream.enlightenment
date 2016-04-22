@@ -558,8 +558,6 @@ main(int argc, char **argv)
    TS("E_Theme Init Done");
    _e_main_shutdown_push(e_theme_shutdown);
 
-   e_screensaver_preinit();
-
    TS("E_Actions Init");
    if (!e_actions_init())
      {
@@ -572,18 +570,10 @@ main(int argc, char **argv)
    /* these just add event handlers and can't fail
     * timestamping them is dumb.
     */
+   e_screensaver_preinit();
    e_zone_init();
    e_desk_init();
    e_plane_init();
-
-   TS("E_Screensaver Init");
-   if (!e_screensaver_init())
-     {
-        e_error_message_show(_("Enlightenment cannot configure the X screensaver.\n"));
-        _e_main_shutdown(-1);
-     }
-   TS("E_Screensaver Init Done");
-   _e_main_shutdown_push(e_screensaver_shutdown);
 
    TRACE_DS_BEGIN(MAIN:SCREEN INIT);
    TS("Screens Init");
@@ -596,6 +586,15 @@ main(int argc, char **argv)
    TS("Screens Init Done");
    _e_main_shutdown_push(_e_main_screens_shutdown);
    TRACE_DS_END();
+
+   TS("E_Screensaver Init");
+   if (!e_screensaver_init())
+     {
+        e_error_message_show(_("Enlightenment cannot configure the X screensaver.\n"));
+        _e_main_shutdown(-1);
+     }
+   TS("E_Screensaver Init Done");
+   _e_main_shutdown_push(e_screensaver_shutdown);
 
    TS("E_Comp Freeze");
    e_comp_all_freeze();
