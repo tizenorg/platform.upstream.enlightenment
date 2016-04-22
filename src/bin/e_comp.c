@@ -850,6 +850,7 @@ _e_comp_override_expire(void *data EINA_UNUSED)
 static Eina_Bool
 _e_comp_screensaver_on(void *data EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
+#if 0
    Eina_List *l;
    E_Zone *zone;
 
@@ -865,6 +866,7 @@ _e_comp_screensaver_on(void *data EINA_UNUSED, int type EINA_UNUSED, void *event
         edje_object_signal_emit(zone->base, "e,state,screensaver,on", "e");
         edje_object_signal_emit(zone->over, "e,state,screensaver,on", "e");
      }
+#endif
 
    return ECORE_CALLBACK_PASS_ON;
 }
@@ -872,6 +874,7 @@ _e_comp_screensaver_on(void *data EINA_UNUSED, int type EINA_UNUSED, void *event
 static Eina_Bool
 _e_comp_screensaver_off(void *data EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
+#if 0
    Eina_List *l;
    E_Zone *zone;
    E_Client *ec;
@@ -891,6 +894,7 @@ _e_comp_screensaver_off(void *data EINA_UNUSED, int type EINA_UNUSED, void *even
    E_CLIENT_FOREACH(ec)
      if (e_comp_object_damage_exists(ec->frame))
        e_comp_object_render_update_add(ec->frame);
+#endif
 
    return ECORE_CALLBACK_PASS_ON;
 }
@@ -999,7 +1003,6 @@ e_comp_init(void)
      }
 
    e_comp_canvas_fake_layers_init();
-   e_screensaver_update();
 
 #ifdef HAVE_HWC
    // TO DO : check hwc init condition
