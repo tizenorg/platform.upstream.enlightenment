@@ -1,15 +1,11 @@
 #include "e.h"
 
 static Eina_List *handlers;
-static Ecore_Timer *timer_post_screensaver_lock = NULL;
-static Ecore_Timer *timer_post_screensaver_on = NULL;
 
 static void
 _e_comp_canvas_cb_del()
 {
    E_FREE_LIST(handlers, ecore_event_handler_del);
-   E_FREE_FUNC(timer_post_screensaver_lock, ecore_timer_del);
-   E_FREE_FUNC(timer_post_screensaver_on, ecore_timer_del);
 }
 
 static void
@@ -67,7 +63,6 @@ _e_comp_canvas_cb_mouse_in(void *d EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object
 {
    E_Client *ec;
 
-   e_screensaver_notidle();
    if (e_client_action_get()) return;
    ec = e_client_focused_get();
    if (ec) e_focus_event_mouse_out(ec);
@@ -76,35 +71,33 @@ _e_comp_canvas_cb_mouse_in(void *d EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object
 static void
 _e_comp_canvas_cb_mouse_down(void *d EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
-   e_screensaver_notidle();
-   if (e_client_action_get()) return;
+   /* Do nothing */
+   ;
 }
 
 static void
 _e_comp_canvas_cb_mouse_up(void *d EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
-   e_screensaver_notidle();
-   if (e_client_action_get()) return;
+   /* Do nothing */
+   ;
 }
 
 static void
 _e_comp_canvas_cb_mouse_wheel(void *d EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
-   e_screensaver_notidle();
-   if (e_client_action_get()) return;
+   /* Do nothing */
+   ;
 }
 
 static Eina_Bool
 _e_comp_cb_key_down(void *data EINA_UNUSED, int ev_type EINA_UNUSED, Ecore_Event_Key *ev)
 {
-   e_screensaver_notidle();
    return !e_comp_wl_key_down(ev);
 }
 
 static Eina_Bool
 _e_comp_cb_key_up(void *data EINA_UNUSED, int ev_type EINA_UNUSED, Ecore_Event_Key *ev)
 {
-   e_screensaver_notidle();
    return !e_comp_wl_key_up(ev);
 }
 
@@ -117,40 +110,6 @@ _e_comp_cb_zone_change()
    return ECORE_CALLBACK_PASS_ON;
 }
 
-////////////////////////////////////
-
-static Eina_Bool
-_e_comp_cb_screensaver_active_delay(void *data EINA_UNUSED)
-{
-   ecore_animator_frametime_set(10.0);
-   if (!e_comp->nocomp)
-     ecore_evas_manual_render_set(e_comp->ee, EINA_TRUE);
-   timer_post_screensaver_on = NULL;
-   return ECORE_CALLBACK_CANCEL;
-}
-
-static void
-_e_comp_canvas_screensaver_active(void *d EINA_UNUSED, Evas_Object *obj EINA_UNUSED, const char *sig EINA_UNUSED, const char *src EINA_UNUSED)
-{
-   if (timer_post_screensaver_on) return;
-   /* thawed in _e_comp_screensaver_off() */
-   timer_post_screensaver_on = ecore_timer_add
-     (1.0, _e_comp_cb_screensaver_active_delay, NULL);
-}
-
-static Eina_Bool
-_e_comp_cb_screensaver_on()
-{
-   return ECORE_CALLBACK_PASS_ON;
-}
-
-static Eina_Bool
-_e_comp_cb_screensaver_off()
-{
-   E_FREE_FUNC(timer_post_screensaver_lock, ecore_timer_del);
-   E_FREE_FUNC(timer_post_screensaver_on, ecore_timer_del);
-   return ECORE_CALLBACK_PASS_ON;
-}
 ////////////////////////////////////
 
 static int
@@ -235,8 +194,6 @@ e_comp_canvas_init(int w, int h)
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_ZONE_DEL, _e_comp_cb_zone_change, NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN, _e_comp_cb_key_down, NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_UP, _e_comp_cb_key_up, NULL);
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_ON, _e_comp_cb_screensaver_on, NULL);
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_OFF, _e_comp_cb_screensaver_off, NULL);
 
    ecore_evas_callback_pre_render_set(e_comp->ee, _e_comp_canvas_prerender);
    ecore_evas_callback_resize_set(e_comp->ee, _e_comp_canvas_resize);
@@ -386,7 +343,7 @@ e_comp_canvas_zone_update(E_Zone *zone)
    evas_object_show(o);
 
    zone->over = o = edje_object_add(e_comp->evas);
-   edje_object_signal_callback_add(o, "e,state,screensaver,active", "e", _e_comp_canvas_screensaver_active, NULL);
+   //edje_object_signal_callback_add(o, "e,state,screensaver,active", "e", _e_comp_canvas_screensaver_active, NULL);
    evas_object_layer_set(o, E_LAYER_MAX);
    evas_object_raise(o);
    evas_object_name_set(zone->over, "zone->over");

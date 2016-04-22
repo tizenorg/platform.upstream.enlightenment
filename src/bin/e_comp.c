@@ -999,7 +999,6 @@ e_comp_init(void)
      }
 
    e_comp_canvas_fake_layers_init();
-   e_screensaver_update();
 
 #ifdef HAVE_HWC
    // TO DO : check hwc init condition
