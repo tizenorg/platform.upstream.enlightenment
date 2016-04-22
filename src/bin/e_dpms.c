@@ -165,10 +165,8 @@ e_dpms_init(void)
 #ifdef HAVE_WAYLAND
    if (e_comp->comp_type != E_PIXMAP_TYPE_X)
      {
-        E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_ON,
-                              _e_dpms_screensaver_on, NULL);
-        E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_OFF_PRE,
-                              _e_dpms_screensaver_off, NULL);
+        //E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_ON, _e_dpms_screensaver_on, NULL);
+        //E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_OFF_PRE, _e_dpms_screensaver_off, NULL);
      }
 #endif
 
