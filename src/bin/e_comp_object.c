@@ -3598,7 +3598,15 @@ e_comp_object_native_surface_set(Evas_Object *obj, Eina_Bool set)
      }
    cw->native = set;
 
+#ifdef HAVE_HWC
+   #include "e_comp_hwc.h"
+   if (e_comp_hwc_find_deactivated_surface(cw->ec))
+     WRN("##soolim: deactivated_ec,%p", cw->ec);
+   else
+     evas_object_image_native_surface_set(cw->obj, set && (!cw->blanked) ? (cw->ns ?: &ns) : NULL);
+#else
    evas_object_image_native_surface_set(cw->obj, set && (!cw->blanked) ? (cw->ns ?: &ns) : NULL);
+#endif
    EINA_LIST_FOREACH(cw->obj_mirror, l, o)
      {
         evas_object_image_alpha_set(o, !!cw->ns ? 1 : cw->ec->argb);
