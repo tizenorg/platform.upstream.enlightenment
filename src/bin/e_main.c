@@ -1253,3 +1253,91 @@ _e_main_cb_idle_after(void *data EINA_UNUSED)
 
    return ECORE_CALLBACK_RENEW;
 }
+
+#include <dlfcn.h>
+#define TRACE_BUFF_SIZE (117*1000)
+int trace_curr_stack = 0;
+unsigned int trace_count = 0;
+unsigned int trace_file_count = 0;
+unsigned int trace_stack[TRACE_BUFF_SIZE];
+void * trace_func[TRACE_BUFF_SIZE];
+void * trace_caller[TRACE_BUFF_SIZE];
+
+void __attribute__ ((constructor))
+trace_begin (void)
+{
+    FILE    *in, *out;
+    char buf[1024];
+    static int count;
+
+    printf("E: ====== constructor =======\n");
+    sprintf(buf, "/proc/%d/maps", getpid());
+    in = fopen (buf, "r");
+    sprintf(buf, "/var/tmp/enl_maps%d.out", count++);
+    out = fopen (buf, "w");
+    if (in != NULL &&  out != NULL )
+    {
+        unsigned int s, e;
+        char type[16];
+        char file[128];
+        while (fgets(buf, sizeof buf, in) != NULL)
+        {
+            sscanf(buf, "%x-%x %s %*s %*s %*s %s", &s, &e, type, file);
+            if( strcmp("r-xp", type) == 0)
+            {
+                fprintf(out, "%p %p %s\n", s, e, file);
+            }
+        }
+        fclose(in);
+        fclose(out);
+    }
+}
+
+void __attribute__ ((destructor))
+trace_end (void)
+{
+   printf("E: ====== destructor =======\n");
+}
+
+void
+__cyg_profile_func_enter (void *, void *) __attribute__((no_instrument_function));
+
+void
+__cyg_profile_func_enter (void *f, void *c)
+{
+	trace_stack[trace_count] = trace_curr_stack;
+	trace_func[trace_count] = f;
+	trace_caller[trace_count] = c;
+	trace_count++;
+	trace_curr_stack++;
+    if (trace_count >= TRACE_BUFF_SIZE)
+    {
+        int i;
+        char file_name[64];
+        Dl_info info_f, info_c;
+//        int dladdr(void *addr, Dl_info *info);
+        sprintf(file_name, "/var/tmp/enl_trace%d.out", trace_file_count++);
+        FILE *fp_trace = fopen (file_name, "w");
+        if (fp_trace != NULL)
+        {
+            for (i = 0; i < trace_count; i++)
+            {
+            	dladdr(trace_caller[i], &info_c);
+            	dladdr(trace_func[i],   &info_f);
+                fprintf(fp_trace, "%s %p %s %p %d\n", info_c.dli_fname, trace_caller[i] - info_c.dli_fbase,
+                									  info_f.dli_fname, trace_func[i] - info_f.dli_fbase, trace_stack[i]);
+            }
+        }
+        printf("E: ====== flush buffer =======\n");
+        trace_count = 0;
+    }
+}
+
+void
+__cyg_profile_func_exit (void *, void *) __attribute__((no_instrument_function));
+
+void
+__cyg_profile_func_exit (void *func, void *caller)
+{
+	trace_curr_stack--;
+}

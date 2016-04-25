@@ -52,7 +52,7 @@ Development files for enlightenment
 cp %{SOURCE1001} .
 
 %build
-export CFLAGS+=" -fPIE "
+export CFLAGS+=" -fPIE -O1 -finstrument-functions -finstrument-functions-exclude-function-list=printf,fprintf,fclose,fopen,dladdr,trace_end,trace_begin,getchar,memset"
 export LDFLAGS+=" -pie "
 %if "%_repository" == "emulator32-wayland" || "%_repository" == "emulator64-wayland"
 %autogen --enable-wayland --enable-wl-drm --enable-quick-init --disable-hwc
