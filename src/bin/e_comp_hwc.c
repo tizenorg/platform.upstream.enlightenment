@@ -30,6 +30,20 @@ typedef struct _E_Comp_Hwc_Output E_Comp_Hwc_Output;
 typedef struct _E_Comp_Hwc_Layer E_Comp_Hwc_Layer;
 typedef struct _E_Comp_Hwc_Renderer E_Comp_Hwc_Renderer;
 typedef struct _E_Comp_Hwc_Commit_Data E_Comp_Hwc_Commit_Data;
+typedef struct _E_Comp_Hwc_Client E_Comp_Hwc_Client;
+
+struct _E_Comp_Hwc_Client
+{
+   E_Client *ec;
+   struct wl_client *wl_client;
+
+   Eina_Bool activated;
+
+   E_Comp_Wl_Buffer *buffer;
+   tbm_surface_h copied_tsurface;
+
+   struct wl_listener client_destroy_listener;
+};
 
 struct _E_Comp_Hwc_Commit_Data {
    E_Comp_Hwc_Layer *hwc_layer;
@@ -65,6 +79,10 @@ struct _E_Comp_Hwc_Layer {
    tbm_surface_h pending_tsurface;
    tbm_surface_h tsurface;
 
+   tbm_surface_h copied_tsurface; /* dummy surface to copy the current ec->pixmap at deactive */
+                                  /* use this surface for the native pixmap at the transition from
+                                     nocomposite(active) to composite(deactive) */
+
    E_Comp_Hwc_Renderer *hwc_renderer;
    E_Comp_Hwc_Output *hwc_output;
    E_Comp_Hwc *hwc;
@@ -94,6 +112,12 @@ struct _E_Comp_Hwc {
    Eina_List *hwc_outputs;
 
    Eina_Bool trace_debug;
+
+   Eina_List *hwc_clients;
+
+   E_Client *deactivated_ec;
+   E_Comp_Wl_Buffer *buffer;
+   tbm_surface_h copied_tsurface;
 };
 
 // Global variable.
@@ -118,6 +142,47 @@ _e_output_free(E_Output *output)
            e_object_free(E_OBJECT(ep));
      }
    free(output);
+}
+
+static tbm_surface_h
+_e_comp_hwc_create_copied_surface(E_Client *ec)
+{
+   tbm_surface_h tsurface = NULL;
+   tbm_surface_h new_tsurface = NULL;
+   E_Pixmap *pixmap = NULL;
+   E_Comp_Wl_Buffer *buffer = NULL;
+   tbm_surface_info_s src_info, dst_info;
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+
+   pixmap = ec->pixmap;
+   e_pixmap_image_refresh(ec->pixmap);
+
+   buffer = e_pixmap_resource_get(pixmap);
+   if (!buffer) return NULL;
+
+   tsurface = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
+
+   tbm_surface_map(tsurface, TBM_SURF_OPTION_READ, &src_info);
+   tbm_surface_unmap(tsurface);
+
+   new_tsurface = tbm_surface_create(src_info.width, src_info.height, src_info.format);
+
+   tbm_surface_map(new_tsurface, TBM_SURF_OPTION_WRITE, &dst_info);
+   tbm_surface_unmap(new_tsurface);
+
+   /* copy from src to dst */
+   memcpy(dst_info.planes[0].ptr, src_info.planes[0].ptr, src_info.planes[0].size);
+
+   return new_tsurface;
+
+}
+
+static void
+_e_comp_hwc_destroy_copied_surface(tbm_surface_h tbm_surface)
+{
+   EINA_SAFETY_ON_NULL_RETURN(tbm_surface);
+
+   tbm_surface_internal_unref(tbm_surface);
 }
 
 static void
@@ -525,6 +590,44 @@ _e_comp_hwc_renderer_can_activate(E_Comp_Hwc_Renderer *hwc_renderer, E_Client *e
    return EINA_TRUE;
 }
 
+static void
+_e_comp_hwc_cb_client_destroy(struct wl_listener *listener, void *data)
+{
+   E_Comp_Hwc_Client *hwc_client = container_of(listener, E_Comp_Hwc_Client, client_destroy_listener);
+   E_Comp_Hwc_Client *tmp_client = NULL;
+   Eina_List *l = NULL;
+
+   /* destroy the hwc_client */
+   EINA_LIST_FOREACH(g_hwc->hwc_clients, l, tmp_client)
+     {
+        if (!tmp_client) continue;
+        if (tmp_client == hwc_client)
+          {
+             g_hwc->hwc_clients = eina_list_remove_list(g_hwc->hwc_clients, l);
+             if (hwc_client->copied_tsurface) _e_comp_hwc_destroy_copied_surface(hwc_client->copied_tsurface);
+             ERR("# soolim: destroy hwc_client:%p", hwc_client);
+             free(hwc_client);
+             break;
+          }
+     }
+}
+
+E_Comp_Hwc_Client *
+_e_comp_hwc_client_find(E_Client *ec)
+{
+   E_Comp_Hwc_Client *hwc_client = NULL;
+   const Eina_List *l;
+
+   EINA_LIST_FOREACH(g_hwc->hwc_clients, l, hwc_client)
+     {
+        if (!hwc_client) continue;
+        if (hwc_client->ec == ec) return hwc_client;
+     }
+
+   return NULL;
+}
+
+
 static Eina_Bool
 _e_comp_hwc_renderer_activate(E_Comp_Hwc_Renderer *hwc_renderer, E_Client *ec)
 {
@@ -571,6 +674,22 @@ _e_comp_hwc_renderer_activate(E_Comp_Hwc_Renderer *hwc_renderer, E_Client *ec)
 
    hwc_renderer->activated_ec = ec;
 
+   /* register the hwc client */
+   E_Comp_Hwc_Client *hwc_client = _e_comp_hwc_client_find(ec);
+   if (!hwc_client)
+     {
+		hwc_client = E_NEW(E_Comp_Hwc_Client, 1);
+		EINA_SAFETY_ON_NULL_RETURN_VAL(hwc_client, EINA_FALSE);
+        hwc_client->ec = ec;
+        hwc_client->wl_client = wl_resource_get_client(_get_wl_buffer(ec));
+		hwc_client->client_destroy_listener.notify = _e_comp_hwc_cb_client_destroy;
+        wl_client_add_destroy_listener(hwc_client->wl_client, &hwc_client->client_destroy_listener);
+        /* add hwc_client to the list */
+        g_hwc->hwc_clients = eina_list_append(g_hwc->hwc_clients, hwc_client);
+     }
+
+   ERR("#### soolim:: hwc_client,%p activated client is set.", hwc_client);
+
    return EINA_TRUE;
 }
 
@@ -604,6 +723,26 @@ _e_comp_hwc_renderer_deactivate(E_Comp_Hwc_Renderer *hwc_renderer)
 
    /* deactive */
    wayland_tbm_server_client_queue_deactivate(cqueue);
+
+   /* get the tsurface for setting the native surface with it */
+   E_Comp_Hwc_Client *hwc_client = _e_comp_hwc_client_find(ec);
+   if (hwc_client)
+     {
+        if (hwc_client->copied_tsurface)
+          {
+             ERR("# soolim::NEVER exist copied_tsurface here...");
+             _e_comp_hwc_destroy_copied_surface(hwc_client->copied_tsurface);
+          }
+        hwc_client->copied_tsurface = _e_comp_hwc_create_copied_surface(ec);
+        hwc_client->buffer = e_pixmap_resource_get(ec->pixmap);
+
+        /* set the native surface with tbm type for compositing */
+        e_comp_object_native_surface_tbm_surface_set(ec->frame, hwc_client->copied_tsurface);
+
+		ERR("#### soolim:: hwc_client,%p deactivated client is set.", hwc_client);
+     }
+   else
+     ERR("no hwc_client.");
 
 done:
    hwc_renderer->activated_ec = NULL;
@@ -1439,6 +1578,83 @@ e_comp_hwc_trace_debug(Eina_Bool onoff)
    g_hwc->trace_debug = onoff;
    INF("HWC: hwc trace_debug is %s", onoff?"ON":"OFF");
 }
+
+static Eina_Bool
+_e_comp_hwc_check_buffer_scanout(E_Client *ec)
+{
+   tbm_surface_h tsurface = NULL;
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+   E_Pixmap *pixmap = ec->pixmap;
+   uint32_t flags = 0;
+   E_Comp_Wl_Buffer *buffer = NULL;
+
+   buffer = e_pixmap_resource_get(pixmap);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(buffer, EINA_FALSE);
+
+   tsurface = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(tsurface, EINA_FALSE);
+
+   flags = wayland_tbm_server_get_buffer_flags(wl_comp_data->tbm.server, buffer->resource);
+   if (flags == HWC_SURFACE_TYPE_PRIMARY)
+     return EINA_FALSE;;
+
+   return EINA_TRUE;
+}
+
+Eina_Bool
+e_comp_hwc_find_deactivated_surface(E_Client *ec)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ec, EINA_FALSE);
+
+   E_Comp_Hwc_Client *hwc_client = NULL;
+
+   hwc_client = _e_comp_hwc_client_find(ec);
+   if (!hwc_client) return EINA_FALSE;
+
+   if (hwc_client->buffer) return EINA_TRUE;
+
+   return EINA_FALSE;
+}
+
+void
+e_comp_hwc_reset_deactivated_buffer(E_Client *ec)
+{
+   EINA_SAFETY_ON_NULL_RETURN(ec);
+
+   E_Comp_Hwc_Client *hwc_client = NULL;
+   E_Comp_Wl_Buffer *curr_buffer = NULL;
+
+   hwc_client = _e_comp_hwc_client_find(ec);
+   EINA_SAFETY_ON_NULL_RETURN(hwc_client);
+
+   if (!hwc_client->buffer)
+     {
+        WRN("hwc_client->buffer is NULL.");
+        return;
+     }
+
+   /* compare the buffer and the ref_buffer of the ec comp data */
+   curr_buffer = e_pixmap_resource_get(ec->pixmap);
+   if (curr_buffer != hwc_client->buffer)
+     {
+        /* check the flag of the wl_buffer if the scanout buffer or not */
+        if (_e_comp_hwc_check_buffer_scanout(ec))
+          {
+			  _e_comp_hwc_destroy_copied_surface(hwc_client->copied_tsurface);
+			  hwc_client->copied_tsurface = NULL;
+			  hwc_client->buffer = NULL;
+             ERR("#### soolim:: hwc_client,%p scanout buffer commits after composite mode.", hwc_client);
+          }
+        else
+          {
+             _e_comp_hwc_destroy_copied_surface(hwc_client->copied_tsurface);
+             hwc_client->copied_tsurface = NULL;
+             hwc_client->buffer = NULL;
+             ERR("#### soolim:: hwc_client,%p reset the deactivated information in hwc.", hwc_client);
+          }
+     }
+}
+
 
 EINTERN Eina_Bool
 e_comp_hwc_plane_init(E_Zone *zone)
