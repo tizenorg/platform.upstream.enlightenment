@@ -909,7 +909,7 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
 
    return ECORE_CALLBACK_PASS_ON;
 }
-
+#ifdef HAVE_HWC
 static char *
 _e_info_server_dump_directory_make(void)
 {
@@ -951,7 +951,7 @@ _e_info_server_dump_directory_make(void)
 
    return fullpath;
 }
-
+#endif
 static Eldbus_Message *
 _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
 {
@@ -963,7 +963,7 @@ _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED,
         ERR("Error getting arguments.");
         return reply;
      }
-
+#ifdef HAVE_HWC
    if (start == 1)
      {
         if (e_info_dump_running == 1)
@@ -999,6 +999,7 @@ _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED,
         e_info_dump_count = 0;
         e_info_dump_running = 0;
      }
+#endif
    return reply;
 }
 
@@ -1096,7 +1097,7 @@ e_info_server_shutdown(void)
         eina_list_free(e_info_transform_list);
         e_info_transform_list = NULL;
      }
-
+#ifdef HAVE_HWC
    if (e_info_dump_running == 1)
      tdm_helper_dump_stop();
    if (e_info_dump_hdlrs)
@@ -1111,7 +1112,7 @@ e_info_server_shutdown(void)
      }
    e_info_dump_count = 0;
    e_info_dump_running = 0;
-
+#endif
    eldbus_shutdown();
 
    return 1;
