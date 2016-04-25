@@ -1,4 +1,3 @@
-#include "e_mmx.h"
 #include "e_object.h"
 #include "e_user.h"
 #include "e_path.h"

@@ -54,7 +54,6 @@ src/bin/e_init.h \
 src/bin/e_layout.h \
 src/bin/e_log.h \
 src/bin/e_maximize.h \
-src/bin/e_mmx.h \
 src/bin/e_module.h \
 src/bin/e_mouse.h \
 src/bin/e_msgbus.h \
