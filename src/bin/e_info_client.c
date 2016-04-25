@@ -922,14 +922,27 @@ _e_info_client_proc_transform_set(int argc, char **argv)
 static void
 _e_info_client_proc_buffer_shot(int argc, char **argv)
 {
-   int dumprun = atoi(argv[2]);
-
-   if (!_e_info_client_eldbus_message_with_args("dump_buffers", NULL, "i", dumprun))
+   if (argc == 3)
      {
-        printf("_e_info_client_proc_buffer_shot fail (%d)\n", dumprun);
-        return;
+        int dumprun = atoi(argv[2]);
+
+        if (dumprun < 0 || dumprun > 1)
+          {
+             printf("Error Check Args : enlightenment_info -dump_buffers [1: start, 0: stop]\n");
+             return;
+          }
+
+        if (!_e_info_client_eldbus_message_with_args("dump_buffers", NULL, "i", dumprun))
+          {
+             printf("_e_info_client_proc_buffer_shot fail (%d)\n", dumprun);
+             return;
+          }
+        printf("_e_info_client_proc_buffer_shot %s\n", (dumprun == 1 ? "start" : "stop"));
      }
-   printf("_e_info_client_proc_buffer_shot %s\n", (dumprun == 1 ? "start" : "stop"));
+   else
+     {
+        printf("Error Check Args : enlightenment_info -dump_buffers [1: start, 0: stop]\n");
+     }
 }
 
 #ifdef HAVE_HWC
