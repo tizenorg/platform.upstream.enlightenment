@@ -1496,7 +1496,7 @@ _e_comp_wl_evas_cb_state_update(void *data, Evas_Object *obj EINA_UNUSED, void *
    /* check for wayland pixmap */
 
    if (ec->comp_data->shell.configure_send)
-     _e_comp_wl_configure_send(ec, 0, 1);
+     _e_comp_wl_configure_send(ec, 0, 0);
    ec->comp_data->maximize_pre = 0;
 }
 
