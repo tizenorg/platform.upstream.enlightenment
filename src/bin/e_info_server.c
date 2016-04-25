@@ -853,7 +853,6 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
    E_Client *ec;
    E_Event_Client *ev = event;
    Ecore_Window event_win;
-   Evas_Object *o;
    char fname[PATH_MAX];
    int count;
 
