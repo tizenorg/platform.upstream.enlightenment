@@ -104,6 +104,10 @@ struct _E_Comp_Hwc {
    Eina_List *hwc_outputs;
 
    Eina_Bool trace_debug;
+
+   E_Client *deactivated_ec;
+   E_Comp_Wl_Buffer *buffer;
+   tbm_surface_h copied_tsurface;
 };
 
 // Global variable.
@@ -125,6 +129,8 @@ _e_comp_hwc_create_copied_surface(E_Client *ec)
    e_pixmap_image_refresh(ec->pixmap);
 
    buffer = e_pixmap_resource_get(pixmap);
+   if (!buffer) return NULL;
+
    tsurface = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
 
    tbm_surface_map(tsurface, TBM_SURF_OPTION_READ, &src_info);
@@ -637,6 +643,11 @@ _e_comp_hwc_renderer_deactivate(E_Comp_Hwc_Renderer *hwc_renderer)
    /* deactive */
    wayland_tbm_server_client_queue_deactivate(cqueue);
 
+
+
+   wl_client_add_destroy_listener(cl->wl_client,
+					  &cl->destroy_listener);
+
    /* get the tsurface for setting the native surface with it */
    copied_tsurface = _e_comp_hwc_create_copied_surface(ec);
    if (!copied_tsurface)
@@ -645,10 +656,10 @@ _e_comp_hwc_renderer_deactivate(E_Comp_Hwc_Renderer *hwc_renderer)
      {
         /* set the native surface with tbm type for compositing */
         e_comp_object_native_surface_tbm_surface_set(ec->frame, copied_tsurface);
-        hwc_renderer->hwc_layer->copied_tsurface = copied_tsurface;
+        g_hwc->buffer = e_pixmap_resource_get(ec->pixmap);
+        g_hwc->copied_tsurface = copied_tsurface;
+        g_hwc->deactivated_ec = ec;
      }
-
-   e_comp->deactivated_ec = ec;
 
 done:
    hwc_renderer->activated_ec = NULL;
@@ -736,12 +747,6 @@ _e_comp_hwc_output_commit_handler_reserved_memory(tdm_output *output, unsigned i
 
    if (hwc_layer->tsurface == tsurface)
      WRN("the same tsurface(%p) as the current tsurface(%p) of the hwc_layer.", tsurface, hwc_layer->tsurface);
-
-   if (hwc_layer->copied_tsurface)
-     {
-        _e_comp_hwc_destroy_copied_surface(hwc_layer->copied_tsurface);
-        hwc_layer->copied_tsurface = NULL;
-     }
 
    if (data->is_canvas && hwc_layer->primary)
      {
@@ -1541,3 +1546,111 @@ e_comp_hwc_plane_init(E_Zone *zone)
 
    return EINA_TRUE;
 }
+
+E_Client *
+e_comp_hwc_get_deactivated_ec()
+{
+   return g_hwc->deactivated_ec;
+}
+
+void
+e_comp_hwc_reset_deactivated_ec()
+{
+   g_hwc->deactivated_ec = NULL;
+}
+
+void *
+e_comp_hwc_get_copied_surface()
+{
+   if (!g_hwc->copied_tsurface)
+     {
+        ERR("g_hwc->copied_tsurface is NULL.");
+        return NULL;
+     }
+
+   return (void *)g_hwc->copied_tsurface;
+}
+
+E_Comp_Wl_Buffer *
+e_comp_hwc_get_deactivated_buffer()
+{
+   if (!g_hwc->buffer) return NULL;
+
+   return g_hwc->buffer;
+}
+
+Eina_Bool
+e_comp_hwc_check_buffer_scanout(E_Client *ec)
+{
+   tbm_surface_h tsurface = NULL;
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+   E_Pixmap *pixmap = ec->pixmap;
+   uint32_t flags = 0;
+   E_Comp_Wl_Buffer *buffer = NULL;
+
+   buffer = e_pixmap_resource_get(pixmap);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(buffer, EINA_FALSE);
+
+   tsurface = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(tsurface, EINA_FALSE);
+
+   flags = wayland_tbm_server_get_buffer_flags(wl_comp_data->tbm.server, buffer->resource);
+   if (flags != HWC_SURFACE_TYPE_PRIMARY)
+     return EINA_FALSE;;
+
+   return EINA_TRUE;
+}
+
+void
+e_comp_hwc_reset_all_deactivated_info(void)
+{
+   g_hwc->buffer = NULL;
+
+   if (g_hwc->copied_tsurface)
+     {
+        _e_comp_hwc_destroy_copied_surface(g_hwc->copied_tsurface);
+        g_hwc->copied_tsurface = NULL;
+     }
+   g_hwc->deactivated_ec = NULL;
+}
+
+
+#if 0
+void *
+e_comp_hwc_get_copied_surface(E_Client *ec)
+{
+   if (g_hwc->deactivated_ec != ec)
+     {
+        ERR("g_hwc->deactivated_ec != ec");
+        return NULL;
+     }
+
+   tbm_surface_h tsurface = NULL;
+   tbm_surface_h new_tsurface = NULL;
+   E_Pixmap *pixmap = NULL;
+   E_Comp_Wl_Buffer *buffer = NULL;
+   tbm_surface_info_s src_info, dst_info;
+   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
+
+   pixmap = ec->pixmap;
+   e_pixmap_image_refresh(ec->pixmap);
+
+   buffer = e_pixmap_resource_get(pixmap);
+   tsurface = wayland_tbm_server_get_surface(wl_comp_data->tbm.server, buffer->resource);
+
+   tbm_surface_map(tsurface, TBM_SURF_OPTION_READ, &src_info);
+   tbm_surface_unmap(tsurface);
+
+   new_tsurface = tbm_surface_create(src_info.width, src_info.height, src_info.format);
+
+   tbm_surface_map(new_tsurface, TBM_SURF_OPTION_WRITE, &dst_info);
+   tbm_surface_unmap(new_tsurface);
+
+   /* copy from src to dst */
+   memcpy(dst_info.planes[0].ptr, src_info.planes[0].ptr, src_info.planes[0].size);
+
+   g_hwc->copied_tsurface = new_tsurface;
+
+   return (void *)new_tsurface;
+}
+#endif

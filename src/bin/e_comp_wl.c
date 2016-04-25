@@ -2243,7 +2243,32 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
        buffer)
      {
         e_comp_hwc_display_client(ec);
+        /* if not, destroy the tbm_surface of the deactivated ec */
      }
+
+    E_Client *deactived_ec = e_comp_hwc_get_deactivated_ec();
+    E_Comp_Wl_Buffer *curr_buffer = NULL, *deactivated_buffer = NULL;
+    if (deactived_ec == ec)
+      {
+         /* compare the buffer and the ref_buffer of the ec comp data */
+         curr_buffer = e_pixmap_resource_get(ec->pixmap);
+         deactivated_buffer = e_comp_hwc_get_deactivated_buffer();
+         if (curr_buffer != deactivated_buffer)
+           {
+              /* check the flag of the wl_buffer if the scanout buffer or not */
+              if (e_comp_hwc_check_buffer_scanout(ec))
+                {
+                   ERR("#### soolim:: scanout buffer commits after composite mode.");
+                }
+              else
+                {
+                   /* if not, destroy the tbm_surface of the deactivated ec */
+                   e_comp_hwc_reset_all_deactivated_info();
+                   ERR("#### soolim:: reset the deactivated information in hwc.");
+                }
+           }
+      }
+
 #endif
 
    if ((buffer && buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO) &&
@@ -4678,7 +4703,7 @@ e_comp_wl_output_init(const char *id, const char *make, const char *model,
 
         e_comp_wl->outputs = eina_list_append(e_comp_wl->outputs, output);
 
-        output->global = 
+        output->global =
           wl_global_create(e_comp_wl->wl.disp, &wl_output_interface,
                            2, output, _e_comp_wl_cb_output_bind);
 
