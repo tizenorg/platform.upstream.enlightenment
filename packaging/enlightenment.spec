@@ -33,6 +33,7 @@ BuildRequires:  pkgconfig(wayland-tbm-server)
 BuildRequires:  pkgconfig(ecore-drm)
 BuildRequires:  pkgconfig(libtdm)
 BuildRequires:  pkgconfig(gbm)
+BuildRequires:  pkgconfig(dlog)
 Requires:       libwayland-extension-server
 
 %description

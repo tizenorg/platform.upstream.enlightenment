@@ -12,6 +12,12 @@
 # include <tdm_helper.h>
 # include <wayland-tbm-server.h>
 
+#include <dlog.h>
+
+#define LOG_TAG "CYEON"
+
+#define CYEON_DLOG(fmt, args...) LOGE("[cyeon]" fmt, ##args)
+
 # define HWC_DRM_MODE_DPMS_OFF 3
 # ifndef CLEAR
 # define CLEAR(x) memset(&(x), 0, sizeof (x))
@@ -114,10 +120,6 @@ struct _E_Comp_Hwc {
    Eina_Bool trace_debug;
 
    Eina_List *hwc_clients;
-
-   E_Client *deactivated_ec;
-   E_Comp_Wl_Buffer *buffer;
-   tbm_surface_h copied_tsurface;
 };
 
 // Global variable.
@@ -678,16 +680,30 @@ _e_comp_hwc_renderer_activate(E_Comp_Hwc_Renderer *hwc_renderer, E_Client *ec)
    E_Comp_Hwc_Client *hwc_client = _e_comp_hwc_client_find(ec);
    if (!hwc_client)
      {
-		hwc_client = E_NEW(E_Comp_Hwc_Client, 1);
-		EINA_SAFETY_ON_NULL_RETURN_VAL(hwc_client, EINA_FALSE);
+        hwc_client = E_NEW(E_Comp_Hwc_Client, 1);
+        EINA_SAFETY_ON_NULL_RETURN_VAL(hwc_client, EINA_FALSE);
         hwc_client->ec = ec;
         hwc_client->wl_client = wl_resource_get_client(_get_wl_buffer(ec));
-		hwc_client->client_destroy_listener.notify = _e_comp_hwc_cb_client_destroy;
+        hwc_client->client_destroy_listener.notify = _e_comp_hwc_cb_client_destroy;
+        hwc_client->activated = EINA_TRUE;
         wl_client_add_destroy_listener(hwc_client->wl_client, &hwc_client->client_destroy_listener);
         /* add hwc_client to the list */
         g_hwc->hwc_clients = eina_list_append(g_hwc->hwc_clients, hwc_client);
      }
+   else
+     {
+        if (hwc_client->copied_tsurface)
+         {
+            CYEON_DLOG("destory copied_tsurface because activate\n");
+            ERR("# soolim::destory copied_tsurface...");
+            _e_comp_hwc_destroy_copied_surface(hwc_client->copied_tsurface);
+            hwc_client->copied_tsurface = NULL;
+            hwc_client->buffer = NULL;
+            hwc_client->activated = EINA_TRUE;
+         }
+     }
 
+   CYEON_DLOG("hwc_client,%p activated client is set.\n", hwc_client);
    ERR("#### soolim:: hwc_client,%p activated client is set.", hwc_client);
 
    return EINA_TRUE;
@@ -730,16 +746,19 @@ _e_comp_hwc_renderer_deactivate(E_Comp_Hwc_Renderer *hwc_renderer)
      {
         if (hwc_client->copied_tsurface)
           {
+             CYEON_DLOG("NEVER exist copied_tsurface here...\n");
              ERR("# soolim::NEVER exist copied_tsurface here...");
              _e_comp_hwc_destroy_copied_surface(hwc_client->copied_tsurface);
           }
         hwc_client->copied_tsurface = _e_comp_hwc_create_copied_surface(ec);
         hwc_client->buffer = e_pixmap_resource_get(ec->pixmap);
+        hwc_client->activated = EINA_FALSE;
 
         /* set the native surface with tbm type for compositing */
         e_comp_object_native_surface_tbm_surface_set(ec->frame, hwc_client->copied_tsurface);
 
-		ERR("#### soolim:: hwc_client,%p deactivated client is set.", hwc_client);
+        CYEON_DLOG("hwc_client,%p deactivated client is set.\n", hwc_client);
+        ERR("#### soolim:: hwc_client,%p deactivated client is set.", hwc_client);
      }
    else
      ERR("no hwc_client.");
@@ -1595,7 +1614,7 @@ _e_comp_hwc_check_buffer_scanout(E_Client *ec)
    EINA_SAFETY_ON_NULL_RETURN_VAL(tsurface, EINA_FALSE);
 
    flags = wayland_tbm_server_get_buffer_flags(wl_comp_data->tbm.server, buffer->resource);
-   if (flags == HWC_SURFACE_TYPE_PRIMARY)
+   if (flags != HWC_SURFACE_TYPE_PRIMARY)
      return EINA_FALSE;;
 
    return EINA_TRUE;
@@ -1611,9 +1630,31 @@ e_comp_hwc_find_deactivated_surface(E_Client *ec)
    hwc_client = _e_comp_hwc_client_find(ec);
    if (!hwc_client) return EINA_FALSE;
 
-   if (hwc_client->buffer) return EINA_TRUE;
+   CYEON_DLOG("hwc_client,%p update  client\n", hwc_client);
 
-   return EINA_FALSE;
+   if (hwc_client->activated) return EINA_FALSE;
+
+   if (hwc_client->copied_tsurface)
+    {
+       CYEON_DLOG("hwc_client,%p destroy before copied tsurface\n", hwc_client);
+       _e_comp_hwc_destroy_copied_surface(hwc_client->copied_tsurface);
+       hwc_client->copied_tsurface = NULL;
+       hwc_client->buffer = NULL;
+    }
+
+   if (!_e_comp_hwc_check_buffer_scanout(ec)) return EINA_FALSE;
+
+   hwc_client->copied_tsurface = _e_comp_hwc_create_copied_surface(ec);
+   hwc_client->buffer = e_pixmap_resource_get(ec->pixmap);
+
+   /* set the native surface with tbm type for compositing */
+   e_comp_object_native_surface_tbm_surface_set(ec->frame, hwc_client->copied_tsurface);
+
+   CYEON_DLOG("hwc_client,%p copy and native set\n", hwc_client);
+
+   ERR("#### soolim:: hwc_client,%p deactivated client is set.", hwc_client);   
+
+   return EINA_TRUE;
 }
 
 void

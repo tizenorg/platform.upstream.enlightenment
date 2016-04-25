@@ -388,7 +388,7 @@ if test "x${have_wayland}" = "xyes"; then
   AC_MSG_RESULT([${e_cv_want_hwc}])
 
   if test "x$e_cv_want_hwc" != "xno";then
-    PKG_CHECK_MODULES([HWC], [libtdm, gbm],
+    PKG_CHECK_MODULES([HWC], [libtdm, gbm ,dlog],
       [
         have_hwc=yes
         AC_DEFINE_UNQUOTED([HAVE_HWC],[1],[enable hwc support])
