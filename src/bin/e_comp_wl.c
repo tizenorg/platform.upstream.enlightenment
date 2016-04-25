@@ -2243,7 +2243,13 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
        buffer)
      {
         e_comp_hwc_display_client(ec);
+        /* if not, destroy the tbm_surface of the deactivated ec */
      }
+
+    if (e_comp_hwc_find_deactivated_surface(ec))
+      {
+         e_comp_hwc_reset_deactivated_buffer(ec);
+      }
 #endif
 
    if ((buffer && buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO) &&
@@ -4678,7 +4684,7 @@ e_comp_wl_output_init(const char *id, const char *make, const char *model,
 
         e_comp_wl->outputs = eina_list_append(e_comp_wl->outputs, output);
 
-        output->global = 
+        output->global =
           wl_global_create(e_comp_wl->wl.disp, &wl_output_interface,
                            2, output, _e_comp_wl_cb_output_bind);
 
