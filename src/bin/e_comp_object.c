@@ -3598,7 +3598,35 @@ e_comp_object_native_surface_set(Evas_Object *obj, Eina_Bool set)
      }
    cw->native = set;
 
+#ifdef HAVE_HWC
+#include "e_comp_hwc.h"
+    E_Client *new_ec;
+    new_ec = e_comp_hwc_get_deactivated_ec();
+    if (new_ec == cw->ec)
+      {
+#if 0
+         void *tsurface = (void *)e_comp_hwc_get_copied_surface();
+         if (!tsurface)
+           {
+              ERR("##### soolim:tsurface is null.");
+              evas_object_image_native_surface_set(cw->obj, set && (!cw->blanked) ? (cw->ns ?: &ns) : NULL);
+           }
+         else
+           {
+               ns.version = EVAS_NATIVE_SURFACE_VERSION;
+               ns.type = EVAS_NATIVE_SURFACE_TBM;
+               ns.data.tbm.buffer = tsurface;
+               evas_object_image_native_surface_set(cw->obj, set && (!cw->blanked) ? (cw->ns ?: &ns) : NULL);
+               e_comp_hwc_reset_deactivated_ec();
+            }
+#endif
+         WRN("##soolim: deactivated_ec,%p", cw->ec);
+      }
+   else
+     evas_object_image_native_surface_set(cw->obj, set && (!cw->blanked) ? (cw->ns ?: &ns) : NULL);
+#else
    evas_object_image_native_surface_set(cw->obj, set && (!cw->blanked) ? (cw->ns ?: &ns) : NULL);
+#endif
    EINA_LIST_FOREACH(cw->obj_mirror, l, o)
      {
         evas_object_image_alpha_set(o, !!cw->ns ? 1 : cw->ec->argb);
