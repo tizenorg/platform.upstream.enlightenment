@@ -80,7 +80,8 @@ src/bin/e_win.h \
 src/bin/e_xinerama.h \
 src/bin/e_zoomap.h \
 src/bin/e_zone.h \
-src/bin/e_util_transform.h
+src/bin/e_util_transform.h \
+src/bin/e_comp_hwc.h
 
 if HAVE_WAYLAND
 ENLIGHTENMENTHEADERS += \
@@ -92,11 +93,6 @@ src/bin/e_comp_wl.h
 if HAVE_WAYLAND_TBM
 ENLIGHTENMENTHEADERS += \
 src/bin/e_comp_wl_tbm.h
-endif
-
-if HAVE_HWC
-ENLIGHTENMENTHEADERS += \
-src/bin/e_comp_hwc.h
 endif
 
 endif
@@ -155,6 +151,7 @@ src/bin/e_xinerama.c \
 src/bin/e_zoomap.c \
 src/bin/e_zone.c \
 src/bin/e_util_transform.c \
+src/bin/e_comp_hwc.c \
 $(ENLIGHTENMENTHEADERS)
 
 if HAVE_WAYLAND
@@ -171,11 +168,6 @@ src/bin/e_comp_wl.c
 if HAVE_WAYLAND_TBM
 enlightenment_src += \
 src/bin/e_comp_wl_tbm.c
-endif
-
-if HAVE_HWC
-enlightenment_src += \
-src/bin/e_comp_hwc.c
 endif
 
 endif

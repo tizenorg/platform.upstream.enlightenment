@@ -1,24 +1,26 @@
 #include "e.h"
-#include "e_comp_wl.h"
-#include "e_comp_hwc.h"
 
-#include <Ecore_Drm.h>
-#include <Evas_Engine_GL_Drm.h>
+#ifdef HAVE_HWC
+# include "e_comp_wl.h"
+# include "e_comp_hwc.h"
 
-#include <gbm/gbm_tbm.h>
-#include <tdm.h>
-#include <tdm_helper.h>
-#include <wayland-tbm-server.h>
+# include <Ecore_Drm.h>
+# include <Evas_Engine_GL_Drm.h>
 
-#define HWC_DRM_MODE_DPMS_OFF 3
-#ifndef CLEAR
-#define CLEAR(x) memset(&(x), 0, sizeof (x))
-#endif
+# include <gbm/gbm_tbm.h>
+# include <tdm.h>
+# include <tdm_helper.h>
+# include <wayland-tbm-server.h>
 
-#define HWC_SURFACE_TYPE_PRIMARY 7777
+# define HWC_DRM_MODE_DPMS_OFF 3
+# ifndef CLEAR
+# define CLEAR(x) memset(&(x), 0, sizeof (x))
+# endif
+
+# define HWC_SURFACE_TYPE_PRIMARY 7777
 
 static const int key_renderer_state;
-#define KEY_RENDERER_STATE ((unsigned long)&key_renderer_state)
+# define KEY_RENDERER_STATE ((unsigned long)&key_renderer_state)
 
 // trace debug
 const Eina_Bool trace_debug = 0;
@@ -1584,4 +1586,64 @@ e_output_update(E_Output * output)
    // TODO: hwc mode change
    return EINA_FALSE; // SHALL BE EINA_TRUE after hwc multi plane implementation
 }
+#else /* HAVE_HWC */
+EINTERN Eina_Bool
+e_comp_hwc_init(void)
+{
+   return EINA_TRUE;
+}
 
+EINTERN void
+e_comp_hwc_shutdown(void)
+{
+   ;
+}
+
+EINTERN Eina_Bool
+e_comp_hwc_mode_nocomp(E_Client *ec)
+{
+   return EINA_FALSE;
+}
+
+EINTERN void
+e_comp_hwc_display_client(E_Client *ec)
+{
+   ;
+}
+
+EINTERN void
+e_comp_hwc_trace_debug(Eina_Bool onoff)
+{
+   ;
+}
+
+EINTERN Eina_Bool
+e_comp_hwc_plane_init(E_Zone *zone)
+{
+   return EINA_TRUE;
+}
+
+E_API E_Output *
+e_output_new(E_Zone *zone)
+{
+   return NULL;
+}
+
+E_API Eina_Bool
+e_output_planes_clear(E_Output * output)
+{
+   return EINA_FALSE;
+}
+
+E_API Eina_Bool
+e_output_planes_set(E_Output * output, E_Hwc_Mode mode, Eina_List* clist)
+{
+   return EINA_FALSE;
+}
+
+E_API Eina_Bool
+e_output_update(E_Output * output)
+{
+   return EINA_FALSE;
+}
+#endif /* endo of HAVE_HWC */
