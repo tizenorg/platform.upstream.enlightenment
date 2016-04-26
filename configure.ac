@@ -263,6 +263,7 @@ e_requires="\
   eio >= $efl_version \
   eo >= $efl_version \
   libtbm \
+  libtdm \
   "
 
 PKG_CHECK_MODULES(E_INFO, [
@@ -388,7 +389,7 @@ if test "x${have_wayland}" = "xyes"; then
   AC_MSG_RESULT([${e_cv_want_hwc}])
 
   if test "x$e_cv_want_hwc" != "xno";then
-    PKG_CHECK_MODULES([HWC], [libtdm, gbm],
+    PKG_CHECK_MODULES([HWC], [gbm],
       [
         have_hwc=yes
         AC_DEFINE_UNQUOTED([HAVE_HWC],[1],[enable hwc support])
@@ -397,6 +398,9 @@ if test "x${have_wayland}" = "xyes"; then
     have_hwc=no
   fi
 fi
+
+have_tdm=no
+PKG_CHECK_MODULES([TDM], [libtdm >= "1.0.0"], [have_tdm="yes"], [have_tdm="no"])
 
 # Check for ttrace header files
 PKG_CHECK_MODULES(TTRACE,
