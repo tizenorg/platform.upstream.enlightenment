@@ -1968,6 +1968,36 @@ _e_client_maximize(E_Client *ec, E_Maximize max)
 }
 
 ////////////////////////////////////////////////
+static void
+_e_client_aux_hint_eval(E_Client *ec)
+{
+   if (!ec) return;
+
+#ifdef HAVE_WAYLAND_ONLY
+   E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+   Eina_List *l, *ll;
+   E_Comp_Wl_Aux_Hint *hint;
+
+   if (cdata && cdata->aux_hint.changed)
+     {
+        _e_client_hook_call(E_CLIENT_HOOK_AUX_HINT_CHANGE, ec);
+
+        EINA_LIST_FOREACH_SAFE(cdata->aux_hint.hints, l, ll, hint)
+          {
+             hint->changed = EINA_FALSE;
+             if (hint->deleted)
+               {
+                  ELOGF("COMP", "AUX_HINT |Del [%d:%s:%s]", ec->pixmap, ec, hint->id, hint->hint, hint->val);
+                  if (hint->hint) eina_stringshare_del(hint->hint);
+                  if (hint->val) eina_stringshare_del(hint->val);
+                  cdata->aux_hint.hints = eina_list_remove_list(cdata->aux_hint.hints, l);
+                  E_FREE(hint);
+               }
+          }
+        cdata->aux_hint.changed = 0;
+     }
+#endif
+}
 
 static void
 _e_client_eval(E_Client *ec)
@@ -2446,17 +2476,7 @@ _e_client_eval(E_Client *ec)
         _e_client_event_property(ec, prop);
      }
 
-#ifdef HAVE_WAYLAND_ONLY
-     {
-        E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
-
-        if (cdata && cdata->aux_hint.changed)
-          {
-             _e_client_hook_call(E_CLIENT_HOOK_AUX_HINT_CHANGE, ec);
-             cdata->aux_hint.changed = 0;
-          }
-     }
-#endif
+   _e_client_aux_hint_eval(ec);
 
    e_client_transform_core_update(ec);
    _e_client_hook_call(E_CLIENT_HOOK_EVAL_END, ec);
@@ -3241,17 +3261,7 @@ e_client_new(E_Pixmap *cp, int first_map, int internal)
         return NULL;
      }
 
-#ifdef HAVE_WAYLAND_ONLY
-     {
-        E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
-
-        if (cdata && cdata->aux_hint.changed)
-          {
-             _e_client_hook_call(E_CLIENT_HOOK_AUX_HINT_CHANGE, ec);
-             cdata->aux_hint.changed = 0;
-          }
-     }
-#endif
+   _e_client_aux_hint_eval(ec);
 
    if (ec->override)
      _e_client_zone_update(ec);

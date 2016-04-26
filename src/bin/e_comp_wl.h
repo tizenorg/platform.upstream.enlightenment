@@ -61,9 +61,11 @@ typedef enum _E_Comp_Wl_Buffer_Type
 
 struct _E_Comp_Wl_Aux_Hint
 {
-   unsigned int id;
-   const char *hint;
-   const char *val;
+   int           id;
+   const char   *hint;
+   const char   *val;
+   Eina_Bool     changed;
+   Eina_Bool     deleted;
 };
 
 struct _E_Comp_Wl_Buffer

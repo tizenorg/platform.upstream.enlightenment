@@ -283,6 +283,9 @@ e_hints_aux_hint_add_with_pixmap(E_Pixmap *cp, int32_t id, const char *name, con
                          id, hint->hint, hint->val, val);
                   eina_stringshare_del(hint->val);
                   hint->val = eina_stringshare_add(val);
+                  hint->changed = EINA_TRUE;
+                  if (hint->deleted)
+                    hint->deleted = EINA_FALSE;
                   cdata->aux_hint.changed = 1;
                }
              found = EINA_TRUE;
@@ -299,6 +302,8 @@ e_hints_aux_hint_add_with_pixmap(E_Pixmap *cp, int32_t id, const char *name, con
              hint->id = id;
              hint->hint = eina_stringshare_add(name);
              hint->val = eina_stringshare_add(val);
+             hint->changed = EINA_TRUE;
+             hint->deleted = EINA_FALSE;
              cdata->aux_hint.hints = eina_list_append(cdata->aux_hint.hints, hint);
              cdata->aux_hint.changed = 1;
              ELOGF("COMP", "AUX_HINT |Add [%d:%s:%s]", cp, e_pixmap_client_get(cp),
@@ -337,8 +342,13 @@ e_hints_aux_hint_change_with_pixmap(E_Pixmap *cp, int32_t id, const char *val)
                         id, hint->hint, hint->val, val);
                   eina_stringshare_del(hint->val);
                   hint->val = eina_stringshare_add(val);
+                  hint->changed = EINA_TRUE;
                   cdata->aux_hint.changed = 1;
                }
+
+             if (hint->deleted)
+               hint->deleted = EINA_FALSE;
+
              found = EINA_TRUE;
              break;
           }
@@ -358,7 +368,7 @@ e_hints_aux_hint_del_with_pixmap(E_Pixmap *cp, int32_t id)
    E_Comp_Wl_Client_Data *cdata;
    Eina_List *l, *ll;
    E_Comp_Wl_Aux_Hint *hint;
-   unsigned int res = -1;
+   int res = -1;
 
    if (!cp) return EINA_FALSE;
    cdata = (E_Comp_Wl_Client_Data*)e_pixmap_cdata_get(cp);
@@ -368,18 +378,19 @@ e_hints_aux_hint_del_with_pixmap(E_Pixmap *cp, int32_t id)
      {
         if (hint->id == id)
           {
-             ELOGF("COMP", "AUX_HINT |Del [%d:%s:%s]", cp, e_pixmap_client_get(cp), id, hint->hint, hint->val);
-             if (hint->hint) eina_stringshare_del(hint->hint);
-             if (hint->val) eina_stringshare_del(hint->val);
-             cdata->aux_hint.hints = eina_list_remove_list(cdata->aux_hint.hints, l);
+             ELOGF("COMP", "AUX_HINT |Del (pending) [%d:%s:%s]", cp, e_pixmap_client_get(cp), id, hint->hint, hint->val);
+             hint->changed = EINA_TRUE;
+             hint->deleted = EINA_TRUE;
              cdata->aux_hint.changed = 1;
              res = hint->id;
-             E_FREE(hint);
              break;
           }
      }
 
-   return !!res;
+   if (res == -1)
+     return EINA_FALSE;
+   else
+     return EINA_TRUE;
 #endif
 
    return EINA_FALSE;
@@ -400,7 +411,8 @@ e_hints_aux_hint_value_get_with_pixmap(E_Pixmap *cp, const char *name)
 
    EINA_LIST_FOREACH(cdata->aux_hint.hints, l, hint)
      {
-        if (!strcmp(hint->hint, name))
+        if ((!hint->deleted) &&
+            (!strcmp(hint->hint, name)))
           {
              res =  hint->val;
              break;
