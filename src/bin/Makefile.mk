@@ -178,6 +178,10 @@ endif
 if HAVE_HWC
 src_bin_enlightenment_CPPFLAGS += @HWC_CFLAGS@
 endif
+if HAVE_TDM
+src_bin_enlightenment_CPPFLAGS += @TDM_CFLAGS@
+endif
+
 src_bin_enlightenment_SOURCES = \
 src/bin/e_main.c \
 $(enlightenment_src)
@@ -189,6 +193,9 @@ src_bin_enlightenment_LDADD += @WAYLAND_TBM_LIBS@ @ECORE_DRM_LIBS@
 endif
 if HAVE_HWC
 src_bin_enlightenment_LDADD += @HWC_LIBS@
+endif
+if HAVE_TDM
+src_bin_enlightenment_LDADD += @TDM_LIBS@
 endif
 
 src_bin_enlightenment_info_SOURCES = \
