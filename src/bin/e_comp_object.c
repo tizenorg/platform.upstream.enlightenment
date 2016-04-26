@@ -4406,3 +4406,61 @@ e_comp_object_transform_bg_vertices_set(Evas_Object *obj, E_Util_Transform_Rect_
         evas_object_map_enable_set(cw->transform_bg_obj, EINA_FALSE);
      }
 }
+
+E_API void
+e_comp_object_layer_update(Evas_Object *obj,
+                           Evas_Object *above, Evas_Object *below)
+{
+   E_Comp_Object *cw2 = NULL;
+   Evas_Object *o = NULL;
+   short layer;
+
+   API_ENTRY;
+
+   if (cw->ec->layer_block) return;
+   if ((above) && (below))
+     {
+        ERR("Invalid layer update request! cw=%p", cw);
+        return;
+     }
+
+   o = above?:below;
+
+   if (o)
+     {
+        layer = evas_object_layer_get(o);
+        cw2 = evas_object_data_get(o, "comp_obj");
+        while (!cw2)
+          {
+             if (!e_util_strcmp(evas_object_name_get(o), "layer_obj")) break;
+
+             o = evas_object_above_get(o);
+             if ((!o) || (o == cw->smart_obj)) break;
+             if (evas_object_layer_get(o) != layer)
+               {
+                  o = e_comp->layers[e_comp_canvas_layer_map(E_LAYER_CLIENT_ALERT)].obj;
+               }
+             if (!o)
+               {
+                  E_Client *ec;
+                  ec = e_client_top_get();
+                  if (ec) o = ec->frame;
+               }
+
+             if (o) cw2 = evas_object_data_get(o, "comp_obj");
+          }
+     }
+
+   _e_comp_object_layers_remove(cw);
+   if (cw2)
+     {
+        if (above)
+          _e_comp_object_layers_add(cw, cw2, NULL, 0);
+        else if (o == obj)
+          _e_comp_object_layers_add(cw, NULL, NULL, above? 0 : 1);
+        else if (below)
+          _e_comp_object_layers_add(cw, NULL, cw2, 0);
+     }
+   else
+     _e_comp_object_layers_add(cw, NULL, NULL, 0);
+}

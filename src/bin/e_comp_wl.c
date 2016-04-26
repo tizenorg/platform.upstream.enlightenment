@@ -558,6 +558,31 @@ _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
 
    _e_comp_wl_subsurface_restack(topmost);
    _e_comp_wl_subsurface_restack_bg_rectangle(topmost);
+
+   //To update client stack list
+   if ((ec->comp_data->sub.data) &&
+       (ec->comp_data->sub.data->parent))
+     {
+        E_Client *parent;
+        Evas_Object *o;
+
+        parent = ec->comp_data->sub.data->parent;
+
+        if ((parent->comp_data->sub.list) &&
+            (eina_list_data_find(parent->comp_data->sub.list, ec)))
+          {
+             //stack above done
+             o = evas_object_below_get(ec->frame);
+             e_comp_object_layer_update(ec->frame, o, NULL);
+          }
+        else if ((parent->comp_data->sub.below_list) &&
+                 (eina_list_data_find(parent->comp_data->sub.below_list, ec)))
+          {
+             //stack below done
+             o = evas_object_above_get(ec->frame);
+             e_comp_object_layer_update(ec->frame, NULL, o);
+          }
+     }
 }
 
 static short
