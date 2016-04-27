@@ -1,5 +1,9 @@
 #include "e.h"
 
+#ifdef HWC
+#include "e_comp_hwc.h"
+#endif
+
 /* data keys:
 
    = keys that return objects =
@@ -3682,10 +3686,12 @@ e_comp_object_dirty(Evas_Object *obj)
         return;
      }
 
-   #include "e_comp_hwc.h"
-
-   if (!e_comp_hwc_find_deactivated_surface(cw->ec))
-      e_comp_object_native_surface_set(obj, e_comp->gl);
+#ifdef HWC
+    if (!e_comp_hwc_check_object_set_copied_surface(cw->ec))
+       e_comp_object_native_surface_set(obj, e_comp->gl);
+#else
+    e_comp_object_native_surface_set(obj, e_comp->gl);
+#endif
 
    it = eina_tiler_iterator_new(cw->updates);
    EINA_ITERATOR_FOREACH(it, rect)
