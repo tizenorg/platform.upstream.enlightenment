@@ -3602,7 +3602,18 @@ e_comp_object_dirty(Evas_Object *obj)
         ERR("ERROR FETCHING PIXMAP FOR %p", cw->ec);
         return;
      }
+
+#ifdef HAVE_HWC
+   if (e_comp->hwc)
+     {
+        if (!e_comp_hwc_native_surface_set(cw->ec))
+          e_comp_object_native_surface_set(obj, e_comp->gl);
+     }
+   else
+     e_comp_object_native_surface_set(obj, e_comp->gl);
+#else
    e_comp_object_native_surface_set(obj, e_comp->gl);
+#endif
    it = eina_tiler_iterator_new(cw->updates);
    EINA_ITERATOR_FOREACH(it, rect)
      {
