@@ -1,4 +1,7 @@
 #include "e.h"
+#ifdef HAVE_HWC
+#include "e_comp_hwc.h"
+#endif
 
 /* data keys:
 
@@ -3602,7 +3605,13 @@ e_comp_object_dirty(Evas_Object *obj)
         ERR("ERROR FETCHING PIXMAP FOR %p", cw->ec);
         return;
      }
+
+#ifdef HAVE_HWC
+   if (!e_comp_hwc_native_surface_set(cw->ec))
+      e_comp_object_native_surface_set(obj, e_comp->gl);
+#else
    e_comp_object_native_surface_set(obj, e_comp->gl);
+#endif
    it = eina_tiler_iterator_new(cw->updates);
    EINA_ITERATOR_FOREACH(it, rect)
      {
@@ -4343,17 +4352,4 @@ e_comp_object_layer_update(Evas_Object *obj,
      }
    else
      _e_comp_object_layers_add(cw, NULL, NULL, 0);
-}
-
-void
-e_comp_object_native_surface_tbm_surface_set(Evas_Object *obj, void *data)
-{
-   Evas_Native_Surface ns;
-   API_ENTRY;
-   EINA_SAFETY_ON_NULL_RETURN(cw->ec);
-
-   ns.version = EVAS_NATIVE_SURFACE_VERSION;
-   ns.type = EVAS_NATIVE_SURFACE_TBM;
-   ns.data.tbm.buffer = data;
-   evas_object_image_native_surface_set(cw->obj, &ns);
 }

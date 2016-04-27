@@ -2282,6 +2282,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
      {
         e_comp_hwc_display_client(ec);
      }
+   e_comp_hwc_client_commit(ec);
 #endif
 
    if ((buffer && buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO) &&
