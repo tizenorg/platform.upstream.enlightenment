@@ -1,7 +1,7 @@
 #include "e.h"
 #include <Ecore_Drm.h>
 
-E_API E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Wl_Drm" };
+
 
 static Eina_List *event_handlers = NULL;
 static Eina_Bool session_state = EINA_FALSE;
@@ -10,7 +10,7 @@ static Eina_Bool dont_set_ecore_drm_keymap = EINA_FALSE;
 static Eina_Bool dont_use_xkb_cache = EINA_FALSE;
 
 static Eina_Bool
-_e_mod_drm_cb_activate(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
+_e_comp_drm_cb_activate(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Drm_Event_Activate *e;
 
@@ -53,7 +53,7 @@ end:
 }
 
 static Eina_Bool
-_e_mod_drm_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
+_e_comp_drm_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    const Eina_List *l;
    E_Randr2_Screen *screen;
@@ -97,7 +97,7 @@ end:
 }
 
 static Eina_Bool
-_e_mod_drm_cb_input_device_add(void *data, int type, void *event)
+_e_comp_drm_cb_input_device_add(void *data, int type, void *event)
 {
    Ecore_Drm_Event_Input_Device_Add *e;
    E_Comp *comp = data;
@@ -129,7 +129,7 @@ end:
 }
 
 static Eina_Bool
-_e_mod_drm_cb_input_device_del(void *data, int type, void *event)
+_e_comp_drm_cb_input_device_del(void *data, int type, void *event)
 {
    Ecore_Drm_Event_Input_Device_Del *e;
    E_Comp *comp = data;
@@ -155,13 +155,13 @@ end:
 }
 
 static void
-_e_mod_drm_cb_ee_resize(Ecore_Evas *ee EINA_UNUSED)
+_e_comp_drm_cb_ee_resize(Ecore_Evas *ee EINA_UNUSED)
 {
    e_comp_canvas_update();
 }
 
 static Ecore_Drm_Output_Mode *
-_e_mod_drm_mode_screen_find(E_Randr2_Screen *s, Ecore_Drm_Output *output)
+_e_comp_drm_mode_screen_find(E_Randr2_Screen *s, Ecore_Drm_Output *output)
 {
    Ecore_Drm_Output_Mode *mode, *m = NULL;
    const Eina_List *l;
@@ -170,8 +170,8 @@ _e_mod_drm_mode_screen_find(E_Randr2_Screen *s, Ecore_Drm_Output *output)
    EINA_LIST_FOREACH(ecore_drm_output_modes_get(output), l, mode)
      {
         diff = (100 * abs(s->config.mode.w - mode->width)) + 
-          (100 * abs(s->config.mode.h - mode->height)) + 
-          fabs((100 * s->config.mode.refresh) - (100 * mode->refresh));
+           (100 * abs(s->config.mode.h - mode->height)) + 
+           fabs((100 * s->config.mode.refresh) - (100 * mode->refresh));
         if (diff < distance)
           {
              m = mode;
@@ -183,14 +183,14 @@ _e_mod_drm_mode_screen_find(E_Randr2_Screen *s, Ecore_Drm_Output *output)
 }
 
 static Eina_Bool
-_e_mod_drm_output_exists(Ecore_Drm_Output *output, unsigned int crtc)
+_e_comp_drm_output_exists(Ecore_Drm_Output *output, unsigned int crtc)
 {
    /* find out if this output can go into the 'possibles' */
    return ecore_drm_output_possible_crtc_get(output, crtc);
 }
 
 static char *
-_e_mod_drm_output_screen_get(Ecore_Drm_Output *output)
+_e_comp_drm_output_screen_get(Ecore_Drm_Output *output)
 {
    const char *model;
 
@@ -270,9 +270,9 @@ _info_unconf_closest_find(E_Randr2 *r, E_Randr2_Screen *s2, Eina_Bool configured
                  (s->config.relative.mode == E_RANDR2_RELATIVE_UNKNOWN))
           continue;
         dx = (s->config.geom.x + (s->config.geom.w / 2)) -
-          (s2->config.geom.x + (s2->config.geom.w / 2));
+           (s2->config.geom.x + (s2->config.geom.w / 2));
         dy = (s->config.geom.y + (s->config.geom.h / 2)) -
-          (s2->config.geom.y + (s2->config.geom.h / 2));
+           (s2->config.geom.y + (s2->config.geom.h / 2));
         dx = sqrt((dx * dx) + (dy * dy));
         if (dx < dist)
           {
@@ -284,7 +284,7 @@ _info_unconf_closest_find(E_Randr2 *r, E_Randr2_Screen *s2, Eina_Bool configured
 }
 
 static void
-_e_mod_drm_relative_fixup(E_Randr2 *r)
+_e_comp_drm_relative_fixup(E_Randr2 *r)
 {
    E_Randr2_Screen *s, *s2;
    int d, dx, dy;
@@ -367,7 +367,7 @@ _e_mod_drm_relative_fixup(E_Randr2 *r)
 }
 
 static E_Randr2 *
-_drm_randr_create(void)
+e_comp_drm_create(void)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *output;
@@ -402,6 +402,7 @@ _drm_randr_create(void)
         E_RANDR2_CONNECTOR_UNDEFINED,
      };
    unsigned int type;
+   INF("========= %s start ===", __FUNCTION__);
 
    printf("DRM RRR: ................. info get!\n");
 
@@ -432,7 +433,7 @@ _drm_randr_create(void)
              s->info.connected = ecore_drm_output_connected_get(output);
              printf("DRM RRR: ...... connected %i\n", s->info.connected);
 
-             s->info.screen = _e_mod_drm_output_screen_get(output);
+             s->info.screen = _e_comp_drm_output_screen_get(output);
 
              s->info.edid = ecore_drm_output_edid_get(output);
              if (s->info.edid)
@@ -506,7 +507,7 @@ _drm_randr_create(void)
                   /* get possible crtcs, compare to output_crtc_id_get */
                   for (j = 0; j < dev->crtc_count; j++)
                     {
-                       if (_e_mod_drm_output_exists(output, dev->crtcs[j]))
+                       if (_e_comp_drm_output_exists(output, dev->crtcs[j]))
                          {
                             ok = EINA_TRUE;
                             possible = EINA_TRUE;
@@ -532,7 +533,7 @@ _drm_randr_create(void)
                                                                &refresh);
                        s->config.mode.refresh = refresh;
                        s->config.enabled = 
-                         ((s->config.mode.w != 0) && (s->config.mode.h != 0));
+                          ((s->config.mode.w != 0) && (s->config.mode.h != 0));
 
                        printf("DRM RRR: '%s' %i %i %ix%i\n", s->info.name,
                               s->config.geom.x, s->config.geom.y,
@@ -543,26 +544,28 @@ _drm_randr_create(void)
                }
 
              r->screens = eina_list_append(r->screens, s);
+             INF("========= %s \t add screen ", __FUNCTION__);             
           }
      }
 
-   _e_mod_drm_relative_fixup(r);
+   _e_comp_drm_relative_fixup(r);
+   INF("========= %s END ===", __FUNCTION__);
 
    return r;
 }
 
 static Eina_Bool
-_drm_randr_available(void)
+e_comp_drm_available(void)
 {
    return EINA_TRUE;
 }
 
 static void
-_drm_randr_stub(void)
+e_comp_drm_stub(void)
 {}
 
 static void
-_drm_randr_apply(void)
+e_comp_drm_apply(void)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *out;
@@ -610,7 +613,7 @@ _drm_randr_apply(void)
                   if (s->config.enabled)
                     {
                        printf("\tDRM RRR: Enabled\n");
-                       mode = _e_mod_drm_mode_screen_find(s, out);
+                       mode = _e_comp_drm_mode_screen_find(s, out);
                     }
                   else
                     {
@@ -674,7 +677,7 @@ _drm_randr_apply(void)
 }
 
 static void
-_drm_dpms(int set)
+e_comp_drm_dpms(int set)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *out;
@@ -696,12 +699,12 @@ _drm_dpms(int set)
 
 static E_Comp_Screen_Iface drmiface =
 {
-   .available = _drm_randr_available,
-   .init = _drm_randr_stub,
-   .shutdown = _drm_randr_stub,
-   .create = _drm_randr_create,
-   .apply = _drm_randr_apply,
-   .dpms = _drm_dpms,
+   .available = e_comp_drm_available,
+   .init = e_comp_drm_stub,
+   .shutdown = e_comp_drm_stub,
+   .create = e_comp_drm_create,
+   .apply = e_comp_drm_apply,
+   .dpms = e_comp_drm_dpms,
 };
 
 static void
@@ -735,14 +738,14 @@ _drm_read_pixels(E_Comp_Wl_Output *output, void *pixels)
 }
 
 E_API void
-_e_mod_drm_keymap_set(struct xkb_context **ctx, struct xkb_keymap **map)
+_e_comp_drm_keymap_set(struct xkb_context **ctx, struct xkb_keymap **map)
 {
    char *keymap_path = NULL;
    struct xkb_context *context;
    struct xkb_keymap *keymap;
    struct xkb_rule_names names = {0,};
 
-   TRACE_INPUT_BEGIN(_e_mod_drm_keymap_set);
+   TRACE_INPUT_BEGIN(_e_comp_drm_keymap_set);
 
    context = xkb_context_new(0);
    EINA_SAFETY_ON_NULL_RETURN(context);
@@ -774,8 +777,8 @@ cleanup:
    TRACE_INPUT_END();
 }
 
-E_API void *
-e_modapi_init(E_Module *m)
+E_API Eina_Bool
+e_comp_drm_init()
 {
    E_Comp *comp;
    int w = 0, h = 0, scr_w = 0, scr_h = 0;
@@ -784,7 +787,7 @@ e_modapi_init(E_Module *m)
    struct xkb_keymap *map = NULL;
    char buf[1024];
 
-   e_main_ts("\twl_drm Init Begin");
+   e_main_ts("\te_comp_drm Init Begin");
 
    dont_set_ecore_drm_keymap = getenv("NO_ECORE_DRM_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
    dont_use_xkb_cache = getenv("NO_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
@@ -797,7 +800,7 @@ e_modapi_init(E_Module *m)
         if (!comp)
           {
              TRACE_DS_END();
-             EINA_SAFETY_ON_NULL_RETURN_VAL(comp, NULL);
+             EINA_SAFETY_ON_NULL_RETURN_VAL(comp, EINA_FALSE);
           }
 
         comp->comp_type = E_PIXMAP_TYPE_WL;
@@ -824,13 +827,14 @@ e_modapi_init(E_Module *m)
    if (scr_w <= 0) scr_w = 1;
    if (scr_h <= 0) scr_h = 1;
 
-   DBG("GL available:%d config engine:%d screen size:%dx%d",
+   //DBG("GL available:%d config engine:%d screen size:%dx%d",
+   INF("GL available:%d config engine:%d screen size:%dx%d",
        e_comp_gl_get(), e_comp_config_get()->engine, scr_w, scr_h);
 
    if (e_config->xkb.use_cache && !dont_use_xkb_cache)
      {
         e_main_ts("\tDRM Keymap Init");
-        _e_mod_drm_keymap_set(&ctx, &map);
+        _e_comp_drm_keymap_set(&ctx, &map);
         e_main_ts("\tDRM Keymap Init Done");
      }
 
@@ -890,7 +894,7 @@ e_modapi_init(E_Module *m)
      {
         fprintf(stderr, "Could not create ecore_evas_drm canvas");
         TRACE_DS_END();
-        return NULL;
+        return EINA_FALSE;
      }
 
    ecore_evas_data_set(e_comp->ee, "comp", e_comp);
@@ -909,7 +913,7 @@ e_modapi_init(E_Module *m)
         e_main_ts("\tEE Resize Done");
      }
 
-   ecore_evas_callback_resize_set(e_comp->ee, _e_mod_drm_cb_ee_resize);
+   ecore_evas_callback_resize_set(e_comp->ee, _e_comp_drm_cb_ee_resize);
 
    e_comp->screen = &drmiface;
 
@@ -917,7 +921,7 @@ e_modapi_init(E_Module *m)
    if (!e_comp_wl_init())
      {
         TRACE_DS_END();
-        return NULL;
+        return EINA_FALSE;
      }
    e_main_ts("\tE_Comp_Wl Init Done");
 
@@ -925,7 +929,7 @@ e_modapi_init(E_Module *m)
    if (!e_comp_canvas_init(w, h))
      {
         TRACE_DS_END();
-        return NULL;
+        return EINA_FALSE;
      }
    e_main_ts("\tE_Comp_Canvas Init Done");
 
@@ -961,18 +965,18 @@ e_modapi_init(E_Module *m)
    e_comp_wl_input_keymap_set("evdev", "pc105", "us", ctx, map);
    e_main_ts("\tE_Comp_WL Keymap Init Done");
 
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,         _e_mod_drm_cb_activate,         comp);
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_OUTPUT,           _e_mod_drm_cb_output,           comp);
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_ADD, _e_mod_drm_cb_input_device_add, comp);
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_DEL, _e_mod_drm_cb_input_device_del, comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,         _e_comp_drm_cb_activate,         comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_OUTPUT,           _e_comp_drm_cb_output,           comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_ADD, _e_comp_drm_cb_input_device_add, comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_DEL, _e_comp_drm_cb_input_device_del, comp);
 
    TRACE_DS_END();
 
-   return m;
+   return EINA_TRUE;
 }
 
-E_API int
-e_modapi_shutdown(E_Module *m EINA_UNUSED)
+E_API void
+e_comp_drm_shutdown()
 {
    /* shutdown ecore_drm */
    /* ecore_drm_shutdown(); */
@@ -981,12 +985,5 @@ e_modapi_shutdown(E_Module *m EINA_UNUSED)
    dont_use_xkb_cache = EINA_FALSE;
    E_FREE_LIST(event_handlers, ecore_event_handler_del);
 
-   return 1;
-}
-
-E_API int
-e_modapi_save(E_Module *m EINA_UNUSED)
-{
-   // do nothing
    return 1;
 }

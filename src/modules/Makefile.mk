@@ -11,7 +11,7 @@ MOD_CPPFLAGS = -I. -DE_LOGGING=1 \
 
 MOD_LIBS = @e_libs@ @dlopen_libs@
 
-include src/modules/Makefile_wl_drm.mk
+#include src/modules/Makefile_wl_drm.mk
 
 include src/modules/Makefile_wl_desktop_shell.mk
 

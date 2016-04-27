@@ -1195,7 +1195,7 @@ error:
 EINTERN Eina_Bool
 e_comp_init(void)
 {
-   E_Module *_mod;
+   //E_Module *_mod;
 
    _e_comp_log_dom = eina_log_domain_register("e_comp", EINA_COLOR_YELLOW);
    eina_log_domain_level_set("e_comp", EINA_LOG_LEVEL_INFO);
@@ -1244,16 +1244,21 @@ e_comp_init(void)
 
    e_comp_new();
 
-   _mod = e_module_new("wl_drm");
-   EINA_SAFETY_ON_NULL_RETURN_VAL(_mod, EINA_FALSE);
+   //_mod = e_module_new("wl_drm");
+   //EINA_SAFETY_ON_NULL_RETURN_VAL(_mod, EINA_FALSE);
+   if (!e_comp_drm_init())
+     {
+        ERR("Fail to init e_comp_drm");
+        return EINA_FALSE;
+     }
 
    e_comp->comp_type = E_PIXMAP_TYPE_WL;
 
-   if (!e_module_enable(_mod))
-     {
-        ERR("Fail to enable wl_drm module");
-        return EINA_FALSE;
-     }
+   //if (!e_module_enable(_mod))
+   //  {
+   //     ERR("Fail to enable wl_drm module");
+   //     return EINA_FALSE;
+   //  }
 
    e_comp_canvas_fake_layers_init();
 
@@ -1322,6 +1327,7 @@ e_comp_shutdown(void)
 #endif
 
    e_comp_wl_shutdown();
+   e_comp_drm_shutdown();
 
    e_object_del(E_OBJECT(e_comp));
    E_FREE_LIST(handlers, ecore_event_handler_del);

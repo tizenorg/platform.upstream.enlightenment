@@ -80,7 +80,8 @@ src/bin/e_xinerama.h \
 src/bin/e_zoomap.h \
 src/bin/e_zone.h \
 src/bin/e_util_transform.h \
-src/bin/e_comp_hwc.h
+src/bin/e_comp_hwc.h \
+src/bin/e_comp_drm.h
 
 if HAVE_WAYLAND
 ENLIGHTENMENTHEADERS += \
@@ -105,6 +106,7 @@ src/bin/e_comp.c \
 src/bin/e_comp_canvas.c \
 src/bin/e_comp_cfdata.c \
 src/bin/e_comp_object.c \
+src/bin/e_comp_drm.c \
 src/bin/e_config.c \
 src/bin/e_config_data.c \
 src/bin/e_dbusmenu.c \
@@ -183,7 +185,7 @@ src/bin/e_main.c \
 $(enlightenment_src)
 
 src_bin_enlightenment_LDFLAGS = -export-dynamic
-src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ @WL_DRM_LIBS@ -lm @SHM_OPEN_LIBS@ $(TTRACE_LIBS)
+src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ -lm @SHM_OPEN_LIBS@ $(TTRACE_LIBS)
 if HAVE_WAYLAND_TBM
 src_bin_enlightenment_LDADD += @WAYLAND_TBM_LIBS@ @ECORE_DRM_LIBS@
 endif

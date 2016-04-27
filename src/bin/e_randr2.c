@@ -44,11 +44,13 @@ E_API int              E_EVENT_RANDR_CHANGE = 0;
 EINTERN Eina_Bool
 e_randr2_init(void)
 {
+   INF("========= %s", __FUNCTION__);
+
    if (!E_EVENT_RANDR_CHANGE) E_EVENT_RANDR_CHANGE = ecore_event_type_new();
    if ((!e_comp->screen) || (!e_comp->screen->available) || (!e_comp->screen->available())) return EINA_FALSE;
    // create data descriptors for config storage
    _e_randr2_cfg_screen_edd =
-     E_CONFIG_DD_NEW("E_Config_Randr2_Screen", E_Config_Randr2_Screen);
+      E_CONFIG_DD_NEW("E_Config_Randr2_Screen", E_Config_Randr2_Screen);
 #undef T
 #undef D
 #define T E_Config_Randr2_Screen
@@ -88,13 +90,17 @@ e_randr2_init(void)
    if ((!e_randr2_cfg->restore) ||
        (_config_screen_match_count(e_randr2, e_randr2_cfg) == 0))
      {
+        Eina_Bool ret = EINA_FALSE;
         _config_update(e_randr2, e_randr2_cfg);
-        e_randr2_config_save();
+        ret = e_randr2_config_save();
+        INF("========= %s\t e_randr2_config_save return %d ", __FUNCTION__, ret);
      }
 
    _do_apply();
 
    ecore_event_add(E_EVENT_RANDR_CHANGE, NULL, NULL, NULL);
+   INF("========= %s END ===", __FUNCTION__);
+
    return EINA_TRUE;
 }
 
@@ -118,7 +124,7 @@ e_randr2_shutdown(void)
    // free up data descriptors
    E_CONFIG_DD_FREE(_e_randr2_cfg_edd);
    E_CONFIG_DD_FREE(_e_randr2_cfg_screen_edd)
-   return 1;
+      return 1;
 }
 
 E_API Eina_Bool
@@ -283,11 +289,15 @@ static E_Config_Randr2 *
 _config_load(void)
 {
    E_Config_Randr2 *cfg;
+   printf("--------------------------------------------------\n");
+   printf("%s\n", __FUNCTION__);
 
    // load config and check if version is up to date
    cfg = e_config_domain_load("e_randr2", _e_randr2_cfg_edd);
    if (cfg)
      {
+
+        printf("%s\t ver. is %d\n", __FUNCTION__, cfg->version);
         if (cfg->version < E_RANDR_CONFIG_VERSION)
           {
              _config_free(cfg);
@@ -296,11 +306,14 @@ _config_load(void)
         else
           {
              printf("RRR: loaded existing config\n");
+             printf("%s\t ver. is %d\n", __FUNCTION__, cfg->version);
+             printf("%s\t restore? %d\n", __FUNCTION__, cfg->restore);
+             printf("%s\t ignore_hotplug_events? %d\n", __FUNCTION__, cfg->ignore_hotplug_events);
+             printf("%s\t ignore_acpi_events? %d\n", __FUNCTION__, cfg->ignore_acpi_events);
              return cfg;
           }
      }
 
-   // need new config
    cfg = calloc(1, sizeof(E_Config_Randr2));
    cfg->version = E_RANDR_CONFIG_VERSION;
    cfg->screens = NULL;
@@ -318,6 +331,8 @@ _config_free(E_Config_Randr2 *cfg)
 
    if (!cfg) return;
    // free config data
+   printf("%s\n", __FUNCTION__);
+
    EINA_LIST_FREE(cfg->screens, cs) free(cs);
    free(cfg);
 }
@@ -325,8 +340,10 @@ _config_free(E_Config_Randr2 *cfg)
 static Eina_Bool
 _config_save(E_Randr2 *r, E_Config_Randr2 *cfg)
 {
+   printf("----------------%s\n", __FUNCTION__);
    if ((!r) || (!cfg)) return EINA_FALSE;
    // save config struct to cfg file
+   printf("----------------%s,  (r) || (cfg)\n", __FUNCTION__);
    return e_config_domain_save("e_randr2", _e_randr2_cfg_edd, cfg);
 }
 
@@ -336,6 +353,7 @@ _config_update(E_Randr2 *r, E_Config_Randr2 *cfg)
    Eina_List *l;
    E_Randr2_Screen *s;
    E_Config_Randr2_Screen *cs;
+   INF("========= %s ", __FUNCTION__);
 
    printf("--------------------------------------------------\n");
    EINA_LIST_FOREACH(r->screens, l, s)
@@ -574,6 +592,7 @@ _screens_differ(E_Randr2 *r1, E_Randr2 *r2)
 static Eina_Bool
 _cb_screen_change_delay(void *data EINA_UNUSED)
 {
+   INF("========= %s ", __FUNCTION__);
    _screen_delay_timer = NULL;
    printf("RRR: ... %i %i\n", event_screen, event_ignore);
    // if we had a screen plug/unplug etc. event and we shouldnt ignore it...
@@ -664,6 +683,7 @@ _screen_fuzzy_fallback_find(E_Config_Randr2 *cfg, const char *id)
 {
    E_Randr2_Screen *s = NULL;
    char *p, *name;
+   INF("========= %s ", __FUNCTION__);
 
    // strip out everythng in the string from / on as that is edid
    // and fall back to finding just the output name in the rel
@@ -690,6 +710,7 @@ _config_screen_clone_resolve(E_Config_Randr2 *cfg, const char *id, int *x, int *
    E_Config_Randr2_Screen *cs;
    E_Randr2_Screen *s;
    char *p, *name;
+   INF("========= %s ", __FUNCTION__);
 
    cs = _config_screen_string_find(cfg, id);
    if (!cs) return NULL;
@@ -718,6 +739,7 @@ _screen_clones_find(Eina_List *screens, E_Randr2_Screen *s)
    Eina_List *clones = NULL, *l;
    E_Randr2_Screen *s2, *sclone;
    Eina_Bool added;
+   INF("========= %s ", __FUNCTION__);
 
    // go over all screens and as long as we have found another screen that is
    // cloned from something in the clone set, then keep looking.
@@ -755,7 +777,7 @@ _screen_clones_find(Eina_List *screens, E_Randr2_Screen *s)
                        // break our list walk, and iterate while again
                        break;
                     }
-              }
+               }
           }
      }
    return clones;
@@ -769,6 +791,7 @@ _screen_clones_common_sync(Eina_List *clones)
    Eina_List *modes = NULL, *l, *l2, *l3;
    Eina_Bool common;
    int d, diff = 0x7fffffff;
+   INF("========= %s ", __FUNCTION__);
 
    // find the base/root/master screen for clones
    EINA_LIST_FOREACH(clones, l, s)
@@ -836,7 +859,7 @@ again:
         d += (sbase->config.mode.w - m->w) * (sbase->config.mode.w - m->w);
         d += (sbase->config.mode.h - m->h) * (sbase->config.mode.h - m->h);
         d += ((sbase->config.mode.refresh - m->refresh) * 10) *
-             ((sbase->config.mode.refresh - m->refresh) * 10);
+           ((sbase->config.mode.refresh - m->refresh) * 10);
         if ((m->w > sbase->config.mode.w) || (m->h > sbase->config.mode.h))
           continue;
         if (d < diff)
@@ -872,6 +895,7 @@ _screen_config_do(E_Randr2_Screen *s)
 {
    E_Randr2_Screen *s2 = NULL;
    Eina_List *cloneset;
+   INF("========= %s ", __FUNCTION__);
 
    printf("RRR: screen do '%s'\n", s->info.name);
    if (_config_do_recurse > 5)
@@ -933,31 +957,31 @@ _screen_config_do(E_Randr2_Screen *s)
              printf("RRR: to left relative\n");
              s->config.geom.x = s2->config.geom.x - s->config.geom.w;
              s->config.geom.y = s2->config.geom.y +
-             ((s2->config.geom.h - s->config.geom.h) *
-              s->config.relative.align);
+                ((s2->config.geom.h - s->config.geom.h) *
+                 s->config.relative.align);
           }
         else if (s->config.relative.mode == E_RANDR2_RELATIVE_TO_RIGHT)
           {
              printf("RRR: to right relative\n");
              s->config.geom.x = s2->config.geom.x + s2->config.geom.w;
              s->config.geom.y = s2->config.geom.y +
-             ((s2->config.geom.h - s->config.geom.h) *
-              s->config.relative.align);
+                ((s2->config.geom.h - s->config.geom.h) *
+                 s->config.relative.align);
           }
         else if (s->config.relative.mode == E_RANDR2_RELATIVE_TO_ABOVE)
           {
              printf("RRR: to above relative\n");
              s->config.geom.x = s2->config.geom.x +
-             ((s2->config.geom.w - s->config.geom.w) *
-              s->config.relative.align);
+                ((s2->config.geom.w - s->config.geom.w) *
+                 s->config.relative.align);
              s->config.geom.y = s2->config.geom.y - s->config.geom.h;
           }
         else if (s->config.relative.mode == E_RANDR2_RELATIVE_TO_BELOW)
           {
              printf("RRR: to below relative\n");
              s->config.geom.x = s2->config.geom.x +
-             ((s2->config.geom.w - s->config.geom.w) *
-              s->config.relative.align);
+                ((s2->config.geom.w - s->config.geom.w) *
+                 s->config.relative.align);
              s->config.geom.y = s2->config.geom.y + s2->config.geom.h;
           }
      }
@@ -1002,6 +1026,7 @@ _screen_config_eval(void)
    Eina_List *l;
    E_Randr2_Screen *s;
    int minx, miny, maxx, maxy;
+   INF("========= %s ", __FUNCTION__);
 
    EINA_LIST_FOREACH(e_randr2->screens, l, s)
      {
@@ -1042,6 +1067,7 @@ _screen_config_maxsize(void)
    Eina_List *l;
    E_Randr2_Screen *s;
    int maxx, maxy;
+   INF("========= %s ", __FUNCTION__);
 
    maxx = -65536;
    maxy = -65536;
@@ -1081,7 +1107,8 @@ _screen_sort_cb(const void *data1, const void *data2)
 
 E_API void
 e_randr2_screen_refresh_queue(Eina_Bool lid_event)
-{
+{ 
+   INF("========= %s ", __FUNCTION__);
    // delay handling of screen shances as they can come in in a series over
    // time and thus we can batch up responding to them by waiting 1.0 sec
    if (_screen_delay_timer)
@@ -1096,11 +1123,13 @@ e_randr2_config_screen_find(E_Randr2_Screen *s, E_Config_Randr2 *cfg)
 {
    Eina_List *l;
    E_Config_Randr2_Screen *cs;
+   INF("========= %s ", __FUNCTION__);
 
    if ((!s) || (!cfg)) return NULL;
    if (!s->id) return NULL;
    EINA_LIST_FOREACH(cfg->screens, l, cs)
      {
+        INF("========= %s  \t -%s | sid %s", __FUNCTION__, cs->id, s->id);
         if (!cs->id) continue;
         if (!strcmp(cs->id, s->id)) return cs;
      }
@@ -1117,6 +1146,7 @@ e_randr2_screens_setup(int rw, int rh)
    Eina_List *l, *ll;
    E_Randr2_Screen *s, *s2, *s_chosen;
    Eina_Bool removed;
+   INF("========= %s ", __FUNCTION__);
 
    if ((!e_randr2) || (!e_randr2->screens)) goto out;
    // put screens in tmp list
@@ -1228,5 +1258,6 @@ out:
 E_API Eina_Bool
 e_acpi_lid_is_closed(void)
 {
+   INF("========= %s ", __FUNCTION__);
    return EINA_FALSE;
 }

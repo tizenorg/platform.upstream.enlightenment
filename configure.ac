@@ -444,7 +444,7 @@ define([CHECK_MODULE_BUFFERQUEUE],
 AM_CONDITIONAL([HAVE_BUFFERQUEUE], [test "x${BUFFERQUEUE}" = "xtrue"])
 
 AC_E_OPTIONAL_MODULE([wl_desktop_shell], $have_wayland, [CHECK_MODULE_WL_DESKTOP_SHELL])
-AC_E_OPTIONAL_MODULE([wl_drm], $have_wayland, [CHECK_MODULE_WL_DRM])
+#AC_E_OPTIONAL_MODULE([wl_drm], $have_wayland, [CHECK_MODULE_WL_DRM])
 AC_E_OPTIONAL_MODULE([bufferqueue], $have_wayland, [CHECK_MODULE_BUFFERQUEUE])
 
 if test "x${have_wayland}" = "xyes"; then

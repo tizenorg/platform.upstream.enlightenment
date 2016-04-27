@@ -52,6 +52,7 @@
 #include "e_hints.h"
 #include "e_plane.h"
 #include "e_comp_hwc.h"
+#include "e_comp_drm.h"
 
 #ifdef HAVE_WAYLAND
 # include "e_comp_wl.h"
