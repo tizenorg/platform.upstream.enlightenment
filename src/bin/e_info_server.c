@@ -2,6 +2,7 @@
 #include "e.h"
 #include <tbm_bufmgr.h>
 #include <tbm_surface.h>
+#include <tbm_surface_internal.h>
 #include <tdm_helper.h>
 #ifdef HAVE_WAYLAND_ONLY
 #include <wayland-tbm-server.h>
@@ -848,6 +849,47 @@ e_info_server_cb_transform_message(const Eldbus_Service_Interface *iface EINA_UN
 }
 
 static Eina_Bool
+_e_info_server_cb_hwc_buffer_change(void *data, int type, void *event)
+{
+   E_Client *ec;
+   E_Event_Client *ev = event;
+   Ecore_Window event_win;
+   char fname[1024];
+   E_Comp_Wl_Buffer *buffer;
+   tbm_surface_h tbm_surface;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ev, ECORE_CALLBACK_PASS_ON);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ev->ec, ECORE_CALLBACK_PASS_ON);
+
+   /* dump buffer change call event buffer */
+   ec = ev->ec;
+   if (e_object_is_del(E_OBJECT(ec)))
+     {
+        ERR("%s: e_object_is_del(E_OBJECT(ec) return\n", __func__);
+        return ECORE_CALLBACK_PASS_ON;
+     }
+   if (e_client_util_ignored_get(ec))
+     {
+        ERR("%s: e_client_util_ignored_get(ec) true. return\n", __func__);
+        return ECORE_CALLBACK_PASS_ON;
+     }
+   event_win = e_client_util_win_get(ec);
+
+   buffer = e_pixmap_resource_get(ec->pixmap);
+   if (!buffer) return ECORE_CALLBACK_PASS_ON;
+
+   tbm_surface = wayland_tbm_server_get_surface(NULL, buffer->resource);
+
+   snprintf(fname, sizeof(fname), "buffer_commit_0x%08x", event_win);
+   tbm_internal_surface_dump_buffer(tbm_surface, fname);
+
+   DBG("%s dump excute\n", fname);
+
+   return ECORE_CALLBACK_PASS_ON;
+}
+
+
+static Eina_Bool
 _e_info_server_cb_buffer_change(void *data, int type, void *event)
 {
    E_Client *ec;
@@ -952,6 +994,58 @@ _e_info_server_dump_directory_make(void)
    return fullpath;
 }
 #endif
+
+static Eldbus_Message *
+_e_info_server_cb_hwc_dump(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   int start = 0;
+
+   if (!eldbus_message_arguments_get(msg, "i", &start))
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   if (start == 1)
+     {
+        if (e_info_dump_running == 1)
+           return reply;
+        e_info_dump_running = 1;
+        e_info_dump_path = _e_info_server_dump_directory_make();
+        if (e_info_dump_path == NULL)
+          {
+             e_info_dump_running = 0;
+             ERR("dump_buffers start fail\n");
+          }
+        else
+          {
+             /* start dump */
+             tbm_surface_internal_dump_start(e_info_dump_path, e_comp->w*e_comp->h*4, 100);
+             E_LIST_HANDLER_APPEND(e_info_dump_hdlrs, E_EVENT_CLIENT_BUFFER_CHANGE,
+                                   _e_info_server_cb_hwc_buffer_change, NULL);
+          }
+     }
+   else
+     {
+        if (e_info_dump_running == 0)
+          return reply;
+
+        tbm_surface_internal_dump_end();
+
+        E_FREE_LIST(e_info_dump_hdlrs, ecore_event_handler_del);
+        e_info_dump_hdlrs = NULL;
+        if (e_info_dump_path)
+          {
+             free(e_info_dump_path);
+             e_info_dump_path = NULL;
+          }
+        e_info_dump_running = 0;
+     }
+
+   return reply;
+}
+
 static Eldbus_Message *
 _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
 {
@@ -1038,6 +1132,7 @@ static const Eldbus_Method methods[] = {
    { "transform_message", ELDBUS_ARGS({"siiiiiiii", "transform_message"}), NULL, e_info_server_cb_transform_message, 0},
    { "dump_buffers", ELDBUS_ARGS({"i", "start"}), NULL, _e_info_server_cb_buffer_dump, 0 },
 #ifdef HAVE_HWC
+   { "hwc_dump", ELDBUS_ARGS({"i", "start"}), NULL, _e_info_server_cb_hwc_dump, 0 },
    { "hwc_trace_message", ELDBUS_ARGS({"i", "hwc_trace_message"}), NULL, e_info_server_cb_hwc_trace_message, 0},
 #endif
    { NULL, NULL, NULL, NULL, 0 }
