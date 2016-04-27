@@ -947,6 +947,32 @@ _e_info_client_proc_buffer_shot(int argc, char **argv)
 
 #ifdef HAVE_HWC
 static void
+_e_info_client_proc_hwc_dump(int argc, char **argv)
+{
+   if (argc == 3)
+     {
+        int dumprun = atoi(argv[2]);
+
+        if (dumprun < 0 || dumprun > 1)
+          {
+             printf("Error Check Args : enlightenment_info -hwc_dump [1: start, 0: stop]\n");
+             return;
+          }
+
+        if (!_e_info_client_eldbus_message_with_args("hwc_dump", NULL, "i", dumprun))
+          {
+             printf("_e_info_client_proc_buffer_shot fail (%d)\n", dumprun);
+             return;
+          }
+        printf("_e_info_client_proc_buffer_shot %s\n", (dumprun == 1 ? "start" : "stop"));
+     }
+   else
+     {
+        printf("Error Check Args : enlightenment_info -hwc_dump [1: start, 0: stop]\n");
+     }
+}
+
+static void
 _e_info_client_proc_hwc_trace(int argc, char **argv)
 {
    uint32_t onoff;
@@ -1044,6 +1070,11 @@ static struct
       _e_info_client_proc_buffer_shot
    },
 #ifdef HAVE_HWC
+   {
+      "hwc_dump", "[start:1,stop:0]",
+      "Dump attach buffers (start:1,stop:0, path:/tmp/dump_xxx/)",
+      _e_info_client_proc_hwc_dump
+   },
    {
       "hwc_trace",
       "[on: 1, off: 0]",
