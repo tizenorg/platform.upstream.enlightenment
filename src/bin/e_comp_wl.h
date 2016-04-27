@@ -50,6 +50,7 @@ typedef struct _E_Comp_Wl_Client_Data E_Comp_Wl_Client_Data;
 typedef struct _E_Comp_Wl_Data E_Comp_Wl_Data;
 typedef struct _E_Comp_Wl_Output E_Comp_Wl_Output;
 typedef struct _E_Comp_Wl_Input_Device E_Comp_Wl_Input_Device;
+typedef struct _E_Comp_Wl_Input_Kbd_Keys E_Comp_Wl_Input_Kbd_Keys;
 
 typedef enum _E_Comp_Wl_Buffer_Type
 {
@@ -142,6 +143,12 @@ struct _E_Comp_Wl_Input_Device
    const char *name;
    const char *identifier;
    unsigned int capability;
+};
+
+struct _E_Comp_Wl_Input_Kbd_Keys
+{
+   unsigned int keycode;
+   Eina_Bool routed;
 };
 
 struct _E_Comp_Wl_Data
