@@ -33,6 +33,9 @@ EINTERN void      e_comp_hwc_shutdown(void);
 EINTERN Eina_Bool e_comp_hwc_mode_nocomp(E_Client *ec);
 EINTERN void      e_comp_hwc_display_client(E_Client *ec);
 EINTERN void      e_comp_hwc_trace_debug(Eina_Bool onoff);
+Eina_Bool         e_comp_hwc_native_surface_set(E_Client *ec);
+void              e_comp_hwc_client_reset(E_Client *ec);
+
 EINTERN Eina_Bool e_comp_hwc_plane_init(E_Zone *zone);
 
 E_API E_Output * e_output_new(E_Zone *zone);
