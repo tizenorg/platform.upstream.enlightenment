@@ -1720,22 +1720,8 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
    /* only do the show if show is allowed */
    if (!cw->real_hid)
      {
-#ifndef HAVE_WAYLAND_ONLY
-        E_Comp_X_Client_Data *cd = NULL;
-        cd = (E_Comp_X_Client_Data *)cw->ec->comp_data;
-#endif
         if (cw->ec->internal) //internal clients render when they feel like it
           e_comp_object_damage(cw->smart_obj, 0, 0, cw->w, cw->h);
-#ifndef HAVE_WAYLAND_ONLY
-        if (ecore_x_icccm_state_get(e_client_util_win_get(cw->ec)) != ECORE_X_WINDOW_STATE_HINT_NORMAL)
-          e_hints_window_visible_set(cw->ec);
-#endif
-
-#ifndef HAVE_WAYLAND_ONLY
-        if (!cw->update_count || !(e_pixmap_validate_check(cw->ec->pixmap))
-            || (cd->damage_count < (e_comp_config_get()->skip_first_damage + 1)))
-          return;
-#endif
 
         evas_object_show(cw->smart_obj);
      }
@@ -3444,13 +3430,13 @@ e_comp_object_shape_apply(Evas_Object *obj)
    evas_object_image_size_get(cw->obj, &w, &h);
    if ((w < 1) || (h < 1)) return;
 
-   //INF("SHAPE RENDER %p", cw->ec);
-
-   if (cw->ec->shaped) evas_object_image_native_surface_set(cw->obj, NULL);
+   if (cw->ec->shaped)
+     evas_object_image_native_surface_set(cw->obj, NULL);
    _e_comp_object_alpha_set(cw);
    EINA_LIST_FOREACH(cw->obj_mirror, l, o)
      {
-        if (cw->ec->shaped) evas_object_image_native_surface_set(o, NULL);
+        if (cw->ec->shaped)
+          evas_object_image_native_surface_set(o, NULL);
         evas_object_image_alpha_set(o, 1);
      }
 
@@ -3583,21 +3569,10 @@ e_comp_object_native_surface_set(Evas_Object *obj, Eina_Bool set)
           (!cw->ec->shaped));
         if (set)
           set = (!!cw->ns) || e_pixmap_native_surface_init(cw->ec->pixmap, &ns);
-
-        /* to show underlay plane on x11, compositor should fill
-         * alpha value of COW with given 24bit window's alpha.
-         */
-        if (set)
-          {
-             E_Pixmap_Type type;
-             type = e_pixmap_type_get(cw->ec->pixmap);
-             if ((type == E_PIXMAP_TYPE_X) && (!cw->ec->argb))
-               evas_object_render_op_set(cw->obj, EVAS_RENDER_COPY);
-          }
      }
    cw->native = set;
 
-   evas_object_image_native_surface_set(cw->obj, set && (!cw->blanked) ? (cw->ns ?: &ns) : NULL);
+   evas_object_image_native_surface_set(cw->obj, set && (!cw->blanked) ? (cw->ns ? cw->ns : &ns) : NULL);
    EINA_LIST_FOREACH(cw->obj_mirror, l, o)
      {
         evas_object_image_alpha_set(o, !!cw->ns ? 1 : cw->ec->argb);
@@ -3663,13 +3638,10 @@ e_comp_object_dirty(Evas_Object *obj)
    if (cw->mask_obj) evas_object_resize(cw->mask_obj, w, h);
    if (cw->transform_bg_obj) evas_object_resize(cw->transform_bg_obj, w, h);
 
-   RENDER_DEBUG("SIZE [%p]: %dx%d", cw->ec, w, h);
    if (cw->pending_updates)
      eina_tiler_area_size_set(cw->pending_updates, w, h);
    EINA_LIST_FOREACH(cw->obj_mirror, ll, o)
      {
-        //evas_object_image_border_set(o, bx, by, bxx, byy);
-        //evas_object_image_border_center_fill_set(o, EVAS_BORDER_FILL_SOLID);
         evas_object_image_pixels_dirty_set(o, dirty);
         if (!dirty)
           evas_object_image_data_set(o, NULL);
@@ -3685,7 +3657,6 @@ e_comp_object_dirty(Evas_Object *obj)
    it = eina_tiler_iterator_new(cw->updates);
    EINA_ITERATOR_FOREACH(it, rect)
      {
-        RENDER_DEBUG("UPDATE ADD [%p]: %d %d %dx%d", cw->ec, rect->x, rect->y, rect->w, rect->h);
         evas_object_image_data_update_add(cw->obj, rect->x, rect->y, rect->w, rect->h);
         EINA_LIST_FOREACH(cw->obj_mirror, ll, o)
           evas_object_image_data_update_add(o, rect->x, rect->y, rect->w, rect->h);
@@ -3750,22 +3721,6 @@ e_comp_object_render(Evas_Object *obj)
              EINA_ITERATOR_FOREACH(it, r)
                {
                   E_RECTS_CLIP_TO_RECT(r->x, r->y, r->w, r->h, 0, 0, pw, ph);
-                  /* get pixmap data from rect region on display server into memory */
-                  ret = e_pixmap_image_draw(cw->ec->pixmap, r);
-                  if (!ret)
-                    {
-                       WRN("UPDATE [%p]: %i %i %ix%i FAIL(%u)!!!!!!!!!!!!!!!!!", cw->ec, r->x, r->y, r->w, r->h, cw->failures);
-                       if (++cw->failures < FAILURE_MAX)
-                         e_comp_object_damage(obj, 0, 0, pw, ph);
-                       else
-                         {
-                            DELD(cw->ec, 2);
-                            e_object_del(E_OBJECT(cw->ec));
-                            return EINA_FALSE;
-                         }
-                       break;
-                    }
-                  RENDER_DEBUG("UPDATE [%p] %i %i %ix%i", cw->ec, r->x, r->y, r->w, r->h);
                }
           }
         else
@@ -3796,20 +3751,6 @@ e_comp_object_render(Evas_Object *obj)
    EINA_ITERATOR_FOREACH(it, r)
      {
         E_RECTS_CLIP_TO_RECT(r->x, r->y, r->w, r->h, 0, 0, pw, ph);
-        ret = e_pixmap_image_draw(cw->ec->pixmap, r);
-        if (!ret)
-          {
-             WRN("UPDATE [%p]: %i %i %ix%i FAIL(%u)!!!!!!!!!!!!!!!!!", cw->ec, r->x, r->y, r->w, r->h, cw->failures);
-             if (++cw->failures < FAILURE_MAX)
-               e_comp_object_damage(obj, 0, 0, pw, ph);
-             else
-               {
-                  DELD(cw->ec, 3);
-                  e_object_del(E_OBJECT(cw->ec));
-                  return EINA_FALSE;
-               }
-             break;
-          }
         e_pixmap_image_data_argb_convert(cw->ec->pixmap, pix, srcpix, r, stride);
         RENDER_DEBUG("UPDATE [%p]: %d %d %dx%d -- pix = %p", cw->ec, r->x, r->y, r->w, r->h, pix);
      }
