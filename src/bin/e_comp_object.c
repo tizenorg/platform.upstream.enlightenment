@@ -4344,3 +4344,16 @@ e_comp_object_layer_update(Evas_Object *obj,
    else
      _e_comp_object_layers_add(cw, NULL, NULL, 0);
 }
+
+void
+e_comp_object_native_surface_tbm_surface_set(Evas_Object *obj, void *data)
+{
+   Evas_Native_Surface ns;
+   API_ENTRY;
+   EINA_SAFETY_ON_NULL_RETURN(cw->ec);
+
+   ns.version = EVAS_NATIVE_SURFACE_VERSION;
+   ns.type = EVAS_NATIVE_SURFACE_TBM;
+   ns.data.tbm.buffer = data;
+   evas_object_image_native_surface_set(cw->obj, &ns);
+}
