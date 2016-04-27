@@ -979,6 +979,7 @@ _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_l
    E_Comp_Hwc_Renderer *hwc_renderer = hwc_layer->hwc_renderer;
    E_Comp_Hwc_Commit_Data *data = NULL;
    tdm_output_dpms dpms_value;
+   char fname[1024];
 
    error = tdm_output_get_dpms(toutput, &dpms_value);
    if (error != TDM_ERROR_NONE)
@@ -1094,6 +1095,20 @@ _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_l
              return EINA_FALSE;
           }
      }
+
+   if (is_canvas)
+     {
+		 snprintf(fname, sizeof(fname), "hwc_output_commit_canvas");
+     }
+   else
+     {
+        Ecore_Window win;
+        win = e_client_util_win_get(data->ec);
+
+        snprintf(fname, sizeof(fname), "hwc_output_commit_0x%08x", win);
+     }
+   tbm_internal_surface_dump_buffer(tsurface, fname);
+
 
    return EINA_TRUE;
 }
