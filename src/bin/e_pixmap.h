@@ -44,10 +44,7 @@ E_API E_Comp_Client_Data *e_pixmap_cdata_get(E_Pixmap *cp);
 E_API void e_pixmap_cdata_set(E_Pixmap *cp, E_Comp_Client_Data *cdata);
 E_API void e_pixmap_resource_set(E_Pixmap *cp, void *resource);
 E_API void e_pixmap_parent_window_set(E_Pixmap *cp, Ecore_Window win);
-E_API void e_pixmap_visual_cmap_set(E_Pixmap *cp, void *visual, unsigned int cmap);
 E_API unsigned int e_pixmap_failures_get(const E_Pixmap *cp);
-E_API void *e_pixmap_visual_get(const E_Pixmap *cp);
-E_API uint32_t e_pixmap_pixmap_get(const E_Pixmap *cp);
 E_API Eina_Bool e_pixmap_dirty_get(E_Pixmap *cp);
 E_API void e_pixmap_clear(E_Pixmap *cp);
 E_API void e_pixmap_usable_set(E_Pixmap *cp, Eina_Bool set);
@@ -71,13 +68,9 @@ E_API Eina_Bool e_pixmap_image_exists(const E_Pixmap *cp);
 E_API Eina_Bool e_pixmap_image_is_argb(const E_Pixmap *cp);
 E_API void *e_pixmap_image_data_get(E_Pixmap *cp);
 E_API Eina_Bool e_pixmap_image_data_argb_convert(E_Pixmap *cp, void *pix, void *ipix, Eina_Rectangle *r, int stride);
-E_API Eina_Bool e_pixmap_image_draw(E_Pixmap *cp, const Eina_Rectangle *r);
-E_API Eina_Bool e_pixmap_validate_check(const E_Pixmap *cp);
 
 E_API void e_pixmap_image_opaque_set(E_Pixmap *cp, int x, int y, int w, int h);
 E_API void e_pixmap_image_opaque_get(E_Pixmap *cp, int *x, int *y, int *w, int *h);
-
-E_API void e_pixmap_alias(E_Pixmap *cp, E_Pixmap_Type type, ...);
 
 E_API E_Pixmap_Hook *e_pixmap_hook_add(E_Pixmap_Hook_Point hookpoint, E_Pixmap_Hook_Cb func, const void *data);
 E_API void e_pixmap_hook_del(E_Pixmap_Hook *ph);
