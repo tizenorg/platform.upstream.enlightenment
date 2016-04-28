@@ -99,11 +99,10 @@ _e_pixmap_cb_buffer_destroy(struct wl_listener *listener, void *data EINA_UNUSED
 static void
 _e_pixmap_clear(E_Pixmap *cp, Eina_Bool cache)
 {
-   if (cp->type != E_PIXMAP_TYPE_WL) return;
-
    cp->w = cp->h = 0;
    cp->image_argb = EINA_FALSE;
 
+   if (cp->type != E_PIXMAP_TYPE_WL) return;
    e_pixmap_image_clear(cp, cache);
    ELOG("PIXMAP CLEAR", cp, cp->client);
 }
@@ -324,7 +323,7 @@ e_pixmap_dirty(E_Pixmap *cp)
 E_API Eina_Bool
 e_pixmap_refresh(E_Pixmap *cp)
 {
-   E_Comp_Wl_Buffer *buffer = cp->buffer;
+   E_Comp_Wl_Buffer *buffer;
    struct wl_shm_buffer *shm_buffer;
    int format;
    Eina_Bool success = EINA_FALSE;
@@ -342,6 +341,7 @@ e_pixmap_refresh(E_Pixmap *cp)
    cp->w = cp->h = 0;
    cp->image_argb = EINA_FALSE;
 
+   buffer = cp->buffer;
    if (!buffer) return EINA_FALSE;
 
    shm_buffer = buffer->shm_buffer;
@@ -368,7 +368,6 @@ e_pixmap_refresh(E_Pixmap *cp)
      }
 
    success = ((cp->w > 0) && (cp->h > 0));
-
    if (success)
      {
         cp->dirty = 0;
@@ -376,6 +375,7 @@ e_pixmap_refresh(E_Pixmap *cp)
      }
    else
      cp->failures++;
+
    return success;
 }
 
