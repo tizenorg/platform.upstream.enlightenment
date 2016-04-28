@@ -1155,7 +1155,10 @@ _e_comp_screensaver_off(void *data EINA_UNUSED, int type EINA_UNUSED, void *even
 static void
 _e_launchscreen_free(E_Launch_Screen *plscrn)
 {
-   if(plscrn->shobj) evas_object_del(plscrn->shobj);
+   if (plscrn->shobj) evas_object_del(plscrn->shobj);
+   if (plscrn->ep) e_pixmap_del(plscrn->ep);
+   if (plscrn->ec) e_object_del(E_OBJECT(plscrn->ec));
+
    E_FREE(plscrn);
 }
 
@@ -1183,10 +1186,29 @@ _e_launchscreen_new(Ecore_Evas *ee)
    evas_object_resize(plscrn->shobj, e_comp->w, e_comp->h);
    evas_object_layer_set(plscrn->shobj, E_LAYER_CLIENT_TOP);
    edje_object_file_set(plscrn->shobj, conf->launch_file, "e/comp/effects/launch");
+
+   plscrn->ep = e_pixmap_new(E_PIXMAP_TYPE_WL, 987654321);
+   EINA_SAFETY_ON_NULL_GOTO(plscrn->ep, error);
+   plscrn->ec = e_client_new(plscrn->ep, 0, 1);
+   EINA_SAFETY_ON_NULL_GOTO(plscrn->ec, error);
+
+   if (plscrn->ec->frame)
+     evas_object_resize(plscrn->ec->frame, plscrn->ec->zone->w, plscrn->ec->zone->h);
+
+   plscrn->ec->netwm.pid = getpid();
+   plscrn->ec->netwm.name = eina_stringshare_add("E-launch_screen");
+
    return plscrn;
 
 error:
    ERR("Could not initialize launchscreen");
+   if (plscrn)
+     {
+        if (plscrn->shobj) evas_object_del(plscrn->shobj);
+        if (plscrn->ep) e_pixmap_del(plscrn->ep);
+        if (plscrn->ec) e_object_del(E_OBJECT(plscrn->ec));
+        E_FREE(plscrn);
+     }
    return NULL;
 }
 

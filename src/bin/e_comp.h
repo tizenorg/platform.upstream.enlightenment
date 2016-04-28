@@ -83,7 +83,9 @@ typedef struct E_Comp_Screen_Iface
 typedef struct _E_Launch_Screen
 {
    Evas_Object *shobj;
-   Ecore_Timer    *timeout;
+   E_Pixmap    *ep;
+   E_Client    *ec;
+   Ecore_Timer *timeout;
 } E_Launch_Screen;
 
 typedef struct _E_Comp_Hook E_Comp_Hook;

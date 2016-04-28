@@ -2693,7 +2693,8 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
           }
         else
           {
-             if (!evas_object_visible_get(ec->frame))
+             if ((!evas_object_visible_get(ec->frame)) &&
+                 (ec != e_comp->launchscrn->ec))
                {
                   if (cdata && !cdata->mapped)
                     {
