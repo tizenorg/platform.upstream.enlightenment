@@ -9,6 +9,7 @@
 E_API int E_EVENT_TEXT_INPUT_PANEL_VISIBILITY_CHANGE = -1;
 static Eina_Bool dont_set_ecore_drm_keymap = EINA_FALSE;
 static Eina_Bool dont_use_xkb_cache = EINA_FALSE;
+static Eina_Bool use_cache_keymap = EINA_FALSE;
 
 static void
 _e_comp_wl_input_update_seat_caps(void)
@@ -714,6 +715,12 @@ e_comp_wl_input_keyboard_enabled_set(Eina_Bool enabled)
    _e_comp_wl_input_update_seat_caps();
 }
 
+E_API Eina_Bool
+e_comp_wl_input_keymap_cache_file_use_get(void)
+{
+   return use_cache_keymap;
+}
+
 E_API Eina_Stringshare *
 e_comp_wl_input_keymap_path_get(struct xkb_rule_names names)
 {
@@ -724,7 +731,6 @@ e_comp_wl_input_keymap_path_get(struct xkb_rule_names names)
             names.variant ? names.variant : "",
             names.options ? names.options : "");
 }
-
 
 E_API struct xkb_keymap *
 e_comp_wl_input_keymap_compile(struct xkb_context *ctx, struct xkb_rule_names names, char **keymap_path)
@@ -749,6 +755,7 @@ e_comp_wl_input_keymap_compile(struct xkb_context *ctx, struct xkb_rule_names na
 
         /* fetch new keymap based on names */
         keymap = xkb_map_new_from_names(ctx, &names, 0);
+        use_cache_keymap = EINA_FALSE;
      }
    else
      {
@@ -760,12 +767,14 @@ e_comp_wl_input_keymap_compile(struct xkb_context *ctx, struct xkb_rule_names na
              fclose(file);
              remove(cache_path);
              keymap = xkb_map_new_from_names(ctx, &names, 0);
+             use_cache_keymap = EINA_FALSE;
           }
         else
           {
              eina_stringshare_del(cache_path);
              cache_path = NULL;
              fclose(file);
+             use_cache_keymap = EINA_TRUE;
           }
      }
 
