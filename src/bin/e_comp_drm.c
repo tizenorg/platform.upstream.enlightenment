@@ -148,7 +148,7 @@ _e_comp_drm_cb_input_device_del(void *data, int type, void *event)
      }
 
 end:
-   if (!e_randr2_cfg->ignore_hotplug_events)
+   if (!e_randr2->ignore_hotplug_events)
      e_randr2_screen_refresh_queue(EINA_TRUE);
 
    return ECORE_CALLBACK_PASS_ON;
@@ -200,211 +200,211 @@ _e_comp_drm_output_screen_get(Ecore_Drm_Output *output)
    return strdup(model);
 }
 
-static E_Randr2_Screen *
-_info_unconf_primary_find(E_Randr2 *r)
-{
-   Eina_List *l;
-   E_Randr2_Screen *s, *s_primary = NULL;
-   int priority = 0;
+//static E_Randr2_Screen *
+//_info_unconf_primary_find(E_Randr2 *r)
+//{
+//   Eina_List *l;
+//   E_Randr2_Screen *s, *s_primary = NULL;
+//   int priority = 0;
+//
+//   EINA_LIST_FOREACH(r->screens, l, s)
+//     {
+//        if (!((s->config.enabled) && 
+//              (s->config.mode.w > 0) && (s->config.mode.h > 0) &&
+//              (s->config.geom.w > 0) && (s->config.geom.h > 0)))
+//          continue;
+//        if (s->config.priority > priority)
+//          {
+//             s_primary = s;
+//             priority = s->config.priority;
+//          }
+//     }
+//
+//   return s_primary;
+//}
 
-   EINA_LIST_FOREACH(r->screens, l, s)
-     {
-        if (!((s->config.enabled) && 
-              (s->config.mode.w > 0) && (s->config.mode.h > 0) &&
-              (s->config.geom.w > 0) && (s->config.geom.h > 0)))
-          continue;
-        if (s->config.priority > priority)
-          {
-             s_primary = s;
-             priority = s->config.priority;
-          }
-     }
+//static E_Randr2_Screen *
+//_info_unconf_left_find(E_Randr2 *r)
+//{
+//   Eina_List *l;
+//   E_Randr2_Screen *s, *s_left = NULL;
+//   int left_x = 0x7fffffff;
+//   int left_size = 0;
+//
+//   EINA_LIST_FOREACH(r->screens, l, s)
+//     {
+//        if (!((s->config.enabled) &&
+//              (s->config.mode.w > 0) && (s->config.mode.h > 0) &&
+//              (s->config.geom.w > 0) && (s->config.geom.h > 0)))
+//          continue;
+//        if ((s->config.geom.x <= left_x) &&
+//            ((s->config.geom.w * s->config.geom.h) > left_size))
+//          {
+//             left_size = s->config.geom.w * s->config.geom.h;
+//             left_x = s->config.geom.x;
+//             s_left = s;
+//          }
+//     }
+//   return s_left;
+//}
 
-   return s_primary;
-}
+//static E_Randr2_Screen *
+//_info_unconf_closest_find(E_Randr2 *r, E_Randr2_Screen *s2, Eina_Bool configured)
+//{
+//   Eina_List *l;
+//   E_Randr2_Screen *s, *s_sel = NULL;
+//   int dist = 0x7fffffff;
+//   int dx, dy;
+//
+//   EINA_LIST_FOREACH(r->screens, l, s)
+//     {
+//        if (s == s2) continue;
+//        if (!((s->config.enabled) &&
+//              (s->config.mode.w > 0) && (s->config.mode.h > 0) &&
+//              (s->config.geom.w > 0) && (s->config.geom.h > 0)))
+//          continue;
+//        if ((!configured) &&
+//            (s->config.relative.mode != E_RANDR2_RELATIVE_UNKNOWN))
+//          continue;
+//        else if ((configured) &&
+//                 (s->config.relative.mode == E_RANDR2_RELATIVE_UNKNOWN))
+//          continue;
+//        dx = (s->config.geom.x + (s->config.geom.w / 2)) -
+//           (s2->config.geom.x + (s2->config.geom.w / 2));
+//        dy = (s->config.geom.y + (s->config.geom.h / 2)) -
+//           (s2->config.geom.y + (s2->config.geom.h / 2));
+//        dx = sqrt((dx * dx) + (dy * dy));
+//        if (dx < dist)
+//          {
+//             s_sel = s;
+//             dist = dx;
+//          }
+//     }
+//   return s_sel;
+//}
 
-static E_Randr2_Screen *
-_info_unconf_left_find(E_Randr2 *r)
-{
-   Eina_List *l;
-   E_Randr2_Screen *s, *s_left = NULL;
-   int left_x = 0x7fffffff;
-   int left_size = 0;
+//static void
+//_e_comp_drm_relative_fixup(E_Randr2 *r)
+//{
+//   E_Randr2_Screen *s, *s2;
+//   int d, dx, dy;
+//
+//   s = _info_unconf_primary_find(r);
+//   if (s)
+//     s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
+//   else
+//     {
+//        s = _info_unconf_left_find(r);
+//        if (!s) return;
+//        s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
+//     }
+//
+//   for (;;)
+//     {
+//        // find the next screen that is closest to the last one we configured
+//        /// that is still not configured yet
+//        s = _info_unconf_closest_find(r, s, EINA_FALSE);
+//        if (!s) break;
+//        s2 = _info_unconf_closest_find(r, s, EINA_TRUE);
+//        // fix up s->config.relative.mode, s->config.relative.to and
+//        // s->config.relative.align to match (as closely as possible)
+//        // the geometry given - config s relative to s2
+//        if (!s2) s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
+//        else
+//          {
+//             s->config.relative.to = strdup(s2->id);
+//             s->config.relative.align = 0.0;
+//             s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
+//             if ((s->config.geom.x + s->config.geom.w) <=
+//                 s2->config.geom.x)
+//               {
+//                  s->config.relative.mode = E_RANDR2_RELATIVE_TO_LEFT;
+//                  d = s->config.geom.h - s2->config.geom.h;
+//                  dy = s2->config.geom.y - s->config.geom.y;
+//                  if (d != 0)
+//                    s->config.relative.align = ((double)dy) / ((double)d);
+//               }
+//             else if (s->config.geom.x >=
+//                      (s2->config.geom.x + s2->config.geom.w))
+//               {
+//                  s->config.relative.mode = E_RANDR2_RELATIVE_TO_RIGHT;
+//                  d = s->config.geom.h - s2->config.geom.h;
+//                  dy = s2->config.geom.y - s->config.geom.y;
+//                  if (d != 0)
+//                    s->config.relative.align = ((double)dy) / ((double)d);
+//               }
+//             else if ((s->config.geom.y + s->config.geom.h) <=
+//                      s2->config.geom.y)
+//               {
+//                  s->config.relative.mode = E_RANDR2_RELATIVE_TO_ABOVE;
+//                  d = s->config.geom.w - s2->config.geom.w;
+//                  dx = s2->config.geom.x - s->config.geom.x;
+//                  if (d != 0)
+//                    s->config.relative.align = ((double)dx) / ((double)d);
+//               }
+//             else if (s->config.geom.y >=
+//                      (s2->config.geom.y + s2->config.geom.h))
+//               {
+//                  s->config.relative.mode = E_RANDR2_RELATIVE_TO_BELOW;
+//                  d = s->config.geom.w - s2->config.geom.w;
+//                  dx = s2->config.geom.x - s->config.geom.x;
+//                  if (d != 0)
+//                    s->config.relative.align = ((double)dx) / ((double)d);
+//               }
+//             else if ((s->config.geom.x == s2->config.geom.x) &&
+//                      (s->config.geom.y == s2->config.geom.y) &&
+//                      (s->config.geom.w == s2->config.geom.w) &&
+//                      (s->config.geom.h == s2->config.geom.h))
+//               {
+//                  s->config.relative.mode = E_RANDR2_RELATIVE_CLONE;
+//               }
+//             if (s->config.relative.align < 0.0)
+//               s->config.relative.align = 0.0;
+//             else if (s->config.relative.align > 1.0)
+//               s->config.relative.align = 1.0;
+//          }
+//     }
+//}
 
-   EINA_LIST_FOREACH(r->screens, l, s)
-     {
-        if (!((s->config.enabled) &&
-              (s->config.mode.w > 0) && (s->config.mode.h > 0) &&
-              (s->config.geom.w > 0) && (s->config.geom.h > 0)))
-          continue;
-        if ((s->config.geom.x <= left_x) &&
-            ((s->config.geom.w * s->config.geom.h) > left_size))
-          {
-             left_size = s->config.geom.w * s->config.geom.h;
-             left_x = s->config.geom.x;
-             s_left = s;
-          }
-     }
-   return s_left;
-}
-
-static E_Randr2_Screen *
-_info_unconf_closest_find(E_Randr2 *r, E_Randr2_Screen *s2, Eina_Bool configured)
-{
-   Eina_List *l;
-   E_Randr2_Screen *s, *s_sel = NULL;
-   int dist = 0x7fffffff;
-   int dx, dy;
-
-   EINA_LIST_FOREACH(r->screens, l, s)
-     {
-        if (s == s2) continue;
-        if (!((s->config.enabled) &&
-              (s->config.mode.w > 0) && (s->config.mode.h > 0) &&
-              (s->config.geom.w > 0) && (s->config.geom.h > 0)))
-          continue;
-        if ((!configured) &&
-            (s->config.relative.mode != E_RANDR2_RELATIVE_UNKNOWN))
-          continue;
-        else if ((configured) &&
-                 (s->config.relative.mode == E_RANDR2_RELATIVE_UNKNOWN))
-          continue;
-        dx = (s->config.geom.x + (s->config.geom.w / 2)) -
-           (s2->config.geom.x + (s2->config.geom.w / 2));
-        dy = (s->config.geom.y + (s->config.geom.h / 2)) -
-           (s2->config.geom.y + (s2->config.geom.h / 2));
-        dx = sqrt((dx * dx) + (dy * dy));
-        if (dx < dist)
-          {
-             s_sel = s;
-             dist = dx;
-          }
-     }
-   return s_sel;
-}
-
-static void
-_e_comp_drm_relative_fixup(E_Randr2 *r)
-{
-   E_Randr2_Screen *s, *s2;
-   int d, dx, dy;
-
-   s = _info_unconf_primary_find(r);
-   if (s)
-     s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
-   else
-     {
-        s = _info_unconf_left_find(r);
-        if (!s) return;
-        s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
-     }
-
-   for (;;)
-     {
-        // find the next screen that is closest to the last one we configured
-        /// that is still not configured yet
-        s = _info_unconf_closest_find(r, s, EINA_FALSE);
-        if (!s) break;
-        s2 = _info_unconf_closest_find(r, s, EINA_TRUE);
-        // fix up s->config.relative.mode, s->config.relative.to and
-        // s->config.relative.align to match (as closely as possible)
-        // the geometry given - config s relative to s2
-        if (!s2) s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
-        else
-          {
-             s->config.relative.to = strdup(s2->id);
-             s->config.relative.align = 0.0;
-             s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
-             if ((s->config.geom.x + s->config.geom.w) <=
-                 s2->config.geom.x)
-               {
-                  s->config.relative.mode = E_RANDR2_RELATIVE_TO_LEFT;
-                  d = s->config.geom.h - s2->config.geom.h;
-                  dy = s2->config.geom.y - s->config.geom.y;
-                  if (d != 0)
-                    s->config.relative.align = ((double)dy) / ((double)d);
-               }
-             else if (s->config.geom.x >=
-                      (s2->config.geom.x + s2->config.geom.w))
-               {
-                  s->config.relative.mode = E_RANDR2_RELATIVE_TO_RIGHT;
-                  d = s->config.geom.h - s2->config.geom.h;
-                  dy = s2->config.geom.y - s->config.geom.y;
-                  if (d != 0)
-                    s->config.relative.align = ((double)dy) / ((double)d);
-               }
-             else if ((s->config.geom.y + s->config.geom.h) <=
-                      s2->config.geom.y)
-               {
-                  s->config.relative.mode = E_RANDR2_RELATIVE_TO_ABOVE;
-                  d = s->config.geom.w - s2->config.geom.w;
-                  dx = s2->config.geom.x - s->config.geom.x;
-                  if (d != 0)
-                    s->config.relative.align = ((double)dx) / ((double)d);
-               }
-             else if (s->config.geom.y >=
-                      (s2->config.geom.y + s2->config.geom.h))
-               {
-                  s->config.relative.mode = E_RANDR2_RELATIVE_TO_BELOW;
-                  d = s->config.geom.w - s2->config.geom.w;
-                  dx = s2->config.geom.x - s->config.geom.x;
-                  if (d != 0)
-                    s->config.relative.align = ((double)dx) / ((double)d);
-               }
-             else if ((s->config.geom.x == s2->config.geom.x) &&
-                      (s->config.geom.y == s2->config.geom.y) &&
-                      (s->config.geom.w == s2->config.geom.w) &&
-                      (s->config.geom.h == s2->config.geom.h))
-               {
-                  s->config.relative.mode = E_RANDR2_RELATIVE_CLONE;
-               }
-             if (s->config.relative.align < 0.0)
-               s->config.relative.align = 0.0;
-             else if (s->config.relative.align > 1.0)
-               s->config.relative.align = 1.0;
-          }
-     }
-}
-
-static E_Randr2 *
+EINTERN E_Randr2 *
 e_comp_drm_create(void)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *output;
    const Eina_List *l, *ll;
    E_Randr2 *r = NULL;
-   const char *conn_types[] =
-     {
-        "None", "VGA", "DVI-I", "DVI-D", "DVI-A",
-        "Composite", "S-Video", "LVDS", "Component", "DIN",
-        "DisplayPort", "HDMI-A", "HDMI-B", "TV", "eDP", "Virtual",
-        "DSI", "UNKNOWN"
-     };
-   E_Randr2_Connector rtype[] =
-     {
-        E_RANDR2_CONNECTOR_UNDEFINED,
-        E_RANDR2_CONNECTOR_UNDEFINED,
-        E_RANDR2_CONNECTOR_DVI,
-        E_RANDR2_CONNECTOR_DVI,
-        E_RANDR2_CONNECTOR_DVI,
-        E_RANDR2_CONNECTOR_UNDEFINED,
-        E_RANDR2_CONNECTOR_UNDEFINED,
-        E_RANDR2_CONNECTOR_UNDEFINED,
-        E_RANDR2_CONNECTOR_UNDEFINED,
-        E_RANDR2_CONNECTOR_UNDEFINED,
-        E_RANDR2_CONNECTOR_DISPLAY_PORT,
-        E_RANDR2_CONNECTOR_HDMI_A,
-        E_RANDR2_CONNECTOR_HDMI_B,
-        E_RANDR2_CONNECTOR_UNDEFINED,
-        E_RANDR2_CONNECTOR_DISPLAY_PORT,
-        E_RANDR2_CONNECTOR_UNDEFINED,
-        E_RANDR2_CONNECTOR_UNDEFINED,
-        E_RANDR2_CONNECTOR_UNDEFINED,
-     };
-   unsigned int type;
+//   const char *conn_types[] =
+//     {
+//        "None", "VGA", "DVI-I", "DVI-D", "DVI-A",
+//        "Composite", "S-Video", "LVDS", "Component", "DIN",
+//        "DisplayPort", "HDMI-A", "HDMI-B", "TV", "eDP", "Virtual",
+//        "DSI", "UNKNOWN"
+//     };
+//   E_Randr2_Connector rtype[] =
+//     {
+//        E_RANDR2_CONNECTOR_UNDEFINED,
+//        E_RANDR2_CONNECTOR_UNDEFINED,
+//        E_RANDR2_CONNECTOR_DVI,
+//        E_RANDR2_CONNECTOR_DVI,
+//        E_RANDR2_CONNECTOR_DVI,
+//        E_RANDR2_CONNECTOR_UNDEFINED,
+//        E_RANDR2_CONNECTOR_UNDEFINED,
+//        E_RANDR2_CONNECTOR_UNDEFINED,
+//        E_RANDR2_CONNECTOR_UNDEFINED,
+//        E_RANDR2_CONNECTOR_UNDEFINED,
+//        E_RANDR2_CONNECTOR_DISPLAY_PORT,
+//        E_RANDR2_CONNECTOR_HDMI_A,
+//        E_RANDR2_CONNECTOR_HDMI_B,
+//        E_RANDR2_CONNECTOR_UNDEFINED,
+//        E_RANDR2_CONNECTOR_DISPLAY_PORT,
+//        E_RANDR2_CONNECTOR_UNDEFINED,
+//        E_RANDR2_CONNECTOR_UNDEFINED,
+//        E_RANDR2_CONNECTOR_UNDEFINED,
+//     };
+//   unsigned int type;
    INF("========= %s start ===", __FUNCTION__);
 
-   printf("DRM RRR: ................. info get!\n");
+   printf("COMP DRM: ................. info get!\n");
 
    r = E_NEW(E_Randr2, 1);
    if (!r) return NULL;
@@ -414,7 +414,7 @@ e_comp_drm_create(void)
         EINA_LIST_FOREACH(dev->outputs, ll, output)
           {
              E_Randr2_Screen *s;
-             E_Config_Randr2_Screen *cs;
+//             E_Config_Randr2_Screen *cs;
              const Eina_List *m;
              Ecore_Drm_Output_Mode *omode;
              // size_t n, e = 0;
@@ -428,10 +428,10 @@ e_comp_drm_create(void)
              if (!s) continue;
 
              s->info.name = ecore_drm_output_name_get(output);
-             printf("DRM RRR: .... out %s\n", s->info.name);
+             printf("COMP DRM: .... out %s\n", s->info.name);
 
              s->info.connected = ecore_drm_output_connected_get(output);
-             printf("DRM RRR: ...... connected %i\n", s->info.connected);
+             printf("COMP DRM: ...... connected %i\n", s->info.connected);
 
              s->info.screen = _e_comp_drm_output_screen_get(output);
 
@@ -452,16 +452,18 @@ e_comp_drm_create(void)
              strncat(s->id, "/", 1);
              if (s->info.edid) strncat(s->id, s->info.edid, strlen(s->info.edid));
 
-             printf("DRM RRR: Created Screen: %s\n", s->id);
+             printf("COMP DRM: Created Screen: %s\n", s->id);
 
-             type = MIN(ecore_drm_output_connector_type_get(output),
-                        EINA_C_ARRAY_LENGTH(conn_types) - 1);
-             s->info.connector = rtype[type];
-             s->info.is_lid = ((type == DRM_MODE_CONNECTOR_LVDS) || 
-                               (type == DRM_MODE_CONNECTOR_eDP));
-             s->info.lid_closed = (s->info.is_lid && e_acpi_lid_is_closed());
-             printf("DRM RRR: ...... lid_closed = %i (%i && %i)\n",
-                    s->info.lid_closed, s->info.is_lid, e_acpi_lid_is_closed());
+//             type = MIN(ecore_drm_output_connector_type_get(output),
+//                        EINA_C_ARRAY_LENGTH(conn_types) - 1);
+//             s->info.connector = rtype[type];
+//             printf("COMP DRM: Connector: type %d (rtype %d)\n", type, rtype[type]);
+
+//             s->info.is_lid = ((type == DRM_MODE_CONNECTOR_LVDS) || 
+//                               (type == DRM_MODE_CONNECTOR_eDP));
+//             s->info.lid_closed = (s->info.is_lid && e_acpi_lid_is_closed());
+//             printf("COMP DRM: ...... lid_closed = %i (%i && %i)\n",
+//                    s->info.lid_closed, s->info.is_lid, e_acpi_lid_is_closed());
 
              s->info.backlight = ecore_drm_output_backlight_get(output);
 
@@ -483,13 +485,14 @@ e_comp_drm_create(void)
                   s->info.modes = eina_list_append(s->info.modes, rmode);
                }
 
-             cs = NULL;
+//             cs = NULL;
              priority = 0;
-             if (e_randr2_cfg)
-               cs = e_randr2_config_screen_find(s, e_randr2_cfg);
-             if (cs)
-               priority = cs->priority;
-             else if (ecore_drm_output_primary_get(dev) == output)
+//             if (e_randr2_cfg)
+//               cs = e_randr2_config_screen_find(s, e_randr2_cfg);
+//             if (cs)
+//               priority = cs->priority;
+//             else if (ecore_drm_output_primary_get(dev) == output)
+             if (ecore_drm_output_primary_get(dev) == output)
                priority = 100;
              s->config.priority = priority;
 
@@ -535,7 +538,7 @@ e_comp_drm_create(void)
                        s->config.enabled = 
                           ((s->config.mode.w != 0) && (s->config.mode.h != 0));
 
-                       printf("DRM RRR: '%s' %i %i %ix%i\n", s->info.name,
+                       printf("COMP DRM: '%s' %i %i %ix%i\n", s->info.name,
                               s->config.geom.x, s->config.geom.y,
                               s->config.geom.w, s->config.geom.h);
                     }
@@ -544,27 +547,27 @@ e_comp_drm_create(void)
                }
 
              r->screens = eina_list_append(r->screens, s);
-             INF("========= %s \t add screen ", __FUNCTION__);             
+             INF("========= %s \t add screen ", __FUNCTION__);
           }
      }
 
-   _e_comp_drm_relative_fixup(r);
+//   _e_comp_drm_relative_fixup(r);
    INF("========= %s END ===", __FUNCTION__);
 
    return r;
 }
 
-static Eina_Bool
+EINTERN Eina_Bool
 e_comp_drm_available(void)
 {
    return EINA_TRUE;
 }
 
-static void
+EINTERN void
 e_comp_drm_stub(void)
 {}
 
-static void
+EINTERN void
 e_comp_drm_apply(void)
 {
    Ecore_Drm_Device *dev;
@@ -582,7 +585,7 @@ e_comp_drm_apply(void)
    EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
      {
         ecore_drm_screen_size_range_get(dev, &minw, &minh, &maxw, &maxh);
-        printf("DRM RRR: size range: %ix%i -> %ix%i\n", minw, minh, maxw, maxh);
+        printf("COMP DRM: size range: %ix%i -> %ix%i\n", minw, minh, maxw, maxh);
 
         ecore_drm_outputs_geometry_get(dev, NULL, NULL, &pw, &ph);
         if (nw > maxw) nw = maxw;
@@ -594,48 +597,48 @@ e_comp_drm_apply(void)
         if (nw < pw) ww = pw;
         if (nh < ph) hh = ph;
 
-        printf("DRM RRR: set vsize: %ix%i\n", ww, hh);
+        printf("COMP DRM: set vsize: %ix%i\n", ww, hh);
 
         EINA_LIST_FOREACH(e_randr2->screens, ll, s)
           {
              //int orient; // FIXME
              Ecore_Drm_Output_Mode *mode = NULL;
 
-             printf("DRM RRR: find output for '%s'\n", s->info.name);
+             printf("COMP DRM: find output for '%s'\n", s->info.name);
 
              out = ecore_drm_device_output_name_find(dev, s->info.name);
              if (!out) continue;
 
              if (s->config.configured)
                {
-                  printf("\tDRM RRR: configured by E\n");
+                  printf("\tCOMP DRM: configured by E\n");
 
                   if (s->config.enabled)
                     {
-                       printf("\tDRM RRR: Enabled\n");
+                       printf("\tCOMP DRM: Enabled\n");
                        mode = _e_comp_drm_mode_screen_find(s, out);
                     }
                   else
                     {
-                       printf("\tDRM RRR: Disabled\n");
+                       printf("\tCOMP DRM: Disabled\n");
                     }
 
                   if (s->config.priority > top_priority)
                     top_priority = s->config.priority;
 
-                  printf("\tDRM RRR: Priority: %d\n", s->config.priority);
+                  printf("\tCOMP DRM: Priority: %d\n", s->config.priority);
 
-                  printf("\tDRM RRR: Geom: %d %d %d %d\n", 
+                  printf("\tCOMP DRM: Geom: %d %d %d %d\n", 
                          s->config.geom.x, s->config.geom.y,
                          s->config.geom.w, s->config.geom.h);
 
                   if (mode)
                     {
-                       printf("\tDRM RRR: Found Valid Drm Mode\n");
-                       printf("\t\tDRM RRR: %dx%d\n", mode->width, mode->height);
+                       printf("\tCOMP DRM: Found Valid Drm Mode\n");
+                       printf("\t\tCOMP DRM: %dx%d\n", mode->width, mode->height);
                     }
                   else
-                    printf("\tDRM RRR: No Valid Drm Mode Found\n");
+                    printf("\tCOMP DRM: No Valid Drm Mode Found\n");
 
                   // FIXME
                   //if (s->config.rotation == 0)
@@ -657,26 +660,26 @@ e_comp_drm_apply(void)
                   else
                     ecore_drm_output_disable(out);
 
-                  printf("\tDRM RRR: Mode\n");
-                  printf("\t\tDRM RRR: Geom: %d %d\n",
+                  printf("\tCOMP DRM: Mode\n");
+                  printf("\t\tCOMP DRM: Geom: %d %d\n",
                          s->config.mode.w, s->config.mode.h);
-                  printf("\t\tDRM RRR: Refresh: %f\n", s->config.mode.refresh);
-                  printf("\t\tDRM RRR: Preferred: %d\n",
+                  printf("\t\tCOMP DRM: Refresh: %f\n", s->config.mode.refresh);
+                  printf("\t\tCOMP DRM: Preferred: %d\n",
                          s->config.mode.preferred);
 
-                  printf("\tDRM RRR: Rotation: %d\n", s->config.rotation);
-
-                  printf("\tDRM RRR: Relative Mode: %d\n",
-                         s->config.relative.mode);
-                  printf("\tDRM RRR: Relative To: %s\n",
-                         s->config.relative.to);
-                  printf("\tDRM RRR: Align: %f\n", s->config.relative.align);
+//                  printf("\tCOMP DRM: Rotation: %d\n", s->config.rotation);
+//
+//                printf("\tCOMP DRM: Relative Mode: %d\n",
+//                       s->config.relative.mode);
+//                printf("\tCOMP DRM: Relative To: %s\n",
+//                       s->config.relative.to);
+//                printf("\tCOMP DRM: Align: %f\n", s->config.relative.align);
                }
           }
      }
 }
 
-static void
+EINTERN void
 e_comp_drm_dpms(int set)
 {
    Ecore_Drm_Device *dev;
@@ -985,5 +988,4 @@ e_comp_drm_shutdown()
    dont_use_xkb_cache = EINA_FALSE;
    E_FREE_LIST(event_handlers, ecore_event_handler_del);
 
-   return 1;
 }
