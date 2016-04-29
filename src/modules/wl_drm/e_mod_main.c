@@ -96,6 +96,47 @@ end:
    return ECORE_CALLBACK_PASS_ON;
 }
 
+/* this callback handles external outputs' plug in/out events */
+static Eina_Bool
+_e_mod_drm_cb_external_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
+{
+   const Eina_List *l, *ll;
+   Ecore_Drm_Event_Output *e;
+   Ecore_Drm_Device *dev;
+   Ecore_Drm_Output *o;
+
+   if (!(e = event)) goto end;
+
+   DBG("WL_DRM EXTERNAL OUTPUT CHANGE");
+
+   /* we must notify wl_comp here that there has been
+    * added external output. wl_comp will create global object
+    * for that output and clients will be able to interact with one
+    * by wayland protocol
+    *
+    * Note: e->x here is relative to external output multiseat
+    */
+   if (e->plug)
+     {
+       if (!e_comp_wl_output_init(e->name, e->make, e->model, e->x, e->y,
+    		   e->w, e->h, e->phys_width, e->phys_height, e->refresh,
+			   e->subpixel_order, e->transform))
+         ERR("WL_DRM: Could not setup new output: %s", e->name);
+       else
+         DBG("WL_DRM: Created external output: "
+        		 "%s  x=%d y=%d  mode:%dx%d "
+        		 "phys_size:%dx%d  refresh:%d\n", e->name,
+				 e->x, e->y, e->w, e->h, e->phys_width, e->phys_height, e->refresh);
+     }
+   else
+     e_comp_wl_output_remove(e->name);
+
+   /* TODO: what about scale update ??? */
+
+end:
+   return ECORE_CALLBACK_PASS_ON;
+}
+
 static Eina_Bool
 _e_mod_drm_cb_input_device_add(void *data, int type, void *event)
 {
@@ -963,6 +1004,7 @@ e_modapi_init(E_Module *m)
 
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,         _e_mod_drm_cb_activate,         comp);
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_OUTPUT,           _e_mod_drm_cb_output,           comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_EXTERNAL_OUTPUT,  _e_mod_drm_cb_external_output,  comp);
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_ADD, _e_mod_drm_cb_input_device_add, comp);
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_DEL, _e_mod_drm_cb_input_device_del, comp);
 
