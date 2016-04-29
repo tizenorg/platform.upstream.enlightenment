@@ -349,6 +349,10 @@ _e_shell_surface_cb_maximized_set(struct wl_client *client EINA_UNUSED, struct w
         e_client_maximize(ec, ((e_config->maximize_policy & E_MAXIMIZE_TYPE) |
                                E_MAXIMIZE_BOTH));
 
+        ec->comp_data->shell.configured.w = ec->w;
+        ec->comp_data->shell.configured.h = ec->h;
+        ec->comp_data->shell.configured.sent ++;
+
         edges = (WL_SHELL_SURFACE_RESIZE_TOP | WL_SHELL_SURFACE_RESIZE_LEFT);
         wl_shell_surface_send_configure(resource, edges, ec->w, ec->h);
      }
@@ -413,8 +417,21 @@ static const struct wl_shell_surface_interface _e_shell_surface_interface =
 static void
 _e_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges, int32_t width, int32_t height)
 {
+   E_Client *ec;
    if (!resource)
      return;
+
+   if (!(ec = wl_resource_get_user_data(resource)))
+     {
+        wl_resource_post_error(resource,
+                               WL_DISPLAY_ERROR_INVALID_OBJECT,
+                               "No Client For Shell Surface");
+        return;
+     }
+
+   if (width) ec->comp_data->shell.configured.w = width;
+   if (height) ec->comp_data->shell.configured.h = height;
+   ec->comp_data->shell.configured.sent ++;
 
    wl_shell_surface_send_configure(resource, edges, width, height);
 }
@@ -647,6 +664,10 @@ _e_xdg_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges
 
    if (ec->netwm.type != E_WINDOW_TYPE_POPUP_MENU)
      {
+        if (width) ec->comp_data->shell.configured.w = width;
+        if (height) ec->comp_data->shell.configured.h = height;
+        ec->comp_data->shell.configured.sent ++;
+
         serial = wl_display_next_serial(e_comp_wl->wl.disp);
         xdg_surface_send_configure(resource, width, height, &states, serial);
      }
@@ -1102,7 +1123,13 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
         e_pixmap_size_get(ec->pixmap, &pw, &ph);
         e_client_geometry_get(ec, NULL, NULL, &cw, &ch);
 
-        if (pw != cw || ph != ch)
+        if (ec->comp_data->shell.configured.sent)
+          {
+             cw = ec->comp_data->shell.configured.w;
+             ch = ec->comp_data->shell.configured.h;
+          }
+
+        if ((pw != cw) || (ph != ch))
           {
              if ((ec->changes.need_maximize) ||
                  ((ec->maximized & E_MAXIMIZE_BOTH) == E_MAXIMIZE_BOTH))
