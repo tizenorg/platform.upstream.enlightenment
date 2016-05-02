@@ -124,7 +124,7 @@ _e_comp_canvas_cb_zone_sort(const void *data1, const void *data2)
 static void
 _e_comp_canvas_resize(Ecore_Evas *ee EINA_UNUSED)
 {
-   e_randr2_screens_setup(e_comp->w, e_comp->h);
+   e_drm_output_screens_setup(e_comp->w, e_comp->h);
    e_comp_canvas_update();
 }
 

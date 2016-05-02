@@ -1690,12 +1690,12 @@ static Eina_Bool
 _e_comp_wl_cb_randr_change(void *data EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
    Eina_List *l;
-   E_Randr2_Screen *screen;
+   E_Output_Screen *screen;
    unsigned int transform = WL_OUTPUT_TRANSFORM_NORMAL;
 
-   if (!e_randr2) return ECORE_CALLBACK_RENEW;
+   if (!e_drm_output) return ECORE_CALLBACK_RENEW;
 
-   EINA_LIST_FOREACH(e_randr2->screens, l, screen)
+   EINA_LIST_FOREACH(e_drm_output->screens, l, screen)
      {
         if (!screen->config.enabled)
           {
@@ -4265,17 +4265,17 @@ e_comp_wl_init(void)
    e_comp_wl_tbm_init();
 #endif
 
-   if (!e_randr2_init())
+   if (!e_drm_output_init())
      {
-        e_error_message_show(_("Enlightenment cannot initialize randr2!\n"));
+        e_error_message_show(_("Enlightenment cannot initialize drm output!\n"));
         TRACE_DS_END();
         return EINA_FALSE;
      }
 
-   e_randr2_screens_setup(-1, -1);
+   e_drm_output_screens_setup(-1, -1);
 
    /* add event handlers to catch E events */
-   E_LIST_HANDLER_APPEND(handlers, E_EVENT_RANDR_CHANGE,            _e_comp_wl_cb_randr_change,        NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREEN_CHANGE,            _e_comp_wl_cb_randr_change,        NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD,         _e_comp_wl_cb_comp_object_add,     NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_MOVE,          _e_comp_wl_cb_mouse_move,          NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_CANCEL, _e_comp_wl_cb_mouse_button_cancel, NULL);
