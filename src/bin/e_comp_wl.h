@@ -39,6 +39,7 @@
    })
 
 #include <Evas_GL.h>
+#include <tbm_surface.h>
 
 typedef struct _E_Comp_Wl_Aux_Hint  E_Comp_Wl_Aux_Hint;
 typedef struct _E_Comp_Wl_Buffer E_Comp_Wl_Buffer;
@@ -57,6 +58,7 @@ typedef enum _E_Comp_Wl_Buffer_Type
    E_COMP_WL_BUFFER_TYPE_SHM = 1,
    E_COMP_WL_BUFFER_TYPE_NATIVE = 2,
    E_COMP_WL_BUFFER_TYPE_VIDEO = 3,
+   E_COMP_WL_BUFFER_TYPE_TBM = 4,
 } E_Comp_Wl_Buffer_Type;
 
 struct _E_Comp_Wl_Aux_Hint
@@ -75,6 +77,7 @@ struct _E_Comp_Wl_Buffer
    struct wl_signal destroy_signal;
    struct wl_listener destroy_listener;
    struct wl_shm_buffer *shm_buffer;
+   tbm_surface_h tbm_surface;
    int32_t w, h;
    uint32_t busy;
 };

@@ -4538,8 +4538,11 @@ e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
         ref->buffer->busy--;
         if (ref->buffer->busy == 0)
           {
-             if (!wl_resource_get_client(ref->buffer->resource)) return;
-             wl_buffer_send_release(ref->buffer->resource);
+             if (ref->buffer->type != E_COMP_WL_BUFFER_TYPE_TBM)
+               {
+                  if (!wl_resource_get_client(ref->buffer->resource)) return;
+                  wl_buffer_send_release(ref->buffer->resource);
+               }
           }
         wl_list_remove(&ref->destroy_listener.link);
      }

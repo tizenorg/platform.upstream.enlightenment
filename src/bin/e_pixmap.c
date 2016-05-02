@@ -510,6 +510,16 @@ e_pixmap_native_surface_init(E_Pixmap *cp, Evas_Native_Surface *ns)
         ELOGF("COMP_NS", "res:%p cp(%dx%d) buff(%dx%d)",
               cp, NULL, cp->buffer->resource, cp->w, cp->h, cp->buffer->w, cp->buffer->h);
      }
+   else if (cp->buffer && cp->buffer->type == E_COMP_WL_BUFFER_TYPE_TBM)
+     {
+        ns->type = EVAS_NATIVE_SURFACE_TBM;
+        ns->version = EVAS_NATIVE_SURFACE_VERSION;
+        ns->data.tbm.buffer = cp->buffer->tbm_surface;
+        if (cp->buffer->tbm_surface)
+          ret = EINA_TRUE;
+        ELOGF("COMP_NS", "res:%p TBM_SURFACE cp(%dx%d) buff(%dx%d)",
+              cp, NULL, NULL, cp->w, cp->h, cp->buffer->w, cp->buffer->h);
+     }
    else /* SHM buffer or VIDEO buffer */
      {
         ns->type = EVAS_NATIVE_SURFACE_NONE;
@@ -640,6 +650,26 @@ e_pixmap_image_refresh(E_Pixmap *cp)
              return EINA_FALSE;
           }
 
+     }
+   else if (buffer->type == E_COMP_WL_BUFFER_TYPE_TBM)
+     {
+        buffer->shm_buffer = NULL;
+        cp->w = buffer->w;
+        cp->h = buffer->h;
+        cp->image_argb = EINA_FALSE; /* TODO: format */
+        cp->data = NULL;
+
+        /* TODO: Current buffer management process doesn't ensure
+         * to render all committed buffer, it means there are buffers
+         * never rendered. New attached buffer resources should be
+         * managed and be pending if previous buffer is not rendered yet. */
+        /* set size of image object to new buffer size */
+        e_comp_object_size_update(cp->client->frame,
+                                  buffer->w,
+                                  buffer->h);
+
+        /* buffer has no client resources */
+        return EINA_TRUE;
      }
    else if (buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO)
      {
