@@ -660,6 +660,16 @@ _e_xdg_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges
    if (ec->focused)
      _e_xdg_surface_state_add(resource, &states, XDG_SURFACE_STATE_ACTIVATED);
 
+   if ((ec->comp_data->shell.client_frame.w) ||
+       (ec->comp_data->shell.client_frame.h))
+     {
+        if ((width) && (height))
+          {
+             width -= ec->comp_data->shell.client_frame.w;
+             height -= ec->comp_data->shell.client_frame.h;
+          }
+     }
+
    if (ec->netwm.type != E_WINDOW_TYPE_POPUP_MENU)
      {
         if (width) ec->comp_data->shell.configured.w = width;

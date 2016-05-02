@@ -1938,6 +1938,15 @@ _e_comp_wl_surface_state_size_update(E_Client *ec, E_Comp_Wl_Surface_State *stat
                                          -window->y,
                                          (window->y + window->h) - state->bh);
      }
+   else if (ec->floating)
+     {
+        if ((!ec->comp_data->shell.client_frame.w) && (!ec->comp_data->shell.client_frame.h))
+          {
+             ec->comp_data->shell.client_frame.w = state->bw - window->w;
+             ec->comp_data->shell.client_frame.h = state->bh - window->h;
+             e_comp_object_frame_geometry_set(ec->frame, 0, 0, 0, 0);
+          }
+     }
    else
      e_comp_object_frame_geometry_set(ec->frame, 0, 0, 0, 0);
 }
