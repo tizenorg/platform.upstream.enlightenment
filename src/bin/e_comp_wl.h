@@ -379,6 +379,11 @@ struct _E_Comp_Wl_Client_Data
         struct
           {
              int w, h;
+          } client_frame;
+
+        struct
+          {
+             int w, h;
              unsigned int sent;
           } configured;
      } shell;
