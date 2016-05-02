@@ -774,34 +774,38 @@ _e_comp_hwc_renderer_deactivate(E_Comp_Hwc_Renderer *hwc_renderer)
    /* deactive */
    wayland_tbm_server_client_queue_deactivate(cqueue);
 
-   if (hwc_client->backup_buffer)
+   if (!hwc_client->backup_buffer)
      {
 #ifdef USE_DLOG_HWC
-        HWC_DLOG("hwc_client,%p The previous backup_buffer exists. destroy it.\n");
+        HWC_DLOG("hwc_client,%p create the backup_buffer.\n");
 #endif
-        _e_comp_hwc_client_destroy_backup_buffer(hwc_client->backup_buffer);
+        /* get the tsurface for setting the native surface with it
+          compositing is processed not calling e_comp_update_cb*/
+        hwc_client->buffer = e_pixmap_resource_get(ec->pixmap);
+        hwc_client->backup_buffer = _e_comp_hwc_client_create_backup_buffer(hwc_client);
+        hwc_client->activated = EINA_FALSE;
+        hwc_client->wait_for_commit = EINA_TRUE;
+
+        /* set the backup buffer resource to the pixmap */
+        e_pixmap_resource_set(ec->pixmap, hwc_client->backup_buffer);
+
+        e_comp->nocomp = 0;
+        e_comp->nocomp_ec = NULL;
+
+        /* force update */
+        e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
+        e_comp_object_dirty(ec->frame);
+        e_comp_object_render(ec->frame);
+
+        /* set the native surface with tbm type for compositing */
+        e_comp_object_native_surface_set(ec->frame, EINA_TRUE);
      }
-
-   /* get the tsurface for setting the native surface with it
-      compositing is processed not calling e_comp_update_cb*/
-   hwc_client->buffer = e_pixmap_resource_get(ec->pixmap);
-   hwc_client->backup_buffer = _e_comp_hwc_client_create_backup_buffer(hwc_client);
-   hwc_client->activated = EINA_FALSE;
-   hwc_client->wait_for_commit = EINA_TRUE;
-
-   /* set the backup buffer resource to the pixmap */
-   e_pixmap_resource_set(ec->pixmap, hwc_client->backup_buffer);
-
-   e_comp->nocomp = 0;
-   e_comp->nocomp_ec = NULL;
-
-   /* force update */
-   e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
-   e_comp_object_dirty(ec->frame);
-   e_comp_object_render(ec->frame);
-
-   /* set the native surface with tbm type for compositing */
-   e_comp_object_native_surface_set(ec->frame, EINA_TRUE);
+   else
+     {
+#ifdef USE_DLOG_HWC
+        HWC_DLOG("hwc_client,%p dose not commit wl_buffer after the previous deactive.\n");
+#endif
+     }
 
 #ifdef USE_DLOG_HWC
    HWC_DLOG("hwc_client,%p deactivated\n", hwc_client);
