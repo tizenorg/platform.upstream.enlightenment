@@ -1,5 +1,6 @@
 #define E_COMP_WL
 #include "e.h"
+#include "e_info_server.h"
 #include <tbm_bufmgr.h>
 #include <tbm_surface.h>
 #include <tdm_helper.h>
@@ -756,6 +757,150 @@ _e_info_server_cb_rotation_message(const Eldbus_Service_Interface *iface EINA_UN
    return reply;
 }
 
+/* wayland private function */
+const char *
+get_next_argument(const char *signature, struct argument_details *details)
+{
+   details->nullable = 0;
+   for(; *signature; ++signature)
+     {
+        switch(*signature)
+          {
+           case 'i':
+           case 'u':
+           case 'f':
+           case 's':
+           case 'o':
+           case 'n':
+           case 'a':
+           case 'h':
+             details->type = *signature;
+             return signature + 1;
+           case '?':
+             details->nullable = 1;
+          }
+     }
+   details->type = '\0';
+   return signature;
+}
+
+static void
+_e_info_server_protocol_debug_func(struct wl_closure *closure, struct wl_resource *resource, int send)
+{
+   int i;
+   struct argument_details arg;
+   struct wl_object *target = &resource->object;
+   struct wl_client *wc = resource->client;
+   const char *signature = closure->message->signature;
+   struct timespec tp;
+   unsigned int time;
+   pid_t client_pid = -1;
+
+   if (wc) wl_client_get_credentials(wc, &client_pid, NULL, NULL);
+
+   clock_gettime(CLOCK_REALTIME, &tp);
+   time = (tp.tv_sec * 1000000L) + (tp.tv_nsec / 1000);
+
+   fprintf(stdout, "[%10.3f] %s%d%s%s@%u.%s(",
+              time / 1000.0,
+              send ? "Server -> Client [PID:" : "Server <- Client [PID:",
+              client_pid, "] ",
+              target->interface->name, target->id,
+              closure->message->name);
+
+   for (i = 0; i < closure->count; i++)
+     {
+        signature = get_next_argument(signature, &arg);
+        if (i > 0) fprintf(stdout, ", ");
+
+        switch (arg.type)
+          {
+           case 'u':
+             fprintf(stdout, "%u", closure->args[i].u);
+             break;
+           case 'i':
+             fprintf(stdout, "%d", closure->args[i].i);
+             break;
+           case 'f':
+             fprintf(stdout, "%f",
+             wl_fixed_to_double(closure->args[i].f));
+             break;
+           case 's':
+             fprintf(stdout, "\"%s\"", closure->args[i].s);
+             break;
+           case 'o':
+             if (closure->args[i].o)
+               fprintf(stdout, "%s@%u", closure->args[i].o->interface->name, closure->args[i].o->id);
+             else
+               fprintf(stdout, "nil");
+             break;
+           case 'n':
+             fprintf(stdout, "new id %s@", (closure->message->types[i]) ? closure->message->types[i]->name : "[unknown]");
+             if (closure->args[i].n != 0)
+               fprintf(stdout, "%u", closure->args[i].n);
+             else
+               fprintf(stdout, "nil");
+             break;
+           case 'a':
+             fprintf(stdout, "array");
+             break;
+           case 'h':
+             fprintf(stdout, "fd %d", closure->args[i].h);
+             break;
+          }
+     }
+
+   fprintf(stdout, ")\n");
+}
+
+static Eldbus_Message *
+_e_info_server_cb_protocol_trace(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   const char *path = NULL;
+   static int old_stderr = -1;
+   int  log_fd = -1;
+   FILE *log_fl;
+
+   if (!eldbus_message_arguments_get(msg, "s", &path) || !path)
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   if (!strncmp(path, "disable", 7) && (old_stderr != -1))
+     {
+        dup2(old_stderr, STDOUT_FILENO);
+        close(old_stderr);
+        old_stderr = -1;
+        wl_debug_server_debug_func_set(NULL);
+        return reply;
+     }
+
+   if (old_stderr == -1)
+     old_stderr = dup(STDOUT_FILENO);
+
+   log_fl = fopen(path, "a");
+
+   if (!log_fl)
+     {
+        ERR("failed: open file(%s)\n", path);
+        return reply;
+     }
+
+   close(STDOUT_FILENO);
+
+   setvbuf(log_fl, NULL, _IOLBF, 512);
+   log_fd = fileno(log_fl);
+
+   dup2(log_fd, STDOUT_FILENO);
+   fclose(log_fl);
+
+   wl_debug_server_debug_func_set(_e_info_server_protocol_debug_func);
+
+   return reply;
+}
+
 static Eldbus_Message *
 _e_info_server_cb_fps_info_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
 {
@@ -1034,6 +1179,7 @@ static const Eldbus_Method methods[] = {
    { "rotation_message", ELDBUS_ARGS({"iii", "rotation_message"}), NULL, _e_info_server_cb_rotation_message, 0},
    { "get_res_lists", ELDBUS_ARGS({VALUE_TYPE_REQUEST_RESLIST, "client resource"}), ELDBUS_ARGS({"a("VALUE_TYPE_REPLY_RESLIST")", "array of client resources"}), _e_info_server_cb_res_lists_get, 0 },
    { "get_input_devices", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_INPUTDEV")", "array of input"}), _e_info_server_cb_input_device_info_get, 0},
+   { "protocol_trace", ELDBUS_ARGS({"s", "protocol_trace"}), NULL, _e_info_server_cb_protocol_trace, 0},
    { "get_fps_info", NULL, ELDBUS_ARGS({"s", "fps request"}), _e_info_server_cb_fps_info_get, 0},
    { "transform_message", ELDBUS_ARGS({"siiiiiiii", "transform_message"}), NULL, e_info_server_cb_transform_message, 0},
    { "dump_buffers", ELDBUS_ARGS({"i", "start"}), NULL, _e_info_server_cb_buffer_dump, 0 },

@@ -197,6 +197,49 @@ finish:
 }
 
 static void
+_e_info_client_proc_protocol_trace(int argc, char **argv)
+{
+   char fd_name[PATH_MAX];
+   int pid;
+   Eina_Bool disable = EINA_FALSE;
+   char cwd[PATH_MAX];
+
+   if (argc != 3 || !argv[2])
+     {
+        printf("protocol-trace: Usage> enlightenment_info -protocol_trace [console | file path | disable]\n");
+        return;
+     }
+
+   pid = getpid();
+
+   cwd[0] = '\0';
+   if (!getcwd(cwd, sizeof(cwd)))
+     snprintf(cwd, sizeof(cwd), "/tmp");
+
+   if (!strncmp(argv[2], "console", 7))
+     snprintf(fd_name, PATH_MAX, "/proc/%d/fd/1", pid);
+   else if (!strncmp(argv[2], "disable", 7))
+     disable = EINA_TRUE;
+   else
+     {
+        if (argv[2][0] == '/')
+          snprintf(fd_name, PATH_MAX, "%s", argv[2]);
+        else
+          {
+             if (strlen(cwd) > 0)
+               snprintf(fd_name, PATH_MAX, "%s/%s", cwd, argv[2]);
+             else
+               snprintf(fd_name, PATH_MAX, "%s", argv[2]);
+          }
+     }
+
+   printf("protocol-trace: %s\n", disable ? "disable" : fd_name);
+
+   if (!_e_info_client_eldbus_message_with_args("protocol_trace", NULL, "s", disable ? "disable" : fd_name))
+     return;
+}
+
+static void
 _e_info_client_proc_topvwins_info(int argc, char **argv)
 {
    E_Win_Info *win;
@@ -980,6 +1023,11 @@ static struct
    void (*func)(int argc, char **argv);
 } procs[] =
 {
+   {
+      "protocol_trace", "[console|file_path|disable]",
+      "Enable/disable wayland protocol trace",
+      _e_info_client_proc_protocol_trace
+   },
    {
       "topvwins", NULL,
       "Print top visible windows",
