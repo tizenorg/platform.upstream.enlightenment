@@ -635,13 +635,13 @@ _e_comp_hwc_output_update_geom(E_Comp_Hwc_Output *hwc_output)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *drm_output;
-   E_Randr2_Screen *s;
+   E_Output_Screen *s;
    const Eina_List *l, *ll;
    int x, y, w, h;
 
    EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
      {
-        EINA_LIST_FOREACH(e_randr2->screens, ll, s)
+        EINA_LIST_FOREACH(e_drm_output->screens, ll, s)
           {
              ELOGF("HWC", "find output for '%s'", NULL, NULL, s->info.name);
 
@@ -1446,7 +1446,7 @@ e_comp_hwc_plane_init(E_Zone *zone)
    E_Comp_Hwc_Output *hwc_output = NULL;
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *drm_output;
-   E_Randr2_Screen *s;
+   E_Output_Screen *s;
    const Eina_List *l, *ll;
    E_Output * eout = NULL;
 
@@ -1455,7 +1455,7 @@ e_comp_hwc_plane_init(E_Zone *zone)
    // TODO: canvas, zone shall match with one output
    EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
      {
-        EINA_LIST_FOREACH(e_randr2->screens, ll, s)
+        EINA_LIST_FOREACH(e_drm_output->screens, ll, s)
           {
              int len;
 

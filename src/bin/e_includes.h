@@ -4,7 +4,6 @@
 #include "e_error.h"
 #include "e_zone.h"
 #include "e_desk.h"
-#include "e_randr2.h"
 #include "e_pixmap.h"
 #include "e_comp_object.h"
 #include "e_util_transform.h"
@@ -52,6 +51,8 @@
 #include "e_hints.h"
 #include "e_plane.h"
 #include "e_comp_hwc.h"
+#include "e_comp_drm.h"
+#include "e_output.h"
 
 #ifdef HAVE_WAYLAND
 # include "e_comp_wl.h"
