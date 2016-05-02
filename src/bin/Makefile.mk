@@ -59,13 +59,13 @@ src/bin/e_mouse.h \
 src/bin/e_msgbus.h \
 src/bin/e_obj_dialog.h \
 src/bin/e_object.h \
+src/bin/e_output.h \
 src/bin/e_path.h \
 src/bin/e_pixmap.h \
 src/bin/e_place.h \
 src/bin/e_plane.h \
 src/bin/e_pointer.h \
 src/bin/e_prefix.h \
-src/bin/e_randr2.h \
 src/bin/e_remember.h \
 src/bin/e_resist.h \
 src/bin/e_scale.h \
@@ -80,7 +80,8 @@ src/bin/e_xinerama.h \
 src/bin/e_zoomap.h \
 src/bin/e_zone.h \
 src/bin/e_util_transform.h \
-src/bin/e_comp_hwc.h
+src/bin/e_comp_hwc.h \
+src/bin/e_comp_drm.h
 
 if HAVE_WAYLAND
 ENLIGHTENMENTHEADERS += \
@@ -105,6 +106,7 @@ src/bin/e_comp.c \
 src/bin/e_comp_canvas.c \
 src/bin/e_comp_cfdata.c \
 src/bin/e_comp_object.c \
+src/bin/e_comp_drm.c \
 src/bin/e_config.c \
 src/bin/e_config_data.c \
 src/bin/e_dbusmenu.c \
@@ -135,7 +137,6 @@ src/bin/e_place.c \
 src/bin/e_plane.c \
 src/bin/e_pointer.c \
 src/bin/e_prefix.c \
-src/bin/e_randr2.c \
 src/bin/e_remember.c \
 src/bin/e_resist.c \
 src/bin/e_scale.c \
@@ -151,6 +152,7 @@ src/bin/e_zoomap.c \
 src/bin/e_zone.c \
 src/bin/e_util_transform.c \
 src/bin/e_comp_hwc.c \
+src/bin/e_output.c \
 $(ENLIGHTENMENTHEADERS)
 
 if HAVE_WAYLAND
@@ -183,7 +185,7 @@ src/bin/e_main.c \
 $(enlightenment_src)
 
 src_bin_enlightenment_LDFLAGS = -export-dynamic
-src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ @WL_DRM_LIBS@ -lm @SHM_OPEN_LIBS@ $(TTRACE_LIBS)
+src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ -lm @SHM_OPEN_LIBS@ $(TTRACE_LIBS)
 if HAVE_WAYLAND_TBM
 src_bin_enlightenment_LDADD += @WAYLAND_TBM_LIBS@ @ECORE_DRM_LIBS@
 endif
