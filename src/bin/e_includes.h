@@ -18,7 +18,6 @@
 #include "e_place.h"
 #include "e_resist.h"
 #include "e_signals.h"
-#include "e_xinerama.h"
 #include "e_layout.h"
 #include "e_theme.h"
 #include "e_dnd.h"

@@ -573,7 +573,6 @@ main(int argc, char **argv)
    e_screensaver_preinit();
    e_zone_init();
    e_desk_init();
-   e_plane_init();
 
    TRACE_DS_BEGIN(MAIN:SCREEN INIT);
    TS("Screens Init");
@@ -760,14 +759,6 @@ _e_main_parse_arguments(int argc, char **argv)
           {
              i++;
              e_util_env_set("DISPLAY", argv[i]);
-          }
-        else if ((!strcmp(argv[i], "-fake-xinerama-screen")) && (i < (argc - 1)))
-          {
-             int x, y, w, h;
-
-             i++;
-             if (sscanf(argv[i], "%ix%i+%i+%i", &w, &h, &x, &y) == 4)
-               e_xinerama_fake_screen_add(x, y, w, h);
           }
         else if (!strcmp(argv[i], "-good"))
           {
@@ -1106,7 +1097,6 @@ _e_main_screens_shutdown(void)
    e_comp_shutdown();
    e_client_shutdown();
 
-   e_plane_shutdown();
    e_desk_shutdown();
    e_zone_shutdown();
    return 1;
