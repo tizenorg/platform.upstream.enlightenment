@@ -582,6 +582,8 @@ _e_shell_cb_shell_surface_get(struct wl_client *client, struct wl_resource *reso
    cdata->shell.ping = _e_shell_surface_ping;
    cdata->shell.map = _e_shell_surface_map;
    cdata->shell.unmap = _e_shell_surface_unmap;
+
+   e_comp_wl_shell_surface_ready(ec);
 }
 
 static void
@@ -1237,6 +1239,8 @@ _e_xdg_shell_cb_surface_get(struct wl_client *client, struct wl_resource *resour
      ec->border.changed = ec->changes.border = !ec->borderless;
    ec->netwm.type = E_WINDOW_TYPE_NORMAL;
    ec->comp_data->set_win_type = EINA_TRUE;
+
+   e_comp_wl_shell_surface_ready(ec);
 }
 
 static void

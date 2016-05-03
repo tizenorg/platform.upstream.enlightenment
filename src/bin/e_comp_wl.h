@@ -51,6 +51,7 @@ typedef struct _E_Comp_Wl_Client_Data E_Comp_Wl_Client_Data;
 typedef struct _E_Comp_Wl_Data E_Comp_Wl_Data;
 typedef struct _E_Comp_Wl_Output E_Comp_Wl_Output;
 typedef struct _E_Comp_Wl_Input_Device E_Comp_Wl_Input_Device;
+typedef struct _E_Comp_Wl_Hook E_Comp_Wl_Hook;
 
 typedef enum _E_Comp_Wl_Buffer_Type
 {
@@ -60,6 +61,14 @@ typedef enum _E_Comp_Wl_Buffer_Type
    E_COMP_WL_BUFFER_TYPE_VIDEO = 3,
    E_COMP_WL_BUFFER_TYPE_TBM = 4,
 } E_Comp_Wl_Buffer_Type;
+
+typedef enum _E_Comp_Wl_Hook_Point
+{
+   E_COMP_WL_HOOK_SHELL_SURFACE_READY,
+   E_COMP_WL_HOOK_LAST,
+} E_Comp_Wl_Hook_Point;
+
+typedef void (*E_Comp_Wl_Hook_Cb) (void *data, E_Client *ec);
 
 struct _E_Comp_Wl_Aux_Hint
 {
@@ -469,6 +478,15 @@ struct _E_Comp_Wl_Output
    void *data;
 };
 
+struct _E_Comp_Wl_Hook
+{
+   EINA_INLIST;
+   E_Comp_Wl_Hook_Point hookpoint;
+   E_Comp_Wl_Hook_Cb func;
+   void *data;
+   unsigned char delete_me : 1;
+};
+
 E_API Eina_Bool e_comp_wl_init(void);
 EINTERN void e_comp_wl_shutdown(void);
 
@@ -491,6 +509,11 @@ EINTERN Eina_Bool e_comp_wl_key_down(Ecore_Event_Key *ev);
 EINTERN Eina_Bool e_comp_wl_key_up(Ecore_Event_Key *ev);
 E_API Eina_Bool e_comp_wl_evas_handle_mouse_button(E_Client *ec, uint32_t timestamp, uint32_t button_id, uint32_t state);
 E_API void        e_comp_wl_touch_cancel(void);
+
+E_API E_Comp_Wl_Hook *e_comp_wl_hook_add(E_Comp_Wl_Hook_Point hookpoint, E_Comp_Wl_Hook_Cb func, const void *data);
+E_API void e_comp_wl_hook_del(E_Comp_Wl_Hook *ch);
+
+E_API void e_comp_wl_shell_surface_ready(E_Client *ec);
 
 E_API extern int E_EVENT_WAYLAND_GLOBAL_ADD;
 
