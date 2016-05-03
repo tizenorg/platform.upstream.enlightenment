@@ -79,6 +79,7 @@ struct _E_Comp_Hwc_Layer {
    int zpos;
    Eina_Bool primary;
    Eina_Bool reserved_memory;
+   unsigned int last_sequence;
 
    Eina_Bool pending;
    Eina_List *pending_tsurfaces;
@@ -930,6 +931,13 @@ _e_comp_hwc_output_commit_handler_reserved_memory(tdm_output *output, unsigned i
              _e_comp_hwc_layer_queue_release(hwc_layer, tsurface);
              hwc_layer->tsurface = tsurface;
           }
+
+        /* fps check at no composite */
+        if (hwc_layer->last_sequence != sequence)
+          {
+             _e_comp_hwc_update_client_fps();
+             hwc_layer->last_sequence = sequence;
+          }
      }
 
    /* send the done surface to the client  */
@@ -1004,6 +1012,13 @@ _e_comp_hwc_output_commit_handler(tdm_output *output, unsigned int sequence,
 
         tbm_surface_internal_unref(tsurface);
         _e_comp_hwc_commit_data_destroy(data);
+
+        /* fps check at no composite */
+        if (hwc_layer->last_sequence != sequence)
+          {
+             _e_comp_hwc_update_client_fps();
+             hwc_layer->last_sequence = sequence;
+          }
      }
 }
 
@@ -1110,10 +1125,6 @@ _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_l
         ERR("fail to tdm_layer_set_buffer");
         return EINA_FALSE;
      }
-
-   /* fps check at no composite */
-   if (!is_canvas)
-      _e_comp_hwc_update_client_fps();
 
    /* commit handler is different */
    if (hwc_layer->reserved_memory)
