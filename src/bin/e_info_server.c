@@ -79,12 +79,17 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
 
         if (ec->pixmap)
           res_id = e_pixmap_res_id_get(ec->pixmap);
+
+        pid = ec->netwm.pid;
 #ifdef HAVE_WAYLAND_ONLY
-        if (ec->comp_data)
+        if (pid <= 0)
           {
-             E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
-             if (cdata->surface)
-               wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
+             if (ec->comp_data)
+               {
+                  E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+                  if (cdata->surface)
+                    wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
+               }
           }
 #endif
         if (e_comp->hwc)
