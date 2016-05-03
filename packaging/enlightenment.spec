@@ -69,7 +69,7 @@ make %{?_smp_mflags}
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
 %license COPYING
-%{_bindir}/enlightenment*
+%attr(750,root,root) %{_bindir}/enlightenment*
 %{_libdir}/enlightenment/*
 %{_datadir}/enlightenment/*
 %{_sysconfdir}/dbus-1/system.d/org.enlightenment.wm.conf
