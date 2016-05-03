@@ -9,11 +9,11 @@
 
 #include <uuid.h>
 
-static Eina_Hash *pixmaps[2] = {NULL};
-static Eina_Hash *deleted[2] = {NULL};
+static Eina_Hash *pixmaps[E_PIXMAP_TYPE_MAX] = {NULL};
+static Eina_Hash *deleted[E_PIXMAP_TYPE_MAX] = {NULL};
 static Eina_Hash *res_ids = NULL;
 static uint32_t res_id = 0;
-static Eina_Hash *aliases[2] = {NULL};
+static Eina_Hash *aliases[E_PIXMAP_TYPE_MAX] = {NULL};
 
 struct _E_Pixmap
 {
@@ -152,7 +152,7 @@ _e_pixmap_find(E_Pixmap_Type type, va_list *l)
    uintptr_t id;
    E_Pixmap *cp;
 
-   if (type != E_PIXMAP_TYPE_WL) return NULL;
+   if (type == E_PIXMAP_TYPE_X) return NULL;
    if (!pixmaps[type]) return NULL;
 
    id = va_arg(*l, uintptr_t);
@@ -184,7 +184,8 @@ E_API void
 e_pixmap_del(E_Pixmap *cp)
 {
    if (!cp) return;
-   if (cp->type != E_PIXMAP_TYPE_WL) return;
+   if (cp->type == E_PIXMAP_TYPE_X) return;
+
    if (eina_hash_find(pixmaps[cp->type], &cp->win))
      {
         eina_hash_del_by_key(pixmaps[cp->type], &cp->win);
@@ -196,7 +197,8 @@ E_API Eina_Bool
 e_pixmap_is_del(E_Pixmap *cp)
 {
    if (!cp) return 0;
-   if (cp->type != E_PIXMAP_TYPE_WL) return 0;
+   if (cp->type == E_PIXMAP_TYPE_X) return 0;
+
    return !!eina_hash_find(deleted[cp->type], &cp->win);
 }
 
@@ -215,7 +217,7 @@ e_pixmap_new(E_Pixmap_Type type, ...)
    va_list l;
    uintptr_t id;
 
-   EINA_SAFETY_ON_FALSE_RETURN_VAL(type == E_PIXMAP_TYPE_WL, NULL);
+   EINA_SAFETY_ON_TRUE_RETURN_VAL(type == E_PIXMAP_TYPE_X, NULL);
 
    va_start(l, type);
 
