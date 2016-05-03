@@ -109,10 +109,8 @@ struct _E_Zone
 #endif
 
    E_Zone_Display_State display_state;
-   char *randr2_id; // same id we get from randr2 so look it up there
-
-   E_Output    *output;
-   E_Plane     *primary_plane;
+   char                 *randr2_id; // same id we get from randr2 so look it up there
+   E_Output_Screen      *screen;
 };
 
 struct _E_Event_Zone_Generic
