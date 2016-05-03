@@ -10,6 +10,7 @@ Source1001:     enlightenment.manifest
 
 BuildRequires:  eet-tools
 BuildRequires:  pkgconfig(dbus-1)
+BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(ecore)
 BuildRequires:  pkgconfig(ecore-evas)
 BuildRequires:  pkgconfig(ecore-file)
