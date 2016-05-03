@@ -371,7 +371,7 @@ _e_comp_selcomp_check(void)
         int ly_total = 0, ly_cnt = 0;
         E_Hwc_Mode mode = E_HWC_MODE_INVALID;
 
-        if (zone->output) ly_total = zone->output->plane_count;
+        if (zone->screen) ly_total = zone->screen->plane_count;
 
         E_CLIENT_REVERSE_FOREACH(ec)
           {
@@ -428,14 +428,14 @@ _e_comp_selcomp_assign_planes(void)
    EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
      {
         E_Client *ec;
-        E_Output *eout;
+        E_Output_Screen *eout;
         int mode = E_HWC_MODE_INVALID;
         int num_of_ly = 0, ly_cnt = 0;
         Eina_List *clist = NULL;
 
-        if (!zone && !zone->output) continue;
+        if (!zone && !zone->screen) continue;
 
-        eout = zone->output;
+        eout = zone->screen;
         printf("reassign all clients from zone %p\n", zone);
         num_of_ly = eout->plane_count;
 
@@ -514,7 +514,7 @@ _e_comp_cb_selcomp_begin(void)
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        if(zone->output) mode_set |= e_output_update(zone->output);
+        if(zone->screen) mode_set |= e_output_update(zone->screen);
      }
 #endif
    if (!mode_set) return;
@@ -559,10 +559,10 @@ e_comp_selcomp_end(const char *location)
    // e_comp->canvases will be replace e_comp->zones
    EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
      {
-        if (zone->output)
+        if (zone->screen)
           {
-             e_output_planes_clear(zone->output);
-             mode_set |= e_output_update(zone->output);
+             e_output_planes_clear(zone->screen);
+             mode_set |= e_output_update(zone->screen);
           }
      }
 #endif
@@ -1242,6 +1242,7 @@ e_comp_init(void)
 
    e_comp_new();
 
+   e_main_ts("\tE_Comp_DRM Init");
    if (!e_comp_drm_init())
      {
         ERR("Fail to init e_comp_drm");
@@ -1249,6 +1250,7 @@ e_comp_init(void)
         E_FREE_FUNC(ignores, eina_hash_free);
         return EINA_FALSE;
      }
+   e_main_ts("\tE_Comp_DRM Init Done");
 
    e_comp->comp_type = E_PIXMAP_TYPE_WL;
 
@@ -1261,8 +1263,6 @@ e_comp_init(void)
         e_comp->hwc = e_comp_hwc_init();
         if (!e_comp->hwc)
           WRN("fail to init hwc.");
-
-        E_LIST_FOREACH(e_comp->zones, e_comp_hwc_plane_init);
      }
 #endif
 

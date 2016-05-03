@@ -1,19 +1,23 @@
 #ifdef E_TYPEDEFS
 
-typedef struct _E_Drm_Output        E_Drm_Output;
+//typedef struct _E_Output        E_Output;
+typedef struct _E_Output        E_Output;
 typedef struct _E_Output_Screen E_Output_Screen;
 typedef struct _E_Output_Mode   E_Output_Mode;
+typedef struct _E_Screen        E_Screen;
 
 #else
 #ifndef E_OUTPUT_H
 #define E_OUTPUT_H
 
-struct _E_Drm_Output
+#define E_OUTPUT_TYPE (int)0xE0b11002
+
+struct _E_Output
 {
    Eina_List *screens; // available screens
    int        w, h; // virtual resolution needed for screens (calculated)
    unsigned char  ignore_hotplug_events;
-   unsigned char  ignore_acpi_events; 
+   unsigned char  ignore_acpi_events;
 };
 
 struct _E_Output_Mode
@@ -27,38 +31,47 @@ struct _E_Output_Screen
 {
    char *id; // string id which is "name/edid";
    struct {
-      char                 *screen; // name of the screen device attached
-      char                 *name; // name of the output itself
-      char                 *edid; // full edid data
-      Eina_Bool             connected : 1; // some screen is plugged in or not
-      Eina_List            *modes; // available screen modes here
-      struct {
-         int                w, h; // physical width and height in mm
-      } size;
+        char                 *screen; // name of the screen device attached
+        char                 *name; // name of the output itself
+        char                 *edid; // full edid data
+        Eina_Bool             connected : 1; // some screen is plugged in or not
+        Eina_List            *modes; // available screen modes here
+        struct {
+             int                w, h; // physical width and height in mm
+        } size;
    } info;
    struct {
-      Eina_Rectangle        geom; // the geometry that is set (as a result)
-      E_Output_Mode         mode; // screen res/refresh to use
-      int                   rotation; // 0, 90, 180, 270
-      int                   priority; // larger num == more important
-      Eina_Bool             enabled : 1; // should this monitor be enabled?
-      Eina_Bool             configured : 1; // has screen been configured by e?
+        Eina_Rectangle        geom; // the geometry that is set (as a result)
+        E_Output_Mode         mode; // screen res/refresh to use
+        int                   rotation; // 0, 90, 180, 270
+        int                   priority; // larger num == more important
+        Eina_Bool             enabled : 1; // should this monitor be enabled?
    } config;
-   Eina_List           *planes;
+
    int                  plane_count;
+   Eina_List           *planes;
    E_Zone              *zone;
 };
 
-extern E_API E_Drm_Output *e_drm_output;
-extern E_API int E_EVENT_SCREEN_CHANGE;
-extern E_API int E_EVENT_RANDR_CHANGE; // x randr
+struct _E_Screen
+{
+   int screen, escreen;
+   int x, y, w, h;
+   char *id; // this is the same id we get from _E_Output_Screen so look it up there
+};
 
-EINTERN Eina_Bool e_drm_output_init(void);
-EINTERN int       e_drm_output_shutdown(void);
-E_API    void      e_drm_output_config_apply(void);
-E_API    void      e_drm_output_screeninfo_update(void);
-E_API void e_drm_output_screen_refresh_queue(Eina_Bool lid_event);
-E_API void e_drm_output_screens_setup(int rw, int rh);
+extern E_API E_Output *e_output;
+extern E_API int E_EVENT_SCREEN_CHANGE;
+
+EINTERN Eina_Bool e_output_init(void);
+EINTERN int       e_output_shutdown(void);
+EINTERN E_Output_Screen * e_output_screen_new(E_Zone *zone, int nlayer);
+E_API   void              e_output_screens_setup(int rw, int rh);
+E_API   const Eina_List * e_output_screens_get(void);
+EINTERN E_Output_Screen * e_output_screen_id_find(const char *id);
+E_API   Eina_Bool         e_output_planes_clear(E_Output_Screen * screen);
+E_API   Eina_Bool         e_output_planes_set(E_Output_Screen * screen, E_Hwc_Mode mode, Eina_List* clist);
+E_API   Eina_Bool         e_output_update(E_Output_Screen * screen);
 
 #endif
 #endif

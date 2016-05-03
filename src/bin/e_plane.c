@@ -1,6 +1,6 @@
 #include "e.h"
 
-/* E_Plane is a child object of E_Output. There is one Output per screen
+/* E_Plane is a child object of E_Output_Screen. There is one Output per screen
  * E_plane represents hw overlay and a surface is assigned to disable composition
  * Each Output always has dedicated canvas and a zone
  */
@@ -12,22 +12,6 @@ E_API int E_EVENT_PLANE_DEL = 0;
 
 /* local subsystem functions */
 static void
-_e_plane_free(E_Plane *plane)
-{
-   //printf("@@@@@@@@@@ e_plane_free: %i %i | %i %i %ix%i = %p\n", zone->num, zone->id, zone->x, zone->y, zone->w, zone->h, zone);
-
-   if (!plane) return;
-   if (plane->output) plane->output->plane_count--;
-
-   /* remove handlers */
-   E_FREE_LIST(plane->handlers, ecore_event_handler_del);
-
-   if (plane->name) eina_stringshare_del(plane->name);
-
-   free(plane);
-}
-
-static void
 _e_plane_reconfigure_clients(E_Plane *plane, int dx, int dy, int dw, int dh)
 {
    EINA_SAFETY_ON_NULL_RETURN(plane->ec);
@@ -36,7 +20,7 @@ _e_plane_reconfigure_clients(E_Plane *plane, int dx, int dy, int dw, int dh)
 }
 
 ///////////////////////////////////////////
-
+/*
 EINTERN int
 e_plane_init(void)
 {
@@ -51,35 +35,47 @@ e_plane_shutdown(void)
 {
    return 1;
 }
+*/
+E_API void
+e_plane_free(E_Plane *plane)
+{
+   //printf("@@@@@@@@@@ e_plane_free: %i %i | %i %i %ix%i = %p\n", zone->num, zone->id, zone->x, zone->y, zone->w, zone->h, zone);
+
+   if (!plane) return;
+   if (plane->name) eina_stringshare_del(plane->name);
+
+   free(plane);
+}
 
 E_API E_Plane *
-e_plane_new(E_Output *output)
+e_plane_new(E_Output_Screen *screen)
 {
    E_Plane *plane;
 
    char name[40];
 
-   if (!output) return NULL;
+   if (!screen) return NULL;
 
-   plane = E_OBJECT_ALLOC(E_Plane, E_PLANE_TYPE, _e_plane_free);
+   //plane = E_OBJECT_ALLOC(E_Plane, E_PLANE_TYPE, _e_plane_free);
+   plane = E_NEW(E_Plane, 1);
    if (!plane) return NULL;
+   printf("%s 2", __FUNCTION__);
 
-   snprintf(name, sizeof(name), "Plane %d", output->zone->num);
+   snprintf(name, sizeof(name), "Plane %d", screen->id);
    plane->name = eina_stringshare_add(name);
 
    plane->type = E_PLANE_TYPE_INVALID;
-   plane->output = output;
+   plane->screen = screen;
 
    /* config default resolution with output size*/
-   plane->resolution.x = output->geom.x;
-   plane->resolution.y = output->geom.y;
-   plane->resolution.w = output->geom.w;
-   plane->resolution.h = output->geom.h;
+   plane->resolution.x = screen->config.geom.x;
+   plane->resolution.y = screen->config.geom.y;
+   plane->resolution.w = screen->config.geom.w;
+   plane->resolution.h = screen->config.geom.h;
 
-   output->planes = eina_list_append(output->planes, plane);
-   output->plane_count++;
+   screen->planes = eina_list_append(screen->planes, plane);
 
-   printf("@@@@@@@@@@ e_plane_new: %s | %i %i %ix%i = %p\n", output->zone->randr2_id, plane->resolution.x , plane->resolution.y, plane->resolution.w, plane->resolution.h, output);
+   printf("@@@@@@@@@@ e_plane_new:| %i %i %ix%i\n", plane->resolution.x , plane->resolution.y, plane->resolution.w, plane->resolution.h);
 
    return plane;
 }
