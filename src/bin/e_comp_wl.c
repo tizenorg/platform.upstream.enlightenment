@@ -52,7 +52,50 @@ static Eina_Bool need_send_leave = EINA_TRUE;
 static Eina_Bool need_send_released = EINA_FALSE;
 static Eina_Bool need_send_motion = EINA_TRUE;
 
+static int _e_comp_wl_hooks_delete = 0;
+static int _e_comp_wl_hooks_walking = 0;
+
+static Eina_Inlist *_e_comp_wl_hooks[] =
+{
+   [E_COMP_WL_HOOK_SHELL_SURFACE_READY] = NULL,
+};
+
 /* local functions */
+static void
+_e_comp_wl_hooks_clean(void)
+{
+   Eina_Inlist *l;
+   E_Comp_Wl_Hook *ch;
+   unsigned int x;
+   for (x = 0; x < E_COMP_WL_HOOK_LAST; x++)
+     EINA_INLIST_FOREACH_SAFE(_e_comp_wl_hooks[x], l, ch)
+       {
+          if (!ch->delete_me) continue;
+          _e_comp_wl_hooks[x] = eina_inlist_remove(_e_comp_wl_hooks[x], EINA_INLIST_GET(ch));
+         free(ch); 
+       }
+}
+
+static void
+_e_comp_wl_hook_call(E_Comp_Wl_Hook_Point hookpoint, E_Client *ec)
+{
+   E_Comp_Wl_Hook *ch;
+
+   e_object_ref(E_OBJECT(ec));
+   _e_comp_wl_hooks_walking++;
+   EINA_INLIST_FOREACH(_e_comp_wl_hooks[hookpoint], ch)
+     {
+        if (ch->delete_me) continue;
+        ch->func(ch->data, ec);
+        if (e_object_is_del(E_OBJECT(ec)))
+          break;
+     }
+   _e_comp_wl_hooks_walking--;
+   if ((_e_comp_wl_hooks_walking == 0) && (_e_comp_wl_hooks_delete > 0))
+     _e_comp_wl_hooks_clean();
+   e_object_unref(E_OBJECT(ec));
+}
+
 static void
 _e_comp_wl_configure_send(E_Client *ec, Eina_Bool edges, Eina_Bool send_size)
 {
@@ -5047,4 +5090,40 @@ E_API void
 e_comp_wl_touch_cancel(void)
 {
    _e_comp_wl_touch_cancel();
+}
+
+E_API E_Comp_Wl_Hook *
+e_comp_wl_hook_add(E_Comp_Wl_Hook_Point hookpoint, E_Comp_Wl_Hook_Cb func, const void *data)
+{
+   E_Comp_Wl_Hook *ch;
+
+   EINA_SAFETY_ON_TRUE_RETURN_VAL(hookpoint >= E_COMP_WL_HOOK_LAST, NULL);
+   ch = E_NEW(E_Comp_Wl_Hook, 1);
+   if (!ch) return NULL;
+   ch->hookpoint = hookpoint;
+   ch->func = func;
+   ch->data = (void*)data;
+   _e_comp_wl_hooks[hookpoint] = eina_inlist_append(_e_comp_wl_hooks[hookpoint], EINA_INLIST_GET(ch));
+   return ch;
+}
+
+E_API void
+e_comp_wl_hook_del(E_Comp_Wl_Hook *ch)
+{
+   ch->delete_me = 1;
+   if (_e_comp_wl_hooks_walking == 0)
+     {
+        _e_comp_wl_hooks[ch->hookpoint] = eina_inlist_remove(_e_comp_wl_hooks[ch->hookpoint], EINA_INLIST_GET(ch));
+        free(ch);
+     }
+   else
+     _e_comp_wl_hooks_delete++;
+}
+
+E_API void
+e_comp_wl_shell_surface_ready(E_Client *ec)
+{
+   if (!ec) return;
+
+   _e_comp_wl_hook_call(E_COMP_WL_HOOK_SHELL_SURFACE_READY, ec);
 }
