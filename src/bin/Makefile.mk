@@ -76,7 +76,6 @@ src/bin/e_theme.h \
 src/bin/e_user.h \
 src/bin/e_utils.h \
 src/bin/e_win.h \
-src/bin/e_xinerama.h \
 src/bin/e_zoomap.h \
 src/bin/e_zone.h \
 src/bin/e_util_transform.h \
@@ -147,7 +146,6 @@ src/bin/e_theme.c \
 src/bin/e_user.c \
 src/bin/e_utils.c \
 src/bin/e_win.c \
-src/bin/e_xinerama.c \
 src/bin/e_zoomap.c \
 src/bin/e_zone.c \
 src/bin/e_util_transform.c \

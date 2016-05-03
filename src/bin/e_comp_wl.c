@@ -1736,9 +1736,9 @@ _e_comp_wl_cb_randr_change(void *data EINA_UNUSED, int type EINA_UNUSED, void *e
    E_Output_Screen *screen;
    unsigned int transform = WL_OUTPUT_TRANSFORM_NORMAL;
 
-   if (!e_drm_output) return ECORE_CALLBACK_RENEW;
+   if (!e_output) return ECORE_CALLBACK_RENEW;
 
-   EINA_LIST_FOREACH(e_drm_output->screens, l, screen)
+   EINA_LIST_FOREACH(e_output->screens, l, screen)
      {
         if (!screen->config.enabled)
           {
@@ -4299,15 +4299,6 @@ e_comp_wl_init(void)
 #ifdef HAVE_WAYLAND_TBM
    e_comp_wl_tbm_init();
 #endif
-
-   if (!e_drm_output_init())
-     {
-        e_error_message_show(_("Enlightenment cannot initialize drm output!\n"));
-        TRACE_DS_END();
-        return EINA_FALSE;
-     }
-
-   e_drm_output_screens_setup(-1, -1);
 
    /* add event handlers to catch E events */
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREEN_CHANGE,            _e_comp_wl_cb_randr_change,        NULL);
