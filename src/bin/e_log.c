@@ -10,12 +10,60 @@ static const char *_names[] = {
    "DBG",
 };
 
+#ifdef HAVE_DLOG
+static Eina_Bool _dlog_enabled = EINA_FALSE;
+#endif
+
 static void
 _e_log_cb(const Eina_Log_Domain *d, Eina_Log_Level level, const char *file, const char *fnc EINA_UNUSED, int line, const char *fmt, void *data EINA_UNUSED, va_list args)
 {
    const char *color;
+#ifdef HAVE_DLOG
+   if (_dlog_enabled)
+     {
+        int log_level;
+        const char buf[512];
+        char tmp_log_level[512];
 
+        switch (level)
+          {
+           case EINA_LOG_LEVEL_CRITICAL:
+              log_level = DLOG_FATAL;
+              strcpy(tmp_log_level, "FATAL");
+              break;
+           case EINA_LOG_LEVEL_ERR:
+              log_level = DLOG_ERROR;
+              strcpy(tmp_log_level, "ERROR");
+              break;
+           case EINA_LOG_LEVEL_WARN:
+              log_level = DLOG_WARN;
+              strcpy(tmp_log_level, "WARNING");
+              break;
+           case EINA_LOG_LEVEL_INFO:
+              log_level = DLOG_INFO;
+              strcpy(tmp_log_level, "INFO");
+              break;
+           case EINA_LOG_LEVEL_DBG:
+              log_level = DLOG_DEBUG;
+              strcpy(tmp_log_level, "DEBUG");
+              break;
+           default:
+              log_level = DLOG_VERBOSE;
+              strcpy(tmp_log_level, "VERBOSE");
+              break;
+          }
+
+        vsnprintf((char *)buf, sizeof(buf), fmt, args);
+
+        dlog_print(log_level, LOG_TAG,
+                  "%s<%s> %30.30s:%04d %s",
+                  _names[level > EINA_LOG_LEVEL_DBG ? EINA_LOG_LEVEL_DBG : level],
+                  d->domain_str,file, line, buf);
+        return;
+     }
+#endif
    color = eina_log_level_color_get(level);
+
    fprintf(stdout,
            "%s%s<" EINA_COLOR_RESET "%s%s>" EINA_COLOR_RESET "%30.30s:%04d" EINA_COLOR_RESET " ",
            color, _names[level > EINA_LOG_LEVEL_DBG ? EINA_LOG_LEVEL_DBG : level],
@@ -24,12 +72,27 @@ _e_log_cb(const Eina_Log_Domain *d, Eina_Log_Level level, const char *file, cons
    putc('\n', stdout);
 }
 
+#ifdef HAVE_DLOG
+EINTERN void
+e_log_dlog_enable(Eina_Bool enable)
+{
+   if (_dlog_enabled != enable)
+     _dlog_enabled = enable;
+}
+#endif
+
 EINTERN int
 e_log_init(void)
 {
    e_log_dom = eina_log_domain_register("e", EINA_COLOR_WHITE);
    eina_log_print_cb_set(_e_log_cb, NULL);
    eina_log_domain_level_set("e", 3);
+
+#ifdef HAVE_DLOG
+   if (getenv("E_LOG_DLOG_ENABLE"))
+     _dlog_enabled = EINA_TRUE;
+#endif
+
    return 1;
 }
 

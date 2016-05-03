@@ -4,6 +4,13 @@
 #ifndef E_LOG_H
 #define E_LOG_H
 
+#ifdef HAVE_DLOG
+# include <dlog.h>
+#  ifdef LOG_TAG
+#   undef LOG_TAG
+#  endif
+# define LOG_TAG "E20"
+#endif
 
 #ifdef E_LOGGING
 #undef DBG
@@ -48,6 +55,10 @@
 
 
 extern E_API int e_log_dom;
+
+#ifdef HAVE_DLOG
+EINTERN void e_log_dlog_enable(Eina_Bool enable);
+#endif
 
 EINTERN int e_log_init(void);
 EINTERN int e_log_shutdown(void);

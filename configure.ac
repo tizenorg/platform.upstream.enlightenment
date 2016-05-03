@@ -409,6 +409,14 @@ if test "x$have_ttrace" = "xyes"; then
 	AC_DEFINE(ENABLE_TTRACE, 1, [ttrace available])
 fi
 
+# dlog
+PKG_CHECK_EXISTS([dlog], [have_dlog="yes"], [have_dlog="no"])
+AC_MSG_CHECKING([Have dlog logger])
+AC_MSG_RESULT([${have_dlog}])
+if test "x${have_dlog}" = "xyes"; then
+    AC_DEFINE([HAVE_DLOG], [1], [Define to 1 if you have dlog])
+fi
+
 AM_CONDITIONAL([HAVE_WAYLAND], [test "x${have_wayland}" = "xyes"])
 AM_CONDITIONAL([HAVE_WAYLAND_TBM], [test "x${have_wayland_tbm}" = "xyes"])
 AM_CONDITIONAL([HAVE_HWC], [test "x${have_hwc}" = "xyes"])

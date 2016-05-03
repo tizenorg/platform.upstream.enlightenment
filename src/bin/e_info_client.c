@@ -557,6 +557,33 @@ _e_info_client_proc_eina_log_path(int argc, char **argv)
      }
 }
 
+#ifdef HAVE_DLOG
+static void
+_e_info_client_proc_dlog_switch(int argc, char **argv)
+{
+   uint32_t onoff;
+
+   EINA_SAFETY_ON_FALSE_RETURN(argc == 3);
+   EINA_SAFETY_ON_NULL_RETURN(argv[2]);
+
+   onoff = atoi(argv[2]);
+   if ((onoff == 1) || (onoff == 0))
+     {
+
+        if (!_e_info_client_eldbus_message_with_args("dlog", NULL, "i", onoff))
+          {
+             printf("Error to switch %s logging system using dlog logging.", onoff?"on":"off");
+             return;
+          }
+        if (onoff)
+          printf("Now you can try to track enlightenment log with dlog logging system.\n"
+                 "Track dlog with LOGTAG \"E20\" ex) dlogutil E20\n");
+        else
+          printf("Logging of enlightenment with dlog is disabled.\n");
+     }
+}
+#endif
+
 static void
 _cb_window_prop_get(const Eldbus_Message *msg)
 {
@@ -1132,6 +1159,14 @@ static struct
       "Set eina-log path in runtime",
       _e_info_client_proc_eina_log_path
    },
+#ifdef HAVE_DLOG
+   {
+      "dlog",
+      "[on:1,off:0]",
+      "Logging using dlog system (on:1, off:0)",
+      _e_info_client_proc_dlog_switch
+   },
+#endif
    {
       "prop", "[id]",
       "Print window infomation",
