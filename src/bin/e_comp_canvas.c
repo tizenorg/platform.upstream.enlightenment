@@ -124,7 +124,7 @@ _e_comp_canvas_cb_zone_sort(const void *data1, const void *data2)
 static void
 _e_comp_canvas_resize(Ecore_Evas *ee EINA_UNUSED)
 {
-   e_drm_output_screens_setup(e_comp->w, e_comp->h);
+   e_output_screens_setup(e_comp->w, e_comp->h);
    e_comp_canvas_update();
 }
 
@@ -174,7 +174,7 @@ e_comp_canvas_init(int w, int h)
 
    e_comp->ee_win = ecore_evas_window_get(e_comp->ee);
 
-   screens = (Eina_List *)e_xinerama_screens_get();
+   screens = (Eina_List *)e_output_screens_get();
    if (screens)
      {
         E_Screen *scr;
@@ -184,7 +184,11 @@ e_comp_canvas_init(int w, int h)
           {
              E_Zone *zone = e_zone_new(scr->screen, scr->escreen,
                                        scr->x, scr->y, scr->w, scr->h);
-             if (scr->id) zone->randr2_id = strdup(scr->id);
+             if (scr->id)
+               {
+                  zone->randr2_id = strdup(scr->id);
+                  zone->screen = e_output_screen_id_find(scr->id);
+               }
           }
      }
    else
@@ -198,7 +202,6 @@ e_comp_canvas_init(int w, int h)
 
    ecore_evas_callback_pre_render_set(e_comp->ee, _e_comp_canvas_prerender);
    ecore_evas_callback_resize_set(e_comp->ee, _e_comp_canvas_resize);
-   ecore_evas_resize(e_comp->ee, w, h);
 
    TRACE_DS_END();
    return EINA_TRUE;
@@ -218,14 +221,6 @@ e_comp_canvas_clear(void)
 }
 
 //////////////////////////////////////////////
-
-E_API void
-e_comp_canvas_resize(int w, int h)
-{
-   e_comp->w = w;
-   e_comp->h = h;
-   ecore_evas_resize(e_comp->ee, w, h);
-}
 
 E_API void
 e_comp_all_freeze(void)
@@ -365,7 +360,7 @@ e_comp_canvas_update(void)
    int i;
    Eina_Bool changed = EINA_FALSE;
 
-   screens = (Eina_List *)e_xinerama_screens_get();
+   screens = (Eina_List *)e_output_screens_get();
 
    if (screens)
      {
@@ -397,13 +392,23 @@ e_comp_canvas_update(void)
                   zone->num = scr->screen;
                   free(zone->randr2_id);
                   zone->randr2_id = NULL;
-                  if (scr->id) zone->randr2_id = strdup(scr->id);
+                  zone->screen = NULL;
+                  if (scr->id)
+                    {
+                       zone->randr2_id = strdup(scr->id);
+                       zone->screen = e_output_screen_id_find(scr->id);
+                    }
                }
              else
                {
                   zone = e_zone_new(scr->screen, scr->escreen,
                                     scr->x, scr->y, scr->w, scr->h);
-                  if (scr->id) zone->randr2_id = strdup(scr->id);
+                  if (scr->id)
+                    {
+                       zone->randr2_id = strdup(scr->id);
+                       zone->screen = e_output_screen_id_find(scr->id);
+                    }
+
                   printf("@@@ NEW ZONE = %p\n", zone);
                   changed = EINA_TRUE;
                }

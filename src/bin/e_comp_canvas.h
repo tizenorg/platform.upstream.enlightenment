@@ -10,7 +10,6 @@ extern E_API int E_EVENT_COMPOSITOR_RESIZE;
 
 E_API Eina_Bool e_comp_canvas_init(int w, int h);
 EINTERN void e_comp_canvas_clear(void);
-E_API void e_comp_canvas_resize(int w, int h);
 E_API void e_comp_all_freeze(void);
 E_API void e_comp_all_thaw(void);
 E_API E_Zone * e_comp_zone_xy_get(Evas_Coord x, Evas_Coord y);
