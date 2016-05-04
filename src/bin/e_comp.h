@@ -133,9 +133,7 @@ struct _E_Comp
 
    Eina_Stringshare *name;
    struct {
-      Ecore_Window win;
       Evas_Object *obj;
-      //Eina_Inlist *objs; /* E_Comp_Object; NOT to be exposed; seems pointless? */
       Eina_Inlist *clients; /* E_Client, bottom to top */
       unsigned int clients_count;
    } layers[E_LAYER_COUNT];
