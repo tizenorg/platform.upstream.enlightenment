@@ -826,6 +826,7 @@ static void
 _e_client_del(E_Client *ec)
 {
    E_Client *child;
+   E_Pixmap_Type type;
 
    ec->changed = 0;
    focus_stack = eina_list_remove(focus_stack, ec);
@@ -894,7 +895,9 @@ _e_client_del(E_Client *ec)
    EINA_LIST_FREE(ec->group, child)
      child->leader = NULL;
 
-   eina_hash_del_by_key(clients_hash[e_pixmap_type_get(ec->pixmap)], &ec->pixmap);
+   type = e_pixmap_type_get(ec->pixmap);
+   if (type == E_PIXMAP_TYPE_WL)
+     eina_hash_del_by_key(clients_hash[1], &ec->pixmap);
    e_comp->clients = eina_list_remove(e_comp->clients, ec);
    e_comp_object_render_update_del(ec->frame);
    e_comp_post_update_purge(ec);
@@ -3225,8 +3228,11 @@ E_API E_Client *
 e_client_new(E_Pixmap *cp, int first_map, int internal)
 {
    E_Client *ec;
+   E_Pixmap_Type type;
 
-   if (eina_hash_find(clients_hash[e_pixmap_type_get(cp)], &cp)) return NULL;
+   type = e_pixmap_type_get(cp);
+   if (type != E_PIXMAP_TYPE_WL) return NULL;
+   if (eina_hash_find(clients_hash[1], &cp)) return NULL;
 
    ec = E_OBJECT_ALLOC(E_Client, E_CLIENT_TYPE, _e_client_free);
    if (!ec) return NULL;

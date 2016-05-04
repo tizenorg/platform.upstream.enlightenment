@@ -296,19 +296,19 @@ e_hints_aux_hint_add_with_pixmap(E_Pixmap *cp, int32_t id, const char *name, con
    if (!found)
      {
         hint = E_NEW(E_Comp_Wl_Aux_Hint, 1);
+        EINA_SAFETY_ON_NULL_RETURN_VAL(hint, EINA_FALSE);
+
         memset(hint, 0, sizeof(E_Comp_Wl_Aux_Hint));
-        if (hint)
-          {
-             hint->id = id;
-             hint->hint = eina_stringshare_add(name);
-             hint->val = eina_stringshare_add(val);
-             hint->changed = EINA_TRUE;
-             hint->deleted = EINA_FALSE;
-             cdata->aux_hint.hints = eina_list_append(cdata->aux_hint.hints, hint);
-             cdata->aux_hint.changed = 1;
-             ELOGF("COMP", "AUX_HINT |Add [%d:%s:%s]", cp, e_pixmap_client_get(cp),
-                   id, hint->hint, hint->val);
-          }
+
+        hint->id = id;
+        hint->hint = eina_stringshare_add(name);
+        hint->val = eina_stringshare_add(val);
+        hint->changed = EINA_TRUE;
+        hint->deleted = EINA_FALSE;
+        cdata->aux_hint.hints = eina_list_append(cdata->aux_hint.hints, hint);
+        cdata->aux_hint.changed = 1;
+        ELOGF("COMP", "AUX_HINT |Add [%d:%s:%s]", cp, e_pixmap_client_get(cp),
+              id, hint->hint, hint->val);
      }
 
    if (!found)

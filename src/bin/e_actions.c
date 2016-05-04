@@ -2426,7 +2426,7 @@ e_action_predef_name_del(const char *act_grp, const char *act_name)
 
    EINA_LIST_FOREACH(actg->acts, l, actd)
      {
-        if (!strcmp(actd->act_name, act_name))
+        if ((actd->act_name) && (!strcmp(actd->act_name, act_name)))
           {
              actg->acts = eina_list_remove(actg->acts, actd);
 

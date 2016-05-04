@@ -1110,7 +1110,8 @@ _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_l
                 hwc_layer->info.dst_pos.w, hwc_layer->info.dst_pos.h, data);
          else
            ELOGF("HWC", "Commit  Layer(%p)     wl_buffer(%p) tsurface(%p) (%dx%d,[%d,%d,%d,%d]=>[%d,%d,%d,%d]) data(%p) wl_buffer_ref(%p)",
-                 ec->pixmap, ec, hwc_layer, _get_wl_buffer(ec), tsurface,
+                 ec ? ec->pixmap : NULL, ec,
+                 hwc_layer, _get_wl_buffer(ec), tsurface,
                  hwc_layer->info.src_config.size.h, hwc_layer->info.src_config.size.h,
                  hwc_layer->info.src_config.pos.x, hwc_layer->info.src_config.pos.y,
                  hwc_layer->info.src_config.pos.w, hwc_layer->info.src_config.pos.h,
