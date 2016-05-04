@@ -133,6 +133,13 @@ struct _E_Config
       const char   *group;
       unsigned int  permissions;
    } wl_sock_access;
+   int                       sleep_for_dri;
+   int                       create_wm_ready;
+   struct
+   {
+      unsigned char r, g, b, a;
+      int opmode;
+   } comp_canvas_bg;
 };
 
 struct _E_Config_Desklock_Background
