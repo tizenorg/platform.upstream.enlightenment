@@ -161,10 +161,7 @@ struct _E_Comp_Wl_Data
    struct
      {
         struct wl_display *disp;
-        struct wl_registry *registry; // only used for nested wl compositors
         struct wl_event_loop *loop;
-        Eina_Inlist *globals;  // only used for nested wl compositors
-        struct wl_shm *shm;  // only used for nested wl compositors
         Evas_GL *gl;
         Evas_GL_Config *glcfg;
         Evas_GL_Context *glctx;

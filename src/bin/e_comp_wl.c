@@ -4361,20 +4361,6 @@ e_comp_wl_shutdown(void)
    /* free handlers */
    E_FREE_LIST(handlers, ecore_event_handler_del);
 
-   while (e_comp_wl->wl.globals)
-     {
-        Ecore_Wl_Global *global;
-
-        global =
-          EINA_INLIST_CONTAINER_GET(e_comp_wl->wl.globals, Ecore_Wl_Global);
-
-        e_comp_wl->wl.globals =
-          eina_inlist_remove(e_comp_wl->wl.globals, e_comp_wl->wl.globals);
-
-        free(global->interface);
-        free(global);
-     }
-   if (e_comp_wl->wl.shm) wl_shm_destroy(e_comp_wl->wl.shm);
    _e_comp_wl_gl_shutdown();
 
 #ifdef HAVE_WAYLAND_TBM
