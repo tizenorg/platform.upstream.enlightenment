@@ -72,6 +72,8 @@ struct _E_Config
    int                       dpms_suspend_timeout;
    int                       dpms_off_timeout;
    unsigned char             no_dpms_on_fullscreen;
+   int                       sleep_for_dri;
+   int                       create_wm_ready;
    int                       mouse_hand;
    int                       border_raise_on_mouse_action;
    int                       border_raise_on_focus;
@@ -126,6 +128,11 @@ struct _E_Config
    int cursor_timer_interval;
    Eina_List *client_types;
    const char *comp_shadow_file;
+   struct
+   {
+      unsigned char r, g, b, a;
+      int opmode;
+   } comp_canvas_bg;
    struct
    {
       unsigned char use;
