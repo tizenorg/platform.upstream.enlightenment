@@ -83,6 +83,7 @@ static void      _e_main_desk_restore(void);
 static void      _e_main_modules_load(Eina_Bool safe_mode);
 static Eina_Bool _e_main_cb_idle_before(void *data EINA_UNUSED);
 static Eina_Bool _e_main_cb_idle_after(void *data EINA_UNUSED);
+static void      _e_main_create_wm_ready(void);
 
 /* local variables */
 static Eina_Bool really_know = EINA_FALSE;
@@ -575,6 +576,17 @@ main(int argc, char **argv)
    e_desk_init();
    e_plane_init();
 
+   if (e_config->sleep_for_dri)
+     {
+        while(access("/dev/dri/card0", F_OK) != 0)
+          {
+             struct timespec req, rem;
+             req.tv_sec = 0;
+             req.tv_nsec = 50000000L;
+             nanosleep(&req, &rem);
+          }
+     }
+
    TRACE_DS_BEGIN(MAIN:SCREEN INIT);
    TS("Screens Init");
    if (!_e_main_screens_init())
@@ -662,6 +674,9 @@ main(int argc, char **argv)
    e_util_env_set("E_RESTART", "1");
 
    TS("MAIN LOOP AT LAST");
+
+   if (e_config->create_wm_ready)
+     _e_main_create_wm_ready();
 
    TRACE_DS_END();
    if (!setjmp(x_fatal_buff))
@@ -1252,4 +1267,35 @@ _e_main_cb_idle_after(void *data EINA_UNUSED)
 #endif
 
    return ECORE_CALLBACK_RENEW;
+}
+
+static void
+_e_main_create_wm_ready(void)
+{
+   FILE *_wmready_checker = NULL;
+
+   _wmready_checker = fopen("/run/.wm_ready", "wb");
+   if (_wmready_checker)
+     {
+        TS("[WM] WINDOW MANAGER is READY!!!");
+        fclose(_wmready_checker);
+
+        /*TODO: Next lines should be removed. */
+        FILE *_tmp_wm_ready_checker;
+        _tmp_wm_ready_checker = fopen("/tmp/.wm_ready", "wb");
+
+        if (_tmp_wm_ready_checker)
+          {
+             TS("[WM] temporary wm_ready path is created.");
+             fclose(_tmp_wm_ready_checker);
+          }
+        else
+          {
+             TS("[WM] temporary wm_ready path create failed.");
+          }
+     }
+   else
+     {
+        TS("[WM] WINDOW MANAGER is READY. BUT, failed to create .wm_ready file.");
+     }
 }

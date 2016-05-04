@@ -143,12 +143,25 @@ e_comp_canvas_init(int w, int h)
 {
    Evas_Object *o;
    Eina_List *screens;
+   E_Comp_Config *conf = NULL;
+   unsigned int a, r, g, b, copy;
 
    TRACE_DS_BEGIN(COMP_CANVAS:INIT);
 
    e_comp->evas = ecore_evas_get(e_comp->ee);
    e_comp->w = w;
    e_comp->h = h;
+
+   a = 255;
+   r = g = b = copy = 0;
+   if ((conf = e_comp_config_get()))
+     {
+        a = conf->canvas_bg.a;
+        r = conf->canvas_bg.r;
+        g = conf->canvas_bg.g;
+        b = conf->canvas_bg.b;
+        copy = conf->canvas_bg.copy;
+     }
 
    if (e_first_frame)
      evas_event_callback_add(e_comp->evas, EVAS_CALLBACK_RENDER_POST, _e_comp_canvas_cb_first_frame, NULL);
@@ -157,7 +170,8 @@ e_comp_canvas_init(int w, int h)
    evas_object_layer_set(o, E_LAYER_BOTTOM);
    evas_object_move(o, 0, 0);
    evas_object_resize(o, e_comp->w, e_comp->h);
-   evas_object_color_set(o, 0, 0, 0, 255);
+   evas_object_color_set(o, r, g, b, a);
+   if (copy) evas_object_render_op_set(o, EVAS_RENDER_COPY);
    evas_object_name_set(o, "comp->bg_blank_object");
    evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN, (Evas_Object_Event_Cb)_e_comp_canvas_cb_mouse_down, NULL);
    evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_UP, (Evas_Object_Event_Cb)_e_comp_canvas_cb_mouse_up, NULL);

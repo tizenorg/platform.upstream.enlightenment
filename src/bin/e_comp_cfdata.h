@@ -39,6 +39,11 @@ struct _E_Comp_Config
    Eina_Bool disable_screen_effects;
    Eina_Bool enable_advanced_features;
    const char   *launch_file;
+   struct
+   {
+      unsigned int r,g,b,a;
+      unsigned int copy;
+   } canvas_bg;
    // the following options add the "/fast" suffix to the normal groups
    Eina_Bool fast_popups;
    Eina_Bool fast_borders;

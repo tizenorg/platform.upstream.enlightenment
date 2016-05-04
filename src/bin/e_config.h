@@ -72,6 +72,8 @@ struct _E_Config
    int                       dpms_suspend_timeout;
    int                       dpms_off_timeout;
    unsigned char             no_dpms_on_fullscreen;
+   int                       sleep_for_dri;
+   int                       create_wm_ready;
    int                       mouse_hand;
    int                       border_raise_on_mouse_action;
    int                       border_raise_on_focus;

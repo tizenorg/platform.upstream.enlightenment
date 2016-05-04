@@ -62,6 +62,11 @@ e_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd)
    E_CONFIG_VAL(D, T, disable_screen_effects, UCHAR);
    E_CONFIG_VAL(D, T, enable_advanced_features, UCHAR);
    E_CONFIG_VAL(D, T, launch_file, STR);
+   E_CONFIG_VAL(D, T, canvas_bg.r, UCHAR);
+   E_CONFIG_VAL(D, T, canvas_bg.g, UCHAR);
+   E_CONFIG_VAL(D, T, canvas_bg.b, UCHAR);
+   E_CONFIG_VAL(D, T, canvas_bg.a, UCHAR);
+   E_CONFIG_VAL(D, T, canvas_bg.copy, UCHAR);
    E_CONFIG_VAL(D, T, fast_popups, UCHAR);
    E_CONFIG_VAL(D, T, fast_borders, UCHAR);
    E_CONFIG_VAL(D, T, fast_menus, UCHAR);
