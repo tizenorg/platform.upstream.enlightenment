@@ -269,6 +269,7 @@ PKG_CHECK_MODULES(E_INFO, [
   eina >= ${efl_version}
   ecore >= ${efl_version}
   eldbus >= ${efl_version}
+  xkbcommon
 ])
 
 PKG_CHECK_EXISTS([xkeyboard-config],[
