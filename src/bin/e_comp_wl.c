@@ -2238,7 +2238,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
              EINA_LIST_FREE(state->damages, dmg)
                {
                   Eina_Rectangle temp = {0,};
-                  if (ec->comp_data && ec->comp_data->sub.data &&
+                  if (ec->comp_data->sub.data &&
                       (ec->comp_data->scaler.buffer_viewport.surface.width != -1 ||
                        ec->comp_data->scaler.buffer_viewport.buffer.src_width != wl_fixed_from_int(-1)))
                     {
@@ -3991,7 +3991,6 @@ _e_comp_wl_gl_init(void *data EINA_UNUSED)
    e_comp_wl->wl.glapi = glapi;
    e_comp_wl->wl.glsfc = sfc;
    e_comp_wl->wl.glctx = ctx;
-   e_comp_wl->wl.glcfg = cfg;
 
    /* for native surface */
    e_comp->gl = 1;

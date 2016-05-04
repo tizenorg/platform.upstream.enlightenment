@@ -29,7 +29,7 @@ E_API int E_EVENT_CLIENT_VISIBILITY_CHANGE = -1;
 E_API int E_EVENT_CLIENT_BUFFER_CHANGE = -1;
 #endif
 
-static Eina_Hash *clients_hash[2] = {NULL}; // pixmap->client
+static Eina_Hash *clients_hash[E_PIXMAP_TYPE_MAX] = {NULL}; // pixmap->client
 
 static unsigned int focus_track_frozen = 0;
 
@@ -826,6 +826,7 @@ static void
 _e_client_del(E_Client *ec)
 {
    E_Client *child;
+   E_Pixmap_Type type;
 
    ec->changed = 0;
    focus_stack = eina_list_remove(focus_stack, ec);
@@ -894,7 +895,9 @@ _e_client_del(E_Client *ec)
    EINA_LIST_FREE(ec->group, child)
      child->leader = NULL;
 
-   eina_hash_del_by_key(clients_hash[e_pixmap_type_get(ec->pixmap)], &ec->pixmap);
+   type = e_pixmap_type_get(ec->pixmap);
+   if (type < E_PIXMAP_TYPE_MAX)
+     eina_hash_del_by_key(clients_hash[type], &ec->pixmap);
    e_comp->clients = eina_list_remove(e_comp->clients, ec);
    e_comp_object_render_update_del(ec->frame);
    e_comp_post_update_purge(ec);
@@ -3049,8 +3052,18 @@ e_client_idler_before(void)
 {
    const Eina_List *l;
    E_Client *ec;
+   Eina_Bool exist_clients_hash = EINA_FALSE;
+   int pix_id;
 
-   if ((!eina_hash_population(clients_hash[0])) && (!eina_hash_population(clients_hash[1]))) return;
+   for (pix_id = 0; pix_id < E_PIXMAP_TYPE_MAX; pix_id++)
+     {
+        if (eina_hash_population(clients_hash[pix_id]))
+          {
+             exist_clients_hash = EINA_TRUE;
+             break;
+          }
+     }
+   if (!exist_clients_hash) return;
 
    TRACE_DS_BEGIN(CLIENT:IDLE BEFORE);
 
@@ -3156,8 +3169,9 @@ e_client_idler_before(void)
 EINTERN Eina_Bool
 e_client_init(void)
 {
-   clients_hash[0] = eina_hash_pointer_new(NULL);
-   clients_hash[1] = eina_hash_pointer_new(NULL);
+   int pix_id;
+   for (pix_id = 0; pix_id < E_PIXMAP_TYPE_MAX; pix_id++)
+     clients_hash[pix_id] = eina_hash_pointer_new(NULL);
 
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_POINTER_WARP, _e_client_cb_pointer_warp, NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_CONFIG_MODE_CHANGED, _e_client_cb_config_mode, NULL);
@@ -3195,8 +3209,9 @@ e_client_init(void)
 EINTERN void
 e_client_shutdown(void)
 {
-   E_FREE_FUNC(clients_hash[0], eina_hash_free);
-   E_FREE_FUNC(clients_hash[1], eina_hash_free);
+   int pix_id;
+   for (pix_id = 0; pix_id < E_PIXMAP_TYPE_MAX; pix_id++)
+     E_FREE_FUNC(clients_hash[pix_id], eina_hash_free);
 
    E_FREE_LIST(handlers, ecore_event_handler_del);
 
@@ -3226,8 +3241,11 @@ E_API E_Client *
 e_client_new(E_Pixmap *cp, int first_map, int internal)
 {
    E_Client *ec;
+   E_Pixmap_Type type;
 
-   if (eina_hash_find(clients_hash[e_pixmap_type_get(cp)], &cp)) return NULL;
+   type = e_pixmap_type_get(cp);
+   if (type >= E_PIXMAP_TYPE_MAX) return NULL;
+   if (eina_hash_find(clients_hash[type], &cp)) return NULL;
 
    ec = E_OBJECT_ALLOC(E_Client, E_CLIENT_TYPE, _e_client_free);
    if (!ec) return NULL;
