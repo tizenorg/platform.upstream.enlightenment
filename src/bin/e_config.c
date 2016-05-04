@@ -160,6 +160,8 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, dpms_suspend_timeout, INT);
    E_CONFIG_VAL(D, T, dpms_off_timeout, INT);
    E_CONFIG_VAL(D, T, no_dpms_on_fullscreen, UCHAR);
+   E_CONFIG_VAL(D, T, sleep_for_dri, INT);
+   E_CONFIG_VAL(D, T, create_wm_ready, INT);
    E_CONFIG_VAL(D, T, mouse_hand, INT);
    E_CONFIG_VAL(D, T, border_raise_on_mouse_action, INT);
    E_CONFIG_VAL(D, T, border_raise_on_focus, INT);
@@ -354,6 +356,8 @@ e_config_load(void)
    E_CONFIG_LIMIT(e_config->dpms_standby_timeout, 30, 5400);
    E_CONFIG_LIMIT(e_config->dpms_suspend_timeout, 30, 5400);
    E_CONFIG_LIMIT(e_config->dpms_off_timeout, 30, 5400);
+   E_CONFIG_LIMIT(e_config->sleep_for_dri, 0, 1);
+   E_CONFIG_LIMIT(e_config->create_wm_ready, 0, 1);
    E_CONFIG_LIMIT(e_config->mouse_hand, 0, 1);
    E_CONFIG_LIMIT(e_config->border_raise_on_mouse_action, 0, 1);
    E_CONFIG_LIMIT(e_config->border_raise_on_focus, 0, 1);
