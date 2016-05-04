@@ -2,6 +2,7 @@
 #include "e_info_shared_types.h"
 #include <time.h>
 #include <dirent.h>
+#include <sys/mman.h>
 
 typedef void (*E_Info_Message_Cb)(const Eldbus_Message *msg);
 
@@ -197,6 +198,82 @@ finish:
 }
 
 static void
+_cb_input_keymap_info_get(const Eldbus_Message *msg)
+{
+   const char *name = NULL, *text = NULL;
+   Eina_Bool res;
+   int i;
+   int min_keycode=0, max_keycode=0, fd=0, size=0, num_mods=0, num_groups = 0;
+   struct xkb_context *context = NULL;
+   struct xkb_keymap *keymap = NULL;
+   struct xkb_state *state = NULL;
+   xkb_keysym_t sym = XKB_KEY_NoSymbol;
+   char keyname[256] = {0, };
+   char *map = NULL;
+
+   res = eldbus_message_error_get(msg, &name, &text);
+   EINA_SAFETY_ON_TRUE_GOTO(res, finish);
+
+   res = eldbus_message_arguments_get(msg, "hi", &fd, &size);
+   EINA_SAFETY_ON_FALSE_GOTO(res, finish);
+
+   context = xkb_context_new(0);
+   EINA_SAFETY_ON_NULL_GOTO(context, finish);
+
+   map = mmap(NULL, size, 0x01, 0x0001, fd, 0);
+   if (map == ((void *)-1))
+     {
+        close(fd);
+        return;
+     }
+
+   keymap = xkb_map_new_from_string(context, map, XKB_KEYMAP_FORMAT_TEXT_V1, 0);
+
+   munmap(map, size);
+   close(fd);
+
+   EINA_SAFETY_ON_NULL_GOTO(keymap, finish);
+   state = xkb_state_new(keymap);
+   EINA_SAFETY_ON_NULL_GOTO(state, finish);
+
+   min_keycode = xkb_keymap_min_keycode(keymap);
+   max_keycode = xkb_keymap_max_keycode(keymap);
+   num_groups = xkb_map_num_groups(keymap);
+   num_mods = xkb_keymap_num_mods(keymap);
+
+   printf("\n");
+   printf("    min keycode: %d\n", min_keycode);
+   printf("    max keycode: %d\n", max_keycode);
+   printf("    num_groups : %d\n", num_groups);
+   printf("    num_mods   : %d\n", num_mods);
+   for (i = 0; i < num_mods; i++)
+     {
+        printf("        [%2d] mod: %s\n", i, xkb_keymap_mod_get_name(keymap, i));
+     }
+
+   printf("\n\n\tkeycode\t\tkeyname\t\t  keysym\t    repeat\n");
+   printf("    ----------------------------------------------------------------------\n");
+
+   for (i = min_keycode; i < (max_keycode + 1); i++)
+     {
+        sym = xkb_state_key_get_one_sym(state, i);
+
+        memset(keyname, 0, sizeof(keyname));
+        xkb_keysym_get_name(sym, keyname, sizeof(keyname));
+
+        printf("\t%4d%-5s%-25s%-20p%-5d\n", i, "", keyname, (void *)sym, xkb_keymap_key_repeats(keymap, i));
+     }
+finish:
+   if ((name) || (text ))
+     {
+        printf("errname:%s errmsg:%s\n", name, text);
+     }
+   if (state) xkb_state_unref(state);
+   if (keymap) xkb_map_unref(keymap);
+   if (context) xkb_context_unref(context);
+}
+
+static void
 _e_info_client_proc_protocol_trace(int argc, char **argv)
 {
    char fd_name[PATH_MAX];
@@ -321,6 +398,13 @@ _e_info_client_proc_input_device_info(int argc, char **argv)
      }
 
    E_FREE_LIST(e_info_client.input_dev, free);
+}
+
+static void
+_e_info_client_proc_keymap_info(int argc, char **argv)
+{
+   if (!_e_info_client_eldbus_message("get_keymap", _cb_input_keymap_info_get))
+      return;
 }
 
 static char *
@@ -1099,6 +1183,11 @@ static struct
       _e_info_client_proc_hwc_trace
    },
 #endif
+   {
+      "keymap", NULL,
+      "Print a current keymap",
+      _e_info_client_proc_keymap_info
+   },
 };
 
 static void

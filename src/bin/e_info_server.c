@@ -907,6 +907,15 @@ _e_info_server_cb_protocol_trace(const Eldbus_Service_Interface *iface EINA_UNUS
 }
 
 static Eldbus_Message *
+_e_info_server_cb_keymap_info_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+
+   eldbus_message_arguments_append(reply, "hi", e_comp_wl->xkb.fd, e_comp_wl->xkb.size);
+   return reply;
+}
+
+static Eldbus_Message *
 _e_info_server_cb_fps_info_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
 {
    static double old_fps = 0;
@@ -1191,6 +1200,7 @@ static const Eldbus_Method methods[] = {
 #ifdef HAVE_HWC
    { "hwc_trace_message", ELDBUS_ARGS({"i", "hwc_trace_message"}), NULL, e_info_server_cb_hwc_trace_message, 0},
 #endif
+   { "get_keymap", NULL, ELDBUS_ARGS({"hi", "keymap fd"}), _e_info_server_cb_keymap_info_get, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 
