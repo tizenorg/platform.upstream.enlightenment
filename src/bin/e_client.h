@@ -233,6 +233,9 @@ typedef void (*E_Client_Layout_Cb)(void);
 # include <Ecore_X.h>
 #endif
 
+/* Do we need to put it in ifdef? */
+#include "e_comp_wl.h"
+
 #define E_CLIENT_TYPE (int)0xE0b01002
 
 struct E_Event_Client
@@ -810,6 +813,7 @@ struct E_Client
    Eina_Bool keyboard_resizing : 1;
    Eina_Bool gesture_disable : 1;
    Eina_Bool floating : 1; //client is set as floating mode
+   Eina_Bool external_output_client : 1; //external output related
 
    Eina_Bool on_post_updates : 1; // client is on the post update list
 #ifdef HAVE_WAYLAND
@@ -1015,6 +1019,12 @@ E_API void              e_client_transform_core_remove(E_Client *ec, E_Util_Tran
 E_API void              e_client_transform_core_update(E_Client *ec);
 E_API int               e_client_transform_core_transform_count_get(E_Client *ec);
 E_API E_Util_Transform *e_client_transform_core_transform_get(E_Client *ec, int index);
+
+/* External output related */
+E_API Eina_Bool e_client_external_output_client_check(E_Client *ec, struct wl_resource *output_resource);
+E_API void e_client_external_output_client_set(E_Client *ec);
+E_API void e_client_external_output_client_unset(E_Client *ec);
+E_API Eina_Bool e_client_is_external_output_client(E_Client *ec);
 
 /**
  * Move window to coordinates that do not account client decorations yet.

@@ -4,6 +4,8 @@
 #include <tizen-extension-server-protocol.h>
 #include "e_scaler.h"
 
+#include <Ecore_Drm.h>
+
 #define XDG_SERVER_VERSION 5
 
 static void
@@ -895,7 +897,7 @@ _e_xdg_shell_surface_cb_maximized_unset(struct wl_client *client EINA_UNUSED, st
 }
 
 static void
-_e_xdg_shell_surface_cb_fullscreen_set(struct wl_client *client EINA_UNUSED, struct wl_resource *resource, struct wl_resource *output_resource EINA_UNUSED)
+_e_xdg_shell_surface_cb_fullscreen_set(struct wl_client *client EINA_UNUSED, struct wl_resource *resource, struct wl_resource *output_resource)
 {
    E_Client *ec;
 
@@ -907,6 +909,9 @@ _e_xdg_shell_surface_cb_fullscreen_set(struct wl_client *client EINA_UNUSED, str
                                "No Client For Shell Surface");
         return;
      }
+
+   if (output_resource && e_client_external_output_client_check(ec, output_resource))
+     e_client_external_output_client_set(ec);
 
    if (!ec->lock_user_fullscreen)
      e_client_fullscreen(ec, e_config->fullscreen_policy);
@@ -925,6 +930,9 @@ _e_xdg_shell_surface_cb_fullscreen_unset(struct wl_client *client EINA_UNUSED, s
                                "No Client For Shell Surface");
         return;
      }
+
+   if (e_client_is_external_output_client(ec) == EINA_TRUE)
+     e_client_external_output_client_unset(ec);
 
    if (!ec->lock_user_fullscreen)
      e_client_unfullscreen(ec);

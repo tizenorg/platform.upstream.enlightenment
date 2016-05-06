@@ -1,5 +1,10 @@
 #include "e.h"
 
+/* Do we need to put it in ifdef? */
+#include "e_comp_wl.h"
+
+#include <Ecore_Drm.h>
+
 static int _e_client_hooks_delete = 0;
 static int _e_client_hooks_walking = 0;
 
@@ -6019,3 +6024,55 @@ e_client_transform_core_transform_get(E_Client *ec, int index)
 
    return (E_Util_Transform*)eina_list_nth(ec->transform_core.transform_list, index);
 }
+
+////////////////////////////////////////////
+E_API Eina_Bool
+e_client_external_output_client_check(E_Client *ec, struct wl_resource *output_resource)
+{
+   Ecore_Drm_Device *dev = NULL;
+   E_Comp_Wl_Output *wl_output = NULL;
+   Ecore_Drm_Output *o = NULL;
+   const Eina_List *l, *ll;
+
+   if (output_resource == NULL)
+     return EINA_FALSE;
+
+   wl_output= wl_resource_get_user_data(output_resource);
+   if (wl_output == NULL)
+     return EINA_FALSE;
+
+   if (wl_output->id == NULL)
+     return EINA_FALSE;
+
+   EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
+     {
+        EINA_LIST_FOREACH(dev->external_outputs, ll, o)
+          {
+             if ((ecore_drm_output_name_get(o)) &&
+                 (strcmp(wl_output->id, ecore_drm_output_name_get(o)) == 0))
+               return EINA_TRUE;
+          }
+     }
+
+   return EINA_FALSE;
+}
+
+E_API void
+e_client_external_output_client_set(E_Client *ec)
+{
+   ec->external_output_client = EINA_TRUE;
+}
+
+E_API void
+e_client_external_output_client_unset(E_Client *ec)
+{
+   ec->external_output_client = EINA_FALSE;
+}
+
+E_API Eina_Bool
+e_client_is_external_output_client(E_Client *ec)
+{
+   return ec->external_output_client;
+}
+
+////////////////////////////////////////////
