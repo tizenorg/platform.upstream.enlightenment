@@ -247,6 +247,17 @@ AC_ARG_ENABLE([quick-init],
 AC_MSG_CHECKING([whether enlightenment quick initialization is enabled])
 AC_MSG_RESULT([${quick_init}])
 
+function_trace=no
+AC_ARG_ENABLE([function-trace],
+  AS_HELP_STRING([--enable-function-trace],[]),
+  [
+   function_trace=yes
+   AC_DEFINE_UNQUOTED([ENABLE_FUNCTION_TRACE], [1], [enable function trace])
+  ],
+  [function_trace=no])
+AC_MSG_CHECKING([whether enlightenment function trace is enabled])
+AC_MSG_RESULT([${function_trace}])
+
 e_requires="\
   evas >= $efl_version \
   ecore >= $efl_version \
