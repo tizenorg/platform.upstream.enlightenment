@@ -173,7 +173,10 @@ e_comp_canvas_init(int w, int h)
    evas_object_move(o, 0, 0);
    evas_object_resize(o, e_comp->w, e_comp->h);
    evas_object_color_set(o, r, g, b, a);
-   evas_object_render_op_set(o, opmode);
+
+   if (opmode != evas_object_render_op_get(o))
+     evas_object_render_op_set(o, opmode);
+
    evas_object_name_set(o, "comp->bg_blank_object");
    evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN, (Evas_Object_Event_Cb)_e_comp_canvas_cb_mouse_down, NULL);
    evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_UP, (Evas_Object_Event_Cb)_e_comp_canvas_cb_mouse_up, NULL);
