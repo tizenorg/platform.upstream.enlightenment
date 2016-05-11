@@ -1670,6 +1670,8 @@ fail:
 void
 e_comp_hwc_trace_debug(Eina_Bool onoff)
 {
+   EINA_SAFETY_ON_NULL_RETURN(g_hwc);
+
    if (onoff == g_hwc->trace_debug) return;
    g_hwc->trace_debug = onoff;
    INF("HWC: hwc trace_debug is %s", onoff?"ON":"OFF");
