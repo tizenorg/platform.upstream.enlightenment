@@ -57,9 +57,6 @@ export CFLAGS+=" -fPIE "
 export LDFLAGS+=" -pie "
 
 %autogen \
-%if "%_repository" == "emulator32-wayland" || "%_repository" == "emulator64-wayland"
-      --disable-hwc \
-%endif
       --enable-function-trace \
       --enable-wayland \
       --enable-quick-init
