@@ -1063,6 +1063,8 @@ _e_xdg_shell_surface_map_cb_timer(void *data)
         evas_object_show(ec->frame);
         ec->comp_data->mapped = EINA_TRUE;
 
+        e_comp_wl_surface_commit(ec);
+
         /* FIXME: sometimes popup surfaces Do Not raise above their
          * respective parents... */
         /* if (ec->netwm.type == E_WINDOW_TYPE_POPUP_MENU) */
