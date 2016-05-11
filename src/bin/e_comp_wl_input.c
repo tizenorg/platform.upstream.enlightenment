@@ -87,6 +87,10 @@ _e_comp_wl_input_pointer_cb_cursor_set(struct wl_client *client, struct wl_resou
         ec->re_manage = 1;
         ec->ignored = 0;
 
+        // TODO: this should be transformed to the local coordinate of pointer surface
+        ec->x = x;
+        ec->y = y;
+
         ec->lock_focus_out = ec->layer_block = ec->visible = ec->override = 1;
         ec->icccm.title = eina_stringshare_add("noshadow");
         ec->icccm.window_role = eina_stringshare_add("wl_pointer-cursor");
