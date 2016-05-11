@@ -55,11 +55,7 @@ cp %{SOURCE1001} .
 %build
 export CFLAGS+=" -fPIE "
 export LDFLAGS+=" -pie "
-%if "%_repository" == "emulator32-wayland" || "%_repository" == "emulator64-wayland"
-%autogen --enable-wayland --enable-wl-drm --enable-quick-init --disable-hwc
-%else
 %autogen --enable-wayland --enable-wl-drm --enable-quick-init
-%endif
 
 make %{?_smp_mflags}
 
