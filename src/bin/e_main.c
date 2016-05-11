@@ -258,7 +258,7 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
         TRACE_DS_END();
         _e_main_shutdown(-1);
      }
-   TS("[DEFERRED E_Scale Init Done");
+   TS("[DEFERRED] E_Scale Init Done");
    _e_main_shutdown_push(e_scale_shutdown);
 
    TS("[DEFERRED] E_Test_Helper Init");
