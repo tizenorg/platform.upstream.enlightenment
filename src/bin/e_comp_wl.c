@@ -4425,7 +4425,7 @@ e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer)
                    (Ecore_End_Cb)e_comp_wl_surface_event_simple_free, NULL);
 }
 
-EINTERN Eina_Bool
+E_API Eina_Bool
 e_comp_wl_surface_commit(E_Client *ec)
 {
    Eina_Bool ignored;
