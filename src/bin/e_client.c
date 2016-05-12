@@ -2819,7 +2819,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
      {
         EINA_LIST_FOREACH(changed_list, l, ec)
           {
-             if (changed)
+             if (ec->visibility.changed)
                _e_client_event_simple(ec, E_EVENT_CLIENT_VISIBILITY_CHANGE);
 
              _e_client_hook_call(E_CLIENT_HOOK_EVAL_VISIBILITY, ec);
