@@ -296,6 +296,7 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
 static Eina_Bool
 _e_main_deferred_job_schedule(void *d EINA_UNUSED, int type EINA_UNUSED, void *ev EINA_UNUSED)
 {
+   PRCTL("[Winsys] all modules loaded");
    ecore_idler_add(_e_main_subsystem_defer, NULL);
    return ECORE_CALLBACK_DONE;
 }
@@ -322,6 +323,7 @@ main(int argc, char **argv)
 #endif
    TRACE_DS_BEGIN(MAIN:BEGIN STARTUP);
    TS("Begin Startup");
+   PRCTL("[Winsys] start of main");
 
    /* trap deadly bug signals and allow some form of sane recovery */
    /* or ability to gdb attach and debug at this point - better than your */
@@ -1094,12 +1096,14 @@ _e_main_screens_init(void)
    if (!e_client_init()) return 0;
 
    TS("Compositor Init");
+   PRCTL("[Winsys] start of compositor init");
    if (!e_comp_init())
      {
         e_error_message_show(_("Enlightenment cannot create a compositor.\n"));
         _e_main_shutdown(-1);
      }
 
+   PRCTL("[Winsys] end of compositor init");
    _e_main_desk_restore();
 
    return 1;
@@ -1268,6 +1272,7 @@ _e_main_create_wm_ready(void)
    if (_wmready_checker)
      {
         TS("[WM] WINDOW MANAGER is READY!!!");
+        PRCTL("[Winsys] WINDOW MANAGER is READY!!!");
         fclose(_wmready_checker);
 
         /*TODO: Next lines should be removed. */
@@ -1277,15 +1282,18 @@ _e_main_create_wm_ready(void)
         if (_tmp_wm_ready_checker)
           {
              TS("[WM] temporary wm_ready path is created.");
+             PRCTL("[Winsys] temporary wm_ready path is created.");
              fclose(_tmp_wm_ready_checker);
           }
         else
           {
              TS("[WM] temporary wm_ready path create failed.");
+             PRCTL("[Winsys] temporary wm_ready path create failed.");
           }
      }
    else
      {
         TS("[WM] WINDOW MANAGER is READY. BUT, failed to create .wm_ready file.");
+        PRCTL("[Winsys] WINDOW MANAGER is READY. BUT, failed to create .wm_ready file.");
      }
 }

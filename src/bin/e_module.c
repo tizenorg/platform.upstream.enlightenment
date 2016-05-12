@@ -255,8 +255,17 @@ e_module_all_load(void)
              snprintf(buf, sizeof(buf), _("Loading Module: %s"), em->name);
              e_init_status_set(buf);
 
+             PRCTL("[Winsys] start of Loading Module: %s", em->name);
              m = e_module_new(em->name);
-             if (m) e_module_enable(m);
+             if (m)
+               {
+                  e_module_enable(m);
+                  PRCTL("[Winsys] end of Loading Module: %s", em->name);
+               }
+             else
+               {
+                  PRCTL("[Winsys] end of Loading Module: Failed to load %s", em->name);
+               }
           }
      }
 
