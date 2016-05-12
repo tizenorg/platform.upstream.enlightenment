@@ -2318,10 +2318,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
 #ifdef HAVE_HWC
    /* HWC: if the compositor fall into the nocomposite mode,
           the compositor display e_client on the hw layer directly */
-   if (e_comp->hwc &&
-       e_comp->nocomp &&
-       e_comp->nocomp_ec == ec &&
-       buffer)
+   if (e_comp->hwc && buffer)
      {
         e_comp_hwc_display_client(ec);
      }
