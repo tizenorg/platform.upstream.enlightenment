@@ -18,8 +18,8 @@ EINTERN void      e_comp_hwc_shutdown(void);
 EINTERN Eina_Bool e_comp_hwc_mode_nocomp(E_Client *ec);
 EINTERN void      e_comp_hwc_display_client(E_Client *ec);
 EINTERN void      e_comp_hwc_trace_debug(Eina_Bool onoff);
-Eina_Bool         e_comp_hwc_native_surface_set(E_Client *ec);
-void              e_comp_hwc_client_commit(E_Client *ec);
+EINTERN Eina_Bool e_comp_hwc_native_surface_set(E_Client *ec);
+EINTERN void      e_comp_hwc_client_commit(E_Client *ec);
 
 /* temp api */
 E_API Eina_Bool   e_comp_hwc_client_set_layer(E_Client *ec, int zorder);

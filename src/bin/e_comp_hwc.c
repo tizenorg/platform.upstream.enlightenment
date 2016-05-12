@@ -1715,7 +1715,7 @@ _e_comp_hwc_check_buffer_scanout(E_Client *ec)
    return EINA_TRUE;
 }
 
-Eina_Bool
+EINTERN Eina_Bool
 e_comp_hwc_native_surface_set(E_Client *ec)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(ec, EINA_FALSE);
@@ -1756,7 +1756,7 @@ e_comp_hwc_native_surface_set(E_Client *ec)
    return EINA_TRUE;
 }
 
-void
+EINTERN void
 e_comp_hwc_client_commit(E_Client *ec)
 {
    EINA_SAFETY_ON_NULL_RETURN(ec);
@@ -1874,13 +1874,13 @@ e_comp_hwc_trace_debug(Eina_Bool onoff)
    ;
 }
 
-Eina_Bool
+EINTERN Eina_Bool
 e_comp_hwc_native_surface_set(E_Client *ec)
 {
    return EINA_FALSE;
 }
 
-void
+EINTERN void
 e_comp_hwc_client_commit(E_Client *ec)
 {
    ;
