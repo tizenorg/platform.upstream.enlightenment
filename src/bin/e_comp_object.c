@@ -3722,8 +3722,10 @@ end:
 
    eina_iterator_free(it);
    E_FREE_FUNC(cw->pending_updates, eina_tiler_free);
-   if (ret)
+
+   if (e_comp->comp_type == E_PIXMAP_TYPE_WL)
      e_comp_client_post_update_add(cw->ec);
+
    return ret;
 }
 
