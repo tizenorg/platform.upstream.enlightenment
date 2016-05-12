@@ -443,17 +443,6 @@ define([CHECK_MODULE_WL_DESKTOP_SHELL],
 ])
 AM_CONDITIONAL([HAVE_WL_DESKTOP_SHELL], [test "x${WL_DESKTOP_SHELL}" = "xtrue"])
 
-WL_DRM=false
-define([CHECK_MODULE_WL_DRM],
-[
-  if test "x${have_wayland}" = "xyes" ; then
-    AC_E_CHECK_PKG(WL_DRM, [ ecore-drm >= $efl_version ecore >= $efl_version eina >= $efl_version ], [WL_DRM=true], [WL_DRM=false])
-  else
-    WL_DRM=false
-  fi
-])
-AM_CONDITIONAL([HAVE_WL_DRM], [test "x${WL_DRM}" = "xtrue"])
-
 define([CHECK_MODULE_BUFFERQUEUE],
 [
   if test "x${have_wayland_clients}" = "xyes" || test "x${e_cv_want_wayland_only}" = "xyes"; then
@@ -465,7 +454,6 @@ define([CHECK_MODULE_BUFFERQUEUE],
 AM_CONDITIONAL([HAVE_BUFFERQUEUE], [test "x${BUFFERQUEUE}" = "xtrue"])
 
 AC_E_OPTIONAL_MODULE([wl_desktop_shell], $have_wayland, [CHECK_MODULE_WL_DESKTOP_SHELL])
-#AC_E_OPTIONAL_MODULE([wl_drm], $have_wayland, [CHECK_MODULE_WL_DRM])
 AC_E_OPTIONAL_MODULE([bufferqueue], $have_wayland, [CHECK_MODULE_BUFFERQUEUE])
 
 if test "x${have_wayland}" = "xyes"; then
