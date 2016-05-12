@@ -86,6 +86,8 @@ struct _E_Comp_Hwc_Layer {
    tbm_surface_h pending_tsurface;
    tbm_surface_h tsurface;
 
+   E_Client *ec; /* ec which display on this layer directly */
+
    E_Comp_Hwc_Renderer *hwc_renderer;
    E_Comp_Hwc_Output *hwc_output;
    E_Comp_Hwc *hwc;
@@ -1544,6 +1546,7 @@ e_comp_hwc_display_client(E_Client *ec)
    E_Comp_Hwc_Output *hwc_output;
    E_Comp_Hwc_Layer *hwc_layer;
    Eina_List *l_o, *ll_o;
+   Eina_List *l_l, *ll_l;
    tdm_output_conn_status conn_status;
 
    EINA_SAFETY_ON_NULL_RETURN(ec);
@@ -1586,6 +1589,19 @@ e_comp_hwc_display_client(E_Client *ec)
 
            default:
              break;
+          }
+
+        /* temporary ec setting to the layer if ec is assigned */
+        /* find the layer that is assigned ec except the primary layer */
+        EINA_LIST_FOREACH_SAFE(hwc_output->hwc_layers, l_l, ll_l, hwc_layer)
+          {
+             if (hwc_layer->primary) continue;
+             if (!hwc_layer->ec) continue;
+
+             if (hwc_layer->reserved_memory)
+               _e_comp_hwc_output_display_client_reserved_memory(hwc_output, hwc_layer, ec);
+             else
+               _e_comp_hwc_output_display_client(hwc_output, hwc_layer, ec);
           }
      }
 }
@@ -1759,6 +1775,74 @@ e_comp_hwc_client_commit(E_Client *ec)
      }
 }
 
+E_API Eina_Bool
+e_comp_hwc_client_set_layer(E_Client *ec, int zorder)
+{
+   E_Comp_Hwc_Output *hwc_output;
+   E_Comp_Hwc_Layer *hwc_layer;
+   Eina_List *l_o, *ll_o;
+   Eina_List *l_l, *ll_l;
+   tdm_output_conn_status conn_status;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ec, EINA_FALSE);
+
+   /* zoder must be bigger than 0. -1 is for video. 0 is for primary */
+   if (zorder < 1) return EINA_FALSE;
+
+   /* find the layer which get zorder */
+   EINA_LIST_FOREACH_SAFE(g_hwc->hwc_outputs, l_o, ll_o, hwc_output)
+     {
+        if (!hwc_output) continue;
+        tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
+        // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
+        if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
+        EINA_LIST_FOREACH_SAFE(hwc_output->hwc_layers, l_l, ll_l, hwc_layer)
+          {
+              if (hwc_layer->primary) continue;
+              if (!hwc_layer->ec) continue;
+              if (hwc_layer->zpos == zorder)
+                {
+                   hwc_layer->ec = ec;
+                   return EINA_TRUE;
+                }
+          }
+     }
+
+   return EINA_FALSE;
+}
+
+E_API void
+e_comp_hwc_client_unset_layer(int zorder)
+{
+   E_Comp_Hwc_Output *hwc_output;
+   E_Comp_Hwc_Layer *hwc_layer;
+   Eina_List *l_o, *ll_o;
+   Eina_List *l_l, *ll_l;
+   tdm_output_conn_status conn_status;
+
+   /* zoder must be bigger than 0. -1 is for video. 0 is for primary */
+   if (zorder < 1) return;
+
+   /* find the layer which get zorder */
+   EINA_LIST_FOREACH_SAFE(g_hwc->hwc_outputs, l_o, ll_o, hwc_output)
+     {
+        if (!hwc_output) continue;
+        tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
+        // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
+        if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
+        EINA_LIST_FOREACH_SAFE(hwc_output->hwc_layers, l_l, ll_l, hwc_layer)
+          {
+              if (hwc_layer->primary) continue;
+              if (!hwc_layer->ec) continue;
+              if (hwc_layer->zpos == zorder)
+                {
+                   hwc_layer->ec = NULL;
+                   return;
+                }
+          }
+     }
+}
+
 #else /* HAVE_HWC */
 EINTERN Eina_Bool
 e_comp_hwc_init(void)
@@ -1802,4 +1886,15 @@ e_comp_hwc_client_commit(E_Client *ec)
    ;
 }
 
+E_API Eina_Bool
+e_comp_hwc_client_set_layer(E_Client *ec, int zorder)
+{
+   return EINA_FALSE;
+}
+
+E_API void
+e_comp_hwc_client_unset_layer(int zorder)
+{
+   ;
+}
 #endif /* endo of HAVE_HWC */
