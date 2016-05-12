@@ -34,6 +34,7 @@ struct _E_Pixmap
    E_Comp_Wl_Buffer_Ref buffer_ref;
    struct wl_listener buffer_destroy_listener;
    void *data;
+   struct wl_shm_pool *data_pool;
    Eina_Rectangle opaque;
    uuid_t uuid;
 
@@ -115,6 +116,11 @@ _e_pixmap_free(E_Pixmap *cp)
      {
         E_FREE(cp->cdata);
         cp->own_cdata = EINA_FALSE;
+     }
+   if (cp->data_pool)
+     {
+        wl_shm_pool_unref(cp->data_pool);
+        cp->data_pool = NULL;
      }
    _e_pixmap_clear(cp, 1);
    ELOG("PIXMAP FREE", cp, cp->client);
@@ -631,6 +637,9 @@ e_pixmap_image_refresh(E_Pixmap *cp)
           }
 
         cp->data = wl_shm_buffer_get_data(shm_buffer);
+
+        if (cp->data_pool) wl_shm_pool_unref(cp->data_pool);
+        cp->data_pool = wl_shm_buffer_ref_pool(shm_buffer);
      }
    else if (buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
      {
