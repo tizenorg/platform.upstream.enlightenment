@@ -132,7 +132,27 @@ struct _E_Config
       const char   *owner;
       const char   *group;
       unsigned int  permissions;
+      struct
+      {
+         unsigned char use;
+         const char   *name;
+         const char   *value;
+         int           flags;
+      } smack;
    } wl_sock_access;
+   struct
+   {
+      unsigned char use;
+      const char   *link_name;
+      const char   *owner;
+      const char   *group;
+      struct
+      {
+         const char   *name;
+         const char   *value;
+         int           flags;
+      } smack;
+   } wl_sock_symlink_access;
    int                       sleep_for_dri;
    int                       create_wm_ready;
    struct

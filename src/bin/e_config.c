@@ -200,6 +200,17 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, wl_sock_access.owner, STR);
    E_CONFIG_VAL(D, T, wl_sock_access.group, STR);
    E_CONFIG_VAL(D, T, wl_sock_access.permissions, INT);
+   E_CONFIG_VAL(D, T, wl_sock_access.smack.use, UCHAR);
+   E_CONFIG_VAL(D, T, wl_sock_access.smack.name, STR);
+   E_CONFIG_VAL(D, T, wl_sock_access.smack.value, STR);
+   E_CONFIG_VAL(D, T, wl_sock_access.smack.flags, INT);
+   E_CONFIG_VAL(D, T, wl_sock_symlink_access.use, UCHAR);
+   E_CONFIG_VAL(D, T, wl_sock_symlink_access.link_name, STR);
+   E_CONFIG_VAL(D, T, wl_sock_symlink_access.owner, STR);
+   E_CONFIG_VAL(D, T, wl_sock_symlink_access.group, STR);
+   E_CONFIG_VAL(D, T, wl_sock_symlink_access.smack.name, STR);
+   E_CONFIG_VAL(D, T, wl_sock_symlink_access.smack.value, STR);
+   E_CONFIG_VAL(D, T, wl_sock_symlink_access.smack.flags, INT);
    E_CONFIG_VAL(D, T, sleep_for_dri, INT);
    E_CONFIG_VAL(D, T, create_wm_ready, INT);
    E_CONFIG_VAL(D, T, comp_canvas_bg.r, UCHAR);
@@ -783,8 +794,17 @@ _e_config_free(E_Config *ecf)
      }
 
    eina_stringshare_del(ecf->xkb.default_model);
+
    eina_stringshare_del(ecf->wl_sock_access.owner);
    eina_stringshare_del(ecf->wl_sock_access.group);
+   eina_stringshare_del(ecf->wl_sock_access.smack.name);
+   eina_stringshare_del(ecf->wl_sock_access.smack.value);
+
+   eina_stringshare_del(ecf->wl_sock_symlink_access.link_name);
+   eina_stringshare_del(ecf->wl_sock_symlink_access.owner);
+   eina_stringshare_del(ecf->wl_sock_symlink_access.group);
+   eina_stringshare_del(ecf->wl_sock_symlink_access.smack.name);
+   eina_stringshare_del(ecf->wl_sock_symlink_access.smack.value);
 
    EINA_LIST_FREE(ecf->modules, em)
      {
