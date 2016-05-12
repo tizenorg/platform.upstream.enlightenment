@@ -3,6 +3,7 @@
 #include "e_info_server.h"
 #include <tbm_bufmgr.h>
 #include <tbm_surface.h>
+#include <tbm_surface_internal.h>
 #include <tdm_helper.h>
 #ifdef HAVE_WAYLAND_ONLY
 #include <wayland-tbm-server.h>
@@ -1033,12 +1034,12 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
    E_Event_Client *ev = event;
    Ecore_Window event_win;
    char fname[PATH_MAX];
-   int count;
+   E_Comp_Wl_Buffer *buffer;
+   tbm_surface_h tbm_surface;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(ev, ECORE_CALLBACK_PASS_ON);
    EINA_SAFETY_ON_NULL_RETURN_VAL(ev->ec, ECORE_CALLBACK_PASS_ON);
 
-   /* dump buffer change call event buffer */
    ec = ev->ec;
    if (e_object_is_del(E_OBJECT(ec)))
      {
@@ -1052,39 +1053,33 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
      }
    event_win = e_client_util_win_get(ec);
 
-   if (e_info_dump_count == 1000)
-     e_info_dump_count = 1;
-   count = e_info_dump_count++;
-   snprintf(fname, sizeof(fname), "%s/%03d_0x%08x.png", e_info_dump_path, count, event_win);
-   e_info_server_dump_client(ec, fname);
+   buffer = e_pixmap_resource_get(ec->pixmap);
+   if (!buffer) return ECORE_CALLBACK_PASS_ON;
 
-#if 0
-   /* dump all buffers */
-   char path[PATH_MAX];
-
-   snprintf(path, sizeof(path), "%s/%d", e_info_dump_path, count);
-   if ((mkdir(path, 0755)) < 0)
+   switch (buffer->type)
      {
-        printf("%s: mkdir '%s' fail\n", __func__, path);
-        return ECORE_CALLBACK_PASS_ON;
-     }
-
-   for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
-     {
-        E_Client *ec = evas_object_data_get(o, "E_Client");
-        Ecore_Window win;
-
-        if (!ec) continue;
-        if (e_client_util_ignored_get(ec)) continue;
-
-        win = e_client_util_win_get(ec);
-
-        snprintf(fname, sizeof(fname), "%s/0x%08x.png", path, win);
-
+      case E_COMP_WL_BUFFER_TYPE_SHM:
+        snprintf(fname, sizeof(fname), "%s/buffer_commit_shm_%03d_0x%08x",
+                 e_info_dump_path, e_info_dump_count++, event_win);
+#if 0 /* do not excute default (slow) */
         e_info_server_dump_client(ec, fname);
-     }
 #endif
-   DBG("%d, %s dump excute\n", count, fname);
+        break;
+      case E_COMP_WL_BUFFER_TYPE_NATIVE:
+      case E_COMP_WL_BUFFER_TYPE_VIDEO:
+      case E_COMP_WL_BUFFER_TYPE_TBM:
+        tbm_surface = wayland_tbm_server_get_surface(NULL, buffer->resource);
+        EINA_SAFETY_ON_NULL_RETURN_VAL(tbm_surface, ECORE_CALLBACK_PASS_ON);
+
+        snprintf(fname, sizeof(fname), "buffer_commit_0x%08x", event_win);
+
+        tbm_internal_surface_dump_buffer(tbm_surface, fname);
+        break;
+      default:
+        DBG("Unknown type resource:%u", wl_resource_get_id(buffer->resource));
+        break;
+     }
+   DBG("%s dump excute\n", fname);
 
    return ECORE_CALLBACK_PASS_ON;
 }
@@ -1158,6 +1153,8 @@ _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED,
           }
         else
           {
+             /* start dump */
+             tbm_surface_internal_dump_start(e_info_dump_path, e_comp->w * e_comp->h * 4, 100);
              tdm_helper_dump_start(e_info_dump_path, &e_info_dump_count);
              E_LIST_HANDLER_APPEND(e_info_dump_hdlrs, E_EVENT_CLIENT_BUFFER_CHANGE,
                                _e_info_server_cb_buffer_change, NULL);
@@ -1167,7 +1164,10 @@ _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED,
      {
         if (e_info_dump_running == 0)
           return reply;
+
         tdm_helper_dump_stop();
+        tbm_surface_internal_dump_end();
+
         E_FREE_LIST(e_info_dump_hdlrs, ecore_event_handler_del);
         e_info_dump_hdlrs = NULL;
         if (e_info_dump_path)
@@ -1283,7 +1283,10 @@ e_info_server_shutdown(void)
      }
 
    if (e_info_dump_running == 1)
-     tdm_helper_dump_stop();
+     {
+        tdm_helper_dump_stop();
+        tbm_surface_internal_dump_end();
+     }
    if (e_info_dump_hdlrs)
      {
         E_FREE_LIST(e_info_dump_hdlrs, ecore_event_handler_del);
