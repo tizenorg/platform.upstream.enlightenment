@@ -19,7 +19,6 @@
 #define HWC_DLOG(fmt, args...) LOGE("[HWC]" fmt, ##args)
 #endif
 
-# define HWC_DRM_MODE_DPMS_OFF 3
 # ifndef CLEAR
 # define CLEAR(x) memset(&(x), 0, sizeof (x))
 # endif
@@ -1019,25 +1018,10 @@ _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_l
    tdm_layer *tlayer = hwc_layer->tlayer;
    E_Comp_Hwc_Renderer *hwc_renderer = hwc_layer->hwc_renderer;
    E_Comp_Hwc_Commit_Data *data = NULL;
-   tdm_output_dpms dpms_value;
 
 #if HWC_DUMP
    char fname[1024] = {0, };
 #endif
-
-   error = tdm_output_get_dpms(toutput, &dpms_value);
-   if (error != TDM_ERROR_NONE)
-     {
-        ERR("fail to get tdm_output_dpms value");
-        return EINA_FALSE;
-     }
-
-   /* check if the output is off */
-   if (dpms_value != TDM_OUTPUT_DPMS_ON)
-     {
-        WRN("DPMS IS NOT ON");
-        return EINA_FALSE;
-     }
 
    data = _e_comp_hwc_commit_data_create();
    if (!data) return EINA_FALSE;
