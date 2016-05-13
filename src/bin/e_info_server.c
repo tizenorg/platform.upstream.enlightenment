@@ -8,6 +8,7 @@
 #ifdef HAVE_WAYLAND_ONLY
 #include <wayland-tbm-server.h>
 #include "e_comp_wl.h"
+#include "e_info_protocol.h"
 void wl_map_for_each(struct wl_map *map, void *func, void *data);
 #endif
 #ifdef HAVE_HWC
@@ -821,12 +822,26 @@ _e_info_server_protocol_debug_func(struct wl_closure *closure, struct wl_resourc
    struct timespec tp;
    unsigned int time;
    pid_t client_pid = -1;
+   E_Comp_Connected_Client_Info *cinfo;
+   Eina_List *l;
 
    if (wc) wl_client_get_credentials(wc, &client_pid, NULL, NULL);
 
    clock_gettime(CLOCK_REALTIME, &tp);
    time = (tp.tv_sec * 1000000L) + (tp.tv_nsec / 1000);
 
+   E_Protocol_Log elog = {0,};
+   elog.type = send;
+   elog.client_pid = client_pid;
+   elog.target_id = target->id;
+   snprintf(elog.name, PATH_MAX, "%s:%s", target->interface->name, closure->message->name);
+   EINA_LIST_FOREACH(e_comp->connected_clients, l, cinfo)
+     {
+        if (cinfo->pid == client_pid)
+          snprintf(elog.cmd, PATH_MAX, "%s", cinfo->name);
+     }
+
+   if (!e_info_protocol_rule_validate(&elog)) return;
    fprintf(stdout, "[%10.3f] %s%d%s%s@%u.%s(",
               time / 1000.0,
               send ? "Server -> Client [PID:" : "Server <- Client [PID:",
@@ -876,7 +891,7 @@ _e_info_server_protocol_debug_func(struct wl_closure *closure, struct wl_resourc
           }
      }
 
-   fprintf(stdout, ")\n");
+   fprintf(stdout, "), cmd: %s\n", elog.cmd? : "cmd is NULL");
 }
 
 static Eldbus_Message *
@@ -925,6 +940,32 @@ _e_info_server_cb_protocol_trace(const Eldbus_Service_Interface *iface EINA_UNUS
    wl_debug_server_debug_func_set((wl_server_debug_func_ptr)_e_info_server_protocol_debug_func);
 
    return reply;
+}
+
+static Eldbus_Message *
+_e_info_server_cb_protocol_rule(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply_msg = eldbus_message_method_return_new(msg);
+   char reply[4096];
+   int len = sizeof (reply);
+   int argc = 3;
+   char *argv[3];
+
+   if (!eldbus_message_arguments_get(msg, "sss", &argv[0], &argv[1], &argv[2]) || !argv[0] || !argv[1] || !argv[2])
+     {
+        ERR("Error getting arguments.");
+        return reply_msg;
+     }
+
+   if ((eina_streq(argv[0], "remove") || eina_streq(argv[0], "file")) && eina_streq(argv[2], "no_data"))
+     argc--;
+   if ((eina_streq(argv[0], "print") || eina_streq(argv[0], "help")) && eina_streq(argv[1], "no_data") && eina_streq(argv[2], "no_data"))
+     argc = 1;
+
+   e_info_protocol_rule_set(argc, (const char**)&(argv[0]), reply, &len);
+   INF("\n%s", reply);
+
+   return reply_msg;
 }
 
 static Eldbus_Message *
@@ -1217,6 +1258,7 @@ static const Eldbus_Method methods[] = {
    { "get_res_lists", ELDBUS_ARGS({VALUE_TYPE_REQUEST_RESLIST, "client resource"}), ELDBUS_ARGS({"a("VALUE_TYPE_REPLY_RESLIST")", "array of client resources"}), _e_info_server_cb_res_lists_get, 0 },
    { "get_input_devices", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_INPUTDEV")", "array of input"}), _e_info_server_cb_input_device_info_get, 0},
    { "protocol_trace", ELDBUS_ARGS({"s", "protocol_trace"}), NULL, _e_info_server_cb_protocol_trace, 0},
+   { "protocol_rule", ELDBUS_ARGS({"sss", "protocol_rule"}), NULL, _e_info_server_cb_protocol_rule, 0},
    { "get_fps_info", NULL, ELDBUS_ARGS({"s", "fps request"}), _e_info_server_cb_fps_info_get, 0},
    { "transform_message", ELDBUS_ARGS({"siiiiiiii", "transform_message"}), NULL, e_info_server_cb_transform_message, 0},
    { "dump_buffers", ELDBUS_ARGS({"i", "start"}), NULL, _e_info_server_cb_buffer_dump, 0 },
@@ -1230,6 +1272,27 @@ static const Eldbus_Method methods[] = {
 static const Eldbus_Service_Interface_Desc iface_desc = {
      IFACE, methods, NULL, NULL, NULL, NULL
 };
+
+Eina_Bool
+e_info_server_protocol_rule_path_init(char *rule_path)
+{
+    char reply[4096];
+    int len = sizeof (reply);
+    char *argv[2];
+    int argc = 2;
+
+    if (!rule_path || strlen(rule_path) <= 0)
+        return EINA_FALSE;
+
+    argv[0] = "file";
+    argv[1] = rule_path;
+
+    e_info_protocol_rule_set(argc, (const char**)&(argv[0]), reply, &len);
+
+    INF("%s: rule_path : %s\n", __func__, reply);
+
+    return EINA_TRUE;
+}
 
 EINTERN int
 e_info_server_init(void)
@@ -1245,6 +1308,8 @@ e_info_server_init(void)
    EINA_SAFETY_ON_NULL_GOTO(e_info_server.iface, err);
 
    E_EVENT_INFO_ROTATION_MESSAGE = ecore_event_type_new();
+
+   //e_info_server_protocol_rule_path_init(E_INFO_PROTOCOL_RULE_PATH);
 
    return 1;
 
@@ -1299,6 +1364,8 @@ e_info_server_shutdown(void)
      }
    e_info_dump_count = 0;
    e_info_dump_running = 0;
+
+   e_info_protocol_shutdown();
 
    eldbus_shutdown();
 

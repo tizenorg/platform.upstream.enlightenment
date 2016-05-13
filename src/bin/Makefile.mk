@@ -80,7 +80,9 @@ src/bin/e_zoomap.h \
 src/bin/e_zone.h \
 src/bin/e_util_transform.h \
 src/bin/e_comp_hwc.h \
-src/bin/e_comp_drm.h
+src/bin/e_comp_drm.h \
+src/bin/bintree.h \
+src/bin/e_info_protocol.h
 
 if HAVE_WAYLAND
 ENLIGHTENMENTHEADERS += \
@@ -151,6 +153,8 @@ src/bin/e_zone.c \
 src/bin/e_util_transform.c \
 src/bin/e_comp_hwc.c \
 src/bin/e_output.c \
+src/bin/bintree.c \
+src/bin/e_info_protocol.c \
 $(ENLIGHTENMENTHEADERS)
 
 if HAVE_WAYLAND
