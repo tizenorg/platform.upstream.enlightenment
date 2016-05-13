@@ -637,7 +637,7 @@ _e_comp_cb_update(void)
    else
      ecore_animator_freeze(e_comp->render_animator);
    DBG("UPDATE ALL");
-   if (e_comp->nocomp) goto nocomp;
+   if (e_comp->nocomp || e_comp->selcomp) goto hwcompose;
    if (conf->grab && (!e_comp->grabbed))
      {
         if (e_comp->grab_cb) e_comp->grab_cb();
@@ -670,7 +670,8 @@ _e_comp_cb_update(void)
      }
    if (e_comp->updates && (!e_comp->update_job))
      ecore_animator_thaw(e_comp->render_animator);
-nocomp:
+
+hwcompose:
    // TO DO :
    // query if selective HWC plane can be used
    if (!e_comp_gl_get() && !e_comp->hwc)
@@ -707,7 +708,7 @@ nocomp:
           {
              if (e_comp->nocomp && e_comp->nocomp_ec)
                {
-                  if (ec != e_comp->nocomp_ec)
+                  if (!e_comp_is_on_overlay(ec))
                     e_comp_nocomp_end("_e_comp_cb_update : nocomp_ec != ec");
                }
              else if ((!e_comp->nocomp) && (!e_comp->nocomp_override))
@@ -1790,4 +1791,29 @@ e_comp_hook_del(E_Comp_Hook *ch)
      }
    else
      _e_comp_hooks_delete++;
+}
+
+EINTERN Eina_Bool
+e_comp_is_on_overlay(E_Client *ec)
+{
+   if (!ec) return EINA_FALSE;
+   if (e_comp->nocomp)
+     {
+        return e_comp->nocomp_ec == ec;
+     }
+   else if (e_comp->selcomp)
+     {
+        Eina_List *l, *ll;
+        E_Output_Screen * screen;
+        E_Plane *ep;
+
+        if(!ec->zone) return EINA_FALSE;
+        screen = ec->zone->screen;
+        EINA_LIST_FOREACH_SAFE(screen->planes, l, ll, ep)
+          {
+             E_Client *overlay_ec = ep->ec;
+             if (overlay_ec == ec) return EINA_TRUE;
+          }
+     }
+   return EINA_FALSE;
 }
