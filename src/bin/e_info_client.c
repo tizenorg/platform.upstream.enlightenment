@@ -317,6 +317,44 @@ _e_info_client_proc_protocol_trace(int argc, char **argv)
 }
 
 static void
+_e_info_client_proc_protocol_rule(int argc, char **argv)
+{
+   char *new_argv[3];
+   int new_argc;
+
+   if (argc < 3 ||
+      (argc > 3 && !eina_streq(argv[2], "print") && !eina_streq(argv[2], "help") && !eina_streq(argv[2], "file") && !eina_streq(argv[2], "add") && !eina_streq(argv[2], "remove")))
+     {
+        printf("protocol-trace: Usage> enlightenment_info -protocol_rule [add | remove | print | help] [allow/deny/all]\n");
+        return;
+     }
+
+   new_argc = argc - 2;
+   for (int i = 0; i < new_argc; i++)
+     new_argv[i] = argv[i + 2];
+   if (new_argc < 2)
+     {
+        new_argv[1] = (char *)calloc (1, PATH_MAX);
+        snprintf(new_argv[1], PATH_MAX, "%s", "no_data");
+        new_argc++;
+     }
+   if (new_argc < 3)
+     {
+        new_argv[2] = (char *)calloc (1, PATH_MAX);
+        snprintf(new_argv[2], PATH_MAX, "%s", "no_data");
+        new_argc++;
+     }
+   if (new_argc != 3)
+     {
+        printf("protocol-trace: Usage> enlightenment_info -protocol_rule [add | remove | print | help] [allow/deny/all]\n");
+        return;
+     }
+
+   if (!_e_info_client_eldbus_message_with_args("protocol_rule", NULL, "sss", new_argv[0], new_argv[1], new_argv[2]))
+     return;
+}
+
+static void
 _e_info_client_proc_topvwins_info(int argc, char **argv)
 {
    E_Win_Info *win;
@@ -1138,6 +1176,11 @@ static struct
       "protocol_trace", "[console|file_path|disable]",
       "Enable/disable wayland protocol trace",
       _e_info_client_proc_protocol_trace
+   },
+   {
+      "protocol_rule", "[add|remove] [wl_pointer|wl_touch|wl_keyboard]",
+      "Add/remove wayland protocol rule you want to trace",
+      _e_info_client_proc_protocol_rule
    },
    {
       "topvwins", NULL,
