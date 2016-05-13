@@ -407,14 +407,13 @@ e_test_helper_init(void)
    eldbus_init();
 
    th_data = E_NEW(Test_Helper_Data, 1);
+   EINA_SAFETY_ON_NULL_GOTO(th_data, err);
 
    th_data->conn = eldbus_connection_get(ELDBUS_CONNECTION_TYPE_SYSTEM);
-   th_data->iface = eldbus_service_interface_register(th_data->conn,
-                                                      PATH,
-                                                      &iface_desc);
+   EINA_SAFETY_ON_NULL_GOTO(th_data->conn, err);
 
-   eldbus_name_request(th_data->conn, BUS, ELDBUS_NAME_REQUEST_FLAG_DO_NOT_QUEUE,
-                       _e_test_helper_cb_name_request, th_data->iface);
+   th_data->iface = eldbus_service_interface_register(th_data->conn, PATH, &iface_desc);
+   EINA_SAFETY_ON_NULL_GOTO(th_data->iface, err);
 
    E_LIST_HANDLER_APPEND(th_data->hdlrs, E_EVENT_CLIENT_VISIBILITY_CHANGE,
                          _e_test_helper_cb_visibility_change, NULL);
@@ -426,6 +425,10 @@ e_test_helper_init(void)
    th_data->registrant.vis = -1;
 
    return 1;
+
+err:
+   e_test_helper_shutdown();
+   return 0;
 }
 
 EINTERN int
