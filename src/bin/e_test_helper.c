@@ -275,35 +275,6 @@ _e_test_helper_cb_get_clients(const Eldbus_Service_Interface *iface EINA_UNUSED,
    return reply;
 }
 
-static void
-_e_test_helper_cb_name_request(void *data EINA_UNUSED,
-                               const Eldbus_Message *msg,
-                               Eldbus_Pending *pending EINA_UNUSED)
-{
-   unsigned int flag;
-   const char *errname, *errmsg;
-
-   if (eldbus_message_error_get(msg, &errname, &errmsg))
-     {
-        ERR("error on _e_test_helper_cb_name_request %s %s\n", errname, errmsg);
-        e_test_helper_shutdown();
-        return;
-     }
-
-   if (!eldbus_message_arguments_get(msg, "u", &flag))
-     {
-        ERR("error geting arguments on _e_test_helper_cb_name_request\n");
-        e_test_helper_shutdown();
-        return;
-     }
-
-   if (flag != ELDBUS_NAME_REQUEST_REPLY_PRIMARY_OWNER)
-     {
-        ERR("error name already in use\n");
-        e_test_helper_shutdown();
-     }
-}
-
 static Eina_Bool
 _e_test_helper_cb_visibility_change(void *data EINA_UNUSED,
                                     int type EINA_UNUSED,
