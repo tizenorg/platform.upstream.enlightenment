@@ -1146,7 +1146,7 @@ _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_l
         win = e_client_util_win_get(data->ec);
         snprintf(fname, sizeof(fname), "hwc_output_commit_0x%08x", win);
      }
-   tbm_internal_surface_dump_buffer(tsurface, fname);
+   tbm_surface_internal_dump_buffer(tsurface, fname);
 #endif
 
    return EINA_TRUE;
