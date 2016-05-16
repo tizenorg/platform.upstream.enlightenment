@@ -1667,7 +1667,7 @@ fail:
    return EINA_FALSE;
 }
 
-void
+EINTERN void
 e_comp_hwc_trace_debug(Eina_Bool onoff)
 {
    EINA_SAFETY_ON_NULL_RETURN(g_hwc);
@@ -1675,6 +1675,72 @@ e_comp_hwc_trace_debug(Eina_Bool onoff)
    if (onoff == g_hwc->trace_debug) return;
    g_hwc->trace_debug = onoff;
    INF("HWC: hwc trace_debug is %s", onoff?"ON":"OFF");
+}
+
+static char *
+_layer_cap_to_str(tdm_layer_capability layer_capabilities, tdm_layer_capability caps)
+{
+   if (layer_capabilities&caps)
+     {
+        if (caps == TDM_LAYER_CAPABILITY_CURSOR) return "cursor ";
+        else if (caps == TDM_LAYER_CAPABILITY_PRIMARY) return "primary ";
+        else if (caps == TDM_LAYER_CAPABILITY_OVERLAY) return "overlay ";
+        else if (caps == TDM_LAYER_CAPABILITY_GRAPHIC) return "graphics ";
+        else if (caps == TDM_LAYER_CAPABILITY_VIDEO) return "video ";
+        else if (caps == TDM_LAYER_CAPABILITY_TRANSFORM) return "transform ";
+        else if (caps == TDM_LAYER_CAPABILITY_RESEVED_MEMORY) return "reserved_memory ";
+        else if (caps == TDM_LAYER_CAPABILITY_NO_CROP) return "no_crop ";
+        else return "unkown";
+     }
+   return "";
+}
+
+EINTERN void
+e_comp_hwc_info_debug(void)
+{
+   EINA_SAFETY_ON_NULL_RETURN(g_hwc);
+
+   E_Comp_Hwc_Output *hwc_output;
+   E_Comp_Hwc_Layer *hwc_layer;
+   Eina_List *l_o, *ll_o;
+   Eina_List *l_l, *ll_l;
+   tdm_output_conn_status conn_status;
+   int output_idx = 0;
+   tdm_layer_capability layer_capabilities;
+   char layer_cap[4096] = {0, };
+
+   INF("HWC: HWC Information ==========================================================");
+   EINA_LIST_FOREACH_SAFE(g_hwc->hwc_outputs, l_o, ll_o, hwc_output)
+     {
+        if (!hwc_output) continue;
+        tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
+        // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
+        if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
+        INF("HWC: HWC Output(%d):(x, y, w, h)=(%d, %d, %d, %d) Information.",
+            ++output_idx, hwc_output->x, hwc_output->y, hwc_output->w, hwc_output->h);
+        INF("HWC:  num_layers=%d", hwc_output->num_layers);
+        EINA_LIST_FOREACH_SAFE(hwc_output->hwc_layers, l_l, ll_l, hwc_layer)
+          {
+              if (!hwc_layer) continue;
+              CLEAR(layer_capabilities);
+              memset(layer_cap, 0, 4096 * sizeof (char));
+              tdm_layer_get_capabilities(hwc_layer->tlayer, &layer_capabilities);
+              snprintf(layer_cap, sizeof(layer_cap), "%s%s%s%s%s%s%s%s",
+                       _layer_cap_to_str(layer_capabilities, TDM_LAYER_CAPABILITY_CURSOR),
+                       _layer_cap_to_str(layer_capabilities, TDM_LAYER_CAPABILITY_PRIMARY),
+                       _layer_cap_to_str(layer_capabilities, TDM_LAYER_CAPABILITY_OVERLAY),
+                       _layer_cap_to_str(layer_capabilities, TDM_LAYER_CAPABILITY_GRAPHIC),
+                       _layer_cap_to_str(layer_capabilities, TDM_LAYER_CAPABILITY_VIDEO),
+                       _layer_cap_to_str(layer_capabilities, TDM_LAYER_CAPABILITY_TRANSFORM),
+                       _layer_cap_to_str(layer_capabilities, TDM_LAYER_CAPABILITY_RESEVED_MEMORY),
+                       _layer_cap_to_str(layer_capabilities, TDM_LAYER_CAPABILITY_NO_CROP));
+              INF("HWC:  index=%d zpos=%d ec=%p %s",
+                  hwc_layer->index, hwc_layer->zpos,
+                  hwc_layer->ec?hwc_layer->ec:NULL,
+                  layer_cap);
+          }
+     }
+   INF("HWC: =========================================================================");
 }
 
 static Eina_Bool
@@ -1826,7 +1892,6 @@ e_comp_hwc_client_unset_layer(int zorder)
           }
      }
 }
-
 #else /* HAVE_HWC */
 EINTERN Eina_Bool
 e_comp_hwc_init(void)
@@ -1854,6 +1919,11 @@ e_comp_hwc_display_client(E_Client *ec)
 
 EINTERN void
 e_comp_hwc_trace_debug(Eina_Bool onoff)
+{
+   ;
+}
+
+EINTERN void e_comp_hwc_info_debug(void)
 {
    ;
 }
