@@ -837,19 +837,6 @@ _e_main_parse_arguments(int argc, char **argv)
              _e_main_shutdown(-1);
           }
      }
-
-   /* we want to have been launched by enlightenment_start. there is a very */
-   /* good reason we want to have been launched this way, thus check */
-   if (!getenv("E_START"))
-     {
-        e_error_message_show(_("You are executing enlightenment directly. This is\n"
-                               "bad. Please do not execute the \"enlightenment\"\n"
-                               "binary. Use the \"enlightenment_start\" launcher. It\n"
-                               "will handle setting up environment variables, paths,\n"
-                               "and launching any other required services etc.\n"
-                               "before enlightenment itself begins running.\n"));
-        _e_main_shutdown(-1);
-     }
 }
 
 EINTERN void
