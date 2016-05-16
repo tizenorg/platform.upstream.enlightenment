@@ -501,6 +501,19 @@ _e_shell_surface_map(struct wl_resource *resource)
         evas_object_geometry_set(ec->frame, ec->x, ec->y, ec->w, ec->h);
         evas_object_show(ec->frame);
         ec->comp_data->mapped = EINA_TRUE;
+
+        if ((!ec->first_mapped) && (!ec->iconic) && (!e_client_util_ignored_get(ec)))
+          {
+             if (!ec->comp_data->sub.data)
+               {
+                  if (ec->post_lower)
+                     evas_object_lower(ec->frame);
+                  else if (ec->post_raise)
+                     evas_object_raise(ec->frame);
+               }
+          }
+
+        ec->first_mapped = 1;
      }
 }
 
@@ -1069,6 +1082,19 @@ _e_xdg_shell_surface_map_cb_timer(void *data)
          * respective parents... */
         /* if (ec->netwm.type == E_WINDOW_TYPE_POPUP_MENU) */
         /*   e_client_raise_latest_set(ec); */
+
+        if ((!ec->first_mapped) && (!ec->iconic) && (!e_client_util_ignored_get(ec)))
+          {
+             if (!ec->comp_data->sub.data)
+               {
+                  if (ec->post_lower)
+                     evas_object_lower(ec->frame);
+                  else if (ec->post_raise)
+                     evas_object_raise(ec->frame);
+               }
+          }
+
+        ec->first_mapped = 1;
      }
    ec->map_timer = NULL;
    return ECORE_CALLBACK_CANCEL;
@@ -1139,6 +1165,19 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
          * respective parents... */
         /* if (ec->netwm.type == E_WINDOW_TYPE_POPUP_MENU) */
         /*   e_client_raise_latest_set(ec); */
+
+        if ((!ec->first_mapped) && (!ec->iconic) && (!e_client_util_ignored_get(ec)))
+          {
+             if (!ec->comp_data->sub.data)
+               {
+                  if (ec->post_lower)
+                     evas_object_lower(ec->frame);
+                  else if (ec->post_raise)
+                     evas_object_raise(ec->frame);
+               }
+          }
+
+        ec->first_mapped = 1;
      }
 
    TRACE_DS_END();
