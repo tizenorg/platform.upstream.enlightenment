@@ -3737,19 +3737,21 @@ e_comp_object_render(Evas_Object *obj)
           }
         else
           ret = EINA_TRUE;
-        /* set pixel data */
-        evas_object_image_data_set(cw->obj, cw->blanked ? NULL : pix);
         goto end;
      }
 
    pix = evas_object_image_data_get(cw->obj, EINA_TRUE);
    stride = evas_object_image_stride_get(cw->obj);
    srcpix = e_pixmap_image_data_get(cw->ec->pixmap);
-
    if (!srcpix)
      {
         e_pixmap_image_refresh(cw->ec->pixmap);
         srcpix = e_pixmap_image_data_get(cw->ec->pixmap);
+        if (!srcpix)
+          {
+             pix = NULL;
+             goto end;
+          }
      }
 
    EINA_ITERATOR_FOREACH(it, r)
@@ -3758,11 +3760,15 @@ e_comp_object_render(Evas_Object *obj)
         e_pixmap_image_data_argb_convert(cw->ec->pixmap, pix, srcpix, r, stride);
         RENDER_DEBUG("UPDATE [%p]: %d %d %dx%d -- pix = %p", cw->ec, r->x, r->y, r->w, r->h, pix);
      }
-   evas_object_image_data_set(cw->obj, cw->blanked ? NULL : pix);
+
 end:
+   /* set pixel data */
+   evas_object_image_data_set(cw->obj, cw->blanked ? NULL : pix);
+   _e_comp_object_alpha_set(cw);
    EINA_LIST_FOREACH(cw->obj_mirror, l, o)
      {
         evas_object_image_data_set(o, pix);
+        evas_object_image_alpha_set(o, evas_object_image_alpha_get(cw->obj));
         evas_object_image_pixels_dirty_set(o, EINA_FALSE);
      }
 
