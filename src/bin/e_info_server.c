@@ -1036,6 +1036,11 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
    char fname[PATH_MAX];
    E_Comp_Wl_Buffer *buffer;
    tbm_surface_h tbm_surface;
+   struct wl_shm_buffer *shmbuffer = NULL;
+   void *ptr;
+   int stride;
+   int w;
+   int h;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(ev, ECORE_CALLBACK_PASS_ON);
    EINA_SAFETY_ON_NULL_RETURN_VAL(ev->ec, ECORE_CALLBACK_PASS_ON);
@@ -1052,6 +1057,7 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
         return ECORE_CALLBACK_PASS_ON;
      }
    event_win = e_client_util_win_get(ec);
+   snprintf(fname, sizeof(fname), "buffer_commit_shm_0x%08x", event_win);
 
    buffer = e_pixmap_resource_get(ec->pixmap);
    if (!buffer) return ECORE_CALLBACK_PASS_ON;
@@ -1059,19 +1065,22 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
    switch (buffer->type)
      {
       case E_COMP_WL_BUFFER_TYPE_SHM:
-        snprintf(fname, sizeof(fname), "%s/buffer_commit_shm_%03d_0x%08x",
-                 e_info_dump_path, e_info_dump_count++, event_win);
-#if 0 /* do not excute default (slow) */
-        e_info_server_dump_client(ec, fname);
-#endif
+        shmbuffer = wl_shm_buffer_get(buffer->resource);
+        EINA_SAFETY_ON_NULL_RETURN_VAL(shmbuffer, ECORE_CALLBACK_PASS_ON);
+
+        ptr = wl_shm_buffer_get_data(shmbuffer);
+        EINA_SAFETY_ON_NULL_RETURN_VAL(ptr, ECORE_CALLBACK_PASS_ON);
+
+        stride = wl_shm_buffer_get_stride(shmbuffer);
+        w = stride / 4;
+        h = wl_shm_buffer_get_height(shmbuffer);
+        tbm_surface_internal_dump_shm_buffer(ptr, w, h, stride, fname);
         break;
       case E_COMP_WL_BUFFER_TYPE_NATIVE:
       case E_COMP_WL_BUFFER_TYPE_VIDEO:
       case E_COMP_WL_BUFFER_TYPE_TBM:
         tbm_surface = wayland_tbm_server_get_surface(NULL, buffer->resource);
         EINA_SAFETY_ON_NULL_RETURN_VAL(tbm_surface, ECORE_CALLBACK_PASS_ON);
-
-        snprintf(fname, sizeof(fname), "buffer_commit_0x%08x", event_win);
 
         tbm_surface_internal_dump_buffer(tbm_surface, fname);
         break;
