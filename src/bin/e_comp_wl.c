@@ -2003,7 +2003,9 @@ _e_comp_wl_subsurface_invisible_parent_get(E_Client *ec)
    while (parent)
      {
         /* in case of topmost */
-        if (!parent->comp_data || !parent->comp_data->sub.data)
+        if (!parent->comp_data) return NULL;
+
+        if (!parent->comp_data->sub.data)
           return (!parent->comp_data->mapped) ? parent : NULL;
 
         if (!parent->comp_data->mapped){
