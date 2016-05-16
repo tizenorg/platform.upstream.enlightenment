@@ -766,18 +766,12 @@ _e_main_shutdown_push(int (*func)(void))
 static void
 _e_main_parse_arguments(int argc, char **argv)
 {
-   char *s = NULL;
    int i = 0;
 
    /* handle some command-line parameters */
    for (i = 1; i < argc; i++)
      {
-        if ((!strcmp(argv[i], "-display")) && (i < (argc - 1)))
-          {
-             i++;
-             e_util_env_set("DISPLAY", argv[i]);
-          }
-        else if (!strcmp(argv[i], "-good"))
+        if (!strcmp(argv[i], "-good"))
           {
              good = EINA_TRUE;
              evil = EINA_FALSE;
@@ -841,27 +835,6 @@ _e_main_parse_arguments(int argc, char **argv)
                  )
                );
              _e_main_shutdown(-1);
-          }
-     }
-
-   /* fix up DISPLAY to be :N.0 if no .screen is in it */
-   s = getenv("DISPLAY");
-   if (s)
-     {
-        char *p, buff[4096];
-
-        if (!(p = strrchr(s, ':')))
-          {
-             snprintf(buff, sizeof(buff), "%s:0.0", s);
-             e_util_env_set("DISPLAY", buff);
-          }
-        else
-          {
-             if (!strrchr(p, '.'))
-               {
-                  snprintf(buff, sizeof(buff), "%s.0", s);
-                  e_util_env_set("DISPLAY", buff);
-               }
           }
      }
 
