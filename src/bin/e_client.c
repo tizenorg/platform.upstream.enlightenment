@@ -3046,6 +3046,26 @@ e_client_visibility_calculate(void)
    _e_calc_visibility = EINA_TRUE;
 }
 
+E_API void
+e_client_post_raise_lower_set(E_Client *ec, Eina_Bool raise_set, Eina_Bool lower_set)
+{
+   if (!ec) return;
+
+   if (!ec->first_mapped)
+     {
+        ec->post_raise = raise_set;
+        ec->post_lower = lower_set;
+     }
+}
+
+E_API Eina_Bool
+e_client_first_mapped_get(E_Client *ec)
+{
+   if (!ec) return EINA_FALSE;
+
+   return ec->first_mapped;
+}
+
 ////////////////////////////////////////////////
 EINTERN void
 e_client_idler_before(void)
@@ -3264,6 +3284,9 @@ e_client_new(E_Pixmap *cp, int first_map, int internal)
    e_pixmap_client_set(cp, ec);
    ec->resize_mode = E_POINTER_RESIZE_NONE;
    ec->layer = E_LAYER_CLIENT_NORMAL;
+   ec->first_mapped = EINA_FALSE;
+   ec->post_raise = EINA_TRUE;
+   ec->post_lower = EINA_FALSE;
 
    /* FIXME: if first_map is 1 then we should ignore the first hide event
     * or ensure the window is already hidden and events flushed before we

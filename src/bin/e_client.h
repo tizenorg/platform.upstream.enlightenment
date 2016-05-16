@@ -810,6 +810,9 @@ struct E_Client
    Eina_Bool keyboard_resizing : 1;
    Eina_Bool gesture_disable : 1;
    Eina_Bool floating : 1; //client is set as floating mode
+   Eina_Bool first_mapped : 1;
+   Eina_Bool post_raise : 1;
+   Eina_Bool post_lower : 1;
 
    Eina_Bool on_post_updates : 1; // client is on the post update list
 #ifdef HAVE_WAYLAND
@@ -1001,6 +1004,8 @@ E_API Eina_Bool e_client_desk_window_profile_available_check(E_Client *ec, const
 E_API void      e_client_desk_window_profile_wait_desk_set(E_Client *ec, E_Desk *desk);
 E_API void      e_client_layout_cb_set(E_Client_Layout_Cb cb);
 E_API void      e_client_visibility_calculate(void);
+E_API void      e_client_post_raise_lower_set(E_Client *ec, Eina_Bool raise_set, Eina_Bool lower_set);
+E_API Eina_Bool e_client_first_mapped_get(E_Client *ec);
 
 E_API void e_client_transform_update(E_Client *ec);
 E_API void e_client_transform_apply(E_Client *ec, double degree, double zoom, int cx, int cy);
