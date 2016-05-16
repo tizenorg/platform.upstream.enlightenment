@@ -1107,13 +1107,13 @@ _e_info_client_proc_hwc_trace(int argc, char **argv)
 
    if (argc < 3)
      {
-        printf("Error Check Args: enlightenment_info -hwc_trace [0/1]\n");
+        printf("Error Check Args: enlightenment_info -hwc_trace [0/1/2]\n");
         return;
      }
 
    onoff = atoi(argv[2]);
 
-   if (onoff == 1 || onoff == 0)
+   if (onoff == 1 || onoff == 0 || onoff == 2)
      {
         if (!_e_info_client_eldbus_message_with_args("hwc_trace_message", NULL, "i", onoff))
           {
@@ -1122,7 +1122,7 @@ _e_info_client_proc_hwc_trace(int argc, char **argv)
           }
      }
    else
-     printf("Error Check Args: enlightenment_info -hwc_trace [0/1]\n");
+     printf("Error Check Args: enlightenment_info -hwc_trace [0/1/2]\n");
 }
 #endif
 
@@ -1213,7 +1213,7 @@ static struct
 #ifdef HAVE_HWC
    {
       "hwc_trace",
-      "[on: 1, off: 0]",
+      "[off: 0, on: 1, info:2]",
       "Show the hwc trace log",
       _e_info_client_proc_hwc_trace
    },
