@@ -575,7 +575,6 @@ e_pixmap_image_clear(E_Pixmap *cp, Eina_Bool cache)
         cp->buffer_destroy_listener.notify = NULL;
      }
    e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
-   cp->data = NULL;
 }
 
 E_API Eina_Bool
