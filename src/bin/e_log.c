@@ -21,35 +21,38 @@ _e_log_cb(const Eina_Log_Domain *d, Eina_Log_Level level, const char *file, cons
 #ifdef HAVE_DLOG
    if (_dlog_enabled)
      {
-        int log_level;
+        int log_level, len = 0;
         const char buf[512];
         char tmp_log_level[512];
+
+        len =  sizeof(tmp_log_level) - 1;
+        tmp_log_level[len] = '\0';
 
         switch (level)
           {
            case EINA_LOG_LEVEL_CRITICAL:
               log_level = DLOG_FATAL;
-              strcpy(tmp_log_level, "FATAL");
+              strncpy(tmp_log_level, "FATAL", len);
               break;
            case EINA_LOG_LEVEL_ERR:
               log_level = DLOG_ERROR;
-              strcpy(tmp_log_level, "ERROR");
+              strncpy(tmp_log_level, "ERROR", len);
               break;
            case EINA_LOG_LEVEL_WARN:
               log_level = DLOG_WARN;
-              strcpy(tmp_log_level, "WARNING");
+              strncpy(tmp_log_level, "WARNING", len);
               break;
            case EINA_LOG_LEVEL_INFO:
               log_level = DLOG_INFO;
-              strcpy(tmp_log_level, "INFO");
+              strncpy(tmp_log_level, "INFO", len);
               break;
            case EINA_LOG_LEVEL_DBG:
               log_level = DLOG_DEBUG;
-              strcpy(tmp_log_level, "DEBUG");
+              strncpy(tmp_log_level, "DEBUG", len);
               break;
            default:
               log_level = DLOG_VERBOSE;
-              strcpy(tmp_log_level, "VERBOSE");
+              strncpy(tmp_log_level, "VERBOSE", len);
               break;
           }
 
