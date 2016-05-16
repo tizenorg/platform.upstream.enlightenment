@@ -844,27 +844,6 @@ _e_main_parse_arguments(int argc, char **argv)
           }
      }
 
-   /* fix up DISPLAY to be :N.0 if no .screen is in it */
-   s = getenv("DISPLAY");
-   if (s)
-     {
-        char *p, buff[4096];
-
-        if (!(p = strrchr(s, ':')))
-          {
-             snprintf(buff, sizeof(buff), "%s:0.0", s);
-             e_util_env_set("DISPLAY", buff);
-          }
-        else
-          {
-             if (!strrchr(p, '.'))
-               {
-                  snprintf(buff, sizeof(buff), "%s.0", s);
-                  e_util_env_set("DISPLAY", buff);
-               }
-          }
-     }
-
    /* we want to have been launched by enlightenment_start. there is a very */
    /* good reason we want to have been launched this way, thus check */
    if (!getenv("E_START"))
