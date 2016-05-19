@@ -48,7 +48,7 @@ static int _e_comp_hooks_walking = 0;
 
 static Eina_Inlist *_e_comp_hooks[] =
 {
-   [E_COMP_HOOK_ASSIGN_PLANE] = NULL,
+   [E_COMP_HOOK_PREPARE_PLANE] = NULL,
 };
 
 E_API int E_EVENT_COMPOSITOR_RESIZE = -1;
@@ -110,7 +110,7 @@ _e_comp_hooks_clean(void)
 }
 
 static void
-_e_comp_hook_call(E_Comp_Hook_Point hookpoint, E_Comp *c)
+_e_comp_hook_call(E_Comp_Hook_Point hookpoint, void *data EINA_UNUSED)
 {
    E_Comp_Hook *ch;
 
@@ -118,7 +118,7 @@ _e_comp_hook_call(E_Comp_Hook_Point hookpoint, E_Comp *c)
    EINA_INLIST_FOREACH(_e_comp_hooks[hookpoint], ch)
      {
         if (ch->delete_me) continue;
-        ch->func(ch->data, c);
+        ch->func(ch->data, NULL);
      }
    _e_comp_hooks_walking--;
    if ((_e_comp_hooks_walking == 0) && (_e_comp_hooks_delete > 0))
@@ -277,6 +277,22 @@ _e_comp_fps_update(void)
      }
 }
 
+static Eina_Bool
+_e_comp_hwc_active(void)
+{
+   if (e_comp->hwc_override > 0)
+     return EINA_FALSE;
+
+   switch (e_comp->hwc_mode)
+     {
+      case E_HWC_MODE_NO_COMPOSITE:
+      case E_HWC_MODE_HWC_COMPOSITE:
+      case E_HWC_MODE_HWC_NO_COMPOSITE:
+         return EINA_TRUE;
+     }
+   return EINA_FALSE;
+}
+
 static void
 _e_comp_cb_nocomp_begin(void)
 {
@@ -352,72 +368,13 @@ e_comp_nocomp_end(const char *location)
 {
    e_comp->nocomp_want = 0;
    E_FREE_FUNC(e_comp->nocomp_delay_timer, ecore_timer_del);
+   if (!e_comp->nocomp) return;
    INF("HWC : NOCOMP_END at %s\n", location);
    _e_comp_cb_nocomp_end();
 }
 #ifdef MULTI_PLANE_HWC
 static Eina_Bool
-_e_comp_selcomp_check(void)
-{
-   Eina_List *l, *ll;
-   E_Zone *zone;
-   E_Client *ec;
-   int ret = 0;
-
-   // instead of zones, canvas list will be the condition of each output check
-   // TODO: e_comp->canvases
-   EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
-     {
-        int ly_total = 0, ly_cnt = 0;
-        E_Hwc_Mode mode = E_HWC_MODE_INVALID;
-
-        if (zone->screen) ly_total = zone->screen->plane_count;
-
-        E_CLIENT_REVERSE_FOREACH(ec)
-          {
-             E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
-
-             // check clients to skip composite
-             if (ec->ignored || ec->input_only || (!evas_object_visible_get(ec->frame)) || (ec->zone != zone))
-               continue;
-
-             if (!E_INTERSECTS(0, 0, e_comp->w, e_comp->h,
-                               ec->client.x, ec->client.y, ec->client.w, ec->client.h))
-               {// check quick panel
-                  continue;
-               }
-
-             if (evas_object_data_get(ec->frame, "comp_skip"))
-               continue;
-
-             // check clients not able to use hwc
-             if ((!cdata->buffer_ref.buffer) ||
-                 (cdata->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_NATIVE) ||
-                 (cdata->width_from_buffer != cdata->width_from_viewport) ||
-                 (cdata->height_from_buffer != cdata->height_from_viewport))
-               {
-                  if (ly_cnt) mode = E_HWC_MODE_HWC_COMPOSITE;
-                  else mode = E_HWC_MODE_COMPOSITE;
-                  break;
-               }
-
-             ly_cnt++;
-          }
-        if (mode == E_HWC_MODE_INVALID)
-          {
-             if (ly_cnt == 1 ) mode = E_HWC_MODE_NO_COMPOSITE;
-             else if (ly_cnt <= ly_total && ly_cnt > 1) mode = E_HWC_MODE_HWC_NO_COMPOSITE;
-             else if (ly_cnt > ly_total) mode = E_HWC_MODE_HWC_COMPOSITE;
-          }
-
-        if((mode != E_HWC_MODE_COMPOSITE) && (mode != E_HWC_MODE_INVALID)) ret++;
-     }
-
-   return (ret > 0);
-}
-
-static Eina_Bool
-_e_comp_selcomp_assign_planes(void)
+_e_comp_prepare_overlay(void)
 {
    Eina_List *l, *ll;
    E_Zone *zone;
@@ -436,7 +393,6 @@ _e_comp_selcomp_assign_planes(void)
         if (!zone && !zone->screen) continue;
 
         eout = zone->screen;
-        printf("reassign all clients from zone %p\n", zone);
         num_of_ly = eout->plane_count;
 
         E_CLIENT_REVERSE_FOREACH(ec)
@@ -479,21 +435,39 @@ _e_comp_selcomp_assign_planes(void)
              else if (ly_cnt > num_of_ly) mode = E_HWC_MODE_HWC_COMPOSITE;
           }
 
-#ifdef HAVE_HWC
-        // comepare clist with current and assign it to planes refer to core policy : FIXME
-        // ......
-        e_output_planes_clear(eout);
-        e_output_planes_set(eout, mode, clist);
-#endif
-       eina_list_free(clist);
-       clist = NULL;
+        e_output_planes_prepare(eout, mode, clist);
+        eina_list_free(clist);
+        clist = NULL;
      }
 
    return EINA_TRUE;
 }
 
+static Eina_Bool
+_e_comp_hwc_usable(void)
+{
+   if (!e_comp->hwc) return EINA_FALSE;
+
+   // check whether to use hwcomposer by assignment policy
+   // core policy
+   _e_comp_prepare_overlay();
+
+   // extra policy
+   _e_comp_hook_call(E_COMP_HOOK_PREPARE_PLANE, NULL);
+
+   switch (e_comp->prepare_mode)
+     {
+      case E_HWC_MODE_NO_COMPOSITE:
+      case E_HWC_MODE_HWC_COMPOSITE:
+      case E_HWC_MODE_HWC_NO_COMPOSITE:
+         return EINA_TRUE;
+     }
+
+   return EINA_FALSE;
+}
+
 static void
-_e_comp_cb_selcomp_begin(void)
+_e_comp_cb_hwc_begin(void)
 {
    Eina_List *l;
    E_Zone *zone;
@@ -502,47 +476,35 @@ _e_comp_cb_selcomp_begin(void)
    if (!e_comp->hwc) return;
    E_FREE_FUNC(e_comp->selcomp_delay_timer, ecore_timer_del);
 
-   if (!_e_comp_selcomp_check()) return;
    e_comp->selcomp_want = 1;
-
-#ifdef HAVE_HWC
-   // check core policy of plane assignment
-   _e_comp_selcomp_assign_planes();
-
-   // check extra policy
-   _e_comp_hook_call(E_COMP_HOOK_ASSIGN_PLANE, NULL);
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        if(zone->screen) mode_set |= e_output_update(zone->screen);
+        if(zone->screen) mode_set |= e_output_planes_apply(zone->screen);
      }
-#endif
+
    if (!mode_set) return;
+   if (!_e_comp_hwc_active()) return;
 
    if (e_comp->calc_fps) e_comp->frametimes[0] = 0;
 
-   e_comp->selcomp = 1;
-   INF("JOB2...");
-
-   e_comp_render_queue();
-   e_comp_shape_queue_block(1);
-   ecore_event_add(E_EVENT_COMPOSITOR_DISABLE, NULL, NULL, NULL);
+   INF("HWC : Begin to use HWComposer...");
 }
 
 static Eina_Bool
-_e_comp_cb_selcomp_begin_timeout(void *data EINA_UNUSED)
+_e_comp_cb_hwc_begin_timeout(void *data EINA_UNUSED)
 {
    e_comp->selcomp_delay_timer = NULL;
 
-   if (e_comp->selcomp_override == 0)
+   if (e_comp->hwc_override == 0 && _e_comp_hwc_usable())
      {
-        _e_comp_cb_selcomp_begin();
+        _e_comp_cb_hwc_begin();
      }
    return EINA_FALSE;
 }
 
-E_API void
-e_comp_selcomp_end(const char *location)
+void
+_e_comp_hwc_end(const char *location)
 {
    Eina_Bool mode_set = EINA_FALSE;
    E_Client *ec;
@@ -550,37 +512,28 @@ e_comp_selcomp_end(const char *location)
    Eina_List *l, *ll;
 
    if (!e_comp->hwc) return;
-   if (!e_comp->selcomp) return;
+   if (!_e_comp_hwc_active()) return;
 
    e_comp->selcomp_want = 0;
    E_FREE_FUNC(e_comp->selcomp_delay_timer, ecore_timer_del);
 
-#ifdef HAVE_HWC
    // e_comp->canvases will be replace e_comp->zones
    EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
      {
         if (zone->screen)
           {
-             e_output_planes_clear(zone->screen);
-             mode_set |= e_output_update(zone->screen);
+             mode_set |= e_output_planes_clear(zone->screen);
           }
      }
-#endif
+
    if (!mode_set) return;
 
-   INF("HWC : selective comp _END at %s\n", location);
-   INF("COMP RESUME!");
+   INF("HWC : End...  at %s", location);
 
-   E_CLIENT_FOREACH(ec)
-     {
-        if (ec->visible && (!ec->input_only))
-          e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
+   e_comp->prepare_mode = 0;
+   e_comp->hwc_mode = 0;
 
-     }
-   e_comp->selcomp = 0;
    e_comp_render_queue();
-   e_comp_shape_queue_block(0);
-   ecore_event_add(E_EVENT_COMPOSITOR_ENABLE, NULL, NULL, NULL);
 }
 #endif
 
@@ -636,8 +589,11 @@ _e_comp_cb_update(void)
      e_comp->update_job = NULL;
    else
      ecore_animator_freeze(e_comp->render_animator);
+
    DBG("UPDATE ALL");
-   if (e_comp->nocomp || e_comp->selcomp) goto hwcompose;
+   if (e_comp->nocomp) goto setup_hwcompose;
+   if (_e_comp_hwc_active()) goto setup_hwcompose;
+
    if (conf->grab && (!e_comp->grabbed))
      {
         if (e_comp->grab_cb) e_comp->grab_cb();
@@ -671,7 +627,7 @@ _e_comp_cb_update(void)
    if (e_comp->updates && (!e_comp->update_job))
      ecore_animator_thaw(e_comp->render_animator);
 
-hwcompose:
+setup_hwcompose:
    // TO DO :
    // query if selective HWC plane can be used
    if (!e_comp_gl_get() && !e_comp->hwc)
@@ -679,26 +635,36 @@ hwcompose:
         goto end;
      }
 #ifdef MULTI_PLANE_HWC
-   if(_e_comp_selcomp_check())
+   if(_e_comp_hwc_usable())
      {
-        // switch mode
-        if (conf->selcomp_use_timer)
+        if (_e_comp_hwc_active())
           {
-             if (!e_comp->selcomp_delay_timer)
-               {
-                  e_comp->selcomp_delay_timer = ecore_timer_add(conf->selcomp_begin_timeout,
-                                                                _e_comp_cb_selcomp_begin_timeout,
-                                                                NULL);
-               }
+             // FIXME : will remove out this condition
+             // new(ec at prepared list) and current(ec on e_plane)
+             if (e_output_planes_need_change)
+                _e_comp_hwc_end("overlay surface changed");
           }
-        else
+        else if (!_e_comp_hwc_active())
           {
-             _e_comp_cb_selcomp_begin();
+             // switch mode
+             if (conf->selcomp_use_timer)
+               {
+                  if (!e_comp->selcomp_delay_timer)
+                    {
+                       e_comp->selcomp_delay_timer = ecore_timer_add(conf->selcomp_begin_timeout,
+                                                                     _e_comp_cb_hwc_begin_timeout,
+                                                                     NULL);
+                    }
+               }
+             else
+               {
+                  _e_comp_cb_hwc_begin();
+               }
           }
      }
    else
      {
-        if (e_comp->selcomp) e_comp_selcomp_end(__FUNCTION__);
+        if (_e_comp_hwc_active()) _e_comp_hwc_end(__FUNCTION__);
      }
 #else
    ec = _e_comp_fullscreen_check();
@@ -1801,7 +1767,7 @@ e_comp_is_on_overlay(E_Client *ec)
      {
         return e_comp->nocomp_ec == ec;
      }
-   else if (e_comp->selcomp)
+   else if (_e_comp_hwc_active())
      {
         Eina_List *l, *ll;
         E_Output_Screen * screen;
