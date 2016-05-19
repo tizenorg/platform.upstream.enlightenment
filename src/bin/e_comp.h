@@ -92,7 +92,7 @@ typedef struct _E_Comp_Hook E_Comp_Hook;
 
 typedef enum _E_Comp_Hook_Point
 {
-   E_COMP_HOOK_ASSIGN_PLANE,
+   E_COMP_HOOK_PREPARE_PLANE,
    E_COMP_HOOK_LAST
 } E_Comp_Hook_Point;
 
@@ -173,12 +173,16 @@ struct _E_Comp
    double          fps;
 
    int             nocomp_override; //number of times nocomp override has been requested
-   int             selcomp_override; //number of times selcomp override has been requested
-   Ecore_Window block_win;
+   Ecore_Window    block_win;
    int             block_count; //number of times block window has been requested
 
-   Ecore_Window  cm_selection; //FIXME: move to comp_x ?
+   Ecore_Window   cm_selection; //FIXME: move to comp_x ?
    E_Client       *nocomp_ec;
+
+   Eina_List      *prepare_ec_list; // temp
+   int             hwc_override; //number of times selcomp override has been requested
+   int             prepare_mode;
+   int             hwc_mode;
 
    int depth;
    unsigned int    input_key_grabs;
@@ -192,7 +196,6 @@ struct _E_Comp
    Eina_Bool       grabbed : 1;
    Eina_Bool       nocomp : 1;
    Eina_Bool       nocomp_want : 1;
-   Eina_Bool       selcomp : 1;
    Eina_Bool       selcomp_want : 1;
    Eina_Bool       saver : 1;
    Eina_Bool       shape_queue_blocked : 1;

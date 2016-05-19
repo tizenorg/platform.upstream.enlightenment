@@ -6,11 +6,11 @@
 
 typedef enum _E_Hwc_Mode
 {
+   E_HWC_MODE_INVALID,
    E_HWC_MODE_COMPOSITE = 1,        /* display only canvas */
    E_HWC_MODE_NO_COMPOSITE = 2,      /* display only one surface */
    E_HWC_MODE_HWC_COMPOSITE = 3,    /* display one or more surfaces and a canvas */
-   E_HWC_MODE_HWC_NO_COMPOSITE = 4, /* display multi surfaces */
-   E_HWC_MODE_INVALID
+   E_HWC_MODE_HWC_NO_COMPOSITE = 4  /* display multi surfaces */
 } E_Hwc_Mode;
 
 EINTERN Eina_Bool e_comp_hwc_init(void);
