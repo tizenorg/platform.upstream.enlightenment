@@ -1254,6 +1254,40 @@ e_info_server_cb_hwc_trace_message(const Eldbus_Service_Interface *iface EINA_UN
 }
 #endif
 
+static Eldbus_Message *
+e_info_server_cb_effect_control(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   uint32_t onoff;
+   E_Module *m;
+
+   if (!eldbus_message_arguments_get(msg, "i", &onoff))
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   m = e_module_find("e-mod-tizen-effect");
+
+   if (onoff == 1)
+     {
+        if (!m)
+          m = e_module_new("e-mod-tizen-effect");
+        if (m)
+          e_module_enable(m);
+     }
+   else if (onoff == 0)
+     {
+        if (m)
+          {
+             e_module_disable(m);
+             e_object_del(E_OBJECT(m));
+          }
+     }
+
+   return reply;
+}
+
 static const Eldbus_Method methods[] = {
    { "get_window_info", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_TOPVWINS")", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, 0 },
@@ -1277,6 +1311,7 @@ static const Eldbus_Method methods[] = {
    { "hwc_trace_message", ELDBUS_ARGS({"i", "hwc_trace_message"}), NULL, e_info_server_cb_hwc_trace_message, 0},
 #endif
    { "get_keymap", NULL, ELDBUS_ARGS({"hi", "keymap fd"}), _e_info_server_cb_keymap_info_get, 0},
+   { "effect_control", ELDBUS_ARGS({"i", "effect_control"}), NULL, e_info_server_cb_effect_control, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 

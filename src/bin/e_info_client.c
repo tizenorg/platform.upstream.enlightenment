@@ -1172,6 +1172,31 @@ _e_info_client_proc_hwc_trace(int argc, char **argv)
 }
 #endif
 
+static void
+_e_info_client_proc_effect_control(int argc, char **argv)
+{
+   uint32_t onoff;
+
+   if (argc < 3)
+     {
+        printf("Error Check Args: enlightenment_info -effect [1: on, 0: off]\n");
+        return;
+     }
+
+   onoff = atoi(argv[2]);
+
+   if (onoff == 1 || onoff == 0)
+     {
+        if (!_e_info_client_eldbus_message_with_args("effect_control", NULL, "i", onoff))
+          {
+             printf("_e_info_client_eldbus_message_with_args error");
+             return;
+          }
+     }
+   else
+     printf("Error Check Args: enlightenment_info -effect [1: on, 0: off]\n");
+}
+
 static struct
 {
    const char *option;
@@ -1275,6 +1300,12 @@ static struct
       "Print a current keymap",
       _e_info_client_proc_keymap_info
    },
+   {
+      "effect",
+      "[on: 1, off: 0]",
+      "On/Off the window effect",
+      _e_info_client_proc_effect_control
+   }
 };
 
 static void
