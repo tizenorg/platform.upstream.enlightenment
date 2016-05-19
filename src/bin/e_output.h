@@ -66,12 +66,15 @@ extern E_API int E_EVENT_SCREEN_CHANGE;
 EINTERN Eina_Bool e_output_init(void);
 EINTERN int       e_output_shutdown(void);
 EINTERN E_Output_Screen * e_output_screen_new(E_Zone *zone, int nlayer);
-E_API   void              e_output_screens_setup(int rw, int rh);
-E_API   const Eina_List * e_output_screens_get(void);
+EINTERN Eina_Bool         e_output_planes_need_change(void);
 EINTERN E_Output_Screen * e_output_screen_id_find(const char *id);
-E_API   Eina_Bool         e_output_planes_clear(E_Output_Screen * screen);
-E_API   Eina_Bool         e_output_planes_set(E_Output_Screen * screen, E_Hwc_Mode mode, Eina_List* clist);
-E_API   Eina_Bool         e_output_update(E_Output_Screen * screen);
+EINTERN Eina_Bool         e_output_planes_clear(E_Output_Screen * screen);
+EINTERN void              e_output_screens_setup(int rw, int rh);
+
+
+E_API   const Eina_List * e_output_screens_get(void);
+E_API   Eina_Bool         e_output_planes_prepare(E_Output_Screen * screen, E_Hwc_Mode mode, Eina_List* clist);
+E_API   Eina_Bool         e_output_util_planes_print(void);
 
 #endif
 #endif

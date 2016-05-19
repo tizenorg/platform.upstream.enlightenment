@@ -323,7 +323,7 @@ e_comp_drm_create(void)
 
                   /* TODO: are rotations possible ?? */
                }
-             // TODO: assign s->plane_count
+             s->plane_count = 1; // TODO: get proper value using libtdm
              printf("COMP DRM: planes %i\n", s->plane_count);
              for (j = 0; j < s->plane_count; j++)
                {
