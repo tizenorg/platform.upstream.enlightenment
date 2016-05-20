@@ -66,17 +66,6 @@ typedef void (*E_Comp_Cb)(void);
 
 typedef struct E_Comp_Screen_Iface
 {
-   /* can screen changes be made at all */
-   Eina_Bool (*available)(void);
-   /* begin listening for screen events */
-   void (*init)(void);
-   /* stop listening for screen events */
-   void (*shutdown)(void);
-   /* gather screen info */
-   E_Output *(*create)(void);
-   /* apply current config */
-   void (*apply)(void);
-   /* set dpms (on, standby, suspend, off) */
    void (*dpms)(int);
 } E_Comp_Screen_Iface;
 

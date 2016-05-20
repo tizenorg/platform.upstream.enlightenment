@@ -80,7 +80,7 @@ src/bin/e_zoomap.h \
 src/bin/e_zone.h \
 src/bin/e_util_transform.h \
 src/bin/e_comp_hwc.h \
-src/bin/e_comp_drm.h \
+src/bin/e_comp_screen.h \
 src/bin/e_info_protocol.h
 
 if HAVE_WAYLAND
@@ -106,7 +106,7 @@ src/bin/e_comp.c \
 src/bin/e_comp_canvas.c \
 src/bin/e_comp_cfdata.c \
 src/bin/e_comp_object.c \
-src/bin/e_comp_drm.c \
+src/bin/e_comp_screen.c \
 src/bin/e_config.c \
 src/bin/e_config_data.c \
 src/bin/e_dbusmenu.c \
