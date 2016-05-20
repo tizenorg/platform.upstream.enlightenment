@@ -18,6 +18,7 @@ typedef enum _E_Plane_Type_State
 
 struct _E_Plane
 {
+   int                 zpos;
    struct
      {
         int          x, y, w, h; // FIXME
@@ -27,6 +28,8 @@ struct _E_Plane
    E_Plane_Type_State  type;
    E_Client           *ec;
    E_Output_Screen    *screen;
+
+   Eina_Bool           is_primary;
 };
 
 extern E_API int E_EVENT_PLANE_ADD;
