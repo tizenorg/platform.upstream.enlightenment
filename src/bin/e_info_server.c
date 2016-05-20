@@ -61,6 +61,9 @@ static char         *e_info_dump_path;
 static int           e_info_dump_running;
 static int           e_info_dump_count;
 
+//FILE pointer for protocol_trace
+static FILE *log_fp_ptrace = NULL;
+
 #define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbis"
 #define VALUE_TYPE_REQUEST_RESLIST "ui"
 #define VALUE_TYPE_REPLY_RESLIST "ssi"
@@ -843,6 +846,7 @@ _e_info_server_protocol_debug_func(struct wl_closure *closure, struct wl_resourc
    E_Comp_Connected_Client_Info *cinfo;
    Eina_List *l;
 
+   if (!log_fp_ptrace) return;
    if (wc) wl_client_get_credentials(wc, &client_pid, NULL, NULL);
 
    clock_gettime(CLOCK_REALTIME, &tp);
@@ -860,7 +864,7 @@ _e_info_server_protocol_debug_func(struct wl_closure *closure, struct wl_resourc
      }
 
    if (!e_info_protocol_rule_validate(&elog)) return;
-   fprintf(stdout, "[%10.3f] %s%d%s%s@%u.%s(",
+   fprintf(log_fp_ptrace, "[%10.3f] %s%d%s%s@%u.%s(",
               time / 1000.0,
               send ? "Server -> Client [PID:" : "Server <- Client [PID:",
               client_pid, "] ",
@@ -870,46 +874,46 @@ _e_info_server_protocol_debug_func(struct wl_closure *closure, struct wl_resourc
    for (i = 0; i < closure->count; i++)
      {
         signature = get_next_argument(signature, &arg);
-        if (i > 0) fprintf(stdout, ", ");
+        if (i > 0) fprintf(log_fp_ptrace, ", ");
 
         switch (arg.type)
           {
            case 'u':
-             fprintf(stdout, "%u", closure->args[i].u);
+             fprintf(log_fp_ptrace, "%u", closure->args[i].u);
              break;
            case 'i':
-             fprintf(stdout, "%d", closure->args[i].i);
+             fprintf(log_fp_ptrace, "%d", closure->args[i].i);
              break;
            case 'f':
-             fprintf(stdout, "%f",
+             fprintf(log_fp_ptrace, "%f",
              wl_fixed_to_double(closure->args[i].f));
              break;
            case 's':
-             fprintf(stdout, "\"%s\"", closure->args[i].s);
+             fprintf(log_fp_ptrace, "\"%s\"", closure->args[i].s);
              break;
            case 'o':
              if (closure->args[i].o)
-               fprintf(stdout, "%s@%u", closure->args[i].o->interface->name, closure->args[i].o->id);
+               fprintf(log_fp_ptrace, "%s@%u", closure->args[i].o->interface->name, closure->args[i].o->id);
              else
-               fprintf(stdout, "nil");
+               fprintf(log_fp_ptrace, "nil");
              break;
            case 'n':
-             fprintf(stdout, "new id %s@", (closure->message->types[i]) ? closure->message->types[i]->name : "[unknown]");
+             fprintf(log_fp_ptrace, "new id %s@", (closure->message->types[i]) ? closure->message->types[i]->name : "[unknown]");
              if (closure->args[i].n != 0)
-               fprintf(stdout, "%u", closure->args[i].n);
+               fprintf(log_fp_ptrace, "%u", closure->args[i].n);
              else
-               fprintf(stdout, "nil");
+               fprintf(log_fp_ptrace, "nil");
              break;
            case 'a':
-             fprintf(stdout, "array");
+             fprintf(log_fp_ptrace, "array");
              break;
            case 'h':
-             fprintf(stdout, "fd %d", closure->args[i].h);
+             fprintf(log_fp_ptrace, "fd %d", closure->args[i].h);
              break;
           }
      }
 
-   fprintf(stdout, "), cmd: %s\n", elog.cmd? : "cmd is NULL");
+   fprintf(log_fp_ptrace, "), cmd: %s\n", elog.cmd? : "cmd is NULL");
 }
 
 static Eldbus_Message *
@@ -917,9 +921,6 @@ _e_info_server_cb_protocol_trace(const Eldbus_Service_Interface *iface EINA_UNUS
 {
    Eldbus_Message *reply = eldbus_message_method_return_new(msg);
    const char *path = NULL;
-   static int old_stderr = -1;
-   int  log_fd = -1;
-   FILE *log_fl;
 
    if (!eldbus_message_arguments_get(msg, "s", &path) || !path)
      {
@@ -927,34 +928,27 @@ _e_info_server_cb_protocol_trace(const Eldbus_Service_Interface *iface EINA_UNUS
         return reply;
      }
 
-   if (!strncmp(path, "disable", 7) && (old_stderr != -1))
+   if (log_fp_ptrace != NULL)
      {
-        dup2(old_stderr, STDOUT_FILENO);
-        close(old_stderr);
-        old_stderr = -1;
+        fclose(log_fp_ptrace);
+        log_fp_ptrace = NULL;
+     }
+
+   if (!strncmp(path, "disable", 7))
+     {
         wl_debug_server_debug_func_set(NULL);
         return reply;
      }
 
-   if (old_stderr == -1)
-     old_stderr = dup(STDOUT_FILENO);
+   log_fp_ptrace = fopen(path, "a");
 
-   log_fl = fopen(path, "a");
-
-   if (!log_fl)
+   if (!log_fp_ptrace)
      {
         ERR("failed: open file(%s)\n", path);
         return reply;
      }
 
-   close(STDOUT_FILENO);
-
-   setvbuf(log_fl, NULL, _IOLBF, 512);
-   log_fd = fileno(log_fl);
-
-   dup2(log_fd, STDOUT_FILENO);
-   fclose(log_fl);
-
+   setvbuf(log_fp_ptrace, NULL, _IOLBF, 512);
    wl_debug_server_debug_func_set((wl_server_debug_func_ptr)_e_info_server_protocol_debug_func);
 
    return reply;
