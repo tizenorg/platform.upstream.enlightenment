@@ -685,11 +685,13 @@ _e_info_rulechecker_rule_print(E_Info_Rule_Checker *rc, char *reply, int *len)
    E_Info_Reply_Buffer buffer = {&reply, len};
    int i;
 
-   REPLY(" ---------------- Protocol Filter Rules ----------------\n");
+   REPLY(" --------------------------[ Protocol Filter Rules ]--------------------------\n");
+   REPLY("  No      Policy              Rule\n");
+   REPLY(" -----------------------------------------------------------------------------\n");
 
    for (i = 0; i < rc->count; i++)
      {
-        REPLY(" [Rule %d] [%s] \"", i, rc->rules[i].policy == E_INFO_POLICY_TYPE_ALLOW ? "ALLOW" : "DENY");
+        REPLY(" %3d %10s \"", i, rc->rules[i].policy == E_INFO_POLICY_TYPE_ALLOW ? "ALLOW" : "DENY");
         _e_info_bintree_inorder_traverse(rc->rules[i].tree, _rule_print_func, (void*)&buffer);
         REPLY("\"\n");
      }
@@ -935,7 +937,7 @@ e_info_protocol_rule_set(const int argc, const char **argv, char *reply, int *le
              return EINA_FALSE;
           }
 
-        REPLY("The rule was successfully added.\n\n");
+        REPLY("The rule was successfully added.\n");
         _e_info_rulechecker_rule_print(rc, reply, len);
 
         return EINA_TRUE;
