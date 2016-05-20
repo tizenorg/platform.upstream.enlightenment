@@ -73,7 +73,7 @@ typedef struct E_Comp_Screen_Iface
    /* stop listening for screen events */
    void (*shutdown)(void);
    /* gather screen info */
-   E_Output *(*create)(void);
+   E_Comp_Screen *(*create)(void);
    /* apply current config */
    void (*apply)(void);
    /* set dpms (on, standby, suspend, off) */
