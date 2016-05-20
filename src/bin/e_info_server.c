@@ -963,7 +963,8 @@ _e_info_server_cb_protocol_rule(const Eldbus_Service_Interface *iface EINA_UNUSE
      argc = 1;
 
    e_info_protocol_rule_set(argc, (const char**)&(argv[0]), reply, &len);
-   INF("\n%s", reply);
+
+   eldbus_message_arguments_append(reply_msg, "s", reply);
 
    return reply_msg;
 }
@@ -1269,7 +1270,7 @@ static const Eldbus_Method methods[] = {
    { "get_res_lists", ELDBUS_ARGS({VALUE_TYPE_REQUEST_RESLIST, "client resource"}), ELDBUS_ARGS({"a("VALUE_TYPE_REPLY_RESLIST")", "array of client resources"}), _e_info_server_cb_res_lists_get, 0 },
    { "get_input_devices", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_INPUTDEV")", "array of input"}), _e_info_server_cb_input_device_info_get, 0},
    { "protocol_trace", ELDBUS_ARGS({"s", "protocol_trace"}), NULL, _e_info_server_cb_protocol_trace, 0},
-   { "protocol_rule", ELDBUS_ARGS({"sss", "protocol_rule"}), NULL, _e_info_server_cb_protocol_rule, 0},
+   { "protocol_rule", ELDBUS_ARGS({"sss", "protocol_rule"}), ELDBUS_ARGS({"s", "rule request"}), _e_info_server_cb_protocol_rule, 0},
    { "get_fps_info", NULL, ELDBUS_ARGS({"s", "fps request"}), _e_info_server_cb_fps_info_get, 0},
    { "transform_message", ELDBUS_ARGS({"siiiiiiii", "transform_message"}), NULL, e_info_server_cb_transform_message, 0},
    { "dump_buffers", ELDBUS_ARGS({"i", "start"}), NULL, _e_info_server_cb_buffer_dump, 0 },

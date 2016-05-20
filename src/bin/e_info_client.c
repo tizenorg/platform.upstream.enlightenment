@@ -325,6 +325,27 @@ _e_info_client_proc_protocol_trace(int argc, char **argv)
 }
 
 static void
+_cb_protocol_rule(const Eldbus_Message *msg)
+{
+   const char *name = NULL, *text = NULL;
+   Eina_Bool res;
+   const char *reply;
+
+   res = eldbus_message_error_get(msg, &name, &text);
+   EINA_SAFETY_ON_TRUE_GOTO(res, finish);
+
+   res = eldbus_message_arguments_get(msg, "s", &reply);
+   EINA_SAFETY_ON_FALSE_GOTO(res, finish);
+   printf("%s\n", reply);
+
+finish:
+   if ((name) || (text ))
+     {
+        printf("errname:%s errmsg:%s\n", name, text);
+     }
+}
+
+static void
 _e_info_client_proc_protocol_rule(int argc, char **argv)
 {
    char *new_argv[3];
@@ -358,7 +379,7 @@ _e_info_client_proc_protocol_rule(int argc, char **argv)
         return;
      }
 
-   if (!_e_info_client_eldbus_message_with_args("protocol_rule", NULL, "sss", new_argv[0], new_argv[1], new_argv[2]))
+   if (!_e_info_client_eldbus_message_with_args("protocol_rule", _cb_protocol_rule, "sss", new_argv[0], new_argv[1], new_argv[2]))
      return;
 }
 
