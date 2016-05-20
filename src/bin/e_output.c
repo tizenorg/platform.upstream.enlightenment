@@ -390,8 +390,8 @@ e_output_planes_prepare(E_Output_Screen * screen, E_Hwc_Mode mode, Eina_List* cl
    return EINA_TRUE;
 }
 
-E_API Eina_Bool
-e_output_planes_apply(E_Output_Screen * screen)
+EINTERN Eina_Bool
+e_output_screen_apply(E_Output_Screen * screen)
 {
    e_comp->hwc_mode = e_comp->prepare_mode;
    switch (e_comp->prepare_mode)
@@ -402,7 +402,7 @@ e_output_planes_apply(E_Output_Screen * screen)
          return _hwc_set(screen, e_comp->prepare_mode, e_comp->prepare_ec_list);
 
       default :
-         e_output_planes_clear(screen);
+         e_output_screen_clear(screen);
          break;
      }
 
@@ -410,7 +410,7 @@ e_output_planes_apply(E_Output_Screen * screen)
 }
 
 EINTERN Eina_Bool
-e_output_planes_clear(E_Output_Screen * screen)
+e_output_screen_clear(E_Output_Screen * screen)
 {
    Eina_List *l, *ll;
    E_Plane *ep;
@@ -430,7 +430,7 @@ e_output_planes_clear(E_Output_Screen * screen)
 }
 
 EINTERN Eina_Bool
-e_output_planes_need_change()
+e_output_screen_need_change()
 {
    E_Zone *zone;
    E_Output_Screen * screen;

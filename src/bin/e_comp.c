@@ -480,7 +480,7 @@ _e_comp_cb_hwc_begin(void)
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        if(zone->screen) mode_set |= e_output_planes_apply(zone->screen);
+        if(zone->screen) mode_set |= e_output_screen_apply(zone->screen);
      }
 
    if (!mode_set) return;
@@ -526,7 +526,7 @@ _e_comp_hwc_end(const char *location)
      {
         if (zone->screen)
           {
-             mode_set |= e_output_planes_clear(zone->screen);
+             mode_set |= e_output_screen_clear(zone->screen);
           }
      }
 
@@ -654,7 +654,7 @@ setup_hwcompose:
           {
              // FIXME : will remove out this condition
              // new(ec at prepared list) and current(ec on e_plane)
-             if (e_output_planes_need_change)
+             if (e_output_screen_need_change)
                 _e_comp_hwc_end("overlay surface changed");
           }
         else if (!_e_comp_hwc_active())
