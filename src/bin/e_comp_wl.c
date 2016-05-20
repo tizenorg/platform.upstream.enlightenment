@@ -1745,20 +1745,20 @@ static Eina_Bool
 _e_comp_wl_cb_randr_change(void *data EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
    Eina_List *l;
-   E_Output_Screen *screen;
+   E_Output *eout;
    unsigned int transform = WL_OUTPUT_TRANSFORM_NORMAL;
 
-   if (!e_output) return ECORE_CALLBACK_RENEW;
+   if (!e_comp_tdm) return ECORE_CALLBACK_RENEW;
 
-   EINA_LIST_FOREACH(e_output->screens, l, screen)
+   EINA_LIST_FOREACH(e_comp_tdm->outputs, l, eout)
      {
-        if (!screen->config.enabled)
+        if (!eout->config.enabled)
           {
-             e_comp_wl_output_remove(screen->id);
+             e_comp_wl_output_remove(eout->id);
              continue;
           }
 
-        switch (screen->config.rotation)
+        switch (eout->config.rotation)
           {
            case 90:
              transform = WL_OUTPUT_TRANSFORM_90;
@@ -1775,13 +1775,13 @@ _e_comp_wl_cb_randr_change(void *data EINA_UNUSED, int type EINA_UNUSED, void *e
              break;
           }
 
-        if (!e_comp_wl_output_init(screen->id, screen->info.name,
-                                   screen->info.screen,
-                                   screen->config.geom.x, screen->config.geom.y,
-                                   screen->config.geom.w, screen->config.geom.h,
-                                   screen->info.size.w, screen->info.size.h,
-                                   screen->config.mode.refresh, 0, transform))
-          ERR("Could not initialize screen %s", screen->info.name);
+        if (!e_comp_wl_output_init(eout->id, eout->info.name,
+                                   eout->info.screen,
+                                   eout->config.geom.x, eout->config.geom.y,
+                                   eout->config.geom.w, eout->config.geom.h,
+                                   eout->info.size.w, eout->info.size.h,
+                                   eout->config.mode.refresh, 0, transform))
+          ERR("Could not initialize screen %s", eout->info.name);
      }
 
    return ECORE_CALLBACK_RENEW;

@@ -54,31 +54,31 @@ static Eina_Bool
 _e_comp_drm_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    const Eina_List *l;
-   E_Output_Screen *screen;
+   E_Output *eout;
    Ecore_Drm_Event_Output *e;
 
    if (!(e = event)) goto end;
 
    DBG("WL_DRM OUTPUT CHANGE");
 
-   EINA_LIST_FOREACH(e_output->screens, l, screen)
+   EINA_LIST_FOREACH(e_comp_tdm->outputs, l, eout)
      {
-        if ((!strcmp(screen->info.name, e->name)) &&
-            (!strcmp(screen->info.screen, e->model)))
+        if ((!strcmp(eout->info.name, e->name)) &&
+            (!strcmp(eout->info.screen, e->model)))
           {
              if (e->plug)
                {
-                  if (!e_comp_wl_output_init(screen->id, e->make, e->model,
+                  if (!e_comp_wl_output_init(eout->id, e->make, e->model,
                                              e->x, e->y, e->w, e->h,
                                              e->phys_width, e->phys_height,
                                              e->refresh, e->subpixel_order,
                                              e->transform))
                     {
-                       ERR("Could not setup new output: %s", screen->id);
+                       ERR("Could not setup new output: %s", eout->id);
                     }
                }
              else
-               e_comp_wl_output_remove(screen->id);
+               e_comp_wl_output_remove(eout->id);
 
              break;
           }
@@ -157,7 +157,7 @@ _e_comp_drm_cb_ee_resize(Ecore_Evas *ee EINA_UNUSED)
 }
 
 static Ecore_Drm_Output_Mode *
-_e_comp_drm_mode_screen_find(E_Output_Screen *s, Ecore_Drm_Output *output)
+_e_comp_drm_mode_screen_find(E_Output *eout, Ecore_Drm_Output *output)
 {
    Ecore_Drm_Output_Mode *mode, *m = NULL;
    const Eina_List *l;
@@ -165,9 +165,9 @@ _e_comp_drm_mode_screen_find(E_Output_Screen *s, Ecore_Drm_Output *output)
 
    EINA_LIST_FOREACH(ecore_drm_output_modes_get(output), l, mode)
      {
-        diff = (100 * abs(s->config.mode.w - mode->width)) + 
-           (100 * abs(s->config.mode.h - mode->height)) + 
-           fabs((100 * s->config.mode.refresh) - (100 * mode->refresh));
+        diff = (100 * abs(eout->config.mode.w - mode->width)) + 
+           (100 * abs(eout->config.mode.h - mode->height)) + 
+           fabs((100 * eout->config.mode.refresh) - (100 * mode->refresh));
         if (diff < distance)
           {
              m = mode;
@@ -196,22 +196,22 @@ _e_comp_drm_output_screen_get(Ecore_Drm_Output *output)
    return strdup(model);
 }
 
-EINTERN E_Output *
-e_comp_drm_create(void)
+EINTERN E_Comp_Tdm *
+e_comp_drm_tdm_init(void)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *output;
    const Eina_List *l, *ll;
-   E_Output *r = NULL;
+   E_Comp_Tdm *r = NULL;
 
-   r = E_NEW(E_Output, 1);
+   r = E_NEW(E_Comp_Tdm, 1);
    if (!r) return NULL;
 
    EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
      {
         EINA_LIST_FOREACH(dev->outputs, ll, output)
           {
-             E_Output_Screen *s;
+             E_Output *eout;
              const Eina_List *m;
              Ecore_Drm_Output_Mode *omode;
              unsigned int j;
@@ -220,38 +220,38 @@ e_comp_drm_create(void)
              Eina_Bool possible = EINA_FALSE;
              int len = 0;
 
-             s = E_NEW(E_Output_Screen, 1);
-             if (!s) continue;
+             eout = E_NEW(E_Output, 1);
+             if (!eout) continue;
 
-             s->info.name = ecore_drm_output_name_get(output);
-             printf("COMP DRM: .... out %s\n", s->info.name);
+             eout->info.name = ecore_drm_output_name_get(output);
+             printf("COMP TDM: .... out %s\n", eout->info.name);
 
-             s->info.connected = ecore_drm_output_connected_get(output);
-             printf("COMP DRM: ...... connected %i\n", s->info.connected);
+             eout->info.connected = ecore_drm_output_connected_get(output);
+             printf("COMP TDM: ...... connected %i\n", eout->info.connected);
 
-             s->info.screen = _e_comp_drm_output_screen_get(output);
+             eout->info.screen = _e_comp_drm_output_screen_get(output);
 
-             s->info.edid = ecore_drm_output_edid_get(output);
-             if (s->info.edid)
-               s->id = malloc(strlen(s->info.name) + 1 + strlen(s->info.edid) + 1);
+             eout->info.edid = ecore_drm_output_edid_get(output);
+             if (eout->info.edid)
+               eout->id = malloc(strlen(eout->info.name) + 1 + strlen(eout->info.edid) + 1);
              else
-               s->id = malloc(strlen(s->info.name) + 1 + 1);
-             if (!s->id)
+               eout->id = malloc(strlen(eout->info.name) + 1 + 1);
+             if (!eout->id)
                {
-                  free(s->info.screen);
-                  free(s->info.edid);
-                  free(s);
+                  free(eout->info.screen);
+                  free(eout->info.edid);
+                  free(eout);
                   continue;
                }
-             len = strlen(s->info.name);
-             strncpy(s->id, s->info.name, len + 1);
-             strncat(s->id, "/", 1);
-             if (s->info.edid) strncat(s->id, s->info.edid, strlen(s->info.edid));
+             len = strlen(eout->info.name);
+             strncpy(eout->id, eout->info.name, len + 1);
+             strncat(eout->id, "/", 1);
+             if (eout->info.edid) strncat(eout->id, eout->info.edid, strlen(eout->info.edid));
 
-             printf("COMP DRM: ...... screen: %s\n", s->id);
+             printf("COMP TDM: ...... screen: %s\n", eout->id);
 
-             ecore_drm_output_physical_size_get(output, &s->info.size.w,
-                                                &s->info.size.h);
+             ecore_drm_output_physical_size_get(output, &eout->info.size.w,
+                                                &eout->info.size.h);
 
              EINA_LIST_FOREACH(ecore_drm_output_modes_get(output), m, omode)
                {
@@ -265,13 +265,13 @@ e_comp_drm_create(void)
                   rmode->refresh = omode->refresh;
                   rmode->preferred = (omode->flags & DRM_MODE_TYPE_PREFERRED);
 
-                  s->info.modes = eina_list_append(s->info.modes, rmode);
+                  eout->info.modes = eina_list_append(eout->info.modes, rmode);
                }
 
              priority = 0;
              if (ecore_drm_output_primary_get(dev) == output)
                priority = 100;
-             s->config.priority = priority;
+             eout->config.priority = priority;
 
              for (j = 0; j < dev->crtc_count; j++)
                {
@@ -302,36 +302,36 @@ e_comp_drm_create(void)
                     {
                        unsigned int refresh;
 
-                       ecore_drm_output_position_get(output, &s->config.geom.x,
-                                                     &s->config.geom.y);
-                       ecore_drm_output_crtc_size_get(output, &s->config.geom.w,
-                                                      &s->config.geom.h);
+                       ecore_drm_output_position_get(output, &eout->config.geom.x,
+                                                     &eout->config.geom.y);
+                       ecore_drm_output_crtc_size_get(output, &eout->config.geom.w,
+                                                      &eout->config.geom.h);
 
                        ecore_drm_output_current_resolution_get(output,
-                                                               &s->config.mode.w,
-                                                               &s->config.mode.h,
+                                                               &eout->config.mode.w,
+                                                               &eout->config.mode.h,
                                                                &refresh);
-                       s->config.mode.refresh = refresh;
-                       s->config.enabled =
-                          ((s->config.mode.w != 0) && (s->config.mode.h != 0));
+                       eout->config.mode.refresh = refresh;
+                       eout->config.enabled =
+                          ((eout->config.mode.w != 0) && (eout->config.mode.h != 0));
 
-                       printf("COMP DRM: '%s' %i %i %ix%i\n", s->info.name,
-                              s->config.geom.x, s->config.geom.y,
-                              s->config.geom.w, s->config.geom.h);
+                       printf("COMP TDM: '%s' %i %i %ix%i\n", eout->info.name,
+                              eout->config.geom.x, eout->config.geom.y,
+                              eout->config.geom.w, eout->config.geom.h);
 
                     }
 
                   /* TODO: are rotations possible ?? */
                }
-             s->plane_count = 1; // TODO: get proper value using libtdm
-             printf("COMP DRM: planes %i\n", s->plane_count);
-             for (j = 0; j < s->plane_count; j++)
+             eout->plane_count = 1; // TODO: get proper value using libtdm
+             printf("COMP TDM: planes %i\n", eout->plane_count);
+             for (j = 0; j < eout->plane_count; j++)
                {
-                  printf("COMP DRM: added plane %i\n", j);
-                  e_plane_new(s);
+                  printf("COMP TDM: added plane %i\n", j);
+                  e_plane_new(eout, j);
                }
 
-             r->screens = eina_list_append(r->screens, s);
+             r->outputs = eina_list_append(r->outputs, eout);
           }
      }
 
@@ -339,34 +339,34 @@ e_comp_drm_create(void)
 }
 
 EINTERN Eina_Bool
-e_comp_drm_available(void)
+e_comp_drm_tdm_available(void)
 {
    return EINA_TRUE;
 }
 
 // TODO: will remove out after removing dependant e pkgs with E_Comp_Screen_Iface
 EINTERN void
-e_comp_drm_stub(void)
+e_comp_drm_tdm_stub(void)
 {}
 
 EINTERN void
-e_comp_drm_apply(void)
+e_comp_drm_tdm_apply(void)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *out;
-   E_Output_Screen *s;
+   E_Output *eout;
    const Eina_List *l, *ll;
    int nw, nh, pw, ph, ww, hh;
    int minw, minh, maxw, maxh;
    int top_priority = 0;
 
    /* TODO: what the actual fuck */
-   nw = e_output->w;
-   nh = e_output->h;
+   nw = e_comp_tdm->w;
+   nh = e_comp_tdm->h;
    EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
      {
         ecore_drm_screen_size_range_get(dev, &minw, &minh, &maxw, &maxh);
-        printf("COMP DRM: size range: %ix%i -> %ix%i\n", minw, minh, maxw, maxh);
+        printf("COMP TDM: size range: %ix%i -> %ix%i\n", minw, minh, maxw, maxh);
 
         ecore_drm_outputs_geometry_get(dev, NULL, NULL, &pw, &ph);
         if (nw > maxw) nw = maxw;
@@ -378,65 +378,65 @@ e_comp_drm_apply(void)
         if (nw < pw) ww = pw;
         if (nh < ph) hh = ph;
 
-        printf("COMP DRM: set vsize: %ix%i\n", ww, hh);
+        printf("COMP TDM: set vsize: %ix%i\n", ww, hh);
 
-        EINA_LIST_FOREACH(e_output->screens, ll, s)
+        EINA_LIST_FOREACH(e_comp_tdm->outputs, ll, eout)
           {
              Ecore_Drm_Output_Mode *mode = NULL;
-             printf("COMP DRM: find output for '%s'\n", s->info.name);
+             printf("COMP TDM: find output for '%s'\n", eout->info.name);
 
-             out = ecore_drm_device_output_name_find(dev, s->info.name);
+             out = ecore_drm_device_output_name_find(dev, eout->info.name);
              if (!out) continue;
 
-             mode = _e_comp_drm_mode_screen_find(s, out);
+             mode = _e_comp_drm_mode_screen_find(eout, out);
 
-             if (s->config.priority > top_priority)
-               top_priority = s->config.priority;
+             if (eout->config.priority > top_priority)
+               top_priority = eout->config.priority;
 
-             printf("\tCOMP DRM: Priority: %d\n", s->config.priority);
+             printf("\tCOMP TDM: Priority: %d\n", eout->config.priority);
 
-             printf("\tCOMP DRM: Geom: %d %d %d %d\n",
-                    s->config.geom.x, s->config.geom.y,
-                    s->config.geom.w, s->config.geom.h);
+             printf("\tCOMP TDM: Geom: %d %d %d %d\n",
+                    eout->config.geom.x, eout->config.geom.y,
+                    eout->config.geom.w, eout->config.geom.h);
 
              if (mode)
                {
-                  printf("\tCOMP DRM: Found Valid Drm Mode\n");
-                  printf("\t\tCOMP DRM: %dx%d\n", mode->width, mode->height);
+                  printf("\tCOMP TDM: Found Valid Drm Mode\n");
+                  printf("\t\tCOMP TDM: %dx%d\n", mode->width, mode->height);
                }
              else
-               printf("\tCOMP DRM: No Valid Drm Mode Found\n");
+               printf("\tCOMP TDM: No Valid Drm Mode Found\n");
 
              ecore_drm_output_mode_set(out, mode,
-                                       s->config.geom.x, s->config.geom.y);
-             if (s->config.priority == top_priority)
+                                       eout->config.geom.x, eout->config.geom.y);
+             if (eout->config.priority == top_priority)
                ecore_drm_output_primary_set(out);
 
              ecore_drm_output_enable(out);
 
-             printf("\tCOMP DRM: Mode\n");
-             printf("\t\tCOMP DRM: Geom: %d %d\n",
-                    s->config.mode.w, s->config.mode.h);
-             printf("\t\tCOMP DRM: Refresh: %f\n", s->config.mode.refresh);
-             printf("\t\tCOMP DRM: Preferred: %d\n",
-                    s->config.mode.preferred);
+             printf("\tCOMP TDM: Mode\n");
+             printf("\t\tCOMP TDM: Geom: %d %d\n",
+                    eout->config.mode.w, eout->config.mode.h);
+             printf("\t\tCOMP TDM: Refresh: %f\n", eout->config.mode.refresh);
+             printf("\t\tCOMP TDM: Preferred: %d\n",
+                    eout->config.mode.preferred);
           }
      }
 }
 
 EINTERN void
-e_comp_drm_dpms(int set)
+e_comp_drm_tdm_dpms(int set)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *out;
-   E_Output_Screen *s;
+   E_Output *eout;
    const Eina_List *l, *ll;
 
    EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
      {
-        EINA_LIST_FOREACH(e_output->screens, ll, s)
+        EINA_LIST_FOREACH(e_comp_tdm->outputs, ll, eout)
           {
-             out = ecore_drm_device_output_name_find(dev, s->info.name);
+             out = ecore_drm_device_output_name_find(dev, eout->info.name);
              if (!out) continue;
 
              //if ((!s->config.configured) || s->config.enabled)
@@ -448,12 +448,12 @@ e_comp_drm_dpms(int set)
 // TODO: will remove out after removing dependant e pkgs with E_Comp_Screen_Iface
 static E_Comp_Screen_Iface drmiface =
 {
-   .available = e_comp_drm_available,
-   .init = e_comp_drm_stub,
-   .shutdown = e_comp_drm_stub,
-   .create = e_comp_drm_create,
-   .apply = e_comp_drm_apply,
-   .dpms = e_comp_drm_dpms,
+   .available = e_comp_drm_tdm_available,
+   .init = e_comp_drm_tdm_stub,
+   .shutdown = e_comp_drm_tdm_stub,
+   .init = e_comp_drm_tdm_init,
+   .apply = e_comp_drm_tdm_apply,
+   .dpms = e_comp_drm_tdm_dpms,
 };
 
 static void

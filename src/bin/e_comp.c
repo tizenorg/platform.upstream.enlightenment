@@ -8,6 +8,8 @@
 #endif
 
 #define OVER_FLOW 1
+#define MULTI_PLANE_HWC 1 // jylee
+
 //#define SHAPE_DEBUG
 //#define BORDER_ZOOMAPS
 //////////////////////////////////////////////////////////////////////////
@@ -385,7 +387,7 @@ _e_comp_prepare_overlay(void)
    EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
      {
         E_Client *ec;
-        E_Output_Screen *eout;
+        E_Output *eout;
         int mode = E_HWC_MODE_INVALID;
         int num_of_ly = 0, ly_cnt = 0;
         Eina_List *clist = NULL;
@@ -480,7 +482,7 @@ _e_comp_cb_hwc_begin(void)
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        if(zone->screen) mode_set |= e_output_screen_apply(zone->screen);
+        if(zone->screen) mode_set |= e_output_apply(zone->screen);
      }
 
    if (!mode_set) return;
@@ -526,7 +528,7 @@ _e_comp_hwc_end(const char *location)
      {
         if (zone->screen)
           {
-             mode_set |= e_output_screen_clear(zone->screen);
+             mode_set |= e_output_clear(zone->screen);
           }
      }
 
@@ -654,7 +656,7 @@ setup_hwcompose:
           {
              // FIXME : will remove out this condition
              // new(ec at prepared list) and current(ec on e_plane)
-             if (e_output_screen_need_change)
+             if (e_output_need_change)
                 _e_comp_hwc_end("overlay surface changed");
           }
         else if (!_e_comp_hwc_active())
@@ -1783,12 +1785,12 @@ e_comp_is_on_overlay(E_Client *ec)
    else if (_e_comp_hwc_active())
      {
         Eina_List *l, *ll;
-        E_Output_Screen * screen;
+        E_Output * eout;
         E_Plane *ep;
 
         if (!ec->zone) return EINA_FALSE;
-        screen = ec->zone->screen;
-        EINA_LIST_FOREACH_SAFE(screen->planes, l, ll, ep)
+        eout = ec->zone->screen;
+        EINA_LIST_FOREACH_SAFE(eout->planes, l, ll, ep)
           {
              E_Client *overlay_ec = ep->ec;
              if (overlay_ec == ec) return EINA_TRUE;
