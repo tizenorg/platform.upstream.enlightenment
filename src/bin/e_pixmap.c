@@ -521,8 +521,6 @@ e_pixmap_native_surface_init(E_Pixmap *cp, Evas_Native_Surface *ns)
         ns->version = EVAS_NATIVE_SURFACE_VERSION;
         ns->data.wl.legacy_buffer = cp->buffer->resource;
         ret = !cp->buffer->shm_buffer;
-        ELOGF("COMP_NS", "res:%p cp(%dx%d) buff(%dx%d)",
-              cp, NULL, cp->buffer->resource, cp->w, cp->h, cp->buffer->w, cp->buffer->h);
      }
    else if (cp->buffer && cp->buffer->type == E_COMP_WL_BUFFER_TYPE_TBM)
      {
@@ -531,8 +529,6 @@ e_pixmap_native_surface_init(E_Pixmap *cp, Evas_Native_Surface *ns)
         ns->data.tbm.buffer = cp->buffer->tbm_surface;
         if (cp->buffer->tbm_surface)
           ret = EINA_TRUE;
-        ELOGF("COMP_NS", "res:%p TBM_SURFACE cp(%dx%d) buff(%dx%d)",
-              cp, NULL, NULL, cp->w, cp->h, cp->buffer->w, cp->buffer->h);
      }
    else /* SHM buffer or VIDEO buffer */
      {
