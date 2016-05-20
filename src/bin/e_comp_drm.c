@@ -328,7 +328,7 @@ e_comp_drm_create(void)
              for (j = 0; j < s->plane_count; j++)
                {
                   printf("COMP DRM: added plane %i\n", j);
-                  e_plane_new(s);
+                  e_plane_new(s, j);
                }
 
              r->screens = eina_list_append(r->screens, s);

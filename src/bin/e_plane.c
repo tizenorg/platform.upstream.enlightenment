@@ -36,7 +36,7 @@ e_plane_shutdown(void)
    return 1;
 }
 */
-E_API void
+EINTERN void
 e_plane_free(E_Plane *plane)
 {
    //printf("@@@@@@@@@@ e_plane_free: %i %i | %i %i %ix%i = %p\n", zone->num, zone->id, zone->x, zone->y, zone->w, zone->h, zone);
@@ -47,8 +47,8 @@ e_plane_free(E_Plane *plane)
    free(plane);
 }
 
-E_API E_Plane *
-e_plane_new(E_Output_Screen *screen)
+EINTERN E_Plane *
+e_plane_new(E_Output_Screen *screen, int zpos)
 {
    E_Plane *plane;
 
@@ -68,22 +68,20 @@ e_plane_new(E_Output_Screen *screen)
    plane->screen = screen;
 
    /* config default resolution with output size*/
-   plane->resolution.x = screen->config.geom.x;
-   plane->resolution.y = screen->config.geom.y;
-   plane->resolution.w = screen->config.geom.w;
-   plane->resolution.h = screen->config.geom.h;
+   plane->geometry.x = screen->config.geom.x;
+   plane->geometry.y = screen->config.geom.y;
+   plane->geometry.w = screen->config.geom.w;
+   plane->geometry.h = screen->config.geom.h;
 
    screen->planes = eina_list_append(screen->planes, plane);
 
-   printf("@@@@@@@@@@ e_plane_new:| %i %i %ix%i\n", plane->resolution.x , plane->resolution.y, plane->resolution.w, plane->resolution.h);
+   printf("@@@@@@@@@@ e_plane_new:| %i %i %ix%i\n", plane->geometry.x , plane->geometry.y, plane->geometry.w, plane->geometry.h);
 
    return plane;
 }
 
 E_API Eina_Bool
 e_plane_resolution_set(E_Plane *plane,
-                       int x,
-                       int y,
                        int w,
                        int h)
 {
@@ -92,13 +90,13 @@ e_plane_resolution_set(E_Plane *plane,
    E_OBJECT_CHECK_RETURN(plane, EINA_FALSE);
    E_OBJECT_TYPE_CHECK_RETURN(plane, E_PLANE_TYPE, EINA_FALSE);
 
-   if ((x == plane->resolution.x) && (plane->resolution.y) && (w == plane->resolution.w) && (h == plane->resolution.h))
+   if (plane->is_primary) return EINA_FALSE;
+
+   if ((w == plane->geometry.w) && (h == plane->geometry.h))
      return EINA_FALSE;
 
-   plane->resolution.x = x;
-   plane->resolution.y = y;
-   plane->resolution.w = w;
-   plane->resolution.h = h;
+   plane->geometry.w = w;
+   plane->geometry.h = h;
 
    /* TODO: config clist refer to resolution */
    _e_plane_reconfigure_clients(plane, dx, dy, dw, dh);
