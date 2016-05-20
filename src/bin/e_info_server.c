@@ -9,6 +9,24 @@
 #include <wayland-tbm-server.h>
 #include "e_comp_wl.h"
 #include "e_info_protocol.h"
+
+struct wl_object
+{
+   const struct wl_interface *interface;
+   const void *implementation;
+   uint32_t id;
+};
+
+struct wl_resource
+{
+   struct wl_object object;
+   wl_resource_destroy_func_t destroy;
+   struct wl_list link;
+   struct wl_signal destroy_signal;
+   struct wl_client *client;
+   void *data;
+};
+
 void wl_map_for_each(struct wl_map *map, void *func, void *data);
 #endif
 #ifdef HAVE_HWC

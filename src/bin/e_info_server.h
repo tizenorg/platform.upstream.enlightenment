@@ -25,25 +25,6 @@ EINTERN void e_info_server_dump_client(E_Client *ec, char *fname);
 #define WL_HIDE_DEPRECATED
 #include <wayland-server.h>
 
-#ifdef WL_HIDE_DEPRECATED
-struct wl_object
-{
-   const struct wl_interface *interface;
-   const void *implementation;
-   uint32_t id;
-};
-
-struct wl_resource
-{
-   struct wl_object object;
-   wl_resource_destroy_func_t destroy;
-   struct wl_list link;
-   struct wl_signal destroy_signal;
-   struct wl_client *client;
-   void *data;
-};
-#endif
-
 /* wayland private MACRO and structure definitions */
 #ifndef WL_CLOSURE_MAX_ARGS
 #define WL_CLOSURE_MAX_ARGS 20
