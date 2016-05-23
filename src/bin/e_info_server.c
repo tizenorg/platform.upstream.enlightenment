@@ -1434,6 +1434,18 @@ e_info_server_dump_client(E_Client *ec, char *fname)
         w = surface_info.planes[0].stride/4;
         h = surface_info.height;
      }
+   else if (buffer->type == E_COMP_WL_BUFFER_TYPE_TBM)
+     {
+        tbm_surface_info_s surface_info;
+        tbm_surface_h tbm_surface = buffer->tbm_surface;
+
+        memset(&surface_info, 0, sizeof(tbm_surface_info_s));
+        tbm_surface_map(tbm_surface, TBM_SURF_OPTION_READ, &surface_info);
+
+        data = surface_info.planes[0].ptr;
+        w = surface_info.planes[0].stride/4;
+        h = surface_info.height;
+     }
    else
      {
         ERR("Invalid resource:%u", wl_resource_get_id(buffer->resource));
