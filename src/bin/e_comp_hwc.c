@@ -207,6 +207,7 @@ _e_comp_hwc_client_destroy_backup_buffer(E_Comp_Wl_Buffer *buffer)
         buffer->tbm_surface = NULL;
      }
 
+   wl_signal_emit(&buffer->destroy_signal, buffer);
    E_FREE(buffer);
 }
 
