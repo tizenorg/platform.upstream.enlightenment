@@ -870,12 +870,6 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
         }
    }
 
-   if (cursor_timer_ec == ec)
-     {
-        E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
-        cursor_timer_ec = NULL;
-     }
-
    if (e_comp_wl->ptr.ec == ec)
      e_comp_wl->ptr.ec = NULL;
    if (e_object_is_del(E_OBJECT(ec))) return;
@@ -887,6 +881,18 @@ _e_comp_wl_evas_cb_mouse_out(void *data, Evas *evas EINA_UNUSED, Evas_Object *ob
         e_comp_wl_data_device_send_leave(ec);
         return;
      }
+
+   if (e_config->use_cursor_timer)
+     {
+        if (e_pointer_is_hidden(e_comp->pointer))
+          return;
+        if (cursor_timer_ec == ec)
+          {
+             E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
+             cursor_timer_ec = NULL;
+          }
+     }
+
    if (!eina_list_count(e_comp_wl->ptr.resources)) return;
 
    wc = wl_resource_get_client(ec->comp_data->surface);
@@ -971,30 +977,31 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
           _e_comp_wl_send_touch_move(ec, ev->cur.canvas.x, ev->cur.canvas.y, ev->timestamp);
         else
           _e_comp_wl_send_mouse_move(ec, ev->cur.canvas.x, ev->cur.canvas.y, ev->timestamp);
-     }
-   if (e_config->use_cursor_timer)
-     {
-        if (e_pointer_is_hidden(e_comp->pointer))
-          _e_comp_wl_cursor_reload(ec);
 
-        if (e_comp_wl->ptr.hide_tmr)
+        if (e_config->use_cursor_timer)
           {
-             if (cursor_timer_ec == ec)
+             if (e_pointer_is_hidden(e_comp->pointer))
+               _e_comp_wl_cursor_reload(ec);
+
+             if (e_comp_wl->ptr.hide_tmr)
                {
-                  ecore_timer_interval_set(e_comp_wl->ptr.hide_tmr, e_config->cursor_timer_interval);
-                  ecore_timer_reset(e_comp_wl->ptr.hide_tmr);
+                  if (cursor_timer_ec == ec)
+                    {
+                       ecore_timer_interval_set(e_comp_wl->ptr.hide_tmr, e_config->cursor_timer_interval);
+                       ecore_timer_reset(e_comp_wl->ptr.hide_tmr);
+                    }
+                  else
+                    {
+                       ecore_timer_del(e_comp_wl->ptr.hide_tmr);
+                       cursor_timer_ec = ec;
+                       e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
+                    }
                }
              else
                {
-                  ecore_timer_del(e_comp_wl->ptr.hide_tmr);
                   cursor_timer_ec = ec;
                   e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
                }
-          }
-        else
-          {
-             cursor_timer_ec = ec;
-             e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, ec);
           }
      }
 }
@@ -1834,31 +1841,33 @@ _e_comp_wl_cb_mouse_move(void *d EINA_UNUSED, int t EINA_UNUSED, Ecore_Event_Mou
    if (e_comp_wl->drag &&
        e_comp_wl->drag_client &&
        e_client_has_xwindow(e_comp_wl->drag_client))
-     _e_comp_wl_send_mouse_move(e_comp_wl->drag_client, ev->x, ev->y, ev->timestamp);
-
-   if (e_config->use_cursor_timer)
      {
-        if (e_pointer_is_hidden(e_comp->pointer))
-          _e_comp_wl_cursor_reload(NULL);
+        _e_comp_wl_send_mouse_move(e_comp_wl->drag_client, ev->x, ev->y, ev->timestamp);
 
-        if (e_comp_wl->ptr.hide_tmr)
+	 if (e_config->use_cursor_timer)
           {
-             if (!cursor_timer_ec)
+             if (e_pointer_is_hidden(e_comp->pointer))
+               _e_comp_wl_cursor_reload(NULL);
+
+             if (e_comp_wl->ptr.hide_tmr)
                {
-                  ecore_timer_interval_set(e_comp_wl->ptr.hide_tmr, e_config->cursor_timer_interval);
-                  ecore_timer_reset(e_comp_wl->ptr.hide_tmr);
+                  if (!cursor_timer_ec)
+                    {
+                       ecore_timer_interval_set(e_comp_wl->ptr.hide_tmr, e_config->cursor_timer_interval);
+                       ecore_timer_reset(e_comp_wl->ptr.hide_tmr);
+                    }
+                  else
+                    {
+                      ecore_timer_del(e_comp_wl->ptr.hide_tmr);
+                      cursor_timer_ec = NULL;
+                      e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, NULL);
+                    }
                }
              else
                {
-                 ecore_timer_del(e_comp_wl->ptr.hide_tmr);
-                 cursor_timer_ec = NULL;
-                 e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, NULL);
+                  cursor_timer_ec = NULL;
+                  e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, NULL);
                }
-          }
-        else
-          {
-             cursor_timer_ec = NULL;
-             e_comp_wl->ptr.hide_tmr = ecore_timer_add(e_config->cursor_timer_interval, _e_comp_wl_cursor_timer, NULL);
           }
      }
 
