@@ -1418,7 +1418,7 @@ e_info_server_dump_client(E_Client *ec, char *fname)
         if (shmbuffer)
           {
              data = wl_shm_buffer_get_data(shmbuffer);
-             w = wl_shm_buffer_get_stride(shmbuffer)/4;
+             w = wl_shm_buffer_get_stride(shmbuffer) / 4;
              h = wl_shm_buffer_get_height(shmbuffer);
           }
      }
@@ -1431,7 +1431,19 @@ e_info_server_dump_client(E_Client *ec, char *fname)
         tbm_surface_map(tbm_surface, TBM_SURF_OPTION_READ, &surface_info);
 
         data = surface_info.planes[0].ptr;
-        w = surface_info.planes[0].stride/4;
+        w = surface_info.planes[0].stride / 4;
+        h = surface_info.height;
+     }
+   else if (buffer->type == E_COMP_WL_BUFFER_TYPE_TBM)
+     {
+        tbm_surface_info_s surface_info;
+        tbm_surface_h tbm_surface = buffer->tbm_surface;
+
+        memset(&surface_info, 0, sizeof(tbm_surface_info_s));
+        tbm_surface_map(tbm_surface, TBM_SURF_OPTION_READ, &surface_info);
+
+        data = surface_info.planes[0].ptr;
+        w = surface_info.planes[0].stride / 4;
         h = surface_info.height;
      }
    else
@@ -1457,10 +1469,18 @@ e_info_server_dump_client(E_Client *ec, char *fname)
 
  err:
  #ifdef HAVE_WAYLAND_ONLY
-   if (data && buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
+   if (data)
      {
-        tbm_surface_h tbm_surface = wayland_tbm_server_get_surface(NULL, buffer->resource);
-        tbm_surface_unmap(tbm_surface);
+        if (buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
+          {
+             tbm_surface_h tbm_surface = wayland_tbm_server_get_surface(NULL, buffer->resource);
+             tbm_surface_unmap(tbm_surface);
+          }
+        else if (buffer->type == E_COMP_WL_BUFFER_TYPE_TBM)
+          {
+             tbm_surface_h tbm_surface = buffer->tbm_surface;
+             tbm_surface_unmap(tbm_surface);
+          }
      }
  #endif
 
