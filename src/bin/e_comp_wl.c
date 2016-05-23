@@ -1970,24 +1970,30 @@ _e_comp_wl_subsurface_hide(E_Client *ec)
 
    EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
      {
-        if (subc->comp_data->mapped)
+        if (!subc->comp_data->sub.data->stand_alone)
           {
-             subc->visible = EINA_FALSE;
-             evas_object_hide(subc->frame);
-             subc->comp_data->mapped = 0;
+             if (subc->comp_data->mapped)
+               {
+                  subc->visible = EINA_FALSE;
+                  evas_object_hide(subc->frame);
+                  subc->comp_data->mapped = 0;
+               }
+             _e_comp_wl_subsurface_hide(subc);
           }
-        _e_comp_wl_subsurface_hide(subc);
      }
 
    EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
      {
-        if (subc->comp_data->mapped)
+        if (!subc->comp_data->sub.data->stand_alone)
           {
-             subc->visible = EINA_FALSE;
-             evas_object_hide(subc->frame);
-             subc->comp_data->mapped = 0;
+             if (subc->comp_data->mapped)
+               {
+                  subc->visible = EINA_FALSE;
+                  evas_object_hide(subc->frame);
+                  subc->comp_data->mapped = 0;
+               }
+             _e_comp_wl_subsurface_hide(subc);
           }
-        _e_comp_wl_subsurface_hide(subc);
      }
 }
 

@@ -146,6 +146,7 @@ struct _E_Comp_Wl_Subsurf_Data
    E_Comp_Wl_Buffer_Ref cached_buffer_ref;
 
    Eina_Bool synchronized;
+   Eina_Bool stand_alone;
 };
 
 struct _E_Comp_Wl_Input_Device
