@@ -20,7 +20,6 @@ EINTERN Eina_Bool
 e_output_init(void)
 {
    if (!E_EVENT_SCREEN_CHANGE) E_EVENT_SCREEN_CHANGE = ecore_event_type_new();
-   if (!e_comp_drm_available()) return EINA_FALSE;
 
    _do_apply();
 
