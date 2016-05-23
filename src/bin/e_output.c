@@ -22,9 +22,6 @@ EINTERN Eina_Bool
 e_output_init(void)
 {
    if (!E_EVENT_SCREEN_CHANGE) E_EVENT_SCREEN_CHANGE = ecore_event_type_new();
-   if (!e_comp_screen_available()) return EINA_FALSE;
-
-   e_comp_screen = e_comp_screen_init_outputs();
 
    _do_apply();
 

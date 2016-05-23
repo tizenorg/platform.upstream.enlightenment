@@ -338,12 +338,6 @@ e_comp_screen_init_outputs(void)
    return r;
 }
 
-EINTERN Eina_Bool
-e_comp_screen_available(void)
-{
-   return EINA_TRUE;
-}
-
 EINTERN void
 e_comp_screen_apply(void)
 {
@@ -418,33 +412,6 @@ e_comp_screen_apply(void)
           }
      }
 }
-
-EINTERN void
-e_comp_screen_dpms(int set)
-{
-   Ecore_Drm_Device *dev;
-   Ecore_Drm_Output *out;
-   E_Output *eout;
-   const Eina_List *l, *ll;
-
-   EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
-     {
-        EINA_LIST_FOREACH(e_comp_screen->outputs, ll, eout)
-          {
-             out = ecore_drm_device_output_name_find(dev, eout->info.name);
-             if (!out) continue;
-
-             //if ((!s->config.configured) || s->config.enabled)
-             ecore_drm_output_dpms_set(out, set);
-          }
-     }
-}
-
-// TODO: will remove out after removing dependant e pkgs with E_Comp_Screen_Iface
-static E_Comp_Screen_Iface drmiface =
-{
-   .dpms = e_comp_screen_dpms,
-};
 
 static void
 _drm_read_pixels(E_Comp_Wl_Output *output, void *pixels)
@@ -632,9 +599,6 @@ e_comp_screen_init()
      }
 
    ecore_evas_callback_resize_set(e_comp->ee, _e_comp_screen_cb_ee_resize);
-
-   //TODO: will be remove out
-   e_comp->screen = &drmiface;
 
    e_main_ts("\tE_Output Init");
    if (!e_output_init())
