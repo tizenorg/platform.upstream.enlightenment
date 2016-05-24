@@ -373,24 +373,33 @@ e_output_screen_id_find(const char *id)
    return NULL;
 }
 
-
-E_API Eina_Bool
-e_output_planes_prepare(E_Output * eout, E_Hwc_Mode mode, Eina_List* clist)
+E_API const Eina_List *
+e_output_hwc_planes_get(const char *output_id)
 {
-   if (!e_comp) return EINA_FALSE;
+   E_Output *eout;
+   E_Plane *ep;
+   Eina_List *l, *hwc_planes = NULL;
 
-   e_comp->prepare_mode = mode;
-   if (e_comp->prepare_ec_list)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
      {
-        eina_list_free(e_comp->prepare_ec_list);
-        e_comp->prepare_ec_list = NULL;
+        if (!strcmp(eout->id, output_id))
+          {
+            if (!eout->planes) break;
+
+            EINA_LIST_FOREACH(eout->planes, l, ep)
+              {
+                  if ((ep->type == E_PLANE_TYPE_PRIMARY) ||
+                      (ep->type == E_PLANE_TYPE_OVERLAY))
+                     hwc_planes = eina_list_append(hwc_planes, ep);
+              }
+            return hwc_planes;
+          }
      }
-   e_comp->prepare_ec_list = eina_list_clone(clist);
-   return EINA_TRUE;
+   return NULL;
 }
 
 EINTERN Eina_Bool
-e_output_apply(E_Output * eout)
+e_output_hwc_apply(E_Output * eout)
 {
    e_comp->hwc_mode = e_comp->prepare_mode;
    switch (e_comp->prepare_mode)
@@ -401,7 +410,7 @@ e_output_apply(E_Output * eout)
          return _hwc_set(eout, e_comp->prepare_mode, e_comp->prepare_ec_list);
 
       default :
-         e_output_clear(eout);
+         e_output_hwc_cancel(eout);
          break;
      }
 
@@ -409,7 +418,7 @@ e_output_apply(E_Output * eout)
 }
 
 EINTERN Eina_Bool
-e_output_clear(E_Output * eout)
+e_output_hwc_cancel(E_Output * eout)
 {
    Eina_List *l, *ll;
    E_Plane *ep;
@@ -429,7 +438,7 @@ e_output_clear(E_Output * eout)
 }
 
 EINTERN Eina_Bool
-e_output_need_change()
+e_output_hwc_changed()
 {
    E_Zone *zone;
    E_Output * eout;
@@ -485,18 +494,14 @@ E_API Eina_Bool
 e_output_util_planes_print(void)
 {
    Eina_List *l, *ll;
-   E_Zone *zone;
+   E_Output * eout = NULL;
 
-   EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
+   EINA_LIST_FOREACH_SAFE(e_comp_screen->outputs, l, ll, eout)
      {
-        E_Output * eout = NULL;
         E_Plane *ep;
         E_Client *ec;
 
-        if (!zone && !zone->screen) continue;
-        eout = zone->screen;
-        if (!eout) continue;
-        if (!eout->planes) continue;
+        if (!eout && !eout->planes) continue;
 
         EINA_LIST_FOREACH_SAFE(eout->planes, l, ll, ep)
           {
