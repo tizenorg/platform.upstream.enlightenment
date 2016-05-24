@@ -62,20 +62,16 @@ struct _E_Screen
 extern E_API E_Comp_Screen *e_comp_screen;
 extern E_API int E_EVENT_SCREEN_CHANGE;
 
-EINTERN Eina_Bool e_output_init(void);
-EINTERN int       e_output_shutdown(void);
-EINTERN E_Output * e_output_screen_id_find(const char *id);
-
-/// regarding hwc
-EINTERN Eina_Bool         e_output_need_change(void);
-EINTERN Eina_Bool         e_output_clear(E_Output * eout);
-EINTERN void              e_output_screens_setup(int rw, int rh);
-EINTERN Eina_Bool         e_output_apply(E_Output * eout);
-
-
-E_API   const Eina_List * e_output_screens_get(void);
-E_API   Eina_Bool         e_output_planes_prepare(E_Output * eout, E_Hwc_Mode mode, Eina_List* clist); // going to remove out
-E_API   Eina_Bool         e_output_util_planes_print(void);
+EINTERN Eina_Bool        e_output_init(void);
+EINTERN int              e_output_shutdown(void);
+EINTERN E_Output        *e_output_find(const char *id);
+EINTERN void             e_output_screens_setup(int rw, int rh);
+EINTERN const Eina_List *e_output_screens_get(void);
+EINTERN Eina_Bool        e_output_hwc_changed(void); // temp api
+EINTERN Eina_Bool        e_output_hwc_cancel(E_Output * eout);
+EINTERN Eina_Bool        e_output_hwc_apply(E_Output * eout);
+E_API const Eina_List   *e_output_hwc_planes_get(const char *output_id);
+E_API Eina_Bool          e_output_util_planes_print(void);
 
 #endif
 #endif
