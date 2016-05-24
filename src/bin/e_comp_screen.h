@@ -2,8 +2,8 @@
 
 
 #else
-#ifndef E_COMP_DRM_H
-#define E_COMP_DRM_H
+#ifndef E_COMP_SCREEN_H
+#define E_COMP_SCREEN_H
 
 
 EINTERN Eina_Bool       e_comp_screen_available(void);
@@ -15,6 +15,6 @@ EINTERN void            e_comp_screen_dpms(int set);
 E_API Eina_Bool         e_comp_screen_init(void);
 E_API void              e_comp_screen_shutdown(void);
 
-#endif /*E_COMP_DRM_H*/
+#endif /*E_COMP_SCREEN_H*/
 
 #endif

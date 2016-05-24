@@ -639,7 +639,7 @@ e_comp_screen_init()
    e_main_ts("\tE_Output Init");
    if (!e_output_init())
      {
-        e_error_message_show(_("Enlightenment cannot initialize drm output!\n"));
+        e_error_message_show(_("Enlightenment cannot initialize output!\n"));
         TRACE_DS_END();
         return EINA_FALSE;
      }
