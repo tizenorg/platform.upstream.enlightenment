@@ -205,8 +205,8 @@ e_comp_canvas_init(int w, int h)
                                        scr->x, scr->y, scr->w, scr->h);
              if (scr->id)
                {
-                  zone->randr2_id = strdup(scr->id);
-                  zone->screen = e_output_screen_id_find(scr->id);
+                  zone->output_id = strdup(scr->id);
+                  zone->screen = e_output_find(scr->id);
                }
           }
      }
@@ -409,13 +409,13 @@ e_comp_canvas_update(void)
                   zones = eina_list_remove(zones, zone);
                   e_comp->zones = eina_list_append(e_comp->zones, zone);
                   zone->num = scr->screen;
-                  free(zone->randr2_id);
-                  zone->randr2_id = NULL;
+                  free(zone->output_id);
+                  zone->output_id = NULL;
                   zone->screen = NULL;
                   if (scr->id)
                     {
-                       zone->randr2_id = strdup(scr->id);
-                       zone->screen = e_output_screen_id_find(scr->id);
+                       zone->output_id = strdup(scr->id);
+                       zone->screen = e_output_find(scr->id);
                     }
                }
              else
@@ -424,8 +424,8 @@ e_comp_canvas_update(void)
                                     scr->x, scr->y, scr->w, scr->h);
                   if (scr->id)
                     {
-                       zone->randr2_id = strdup(scr->id);
-                       zone->screen = e_output_screen_id_find(scr->id);
+                       zone->output_id = strdup(scr->id);
+                       zone->screen = e_output_find(scr->id);
                     }
 
                   printf("@@@ NEW ZONE = %p\n", zone);
