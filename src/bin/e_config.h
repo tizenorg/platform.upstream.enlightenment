@@ -160,6 +160,7 @@ struct _E_Config
       unsigned char r, g, b, a;
       int opmode;
    } comp_canvas_bg;
+   int delayed_load_idle_count;
 };
 
 struct _E_Config_Desklock_Background
