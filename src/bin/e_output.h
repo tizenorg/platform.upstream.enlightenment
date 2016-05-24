@@ -70,12 +70,14 @@ EINTERN E_Output * e_output_screen_id_find(const char *id);
 EINTERN Eina_Bool         e_output_need_change(void);
 EINTERN Eina_Bool         e_output_clear(E_Output * eout);
 EINTERN void              e_output_screens_setup(int rw, int rh);
-EINTERN Eina_Bool         e_output_apply(E_Output * eout);
+EINTERN Eina_Bool         e_output_hwc_apply(E_Output * eout);
+EINTERN const Eina_List * e_output_hwc_planes_get(const char *output_id);
 
 
 E_API   const Eina_List * e_output_screens_get(void);
 E_API   Eina_Bool         e_output_planes_prepare(E_Output * eout, E_Hwc_Mode mode, Eina_List* clist); // going to remove out
 E_API   Eina_Bool         e_output_util_planes_print(void);
+
 
 #endif
 #endif

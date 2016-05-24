@@ -481,7 +481,7 @@ _e_comp_cb_hwc_begin(void)
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        if(zone->screen) mode_set |= e_output_apply(zone->screen);
+        if(zone->screen) mode_set |= e_output_hwc_apply(zone->screen);
      }
 
    if (!mode_set) return;

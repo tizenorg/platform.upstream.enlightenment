@@ -373,7 +373,6 @@ e_output_screen_id_find(const char *id)
    return NULL;
 }
 
-
 E_API Eina_Bool
 e_output_planes_prepare(E_Output * eout, E_Hwc_Mode mode, Eina_List* clist)
 {
@@ -389,8 +388,33 @@ e_output_planes_prepare(E_Output * eout, E_Hwc_Mode mode, Eina_List* clist)
    return EINA_TRUE;
 }
 
+EINTERN const Eina_List *
+e_output_hwc_planes_get(const char *output_id)
+{
+   E_Output *eout;
+   E_Plane *ep;
+   Eina_List *l, *hwc_planes = NULL;
+
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+     {
+        if (!strcmp(eout->id, output_id))
+          {
+            if (!eout->planes) break;
+
+            EINA_LIST_FOREACH(eout->planes, l, ep)
+              {
+                  if ((ep->type == E_PLANE_TYPE_PRIMARY) ||
+                      (ep->type == E_PLANE_TYPE_OVERLAY))
+                     hwc_planes = eina_list_append(hwc_planes, ep);
+              }
+            return hwc_planes;
+          }
+     }
+   return NULL;
+}
+
 EINTERN Eina_Bool
-e_output_apply(E_Output * eout)
+e_output_hwc_apply(E_Output * eout)
 {
    e_comp->hwc_mode = e_comp->prepare_mode;
    switch (e_comp->prepare_mode)
@@ -485,18 +509,14 @@ E_API Eina_Bool
 e_output_util_planes_print(void)
 {
    Eina_List *l, *ll;
-   E_Zone *zone;
+   E_Output * eout = NULL;
 
-   EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
+   EINA_LIST_FOREACH_SAFE(e_comp_screen->outputs, l, ll, eout)
      {
-        E_Output * eout = NULL;
         E_Plane *ep;
         E_Client *ec;
 
-        if (!zone && !zone->screen) continue;
-        eout = zone->screen;
-        if (!eout) continue;
-        if (!eout->planes) continue;
+        if (!eout && !eout->planes) continue;
 
         EINA_LIST_FOREACH_SAFE(eout->planes, l, ll, ep)
           {
