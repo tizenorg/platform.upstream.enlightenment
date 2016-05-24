@@ -839,12 +839,14 @@ _e_info_protocol_rule_file_set(const char *filename, char *reply, int *len)
         pfs += (strlen(new_argv[2]) + 1);
 
         if (!e_info_protocol_rule_set((const int) new_argc, (const char**) new_argv, reply, len))
-          return EINA_FALSE;
+          {
+             close(fd);
+             return EINA_FALSE;
+          }
 
      }
 
-   if (fd >= 0)
-     close(fd);
+   close(fd);
 
    return EINA_TRUE;
 }
