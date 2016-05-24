@@ -218,6 +218,7 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, comp_canvas_bg.b, UCHAR);
    E_CONFIG_VAL(D, T, comp_canvas_bg.a, UCHAR);
    E_CONFIG_VAL(D, T, comp_canvas_bg.opmode, INT);
+   E_CONFIG_VAL(D, T, delayed_load_idle_count, INT);
 }
 
 /* externally accessible functions */
@@ -394,6 +395,7 @@ e_config_load(void)
    E_CONFIG_LIMIT(e_config->comp_canvas_bg.b, 0, 255);
    E_CONFIG_LIMIT(e_config->comp_canvas_bg.a, 0, 255);
    E_CONFIG_LIMIT(e_config->comp_canvas_bg.opmode, 0, 11);
+   E_CONFIG_LIMIT(e_config->delayed_load_idle_count, 0, 100);
 }
 
 E_API int

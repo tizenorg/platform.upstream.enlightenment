@@ -14,6 +14,7 @@ static void _e_module_dialog_disable_create(const char *title, const char *body,
 static void _e_module_cb_dialog_disable(void *data, E_Dialog *dia);
 static void _e_module_event_update_free(void *data, void *event);
 static int  _e_module_sort_priority(const void *d1, const void *d2);
+static Eina_Bool _e_module_cb_idler(void *data);
 
 /* local subsystem globals */
 static Eina_List *_e_modules = NULL;
@@ -25,6 +26,9 @@ static Eina_Bool _e_modules_init_end = EINA_FALSE;
 static Eina_List *_e_module_path_lists = NULL;
 static Eina_List *handlers = NULL;
 static Eina_Hash *_e_module_path_hash = NULL;
+
+static Ecore_Idle_Enterer *_e_module_idler = NULL;
+static int _e_module_delayed_load_idle_cnt = 0;
 
 E_API int E_EVENT_MODULE_UPDATE = 0;
 E_API int E_EVENT_MODULE_INIT_END = 0;
@@ -245,7 +249,17 @@ e_module_all_load(void)
              free(em);
              continue;
           }
-        if (em->enabled)
+
+        if ((em->delayed) && (em->enabled))
+          {
+             if (!_e_module_idler)
+               _e_module_idler = ecore_idle_enterer_add(_e_module_cb_idler, NULL);
+             _e_modules_delayed =
+                eina_list_append(_e_modules_delayed,
+                                 eina_stringshare_add(em->name));
+             PRCTL("[Winsys] Delayled module list added: %s", em->name);
+          }
+        else if (em->enabled)
           {
              E_Module *m;
 
@@ -816,3 +830,45 @@ _e_module_event_update_free(void *data EINA_UNUSED, void *event)
    eina_stringshare_del(ev->name);
    E_FREE(ev);
 }
+
+static Eina_Bool
+_e_module_cb_idler(void *data)
+{
+   if (_e_module_delayed_load_idle_cnt < e_config->delayed_load_idle_count)
+     {
+        PRCTL("[Winsys] :::: delayed ::  _e_module_cb_idler enter [%d]", _e_module_delayed_load_idle_cnt);
+        _e_module_delayed_load_idle_cnt++;
+
+        return ECORE_CALLBACK_PASS_ON;
+     }
+
+   if (_e_modules_delayed)
+     {
+        const char *name;
+        E_Module *m;
+
+        name = eina_list_data_get(_e_modules_delayed);
+        _e_modules_delayed =
+           eina_list_remove_list(_e_modules_delayed, _e_modules_delayed);
+        m = NULL;
+        if (name) m = e_module_new(name);
+        if (m)
+          {
+             PRCTL("[Winsys] ::: delayed ::: start of Loading Delayed Module %s", name ? name : "NONAME");
+             e_module_enable(m);
+             PRCTL("[Winsys] ::: delayed ::: end of Loading Delayed Module %s", name ? name : "NONAME");
+          }
+        eina_stringshare_del(name);
+     }
+   if (_e_modules_delayed)
+     {
+        e_util_wakeup();
+        return ECORE_CALLBACK_PASS_ON;
+     }
+
+   ecore_event_add(E_EVENT_MODULE_INIT_END, NULL, NULL, NULL);
+
+   _e_module_idler = NULL;
+   return ECORE_CALLBACK_DONE;
+}
+
