@@ -4,10 +4,6 @@
  * E_plane represents hw overlay and a surface is assigned to disable composition
  * Each Output always has dedicated canvas and a zone
  */
-
-E_API int E_EVENT_PLANE_ADD = 0;
-E_API int E_EVENT_PLANE_DEL = 0;
-
 ///////////////////////////////////////////
 
 /* local subsystem functions */
@@ -24,9 +20,6 @@ _e_plane_reconfigure_clients(E_Plane *plane, int dx, int dy, int dw, int dh)
 EINTERN int
 e_plane_init(void)
 {
-   E_EVENT_PLANE_ADD = ecore_event_type_new();
-   E_EVENT_PLANE_DEL = ecore_event_type_new();
-
    return 1;
 }
 
@@ -56,10 +49,8 @@ e_plane_new(E_Output *eout, int zpos)
 
    if (!eout) return NULL;
 
-   //plane = E_OBJECT_ALLOC(E_Plane, E_PLANE_TYPE, _e_plane_free);
    plane = E_NEW(E_Plane, 1);
-   if (!plane) return NULL;
-   printf("%s 2", __FUNCTION__);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(plane, NULL);
 
    snprintf(name, sizeof(name), "Plane %s", eout->id);
    plane->name = eina_stringshare_add(name);
@@ -87,8 +78,7 @@ e_plane_resolution_set(E_Plane *plane,
 {
    int dx = 0, dy = 0, dw = 0, dh = 0;
 
-   E_OBJECT_CHECK_RETURN(plane, EINA_FALSE);
-   E_OBJECT_TYPE_CHECK_RETURN(plane, E_PLANE_TYPE, EINA_FALSE);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
 
    if (plane->is_primary) return EINA_FALSE;
 
@@ -106,17 +96,42 @@ e_plane_resolution_set(E_Plane *plane,
 E_API void
 e_plane_type_set(E_Plane *plane, E_Plane_Type_State type)
 {
-   E_OBJECT_CHECK(plane);
-   E_OBJECT_TYPE_CHECK(plane, E_PLANE_TYPE);
-
+   if (!plane) return;
    plane->type = type;
 }
 
 E_API E_Plane_Type_State
 e_plane_type_get(E_Plane *plane)
 {
-   E_OBJECT_CHECK_RETURN(plane, E_ZONE_DISPLAY_STATE_OFF);
-   E_OBJECT_TYPE_CHECK_RETURN(plane, E_PLANE_TYPE, E_ZONE_DISPLAY_STATE_OFF);
-
+   EINA_SAFETY_ON_NULL_RETURN_VAL(plane, E_PLANE_TYPE_INVALID);
    return plane->type;
 }
+
+E_API E_Client *
+e_plane_hwc_get(E_Plane *plane)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL(plane, NULL);
+   return plane->ec;
+}
+
+E_API E_Client *
+e_plane_hwc_prepare_get(E_Plane *plane)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL(plane, NULL);
+   return plane->prepare_ec;
+}
+
+E_API Eina_Bool
+e_plane_hwc_prepare_set(E_Plane *plane, E_Client *ec)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
+
+   if ((plane->type == E_PLANE_TYPE_PRIMARY) &&
+      (plane->type == E_PLANE_TYPE_OVERLAY))
+     {
+        plane->prepare_ec = ec;
+        return EINA_TRUE;
+     }
+   return EINA_FALSE;
+}
+

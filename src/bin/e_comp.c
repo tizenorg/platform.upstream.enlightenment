@@ -436,7 +436,7 @@ _e_comp_prepare_overlay(void)
              else if (ly_cnt > num_of_ly) mode = E_HWC_MODE_HWC_COMPOSITE;
           }
 
-        e_output_planes_prepare(eout, mode, clist);
+        //e_output_planes_prepare(eout, mode, clist);
         eina_list_free(clist);
         clist = NULL;
      }
@@ -481,7 +481,7 @@ _e_comp_cb_hwc_begin(void)
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        if(zone->screen) mode_set |= e_output_apply(zone->screen);
+        if(zone->screen) mode_set |= e_output_hwc_apply(zone->screen);
      }
 
    if (!mode_set) return;
@@ -526,7 +526,7 @@ _e_comp_hwc_end(const char *location)
      {
         if (zone->screen)
           {
-             mode_set |= e_output_clear(zone->screen);
+             mode_set |= e_output_hwc_cancel(zone->screen);
           }
      }
 
@@ -654,7 +654,7 @@ setup_hwcompose:
           {
              // FIXME : will remove out this condition
              // new(ec at prepared list) and current(ec on e_plane)
-             if (e_output_need_change())
+             if (e_output_hwc_changed())
                 _e_comp_hwc_end("overlay surface changed");
           }
         else if (!_e_comp_hwc_active())
