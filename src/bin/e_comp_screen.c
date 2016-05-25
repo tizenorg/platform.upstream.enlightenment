@@ -440,12 +440,6 @@ e_comp_screen_dpms(int set)
      }
 }
 
-// TODO: will remove out after removing dependant e pkgs with E_Comp_Screen_Iface
-static E_Comp_Screen_Iface drmiface =
-{
-   .dpms = e_comp_screen_dpms,
-};
-
 static void
 _drm_read_pixels(E_Comp_Wl_Output *output, void *pixels)
 {
@@ -632,9 +626,6 @@ e_comp_screen_init()
      }
 
    ecore_evas_callback_resize_set(e_comp->ee, _e_comp_screen_cb_ee_resize);
-
-   //TODO: will be remove out
-   e_comp->screen = &drmiface;
 
    e_main_ts("\tE_Output Init");
    if (!e_output_init())
