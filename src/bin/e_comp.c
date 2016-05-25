@@ -473,7 +473,7 @@ _e_comp_hwc_apply(E_Output * eout)
          return _hwc_set(eout, e_comp->prepare_mode, e_comp->prepare_ec_list);
 
       default :
-         e_output_hwc_cancel(eout);
+         _e_comp_hwc_cancel(eout);
          break;
      }
 
@@ -607,7 +607,7 @@ _e_comp_hwc_usable(void)
 {
    if (!e_comp->hwc) return EINA_FALSE;
 
-   //check whether to use hwcomposer by assignment policy
+   // check whether to use hwcomposer by assignment policy
    // core policy
    _e_comp_hwc_prepare_planes();
 
@@ -649,10 +649,6 @@ _e_comp_cb_hwc_begin(void)
    if (e_comp->calc_fps) e_comp->frametimes[0] = 0;
 
    INF("HWC : Begin to use HWComposer...");
-
-   //e_comp_render_queue();
-   //e_comp_shape_queue_block(1);
-   //ecore_event_add(E_EVENT_COMPOSITOR_DISABLE, NULL, NULL, NULL);
 }
 
 static Eina_Bool
@@ -690,20 +686,11 @@ _e_comp_hwc_end(const char *location)
    if (!mode_set) return;
 
    INF("HWC : End...  at %s", location);
-   /*
-      E_CLIENT_FOREACH(ec)
-      {
-      if (ec->visible && (!ec->input_only))
-      e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
 
-      }
-    */
    e_comp->prepare_mode = 0;
    e_comp->hwc_mode = 0;
 
    e_comp_render_queue();
-   //e_comp_shape_queue_block(0);
-   //ecore_event_add(E_EVENT_COMPOSITOR_ENABLE, NULL, NULL, NULL);
 }
 #endif
 

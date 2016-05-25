@@ -143,24 +143,24 @@ e_plane_ec_prepare_set(E_Plane *plane,
 {
    if(!plane)
      {
-        eina_stringshare_replace(_e_plane_ec_last_err, "Invalid e_plane were passed");
+        eina_stringshare_replace(&_e_plane_ec_last_err, "Invalid e_plane were passed");
         goto err;
      }
 
    if ((plane->type == E_PLANE_TYPE_PRIMARY) &&
        (plane->type == E_PLANE_TYPE_OVERLAY))
      {
-        eina_stringshare_replace(_e_plane_ec_last_err, NULL);
+        eina_stringshare_replace(&_e_plane_ec_last_err, NULL);
         plane->prepare_ec = ec;
         return EINA_TRUE;
      }
-   eina_stringshare_replace(_e_plane_ec_last_err, "Type dismatch : ec not availabe on e_plane");
+   eina_stringshare_replace(&_e_plane_ec_last_err, "Type dismatch : ec not availabe on e_plane");
 err:
 
    return EINA_FALSE;
 }
 
-E_API Eina_Bool const char *
+E_API const char *
 e_plane_ec_prepare_set_last_error_get(E_Plane *plane)
 {
    return _e_plane_ec_last_err;

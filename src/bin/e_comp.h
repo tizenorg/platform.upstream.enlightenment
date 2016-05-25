@@ -64,11 +64,6 @@ extern E_API int E_EVENT_COMPOSITOR_FPS_UPDATE;
 
 typedef void (*E_Comp_Cb)(void);
 
-typedef struct E_Comp_Screen_Iface
-{
-   void (*dpms)(int);
-} E_Comp_Screen_Iface;
-
 typedef struct _E_Launch_Screen
 {
    Evas_Object *shobj;
@@ -136,8 +131,6 @@ struct _E_Comp
       E_Comp_Object_Key_Cb key_cb;
       void *data;
    } autoclose;
-
-   E_Comp_Screen_Iface *screen;
 
    E_Launch_Screen   *launchscrn;
 
