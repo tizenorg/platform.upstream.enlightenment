@@ -577,6 +577,7 @@ main(int argc, char **argv)
    e_zone_init();
    e_desk_init();
 
+   TRACE_DS_BEGIN(MAIN:WAIT /dev/dri/card0);
    if (e_config->sleep_for_dri)
      {
         while(access("/dev/dri/card0", F_OK) != 0)
@@ -587,6 +588,7 @@ main(int argc, char **argv)
              nanosleep(&req, &rem);
           }
      }
+   TRACE_DS_END();
 
    TRACE_DS_BEGIN(MAIN:SCREEN INIT);
    TS("Screens Init");
