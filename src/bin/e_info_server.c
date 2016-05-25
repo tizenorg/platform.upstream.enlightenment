@@ -1348,7 +1348,8 @@ e_info_server_protocol_rule_path_init(char *rule_path)
 
     e_info_protocol_rule_set(argc, (const char**)&(argv[0]), reply, &len);
 
-    INF("%s: rule_path : %s\n", __func__, reply);
+    INF("%s: rule_path : %s\n", __func__, rule_path);
+    INF("%s\n", reply);
 
     return EINA_TRUE;
 }
@@ -1369,6 +1370,7 @@ e_info_server_init(void)
    E_EVENT_INFO_ROTATION_MESSAGE = ecore_event_type_new();
 
    e_info_protocol_init();
+   e_info_server_protocol_rule_path_init(getenv("E_INFO_RULE_FILE"));
 
    return 1;
 
