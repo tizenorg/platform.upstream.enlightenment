@@ -154,8 +154,11 @@ _e_comp_fullscreen_check(void)
         if (evas_object_data_get(ec->frame, "comp_skip"))
           continue;
 
+        if ((ec->pixmap) && (e_pixmap_type_get(ec->pixmap) == E_PIXMAP_TYPE_EXT_OBJECT))
+          break;
 
-        if ((!cdata->buffer_ref.buffer) ||
+        if ((!cdata) ||
+            (!cdata->buffer_ref.buffer) ||
             (cdata->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_NATIVE))
           break;
 
