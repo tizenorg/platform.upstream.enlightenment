@@ -674,6 +674,7 @@ struct E_Client
       int opaque;
       int obscured;
       unsigned char changed : 1;
+      Eina_Bool skip : 1;
    } visibility;
 
    struct
@@ -1004,6 +1005,7 @@ E_API Eina_Bool e_client_desk_window_profile_available_check(E_Client *ec, const
 E_API void      e_client_desk_window_profile_wait_desk_set(E_Client *ec, E_Desk *desk);
 E_API void      e_client_layout_cb_set(E_Client_Layout_Cb cb);
 E_API void      e_client_visibility_calculate(void);
+E_API void      e_client_visibility_skip_set(E_Client *ec, Eina_Bool skip);
 E_API void      e_client_post_raise_lower_set(E_Client *ec, Eina_Bool raise_set, Eina_Bool lower_set);
 E_API Eina_Bool e_client_first_mapped_get(E_Client *ec);
 
