@@ -77,6 +77,8 @@ typedef struct _E_Comp_Object
    Eina_Stringshare   *frame_name;
    Eina_Stringshare   *visibility_effect; //effect when toggling visibility
 
+   E_Comp_Object_Content_Type content_type; // type of e.swallow.content
+
    Evas_Object         *smart_obj;  // smart object
    Evas_Object         *clip; // clipper over effect object
    Evas_Object         *input_obj; // input rect
@@ -127,6 +129,7 @@ typedef struct _E_Comp_Object
    Eina_Bool            force_move : 1;
    Eina_Bool            frame_extends : 1; //frame may extend beyond object size
    Eina_Bool            blanked : 1; //window is rendering blank content (externally composited)
+   Eina_Bool            external_content : 1; // e.swallow.content(obj) is set by external evas object
 } E_Comp_Object;
 
 
@@ -364,6 +367,15 @@ static void
 _e_comp_object_alpha_set(E_Comp_Object *cw)
 {
    Eina_Bool alpha = cw->ec->argb;
+
+   if ((cw->external_content) &&
+       (cw->content_type != E_COMP_OBJECT_CONTENT_TYPE_EXT_IMAGE))
+     {
+        WRN("Can set up alpha value to ONLY evas \"image\" object. "
+            "But current external content is %d object for %p.",
+            cw->content_type, cw->ec);
+        return;
+     }
 
    if (cw->blanked || cw->ns || cw->ec->shaped) alpha = EINA_TRUE;
 
@@ -888,6 +900,7 @@ _e_comp_object_pixels_get(void *data, Evas_Object *obj EINA_UNUSED)
    int bx, by, bxx, byy;
 
    if (e_object_is_del(E_OBJECT(ec))) return;
+   if (cw->external_content) return;
    if (!e_pixmap_size_get(ec->pixmap, &pw, &ph)) return;
    e_pixmap_image_opaque_get(cw->ec->pixmap, &bx, &by, &bxx, &byy);
    if (bxx && byy)
@@ -975,6 +988,15 @@ _e_comp_intercept_move(void *data, Evas_Object *obj, int x, int y)
         cw->ec->client.x = x, cw->ec->client.y = y;
         cw->ec->x = x, cw->ec->y = y;
         evas_object_move(obj, x, y);
+        return;
+     }
+
+   if ((e_pixmap_type_get(cw->ec->pixmap) != E_PIXMAP_TYPE_EXT_OBJECT) &&
+       (cw->external_content))
+     {
+        /* delay to move until the external content is unset */
+        cw->ec->changes.pos = 1;
+        EC_CHANGED(cw->ec);
         return;
      }
 
@@ -1149,7 +1171,9 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
         cw->ec->client.h = ih;
         if ((cw->ec->client.w < 0) || (cw->ec->client.h < 0)) CRI("WTF");
      }
-   if ((!cw->ec->input_only) && cw->redirected && (e_pixmap_dirty_get(cw->ec->pixmap) ||
+   if ((!cw->ec->input_only) && (cw->redirected) &&
+       (e_pixmap_type_get(cw->ec->pixmap) != E_PIXMAP_TYPE_EXT_OBJECT) &&
+       (e_pixmap_dirty_get(cw->ec->pixmap) ||
        (!e_pixmap_size_get(cw->ec->pixmap, &pw, &ph))))
      {
         if (e_comp->comp_type != E_PIXMAP_TYPE_X) return;
@@ -1161,6 +1185,8 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
         EC_CHANGED(cw->ec);
         return;
      }
+   if (e_pixmap_type_get(cw->ec->pixmap) == E_PIXMAP_TYPE_EXT_OBJECT)
+     pw = w, ph = h;
    prev_w = cw->w, prev_h = cw->h;
    e_comp_object_frame_wh_adjust(obj, 0, 0, &fw, &fh);
    /* check shading and clamp to pixmap size for regular clients */
@@ -1614,6 +1640,15 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
           }
         return;
      }
+   if (e_pixmap_type_get(cw->ec->pixmap) == E_PIXMAP_TYPE_EXT_OBJECT)
+     {
+        evas_object_move(cw->smart_obj, cw->ec->x, cw->ec->y);
+        evas_object_resize(cw->smart_obj, cw->ec->w, cw->ec->h);
+        e_comp_object_frame_theme_set(cw->smart_obj, E_COMP_OBJECT_FRAME_RESHADOW);
+        cw->real_hid = 0;
+        evas_object_show(cw->smart_obj);
+        return;
+     }
    if ((!cw->updates) && (!cw->ec->input_only) && (!cw->ec->ignored))
      {
         int pw, ph;
@@ -1716,14 +1751,24 @@ _e_comp_intercept_show(void *data, Evas_Object *obj EINA_UNUSED)
      }
    else
      {
+        if ((!cw->obj) && (cw->external_content))
+          {
+             ERR("cw->obj for external content is not created! ec:%p", cw->ec);
+             return;
+          }
+
         _e_comp_object_setup(cw);
-        cw->obj = evas_object_image_filled_add(e_comp->evas);
-        evas_object_image_border_center_fill_set(cw->obj, EVAS_BORDER_FILL_SOLID);
-        e_util_size_debug_set(cw->obj, 1);
-        evas_object_image_pixels_get_callback_set(cw->obj, _e_comp_object_pixels_get, cw);
-        evas_object_image_smooth_scale_set(cw->obj, e_comp_config_get()->smooth_windows);
-        evas_object_name_set(cw->obj, "cw->obj");
-        evas_object_image_colorspace_set(cw->obj, EVAS_COLORSPACE_ARGB8888);
+        if (!cw->obj)
+          {
+             cw->content_type = E_COMP_OBJECT_CONTENT_TYPE_INT_IMAGE;
+             cw->obj = evas_object_image_filled_add(e_comp->evas);
+             evas_object_image_border_center_fill_set(cw->obj, EVAS_BORDER_FILL_SOLID);
+             e_util_size_debug_set(cw->obj, 1);
+             evas_object_image_pixels_get_callback_set(cw->obj, _e_comp_object_pixels_get, cw);
+             evas_object_image_smooth_scale_set(cw->obj, e_comp_config_get()->smooth_windows);
+             evas_object_name_set(cw->obj, "cw->obj");
+             evas_object_image_colorspace_set(cw->obj, EVAS_COLORSPACE_ARGB8888);
+          }
         _e_comp_object_alpha_set(cw);
 #ifdef BORDER_ZOOMAPS
         e_comp_object_zoomap_set(o, 1);
@@ -2073,6 +2118,8 @@ _e_comp_smart_add(Evas_Object *obj)
    cw->x = cw->y = cw->w = cw->h = -1;
    evas_object_smart_data_set(obj, cw);
    cw->opacity = 255.0;
+   cw->external_content = 0;
+   cw->content_type = E_COMP_OBJECT_CONTENT_TYPE_NONE;
    evas_object_data_set(obj, "comp_obj", cw);
    evas_object_move(obj, -1, -1);
    /* intercept ALL the callbacks! */
@@ -3365,6 +3412,7 @@ e_comp_object_shape_apply(Evas_Object *obj)
 
    API_ENTRY;
    if (!cw->ec) return; //NYI
+   if (cw->external_content) return;
    if (cw->ec->shaped)
      {
         if ((cw->ec->shape_rects_num >= 1) &&
@@ -3466,6 +3514,7 @@ e_comp_object_redirected_set(Evas_Object *obj, Eina_Bool set)
    set = !!set;
    if (cw->redirected == set) return;
    cw->redirected = set;
+   if (cw->external_content) return;
    if (set)
      {
         if (cw->updates_exist)
@@ -3508,6 +3557,7 @@ e_comp_object_native_surface_set(Evas_Object *obj, Eina_Bool set)
    API_ENTRY;
    EINA_SAFETY_ON_NULL_RETURN(cw->ec);
    if (cw->ec->input_only) return;
+   if (cw->external_content) return;
    set = !!set;
 
    memset(&ns, 0, sizeof(Evas_Native_Surface));
@@ -3578,6 +3628,7 @@ e_comp_object_dirty(Evas_Object *obj)
    Eina_Bool dirty, visible;
 
    API_ENTRY;
+   if (cw->external_content) return;
    /* only actually dirty if pixmap is available */
    dirty = e_pixmap_size_get(cw->ec->pixmap, &w, &h);
    visible = cw->visible;
@@ -3657,6 +3708,7 @@ e_comp_object_render(Evas_Object *obj)
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(cw->ec, EINA_FALSE);
    if (cw->ec->input_only) return EINA_TRUE;
+   if (cw->external_content) return EINA_TRUE;
    e_comp_object_render_update_del(obj);
    if (!e_pixmap_size_get(cw->ec->pixmap, &pw, &ph)) return EINA_FALSE;
 
@@ -3746,6 +3798,11 @@ e_comp_object_util_mirror_add(Evas_Object *obj)
         return o;
      }
    if ((!cw->ec) || (!e_pixmap_size_get(cw->ec->pixmap, &w, &h))) return NULL;
+   if (cw->external_content)
+     {
+        ERR("%p of client %p is external content.", obj, cw->ec);
+        return NULL;
+     }
    o = evas_object_image_filled_add(evas_object_evas_get(obj));
    evas_object_image_colorspace_set(o, EVAS_COLORSPACE_ARGB8888);
    evas_object_image_smooth_scale_set(o, e_comp_config_get()->smooth_windows);
@@ -4160,11 +4217,20 @@ e_comp_object_alpha_set(Evas_Object *obj, Eina_Bool alpha)
 {
    SOFT_ENTRY();
 
+   if ((cw->external_content) &&
+       (cw->content_type != E_COMP_OBJECT_CONTENT_TYPE_EXT_IMAGE))
+     {
+        WRN("Can set up alpha value to ONLY evas \"image\" object. "
+            "But current external content is %d object for %p.",
+            cw->content_type, cw->ec);
+        return;
+     }
+
    if (alpha == evas_object_image_alpha_get(cw->obj)) return;
 
    evas_object_image_alpha_set(cw->obj, alpha);
 
-   if (!cw->native)
+   if ((!cw->native) && (!cw->external_content))
      evas_object_image_data_set(cw->obj, NULL);
 }
 
@@ -4212,6 +4278,15 @@ E_API void
 e_comp_object_size_update(Evas_Object *obj, int w, int h)
 {
    API_ENTRY;
+
+   if ((cw->external_content) &&
+       (cw->content_type != E_COMP_OBJECT_CONTENT_TYPE_EXT_IMAGE))
+     {
+        WRN("Can set up size to ONLY evas \"image\" object. "
+            "But current external content is %d object for %p.",
+            cw->content_type, cw->ec);
+        return;
+     }
 
    evas_object_image_size_set(cw->obj, w, h);
 }
@@ -4350,4 +4425,107 @@ e_comp_object_layer_update(Evas_Object *obj,
      }
    else
      _e_comp_object_layers_add(cw, NULL, NULL, 0);
+}
+
+E_API Eina_Bool
+e_comp_object_content_set(Evas_Object *obj,
+                          Evas_Object *content,
+                          E_Comp_Object_Content_Type type)
+{
+   API_ENTRY EINA_FALSE;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cw->ec, EINA_FALSE);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cw->ec->pixmap, EINA_FALSE);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(content, EINA_FALSE);
+
+   if (cw->obj)
+     {
+        ERR("Can't set e.swallow.content to requested content. "
+            "Previous comp object should not be changed at all.");
+        return EINA_FALSE;
+     }
+
+   if (e_pixmap_type_get(cw->ec->pixmap) != E_PIXMAP_TYPE_EXT_OBJECT)
+     {
+        ERR("Invalid type %d of pixmap %p and client %p for external content.",
+            e_pixmap_type_get(cw->ec->pixmap), cw->ec->pixmap, cw->ec);
+        return EINA_FALSE;
+     }
+
+   if ((type != E_COMP_OBJECT_CONTENT_TYPE_EXT_IMAGE) &&
+       (type != E_COMP_OBJECT_CONTENT_TYPE_EXT_EDJE))
+     {
+        ERR("Content type %d for %p is not supported ec:%p pixmap:%p",
+            type, content, cw->ec, cw->ec->pixmap);
+        return EINA_FALSE;
+     }
+
+   cw->external_content = EINA_TRUE;
+
+   cw->obj = content;
+   cw->content_type = type;
+   e_util_size_debug_set(cw->obj, 1);
+   evas_object_name_set(cw->obj, "cw->obj");
+   _e_comp_object_alpha_set(cw);
+
+   _e_comp_object_shadow_setup(cw);
+
+   return EINA_TRUE;
+}
+
+E_API Eina_Bool
+e_comp_object_content_unset(Evas_Object *obj)
+{
+   API_ENTRY EINA_FALSE;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cw->ec, EINA_FALSE);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cw->ec->pixmap, EINA_FALSE);
+
+   if (!cw->obj && !cw->ec->visible)
+     {
+        INF("%p is not visible yet. no need to unset", cw->ec);
+        return EINA_TRUE;
+     }
+
+   if (cw->content_type == E_COMP_OBJECT_CONTENT_TYPE_INT_IMAGE)
+     {
+        INF("%p has been set to internal image object already.", cw->ec);
+        return EINA_TRUE;
+     }
+
+   if (cw->obj)
+     {
+        if (cw->frame_object)
+          edje_object_part_unswallow(cw->frame_object, cw->obj);
+        else if (cw->shobj)
+          edje_object_part_unswallow(cw->shobj, cw->obj);
+
+        evas_object_del(cw->obj);
+        cw->obj = NULL;
+     }
+
+   cw->external_content = EINA_FALSE;
+
+   cw->content_type = E_COMP_OBJECT_CONTENT_TYPE_INT_IMAGE;
+   cw->obj = evas_object_image_filled_add(e_comp->evas);
+   evas_object_image_border_center_fill_set(cw->obj, EVAS_BORDER_FILL_SOLID);
+   e_util_size_debug_set(cw->obj, 1);
+   evas_object_image_pixels_get_callback_set(cw->obj, _e_comp_object_pixels_get, cw);
+   evas_object_image_smooth_scale_set(cw->obj, e_comp_config_get()->smooth_windows);
+   evas_object_name_set(cw->obj, "cw->obj");
+   evas_object_image_colorspace_set(cw->obj, EVAS_COLORSPACE_ARGB8888);
+   _e_comp_object_alpha_set(cw);
+
+   _e_comp_object_shadow_setup(cw);
+
+   if (cw->visible)
+     {
+        cw->visible = 0;
+        _e_comp_intercept_show_helper(cw);
+        cw->visible = 1;
+     }
+
+   e_comp_object_render_update_add(obj);
+
+   return EINA_TRUE;
 }
