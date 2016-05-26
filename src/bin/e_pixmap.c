@@ -53,8 +53,6 @@ static Eina_Inlist *_e_pixmap_hooks[] =
 {
    [E_PIXMAP_HOOK_NEW] = NULL,
    [E_PIXMAP_HOOK_DEL] = NULL,
-   [E_PIXMAP_HOOK_USABLE] = NULL,
-   [E_PIXMAP_HOOK_UNUSABLE] = NULL,
 };
 
 static void
@@ -176,9 +174,6 @@ e_pixmap_free(E_Pixmap *cp)
    if (!cp) return 0;
    if (--cp->refcount) return cp->refcount;
    ELOG("PIXMAP DEL", cp, cp->client);
-   if (cp->usable)
-     e_pixmap_usable_set(cp, 0);
-
    _e_pixmap_hook_call(E_PIXMAP_HOOK_DEL, cp);
    e_pixmap_image_clear(cp, EINA_FALSE);
    eina_hash_del_by_key(pixmaps[cp->type], &cp->win);
@@ -306,18 +301,8 @@ e_pixmap_parent_window_set(E_Pixmap *cp, Ecore_Window win)
 E_API void
 e_pixmap_usable_set(E_Pixmap *cp, Eina_Bool set)
 {
-   Eina_Bool tmp = !!set;
    EINA_SAFETY_ON_NULL_RETURN(cp);
-
-   if (cp->usable != tmp)
-     {
-        cp->usable = tmp;
-
-        if (cp->usable)
-          _e_pixmap_hook_call(E_PIXMAP_HOOK_USABLE, cp);
-        else
-          _e_pixmap_hook_call(E_PIXMAP_HOOK_UNUSABLE, cp);
-     }
+   cp->usable = !!set;
 }
 
 E_API Eina_Bool

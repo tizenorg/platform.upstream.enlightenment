@@ -20,8 +20,6 @@ typedef enum _E_Pixmap_Hook_Point
 {
    E_PIXMAP_HOOK_NEW,
    E_PIXMAP_HOOK_DEL,
-   E_PIXMAP_HOOK_USABLE,
-   E_PIXMAP_HOOK_UNUSABLE,
    E_PIXMAP_HOOK_LAST
 } E_Pixmap_Hook_Point;
 
