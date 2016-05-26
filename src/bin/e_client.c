@@ -2678,6 +2678,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         if (e_client_util_ignored_get(ec)) continue;
         if (ec->zone != zone) continue;
         if (!ec->frame) continue;
+        if (ec->visibility.skip) continue;
 #ifdef HAVE_WAYLAND_ONLY
         /* if ec is subsurface, skip this */
         cdata = (E_Comp_Wl_Client_Data *)ec->comp_data;
@@ -3051,6 +3052,12 @@ e_client_visibility_calculate(void)
 }
 
 E_API void
+e_client_visibility_skip_set(E_Client *ec, Eina_Bool skip)
+{
+   ec->visibility.skip = skip;
+}
+
+E_API void
 e_client_post_raise_lower_set(E_Client *ec, Eina_Bool raise_set, Eina_Bool lower_set)
 {
    if (!ec) return;
@@ -3369,6 +3376,7 @@ e_client_new(E_Pixmap *cp, int first_map, int internal)
    ec->visibility.obscured = E_VISIBILITY_UNKNOWN;
    ec->visibility.opaque = -1;
    ec->visibility.changed = 0;
+   ec->visibility.skip = 0;
 
    ec->transform.zoom = 1.0;
    ec->transform.angle = 0.0;
