@@ -2706,8 +2706,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
           }
         else
           {
-             if ((!evas_object_visible_get(ec->frame)) &&
-                 (ec != e_comp->launchscrn->ec))
+             if (!evas_object_visible_get(ec->frame))
                {
                   if (cdata && !cdata->mapped)
                     {
@@ -2836,7 +2835,12 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         ec = e_client_focused_get();
         if (ec != focus_ec)
           {
-             if (!focus_ec->floating)
+             //if focus_ec is for launchscreen, unset focused client.
+             if (eina_list_data_find(e_comp->launchscrns, focus_ec))
+               {
+                  e_client_focused_set(NULL);
+               }
+             else if (!focus_ec->floating)
                {
                   e_client_focused_set(focus_ec);
                   evas_object_focus_set(focus_ec->frame, 1);
