@@ -390,9 +390,9 @@ _e_comp_prepare_overlay(void)
         int num_of_ly = 0, ly_cnt = 0;
         Eina_List *clist = NULL;
 
-        if (!zone && !zone->screen) continue;
+        if (!zone && !zone->output_id) continue;
 
-        eout = zone->screen;
+        eout = e_output_screen_id_find(zone->output_id);
         num_of_ly = eout->plane_count;
 
         E_CLIENT_REVERSE_FOREACH(ec)
@@ -435,7 +435,7 @@ _e_comp_prepare_overlay(void)
              else if (ly_cnt > num_of_ly) mode = E_HWC_MODE_HWC_COMPOSITE;
           }
 
-        e_output_planes_prepare(eout, mode, clist);
+        //e_output_planes_prepare(eout, mode, clist);
         eina_list_free(clist);
         clist = NULL;
      }
@@ -480,7 +480,10 @@ _e_comp_cb_hwc_begin(void)
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        if(zone->screen) mode_set |= e_output_planes_apply(zone->screen);
+        E_Output_Screen * eout;
+        if (!zone->output_id) continue;
+        eout = e_output_screen_id_find(zone->output_id);
+        if(eout) mode_set |= e_output_planes_apply(eout);
      }
 
    if (!mode_set) return;
@@ -507,7 +510,6 @@ void
 _e_comp_hwc_end(const char *location)
 {
    Eina_Bool mode_set = EINA_FALSE;
-   E_Client *ec;
    E_Zone *zone;
    Eina_List *l, *ll;
 
@@ -520,10 +522,10 @@ _e_comp_hwc_end(const char *location)
    // e_comp->canvases will be replace e_comp->zones
    EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
      {
-        if (zone->screen)
-          {
-             mode_set |= e_output_planes_clear(zone->screen);
-          }
+        E_Output_Screen * eout;
+        if (!zone->output_id) continue;
+        eout = e_output_screen_id_find(zone->output_id);
+        if (eout) mode_set |= e_output_planes_clear(eout);
      }
 
    if (!mode_set) return;
@@ -1774,7 +1776,7 @@ e_comp_is_on_overlay(E_Client *ec)
         E_Plane *ep;
 
         if (!ec->zone) return EINA_FALSE;
-        screen = ec->zone->screen;
+        screen = e_output_screen_id_find(ec->zone->output_id);
         EINA_LIST_FOREACH_SAFE(screen->planes, l, ll, ep)
           {
              E_Client *overlay_ec = ep->ec;

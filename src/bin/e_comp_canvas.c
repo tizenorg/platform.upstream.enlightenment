@@ -203,11 +203,7 @@ e_comp_canvas_init(int w, int h)
           {
              E_Zone *zone = e_zone_new(scr->screen, scr->escreen,
                                        scr->x, scr->y, scr->w, scr->h);
-             if (scr->id)
-               {
-                  zone->randr2_id = strdup(scr->id);
-                  zone->screen = e_output_screen_id_find(scr->id);
-               }
+             if (scr->id) zone->output_id = strdup(scr->id);
           }
      }
    else
@@ -409,24 +405,15 @@ e_comp_canvas_update(void)
                   zones = eina_list_remove(zones, zone);
                   e_comp->zones = eina_list_append(e_comp->zones, zone);
                   zone->num = scr->screen;
-                  free(zone->randr2_id);
-                  zone->randr2_id = NULL;
-                  zone->screen = NULL;
-                  if (scr->id)
-                    {
-                       zone->randr2_id = strdup(scr->id);
-                       zone->screen = e_output_screen_id_find(scr->id);
-                    }
+                  free(zone->output_id);
+                  zone->output_id = NULL;
+                  if (scr->id) zone->output_id = strdup(scr->id);
                }
              else
                {
                   zone = e_zone_new(scr->screen, scr->escreen,
                                     scr->x, scr->y, scr->w, scr->h);
-                  if (scr->id)
-                    {
-                       zone->randr2_id = strdup(scr->id);
-                       zone->screen = e_output_screen_id_find(scr->id);
-                    }
+                  if (scr->id) zone->output_id = strdup(scr->id);
 
                   printf("@@@ NEW ZONE = %p\n", zone);
                   changed = EINA_TRUE;

@@ -109,8 +109,7 @@ struct _E_Zone
 #endif
 
    E_Zone_Display_State display_state;
-   char                 *randr2_id; // same id we get from randr2 so look it up there
-   E_Output_Screen      *screen;
+   char                 *output_id; // same id we get from e_comp_screen so look it up there
 };
 
 struct _E_Event_Zone_Generic

@@ -443,7 +443,7 @@ e_output_planes_need_change()
 
    zone = eina_list_data_get(e_comp->zones);
    if (!zone) return EINA_FALSE;
-   screen = zone->screen;
+   screen = e_output_screen_id_find(zone->output_id);
    if (!screen) return EINA_FALSE;
    l_p = screen->planes;
    if (!l_p) return EINA_FALSE;
@@ -493,8 +493,8 @@ e_output_util_planes_print(void)
         E_Plane *ep;
         E_Client *ec;
 
-        if (!zone && !zone->screen) continue;
-        screen = zone->screen;
+        if (!zone && !zone->output_id) continue;
+        screen = e_output_screen_id_find(zone->output_id);
         if (!screen) continue;
         if (!screen->planes) continue;
 
