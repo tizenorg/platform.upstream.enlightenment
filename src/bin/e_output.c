@@ -22,6 +22,9 @@ EINTERN Eina_Bool
 e_output_init(void)
 {
    if (!E_EVENT_SCREEN_CHANGE) E_EVENT_SCREEN_CHANGE = ecore_event_type_new();
+   if (!e_comp_screen_available()) return EINA_FALSE;
+
+   e_output = e_comp_screen_init_outputs();
 
    _do_apply();
 
@@ -45,15 +48,12 @@ e_output_shutdown(void)
 static void
 _do_apply(void)
 {
-   // take current screen config and apply it to the driver
-   printf("OUTPUT: re-get info before applying..\n");
-   _info_free(e_output);
-   e_output = e_comp_drm_create();
+   // take current e_output config and apply it to the driver
    _screen_config_maxsize();
    printf("OUTPUT: eval config...\n");
    _screen_config_eval();
    printf("OUTPUT: really apply config...\n");
-   e_comp_drm_apply();
+   e_comp_screen_apply();
    printf("OUTPUT: done config...\n");
 }
 
