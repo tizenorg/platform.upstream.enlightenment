@@ -38,6 +38,8 @@ void wl_map_for_each(struct wl_map *map, void *func, void *data);
 #define IFACE "org.enlightenment.wm.info"
 
 E_API int E_EVENT_INFO_ROTATION_MESSAGE = -1;
+E_API int E_EVENT_INFO_KEYGRAB_STATUS = -1;
+E_API int E_EVENT_INFO_KEYROUTER_INFO = -1;
 
 typedef struct _E_Info_Server
 {
@@ -991,6 +993,44 @@ _e_info_server_cb_keymap_info_get(const Eldbus_Service_Interface *iface EINA_UNU
 }
 
 static Eldbus_Message *
+_e_info_server_cb_keyrouter_info_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   const char *path = NULL;
+   char *arg;
+
+   if (!eldbus_message_arguments_get(msg, "s", &path) || !path)
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   arg = strdup(path);
+
+   ecore_event_add(E_EVENT_INFO_KEYROUTER_INFO, arg, NULL, NULL);
+   return reply;
+}
+
+static Eldbus_Message *
+_e_info_server_cb_keygrab_status_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   const char *path = NULL;
+   char *arg;
+
+   if (!eldbus_message_arguments_get(msg, "s", &path) || !path)
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   arg = strdup(path);
+
+   ecore_event_add(E_EVENT_INFO_KEYGRAB_STATUS, arg, NULL, NULL);
+   return reply;
+}
+
+static Eldbus_Message *
 _e_info_server_cb_fps_info_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
 {
    static double old_fps = 0;
@@ -1325,6 +1365,8 @@ static const Eldbus_Method methods[] = {
 #endif
    { "get_keymap", NULL, ELDBUS_ARGS({"hi", "keymap fd"}), _e_info_server_cb_keymap_info_get, 0},
    { "effect_control", ELDBUS_ARGS({"i", "effect_control"}), NULL, e_info_server_cb_effect_control, 0},
+   { "get_keyrouter_info", ELDBUS_ARGS({"s", "get_keyrouter_info"}), NULL, _e_info_server_cb_keyrouter_info_get, 0},
+   { "get_keygrab_status", ELDBUS_ARGS({"s", "get_keygrab_status"}), NULL, _e_info_server_cb_keygrab_status_get, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 
@@ -1367,6 +1409,8 @@ e_info_server_init(void)
    EINA_SAFETY_ON_NULL_GOTO(e_info_server.iface, err);
 
    E_EVENT_INFO_ROTATION_MESSAGE = ecore_event_type_new();
+   E_EVENT_INFO_KEYGRAB_STATUS = ecore_event_type_new();
+   E_EVENT_INFO_KEYROUTER_INFO = ecore_event_type_new();
 
    e_info_protocol_init();
 
