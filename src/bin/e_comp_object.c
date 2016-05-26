@@ -127,6 +127,7 @@ typedef struct _E_Comp_Object
    Eina_Bool            force_move : 1;
    Eina_Bool            frame_extends : 1; //frame may extend beyond object size
    Eina_Bool            blanked : 1; //window is rendering blank content (externally composited)
+   Eina_Bool            external_content : 1; // e.swallow.content(obj) is set by external evas object
 } E_Comp_Object;
 
 
@@ -888,6 +889,7 @@ _e_comp_object_pixels_get(void *data, Evas_Object *obj EINA_UNUSED)
    int bx, by, bxx, byy;
 
    if (e_object_is_del(E_OBJECT(ec))) return;
+   if (cw->external_content) return;
    if (!e_pixmap_size_get(ec->pixmap, &pw, &ph)) return;
    e_pixmap_image_opaque_get(cw->ec->pixmap, &bx, &by, &bxx, &byy);
    if (bxx && byy)
@@ -1717,14 +1719,19 @@ _e_comp_intercept_show(void *data, Evas_Object *obj EINA_UNUSED)
    else
      {
         _e_comp_object_setup(cw);
-        cw->obj = evas_object_image_filled_add(e_comp->evas);
-        evas_object_image_border_center_fill_set(cw->obj, EVAS_BORDER_FILL_SOLID);
-        e_util_size_debug_set(cw->obj, 1);
-        evas_object_image_pixels_get_callback_set(cw->obj, _e_comp_object_pixels_get, cw);
-        evas_object_image_smooth_scale_set(cw->obj, e_comp_config_get()->smooth_windows);
-        evas_object_name_set(cw->obj, "cw->obj");
-        evas_object_image_colorspace_set(cw->obj, EVAS_COLORSPACE_ARGB8888);
-        _e_comp_object_alpha_set(cw);
+        if (!cw->obj)
+          {
+             cw->external_content = EINA_FALSE;
+             cw->obj = evas_object_image_filled_add(e_comp->evas);
+             evas_object_image_border_center_fill_set(cw->obj, EVAS_BORDER_FILL_SOLID);
+             e_util_size_debug_set(cw->obj, 1);
+             evas_object_image_pixels_get_callback_set(cw->obj, _e_comp_object_pixels_get, cw);
+             evas_object_image_smooth_scale_set(cw->obj, e_comp_config_get()->smooth_windows);
+             evas_object_name_set(cw->obj, "cw->obj");
+             evas_object_image_colorspace_set(cw->obj, EVAS_COLORSPACE_ARGB8888);
+             _e_comp_object_alpha_set(cw);
+
+          }
 #ifdef BORDER_ZOOMAPS
         e_comp_object_zoomap_set(o, 1);
 #else
@@ -3365,6 +3372,7 @@ e_comp_object_shape_apply(Evas_Object *obj)
 
    API_ENTRY;
    if (!cw->ec) return; //NYI
+   if (cw->external_content) return;
    if (cw->ec->shaped)
      {
         if ((cw->ec->shape_rects_num >= 1) &&
@@ -3466,6 +3474,7 @@ e_comp_object_redirected_set(Evas_Object *obj, Eina_Bool set)
    set = !!set;
    if (cw->redirected == set) return;
    cw->redirected = set;
+   if (cw->external_content) return;
    if (set)
      {
         if (cw->updates_exist)
@@ -3508,6 +3517,7 @@ e_comp_object_native_surface_set(Evas_Object *obj, Eina_Bool set)
    API_ENTRY;
    EINA_SAFETY_ON_NULL_RETURN(cw->ec);
    if (cw->ec->input_only) return;
+   if (cw->external_content) return;
    set = !!set;
 
    if (set)
@@ -3576,6 +3586,7 @@ e_comp_object_dirty(Evas_Object *obj)
    Eina_Bool dirty, visible;
 
    API_ENTRY;
+   if (cw->external_content) return;
    /* only actually dirty if pixmap is available */
    dirty = e_pixmap_size_get(cw->ec->pixmap, &w, &h);
    visible = cw->visible;
@@ -3655,6 +3666,7 @@ e_comp_object_render(Evas_Object *obj)
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(cw->ec, EINA_FALSE);
    if (cw->ec->input_only) return EINA_TRUE;
+   if (cw->external_content) return EINA_TRUE;
    e_comp_object_render_update_del(obj);
    if (!e_pixmap_size_get(cw->ec->pixmap, &pw, &ph)) return EINA_FALSE;
 
@@ -3744,6 +3756,11 @@ e_comp_object_util_mirror_add(Evas_Object *obj)
         return o;
      }
    if ((!cw->ec) || (!e_pixmap_size_get(cw->ec->pixmap, &w, &h))) return NULL;
+   if (cw->external_content)
+     {
+        ERR("%p of client %p is external content.", obj, cw->ec);
+        return NULL;
+     }
    o = evas_object_image_filled_add(evas_object_evas_get(obj));
    evas_object_image_colorspace_set(o, EVAS_COLORSPACE_ARGB8888);
    evas_object_image_smooth_scale_set(o, e_comp_config_get()->smooth_windows);
@@ -4158,6 +4175,7 @@ e_comp_object_alpha_set(Evas_Object *obj, Eina_Bool alpha)
 {
    SOFT_ENTRY();
 
+   if (cw->external_content) return;
    if (alpha == evas_object_image_alpha_get(cw->obj)) return;
 
    evas_object_image_alpha_set(cw->obj, alpha);
@@ -4210,6 +4228,8 @@ E_API void
 e_comp_object_size_update(Evas_Object *obj, int w, int h)
 {
    API_ENTRY;
+
+   if (cw->external_content) return;
 
    evas_object_image_size_set(cw->obj, w, h);
 }
@@ -4348,4 +4368,45 @@ e_comp_object_layer_update(Evas_Object *obj,
      }
    else
      _e_comp_object_layers_add(cw, NULL, NULL, 0);
+}
+
+E_API void
+e_comp_object_content_set(Evas_Object *obj, Evas_Object *content)
+{
+   Eina_Bool frame_reswallow = EINA_FALSE;
+   Eina_Bool shobj_reswallow = EINA_FALSE;
+
+   API_ENTRY;
+
+   EINA_SAFETY_ON_NULL_RETURN(cw->ec);
+   EINA_SAFETY_ON_NULL_RETURN(cw->ec->pixmap);
+   if (e_pixmap_type_get(cw->ec->pixmap) != E_PIXMAP_TYPE_NONE) return;
+
+   if (cw->obj)
+     {
+        if (cw->frame_object)
+          {
+             frame_reswallow = EINA_TRUE;
+             edje_object_part_unswallow(cw->frame_object, cw->obj);
+          }
+        else if (cw->shobj)
+          {
+             shobj_reswallow = EINA_TRUE;
+             edje_object_part_unswallow(cw->shobj, cw->obj);
+          }
+        evas_object_del(cw->obj);
+     }
+
+   cw->obj = content;
+   e_util_size_debug_set(cw->obj, 1);
+   evas_object_name_set(cw->obj, "cw->obj");
+
+   if (frame_reswallow)
+     edje_object_part_swallow(cw->frame_object, "e.swallow.content", cw->obj);
+   else if (shobj_reswallow)
+     edje_object_part_swallow(cw->shobj, "e.swallow.content", cw->obj);
+
+   cw->external_content = EINA_TRUE;
+
+   return;
 }
