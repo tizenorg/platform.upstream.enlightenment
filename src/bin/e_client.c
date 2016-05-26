@@ -2678,6 +2678,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         if (e_client_util_ignored_get(ec)) continue;
         if (ec->zone != zone) continue;
         if (!ec->frame) continue;
+        if (ec->visibility.skip) continue;
 #ifdef HAVE_WAYLAND_ONLY
         /* if ec is subsurface, skip this */
         cdata = (E_Comp_Wl_Client_Data *)ec->comp_data;
@@ -3044,6 +3045,12 @@ E_API void
 e_client_visibility_calculate(void)
 {
    _e_calc_visibility = EINA_TRUE;
+}
+
+E_API void
+e_client_visibility_skip_set(E_Client *ec, Eina_Bool skip)
+{
+   ec->visibility.skip = skip;
 }
 
 E_API void
