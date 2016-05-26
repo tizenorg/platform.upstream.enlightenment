@@ -52,6 +52,7 @@ struct _E_Comp_Hwc_Client
 
 struct _E_Comp_Hwc_Commit_Data {
    E_Comp_Hwc_Layer *hwc_layer;
+   E_Comp_Wl_Buffer_Ref buffer_ref;
    tbm_surface_h tsurface;
    E_Client *ec;
    Eina_Bool is_canvas;
@@ -84,6 +85,8 @@ struct _E_Comp_Hwc_Layer {
    Eina_List *pending_tsurfaces;
    tbm_surface_h pending_tsurface;
    tbm_surface_h tsurface;
+
+   E_Comp_Wl_Buffer_Ref displaying_buffer_ref;
 
    E_Client *ec; /* ec which display on this layer directly */
 
@@ -259,8 +262,9 @@ _e_comp_hwc_commit_data_create(void)
 static void
 _e_comp_hwc_commit_data_destroy(E_Comp_Hwc_Commit_Data *data)
 {
-   if (data) return;
+   if (!data) return;
 
+   e_comp_wl_buffer_reference(&data->buffer_ref, NULL);
    free(data);
 }
 
@@ -903,6 +907,7 @@ _e_comp_hwc_output_commit_handler_reserved_memory(tdm_output *output, unsigned i
         else
           {
              _e_comp_hwc_layer_queue_release(hwc_layer, hwc_layer->tsurface);
+             e_comp_wl_buffer_reference(&hwc_layer->displaying_buffer_ref, NULL);
              hwc_layer->tsurface = tsurface;
           }
      }
@@ -916,7 +921,8 @@ _e_comp_hwc_output_commit_handler_reserved_memory(tdm_output *output, unsigned i
         /* release */
         if (hwc_layer->tsurface)
           {
-             _e_comp_hwc_layer_queue_release(hwc_layer, tsurface);
+             _e_comp_hwc_layer_queue_release(hwc_layer, hwc_layer->tsurface);
+             e_comp_wl_buffer_reference(&hwc_layer->displaying_buffer_ref, data->buffer_ref.buffer);
              hwc_layer->tsurface = tsurface;
           }
 
@@ -986,7 +992,6 @@ _e_comp_hwc_output_commit_handler(tdm_output *output, unsigned int sequence,
 
         tbm_surface_internal_unref(tsurface);
         _e_comp_hwc_commit_data_destroy(data);
-
      }
    else
      {
@@ -1032,7 +1037,11 @@ _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_l
    /* hwc_renderer->activated_ec can be changed at the time of commit handler
       , so we stores the current activated_ec at data */
    if (hwc_renderer->activated_ec)
-     data->ec = hwc_renderer->activated_ec;
+     {
+        data->ec = hwc_renderer->activated_ec;
+        e_comp_wl_buffer_reference(&data->buffer_ref, e_pixmap_resource_get(hwc_renderer->activated_ec->pixmap));
+     }
+
    data->is_canvas = is_canvas;
 
    /* set layer when the layer infomation is different from the previous one */
