@@ -15,6 +15,15 @@ typedef enum
    E_COMP_OBJECT_TYPE_LAST,
 } E_Comp_Object_Type;
 
+typedef enum
+{
+   E_COMP_OBJECT_CONTENT_TYPE_NONE,
+   E_COMP_OBJECT_CONTENT_TYPE_INT_IMAGE,
+   E_COMP_OBJECT_CONTENT_TYPE_EXT_IMAGE,
+   E_COMP_OBJECT_CONTENT_TYPE_EXT_EDJE,
+   E_COMP_OBJECT_CONTENT_TYPE_LAST,
+} E_Comp_Object_Content_Type;
+
 #else
 #ifndef E_COMP_OBJECT_H
 #define E_COMP_OBJECT_H
@@ -119,6 +128,8 @@ E_API void e_comp_object_transform_bg_set(Evas_Object *obj, Eina_Bool set);
 E_API void e_comp_object_transform_bg_vertices_set(Evas_Object *obj, E_Util_Transform_Rect_Vertex *vertices);
 
 E_API void e_comp_object_layer_update(Evas_Object *obj, Evas_Object *above, Evas_Object *below);
+
+E_API Eina_Bool e_comp_object_content_set(Evas_Object* obj, Evas_Object *content, E_Comp_Object_Content_Type type);
 #endif
 #endif
 
