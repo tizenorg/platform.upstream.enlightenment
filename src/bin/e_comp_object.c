@@ -1149,7 +1149,9 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
         cw->ec->client.h = ih;
         if ((cw->ec->client.w < 0) || (cw->ec->client.h < 0)) CRI("WTF");
      }
-   if ((!cw->ec->input_only) && cw->redirected && (e_pixmap_dirty_get(cw->ec->pixmap) ||
+   if ((!cw->ec->input_only) && (cw->redirected) &&
+       (e_pixmap_type_get(cw->ec->pixmap) != E_PIXMAP_TYPE_EXT_OBJECT) &&
+       (e_pixmap_dirty_get(cw->ec->pixmap) ||
        (!e_pixmap_size_get(cw->ec->pixmap, &pw, &ph))))
      {
         if (e_comp->comp_type != E_PIXMAP_TYPE_X) return;
@@ -1161,6 +1163,8 @@ _e_comp_intercept_resize(void *data, Evas_Object *obj, int w, int h)
         EC_CHANGED(cw->ec);
         return;
      }
+   if (e_pixmap_type_get(cw->ec->pixmap) == E_PIXMAP_TYPE_EXT_OBJECT)
+     pw = w, ph = h;
    prev_w = cw->w, prev_h = cw->h;
    e_comp_object_frame_wh_adjust(obj, 0, 0, &fw, &fh);
    /* check shading and clamp to pixmap size for regular clients */
@@ -1612,6 +1616,15 @@ _e_comp_intercept_show_helper(E_Comp_Object *cw)
              e_comp_object_signal_emit(cw->smart_obj, "e,action,uniconify", "e");
              cw->defer_hide = 0;
           }
+        return;
+     }
+   if (e_pixmap_type_get(cw->ec->pixmap) == E_PIXMAP_TYPE_EXT_OBJECT)
+     {
+        evas_object_move(cw->smart_obj, cw->ec->x, cw->ec->y);
+        evas_object_resize(cw->smart_obj, cw->ec->w, cw->ec->h);
+        e_comp_object_frame_theme_set(cw->smart_obj, E_COMP_OBJECT_FRAME_RESHADOW);
+        cw->real_hid = 0;
+        evas_object_show(cw->smart_obj);
         return;
      }
    if ((!cw->updates) && (!cw->ec->input_only) && (!cw->ec->ignored))
