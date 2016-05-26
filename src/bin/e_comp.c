@@ -37,8 +37,6 @@ static E_Config_DD *conf_match_edd = NULL;
 static Ecore_Timer *action_timeout = NULL;
 static Eina_Bool gl_avail = EINA_FALSE;
 
-E_Launch_Screen *launch_scrn = NULL;
-
 static double ecore_frametime = 0;
 
 static int _e_comp_log_dom = -1;
@@ -1132,73 +1130,6 @@ _e_comp_screensaver_off(void *data EINA_UNUSED, int type EINA_UNUSED, void *even
    return ECORE_CALLBACK_PASS_ON;
 }
 
-static void
-_e_launchscreen_free(E_Launch_Screen *plscrn)
-{
-   if (plscrn->shobj)
-     evas_object_del(plscrn->shobj);
-   if (plscrn->ep)
-     e_pixmap_del(plscrn->ep);
-   if (plscrn->ec)
-     e_object_del(E_OBJECT(plscrn->ec));
-
-   E_FREE(plscrn);
-}
-
-E_Launch_Screen *
-_e_launchscreen_new(Ecore_Evas *ee)
-{
-   E_Launch_Screen *plscrn = NULL;
-
-   EINA_SAFETY_ON_NULL_GOTO(ee, error);
-   EINA_SAFETY_ON_NULL_GOTO(conf, error);
-
-   if (conf->launch_file)
-     {
-        if (!edje_file_group_exists(conf->launch_file, "e/comp/effects/launch"))
-          goto error;
-     }
-
-   plscrn = E_NEW(E_Launch_Screen, 1);
-   EINA_SAFETY_ON_NULL_GOTO(plscrn, error);
-
-   plscrn->shobj = edje_object_add(e_comp->evas);
-   evas_object_name_set(plscrn->shobj, "launch_screen");
-
-   evas_object_move(plscrn->shobj, 0, 0);
-   evas_object_resize(plscrn->shobj, e_comp->w, e_comp->h);
-   evas_object_layer_set(plscrn->shobj, E_LAYER_CLIENT_TOP);
-   edje_object_file_set(plscrn->shobj, conf->launch_file, "e/comp/effects/launch");
-
-   plscrn->ep = e_pixmap_new(E_PIXMAP_TYPE_NONE, 0);
-   EINA_SAFETY_ON_NULL_GOTO(plscrn->ep, error);
-   plscrn->ec = e_client_new(plscrn->ep, 0, 1);
-   EINA_SAFETY_ON_NULL_GOTO(plscrn->ec, error);
-
-   if (plscrn->ec->frame)
-     evas_object_resize(plscrn->ec->frame, plscrn->ec->zone->w, plscrn->ec->zone->h);
-
-   plscrn->ec->netwm.pid = getpid();
-   plscrn->ec->netwm.name = eina_stringshare_add("E-launch_screen");
-   plscrn->ec->ignored = EINA_TRUE;
-
-   return plscrn;
-
-error:
-   ERR("Could not initialize launchscreen");
-   if (plscrn)
-     {
-        if (plscrn->shobj)
-          evas_object_del(plscrn->shobj);
-        if (plscrn->ep)
-          e_pixmap_del(plscrn->ep);
-        if (plscrn->ec)
-          e_object_del(E_OBJECT(plscrn->ec));
-        E_FREE(plscrn);
-     }
-   return NULL;
-}
-
 //////////////////////////////////////////////////////////////////////////
 
 EINTERN Eina_Bool
@@ -1317,11 +1248,6 @@ e_comp_shutdown(void)
         e_object_del(E_OBJECT(ec));
      }
 
-   if (e_comp->launchscrn)
-     {
-        _e_launchscreen_free(e_comp->launchscrn);
-     }
-
 #ifdef HAVE_HWC
    if (e_comp->hwc)
      e_comp_hwc_shutdown();
@@ -1371,14 +1297,6 @@ e_comp_deferred_job(void)
         e_pointer_hide(e_comp->pointer);
      }
    e_main_ts("\tE_Pointer New Done");
-
-   /* launchscreen setting */
-   e_main_ts("\tLaunchScrn New");
-   if (!e_comp->launchscrn)
-     {
-        e_comp->launchscrn = _e_launchscreen_new(e_comp->ee);
-     }
-   e_main_ts("\tLaunchScrn Done");
 
    e_main_ts("\tE_Comp_Wl_Deferred");
    e_comp_wl_deferred_job();
