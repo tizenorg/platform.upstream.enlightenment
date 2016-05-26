@@ -64,14 +64,6 @@ extern E_API int E_EVENT_COMPOSITOR_FPS_UPDATE;
 
 typedef void (*E_Comp_Cb)(void);
 
-typedef struct _E_Launch_Screen
-{
-   Evas_Object *shobj;
-   E_Pixmap    *ep;
-   E_Client    *ec;
-   Ecore_Timer *timeout;
-} E_Launch_Screen;
-
 typedef struct _E_Comp_Hook E_Comp_Hook;
 
 typedef enum _E_Comp_Hook_Point
@@ -131,8 +123,6 @@ struct _E_Comp
       E_Comp_Object_Key_Cb key_cb;
       void *data;
    } autoclose;
-
-   E_Launch_Screen   *launchscrn;
 
    Eina_List *debug_rects;
    Eina_List *ignore_wins;
