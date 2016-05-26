@@ -8,7 +8,7 @@ static Eina_Bool dont_set_ecore_drm_keymap = EINA_FALSE;
 static Eina_Bool dont_use_xkb_cache = EINA_FALSE;
 
 static Eina_Bool
-_e_comp_drm_cb_activate(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
+_e_comp_screen_cb_activate(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    Ecore_Drm_Event_Activate *e;
 
@@ -51,7 +51,7 @@ end:
 }
 
 static Eina_Bool
-_e_comp_drm_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
+_e_comp_screen_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    const Eina_List *l;
    E_Output_Screen *screen;
@@ -95,7 +95,7 @@ end:
 }
 
 static Eina_Bool
-_e_comp_drm_cb_input_device_add(void *data, int type, void *event)
+_e_comp_screen_cb_input_device_add(void *data, int type, void *event)
 {
    Ecore_Drm_Event_Input_Device_Add *e;
    E_Comp *comp = data;
@@ -127,7 +127,7 @@ end:
 }
 
 static Eina_Bool
-_e_comp_drm_cb_input_device_del(void *data, int type, void *event)
+_e_comp_screen_cb_input_device_del(void *data, int type, void *event)
 {
    Ecore_Drm_Event_Input_Device_Del *e;
    E_Comp *comp = data;
@@ -151,13 +151,13 @@ end:
 }
 
 static void
-_e_comp_drm_cb_ee_resize(Ecore_Evas *ee EINA_UNUSED)
+_e_comp_screen_cb_ee_resize(Ecore_Evas *ee EINA_UNUSED)
 {
    e_comp_canvas_update();
 }
 
 static Ecore_Drm_Output_Mode *
-_e_comp_drm_mode_screen_find(E_Output_Screen *s, Ecore_Drm_Output *output)
+_e_comp_screen_mode_screen_find(E_Output_Screen *s, Ecore_Drm_Output *output)
 {
    Ecore_Drm_Output_Mode *mode, *m = NULL;
    const Eina_List *l;
@@ -179,14 +179,14 @@ _e_comp_drm_mode_screen_find(E_Output_Screen *s, Ecore_Drm_Output *output)
 }
 
 static Eina_Bool
-_e_comp_drm_output_exists(Ecore_Drm_Output *output, unsigned int crtc)
+_e_comp_screen_output_exists(Ecore_Drm_Output *output, unsigned int crtc)
 {
    /* find out if this output can go into the 'possibles' */
    return ecore_drm_output_possible_crtc_get(output, crtc);
 }
 
 static char *
-_e_comp_drm_output_screen_get(Ecore_Drm_Output *output)
+_e_comp_screen_output_screen_get(Ecore_Drm_Output *output)
 {
    const char *model;
 
@@ -197,7 +197,7 @@ _e_comp_drm_output_screen_get(Ecore_Drm_Output *output)
 }
 
 EINTERN E_Output *
-e_comp_drm_create(void)
+e_comp_screen_init_outputs(void)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *output;
@@ -229,7 +229,7 @@ e_comp_drm_create(void)
              s->info.connected = ecore_drm_output_connected_get(output);
              printf("COMP DRM: ...... connected %i\n", s->info.connected);
 
-             s->info.screen = _e_comp_drm_output_screen_get(output);
+             s->info.screen = _e_comp_screen_output_screen_get(output);
 
              s->info.edid = ecore_drm_output_edid_get(output);
              if (s->info.edid)
@@ -287,7 +287,7 @@ e_comp_drm_create(void)
                   /* get possible crtcs, compare to output_crtc_id_get */
                   for (j = 0; j < dev->crtc_count; j++)
                     {
-                       if (_e_comp_drm_output_exists(output, dev->crtcs[j]))
+                       if (_e_comp_screen_output_exists(output, dev->crtcs[j]))
                          {
                             ok = EINA_TRUE;
                             possible = EINA_TRUE;
@@ -338,8 +338,14 @@ e_comp_drm_create(void)
    return r;
 }
 
+EINTERN Eina_Bool
+e_comp_screen_available(void)
+{
+   return EINA_TRUE;
+}
+
 EINTERN void
-e_comp_drm_apply(void)
+e_comp_screen_apply(void)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *out;
@@ -377,7 +383,7 @@ e_comp_drm_apply(void)
              out = ecore_drm_device_output_name_find(dev, s->info.name);
              if (!out) continue;
 
-             mode = _e_comp_drm_mode_screen_find(s, out);
+             mode = _e_comp_screen_mode_screen_find(s, out);
 
              if (s->config.priority > top_priority)
                top_priority = s->config.priority;
@@ -444,14 +450,14 @@ _drm_read_pixels(E_Comp_Wl_Output *output, void *pixels)
 }
 
 E_API void
-_e_comp_drm_keymap_set(struct xkb_context **ctx, struct xkb_keymap **map)
+_e_comp_screen_keymap_set(struct xkb_context **ctx, struct xkb_keymap **map)
 {
    char *keymap_path = NULL;
    struct xkb_context *context;
    struct xkb_keymap *keymap;
    struct xkb_rule_names names = {0,};
 
-   TRACE_INPUT_BEGIN(_e_comp_drm_keymap_set);
+   TRACE_INPUT_BEGIN(_e_comp_screen_keymap_set);
 
    context = xkb_context_new(0);
    EINA_SAFETY_ON_NULL_RETURN(context);
@@ -484,15 +490,13 @@ cleanup:
 }
 
 E_API Eina_Bool
-e_comp_drm_init()
+e_comp_screen_init()
 {
    E_Comp *comp;
    int w = 0, h = 0, scr_w = 1, scr_h = 1;
    struct xkb_context *ctx = NULL;
    struct xkb_keymap *map = NULL;
    char buf[1024];
-
-   e_main_ts("\te_comp_drm Init Begin");
 
    dont_set_ecore_drm_keymap = getenv("NO_ECORE_DRM_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
    dont_use_xkb_cache = getenv("NO_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
@@ -521,7 +525,7 @@ e_comp_drm_init()
    if (e_config->xkb.use_cache && !dont_use_xkb_cache)
      {
         e_main_ts("\tDRM Keymap Init");
-        _e_comp_drm_keymap_set(&ctx, &map);
+        _e_comp_screen_keymap_set(&ctx, &map);
         e_main_ts("\tDRM Keymap Init Done");
      }
 
@@ -600,12 +604,12 @@ e_comp_drm_init()
         e_main_ts("\tEE Resize Done");
      }
 
-   ecore_evas_callback_resize_set(e_comp->ee, _e_comp_drm_cb_ee_resize);
+   ecore_evas_callback_resize_set(e_comp->ee, _e_comp_screen_cb_ee_resize);
 
    e_main_ts("\tE_Output Init");
    if (!e_output_init())
      {
-        e_error_message_show(_("Enlightenment cannot initialize drm output!\n"));
+        e_error_message_show(_("Enlightenment cannot initialize output!\n"));
         TRACE_DS_END();
         return EINA_FALSE;
      }
@@ -660,10 +664,10 @@ e_comp_drm_init()
    e_comp_wl_input_keymap_set("evdev", "pc105", "us", ctx, map);
    e_main_ts("\tE_Comp_WL Keymap Init Done");
 
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,         _e_comp_drm_cb_activate,         comp);
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_OUTPUT,           _e_comp_drm_cb_output,           comp);
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_ADD, _e_comp_drm_cb_input_device_add, comp);
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_DEL, _e_comp_drm_cb_input_device_del, comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,         _e_comp_screen_cb_activate,         comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_OUTPUT,           _e_comp_screen_cb_output,           comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_ADD, _e_comp_screen_cb_input_device_add, comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_DEL, _e_comp_screen_cb_input_device_del, comp);
 
    TRACE_DS_END();
 
@@ -671,7 +675,7 @@ e_comp_drm_init()
 }
 
 E_API void
-e_comp_drm_shutdown()
+e_comp_screen_shutdown()
 {
    /* shutdown ecore_drm */
    /* ecore_drm_shutdown(); */

@@ -1238,15 +1238,15 @@ e_comp_init(void)
 
    e_comp_new();
 
-   e_main_ts("\tE_Comp_DRM Init");
-   if (!e_comp_drm_init())
+   e_main_ts("\tE_Comp_Screen Init");
+   if (!e_comp_screen_init())
      {
-        ERR("Fail to init e_comp_drm");
+        ERR("Fail to init e_comp_screen");
         e_object_del(E_OBJECT(e_comp));
         E_FREE_FUNC(ignores, eina_hash_free);
         return EINA_FALSE;
      }
-   e_main_ts("\tE_Comp_DRM Init Done");
+   e_main_ts("\tE_Comp_Screen Init Done");
 
    e_comp->comp_type = E_PIXMAP_TYPE_WL;
 
@@ -1315,7 +1315,7 @@ e_comp_shutdown(void)
 #endif
 
    e_comp_wl_shutdown();
-   e_comp_drm_shutdown();
+   e_comp_screen_shutdown();
 
    e_object_del(E_OBJECT(e_comp));
    E_FREE_LIST(handlers, ecore_event_handler_del);

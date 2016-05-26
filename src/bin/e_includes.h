@@ -50,7 +50,7 @@
 #include "e_hints.h"
 #include "e_plane.h"
 #include "e_comp_hwc.h"
-#include "e_comp_drm.h"
+#include "e_comp_screen.h"
 #include "e_output.h"
 
 #ifdef HAVE_WAYLAND
