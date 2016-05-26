@@ -4860,10 +4860,15 @@ e_client_uniconify(E_Client *ec)
    not_raise = ec->exp_iconify.not_raise;
    if (!not_raise)
      evas_object_raise(ec->frame);
-   evas_object_show(ec->frame);
+
+   if (ec->pixmap && e_pixmap_usable_get(ec->pixmap))
+      evas_object_show(ec->frame);
+
    e_client_comp_hidden_set(ec, 0);
    ec->deskshow = ec->iconic = 0;
-   evas_object_focus_set(ec->frame, 1);
+
+   if (ec->pixmap && e_pixmap_usable_get(ec->pixmap))
+      evas_object_focus_set(ec->frame, 1);
 
    _e_client_event_simple(ec, E_EVENT_CLIENT_UNICONIFY);
 
