@@ -394,15 +394,14 @@ _e_comp_prepare_overlay(void)
    EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
      {
         E_Client *ec;
-        E_Output_Screen *eout;
+        E_Output *eout;
         int mode = E_HWC_MODE_INVALID;
         int num_of_ly = 0, ly_cnt = 0;
         Eina_List *clist = NULL;
 
         if (!zone || !zone->output_id) continue;
 
-        eout = e_output_screen_id_find(zone->output_id);
-        num_of_ly = eout->plane_count;
+        eout = e_output_find(zone->output_id);
 
         E_CLIENT_REVERSE_FOREACH(ec)
           {
@@ -489,9 +488,9 @@ _e_comp_cb_hwc_begin(void)
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
-        E_Output_Screen * eout;
+        E_Output * eout;
         if (!zone->output_id) continue;
-        eout = e_output_screen_id_find(zone->output_id);
+        eout = e_output_find(zone->output_id);
         if(eout) mode_set |= e_output_planes_apply(eout);
      }
 
@@ -1690,12 +1689,12 @@ e_comp_is_on_overlay(E_Client *ec)
    else if (_e_comp_hwc_active())
      {
         Eina_List *l, *ll;
-        E_Output_Screen * screen;
+        E_Output * eout;
         E_Plane *ep;
 
         if (!ec->zone) return EINA_FALSE;
-        screen = e_output_screen_id_find(ec->zone->output_id);
-        EINA_LIST_FOREACH_SAFE(screen->planes, l, ll, ep)
+        eout = e_output_find(ec->zone->output_id);
+        EINA_LIST_FOREACH_SAFE(eout->planes, l, ll, ep)
           {
              E_Client *overlay_ec = ep->ec;
              if (overlay_ec == ec) return EINA_TRUE;
