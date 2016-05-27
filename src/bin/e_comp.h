@@ -148,13 +148,11 @@ struct _E_Comp
    Ecore_Window    block_win;
    int             block_count; //number of times block window has been requested
 
-   Ecore_Window   cm_selection; //FIXME: move to comp_x ?
+   Ecore_Window    cm_selection; //FIXME: move to comp_x ?
    E_Client       *nocomp_ec;
 
-   Eina_List      *prepare_ec_list; // temp
-   int             hwc_override; //number of times selcomp override has been requested
-   int             prepare_mode;
-   int             hwc_mode;
+   int             hwc_override; //number of times hwc override has been requested
+   Eina_Bool       hwc_mode;
 
    int depth;
    unsigned int    input_key_grabs;
