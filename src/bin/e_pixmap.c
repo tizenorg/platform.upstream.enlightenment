@@ -235,7 +235,8 @@ e_pixmap_new(E_Pixmap_Type type, ...)
 
    id = va_arg(l, uintptr_t);
 
-   if (type == E_PIXMAP_TYPE_NONE)
+   if ((type == E_PIXMAP_TYPE_NONE) ||
+       (type == E_PIXMAP_TYPE_EXT_OBJECT))
      {
         id = dummy_pixmap_id++;
      }
