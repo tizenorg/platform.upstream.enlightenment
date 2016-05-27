@@ -323,7 +323,7 @@ e_comp_screen_init_outputs(void)
 
                   /* TODO: are rotations possible ?? */
                }
-             eout->plane_count = 1; // TODO: get proper value using libtdm
+             eout->plane_count = 2; // TODO: get proper value using libtdm
              printf("COMP TDM: planes %i\n", eout->plane_count);
              for (j = 0; j < eout->plane_count; j++)
                {

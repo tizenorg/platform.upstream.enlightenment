@@ -8,6 +8,8 @@
 #endif
 
 #define OVER_FLOW 1
+#define MULTI_PLANE_HWC 1
+
 //#define SHAPE_DEBUG
 //#define BORDER_ZOOMAPS
 //////////////////////////////////////////////////////////////////////////
@@ -859,6 +861,9 @@ setup_hwcompose:
         goto end;
      }
 #ifdef MULTI_PLANE_HWC
+   //conf->selcomp_use_timer = 1;
+   //conf->selcomp_begin_timeout = 2.0;
+
    if(_e_comp_hwc_usable())
      {
         if (_e_comp_hwc_is_on())
