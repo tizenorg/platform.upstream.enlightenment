@@ -834,18 +834,18 @@ _e_comp_hwc_output_update_geom(E_Comp_Hwc_Output *hwc_output)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *drm_output;
-   E_Output_Screen *s;
+   E_Output *eout;
    const Eina_List *l, *ll;
    int x, y, w, h;
 
    EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
      {
-        EINA_LIST_FOREACH(e_output->screens, ll, s)
+        EINA_LIST_FOREACH(e_comp_screen->outputs, ll, eout)
           {
-             ELOGF("HWC", "find output for '%s'", NULL, NULL, s->info.name);
+             ELOGF("HWC", "find output for '%s'", NULL, NULL, eout->info.name);
 
-             if (!s->config.enabled) continue;
-             drm_output = ecore_drm_device_output_name_find(dev, s->info.name);
+             if (!eout->config.enabled) continue;
+             drm_output = ecore_drm_device_output_name_find(dev, eout->info.name);
              if (!drm_output) continue;
 
              ecore_drm_output_position_get(drm_output, &x, &y);
@@ -863,7 +863,7 @@ _e_comp_hwc_output_update_geom(E_Comp_Hwc_Output *hwc_output)
              hwc_output->w = w;
              hwc_output->h = h;
 
-             ELOGF("HWC", "%s %d,%d,%d,%d", NULL, NULL, s->info.name, x, y, w, h);
+             ELOGF("HWC", "%s %d,%d,%d,%d", NULL, NULL, eout->info.name, x, y, w, h);
           }
      }
 }

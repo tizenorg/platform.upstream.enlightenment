@@ -1,6 +1,6 @@
 #include "e.h"
 
-/* E_Plane is a child object of E_Output_Screen. There is one Output per screen
+/* E_Plane is a child object of E_Output. There is one Output per screen
  * E_plane represents hw overlay and a surface is assigned to disable composition
  * Each Output always has dedicated canvas and a zone
  */
@@ -48,32 +48,32 @@ e_plane_free(E_Plane *plane)
 }
 
 E_API E_Plane *
-e_plane_new(E_Output_Screen *screen)
+e_plane_new(E_Output *eout)
 {
    E_Plane *plane;
 
    char name[40];
 
-   if (!screen) return NULL;
+   if (!eout) return NULL;
 
    //plane = E_OBJECT_ALLOC(E_Plane, E_PLANE_TYPE, _e_plane_free);
    plane = E_NEW(E_Plane, 1);
    if (!plane) return NULL;
    printf("%s 2", __FUNCTION__);
 
-   snprintf(name, sizeof(name), "Plane %s", screen->id);
+   snprintf(name, sizeof(name), "Plane %s", eout->id);
    plane->name = eina_stringshare_add(name);
 
    plane->type = E_PLANE_TYPE_INVALID;
-   plane->screen = screen;
+   plane->eout = eout;
 
    /* config default resolution with output size*/
-   plane->resolution.x = screen->config.geom.x;
-   plane->resolution.y = screen->config.geom.y;
-   plane->resolution.w = screen->config.geom.w;
-   plane->resolution.h = screen->config.geom.h;
+   plane->resolution.x = eout->config.geom.x;
+   plane->resolution.y = eout->config.geom.y;
+   plane->resolution.w = eout->config.geom.w;
+   plane->resolution.h = eout->config.geom.h;
 
-   screen->planes = eina_list_append(screen->planes, plane);
+   eout->planes = eina_list_append(eout->planes, plane);
 
    printf("@@@@@@@@@@ e_plane_new:| %i %i %ix%i\n", plane->resolution.x , plane->resolution.y, plane->resolution.w, plane->resolution.h);
 
