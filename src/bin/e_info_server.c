@@ -177,7 +177,7 @@ _input_msg_clients_append(Eldbus_Message_Iter *iter)
 
         eldbus_message_iter_arguments_append
                      (struct_of_input, VALUE_TYPE_FOR_INPUTDEV,
-                      dev->name, dev->identifier, dev->capability);
+                      dev->name, dev->identifier, dev->clas);
 
         eldbus_message_iter_container_close(array_of_input, struct_of_input);
      }
