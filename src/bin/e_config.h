@@ -112,6 +112,14 @@ struct _E_Config
       Eina_Bool    dont_touch_my_damn_keyboard;
       Eina_Bool    use_cache;
       unsigned int delay_held_key_input_to_focus;
+      struct
+      {
+          const char *rules;
+          const char *model;
+          const char *layout;
+          const char *variant;
+          const char *options;
+      } default_rmlvo;
    } xkb;
    struct
    {
