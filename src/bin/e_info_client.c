@@ -170,12 +170,12 @@ _cb_input_device_info_get(const Eldbus_Message *msg)
      {
         char *dev_name;
         char *identifier;
-        int capability;
+        int clas;
         res = eldbus_message_iter_arguments_get(eldbus_msg,
                                                 VALUE_TYPE_FOR_INPUTDEV,
                                                 &dev_name,
                                                 &identifier,
-                                                &capability);
+                                                &clas);
         if (!res)
           {
              printf("Failed to get device info\n");
@@ -185,7 +185,7 @@ _cb_input_device_info_get(const Eldbus_Message *msg)
         dev = E_NEW(E_Comp_Wl_Input_Device, 1);
         dev->name = strdup(dev_name);
         dev->identifier = strdup(identifier);
-        dev->capability = capability;
+        dev->clas = clas;
 
         e_info_client.input_dev = eina_list_append(e_info_client.input_dev, dev);
      }
@@ -459,10 +459,10 @@ _e_info_client_proc_input_device_info(int argc, char **argv)
      {
         i++;
         printf("%3d %50s %20s         ", i, dev->name, dev->identifier);
-        if (dev->capability & ECORE_DEVICE_POINTER) printf("Pointer | ");
-        if (dev->capability & ECORE_DEVICE_KEYBOARD) printf("Keyboard | ");
-        if (dev->capability & ECORE_DEVICE_TOUCH) printf("Touch | ");
-        printf("(0x%x)\n", dev->capability);
+        if (dev->clas == ECORE_DEVICE_CLASS_MOUSE) printf("Mouse | ");
+        else if (dev->clas == ECORE_DEVICE_CLASS_KEYBOARD) printf("Keyboard | ");
+        else if (dev->clas == ECORE_DEVICE_CLASS_TOUCH) printf("Touch | ");
+        printf("(0x%x)\n", dev->clas);
      }
 
    E_FREE_LIST(e_info_client.input_dev, free);
