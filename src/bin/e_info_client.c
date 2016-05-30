@@ -350,6 +350,7 @@ _e_info_client_proc_protocol_rule(int argc, char **argv)
 {
    char *new_argv[3];
    int new_argc;
+   int i;
 
    if (argc < 3 ||
       (argc > 3 && !eina_streq(argv[2], "print") && !eina_streq(argv[2], "help") && !eina_streq(argv[2], "file") && !eina_streq(argv[2], "add") && !eina_streq(argv[2], "remove")))
@@ -359,7 +360,7 @@ _e_info_client_proc_protocol_rule(int argc, char **argv)
      }
 
    new_argc = argc - 2;
-   for (int i = 0; i < new_argc; i++)
+   for (i = 0; i < new_argc; i++)
      new_argv[i] = argv[i + 2];
    if (new_argc < 2)
      {
