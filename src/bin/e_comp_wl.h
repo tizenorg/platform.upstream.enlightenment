@@ -153,7 +153,7 @@ struct _E_Comp_Wl_Input_Device
    Eina_List *resources;
    const char *name;
    const char *identifier;
-   unsigned int capability;
+   Ecore_Device_Class clas;
 };
 
 struct _E_Comp_Wl_Data
@@ -205,7 +205,7 @@ struct _E_Comp_Wl_Data
         Eina_List *resources;
         Eina_List *device_list;
         const char *last_device_name;
-        unsigned int last_device_cap;
+        Ecore_Device_Class last_device_clas;
         struct
           {
              double radius_x;
