@@ -186,6 +186,11 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, xkb.dont_touch_my_damn_keyboard, UCHAR);
    E_CONFIG_VAL(D, T, xkb.use_cache, UCHAR);
    E_CONFIG_VAL(D, T, xkb.delay_held_key_input_to_focus, UINT);
+   E_CONFIG_VAL(D, T, xkb.default_rmlvo.rules, STR);
+   E_CONFIG_VAL(D, T, xkb.default_rmlvo.model, STR);
+   E_CONFIG_VAL(D, T, xkb.default_rmlvo.layout, STR);
+   E_CONFIG_VAL(D, T, xkb.default_rmlvo.variant, STR);
+   E_CONFIG_VAL(D, T, xkb.default_rmlvo.options, STR);
    E_CONFIG_VAL(D, T, keyboard.repeat_delay, INT);
    E_CONFIG_VAL(D, T, keyboard.repeat_rate, INT);
    E_CONFIG_VAL(D, T, use_desktop_window_profile, INT);
@@ -796,6 +801,11 @@ _e_config_free(E_Config *ecf)
      }
 
    eina_stringshare_del(ecf->xkb.default_model);
+   eina_stringshare_del(ecf->xkb.default_rmlvo.rules);
+   eina_stringshare_del(ecf->xkb.default_rmlvo.model);
+   eina_stringshare_del(ecf->xkb.default_rmlvo.layout);
+   eina_stringshare_del(ecf->xkb.default_rmlvo.variant);
+   eina_stringshare_del(ecf->xkb.default_rmlvo.options);
 
    eina_stringshare_del(ecf->wl_sock_access.owner);
    eina_stringshare_del(ecf->wl_sock_access.group);
