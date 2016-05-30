@@ -963,7 +963,7 @@ _e_comp_wl_evas_cb_mouse_move(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
    if (ec->ignored) return;
    if (!ec->comp_data->surface) return;
 
-   if (!need_send_motion && !need_send_released && !ec->vkbd.vkbd) return;
+   if ((!need_send_motion) && (!need_send_released) && (ec->visibility.obscured == E_VISIBILITY_FULLY_OBSCURED)) return;
 
    if ((!e_comp_wl->drag_client) ||
        (!e_client_has_xwindow(e_comp_wl->drag_client)))
