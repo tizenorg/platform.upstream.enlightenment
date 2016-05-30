@@ -792,12 +792,14 @@ e_comp_wl_input_keymap_compile(struct xkb_context *ctx, struct xkb_rule_names na
 
 E_API void
 e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *layout,
+                           const char *variant, const char *options,
                            struct xkb_context *dflt_ctx, struct xkb_keymap *dflt_map)
 {
    struct xkb_keymap *keymap;
    struct xkb_rule_names names;
    char *keymap_path = NULL;
    Eina_Bool use_dflt_xkb = EINA_FALSE;
+   const char *dflt_rules, *dflt_model, *dflt_layout, *dflt_variant, *dflt_options;
 
    /* DBG("COMP_WL: Keymap Set: %s %s %s", rules, model, layout); */
    TRACE_INPUT_BEGIN(e_comp_wl_input_keymap_set);
@@ -826,11 +828,35 @@ e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *lay
    /* assemble xkb_rule_names so we can fetch keymap */
    memset(&names, 0, sizeof(names));
    if (rules) names.rules = strdup(rules);
-   else names.rules = strdup("evdev");
+   else
+     {
+        dflt_rules = e_comp_wl_input_keymap_default_rules_get();
+        names.rules = strdup(dflt_rules);
+     }
    if (model) names.model = strdup(model);
-   else names.model = strdup("pc105");
+   else
+     {
+        dflt_model = e_comp_wl_input_keymap_default_model_get();
+        names.model = strdup(dflt_model);
+     }
    if (layout) names.layout = strdup(layout);
-   else names.layout = strdup("us");
+   else
+     {
+        dflt_layout = e_comp_wl_input_keymap_default_layout_get();
+        names.layout = strdup(dflt_layout);
+     }
+   if (variant) names.variant = strdup(variant);
+   else
+     {
+        dflt_variant = e_comp_wl_input_keymap_default_variant_get();
+        if (dflt_variant) names.variant = strdup(dflt_variant);
+     }
+   if (options) names.options = strdup(options);
+   else
+     {
+        dflt_options = e_comp_wl_input_keymap_default_options_get();
+        if (dflt_options) names.options = strdup(dflt_options);
+     }
 
    TRACE_INPUT_BEGIN(e_comp_wl_input_keymap_set_keymap_compile);
    if (use_dflt_xkb)
@@ -861,6 +887,76 @@ e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *lay
    free((char *)names.model);
    free((char *)names.layout);
    TRACE_INPUT_END();
+}
+
+const char*
+e_comp_wl_input_keymap_default_rules_get(void)
+{
+   const char *rules;
+   if (e_config->xkb.default_rmlvo.rules)
+     return e_config->xkb.default_rmlvo.rules;
+   else
+     {
+        rules = getenv("E_DEFAULT_XKB_RULES");
+        if (rules) return rules;
+        else return "evdev";
+     }
+}
+
+const char*
+e_comp_wl_input_keymap_default_model_get(void)
+{
+   const char *model;
+   if (e_config->xkb.default_rmlvo.model)
+     return e_config->xkb.default_rmlvo.model;
+   else
+     {
+        model = getenv("E_DEFAULT_XKB_MODEL");
+        if (model) return model;
+        else return "pc105";
+     }
+}
+
+const char*
+e_comp_wl_input_keymap_default_layout_get(void)
+{
+   const char *layout;
+   if (e_config->xkb.default_rmlvo.layout)
+     return e_config->xkb.default_rmlvo.layout;
+   else
+     {
+        layout = getenv("E_DEFAULT_XKB_LAYOUT");
+        if (layout) return layout;
+        else return "us";
+     }
+}
+
+const char*
+e_comp_wl_input_keymap_default_variant_get(void)
+{
+   const char *variant;
+   if (e_config->xkb.default_rmlvo.variant)
+     return e_config->xkb.default_rmlvo.variant;
+   else
+     {
+        variant = getenv("E_DEFAULT_XKB_VARIANT");
+        if (variant) return variant;
+        else return NULL;
+     }
+}
+
+const char*
+e_comp_wl_input_keymap_default_options_get(void)
+{
+   const char *options;
+   if (e_config->xkb.default_rmlvo.options)
+     return e_config->xkb.default_rmlvo.options;
+   else
+     {
+        options = getenv("E_DEFAULT_XKB_OPTIONS");
+        if (options) return options;
+        else return NULL;
+     }
 }
 
 E_API void

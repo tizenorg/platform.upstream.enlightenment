@@ -456,6 +456,7 @@ _e_comp_screen_keymap_set(struct xkb_context **ctx, struct xkb_keymap **map)
    struct xkb_context *context;
    struct xkb_keymap *keymap;
    struct xkb_rule_names names = {0,};
+   const char* dflt_rules, *dflt_model, *dflt_layout, *dflt_variant, *dflt_options;
 
    TRACE_INPUT_BEGIN(_e_comp_screen_keymap_set);
 
@@ -464,9 +465,18 @@ _e_comp_screen_keymap_set(struct xkb_context **ctx, struct xkb_keymap **map)
 
    /* assemble xkb_rule_names so we can fetch keymap */
    memset(&names, 0, sizeof(names));
-   names.rules = strdup("evdev");
-   names.model = strdup("pc105");
-   names.layout = strdup("us");
+
+   dflt_rules = e_comp_wl_input_keymap_default_rules_get();
+   dflt_model = e_comp_wl_input_keymap_default_model_get();
+   dflt_layout = e_comp_wl_input_keymap_default_layout_get();
+   dflt_variant = e_comp_wl_input_keymap_default_variant_get();
+   dflt_options = e_comp_wl_input_keymap_default_options_get();
+
+   if (dflt_rules) names.rules = strdup(dflt_rules);
+   if (dflt_model) names.model = strdup(dflt_model);
+   if (dflt_layout) names.layout = strdup(dflt_layout);
+   if (dflt_variant) names.variant = strdup(dflt_variant);
+   if (dflt_options) names.options = strdup(dflt_options);
 
    keymap = e_comp_wl_input_keymap_compile(context, names, &keymap_path);
    eina_stringshare_del(keymap_path);
@@ -661,7 +671,12 @@ e_comp_screen_init()
    /* FIXME: This is just for testing at the moment....
     * happens to jive with what drm does */
    e_main_ts("\tE_Comp_WL Keymap Init");
-   e_comp_wl_input_keymap_set("evdev", "pc105", "us", ctx, map);
+   e_comp_wl_input_keymap_set(e_comp_wl_input_keymap_default_rules_get(),
+                              e_comp_wl_input_keymap_default_model_get(),
+                              e_comp_wl_input_keymap_default_layout_get(),
+                              e_comp_wl_input_keymap_default_variant_get(),
+                              e_comp_wl_input_keymap_default_options_get(),
+                              ctx, map);
    e_main_ts("\tE_Comp_WL Keymap Init Done");
 
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,         _e_comp_screen_cb_activate,         comp);

@@ -30,7 +30,13 @@ E_API void e_comp_wl_input_touch_enabled_set(Eina_Bool enabled);
 E_API Eina_Bool e_comp_wl_input_keymap_cache_file_use_get(void);
 E_API Eina_Stringshare *e_comp_wl_input_keymap_path_get(struct xkb_rule_names names);
 E_API struct xkb_keymap *e_comp_wl_input_keymap_compile(struct xkb_context *ctx, struct xkb_rule_names names, char **keymap_path);
-E_API void e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *layout, struct xkb_context *dflt_ctx, struct xkb_keymap *dflt_map);
+E_API void e_comp_wl_input_keymap_set(const char *rules, const char *model, const char *layout, const char *variant, const char *options, struct xkb_context *dflt_ctx, struct xkb_keymap *dflt_map);
+
+EAPI const char *e_comp_wl_input_keymap_default_rules_get(void);
+EAPI const char *e_comp_wl_input_keymap_default_model_get(void);
+EAPI const char *e_comp_wl_input_keymap_default_layout_get(void);
+EAPI const char *e_comp_wl_input_keymap_default_variant_get(void);
+EAPI const char *e_comp_wl_input_keymap_default_options_get(void);
 
 # endif
 #endif
