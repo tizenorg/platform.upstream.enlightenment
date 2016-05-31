@@ -542,6 +542,9 @@ e_pixmap_native_surface_init(E_Pixmap *cp, Evas_Native_Surface *ns)
         ns->type = EVAS_NATIVE_SURFACE_TBM;
         ns->version = EVAS_NATIVE_SURFACE_VERSION;
         ns->data.tbm.buffer = cp->buffer->tbm_surface;
+        ns->data.tbm.rot = 0;
+        ns->data.tbm.ratio = 0;
+        ns->data.tbm.flip = 0;
         if (cp->buffer->tbm_surface)
           ret = EINA_TRUE;
      }
