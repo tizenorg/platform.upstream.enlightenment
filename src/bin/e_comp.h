@@ -185,6 +185,7 @@ struct _E_Comp
    Eina_Bool       hwc : 1;
 
    Eina_List      *connected_clients;
+   Eina_List      *launchscrns;
 };
 
 
