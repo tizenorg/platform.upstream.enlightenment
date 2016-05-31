@@ -1542,9 +1542,13 @@ e_comp_hwc_display_client(E_Client *ec)
    Eina_List *l_o, *ll_o;
    Eina_List *l_l, *ll_l;
    tdm_output_conn_status conn_status;
+   E_Comp_Wl_Client_Data *cdata;
 
    EINA_SAFETY_ON_NULL_RETURN(ec);
    EINA_SAFETY_ON_NULL_RETURN(hwc);
+
+   cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+   EINA_SAFETY_ON_NULL_RETURN(cdata);
 
    EINA_LIST_FOREACH_SAFE(hwc->hwc_outputs, l_o, ll_o, hwc_output)
      {
@@ -1568,6 +1572,12 @@ e_comp_hwc_display_client(E_Client *ec)
                     _e_comp_hwc_output_display_client_reserved_memory(hwc_output, hwc_layer, ec);
                   else
                     _e_comp_hwc_output_display_client(hwc_output, hwc_layer, ec);
+
+                  if (cdata->sub.below_list || cdata->sub.below_list_pending)
+                    {
+                       if (!e_comp_wl_video_client_has(ec))
+                         e_comp_nocomp_end(__FUNCTION__);
+                    }
                }
              else
                ERR("no primary layer");

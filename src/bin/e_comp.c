@@ -154,6 +154,12 @@ _e_comp_fullscreen_check(void)
             (cdata->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_NATIVE))
           break;
 
+        if (cdata->sub.below_list || cdata->sub.below_list_pending)
+          {
+             if (!e_comp_wl_video_client_has(ec))
+                break;
+          }
+
         ow = cdata->width_from_buffer;
         oh = cdata->height_from_buffer;
         vw = cdata->width_from_viewport;
