@@ -25,9 +25,7 @@ E_API int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL = -1;
 E_API int E_EVENT_CLIENT_ROTATION_CHANGE_END = -1;
 #endif
 E_API int E_EVENT_CLIENT_VISIBILITY_CHANGE = -1;
-#ifdef HAVE_WAYLAND_ONLY
 E_API int E_EVENT_CLIENT_BUFFER_CHANGE = -1;
-#endif
 
 static Eina_Hash *clients_hash[E_PIXMAP_TYPE_MAX] = {NULL}; // pixmap->client
 
@@ -817,9 +815,7 @@ _e_client_free(E_Client *ec)
    E_OBJECT(ec)->references--;
    ELOG("CLIENT FREE", ec->pixmap, ec);
 
-#ifdef HAVE_WAYLAND
    e_uuid_store_entry_del(ec->uuid);
-#endif
 
    free(ec);
 }
@@ -1987,7 +1983,6 @@ _e_client_aux_hint_eval(E_Client *ec)
 {
    if (!ec) return;
 
-#ifdef HAVE_WAYLAND_ONLY
    E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
    Eina_List *l, *ll;
    E_Comp_Wl_Aux_Hint *hint;
@@ -2010,7 +2005,6 @@ _e_client_aux_hint_eval(E_Client *ec)
           }
         cdata->aux_hint.changed = 0;
      }
-#endif
 }
 
 static void
@@ -2590,7 +2584,6 @@ _e_client_type_get(E_Client *ec)
    return ec->client_type;
 }
 
-#ifdef HAVE_WAYLAND_ONLY
 static void
 _e_client_transform_sub_apply(E_Client *ec, E_Client *epc, double zoom)
 {
@@ -2631,7 +2624,6 @@ _e_client_transform_sub_apply(E_Client *ec, E_Client *epc, double zoom)
 
    evas_map_free(map);
 }
-#endif
 
 static void
 _e_client_visibility_zone_calculate(E_Zone *zone)
@@ -2649,9 +2641,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
    int w = 0;
    int h = 0;
    const int edge = 1;
-#ifdef HAVE_WAYLAND_ONLY
    E_Comp_Wl_Client_Data *cdata;
-#endif
    Eina_List *changed_list = NULL;
    Eina_List *l = NULL;
 
@@ -2680,11 +2670,9 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         if (ec->zone != zone) continue;
         if (!ec->frame) continue;
         if (ec->visibility.skip) continue;
-#ifdef HAVE_WAYLAND_ONLY
         /* if ec is subsurface, skip this */
         cdata = (E_Comp_Wl_Client_Data *)ec->comp_data;
         if (cdata && cdata->sub.data) continue;
-#endif
 
         /* TODO: need to check whether window intersects with entire screen, not zone. */
         /* if (!E_INTERSECTS(ec->x, ec->y, ec->w, ec->h, zone->x, zone->y, zone->w, zone->h)) continue; */
@@ -2908,7 +2896,6 @@ _e_client_transform_core_check_change(E_Client *ec)
      }
 
    // check parent matrix change
-#ifdef HAVE_WAYLAND_ONLY
    if (ec->comp_data)
      {
         E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
@@ -2936,7 +2923,6 @@ _e_client_transform_core_check_change(E_Client *ec)
                }
           }
      }
-#endif
 
    return check;
 }
@@ -3020,7 +3006,6 @@ _e_client_transform_core_vertices_apply(E_Client *ec EINA_UNUSED, Evas_Object *o
 static void
 _e_client_transform_core_sub_update(E_Client *ec, E_Util_Transform_Rect_Vertex *vertices)
 {
-#ifdef HAVE_WAYLAND_ONLY
    Eina_List *l;
    E_Client *subc;
    E_Comp_Wl_Client_Data *cdata;
@@ -3038,7 +3023,6 @@ _e_client_transform_core_sub_update(E_Client *ec, E_Util_Transform_Rect_Vertex *
 
    EINA_LIST_FOREACH(cdata->sub.below_list, l, subc)
       e_client_transform_core_update(subc);
-#endif
 }
 
 E_API void
@@ -3226,9 +3210,7 @@ e_client_init(void)
    E_EVENT_CLIENT_ROTATION_CHANGE_END = ecore_event_type_new();
 #endif
    E_EVENT_CLIENT_VISIBILITY_CHANGE = ecore_event_type_new();
-#ifdef HAVE_WAYLAND_ONLY
    E_EVENT_CLIENT_BUFFER_CHANGE = ecore_event_type_new();
-#endif
 
    return (!!clients_hash[1]);
 }
@@ -3278,9 +3260,7 @@ e_client_new(E_Pixmap *cp, int first_map, int internal)
    if (!ec) return NULL;
    e_object_del_func_set(E_OBJECT(ec), E_OBJECT_CLEANUP_FUNC(_e_client_del));
 
-#ifdef HAVE_WAYLAND
    uuid_generate(ec->uuid);
-#endif
 
    ec->focus_policy_override = E_FOCUS_LAST;
    ec->w = 1;

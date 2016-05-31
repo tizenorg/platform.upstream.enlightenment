@@ -1,21 +1,7 @@
 #ifdef E_TYPEDEFS
-typedef struct _E_Comp E_Comp;
-
-#ifdef E_COMP_WL
-typedef struct _E_Comp_Wl_Client_Data E_Comp_Client_Data;
-#endif
-typedef struct _E_Comp_Wl_Data E_Comp_Wl_Data;
-
-#ifdef E_COMP_X
-typedef struct _E_Comp_X_Client_Data E_Comp_Client_Data;
-#endif
-typedef struct _E_Comp_X_Data E_Comp_X_Data;
-
-#if !defined(E_COMP_WL) && !defined(E_COMP_X)
-typedef struct _E_Comp_Client_Data E_Comp_Client_Data;
-#endif
-
-typedef struct _E_Comp_Demo_Style_Item E_Comp_Demo_Style_Item;
+typedef struct _E_Comp                       E_Comp;
+typedef struct _E_Comp_Wl_Client_Data        E_Comp_Client_Data;
+typedef struct _E_Comp_Wl_Data               E_Comp_Wl_Data;
 typedef struct _E_Comp_Connected_Client_Info E_Comp_Connected_Client_Info;
 
 # define E_COMP_TYPE (int) 0xE0b01003
@@ -102,7 +88,6 @@ struct _E_Comp
 
    Eina_List *pre_render_cbs; /* E_Comp_Cb */
 
-   E_Comp_X_Data *x_comp_data;
    E_Comp_Wl_Data *wl_comp_data;
 
    E_Pixmap_Type comp_type; //for determining X/Wayland/
@@ -176,17 +161,6 @@ struct _E_Comp
 
    Eina_List      *connected_clients;
    Eina_List      *launchscrns; // list of dummy clients for launchscreen image.
-};
-
-
-struct _E_Comp_Demo_Style_Item
-{
-   Evas_Object *preview;
-   Evas_Object *frame;
-   Evas_Object *livethumb;
-   Evas_Object *layout;
-   Evas_Object *border;
-   Evas_Object *client;
 };
 
 struct _E_Comp_Connected_Client_Info

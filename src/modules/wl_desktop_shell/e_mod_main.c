@@ -1,4 +1,3 @@
-#define E_COMP_WL
 #include "e.h"
 #include <xdg-shell-server-protocol.h>
 #include <tizen-extension-server-protocol.h>

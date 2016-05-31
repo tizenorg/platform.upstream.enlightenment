@@ -14,7 +14,6 @@ static void      _e_desk_event_desk_name_change_free(void *data, void *ev);
 static void      _e_desk_show_begin(E_Desk *desk, int dx, int dy);
 static void      _e_desk_hide_begin(E_Desk *desk, int dx, int dy);
 static void      _e_desk_event_desk_window_profile_change_free(void *data, void *ev);
-static void      _e_desk_window_profile_change_protocol_set(void);
 
 static E_Desk_Flip_Cb _e_desk_flip_cb = NULL;
 static void *_e_desk_flip_data = NULL;
@@ -575,8 +574,6 @@ e_desk_window_profile_update(void)
    E_Config_Desktop_Window_Profile *cfprof;
    int d_x, d_y, ok;
 
-   _e_desk_window_profile_change_protocol_set();
-
    if (!(e_config->use_desktop_window_profile))
      return;
 
@@ -842,12 +839,4 @@ _e_desk_hide_begin(E_Desk *desk, int dx, int dy)
           }
         e_client_comp_hidden_set(ec, EINA_TRUE);
      }
-}
-
-static void
-_e_desk_window_profile_change_protocol_set(void)
-{
-#ifndef HAVE_WAYLAND_ONLY
-  ecore_x_e_window_profile_supported_set(e_comp->root, e_config->use_desktop_window_profile);
-#endif
 }

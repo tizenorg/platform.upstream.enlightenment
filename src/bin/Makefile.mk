@@ -81,10 +81,7 @@ src/bin/e_zone.h \
 src/bin/e_util_transform.h \
 src/bin/e_comp_hwc.h \
 src/bin/e_comp_screen.h \
-src/bin/e_info_protocol.h
-
-if HAVE_WAYLAND
-ENLIGHTENMENTHEADERS += \
+src/bin/e_info_protocol.h \
 src/bin/e_uuid_store.h \
 src/bin/e_comp_wl_data.h \
 src/bin/e_comp_wl_input.h \
@@ -93,8 +90,6 @@ src/bin/e_comp_wl.h
 if HAVE_WAYLAND_TBM
 ENLIGHTENMENTHEADERS += \
 src/bin/e_comp_wl_tbm.h
-endif
-
 endif
 
 enlightenment_src = \
@@ -153,10 +148,6 @@ src/bin/e_util_transform.c \
 src/bin/e_comp_hwc.c \
 src/bin/e_output.c \
 src/bin/e_info_protocol.c \
-$(ENLIGHTENMENTHEADERS)
-
-if HAVE_WAYLAND
-enlightenment_src += \
 src/bin/e_uuid_store.c \
 src/bin/session-recovery-protocol.c \
 src/bin/session-recovery-server-protocol.h \
@@ -164,13 +155,12 @@ src/bin/e_comp_wl_screenshooter_server.c \
 src/bin/e_comp_wl_screenshooter_server.h \
 src/bin/e_comp_wl_data.c \
 src/bin/e_comp_wl_input.c \
-src/bin/e_comp_wl.c
+src/bin/e_comp_wl.c \
+$(ENLIGHTENMENTHEADERS)
 
 if HAVE_WAYLAND_TBM
 enlightenment_src += \
 src/bin/e_comp_wl_tbm.c
-endif
-
 endif
 
 src_bin_enlightenment_CPPFLAGS = $(E_CPPFLAGS) -DEFL_BETA_API_SUPPORT -DEFL_EO_API_SUPPORT -DE_LOGGING=1 @WAYLAND_CFLAGS@ $(TTRACE_CFLAGS) $(DLOG_CFLAGS)

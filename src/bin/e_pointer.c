@@ -109,10 +109,6 @@ _e_pointer_cb_idle_pre(void *data)
 
    if (ptr->canvas)
      ecore_evas_pointer_xy_get(ptr->ee, &ptr->x, &ptr->y);
-#ifndef HAVE_WAYLAND_ONLY
-   else
-     ecore_x_pointer_xy_get(ptr->win, &ptr->x, &ptr->y);
-#endif
 
    ptr->idle_tmr = ecore_timer_loop_add(4.0, _e_pointer_cb_idle_wait, ptr);
 
@@ -521,10 +517,6 @@ e_pointer_hide(E_Pointer *ptr)
      _e_pointer_canvas_del(ptr);
    if (ptr->canvas)
      evas_object_hide(ptr->o_ptr);
-#ifndef HAVE_WAYLAND_ONLY
-   if (ptr->win)
-     ecore_x_window_cursor_set(ptr->win, 0);
-#endif
 }
 
 E_API void 
@@ -695,14 +687,6 @@ e_pointer_idler_before(void)
 
              if ((updates = evas_render_updates(ptr->buffer_evas)))
                {
-#ifndef HAVE_WAYLAND_ONLY
-                  Ecore_X_Cursor cur;
-
-                  cur = ecore_x_cursor_new(ptr->win, ptr->pixels, ptr->w, 
-                                           ptr->h, ptr->hot.x, ptr->hot.y);
-                  ecore_x_window_cursor_set(ptr->win, cur);
-                  ecore_x_cursor_free(cur);
-#endif
                   evas_render_updates_free(updates);
                }
           }

@@ -5,10 +5,8 @@
  */
 #include "e.h"
 
-#ifdef HAVE_WAYLAND
-# ifdef HAVE_WL_DRM
-#include <Ecore_Drm.h>
-# endif
+#ifdef HAVE_WL_DRM
+# include <Ecore_Drm.h>
 #endif
 
 #ifdef HAVE_EXECINFO_H
@@ -20,7 +18,6 @@ static volatile Eina_Bool _e_x_composite_shutdown_try = 0;
 static void
 _e_crash(void)
 {
-#ifdef HAVE_WAYLAND
    if (e_comp->comp_type == E_PIXMAP_TYPE_WL)
      {
 #ifdef HAVE_WL_DRM
@@ -42,7 +39,6 @@ _e_crash(void)
 #endif
         return;
      }
-#endif
 }
 
 /* a tricky little devil, requires e and it's libs to be built
@@ -64,12 +60,6 @@ e_sigill_act(int x EINA_UNUSED, siginfo_t *info EINA_UNUSED, void *data EINA_UNU
    kill(getpid(), SIGUSR1);
    kill(getpid(), SIGSEGV);
    pause();
-   /* _e_x_composite_shutdown(); */
-   /* ecore_x_pointer_ungrab(); */
-   /* ecore_x_keyboard_ungrab(); */
-   /* ecore_x_ungrab(); */
-   /* ecore_x_sync(); */
-   /* e_alert_show(); */
 }
 
 E_API void
