@@ -262,7 +262,6 @@ e_hints_aux_hint_value_get(E_Client *ec, const char *name)
 EAPI Eina_Bool
 e_hints_aux_hint_add_with_pixmap(E_Pixmap *cp, int32_t id, const char *name, const char *val)
 {
-#ifdef HAVE_WAYLAND_ONLY
    E_Comp_Wl_Client_Data *cdata;
    Eina_Bool found = EINA_FALSE;
    E_Comp_Wl_Aux_Hint *hint;
@@ -312,9 +311,7 @@ e_hints_aux_hint_add_with_pixmap(E_Pixmap *cp, int32_t id, const char *name, con
      }
 
    if (!found)
-      return EINA_TRUE;
-   return EINA_FALSE;
-#endif
+     return EINA_TRUE;
 
    return EINA_FALSE;
 }
@@ -322,7 +319,6 @@ e_hints_aux_hint_add_with_pixmap(E_Pixmap *cp, int32_t id, const char *name, con
 EAPI Eina_Bool
 e_hints_aux_hint_change_with_pixmap(E_Pixmap *cp, int32_t id, const char *val)
 {
-#ifdef HAVE_WAYLAND_ONLY
    E_Comp_Wl_Client_Data *cdata;
    Eina_List *l;
    E_Comp_Wl_Aux_Hint *hint;
@@ -355,16 +351,14 @@ e_hints_aux_hint_change_with_pixmap(E_Pixmap *cp, int32_t id, const char *val)
      }
 
    if (found)
-      return EINA_TRUE;
-   return EINA_FALSE;
-#endif
+     return EINA_TRUE;
+
    return EINA_FALSE;
 }
 
 EAPI Eina_Bool
 e_hints_aux_hint_del_with_pixmap(E_Pixmap *cp, int32_t id)
 {
-#ifdef HAVE_WAYLAND_ONLY
    E_Comp_Wl_Client_Data *cdata;
    Eina_List *l, *ll;
    E_Comp_Wl_Aux_Hint *hint;
@@ -389,17 +383,13 @@ e_hints_aux_hint_del_with_pixmap(E_Pixmap *cp, int32_t id)
 
    if (res == -1)
      return EINA_FALSE;
-   else
-     return EINA_TRUE;
-#endif
 
-   return EINA_FALSE;
+   return EINA_TRUE;
 }
 
 EAPI const char *
 e_hints_aux_hint_value_get_with_pixmap(E_Pixmap *cp, const char *name)
 {
-#ifdef HAVE_WAYLAND_ONLY
    E_Comp_Wl_Client_Data *cdata;
    Eina_List *l;
    E_Comp_Wl_Aux_Hint *hint;
@@ -420,6 +410,4 @@ e_hints_aux_hint_value_get_with_pixmap(E_Pixmap *cp, const char *name)
      }
 
    return res;
-#endif
-   return NULL;
 }

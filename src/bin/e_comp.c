@@ -1,7 +1,4 @@
 #include "e.h"
-#ifdef HAVE_WAYLAND
-# include "e_comp_wl.h"
-#endif
 
 #ifdef HAVE_HWC
 # include "e_comp_hwc.h"
@@ -903,13 +900,6 @@ _e_comp_shapes_update_job(void *d EINA_UNUSED)
    INF("---------------------");
 #endif
 
-#ifndef HAVE_WAYLAND_ONLY
-   Ecore_Window win;
-   if (e_comp->comp_type == E_PIXMAP_TYPE_X)
-     win = e_comp->win;
-   else
-     win = e_comp->cm_selection;
-#endif
    E_FREE_LIST(e_comp->debug_rects, evas_object_del);
    tb = eina_tiler_new(e_comp->w, e_comp->h);
    EINA_SAFETY_ON_NULL_GOTO(tb, tb_fail);
@@ -970,10 +960,6 @@ _e_comp_shapes_update_job(void *d EINA_UNUSED)
           }
 #endif
      }
-
-#ifndef HAVE_WAYLAND_ONLY
-   ecore_x_window_shape_input_rectangles_set(win, (Ecore_X_Rectangle*)exr, i);
-#endif
 
 exr_fail:
    free(exr);

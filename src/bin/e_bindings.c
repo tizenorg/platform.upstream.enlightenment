@@ -225,52 +225,6 @@ e_bindings_mouse_del(E_Binding_Context ctxt, int button, E_Binding_Modifier mod,
      }
 }
 
-E_API void
-e_bindings_mouse_grab(E_Binding_Context ctxt, Ecore_X_Window win)
-{
-   E_Binding_Mouse *binding;
-   Eina_List *l;
-
-   EINA_LIST_FOREACH(mouse_bindings, l, binding)
-     {
-        if (_e_bindings_context_match(binding->ctxt, ctxt))
-          {
-#ifndef HAVE_WAYLAND_ONLY
-             ecore_x_window_button_grab(win, binding->button,
-                                        ECORE_X_EVENT_MASK_MOUSE_DOWN |
-                                        ECORE_X_EVENT_MASK_MOUSE_UP |
-                                        ECORE_X_EVENT_MASK_MOUSE_MOVE,
-                                        e_bindings_modifiers_to_ecore_convert(binding->mod),
-                                        binding->any_mod);
-#endif
-          }
-     }
-#ifdef HAVE_WAYLAND_ONLY
-   (void)win;
-#endif
-}
-
-E_API void
-e_bindings_mouse_ungrab(E_Binding_Context ctxt, Ecore_X_Window win)
-{
-   E_Binding_Mouse *binding;
-   Eina_List *l;
-
-   EINA_LIST_FOREACH(mouse_bindings, l, binding)
-     {
-        if (_e_bindings_context_match(binding->ctxt, ctxt))
-          {
-#ifndef HAVE_WAYLAND_ONLY
-             ecore_x_window_button_ungrab(win, binding->button,
-                                          e_bindings_modifiers_to_ecore_convert(binding->mod), binding->any_mod);
-#endif
-          }
-     }
-#ifdef HAVE_WAYLAND_ONLY
-   (void)win;
-#endif
-}
-
 E_API E_Action *
 e_bindings_mouse_button_find(E_Binding_Context ctxt, E_Binding_Event_Mouse_Button *ev, E_Binding_Mouse **bind_ret)
 {
@@ -440,54 +394,6 @@ e_bindings_key_del(E_Binding_Context ctxt, const char *key, E_Binding_Modifier m
              break;
           }
      }
-}
-
-E_API void
-e_bindings_key_grab(E_Binding_Context ctxt, Ecore_X_Window win)
-{
-   E_Binding_Key *binding;
-   Eina_List *l;
-
-   EINA_LIST_FOREACH(key_bindings, l, binding)
-     {
-        if (_e_bindings_context_match(binding->ctxt, ctxt))
-          {
-             if (e_bindings_key_allowed(binding->key))
-               {
-#ifndef HAVE_WAYLAND_ONLY
-                  ecore_x_window_key_grab(win, binding->key,
-                                          e_bindings_modifiers_to_ecore_convert(binding->mod), binding->any_mod);
-#endif
-               }
-          }
-     }
-#ifdef HAVE_WAYLAND_ONLY
-   (void)win;
-#endif
-}
-
-E_API void
-e_bindings_key_ungrab(E_Binding_Context ctxt, Ecore_X_Window win)
-{
-   E_Binding_Key *binding;
-   Eina_List *l;
-
-   EINA_LIST_FOREACH(key_bindings, l, binding)
-     {
-        if (_e_bindings_context_match(binding->ctxt, ctxt))
-          {
-             if (e_bindings_key_allowed(binding->key))
-               {
-#ifndef HAVE_WAYLAND_ONLY
-                  ecore_x_window_key_ungrab(win, binding->key,
-                                            e_bindings_modifiers_to_ecore_convert(binding->mod), binding->any_mod);
-#endif
-               }
-          }
-     }
-#ifdef HAVE_WAYLAND_ONLY
-   (void)win;
-#endif
 }
 
 E_API E_Action *
@@ -1029,83 +935,6 @@ e_bindings_wheel_del(E_Binding_Context ctxt, int direction, int z, E_Binding_Mod
              break;
           }
      }
-}
-
-E_API void
-e_bindings_wheel_grab(E_Binding_Context ctxt, Ecore_X_Window win)
-{
-   E_Binding_Wheel *binding;
-   Eina_List *l;
-
-   EINA_LIST_FOREACH(wheel_bindings, l, binding)
-     {
-        if (_e_bindings_context_match(binding->ctxt, ctxt))
-          {
-             int button = 0;
-
-             if (binding->direction == 0)
-               {
-                  if (binding->z < 0) button = 4;
-                  else if (binding->z > 0)
-                    button = 5;
-               }
-             else if (binding->direction == 1)
-               {
-                  if (binding->z < 0) button = 6;
-                  else if (binding->z > 0)
-                    button = 7;
-               }
-             if (button != 0)
-               {
-#ifndef HAVE_WAYLAND_ONLY
-                  ecore_x_window_button_grab(win, button,
-                                             ECORE_X_EVENT_MASK_MOUSE_DOWN,
-                                             e_bindings_modifiers_to_ecore_convert(binding->mod), binding->any_mod);
-#endif
-               }
-          }
-     }
-#ifdef HAVE_WAYLAND_ONLY
-   (void)win;
-#endif
-}
-
-E_API void
-e_bindings_wheel_ungrab(E_Binding_Context ctxt, Ecore_X_Window win)
-{
-   E_Binding_Wheel *binding;
-   Eina_List *l;
-
-   EINA_LIST_FOREACH(wheel_bindings, l, binding)
-     {
-        if (_e_bindings_context_match(binding->ctxt, ctxt))
-          {
-             int button = 0;
-
-             if (binding->direction == 0)
-               {
-                  if (binding->z < 0) button = 4;
-                  else if (binding->z > 0)
-                    button = 5;
-               }
-             else if (binding->direction == 1)
-               {
-                  if (binding->z < 0) button = 6;
-                  else if (binding->z > 0)
-                    button = 7;
-               }
-             if (button != 0)
-               {
-#ifndef HAVE_WAYLAND_ONLY
-                  ecore_x_window_button_ungrab(win, button,
-                                               e_bindings_modifiers_to_ecore_convert(binding->mod), binding->any_mod);
-#endif
-               }
-          }
-     }
-#ifdef HAVE_WAYLAND_ONLY
-   (void)win;
-#endif
 }
 
 E_API E_Action *

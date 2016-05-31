@@ -1,7 +1,4 @@
 #ifdef E_TYPEDEFS
-#  ifndef HAVE_WAYLAND_ONLY
-#   include "e_comp_x.h"
-#  endif
 #else
 # ifndef E_COMP_WL_H
 #  define E_COMP_WL_H
@@ -15,10 +12,6 @@
 #  pragma GCC diagnostic pop
 
 #  include <xkbcommon/xkbcommon.h>
-
-#  ifndef HAVE_WAYLAND_ONLY
-#   include "e_comp_x.h"
-#  endif
 
 #  ifdef __linux__
 #   include <linux/input.h>
@@ -396,10 +389,6 @@ struct _E_Comp_Wl_Client_Data
      {
         int32_t x, y;
      } popup;
-#ifndef HAVE_WAYLAND_ONLY
-   E_Pixmap *xwayland_pixmap;
-   E_Comp_X_Client_Data *xwayland_data;
-#endif
 
    struct
      {

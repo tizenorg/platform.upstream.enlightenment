@@ -5,7 +5,6 @@
 #include <tbm_surface.h>
 #include <tbm_surface_internal.h>
 #include <tdm_helper.h>
-#ifdef HAVE_WAYLAND_ONLY
 #include <wayland-tbm-server.h>
 #include "e_comp_wl.h"
 #include "e_info_protocol.h"
@@ -28,7 +27,7 @@ struct wl_resource
 };
 
 void wl_map_for_each(struct wl_map *map, void *func, void *data);
-#endif
+
 #ifdef HAVE_HWC
 #include "e_comp_hwc.h"
 #endif
@@ -105,7 +104,6 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
           res_id = e_pixmap_res_id_get(ec->pixmap);
 
         pid = ec->netwm.pid;
-#ifdef HAVE_WAYLAND_ONLY
         if (pid <= 0)
           {
              if (ec->comp_data)
@@ -115,7 +113,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
                     wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
                }
           }
-#endif
+
         if (e_comp->hwc)
           {
              // TODO: print plane number
@@ -231,14 +229,12 @@ _msg_connected_clients_append(Eldbus_Message_Iter *iter)
 
              if (ec->pixmap)
                res_id = e_pixmap_res_id_get(ec->pixmap);
-#ifdef HAVE_WAYLAND_ONLY
              if (ec->comp_data)
                {
                   E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
                   if (cdata->surface)
                     wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
                }
-#endif
              if (cinfo->pid == pid)
                {
                   __CONNECTED_CLIENTS_ARG_APPEND_TYPE("[E_Client Info]", "win:0x%08x res_id:%5d, name:%20s, geo:(%4d, %4d, %4dx%4d), layer:%5d, visible:%d, argb:%d",
@@ -406,7 +402,6 @@ _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
           }
      }
 
-#ifdef HAVE_WAYLAND_ONLY
    if (target_ec->comp_data)
      {
 
@@ -416,7 +411,6 @@ _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
              wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
           }
      }
-#endif
 
 #define __WINDOW_PROP_ARG_APPEND(title, value) ({                                    \
                                                 eldbus_message_iter_arguments_append(iter, "(ss)", &struct_of_ec);    \
@@ -546,7 +540,6 @@ _msg_window_prop_append(Eldbus_Message_Iter *iter, uint32_t mode, const char *va
         else if (mode == WINDOW_PID_MODE)
           {
              pid_t pid = -1;
-#ifdef HAVE_WAYLAND_ONLY
              if (ec->comp_data)
                {
                   E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
@@ -555,7 +548,6 @@ _msg_window_prop_append(Eldbus_Message_Iter *iter, uint32_t mode, const char *va
                        wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
                     }
                }
-#endif
              if (pid == value_number)
                {
                   _msg_window_prop_client_append(array_of_ec, ec);
@@ -1444,7 +1436,6 @@ e_info_server_dump_client(E_Client *ec, char *fname)
    if (!ec) return;
    if (e_client_util_ignored_get(ec)) return;
 
- #ifdef HAVE_WAYLAND_ONLY
    struct wl_shm_buffer *shmbuffer = NULL;
    E_Comp_Wl_Buffer *buffer = e_pixmap_resource_get(ec->pixmap);
    if (!buffer) return;
@@ -1487,7 +1478,6 @@ e_info_server_dump_client(E_Client *ec, char *fname)
      {
         ERR("Invalid resource:%u", wl_resource_get_id(buffer->resource));
      }
- #endif
 
    EINA_SAFETY_ON_NULL_GOTO(data, err);
 
@@ -1504,8 +1494,7 @@ e_info_server_dump_client(E_Client *ec, char *fname)
    if (!evas_object_image_save(img, fname, NULL, "compress=1 quality=100"))
      ERR("Cannot save window to '%s'", fname);
 
- err:
- #ifdef HAVE_WAYLAND_ONLY
+err:
    if (data)
      {
         if (buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
@@ -1519,7 +1508,6 @@ e_info_server_dump_client(E_Client *ec, char *fname)
              tbm_surface_unmap(tbm_surface);
           }
      }
- #endif
 
    if (img) evas_object_del(img);
    if (ee) ecore_evas_free(ee);
