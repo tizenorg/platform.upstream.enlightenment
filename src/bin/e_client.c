@@ -6051,3 +6051,33 @@ e_client_transform_core_transform_get(E_Client *ec, int index)
 
    return (E_Util_Transform*)eina_list_nth(ec->transform_core.transform_list, index);
 }
+
+E_API E_Pixmap *
+e_client_pixmap_change(E_Client *ec, E_Pixmap *newcp)
+{
+   E_Pixmap_Type oldtype, newtype;
+   E_Pixmap *oldcp;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ec, NULL);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ec->pixmap, NULL);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(newcp, NULL);
+
+   oldcp = ec->pixmap;
+
+   oldtype = e_pixmap_type_get(oldcp);
+   if (oldtype >= E_PIXMAP_TYPE_MAX) return NULL;
+
+   newtype = e_pixmap_type_get(newcp);
+   if (newtype >= E_PIXMAP_TYPE_MAX) return NULL;
+
+   if (eina_hash_find(clients_hash[oldtype], &oldcp))
+     eina_hash_del_by_key(clients_hash[oldtype], &oldcp);
+   e_pixmap_client_set(oldcp, NULL);
+
+   ec->pixmap = newcp;
+   e_pixmap_client_set(newcp, ec);
+
+   eina_hash_add(clients_hash[newtype], &newcp, ec);
+
+   return oldcp;
+}
