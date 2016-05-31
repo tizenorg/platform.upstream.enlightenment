@@ -40,6 +40,8 @@ static void _e_comp_wl_subsurface_check_below_bg_rectangle(E_Client *ec);
 static void _e_comp_wl_subsurface_show(E_Client *ec);
 static void _e_comp_wl_subsurface_hide(E_Client *ec);
 
+static E_Client * _e_comp_wl_client_usable_get(pid_t pid, struct wl_resource *surface_resource);
+
 /* local variables */
 typedef struct _E_Comp_Wl_Transform_Context
 {
@@ -2769,11 +2771,15 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
      }
    else
      {
-        if ((ep = e_pixmap_find(E_PIXMAP_TYPE_WL, (uintptr_t)res)))
+        ec = _e_comp_wl_client_usable_get(pid, res);
+        if (!ec)
           {
-             ERR("There is e_pixmap already, Delete old e_pixmap %p", ep);
-             e_pixmap_del(ep);
-             ep = NULL;
+             if ((ep = e_pixmap_find(E_PIXMAP_TYPE_WL, (uintptr_t)res)))
+               {
+                  ERR("There is e_pixmap already, Delete old e_pixmap %p", ep);
+                  e_pixmap_del(ep);
+                  ep = NULL;
+               }
           }
      }
 
@@ -4003,6 +4009,58 @@ _e_comp_wl_client_cb_uniconify(void *data EINA_UNUSED, E_Client *ec)
      e_client_uniconify(subc);
    EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
      e_client_uniconify(subc);
+}
+
+static E_Client *
+_e_comp_wl_client_usable_get(pid_t pid, struct wl_resource *surface_resource)
+{
+   E_Client *ec = NULL, *_ec = NULL;
+   Eina_List *l;
+
+   /* find launchscreen client list */
+   if (e_comp->launchscrns)
+     {
+        EINA_LIST_FOREACH(e_comp->launchscrns, l, _ec)
+          {
+             if (_ec->netwm.pid == pid)
+               {
+                  ec = _ec;
+                  break;
+               }
+          }
+        if (ec)
+          {
+             E_Pixmap *oldep = NULL, *newep = NULL;
+
+             if (!(newep = e_pixmap_new(E_PIXMAP_TYPE_WL, surface_resource)))
+               {
+                  ERR("Could not create new pixmap");
+                  return NULL;
+               }
+
+             e_comp->launchscrns = eina_list_remove(e_comp->launchscrns, ec);
+
+             oldep = e_client_pixmap_change(ec, newep);
+             if (oldep)
+               {
+                  e_pixmap_del(oldep);
+                  e_pixmap_free(oldep);
+               }
+
+             E_Comp_Wl_Client_Data *cdata = e_pixmap_cdata_get(newep);
+             if (cdata)
+               cdata->wl_surface = surface_resource;
+
+             if (ec->internal)
+               ec->internal = 0;
+
+             /* to set-up comp data */
+             _e_comp_wl_client_cb_new(NULL, ec);
+             _e_comp_wl_client_evas_init(ec);
+          }
+     }
+
+   return ec;
 }
 
 static void
