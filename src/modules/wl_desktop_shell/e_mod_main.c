@@ -497,6 +497,9 @@ _e_shell_surface_map(struct wl_resource *resource)
    /* map this surface if needed */
    if ((!ec->comp_data->mapped) && (e_pixmap_usable_get(ec->pixmap)))
      {
+        /* unset previous content */
+        e_comp_object_content_unset(ec->frame);
+
         ec->visible = EINA_TRUE;
         evas_object_geometry_set(ec->frame, ec->x, ec->y, ec->w, ec->h);
         evas_object_show(ec->frame);
@@ -1071,6 +1074,9 @@ _e_xdg_shell_surface_map_cb_timer(void *data)
               (unsigned int)e_client_util_win_get(ec),
               ec->w, ec->h);
 
+        /* unset previous content */
+        e_comp_object_content_unset(ec->frame);
+
         /* map this surface if needed */
         ec->visible = EINA_TRUE;
         evas_object_show(ec->frame);
@@ -1155,6 +1161,9 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
               ec->pixmap, ec,
               (unsigned int)e_client_util_win_get(ec),
               ec->w, ec->h);
+
+        /* unset previous content */
+        e_comp_object_content_unset(ec->frame);
 
         /* map this surface if needed */
         ec->visible = EINA_TRUE;
