@@ -40,6 +40,8 @@ static void _e_comp_wl_subsurface_check_below_bg_rectangle(E_Client *ec);
 static void _e_comp_wl_subsurface_show(E_Client *ec);
 static void _e_comp_wl_subsurface_hide(E_Client *ec);
 
+static E_Client * _e_comp_wl_client_usable_get(pid_t pid, E_Pixmap *ep);
+
 /* local variables */
 typedef struct _E_Comp_Wl_Transform_Context
 {
@@ -2795,7 +2797,10 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
 
         DBG("\tUsing Pixmap: %p", ep);
 
-        ec = e_client_new(ep, 0, internal);
+        if (!(ec = _e_comp_wl_client_usable_get(pid, ep)))
+          {
+             ec = e_client_new(ep, 0, internal);
+          }
      }
    if (ec)
      {
@@ -4003,6 +4008,48 @@ _e_comp_wl_client_cb_uniconify(void *data EINA_UNUSED, E_Client *ec)
      e_client_uniconify(subc);
    EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
      e_client_uniconify(subc);
+}
+
+static E_Client *
+_e_comp_wl_client_usable_get(pid_t pid, E_Pixmap *ep)
+{
+   E_Client *ec = NULL, *_ec = NULL;
+   Eina_List *l;
+
+   /* find launchscreen client list */
+   if (e_comp->launchscrns)
+     {
+        EINA_LIST_FOREACH(e_comp->launchscrns, l, _ec)
+          {
+             if (_ec->netwm.pid == pid)
+               {
+                  ec = _ec;
+                  break;
+               }
+          }
+        if (ec)
+          {
+             E_Pixmap *oldep = NULL;
+
+             e_comp->launchscrns = eina_list_remove(e_comp->launchscrns, ec);
+
+             oldep = e_client_pixmap_change(ec, ep);
+             if (oldep)
+               {
+                  e_pixmap_del(oldep);
+                  e_pixmap_free(oldep);
+               }
+
+             if (ec->internal)
+               ec->internal = 0;
+
+             /* to set-up comp data */
+             _e_comp_wl_client_cb_new(NULL, ec);
+             _e_comp_wl_client_evas_init(ec);
+          }
+     }
+
+   return ec;
 }
 
 static void
