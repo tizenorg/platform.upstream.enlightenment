@@ -1021,6 +1021,8 @@ E_API void              e_client_transform_core_update(E_Client *ec);
 E_API int               e_client_transform_core_transform_count_get(E_Client *ec);
 E_API E_Util_Transform *e_client_transform_core_transform_get(E_Client *ec, int index);
 
+E_API E_Pixmap *e_client_pixmap_change(E_Client *ec, E_Pixmap *newcp);
+
 /**
  * Move window to coordinates that do not account client decorations yet.
  *
