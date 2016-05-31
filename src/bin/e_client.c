@@ -377,8 +377,8 @@ _e_client_action_finish(void)
    action_client = NULL;
 }
 
-static void _e_client_transform_point_transform(int cx, int cy, double angle,
-                                                int x, int y, int *tx, int *ty)
+static void
+_e_client_transform_point_transform(int cx, int cy, double angle, int x, int y, int *tx, int *ty)
 {
    double s = sin(angle * M_PI / 180);
    double c = cos(angle * M_PI / 180);
@@ -397,7 +397,8 @@ static void _e_client_transform_point_transform(int cx, int cy, double angle,
    *ty = ry;
 }
 
-static void _e_client_transform_geometry_save(E_Client *ec, Evas_Map *map)
+static void
+_e_client_transform_geometry_save(E_Client *ec, Evas_Map *map)
 {
    int i;
 
@@ -412,7 +413,8 @@ static void _e_client_transform_geometry_save(E_Client *ec, Evas_Map *map)
      }
 }
 
-static void _e_client_transform_resize(E_Client *ec)
+static void
+_e_client_transform_resize(E_Client *ec)
 {
    Evas_Map *map;
    int cx, cy;
@@ -1317,7 +1319,6 @@ _e_client_resize_end(E_Client *ec)
 
    return 1;
 }
-
 
 static Eina_Bool
 _e_client_action_resize_timeout(void *data EINA_UNUSED)
@@ -2847,7 +2848,6 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
    TRACE_DS_END();
 }
 
-
 static Eina_Bool
 _e_client_transform_core_check_change(E_Client *ec)
 {
@@ -2937,11 +2937,11 @@ _e_client_transform_core_check_change(E_Client *ec)
 }
 
 static void
-_e_client_transform_core_boundary_update(E_Client *ec,  E_Util_Transform_Rect_Vertex *vertices)
+_e_client_transform_core_boundary_update(E_Client *ec, E_Util_Transform_Rect_Vertex *vertices)
 {
-   double minx, miny;
-   double maxx, maxy;
-   double initValue = 99999;
+   double minx = 99999, miny = 99999;
+   double maxx = -99999, maxy = -99999;
+   double x, y;
    int i;
 
    if (!ec) return;
@@ -2949,15 +2949,10 @@ _e_client_transform_core_boundary_update(E_Client *ec,  E_Util_Transform_Rect_Ve
    if (!ec->transform_core.result.enable) return;
    if (!vertices) return;
 
-   minx = initValue;
-   miny = initValue;
-   maxx = -initValue;
-   maxy = -initValue;
-
-   for (i = 0 ; i < 4 ; ++i)
+   for (i = 0; i < 4; ++i)
      {
-        double x = 0.0;
-        double y = 0.0;
+        x = 0.0;
+        y = 0.0;
         e_util_transform_vertices_pos_get(vertices, i, &x, &y, 0, 0);
 
         if (x < minx) minx = x;
@@ -2971,49 +2966,50 @@ _e_client_transform_core_boundary_update(E_Client *ec,  E_Util_Transform_Rect_Ve
    ec->transform_core.result.boundary.w = (int)(maxx - minx + 0.5);
    ec->transform_core.result.boundary.h = (int)(maxy - miny + 0.5);
 
-   ELOGF("COMP", "[Transform][boundary][%d %d %d %d]", ec->pixmap, ec,
-         ec->transform_core.result.boundary.x, ec->transform_core.result.boundary.y,
-         ec->transform_core.result.boundary.w, ec->transform_core.result.boundary.h);
+   ELOGF("COMP", "[Transform][boundary][%d %d %d %d]",
+         ec->pixmap, ec,
+         ec->transform_core.result.boundary.x,
+         ec->transform_core.result.boundary.y,
+         ec->transform_core.result.boundary.w,
+         ec->transform_core.result.boundary.h);
 }
 
 static void
 _e_client_transform_core_vertices_apply(E_Client *ec EINA_UNUSED, Evas_Object *obj, E_Util_Transform_Rect_Vertex *vertices)
 {
+   Evas_Map *map = NULL;
+   int i, x, y;
+   double dx, dy;
+
    if (!obj) return;
 
    if (vertices)
      {
-        Evas_Map *map = evas_map_new(4);
+        map = evas_map_new(4);
+        EINA_SAFETY_ON_NULL_RETURN(map);
 
-        if (map)
+        evas_map_util_points_populate_from_object_full(map, obj, 0);
+        evas_map_util_points_color_set(map, 255, 255, 255, 255);
+
+        for (i = 0 ; i < 4 ; ++i)
           {
-             int i;
-             evas_map_util_points_populate_from_object_full(map, obj, 0);
-             evas_map_util_points_color_set(map, 255, 255, 255, 255);
+             dx = 0.0; dy = 0.0;
 
-             for (i = 0 ; i < 4 ; ++i)
-               {
-                  double dx = 0.0;
-                  double dy = 0.0;
-                  int x = 0;
-                  int y = 0;
+             e_util_transform_vertices_pos_get(vertices, i, &dx, &dy, 0, 0);
 
-                  e_util_transform_vertices_pos_get(vertices, i, &dx, &dy, 0, 0);
+             x = (int)(dx + 0.5);
+             y = (int)(dy + 0.5);
 
-                  x = (int)(dx + 0.5);
-                  y = (int)(dy + 0.5);
-
-                  evas_map_point_coord_set(map, i, x, y, 1.0);
-               }
-
-             evas_object_map_set(obj, map);
-             evas_object_map_enable_set(obj, EINA_TRUE);
-
-             evas_map_free(map);
+             evas_map_point_coord_set(map, i, x, y, 1.0);
           }
+
+        evas_object_map_set(obj, map);
+        evas_object_map_enable_set(obj, EINA_TRUE);
+
+        evas_map_free(map);
      }
    else
-      evas_object_map_enable_set(obj, EINA_FALSE);
+     evas_object_map_enable_set(obj, EINA_FALSE);
 }
 
 static void
@@ -5798,7 +5794,8 @@ e_client_layout_cb_set(E_Client_Layout_Cb cb)
 
 ////////////////////////////////////////////
 
-E_API void e_client_transform_update(E_Client *ec)
+E_API void
+e_client_transform_update(E_Client *ec)
 {
    if (e_client_util_resizing_get(ec))
      _e_client_transform_resize(ec);
@@ -5806,7 +5803,8 @@ E_API void e_client_transform_update(E_Client *ec)
 
 ////////////////////////////////////////////
 
-E_API void e_client_transform_apply(E_Client *ec, double angle, double zoom, int cx, int cy)
+E_API void
+e_client_transform_apply(E_Client *ec, double angle, double zoom, int cx, int cy)
 {
    Evas_Map *map;
    E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
@@ -5902,13 +5900,15 @@ e_client_transform_clear(E_Client *ec)
    ec->transformed = EINA_FALSE;
 }
 
-E_API Eina_Bool e_client_transform_core_enable_get(E_Client *ec)
+E_API Eina_Bool
+e_client_transform_core_enable_get(E_Client *ec)
 {
    if (!ec) return EINA_FALSE;
    return ec->transform_core.result.enable;
 }
 
-E_API void e_client_transform_core_add(E_Client *ec, E_Util_Transform *transform)
+E_API void
+e_client_transform_core_add(E_Client *ec, E_Util_Transform *transform)
 {
    if (!ec) return;
    if (!transform) return;
@@ -5926,7 +5926,8 @@ E_API void e_client_transform_core_add(E_Client *ec, E_Util_Transform *transform
    e_client_transform_core_update(ec);
 }
 
-E_API void e_client_transform_core_remove(E_Client *ec, E_Util_Transform *transform)
+E_API void
+e_client_transform_core_remove(E_Client *ec, E_Util_Transform *transform)
 {
    if (!ec) return;
    if (!transform) return;
@@ -5942,7 +5943,8 @@ E_API void e_client_transform_core_remove(E_Client *ec, E_Util_Transform *transf
    e_client_transform_core_update(ec);
 }
 
-E_API void e_client_transform_core_update(E_Client *ec)
+E_API void
+e_client_transform_core_update(E_Client *ec)
 {
    if (!ec) return;
    if (ec->new_client) return;
