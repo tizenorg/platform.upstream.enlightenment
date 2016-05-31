@@ -21,7 +21,6 @@ EINTERN int e_info_server_shutdown(void);
 
 EINTERN void e_info_server_dump_client(E_Client *ec, char *fname);
 
-#ifdef HAVE_WAYLAND_ONLY
 #define WL_HIDE_DEPRECATED
 #include <wayland-server.h>
 
@@ -46,7 +45,6 @@ struct argument_details {
    char type;
    int nullable;
 };
-#endif
 
 #endif
 #endif

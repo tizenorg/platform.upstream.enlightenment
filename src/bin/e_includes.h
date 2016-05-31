@@ -52,13 +52,10 @@
 #include "e_comp_hwc.h"
 #include "e_comp_screen.h"
 #include "e_output.h"
-
-#ifdef HAVE_WAYLAND
-# include "e_comp_wl.h"
-# include "e_comp_wl_data.h"
-# include "e_comp_wl_input.h"
-# include "e_uuid_store.h"
+#include "e_comp_wl.h"
+#include "e_comp_wl_data.h"
+#include "e_comp_wl_input.h"
+#include "e_uuid_store.h"
 #ifdef HAVE_WAYLAND_TBM
 # include "e_comp_wl_tbm.h"
-#endif
 #endif

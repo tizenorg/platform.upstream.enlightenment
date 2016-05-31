@@ -1,5 +1,4 @@
 #define EXECUTIVE_MODE_ENABLED
-#define E_COMP_WL
 #include "e.h"
 #include <sys/mman.h>
 #ifdef HAVE_WL_DRM
