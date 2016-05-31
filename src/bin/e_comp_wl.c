@@ -342,21 +342,24 @@ _e_comp_wl_topmost_parent_get(E_Client *ec)
    return ec;
 }
 
-static Eina_Bool
-_e_comp_wl_video_client_has(E_Client *ec)
+E_API Eina_Bool
+e_comp_wl_video_client_has(E_Client *ec)
 {
    E_Client *subc;
    Eina_List *l;
+
+   if (!ec) return EINA_FALSE;
+   if (!ec->comp_data) return EINA_FALSE;
 
    if (ec->comp_data->video_client)
      return EINA_TRUE;
 
    EINA_LIST_FOREACH(ec->comp_data->sub.below_list_pending, l, subc)
-     if (_e_comp_wl_video_client_has(subc))
+     if (e_comp_wl_video_client_has(subc))
         return EINA_TRUE;
 
    EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
-     if (_e_comp_wl_video_client_has(subc))
+     if (e_comp_wl_video_client_has(subc))
         return EINA_TRUE;
 
    return EINA_FALSE;
@@ -3140,7 +3143,7 @@ _e_comp_wl_subsurface_check_below_bg_rectangle(E_Client *ec)
    evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_RESIZE,
                                   _e_comp_wl_subsurface_bg_evas_cb_resize, ec);
 
-   has_video_client = _e_comp_wl_video_client_has(ec);
+   has_video_client = e_comp_wl_video_client_has(ec);
    ELOGF("COMP", "         |bg_rectangle|video_client:%d", NULL, ec, has_video_client);
 
    /* set alpha only if SW path */
