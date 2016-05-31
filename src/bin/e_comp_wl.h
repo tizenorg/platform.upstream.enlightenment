@@ -117,7 +117,7 @@ struct _E_Comp_Wl_Surface_State
    int bw, bh;
    E_Comp_Wl_Buffer *buffer;
    struct wl_listener buffer_destroy_listener;
-   Eina_List *damages, *frames;
+   Eina_List *damages, *buffer_damages, *frames;
    Eina_Tiler *input, *opaque;
    E_Comp_Wl_Buffer_Viewport buffer_viewport;
    Eina_Bool new_attach : 1;
