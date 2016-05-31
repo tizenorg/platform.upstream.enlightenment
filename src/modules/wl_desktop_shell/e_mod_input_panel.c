@@ -1,4 +1,3 @@
-#define E_COMP_WL
 #include "e.h"
 #include "e_mod_main.h"
 #include "e_input_method_protocol.h"

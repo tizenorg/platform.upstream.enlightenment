@@ -229,10 +229,6 @@ typedef void (*E_Client_Hook_Cb)(void *data, E_Client *ec);
 typedef void (*E_Client_Layout_Cb)(void);
 #else
 
-#ifndef HAVE_WAYLAND_ONLY
-# include <Ecore_X.h>
-#endif
-
 #define E_CLIENT_TYPE (int)0xE0b01002
 
 struct E_Event_Client
@@ -394,13 +390,6 @@ struct E_Client
       Ecore_Window            window_group;
       Ecore_Window            transient_for;
       Ecore_Window            client_leader;
-#ifndef HAVE_WAYLAND_ONLY
-      Ecore_X_Window_State_Hint initial_state;
-      Ecore_X_Window_State_Hint state;
-      Ecore_X_Pixmap            icon_pixmap;
-      Ecore_X_Pixmap            icon_mask;
-      Ecore_X_Gravity           gravity;
-#endif
       Eina_Stringshare         *window_role;
       unsigned char             take_focus : 1;
       unsigned char             accepts_focus : 1;
@@ -432,11 +421,6 @@ struct E_Client
    /* MWM */
    struct
    {
-#ifndef HAVE_WAYLAND_ONLY
-      Ecore_X_MWM_Hint_Func  func;
-      Ecore_X_MWM_Hint_Decor decor;
-      Ecore_X_MWM_Hint_Input input;
-#endif
       unsigned char          exists : 1;
       unsigned char          borderless : 1;
       struct
@@ -637,9 +621,6 @@ struct E_Client
          unsigned char state : 1;
          unsigned char vkbd : 1;
       } fetch;
-#ifndef HAVE_WAYLAND_ONLY
-      Ecore_X_Virtual_Keyboard_State state;
-#endif
       unsigned char                  have_property : 1;
       unsigned char                  vkbd : 1;
 #ifdef _F_E_VIRTUAL_KEYBOARD_TYPE_
@@ -815,9 +796,7 @@ struct E_Client
    Eina_Bool post_lower : 1;
 
    Eina_Bool on_post_updates : 1; // client is on the post update list
-#ifdef HAVE_WAYLAND
    uuid_t uuid;
-#endif
 
    int client_type; //e_client_type
 
@@ -916,9 +895,7 @@ E_API extern int E_EVENT_CLIENT_ROTATION_CHANGE_CANCEL;
 E_API extern int E_EVENT_CLIENT_ROTATION_CHANGE_END;
 #endif
 E_API extern int E_EVENT_CLIENT_VISIBILITY_CHANGE;
-#ifdef HAVE_WAYLAND_ONLY
 E_API extern int E_EVENT_CLIENT_BUFFER_CHANGE;
-#endif
 
 EINTERN void e_client_idler_before(void);
 EINTERN Eina_Bool e_client_init(void);
@@ -1109,22 +1086,14 @@ static inline Ecore_Window
 e_client_util_pwin_get(const E_Client *ec)
 {
    if (!ec->pixmap) return 0;
-#if defined(HAVE_WAYLAND) && !defined(HAVE_WAYLAND_ONLY)
-   return e_pixmap_parent_window_get(e_comp_x_client_pixmap_get(ec));
-#else
    return e_pixmap_parent_window_get(ec->pixmap);
-#endif
 }
 
 static inline Ecore_Window
 e_client_util_win_get(const E_Client *ec)
 {
    if (!ec->pixmap) return 0;
-#if defined(HAVE_WAYLAND) && !defined(HAVE_WAYLAND_ONLY)
-   return e_pixmap_window_get(e_comp_x_client_pixmap_get(ec));
-#else
    return e_pixmap_window_get(ec->pixmap);
-#endif
 }
 
 static inline Eina_Bool

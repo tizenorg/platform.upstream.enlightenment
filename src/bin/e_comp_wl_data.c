@@ -1,5 +1,4 @@
 #define EXECUTIVE_MODE_ENABLED
-#define E_COMP_WL
 #include "e.h"
 
 static void

@@ -1,4 +1,3 @@
-#define E_COMP_WL
 #include "e.h"
 #include "e_comp_wl_screenshooter_server.h"
 
@@ -2184,10 +2183,6 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    E_Comp_Wl_Buffer *buffer;
 
    first = !e_pixmap_usable_get(ec->pixmap);
-#ifndef HAVE_WAYLAND_ONLY
-   if (first && e_client_has_xwindow(ec))
-     first = !e_pixmap_usable_get(e_comp_x_client_pixmap_get(ec));
-#endif
 
    if (ec->ignored && (ec->comp_data->shell.surface || ec->internal))
      {
@@ -2809,16 +2804,7 @@ _e_comp_wl_compositor_cb_surface_create(struct wl_client *client, struct wl_reso
    /* set reference to pixmap so we can fetch it later */
    DBG("\tUsing Client: %p", ec);
    wl_resource_set_user_data(res, ec);
-#ifndef HAVE_WAYLAND_ONLY
-   EINA_LIST_FOREACH(e_comp_wl->xwl_pending, l, wc)
-     {
-        if (!e_pixmap_is_x(wc->pixmap)) continue;
-        if (wl_resource_get_id(res) !=
-            ((E_Comp_X_Client_Data*)wc->comp_data)->surface_id) continue;
-        e_comp_x_xwayland_client_setup(wc, ec);
-        break;
-     }
-#endif
+
    /* emit surface create signal */
    wl_signal_emit(&e_comp_wl->signals.surface.create, res);
 

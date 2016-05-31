@@ -124,11 +124,7 @@ _e_test_helper_message_append_clients(Eldbus_Message_Iter *iter)
         if (!ec) continue;
         if (e_client_util_ignored_get(ec)) continue;
 
-#ifdef HAVE_WAYLAND_ONLY
         win = e_pixmap_res_id_get(ec->pixmap);
-#else
-        win = e_client_util_win_get(ec);
-#endif
 
         eldbus_message_iter_arguments_append(array_of_ec, "(usiiiiibb)", &struct_of_ec);
         eldbus_message_iter_arguments_append
@@ -148,16 +144,8 @@ _e_test_helper_restack(Ecore_Window win, Ecore_Window target, int above)
 {
    E_Client *ec = NULL, *tec = NULL;
 
-#ifdef HAVE_WAYLAND_ONLY
    ec = e_pixmap_find_client_by_res_id(win);
    tec = e_pixmap_find_client_by_res_id(target);
-#else
-   if ((!ec) || ((e_pixmap_type_get(ec->pixmap) == E_PIXMAP_TYPE_X)))
-     {
-        ec = e_pixmap_find_client(E_PIXMAP_TYPE_X, win);
-        tec = e_pixmap_find_client(E_PIXMAP_TYPE_X, target);
-     }
-#endif
 
    if (!ec) return;
 
@@ -288,11 +276,7 @@ _e_test_helper_cb_visibility_change(void *data EINA_UNUSED,
    if (!th_data->registrant.win) return ECORE_CALLBACK_PASS_ON;
 
    ec = ev->ec;
-#ifdef HAVE_WAYLAND_ONLY
    win = e_pixmap_res_id_get(ec->pixmap);
-#else
-   win = e_client_util_win_get(ec);
-#endif
 
    if (win != th_data->registrant.win) return ECORE_CALLBACK_PASS_ON;
 
@@ -342,11 +326,7 @@ _e_test_helper_cb_client_restack(void *data EINA_UNUSED, int type EINA_UNUSED, v
 
    ec = ev->ec;
 
-#ifdef HAVE_WAYLAND_ONLY
    win = e_pixmap_res_id_get(ec->pixmap);
-#else
-   win = e_client_util_win_get(ec);
-#endif
 
    if (win)
      {

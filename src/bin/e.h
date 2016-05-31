@@ -113,11 +113,6 @@ void *alloca (size_t);
 #  define TRACE_INPUT_END()
 # endif
 
-/* egl.h must come before Evas_GL.h otherwise they will conflict */
-//# ifdef HAVE_WAYLAND_EGL
-//#  include <EGL/egl.h>
-//# endif
-
 # include <setjmp.h>
 # include <Eo.h>
 # include <Eina.h>
@@ -131,11 +126,7 @@ void *alloca (size_t);
 # include <Edje.h>
 # include <Eldbus.h>
 # include <Eio.h>
-
-# ifdef HAVE_WAYLAND
-#  include <Ecore_Wayland.h>
-#  include <uuid.h>
-# endif
+# include <uuid.h>
 
 # ifdef E_API
 #  undef E_API
