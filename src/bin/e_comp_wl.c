@@ -8,7 +8,7 @@
 #include <inttypes.h>
 #include <sys/xattr.h>
 
-#define COMPOSITOR_VERSION 3
+#define COMPOSITOR_VERSION 4
 
 E_API int E_EVENT_WAYLAND_GLOBAL_ADD = -1;
 #include "session-recovery-server-protocol.h"
@@ -2157,6 +2157,9 @@ _e_comp_wl_surface_state_finish(E_Comp_Wl_Surface_State *state)
    EINA_LIST_FREE(state->damages, dmg)
      eina_rectangle_free(dmg);
 
+   EINA_LIST_FREE(state->buffer_damages, dmg)
+     eina_rectangle_free(dmg);
+
    if (state->opaque) eina_tiler_free(state->opaque);
    state->opaque = NULL;
 
@@ -2346,7 +2349,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    if ((!e_comp->nocomp) && (ec->frame))
      {
         /* FIXME: workaround for bad wayland egl driver which doesn't send damage request */
-        if (!eina_list_count(state->damages))
+        if (!eina_list_count(state->damages) && !eina_list_count(state->buffer_damages))
           {
              if ((ec->comp_data->buffer_ref.buffer) &&
                  (ec->comp_data->buffer_ref.buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE))
@@ -2359,27 +2362,35 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
           }
         else
           {
+             Eina_List *damages;
+
+             damages = eina_list_clone(state->buffer_damages);
+             state->buffer_damages = eina_list_free(state->buffer_damages);
+
              EINA_LIST_FREE(state->damages, dmg)
                {
-                  Eina_Rectangle temp = {0,};
                   if (ec->comp_data->sub.data &&
                       (ec->comp_data->scaler.buffer_viewport.surface.width != -1 ||
                        ec->comp_data->scaler.buffer_viewport.buffer.src_width != wl_fixed_from_int(-1)))
                     {
+                       Eina_Rectangle temp = {0,};
                        /* change to the buffer cordinate if subsurface */
                        _e_comp_wl_surface_to_buffer_rect(ec, dmg, &temp);
-                       dmg = &temp;
+                       *dmg = temp;
                     }
 
+                  damages = eina_list_append(damages, dmg);
+               }
 
+             EINA_LIST_FREE(damages, dmg)
+               {
                   /* not creating damage for ec that shows a underlay video */
                   if (state->buffer_viewport.changed ||
                       !e_comp->wl_comp_data->available_hw_accel.underlay ||
                       !buffer || buffer->type != E_COMP_WL_BUFFER_TYPE_VIDEO)
                     e_comp_object_damage(ec->frame, dmg->x, dmg->y, dmg->w, dmg->h);
 
-                  if (dmg != &temp)
-                    eina_rectangle_free(dmg);
+                  eina_rectangle_free(dmg);
                }
           }
      }
@@ -2694,6 +2705,21 @@ _e_comp_wl_surface_cb_buffer_scale_set(struct wl_client *client EINA_UNUSED, str
    ec->comp_data->pending.buffer_viewport.changed = 1;
 }
 
+static void
+_e_comp_wl_surface_cb_damage_buffer(struct wl_client *client EINA_UNUSED, struct wl_resource *resource, int32_t x, int32_t y, int32_t w, int32_t h)
+{
+   E_Client *ec;
+   Eina_Rectangle *dmg = NULL;
+
+   if (!(ec = wl_resource_get_user_data(resource))) return;
+   if (e_object_is_del(E_OBJECT(ec))) return;
+
+   if (!(dmg = eina_rectangle_new(x, y, w, h))) return;
+
+   ec->comp_data->pending.buffer_damages =
+     eina_list_append(ec->comp_data->pending.buffer_damages, dmg);
+}
+
 static const struct wl_surface_interface _e_surface_interface =
 {
    _e_comp_wl_surface_cb_destroy,
@@ -2704,7 +2730,8 @@ static const struct wl_surface_interface _e_surface_interface =
    _e_comp_wl_surface_cb_input_region_set,
    _e_comp_wl_surface_cb_commit,
    _e_comp_wl_surface_cb_buffer_transform_set,
-   _e_comp_wl_surface_cb_buffer_scale_set
+   _e_comp_wl_surface_cb_buffer_scale_set,
+   _e_comp_wl_surface_cb_damage_buffer,
 };
 
 static void
@@ -3152,7 +3179,7 @@ _e_comp_wl_subsurface_commit_to_cache(E_Client *ec)
    E_Comp_Client_Data *cdata;
    E_Comp_Wl_Subsurf_Data *sdata;
    struct wl_resource *cb;
-   Eina_List *l;
+   Eina_List *l, *ll;
    Eina_Iterator *itr;
    Eina_Rectangle *rect;
 
@@ -3164,6 +3191,9 @@ _e_comp_wl_subsurface_commit_to_cache(E_Client *ec)
    /* move pending damage to cached */
    EINA_LIST_FOREACH(cdata->pending.damages, l, rect)
      eina_list_move(&sdata->cached.damages, &cdata->pending.damages, rect);
+
+   EINA_LIST_FOREACH_SAFE(cdata->pending.buffer_damages, l, ll, rect)
+     eina_list_move(&sdata->cached.buffer_damages, &cdata->pending.buffer_damages, rect);
 
    if (cdata->pending.new_attach)
      {
