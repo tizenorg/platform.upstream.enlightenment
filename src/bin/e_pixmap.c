@@ -3,6 +3,7 @@
 #include "e_comp_wl.h"
 #include <wayland-tbm-server.h>
 #include <tizen-extension-server-protocol.h>
+#include "tizen-surface-server.h"
 #ifndef EGL_TEXTURE_RGBA
 # define EGL_TEXTURE_RGBA 0x305E
 #endif
@@ -37,6 +38,12 @@ struct _E_Pixmap
    struct wl_shm_pool *data_pool;
    Eina_Rectangle opaque;
    uuid_t uuid;
+
+   struct
+   {
+      struct wl_resource *flusher;
+      E_Comp_Wl_Buffer_Type buf_type;
+   } tzshm;
 
    E_Comp_Wl_Client_Data *cdata;
    Eina_Bool own_cdata : 1;
@@ -126,6 +133,10 @@ _e_pixmap_free(E_Pixmap *cp)
      }
    _e_pixmap_clear(cp, 1);
    ELOG("PIXMAP FREE", cp, cp->client);
+
+   if (cp->tzshm.flusher)
+     wl_resource_destroy(cp->tzshm.flusher);
+
    free(cp);
 }
 
@@ -168,6 +179,78 @@ _e_pixmap_find(E_Pixmap_Type type, va_list *l)
    cp = eina_hash_find(aliases[type], &id);
    if (!cp) cp = eina_hash_find(pixmaps[type], &id);
    return cp;
+}
+
+// --------------------------------------------------------
+// tizen_surface_shm
+// --------------------------------------------------------
+static void
+_e_pixmap_tzsurf_shm_flusher_cb_destroy(struct wl_client *client EINA_UNUSED, struct wl_resource *resource)
+{
+   wl_resource_destroy(resource);
+}
+
+static const struct tizen_surface_shm_flusher_interface _tzsurf_shm_flusher_iface =
+{
+   _e_pixmap_tzsurf_shm_flusher_cb_destroy,
+};
+
+static void
+_e_pixmap_tzsurf_shm_flusher_cb_res_destroy(struct wl_resource *resource)
+{
+   E_Pixmap *cp;
+
+   cp = wl_resource_get_user_data(resource);
+   cp->tzshm.flusher = NULL;
+}
+
+static void
+_e_pixmap_tzsurf_shm_cb_flusher_get(struct wl_client *client, struct wl_resource *tzshm, uint32_t id, struct wl_resource *surface)
+{
+   E_Client *ec;
+   struct wl_resource *res;
+
+   ec = wl_resource_get_user_data(surface);
+   if ((!ec) || (!ec->pixmap))
+     {
+        wl_resource_post_error(tzshm, WL_DISPLAY_ERROR_INVALID_OBJECT,
+                               "tizen_shm_flusher failed: wrong wl_surface@%d resource",
+                               wl_resource_get_id(surface));
+        return;
+     }
+
+   res = wl_resource_create(client, &tizen_surface_shm_flusher_interface,
+                            wl_resource_get_version(tzshm), id);
+   if (!res)
+     {
+        wl_resource_post_no_memory(tzshm);
+        return;
+     }
+
+   wl_resource_set_implementation(res, &_tzsurf_shm_flusher_iface, ec->pixmap,
+                                  _e_pixmap_tzsurf_shm_flusher_cb_res_destroy);
+
+   ec->pixmap->tzshm.flusher = res;
+}
+
+static const struct tizen_surface_shm_interface _tzsurf_shm_iface =
+{
+   _e_pixmap_tzsurf_shm_cb_flusher_get,
+};
+
+static void
+_e_pixmap_tzsurf_shm_cb_bind(struct wl_client *client, void *data EINA_UNUSED, uint32_t ver, uint32_t id)
+{
+   struct wl_resource *res;
+
+   res = wl_resource_create(client, &tizen_surface_shm_interface, ver, id);
+   if (!res)
+     {
+        wl_client_post_no_memory(client);
+        return;
+     }
+
+   wl_resource_set_implementation(res, &_tzsurf_shm_iface, NULL, NULL);
 }
 
 E_API int
@@ -512,6 +595,10 @@ e_pixmap_resource_set(E_Pixmap *cp, void *resource)
 {
    if ((!cp) || (cp->type != E_PIXMAP_TYPE_WL)) return;
    cp->buffer = resource;
+   /* in order to reference when clean buffer,
+    * store the type of latest set buffer. */
+   if (cp->buffer)
+     cp->tzshm.buf_type = cp->buffer->type;
 }
 
 E_API Ecore_Window
@@ -883,4 +970,73 @@ e_pixmap_hook_del(E_Pixmap_Hook *ph)
      }
    else
      _e_pixmap_hooks_delete++;
+}
+
+E_API Eina_Bool
+e_pixmap_init(void)
+{
+   struct wl_global *global;
+
+   if (!e_comp_wl)
+     return EINA_FALSE;
+
+   if (!e_comp_wl->wl.disp)
+     return EINA_FALSE;
+
+   global = wl_global_create(e_comp_wl->wl.disp, &tizen_surface_shm_interface,
+                             1, NULL, _e_pixmap_tzsurf_shm_cb_bind);
+   if (!global)
+     return EINA_FALSE;
+
+   return EINA_TRUE;
+}
+
+E_API void
+e_pixmap_shutdown(void)
+{
+}
+
+E_API void
+e_pixmap_buffer_clear(E_Pixmap *cp)
+{
+   EINA_SAFETY_ON_NULL_RETURN(cp);
+
+   switch (cp->tzshm.buf_type)
+     {
+      case E_COMP_WL_BUFFER_TYPE_SHM:
+           {
+              if (!cp->tzshm.flusher)
+                return;
+
+              /* release the helded buffer by e_client */
+              e_comp_wl_buffer_reference(&cp->client->comp_data->buffer_ref, NULL);
+
+              DBG("PIXMAP: Buffer Flush(SHM) '%s'(%p)", cp->client->icccm.name?:"", cp->client);
+              tizen_surface_shm_flusher_send_flush(cp->tzshm.flusher);
+              break;
+           }
+      case E_COMP_WL_BUFFER_TYPE_TBM:
+      case E_COMP_WL_BUFFER_TYPE_NATIVE:
+           {
+              struct wayland_tbm_client_queue *cqueue = NULL;
+
+              cqueue =
+                 wayland_tbm_server_client_queue_get(e_comp_wl->tbm.server,
+                                                     cp->client->comp_data->wl_surface);
+              if (!cqueue)
+                return;
+
+              /* release the helded buffer by e_client */
+              e_comp_wl_buffer_reference(&cp->client->comp_data->buffer_ref, NULL);
+
+              DBG("PIXMAP: Buffer Flush(NATIVE) '%s'(%p)", cp->client->icccm.name?:"", cp->client);
+              wayland_tbm_server_client_queue_flush(cqueue);
+           }
+         break;
+      default:
+         /* Do nothing */
+         return;
+     }
+
+   e_comp_object_clear(cp->client->frame);
 }
