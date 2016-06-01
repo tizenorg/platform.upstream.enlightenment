@@ -4823,6 +4823,9 @@ e_client_iconify(E_Client *ec)
 
    e_remember_update(ec);
 
+   if (e_config->use_buffer_flush)
+     e_pixmap_buffer_clear(ec->pixmap);
+
    TRACE_DS_END();
 }
 
