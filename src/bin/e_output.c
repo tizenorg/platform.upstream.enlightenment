@@ -35,7 +35,7 @@ e_output_shutdown(void)
      }
 }
 
-EINTERN E_Output *
+E_API E_Output *
 e_output_find(const char *id)
 {
    E_Output *eout;

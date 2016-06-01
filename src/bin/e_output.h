@@ -44,7 +44,7 @@ struct _E_Output
 
 EINTERN Eina_Bool         e_output_init(void);
 EINTERN void              e_output_shutdown(void);
-EINTERN E_Output        * e_output_find(const char *id);
+E_API E_Output          * e_output_find(const char *id);
 E_API const Eina_List   * e_output_planes_get(E_Output *eout);
 E_API void                e_output_util_planes_print(void);
 
