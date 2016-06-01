@@ -3510,6 +3510,8 @@ e_comp_object_native_surface_set(Evas_Object *obj, Eina_Bool set)
    if (cw->ec->input_only) return;
    set = !!set;
 
+   memset(&ns, 0, sizeof(Evas_Native_Surface));
+
    if (set)
      {
         /* native requires gl enabled, texture from pixmap enabled, and a non-shaped client */
@@ -3768,7 +3770,7 @@ e_comp_object_util_mirror_add(Evas_Object *obj)
              else
                {
                   Evas_Native_Surface ns;
-
+                  memset(&ns, 0, sizeof(Evas_Native_Surface));
                   if (e_pixmap_native_surface_init(cw->ec->pixmap, &ns))
                     evas_object_image_native_surface_set(o, &ns);
                }
