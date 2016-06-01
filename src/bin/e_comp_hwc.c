@@ -1539,6 +1539,7 @@ e_comp_hwc_display_client(E_Client *ec)
    E_Comp_Hwc *hwc = g_hwc;
    E_Comp_Hwc_Output *hwc_output;
    E_Comp_Hwc_Layer *hwc_layer;
+   E_Comp_Hwc_Renderer *hwc_renderer;
    Eina_List *l_o, *ll_o;
    Eina_List *l_l, *ll_l;
    tdm_output_conn_status conn_status;
@@ -1568,6 +1569,11 @@ e_comp_hwc_display_client(E_Client *ec)
              if (hwc_output->primary_layer)
                {
                   hwc_layer = hwc_output->primary_layer;
+                  hwc_renderer = hwc_layer->hwc_renderer;
+
+                  if (!hwc_renderer) continue;
+                  if (hwc_renderer->activated_ec != ec) continue;
+
                   if (hwc_layer->reserved_memory)
                     _e_comp_hwc_output_display_client_reserved_memory(hwc_output, hwc_layer, ec);
                   else
