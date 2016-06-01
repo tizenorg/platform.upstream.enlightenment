@@ -1705,6 +1705,12 @@ _e_comp_wl_buffer_cb_destroy(struct wl_listener *listener, void *data EINA_UNUSE
 
    buffer = container_of(listener, E_Comp_Wl_Buffer, destroy_listener);
 
+   DBG("Wl Buffer Destroy: b %p owner '%s'(%p)",
+       buffer, buffer->debug_info.owner_name, buffer->debug_info.owner_ptr);
+
+   /* remove debug info */
+   eina_stringshare_del(buffer->debug_info.owner_name);
+
    if ((ec = eina_hash_find(clients_buffer_hash, &buffer->resource)))
      {
         eina_hash_del_by_key(clients_buffer_hash, &buffer->resource);
@@ -4615,6 +4621,8 @@ e_comp_wl_init(void)
    e_comp_wl_tbm_init();
 #endif
 
+   e_pixmap_init();
+
    /* add event handlers to catch E events */
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREEN_CHANGE,            _e_comp_wl_cb_randr_change,        NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD,         _e_comp_wl_cb_comp_object_add,     NULL);
@@ -4671,6 +4679,8 @@ e_comp_wl_shutdown(void)
 #ifdef HAVE_WAYLAND_TBM
    e_comp_wl_tbm_shutdown();
 #endif
+
+   e_pixmap_shutdown();
 
    e_comp_wl_input_shutdown();
 
@@ -4964,6 +4974,12 @@ e_comp_wl_buffer_get(struct wl_resource *resource, E_Client *ec)
    wl_signal_init(&buffer->destroy_signal);
    buffer->destroy_listener.notify = _e_comp_wl_buffer_cb_destroy;
    wl_resource_add_destroy_listener(resource, &buffer->destroy_listener);
+
+   buffer->debug_info.owner_ptr = (void *)ec;
+   buffer->debug_info.owner_name = eina_stringshare_add(ec->icccm.name?:"");
+
+   DBG("Wl Buffer Create: b %p owner '%s'(%p)",
+       buffer, buffer->debug_info.owner_name, buffer->debug_info.owner_ptr);
 
    return buffer;
 
