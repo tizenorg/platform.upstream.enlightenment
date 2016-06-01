@@ -169,6 +169,7 @@ struct _E_Config
       int opmode;
    } comp_canvas_bg;
    int delayed_load_idle_count;
+   Eina_Bool use_buffer_flush;
 };
 
 struct _E_Config_Desklock_Background
