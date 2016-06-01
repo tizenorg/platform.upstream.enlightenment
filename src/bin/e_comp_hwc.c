@@ -835,8 +835,11 @@ _e_comp_hwc_output_update_geom(E_Comp_Hwc_Output *hwc_output)
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *drm_output;
    E_Output *eout;
+   E_Comp_Screen *e_comp_screen;
    const Eina_List *l, *ll;
    int x, y, w, h;
+
+   e_comp_screen = e_comp->e_comp_screen;
 
    EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
      {
