@@ -1682,6 +1682,12 @@ _e_comp_wl_buffer_cb_destroy(struct wl_listener *listener, void *data EINA_UNUSE
 
    buffer = container_of(listener, E_Comp_Wl_Buffer, destroy_listener);
 
+   DBG("Wl Buffer Destroy: b %p owner '%s'(%p)",
+       buffer, buffer->debug_info.owner_name, buffer->debug_info.owner_ptr);
+
+   /* remove debug info */
+   eina_stringshare_del(buffer->debug_info.owner_name);
+
    if ((ec = eina_hash_find(clients_buffer_hash, &buffer->resource)))
      {
         eina_hash_del_by_key(clients_buffer_hash, &buffer->resource);
@@ -1696,6 +1702,7 @@ _e_comp_wl_buffer_cb_destroy(struct wl_listener *listener, void *data EINA_UNUSE
 
         if (e_pixmap_resource_get(ec->pixmap) == buffer)
           {
+             e_pixmap_usable_set(ec->pixmap, 0);
              e_pixmap_resource_set(ec->pixmap, NULL);
              e_comp_object_native_surface_set(ec->frame, 0);
           }
@@ -2482,13 +2489,11 @@ _e_comp_wl_surface_cb_attach(struct wl_client *client EINA_UNUSED, struct wl_res
              wl_client_post_no_memory(client);
              return;
           }
-
         /* ref only if it's first buffer of client */
         if (!eina_hash_del_by_data(clients_buffer_hash, ec))
           e_object_ref(E_OBJECT(ec));
         eina_hash_add(clients_buffer_hash, &buffer_resource, ec);
      }
-
    _e_comp_wl_surface_state_buffer_set(&ec->comp_data->pending, buffer);
 
    ec->comp_data->pending.sx = sx;
@@ -4525,6 +4530,8 @@ e_comp_wl_init(void)
    e_comp_wl_tbm_init();
 #endif
 
+   e_pixmap_init();
+
    /* add event handlers to catch E events */
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREEN_CHANGE,            _e_comp_wl_cb_randr_change,        NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD,         _e_comp_wl_cb_comp_object_add,     NULL);
@@ -4632,7 +4639,6 @@ e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer)
    E_Event_Client *ev;
    ev = E_NEW(E_Event_Client, 1);
    if (!ev) return;
-
    e_comp_wl_buffer_reference(&ec->comp_data->buffer_ref, buffer);
 
    /* set usable early because shell module checks this */
@@ -4859,11 +4865,17 @@ e_comp_wl_buffer_get(struct wl_resource *resource, E_Client *ec)
           goto err;
      }
    buffer->shm_buffer = shmbuff;
-
    buffer->resource = resource;
+
    wl_signal_init(&buffer->destroy_signal);
    buffer->destroy_listener.notify = _e_comp_wl_buffer_cb_destroy;
    wl_resource_add_destroy_listener(resource, &buffer->destroy_listener);
+
+   buffer->debug_info.owner_ptr = (void *)ec;
+   buffer->debug_info.owner_name = eina_stringshare_add(ec->icccm.name?:"");
+
+   DBG("Wl Buffer Create: b %p owner '%s'(%p)",
+       buffer, buffer->debug_info.owner_name, buffer->debug_info.owner_ptr);
 
    return buffer;
 

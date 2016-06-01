@@ -80,6 +80,11 @@ struct _E_Comp_Wl_Buffer
    struct wl_listener destroy_listener;
    struct wl_shm_buffer *shm_buffer;
    tbm_surface_h tbm_surface;
+   struct
+   {
+      Eina_Stringshare *owner_name;
+      void *owner_ptr;
+   } debug_info;
    int32_t w, h;
    uint32_t busy;
 };
