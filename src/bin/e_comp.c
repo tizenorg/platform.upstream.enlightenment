@@ -662,11 +662,11 @@ _e_comp_hwc_usable(void)
 
    if (!e_comp->hwc) return EINA_FALSE;
 
-   // check whether to use hwcomposer by assignment policy
-   // core policy
+   // check whether to use hwc
+   // core assignment policy
    _e_comp_hwc_prepare();
 
-   // extra policy
+   // extra policy can replace core policy
    _e_comp_hook_call(E_COMP_HOOK_PREPARE_PLANE, NULL);
 
    EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
