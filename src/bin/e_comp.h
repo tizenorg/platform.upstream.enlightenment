@@ -133,6 +133,7 @@ struct _E_Comp
    } autoclose;
 
    E_Launch_Screen   *launchscrn;
+   E_Comp_Screen *e_comp_screen;
 
    Eina_List *debug_rects;
    Eina_List *ignore_wins;
