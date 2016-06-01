@@ -3505,6 +3505,29 @@ e_comp_object_shape_apply(Evas_Object *obj)
 // alpha channel content
 }
 
+static void
+_e_comp_object_clear(E_Comp_Object *cw)
+{
+   Eina_List *l;
+   Evas_Object *o;
+
+   if (cw->ec->pixmap)
+     e_pixmap_clear(cw->ec->pixmap);
+   if (cw->native)
+     evas_object_image_native_surface_set(cw->obj, NULL);
+   evas_object_image_size_set(cw->obj, 1, 1);
+   evas_object_image_data_set(cw->obj, NULL);
+   EINA_LIST_FOREACH(cw->obj_mirror, l, o)
+     {
+        evas_object_image_size_set(o, 1, 1);
+        evas_object_image_data_set(o, NULL);
+        if (cw->native)
+          evas_object_image_native_surface_set(o, NULL);
+     }
+   cw->native = 0;
+   e_comp_object_render_update_del(cw->smart_obj);
+}
+
 /* helper function to simplify toggling of redirection for display servers which support it */
 E_API void
 e_comp_object_redirected_set(Evas_Object *obj, Eina_Bool set)
@@ -3525,24 +3548,7 @@ e_comp_object_redirected_set(Evas_Object *obj, Eina_Bool set)
      }
    else
      {
-        Eina_List *l;
-        Evas_Object *o;
-
-        if (cw->ec->pixmap)
-          e_pixmap_clear(cw->ec->pixmap);
-        if (cw->native)
-          evas_object_image_native_surface_set(cw->obj, NULL);
-        evas_object_image_size_set(cw->obj, 1, 1);
-        evas_object_image_data_set(cw->obj, NULL);
-        EINA_LIST_FOREACH(cw->obj_mirror, l, o)
-          {
-             evas_object_image_size_set(o, 1, 1);
-             evas_object_image_data_set(o, NULL);
-             if (cw->native)
-               evas_object_image_native_surface_set(o, NULL);
-          }
-        cw->native = 0;
-        e_comp_object_render_update_del(obj);
+        _e_comp_object_clear(cw);
         evas_object_smart_callback_call(obj, "unredirected", NULL);
      }
 }
@@ -4501,4 +4507,12 @@ e_comp_object_content_unset(Evas_Object *obj)
    e_comp_object_render_update_add(obj);
 
    return EINA_TRUE;
+}
+
+E_API void
+e_comp_object_clear(Evas_Object *obj)
+{
+   API_ENTRY;
+
+   _e_comp_object_clear(cw);
 }
