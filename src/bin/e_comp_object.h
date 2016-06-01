@@ -131,6 +131,9 @@ E_API void e_comp_object_layer_update(Evas_Object *obj, Evas_Object *above, Evas
 
 E_API Eina_Bool e_comp_object_content_set(Evas_Object* obj, Evas_Object *content, E_Comp_Object_Content_Type type);
 E_API Eina_Bool e_comp_object_content_unset(Evas_Object* obj);
+
+E_API void      e_comp_object_clear(Evas_Object *obj);
+
 #endif
 #endif
 
