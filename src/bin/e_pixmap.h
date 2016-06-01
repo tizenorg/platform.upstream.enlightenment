@@ -79,6 +79,10 @@ E_API void e_pixmap_image_opaque_get(E_Pixmap *cp, int *x, int *y, int *w, int *
 E_API E_Pixmap_Hook *e_pixmap_hook_add(E_Pixmap_Hook_Point hookpoint, E_Pixmap_Hook_Cb func, const void *data);
 E_API void e_pixmap_hook_del(E_Pixmap_Hook *ph);
 
+E_API Eina_Bool e_pixmap_init(void);
+E_API void e_pixmap_shutdown(void);
+E_API void e_pixmap_buffer_clear(E_Pixmap *cp);
+
 static inline Eina_Bool
 e_pixmap_is_x(const E_Pixmap *cp)
 {
