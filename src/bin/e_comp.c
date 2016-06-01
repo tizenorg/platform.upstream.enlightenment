@@ -561,7 +561,7 @@ _e_comp_hwc_changed()
         E_Plane *ep = NULL, *ep_prime = NULL;
         const Eina_List *ep_l = NULL, *p_l, *p_ll;
 
-        if (!zone && !zone->output_id) continue;
+        if (!zone || !zone->output_id) continue;
 
         eout = e_output_find(zone->output_id);
         ep_l = e_output_planes_get(eout);
@@ -678,7 +678,7 @@ _e_comp_hwc_usable(void)
         E_Plane *ep = NULL, *ep_prime = NULL;
         const Eina_List *ep_l = NULL, *p_l, *p_ll;
 
-        if (!zone && !zone->output_id) continue;
+        if (!zone || !zone->output_id) continue;
 
         eout = e_output_find(zone->output_id);
         ep_l = e_output_planes_get(eout);
