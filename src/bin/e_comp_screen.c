@@ -340,12 +340,6 @@ e_comp_screen_init_outputs(void)
    return r;
 }
 
-EINTERN Eina_Bool
-e_comp_screen_available(void)
-{
-   return EINA_TRUE;
-}
-
 EINTERN void
 e_comp_screen_apply(void)
 {
