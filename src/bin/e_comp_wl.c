@@ -1758,9 +1758,12 @@ _e_comp_wl_cb_randr_change(void *data EINA_UNUSED, int type EINA_UNUSED, void *e
 {
    Eina_List *l;
    E_Output *eout;
+   E_Comp_Screen *e_comp_screen;
    unsigned int transform = WL_OUTPUT_TRANSFORM_NORMAL;
 
-   if (!e_comp_screen) return ECORE_CALLBACK_RENEW;
+   if (!e_comp) return ECORE_CALLBACK_RENEW;
+   if (!e_comp->e_comp_screen) return ECORE_CALLBACK_RENEW;
+   e_comp_screen = e_comp->e_comp_screen;
 
    EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
      {
