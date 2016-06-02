@@ -23,6 +23,7 @@
 #define UPDATE_MAX 512 // same as evas
 #define FAILURE_MAX 2 // seems reasonable
 #define SMART_NAME     "e_comp_object"
+#define INPUT_OBJ_SMART_NAME "input_object"
 
 /* for non-util functions */
 #define API_ENTRY      E_Comp_Object *cw; \
@@ -60,7 +61,6 @@ typedef struct _E_Comp_Object
    EINA_INLIST;
 
    int                  x, y, w, h;  // geometry
-   Eina_Rectangle       input_rect;
 
    E_Client *ec;
 
@@ -82,7 +82,7 @@ typedef struct _E_Comp_Object
 
    Evas_Object         *smart_obj;  // smart object
    Evas_Object         *clip; // clipper over effect object
-   Evas_Object         *input_obj; // input rect
+   Evas_Object         *input_obj; // input smart object
    Evas_Object         *obj;  // composite object
    Evas_Object         *frame_object; // for client frames
    Evas_Object         *zoomobj; // zoomap
@@ -134,6 +134,17 @@ typedef struct _E_Comp_Object
    Eina_Bool            dim_enable : 1;
 } E_Comp_Object;
 
+typedef struct _E_Input_Rect_Data
+{
+   Eina_Rectangle rect;
+   Evas_Object *obj;
+} E_Input_Rect_Data;
+
+typedef struct _E_Input_Rect_Smart_Data
+{
+   Eina_List *input_rect_data_list;
+   E_Comp_Object *cw;
+} E_Input_Rect_Smart_Data;
 
 struct E_Comp_Object_Mover
 {
@@ -146,6 +157,7 @@ struct E_Comp_Object_Mover
 
 static Eina_Inlist *_e_comp_object_movers = NULL;
 static Evas_Smart *_e_comp_smart = NULL;
+static Evas_Smart *_e_comp_input_obj_smart = NULL;
 
 #ifdef _F_E_COMP_OBJECT_INTERCEPT_HOOK_
 static int _e_comp_object_intercept_hooks_delete = 0;
@@ -576,9 +588,11 @@ _e_comp_object_shadow_setup(E_Comp_Object *cw)
    int ok = 0;
    char buf[4096];
    Eina_List *list = NULL, *l;
+   E_Input_Rect_Data *input_rect_data;
+   E_Input_Rect_Smart_Data *input_rect_sd;
    E_Comp_Match *m;
    Eina_Stringshare *reshadow_group = NULL;
-   Eina_Bool focus = EINA_FALSE, urgent = EINA_FALSE, skip = EINA_FALSE, fast = EINA_FALSE, reshadow = EINA_FALSE, no_shadow = EINA_FALSE;
+   Eina_Bool focus = EINA_FALSE, urgent = EINA_FALSE, skip = EINA_FALSE, fast = EINA_FALSE, reshadow = EINA_FALSE, no_shadow = EINA_FALSE, pass_event_flag = EINA_FALSE;
    Eina_Stringshare *name, *title;
    E_Comp_Config *conf = e_comp_config_get();
 
@@ -752,9 +766,21 @@ _e_comp_object_shadow_setup(E_Comp_Object *cw)
           edje_object_part_swallow(cw->shobj, "e.swallow.content", cw->obj);
      }
    if (cw->input_obj)
-     evas_object_pass_events_set(cw->obj, 1);
-   else
-     evas_object_pass_events_set(cw->obj, 0);
+     {
+        input_rect_sd = evas_object_smart_data_get(cw->input_obj);
+        if (input_rect_sd)
+          {
+             EINA_LIST_FOREACH(input_rect_sd->input_rect_data_list, l, input_rect_data)
+               {
+                  if (input_rect_data->obj)
+                    {
+                       pass_event_flag = EINA_TRUE;
+                       break;
+                    }
+               }
+          }
+     }
+   evas_object_pass_events_set(cw->obj, pass_event_flag);
 #ifdef BORDER_ZOOMAPS
    e_zoomap_child_edje_solid_setup(cw->zoomobj);
 #endif
@@ -1766,6 +1792,9 @@ _e_comp_intercept_show(void *data, Evas_Object *obj EINA_UNUSED)
 {
    E_Comp_Object *cw = data;
    E_Client *ec = cw->ec;
+   Eina_List *l;
+   E_Input_Rect_Data *input_rect_data;
+   E_Input_Rect_Smart_Data *input_rect_sd;
 
    if (ec->ignored) return;
 
@@ -1814,10 +1843,23 @@ _e_comp_intercept_show(void *data, Evas_Object *obj EINA_UNUSED)
 
    evas_object_geometry_set(cw->effect_obj, cw->x, cw->y, cw->w, cw->h);
    if (cw->input_obj)
-     evas_object_geometry_set(cw->input_obj,
-       cw->x + cw->input_rect.x + (!!cw->frame_object * cw->client_inset.l),
-       cw->y + cw->input_rect.y + (!!cw->frame_object * cw->client_inset.t),
-       cw->input_rect.w, cw->input_rect.h);
+     {
+        input_rect_sd = evas_object_smart_data_get(cw->input_obj);
+        if (input_rect_sd)
+          {
+             EINA_LIST_FOREACH(input_rect_sd->input_rect_data_list, l, input_rect_data)
+               {
+                  if (input_rect_data->obj)
+                    {
+                       evas_object_geometry_set(input_rect_data->obj,
+                         cw->x + input_rect_data->rect.x + (!!cw->frame_object * cw->client_inset.l),
+                         cw->y + input_rect_data->rect.y + (!!cw->frame_object * cw->client_inset.t),
+                         input_rect_data->rect.w, input_rect_data->rect.h);
+                    }
+               }
+          }
+     }
+
    if (cw->mask_obj)
      evas_object_resize(cw->mask_obj, cw->w, cw->h);
 
@@ -1922,6 +1964,10 @@ static void
 _e_comp_object_frame_recalc(E_Comp_Object *cw)
 {
    int w, h, ox, oy, ow, oh;
+   Eina_List *l;
+   Eina_Bool pass_event_flag = EINA_FALSE;
+   E_Input_Rect_Data *input_rect_data;
+   E_Input_Rect_Smart_Data *input_rect_sd;
 
    if (cw->frame_object)
      {
@@ -1938,8 +1984,23 @@ _e_comp_object_frame_recalc(E_Comp_Object *cw)
         cw->client_inset.b = MAX(h, 50) - (oy + oh);
         if (cw->obj) edje_object_part_swallow(cw->frame_object, "e.swallow.client", cw->obj);
         evas_object_resize(cw->frame_object, w, h);
-        if (cw->input_rect.w && (!cw->input_obj))
-          evas_object_pass_events_set(cw->obj, 0);
+
+        if (cw->input_obj)
+          {
+             input_rect_sd = evas_object_smart_data_get(cw->input_obj);
+             if (input_rect_sd)
+               {
+                  EINA_LIST_FOREACH(input_rect_sd->input_rect_data_list, l, input_rect_data)
+                    {
+                       if (input_rect_data->obj)
+                         {
+                            pass_event_flag = EINA_TRUE;
+                            break;
+                         }
+                    }
+               }
+          }
+        evas_object_pass_events_set(cw->obj, pass_event_flag);
      }
    else
      {
@@ -2138,6 +2199,155 @@ _e_comp_smart_focus_out(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void 
    if (!e_object_is_del(E_OBJECT(cw->ec)))
      e_comp_object_signal_emit(obj, "e,state,unfocused", "e");
 }
+
+static void
+_e_comp_input_obj_smart_add(Evas_Object *obj)
+{
+   E_Input_Rect_Smart_Data *input_rect_sd;
+   input_rect_sd = E_NEW(E_Input_Rect_Smart_Data, 1);
+
+   if (!input_rect_sd) return;
+   evas_object_smart_data_set(obj, input_rect_sd);
+}
+
+static void
+_e_comp_input_obj_smart_del(Evas_Object *obj)
+{
+   E_Input_Rect_Smart_Data *input_rect_sd;
+   E_Input_Rect_Data *input_rect_data;
+
+   input_rect_sd = evas_object_smart_data_get(obj);
+   if (!input_rect_sd) return;
+
+   EINA_LIST_FREE(input_rect_sd->input_rect_data_list, input_rect_data)
+     {
+        if (input_rect_data->obj)
+          {
+             evas_object_smart_member_del(input_rect_data->obj);
+             E_FREE_FUNC(input_rect_data->obj, evas_object_del);
+          }
+        E_FREE(input_rect_data);
+     }
+   E_FREE(input_rect_sd);
+}
+
+static void
+_e_comp_input_obj_smart_move(Evas_Object *obj, int x, int y)
+{
+   E_Input_Rect_Smart_Data *input_rect_sd;
+   E_Input_Rect_Data *input_rect_data;
+   Eina_List *l;
+   E_Comp_Object *cw;
+
+   input_rect_sd = evas_object_smart_data_get(obj);
+   if (!input_rect_sd) return;
+
+   cw = input_rect_sd->cw;
+   EINA_LIST_FOREACH(input_rect_sd->input_rect_data_list, l, input_rect_data)
+     {
+        if (input_rect_data->obj)
+          {
+             evas_object_geometry_set(input_rect_data->obj,
+               x + input_rect_data->rect.x + (!!cw->frame_object * cw->client_inset.l),
+               y + input_rect_data->rect.y + (!!cw->frame_object * cw->client_inset.t),
+               input_rect_data->rect.w, input_rect_data->rect.h);
+          }
+     }
+}
+
+static void
+_e_comp_input_obj_smart_resize(Evas_Object *obj, int w, int h)
+{
+   E_Input_Rect_Smart_Data *input_rect_sd;
+   E_Input_Rect_Data *input_rect_data;
+   Eina_List *l;
+   E_Comp_Object *cw;
+
+   input_rect_sd = evas_object_smart_data_get(obj);
+   if (!input_rect_sd) return;
+
+   cw = input_rect_sd->cw;
+   EINA_LIST_FOREACH(input_rect_sd->input_rect_data_list, l, input_rect_data)
+     {
+        if (input_rect_data->obj)
+          {
+             evas_object_geometry_set(input_rect_data->obj,
+               cw->x + input_rect_data->rect.x + (!!cw->frame_object * cw->client_inset.l),
+               cw->y + input_rect_data->rect.y + (!!cw->frame_object * cw->client_inset.t),
+               input_rect_data->rect.w, input_rect_data->rect.h);
+          }
+     }
+}
+
+static void
+_e_comp_input_obj_smart_show(Evas_Object *obj)
+{
+   E_Input_Rect_Smart_Data *input_rect_sd;
+   E_Input_Rect_Data *input_rect_data;
+   Eina_List *l;
+
+   input_rect_sd = evas_object_smart_data_get(obj);
+   if (!input_rect_sd) return;
+
+   EINA_LIST_FOREACH(input_rect_sd->input_rect_data_list, l, input_rect_data)
+     {
+        if (input_rect_data->obj)
+          {
+             evas_object_show(input_rect_data->obj);
+          }
+     }
+}
+
+static void
+_e_comp_input_obj_smart_hide(Evas_Object *obj)
+{
+   E_Input_Rect_Smart_Data *input_rect_sd;
+   E_Input_Rect_Data *input_rect_data;
+   Eina_List *l;
+
+   input_rect_sd = evas_object_smart_data_get(obj);
+   if (!input_rect_sd) return;
+
+   EINA_LIST_FOREACH(input_rect_sd->input_rect_data_list, l, input_rect_data)
+     {
+        if (input_rect_data->obj)
+          {
+             evas_object_hide(input_rect_data->obj);
+          }
+     }
+}
+
+static void
+_e_comp_input_obj_smart_init(void)
+{
+   if (_e_comp_input_obj_smart) return;
+   {
+      static const Evas_Smart_Class sc =
+      {
+         INPUT_OBJ_SMART_NAME,
+         EVAS_SMART_CLASS_VERSION,
+         _e_comp_input_obj_smart_add,
+         _e_comp_input_obj_smart_del,
+         _e_comp_input_obj_smart_move,
+         _e_comp_input_obj_smart_resize,
+         _e_comp_input_obj_smart_show,
+         _e_comp_input_obj_smart_hide,
+         NULL,
+         NULL,
+         NULL,
+         NULL,
+         NULL,
+         NULL,
+
+         NULL,
+         NULL,
+         NULL,
+         NULL
+      };
+      _e_comp_input_obj_smart = evas_smart_class_new(&sc);
+   }
+}
+
 
 static void
 _e_comp_smart_add(Evas_Object *obj)
@@ -2393,11 +2603,8 @@ _e_comp_smart_move(Evas_Object *obj, int x, int y)
    cw->x = x, cw->y = y;
    evas_object_move(cw->clip, 0, 0);
    evas_object_move(cw->effect_obj, x, y);
-   if (cw->input_obj)
-     evas_object_geometry_set(cw->input_obj,
-       cw->x + cw->input_rect.x + (!!cw->frame_object * cw->client_inset.l),
-       cw->y + cw->input_rect.y + (!!cw->frame_object * cw->client_inset.t),
-       cw->input_rect.w, cw->input_rect.h);
+   if (cw->input_obj) evas_object_move(cw->input_obj, x, y);
+
    /* this gets called once during setup to init coords offscreen and guarantee first move */
    if (e_comp && cw->visible)
      e_comp_shape_queue();
@@ -2433,10 +2640,7 @@ _e_comp_smart_resize(Evas_Object *obj, int w, int h)
         evas_object_resize(cw->effect_obj, w, h);
         if (cw->zoomobj) e_zoomap_child_resize(cw->zoomobj, pw, ph);
         if (cw->input_obj)
-          evas_object_geometry_set(cw->input_obj,
-            cw->x + cw->input_rect.x + (!!cw->frame_object * cw->client_inset.l),
-            cw->y + cw->input_rect.y + (!!cw->frame_object * cw->client_inset.t),
-            cw->input_rect.w, cw->input_rect.h);
+          evas_object_resize(cw->input_obj, w, h);
         if (cw->mask_obj)
           evas_object_resize(cw->mask_obj, w, h);
         if (cw->transform_bg_obj)
@@ -3039,29 +3243,69 @@ e_comp_object_util_center_pos_get(Evas_Object *obj, int *x, int *y)
 }
 
 E_API void
+e_comp_object_input_objs_del(Evas_Object *obj)
+{
+   API_ENTRY;
+   E_Input_Rect_Data *input_rect_data;
+   E_Input_Rect_Smart_Data *input_rect_sd;
+
+   input_rect_sd = evas_object_smart_data_get(cw->input_obj);
+   if (!input_rect_sd) return;
+
+   EINA_LIST_FREE(input_rect_sd->input_rect_data_list, input_rect_data)
+     {
+        if (input_rect_data->obj)
+          {
+             evas_object_smart_member_del(input_rect_data->obj);
+             E_FREE_FUNC(input_rect_data->obj, evas_object_del);
+          }
+        E_FREE(input_rect_data);
+     }
+}
+
+E_API void
 e_comp_object_input_area_set(Evas_Object *obj, int x, int y, int w, int h)
 {
    API_ENTRY;
+   E_Input_Rect_Data *input_rect_data;
+   E_Input_Rect_Smart_Data *input_rect_sd;
 
    E_RECTS_CLIP_TO_RECT(x, y, w, h, 0, 0, cw->ec->client.w, cw->ec->client.h);
-   if ((cw->input_rect.x == x) && (cw->input_rect.y == y) &&
-       (cw->input_rect.w == w) && (cw->input_rect.h == h)) return;
-   EINA_RECTANGLE_SET(&cw->input_rect, x, y, w, h);
+
+   input_rect_data = E_NEW(E_Input_Rect_Data, 1);
+   EINA_RECTANGLE_SET(&input_rect_data->rect, x, y, w, h);
+
+   if (!cw->input_obj)
+     {
+        _e_comp_input_obj_smart_init();
+        cw->input_obj = evas_object_smart_add(e_comp->evas, _e_comp_input_obj_smart);
+        evas_object_smart_member_add(cw->input_obj, cw->smart_obj);
+        input_rect_sd = evas_object_smart_data_get(cw->input_obj);
+
+        if (input_rect_sd)
+          input_rect_sd->cw = cw;
+     }
+
+   input_rect_sd = evas_object_smart_data_get(cw->input_obj);
+   if (input_rect_sd)
+     input_rect_sd->input_rect_data_list = eina_list_append(input_rect_sd->input_rect_data_list, input_rect_data);
+
    if (x || y || (w != cw->ec->client.w) || (h != cw->ec->client.h))
      {
-        if (!cw->input_obj)
-          {
-             cw->input_obj = evas_object_rectangle_add(e_comp->evas);
-             evas_object_name_set(cw->input_obj, "cw->input_obj");
-             evas_object_color_set(cw->input_obj, 0, 0, 0, 0);
-             evas_object_clip_set(cw->input_obj, cw->clip);
-             evas_object_smart_member_add(cw->input_obj, obj);
-          }
-        evas_object_geometry_set(cw->input_obj,
+        input_rect_data->obj = evas_object_rectangle_add(e_comp->evas);
+        evas_object_name_set(input_rect_data->obj, "cw->input_obj");
+        evas_object_color_set(input_rect_data->obj, 0, 0, 0, 0);
+        evas_object_clip_set(input_rect_data->obj, cw->clip);
+        evas_object_smart_member_add(input_rect_data->obj, cw->input_obj);
+        evas_object_geometry_set(input_rect_data->obj,
           MAX(cw->ec->client.x + (!!cw->frame_object * cw->client_inset.l), 0) + x,
           MAX(cw->ec->client.y + (!!cw->frame_object * cw->client_inset.t), 0) + y, w, h);
         evas_object_pass_events_set(cw->obj, 1);
-        if (cw->visible) evas_object_show(cw->input_obj);
+        if (cw->visible)
+          {
+             evas_object_show(input_rect_data->obj);
+             evas_object_show(cw->input_obj);
+          }
      }
    else
      {
