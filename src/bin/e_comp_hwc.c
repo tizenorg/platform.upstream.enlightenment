@@ -1402,7 +1402,7 @@ e_comp_hwc_init(void)
 
    Evas_Engine_Info_GL_Drm *einfo;
 
-   int i, j;
+   int i;
    int num_outputs, num_layers;
    unsigned int zpos;
 
@@ -1444,64 +1444,62 @@ e_comp_hwc_init(void)
    hwc->trace_debug = trace_debug;
 
    /* initialize outputs */
-   for (i = 0; i < num_outputs; i++)
+   /* make only main output list for hwc */
+   hwc_output = E_NEW(E_Comp_Hwc_Output, 1);
+   if (!hwc_output) goto fail;
+   hwc->hwc_outputs = eina_list_append(hwc->hwc_outputs, hwc_output);
+
+   toutput = tdm_display_get_output(hwc->tdisplay, 0, NULL);
+   if (!toutput) goto fail;
+   hwc_output->toutput = toutput;
+
+   tdm_output_get_layer_count(toutput, &num_layers);
+   if (num_layers < 1)
      {
-        hwc_output = E_NEW(E_Comp_Hwc_Output, 1);
-        if (!hwc_output) goto fail;
-        hwc->hwc_outputs = eina_list_append(hwc->hwc_outputs, hwc_output);
-
-        toutput = tdm_display_get_output(hwc->tdisplay, i, NULL);
-        if (!toutput) goto fail;
-        hwc_output->toutput = toutput;
-
-        tdm_output_get_layer_count(toutput, &num_layers);
-        if (num_layers < 1)
-          {
-             ERR("fail to get tdm_output_get_layer_count\n");
-             goto fail;
-          }
-        hwc_output->num_layers = num_layers;
-
-        for (j = 0; j < num_layers; j++)
-          {
-             hwc_layer = E_NEW(E_Comp_Hwc_Layer, 1);
-             if (!hwc_layer) goto fail;
-             hwc_output->hwc_layers = eina_list_append(hwc_output->hwc_layers, hwc_layer);
-
-             tlayer = tdm_output_get_layer(toutput, j, NULL);
-             if (!tlayer) goto fail;
-             hwc_layer->tlayer = tlayer;
-             hwc_layer->index = j;
-
-             tdm_layer_get_zpos(tlayer, &zpos);
-             hwc_layer->zpos = zpos;
-             hwc_layer->hwc_output = hwc_output;
-             hwc_layer->hwc = hwc;
-
-             CLEAR(layer_capabilities);
-             tdm_layer_get_capabilities(hwc_layer->tlayer, &layer_capabilities);
-             /* check the layer is the primary layer */
-             if (layer_capabilities&TDM_LAYER_CAPABILITY_PRIMARY)
-               {
-                  hwc_layer->primary = EINA_TRUE;
-                  hwc_output->primary_layer = hwc_layer; /* register the primary layer */
-                  INF("HWC: hwc_layer(%p) is the primary layer.", hwc_layer);
-               }
-             /* check that the layer uses the reserved memory */
-             if (layer_capabilities&TDM_LAYER_CAPABILITY_RESEVED_MEMORY)
-               {
-                 hwc_layer->reserved_memory = EINA_TRUE;
-                 INF("HWC: TDM layer(%p) uses the reserved memory.", hwc_layer);
-               }
-
-             hwc_renderer = E_NEW(E_Comp_Hwc_Renderer, 1);
-             if (!hwc_renderer) goto fail;
-             hwc_renderer->hwc_layer = hwc_layer;
-             hwc_layer->hwc_renderer = hwc_renderer;
-          }
-
-        hwc_output->hwc = hwc;
+        ERR("fail to get tdm_output_get_layer_count\n");
+        goto fail;
      }
+   hwc_output->num_layers = num_layers;
+
+   for (i = 0; i < num_layers; i++)
+     {
+        hwc_layer = E_NEW(E_Comp_Hwc_Layer, 1);
+        if (!hwc_layer) goto fail;
+        hwc_output->hwc_layers = eina_list_append(hwc_output->hwc_layers, hwc_layer);
+
+        tlayer = tdm_output_get_layer(toutput, i, NULL);
+        if (!tlayer) goto fail;
+        hwc_layer->tlayer = tlayer;
+        hwc_layer->index = i;
+
+        tdm_layer_get_zpos(tlayer, &zpos);
+        hwc_layer->zpos = zpos;
+        hwc_layer->hwc_output = hwc_output;
+        hwc_layer->hwc = hwc;
+
+        CLEAR(layer_capabilities);
+        tdm_layer_get_capabilities(hwc_layer->tlayer, &layer_capabilities);
+        /* check the layer is the primary layer */
+        if (layer_capabilities&TDM_LAYER_CAPABILITY_PRIMARY)
+          {
+             hwc_layer->primary = EINA_TRUE;
+             hwc_output->primary_layer = hwc_layer; /* register the primary layer */
+             INF("HWC: hwc_layer(%p) is the primary layer.", hwc_layer);
+          }
+        /* check that the layer uses the reserved memory */
+        if (layer_capabilities&TDM_LAYER_CAPABILITY_RESEVED_MEMORY)
+          {
+            hwc_layer->reserved_memory = EINA_TRUE;
+            INF("HWC: TDM layer(%p) uses the reserved memory.", hwc_layer);
+          }
+
+        hwc_renderer = E_NEW(E_Comp_Hwc_Renderer, 1);
+        if (!hwc_renderer) goto fail;
+        hwc_renderer->hwc_layer = hwc_layer;
+        hwc_layer->hwc_renderer = hwc_renderer;
+     }
+
+   hwc_output->hwc = hwc;
 
    _e_comp_hwc_output_update_geom(hwc_output);
 
