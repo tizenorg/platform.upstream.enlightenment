@@ -3696,13 +3696,10 @@ e_comp_object_dirty(Evas_Object *obj)
 E_API Eina_Bool
 e_comp_object_render(Evas_Object *obj)
 {
-   Eina_Iterator *it;
-   Eina_Rectangle *r;
    Eina_List *l;
    Evas_Object *o;
-   int stride, pw, ph;
-   unsigned int *pix, *srcpix;
-   Eina_Bool ret = EINA_FALSE;
+   int pw, ph;
+   unsigned int *pix;
 
    API_ENTRY EINA_FALSE;
 
@@ -3724,44 +3721,14 @@ e_comp_object_render(Evas_Object *obj)
    evas_object_image_pixels_dirty_set(cw->obj, EINA_FALSE);
 
    RENDER_DEBUG("RENDER SIZE: %dx%d", pw, ph);
-   it = eina_tiler_iterator_new(cw->pending_updates);
-   if (e_pixmap_image_is_argb(cw->ec->pixmap))
-     {
-        pix = e_pixmap_image_data_get(cw->ec->pixmap);
-        if (e_comp->comp_type == E_PIXMAP_TYPE_X)
-          {
-             EINA_ITERATOR_FOREACH(it, r)
-               {
-                  E_RECTS_CLIP_TO_RECT(r->x, r->y, r->w, r->h, 0, 0, pw, ph);
-               }
-          }
-        else
-          ret = EINA_TRUE;
-        goto end;
-     }
 
-   pix = evas_object_image_data_get(cw->obj, EINA_TRUE);
-   stride = evas_object_image_stride_get(cw->obj);
-   srcpix = e_pixmap_image_data_get(cw->ec->pixmap);
-   if (!srcpix)
+   pix = e_pixmap_image_data_get(cw->ec->pixmap);
+   if (!pix)
      {
         e_pixmap_image_refresh(cw->ec->pixmap);
-        srcpix = e_pixmap_image_data_get(cw->ec->pixmap);
-        if (!srcpix)
-          {
-             pix = NULL;
-             goto end;
-          }
+        pix = e_pixmap_image_data_get(cw->ec->pixmap);
      }
 
-   EINA_ITERATOR_FOREACH(it, r)
-     {
-        E_RECTS_CLIP_TO_RECT(r->x, r->y, r->w, r->h, 0, 0, pw, ph);
-        e_pixmap_image_data_argb_convert(cw->ec->pixmap, pix, srcpix, r, stride);
-        RENDER_DEBUG("UPDATE [%p]: %d %d %dx%d -- pix = %p", cw->ec, r->x, r->y, r->w, r->h, pix);
-     }
-
-end:
    /* set pixel data */
    evas_object_image_data_set(cw->obj, cw->blanked ? NULL : pix);
    _e_comp_object_alpha_set(cw);
@@ -3772,13 +3739,12 @@ end:
         evas_object_image_pixels_dirty_set(o, EINA_FALSE);
      }
 
-   eina_iterator_free(it);
    E_FREE_FUNC(cw->pending_updates, eina_tiler_free);
 
    if (e_comp->comp_type == E_PIXMAP_TYPE_WL)
      e_comp_client_post_update_add(cw->ec);
 
-   return ret;
+   return EINA_TRUE;
 }
 
 /* create a duplicate of an evas object */
