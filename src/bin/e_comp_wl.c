@@ -153,8 +153,8 @@ _e_comp_wl_cb_prepare(void *data EINA_UNUSED, Ecore_Fd_Handler *hdlr EINA_UNUSED
    wl_display_flush_clients(e_comp_wl->wl.disp);
 }
 
-static void
-_e_comp_wl_map_size_cal_from_buffer(E_Client *ec)
+void
+e_comp_wl_map_size_cal_from_buffer(E_Client *ec)
 {
    E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
    E_Comp_Wl_Buffer *buffer;
@@ -187,8 +187,8 @@ _e_comp_wl_map_size_cal_from_buffer(E_Client *ec)
    ec->comp_data->height_from_buffer = height;
 }
 
-static void
-_e_comp_wl_map_size_cal_from_viewport(E_Client *ec)
+void
+e_comp_wl_map_size_cal_from_viewport(E_Client *ec)
 {
    E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
    int32_t width, height;
@@ -381,11 +381,12 @@ _e_comp_wl_extern_parent_commit(E_Client *ec)
    _e_comp_wl_subsurface_parent_commit(ec, EINA_TRUE);
 }
 
-static void
-_e_comp_wl_map_apply(E_Client *ec)
+void
+e_comp_wl_map_apply(E_Client *ec)
 {
    E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
    E_Comp_Wl_Subsurf_Data *sdata;
+   const Evas_Map *m;
    Evas_Map *map;
    int x1, y1, x2, y2, x, y;
    int dx, dy;
@@ -409,6 +410,18 @@ _e_comp_wl_map_apply(E_Client *ec)
         dx = ec->x;
         dy = ec->y;
      }
+
+   evas_object_geometry_get(ec->frame, &x, &y, NULL, NULL);
+   if (x != dx || y != dy)
+     evas_object_move(ec->frame, dx, dy);
+
+   m = evas_object_map_get(ec->frame);
+   evas_map_point_coord_get(m, 0, &x1, &y1, NULL);
+   evas_map_point_coord_get(m, 2, &x2, &y2, NULL);
+
+   if (x1 == dx && (x2 - x1) == ec->comp_data->width_from_viewport &&
+       y1 == dy && (y2 - y1) == ec->comp_data->height_from_viewport)
+     return;
 
    map = evas_map_new(4);
 
@@ -533,12 +546,14 @@ _e_comp_wl_evas_cb_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
    E_Client *subc;
    Eina_List *l;
    int x, y;
+   const Evas_Map *m;
 
    if (!(ec = data)) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
      {
+        if ((m = evas_object_map_get(subc->frame))) continue;
         x = ec->x + subc->comp_data->sub.data->position.x;
         y = ec->y + subc->comp_data->sub.data->position.y;
         evas_object_move(subc->frame, x, y);
@@ -546,6 +561,7 @@ _e_comp_wl_evas_cb_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
 
    EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
      {
+        if ((m = evas_object_map_get(subc->frame))) continue;
         x = ec->x + subc->comp_data->sub.data->position.x;
         y = ec->y + subc->comp_data->sub.data->position.y;
         evas_object_move(subc->frame, x, y);
@@ -2206,12 +2222,15 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    if (state->new_attach)
      e_comp_wl_surface_attach(ec, state->buffer);
 
+   /* emit a apply_viewport signal when the information of viewport and buffer is ready */
+   wl_signal_emit(&ec->comp_data->apply_viewport_signal, &ec->comp_data->surface);
+
    _e_comp_wl_surface_state_buffer_set(state, NULL);
 
    if (state->new_attach || state->buffer_viewport.changed)
      {
         _e_comp_wl_surface_state_size_update(ec, state);
-        _e_comp_wl_map_size_cal_from_viewport(ec);
+        e_comp_wl_map_size_cal_from_viewport(ec);
 
         if (ec->changes.pos)
           e_comp_object_frame_xy_unadjust(ec->frame, ec->x, ec->y, &x, &y);
@@ -2326,8 +2345,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
           }
      }
 
-   if (state->buffer_viewport.changed)
-     _e_comp_wl_map_apply(ec);
+   if (ec->comp_data->scaler.buffer_viewport.changed)
+     e_comp_wl_map_apply(ec);
 
    /* resize transform object */
    if (ec->transformed)
@@ -3516,8 +3535,8 @@ e_comp_wl_subsurface_create(E_Client *ec, E_Client *epc, uint32_t id, struct wl_
         if (epc->comp_data)
           {
              /* append this client to the parents subsurface list */
-             epc->comp_data->sub.list_pending =
-               eina_list_append(epc->comp_data->sub.list_pending, ec);
+             epc->comp_data->sub.list =
+               eina_list_append(epc->comp_data->sub.list, ec);
              epc->comp_data->sub.list_changed = EINA_TRUE;
           }
 
@@ -3761,6 +3780,7 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
      }
 
    wl_signal_init(&ec->comp_data->destroy_signal);
+   wl_signal_init(&ec->comp_data->apply_viewport_signal);
 
    _e_comp_wl_surface_state_init(&ec->comp_data->pending, ec->w, ec->h);
 
@@ -4673,7 +4693,7 @@ e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer)
    e_pixmap_refresh(ec->pixmap);
 
    _e_comp_wl_surface_state_size_update(ec, &ec->comp_data->pending);
-   _e_comp_wl_map_size_cal_from_buffer(ec);
+   e_comp_wl_map_size_cal_from_buffer(ec);
 
    ev->ec = ec;
    e_object_ref(E_OBJECT(ec));

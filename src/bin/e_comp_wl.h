@@ -367,6 +367,7 @@ struct _E_Comp_Wl_Client_Data
    /* regular surface resource (wl_compositor_create_surface) */
    struct wl_resource *surface;
    struct wl_signal destroy_signal;
+   struct wl_signal apply_viewport_signal;
 
    struct
      {
@@ -504,6 +505,9 @@ E_API void e_comp_wl_hook_del(E_Comp_Wl_Hook *ch);
 E_API void e_comp_wl_shell_surface_ready(E_Client *ec);
 
 E_API Eina_Bool e_comp_wl_video_client_has(E_Client *ec);
+E_API void e_comp_wl_map_size_cal_from_buffer(E_Client *ec);
+E_API void e_comp_wl_map_size_cal_from_viewport(E_Client *ec);
+E_API void e_comp_wl_map_apply(E_Client *ec);
 
 E_API extern int E_EVENT_WAYLAND_GLOBAL_ADD;
 
