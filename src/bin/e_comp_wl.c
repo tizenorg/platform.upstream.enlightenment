@@ -2422,6 +2422,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
              Eina_Rectangle *rect;
              Eina_Iterator *itr;
 
+             e_comp_object_input_objs_del(ec->frame);
+
              itr = eina_tiler_iterator_new(src);
              EINA_ITERATOR_FOREACH(itr, rect)
                e_comp_object_input_area_set(ec->frame, rect->x, rect->y,
