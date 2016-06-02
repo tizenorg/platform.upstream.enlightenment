@@ -1081,6 +1081,11 @@ _e_xdg_shell_surface_map_cb_timer(void *data)
         evas_object_show(ec->frame);
         ec->comp_data->mapped = EINA_TRUE;
 
+        /* force update */
+        e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
+        e_comp_object_dirty(ec->frame);
+        e_comp_object_render(ec->frame);
+
         e_comp_wl_surface_commit(ec);
 
         /* FIXME: sometimes popup surfaces Do Not raise above their
