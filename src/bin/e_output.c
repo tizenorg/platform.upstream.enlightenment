@@ -493,7 +493,7 @@ e_output_util_planes_print(void)
         E_Plane *ep;
         E_Client *ec;
 
-        if (!zone && !zone->output_id) continue;
+        if (!zone || !zone->output_id) continue;
         screen = e_output_screen_id_find(zone->output_id);
         if (!screen) continue;
         if (!screen->planes) continue;

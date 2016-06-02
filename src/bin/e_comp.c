@@ -401,7 +401,7 @@ _e_comp_prepare_overlay(void)
         int num_of_ly = 0, ly_cnt = 0;
         Eina_List *clist = NULL;
 
-        if (!zone && !zone->output_id) continue;
+        if (!zone || !zone->output_id) continue;
 
         eout = e_output_screen_id_find(zone->output_id);
         num_of_ly = eout->plane_count;
