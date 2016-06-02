@@ -230,6 +230,16 @@ typedef struct _E_Rect         E_Rect;
     } \
   while (0)
 
+#define E_LIST_HOOK_APPEND(list, type, callback, data) \
+  do \
+    { \
+       E_Client_Hook *_ch; \
+       _ch = e_client_hook_add(type, callback, data); \
+       assert(_ch); \
+       list = eina_list_append(list, _ch); \
+    } \
+  while (0)
+
 # define E_CLAMP(x, min, max) (x < min ? min : (x > max ? max : x))
 # define E_RECTS_CLIP_TO_RECT(_x, _y, _w, _h, _cx, _cy, _cw, _ch) \
   {                                                               \
