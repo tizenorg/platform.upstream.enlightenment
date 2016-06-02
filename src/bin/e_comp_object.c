@@ -3706,6 +3706,7 @@ e_comp_object_render(Evas_Object *obj)
    EINA_SAFETY_ON_NULL_RETURN_VAL(cw->ec, EINA_FALSE);
    if (cw->ec->input_only) return EINA_TRUE;
    if (cw->external_content) return EINA_TRUE;
+   if (cw->native) return EINA_FALSE;
    e_comp_object_render_update_del(obj);
    if (!e_pixmap_size_get(cw->ec->pixmap, &pw, &ph)) return EINA_FALSE;
 
