@@ -1158,7 +1158,12 @@ _e_comp_hwc_output_display_client_reserved_memory(E_Comp_Hwc_Output *hwc_output,
      ELOGF("HWC", "Display Client", ec->pixmap, ec);
 
    hwc_client = _e_comp_hwc_client_find(ec);
-   EINA_SAFETY_ON_NULL_RETURN(hwc_client);
+   if (!hwc_client)
+     {
+        e_pixmap_image_clear(pixmap, 1);
+        ERR("fail to _e_comp_hwc_client_find");
+        return;
+     }
 
    if (hwc_client->backup_buffer)
      {
