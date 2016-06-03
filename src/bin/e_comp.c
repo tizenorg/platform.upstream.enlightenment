@@ -358,7 +358,7 @@ _e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
 {
    e_comp->nocomp_delay_timer = NULL;
 
-   if (e_comp->nocomp_override == 0)
+   if (e_comp->hwc_override == 0)
      {
         if (_e_comp_fullscreen_check()) e_comp->nocomp_want = 1;
         _e_comp_cb_nocomp_begin();
@@ -910,7 +910,7 @@ setup_hwcompose:
                   if (!e_comp_is_on_overlay(ec))
                     e_comp_nocomp_end("_e_comp_cb_update : nocomp_ec != ec");
                }
-             else if ((!e_comp->nocomp) && (!e_comp->nocomp_override))
+             else if ((!e_comp->nocomp) && (!e_comp->hwc_override))
                {
                   if (conf->nocomp_use_timer)
                     {
@@ -1277,11 +1277,11 @@ static Eina_Bool
 _e_comp_override_expire(void *data EINA_UNUSED)
 {
    e_comp->nocomp_override_timer = NULL;
-   e_comp->nocomp_override--;
+   e_comp->hwc_override--;
 
-   if (e_comp->nocomp_override <= 0)
+   if (e_comp->hwc_override <= 0)
      {
-        e_comp->nocomp_override = 0;
+        e_comp->hwc_override = 0;
         if (e_comp->nocomp_want) _e_comp_cb_nocomp_begin();
      }
    return EINA_FALSE;
@@ -1651,10 +1651,10 @@ e_comp_ignore_win_find(Ecore_Window win)
 E_API void
 e_comp_override_del()
 {
-   e_comp->nocomp_override--;
-   if (e_comp->nocomp_override <= 0)
+   e_comp->hwc_override--;
+   if (e_comp->hwc_override <= 0)
      {
-        e_comp->nocomp_override = 0;
+        e_comp->hwc_override = 0;
         if (e_comp->nocomp_want) _e_comp_cb_nocomp_begin();
      }
 }
@@ -1662,8 +1662,8 @@ e_comp_override_del()
 E_API void
 e_comp_override_add()
 {
-   e_comp->nocomp_override++;
-   if ((e_comp->nocomp_override > 0) && (e_comp->nocomp)) e_comp_nocomp_end(__FUNCTION__);
+   e_comp->hwc_override++;
+   if ((e_comp->hwc_override > 0) && (e_comp->nocomp)) e_comp_nocomp_end(__FUNCTION__);
 }
 
 E_API E_Comp *
@@ -1676,9 +1676,9 @@ e_comp_find_by_window(Ecore_Window win)
 E_API void
 e_comp_override_timed_pop(void)
 {
-   if (e_comp->nocomp_override <= 0) return;
+   if (e_comp->hwc_override <= 0) return;
    if (e_comp->nocomp_override_timer)
-     e_comp->nocomp_override--;
+     e_comp->hwc_override--;
    else
      e_comp->nocomp_override_timer = ecore_timer_add(1.0, _e_comp_override_expire, NULL);
 }
