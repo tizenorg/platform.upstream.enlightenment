@@ -724,8 +724,6 @@ _e_comp_hwc_begin(void)
    if (e_comp->calc_fps) e_comp->frametimes[0] = 0;
 
    INF("HWC : Begin ...");
-
-   e_comp_render_queue();
 }
 
 static Eina_Bool
