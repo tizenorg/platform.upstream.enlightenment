@@ -736,22 +736,16 @@ e_comp_screen_init()
    struct xkb_keymap *map = NULL;
    char buf[1024];
 
-   dont_set_ecore_drm_keymap = getenv("NO_ECORE_DRM_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
-   dont_use_xkb_cache = getenv("NO_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
-
-   TRACE_DS_BEGIN(WL_DRM:INIT);
-
+   TRACE_DS_BEGIN(E_COMP_SCREEN:INIT);
    if (!(comp = e_comp))
      {
-        comp = e_comp_new();
-        if (!comp)
-          {
-             TRACE_DS_END();
-             EINA_SAFETY_ON_NULL_RETURN_VAL(comp, EINA_FALSE);
-          }
-
-        comp->comp_type = E_PIXMAP_TYPE_WL;
+        TRACE_DS_END();
+        EINA_SAFETY_ON_NULL_RETURN_VAL(comp, EINA_FALSE);
      }
+   comp->comp_type = E_PIXMAP_TYPE_WL;
+
+   dont_set_ecore_drm_keymap = getenv("NO_ECORE_DRM_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
+   dont_use_xkb_cache = getenv("NO_KEYMAP_CACHE") ? EINA_TRUE : EINA_FALSE;
 
    /* set gl available if we have ecore_evas support */
    if (ecore_evas_engine_type_supported_get(ECORE_EVAS_ENGINE_OPENGL_DRM))
