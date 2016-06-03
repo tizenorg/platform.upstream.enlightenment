@@ -328,7 +328,9 @@ e_comp_screen_init_outputs(void)
              for (j = 0; j < eout->plane_count; j++)
                {
                   printf("COMP TDM: added plane %i\n", j);
-                  e_plane_new(eout);
+                  Eina_Bool pri = EINA_FALSE;
+                  if (j == 0) pri = EINA_TRUE;
+                  e_plane_new(eout, j, pri);
                }
 
              r->outputs = eina_list_append(r->outputs, eout);
