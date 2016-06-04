@@ -160,6 +160,7 @@ struct _E_Comp
    Eina_Bool       hwc : 1;
 
    Eina_List      *connected_clients;
+   E_Client       *dim_client;
    Eina_List      *launchscrns; // list of dummy clients for launchscreen image.
 };
 
