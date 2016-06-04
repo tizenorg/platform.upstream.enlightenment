@@ -77,6 +77,8 @@ e_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd)
    E_CONFIG_LIST(D, T, match.overrides, *match_edd);
    E_CONFIG_LIST(D, T, match.menus, *match_edd);
    E_CONFIG_LIST(D, T, match.objects, *match_edd);
+   E_CONFIG_VAL(D, T, dim_rect_effect, UCHAR);
+   E_CONFIG_VAL(D, T, dim_rect_enable, UCHAR);
 }
 
 E_API E_Comp_Config *
@@ -207,6 +209,9 @@ e_comp_cfdata_config_new(void)
    mat = E_NEW(E_Comp_Match, 1);
    cfg->match.menus = eina_list_append(cfg->match.menus, mat);
    mat->shadow_style = eina_stringshare_add("menu");
+
+   cfg->dim_rect_effect = 0;
+   cfg->dim_rect_enable = 0;
 
    return cfg;
 }
