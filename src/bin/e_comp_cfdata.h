@@ -45,6 +45,8 @@ struct _E_Comp_Config
    Eina_Bool fast_menus;
    Eina_Bool fast_overrides;
    Eina_Bool fast_objects;
+   unsigned char dim_rect_enable;
+   unsigned char dim_rect_effect;
 
    struct
    {

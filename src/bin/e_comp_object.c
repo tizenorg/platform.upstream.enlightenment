@@ -130,6 +130,7 @@ typedef struct _E_Comp_Object
    Eina_Bool            frame_extends : 1; //frame may extend beyond object size
    Eina_Bool            blanked : 1; //window is rendering blank content (externally composited)
    Eina_Bool            external_content : 1; // e.swallow.content(obj) is set by external evas object
+   Eina_Bool            dim_enable : 1;
 } E_Comp_Object;
 
 
@@ -161,6 +162,10 @@ EINTERN void e_client_focused_set(E_Client *ec);
 
 /* emitted every time a new noteworthy comp object is added */
 E_API int E_EVENT_COMP_OBJECT_ADD = -1;
+
+static void           e_comp_objs_dim_enable_set(E_Client *ec, Eina_Bool enable, Eina_Bool noeffect);
+static Eina_Bool      e_comp_objs_dim_enable_get(E_Client *ec);
+static void           e_comp_objs_dim_update(E_Comp_Object *cw);
 
 #ifdef _F_E_COMP_OBJECT_INTERCEPT_HOOK_
 static void
@@ -2289,6 +2294,8 @@ _e_comp_smart_show(Evas_Object *obj)
         e_comp_object_effect_set(obj, NULL);
         e_comp_shape_queue();
      }
+
+   e_comp_objs_dim_update(cw);
 
    TRACE_DS_END();
 }
@@ -4502,3 +4509,109 @@ e_comp_object_content_unset(Evas_Object *obj)
 
    return EINA_TRUE;
 }
+
+E_API void
+e_comp_object_src_dim_client_set(E_Client *ec)
+{
+   E_Comp_Config *conf = e_comp_config_get();
+   if (!conf->dim_rect_enable) return ;
+
+   if (e_comp->dim_client != ec)
+     {
+        Eina_Bool prev_dim = EINA_FALSE;
+        INF("[DIM] Client Set %p -> %p", e_comp->dim_client, ec);
+
+        if (e_comp->dim_client && e_comp_objs_dim_enable_get(e_comp->dim_client))
+           prev_dim = EINA_TRUE;
+
+        if (prev_dim && ((e_comp->dim_client)->visible) && ec)
+          {
+             e_comp_objs_dim_enable_set(e_comp->dim_client, EINA_FALSE, EINA_TRUE);
+             e_comp_objs_dim_enable_set(ec, EINA_TRUE, EINA_TRUE);
+          }
+        else
+          {
+             if (prev_dim) e_comp_objs_dim_enable_set(e_comp->dim_client, EINA_FALSE, EINA_FALSE);
+             if (ec)       e_comp_objs_dim_enable_set(ec, EINA_TRUE, EINA_FALSE);
+          }
+        e_comp->dim_client = ec;
+     }
+}
+
+E_API E_Client *
+e_comp_object_src_dim_client_get(void)
+{
+   E_Comp_Config *conf = e_comp_config_get();
+   if (!conf->dim_rect_enable ) return NULL;
+
+   return e_comp->dim_client;
+}
+
+static void
+e_comp_objs_dim_enable_set(E_Client *ec, Eina_Bool enable, Eina_Bool noeffect)
+{
+   E_Comp_Object *cw;
+   char emit[32] = "\0";
+   E_Comp_Config *conf = e_comp_config_get();
+   if (!ec) return;
+   if (!ec->frame) return;
+   if (!conf->dim_rect_enable) return;
+
+   cw = evas_object_smart_data_get(ec->frame);
+   if (!cw || (e_util_strcmp(evas_object_type_get(ec->frame), SMART_NAME)))
+     return ;
+
+   if (!cw->effect_obj) return;
+
+   if (enable != cw->dim_enable)
+     {
+        if (noeffect || !conf->dim_rect_effect)
+          {
+             INF("[DIM] Applied on Client[%p] ON[%d]\n",ec,enable );
+             strncpy(emit, (enable ? "e,state,vd,dim,on,noeffect" : "e,state,vd,dim,off,noeffect"), sizeof(emit) - 1);
+          }
+        else
+          {
+             INF("[DIM] Applied on Client[%p] ON[%d]\n",ec,enable );
+           strncpy(emit, (enable ? "e,state,vd,dim,on" : "e,state,vd,dim,off"), sizeof(emit) - 1);
+          }
+
+        edje_object_signal_emit(cw->effect_obj, emit, "e");
+
+     }
+   cw->dim_enable = enable;
+}
+
+static Eina_Bool
+e_comp_objs_dim_enable_get(E_Client *ec)
+{
+   E_Comp_Object *cw;
+   E_Comp_Config *conf = e_comp_config_get();
+   if (!ec) return EINA_FALSE;
+   if (!ec->frame) return EINA_FALSE;
+   if (!conf->dim_rect_enable) return EINA_FALSE;
+
+   cw = evas_object_smart_data_get(ec->frame);
+   if (!cw || (e_util_strcmp(evas_object_type_get(ec->frame), SMART_NAME)))
+     return EINA_FALSE ;
+
+   if (cw->dim_enable) return EINA_TRUE;
+
+   return EINA_FALSE;
+}
+
+static void
+e_comp_objs_dim_update(E_Comp_Object *cw)
+{
+   E_Comp_Config *conf = e_comp_config_get();
+
+   if (!cw) return;
+   if (!conf->dim_rect_enable) return;
+   if (!cw->effect_obj) return;
+   if (cw->dim_enable)
+     {
+        edje_object_signal_emit(cw->effect_obj, (cw->dim_enable ? "e,state,vd,dim,on,noeffect" : "e,state,vd,dim,off,noeffect"), "e");
+        INF("[DIM] Applied on Client[%p] enable[%d]\n",cw->ec, cw->dim_enable);
+     }
+}
+
