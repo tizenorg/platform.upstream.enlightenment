@@ -59,6 +59,9 @@ struct _E_Comp_Config
       Eina_Bool disable_objects;
       Eina_List *objects;    // used for e objects which are not popups or menus
    } match;
+
+   unsigned char dim_rect_enable;
+   unsigned char dim_rect_effect;
 };
 
 struct _E_Comp_Match
