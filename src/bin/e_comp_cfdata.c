@@ -67,6 +67,8 @@ e_comp_cfdata_edd_init(E_Config_DD **conf_edd, E_Config_DD **match_edd)
    E_CONFIG_VAL(D, T, fast_menus, UCHAR);
    E_CONFIG_VAL(D, T, fast_overrides, UCHAR);
    E_CONFIG_VAL(D, T, fast_objects, UCHAR);
+   E_CONFIG_VAL(D, T, dim_rect_effect, UCHAR);
+   E_CONFIG_VAL(D, T, dim_rect_enable, UCHAR);
    E_CONFIG_VAL(D, T, match.disable_popups, UCHAR);
    E_CONFIG_VAL(D, T, match.disable_borders, UCHAR);
    E_CONFIG_VAL(D, T, match.disable_overrides, UCHAR);
@@ -119,6 +121,8 @@ e_comp_cfdata_config_new(void)
    cfg->first_draw_delay = 0.15;
    cfg->skip_first_damage = 1;
    cfg->launch_file = NULL;
+   cfg->dim_rect_effect = 0;
+   cfg->dim_rect_enable = 0;
 
    cfg->match.popups = NULL;
 

@@ -830,6 +830,12 @@ _e_client_del(E_Client *ec)
    focus_stack = eina_list_remove(focus_stack, ec);
    raise_stack = eina_list_remove(raise_stack, ec);
 
+   if (ec == e_comp_object_src_dim_client_get())
+   {
+      INF("[DIM] client deleted\n");
+      e_comp_object_src_dim_client_set(NULL);
+   }
+
    if (ec->cur_mouse_action)
      {
         if (ec->cur_mouse_action->func.end)
