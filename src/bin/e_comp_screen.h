@@ -15,6 +15,8 @@ struct _E_Comp_Screen
    unsigned char  ignore_hotplug_events;
    unsigned char  ignore_acpi_events;
    Eina_List *e_screens;
+
+   const Eina_List *devices;
 };
 
 
