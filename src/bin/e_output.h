@@ -7,6 +7,8 @@ typedef struct _E_Output_Mode   E_Output_Mode;
 #ifndef E_OUTPUT_H
 #define E_OUTPUT_H
 
+#include <Ecore_Drm.h>
+
 #define E_OUTPUT_TYPE (int)0xE0b11002
 
 struct _E_Output_Mode
@@ -37,13 +39,16 @@ struct _E_Output
         Eina_Bool             enabled : 1; // should this monitor be enabled?
    } config;
 
+   Ecore_Drm_Output *output;
+
    int                  plane_count;
    Eina_List           *planes;
    E_Zone              *zone;
 };
 
-EINTERN Eina_Bool         e_output_init(void);
-EINTERN void              e_output_shutdown(void);
+EINTERN E_Output        * e_output_new(Ecore_Drm_Output *output);
+EINTERN void              e_output_del(E_Output *eout);
+EINTERN Eina_Bool         e_output_update(E_Output *eout);
 E_API E_Output          * e_output_find(const char *id);
 E_API const Eina_List   * e_output_planes_get(E_Output *eout);
 E_API void                e_output_util_planes_print(void);
