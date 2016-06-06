@@ -317,7 +317,10 @@ e_pixmap_usable_set(E_Pixmap *cp, Eina_Bool set)
         if (cp->usable)
           _e_pixmap_hook_call(E_PIXMAP_HOOK_USABLE, cp);
         else
-          _e_pixmap_hook_call(E_PIXMAP_HOOK_UNUSABLE, cp);
+          {
+             e_pixmap_image_clear(cp, 1);
+             _e_pixmap_hook_call(E_PIXMAP_HOOK_UNUSABLE, cp);
+          }
      }
 }
 
