@@ -317,7 +317,13 @@ e_pixmap_usable_set(E_Pixmap *cp, Eina_Bool set)
         if (cp->usable)
           _e_pixmap_hook_call(E_PIXMAP_HOOK_USABLE, cp);
         else
-          _e_pixmap_hook_call(E_PIXMAP_HOOK_UNUSABLE, cp);
+          {
+             // if we are received NULL Buffer by client while a surface waiting in the render queue,
+             // we canceled rendering and we doesn't send frame callback event.
+             // in this case e_pixmap_iamge_clear function send frame callback.
+             e_pixmap_image_clear(cp, 1);
+             _e_pixmap_hook_call(E_PIXMAP_HOOK_UNUSABLE, cp);
+          }
      }
 }
 
