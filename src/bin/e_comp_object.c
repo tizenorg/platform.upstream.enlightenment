@@ -3305,6 +3305,13 @@ e_comp_object_damage(Evas_Object *obj, int x, int y, int w, int h)
         cw->nocomp_need_update = EINA_TRUE;
         return;
      }
+
+   // FIXME: will remove out once tdm_output_commit thru e_output,e_plane
+   if (e_comp_is_on_overlay(cw->ec))
+     {
+        e_comp->hwc_need_update = EINA_TRUE;
+     }
+
    /* ignore overdraw */
    if (cw->updates_full)
      {

@@ -139,6 +139,7 @@ struct _E_Comp
 
    int             hwc_override; //number of times hwc override has been requested
    Eina_Bool       hwc_mode;
+   Eina_Bool       hwc_need_update;
 
    int depth;
    unsigned int    input_key_grabs;
