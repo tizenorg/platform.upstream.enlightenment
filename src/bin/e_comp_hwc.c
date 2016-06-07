@@ -1286,8 +1286,8 @@ _e_comp_hwc_canvas_render_post(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void
      {
         if (!hwc_output) continue;
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
-        // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
-        if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
+        if (conn_status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) continue;
+
         if (!hwc_output->primary_layer)
           {
              ERR("no primary layer");
@@ -1555,8 +1555,8 @@ e_comp_hwc_display_client(E_Client *ec)
      {
         if (!hwc_output) continue;
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
-        // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
-        if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
+        if (conn_status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) continue;
+
         if (hwc_output->mode == E_HWC_MODE_COMPOSITE) continue;
 
         switch (hwc_output->mode)
@@ -1630,8 +1630,8 @@ e_comp_hwc_mode_nocomp(E_Client *ec)
      {
         if (!hwc_output) continue;
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
-        // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
-        if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
+        if (conn_status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) continue;
+
         /* make the policy to configure the layers with the client candidates */
 
         hwc_renderer = hwc_output->primary_layer->hwc_renderer;
@@ -1740,8 +1740,8 @@ e_comp_hwc_info_debug(void)
      {
         if (!hwc_output) continue;
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
-        // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
-        if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
+        if (conn_status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) continue;
+
         INF("HWC: HWC Output(%d):(x, y, w, h)=(%d, %d, %d, %d) Information.",
             ++output_idx, hwc_output->x, hwc_output->y, hwc_output->w, hwc_output->h);
         INF("HWC:  num_layers=%d", hwc_output->num_layers);
@@ -1870,8 +1870,8 @@ e_comp_hwc_client_set_layer(E_Client *ec, int zorder)
      {
         if (!hwc_output) continue;
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
-        // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
-        if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
+        if (conn_status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) continue;
+
         EINA_LIST_FOREACH_SAFE(hwc_output->hwc_layers, l_l, ll_l, hwc_layer)
           {
               if (hwc_layer->primary) continue;
@@ -1904,8 +1904,8 @@ e_comp_hwc_client_unset_layer(int zorder)
      {
         if (!hwc_output) continue;
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
-        // TODO: check TDM_OUTPUT_CONN_STATUS_MODE_SETTED
-        if (conn_status != TDM_OUTPUT_CONN_STATUS_CONNECTED) continue;
+        if (conn_status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) continue;
+
         EINA_LIST_FOREACH_SAFE(hwc_output->hwc_layers, l_l, ll_l, hwc_layer)
           {
               if (hwc_layer->primary) continue;
