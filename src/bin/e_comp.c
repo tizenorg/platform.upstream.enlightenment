@@ -402,6 +402,8 @@ _hwc_set(E_Output * eout)
                     {
                        e_client_redirected_set(ep->prepare_ec, 0);
                        ep->ec = ep->prepare_ec;
+                       // FIXME: will remove out once e_output,e_plane takes care of multi plane
+                       e_comp_hwc_mode_nocomp(ep->ec);
                     }
                }
              continue;
@@ -409,7 +411,6 @@ _hwc_set(E_Output * eout)
         if (e_plane_is_cursor(ep)) continue;
         if (ep->zpos > ep_prime->zpos)
           {
-             ep_prime = ep;
              if (ep->prepare_ec)
                {
                   e_client_redirected_set(ep->prepare_ec, 0);
@@ -509,6 +510,8 @@ _e_comp_hwc_cancel(E_Output * eout)
         if (ep->ec) e_client_redirected_set(ep->ec, 1);
         ep->prepare_ec = NULL;
         ep->ec = NULL;
+        // FIXME: will remove out once e_output,e_plane takes care of multi plane
+        e_comp_hwc_mode_nocomp(NULL);
      }
 
    return EINA_TRUE;
@@ -1339,6 +1342,43 @@ _e_comp_screensaver_off(void *data EINA_UNUSED, int type EINA_UNUSED, void *even
    return ECORE_CALLBACK_PASS_ON;
 }
 
+
+static void
+_e_comp_cb_idle(void)
+{
+   Eina_List *l, *ll;
+   E_Zone *zone;
+
+   if (!e_comp->hwc) return;
+   if (!_e_comp_hwc_is_on()) return;
+
+   EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
+     {
+        E_Output *eout = NULL;
+        E_Plane *ep = NULL, *ep_prime = NULL;
+        const Eina_List *ep_l = NULL, *p_l, *p_ll;
+
+        if (!zone || !zone->output_id) continue;
+
+        eout = e_output_find(zone->output_id);
+        ep_l = e_output_planes_get(eout);
+        EINA_LIST_FOREACH_SAFE(ep_l, p_l, p_ll, ep)
+          {
+             if (!ep_prime)
+               {
+                  if (e_plane_is_primary(ep))
+                    {
+                       // FIXME: will remove out once e_output,e_plane takes care of multi plane
+                       if (ep->ec != NULL) e_comp_hwc_display_client(ep->ec);
+                       return;
+                    }
+                  continue;
+               }
+          }
+     }
+   return;
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 EINTERN Eina_Bool
@@ -1420,6 +1460,10 @@ e_comp_init(void)
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN,    _e_comp_key_down,        NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_SIGNAL_USER, _e_comp_signal_user,     NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD, _e_comp_object_add,      NULL);
+
+#ifdef ENABLE_HWC_MULTI
+   ecore_idle_enterer_add(_e_comp_cb_idle, NULL);
+#endif
 
    return EINA_TRUE;
 }
