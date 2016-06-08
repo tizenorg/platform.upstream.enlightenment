@@ -3679,6 +3679,9 @@ e_comp_object_dirty(Evas_Object *obj)
      }
 
 #ifdef HAVE_HWC
+#ifdef ENABLE_HWC_MULTI
+   e_comp_object_native_surface_set(obj, e_comp->gl);
+#else
    if (e_comp->hwc)
      {
         if (!e_comp_hwc_native_surface_set(cw->ec))
@@ -3686,6 +3689,7 @@ e_comp_object_dirty(Evas_Object *obj)
      }
    else
      e_comp_object_native_surface_set(obj, e_comp->gl);
+#endif
 #else
    e_comp_object_native_surface_set(obj, e_comp->gl);
 #endif
