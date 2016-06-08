@@ -5,6 +5,8 @@
 #ifndef E_COMP_SCREEN_H
 #define E_COMP_SCREEN_H
 
+#include <tdm.h>
+
 typedef struct _E_Comp_Screen   E_Comp_Screen;
 typedef struct _E_Screen        E_Screen;
 
@@ -16,6 +18,10 @@ struct _E_Comp_Screen
    unsigned char  ignore_acpi_events;
    Eina_List *e_screens;
 
+   int num_outputs;
+   tdm_display *tdisplay;
+
+   /* for sw compositing */
    const Eina_List *devices;
 };
 
