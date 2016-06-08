@@ -428,6 +428,23 @@ e_module_new(const char *name)
         goto init_done;
      }
 
+   /* e-mod-tize-eom related */
+   if (strcmp(m->api->name, "EOM Module") == 0)
+   {
+	   E_Module_EOM_Data *eom_data = E_NEW(E_Module_EOM_Data, 1);
+	   if (!eom_data)
+         goto init_done;
+
+       eom_data->output_is_external = dlsym(m->handle, "e_eom_output_is_external");
+       if (!eom_data->output_is_external)
+         {
+            free(eom_data);
+            goto init_done;
+         }
+
+       m->data = (void *) eom_data;
+   }
+
 init_done:
 
    _e_modules = eina_list_append(_e_modules, m);
