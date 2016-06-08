@@ -1717,7 +1717,14 @@ E_API void
 e_comp_override_add()
 {
    e_comp->hwc_override++;
-   if ((e_comp->hwc_override > 0) && (e_comp->nocomp)) e_comp_nocomp_end(__FUNCTION__);
+   if ((e_comp->hwc_override > 0) && (e_comp->nocomp))
+     {
+#ifdef MULTI_PLANE_HWC
+        _e_comp_hwc_end(__FUNCTION__);
+#else
+        e_comp_nocomp_end(__FUNCTION__);
+#endif // end of MULTI_PLANE_HWC
+     }
 }
 
 E_API E_Comp *

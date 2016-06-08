@@ -718,7 +718,11 @@ e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
              ecore_evas_object_cursor_set(ptr->ee, obj, E_LAYER_MAX - 1, x, y);
              if (e_pointer_is_hidden(ptr))
                {
-                 e_comp_nocomp_end("re_cursor_set");
+#ifdef MULTI_PLANE_HWC
+                  _e_comp_hwc_end("re_cursor_set");
+#else
+                  e_comp_nocomp_end("re_cursor_set");
+#endif // end of MULTI_PLANE_HWC
                }
              return;
           }
@@ -740,7 +744,11 @@ e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
 
    if (e_pointer_is_hidden(ptr))
      {
+#ifdef MULTI_PLANE_HWC
+       _e_comp_hwc_end("cursor_set");
+#else
        e_comp_nocomp_end("cursor_set");
+#endif // end of MULTI_PLANE_HWC
      }
 }
 
