@@ -6097,4 +6097,42 @@ e_client_is_external_output_client(E_Client *ec)
    return ec->external_output_client;
 }
 
+E_API void
+e_client_external_output_name_set(E_Client *ec, const char *output_name)
+{
+   ec->external_output_name = eina_stringshare_add(output_name);
+}
+
+E_API void
+e_client_external_output_name_unset(E_Client *ec)
+{
+   eina_stringshare_del(ec->external_output_name);
+}
+
+E_API const char *
+e_client_external_output_name_get(E_Client *ec)
+{
+   if (ec->external_output_name == NULL)
+     return NULL;
+   return eina_stringshare_add(ec->external_output_name);
+}
+
+E_API const char *
+e_client_external_output_name_by_resorce_get(struct wl_resource *output_resource)
+{
+   E_Comp_Wl_Output *wl_output = NULL;
+
+   if (output_resource == NULL)
+     return NULL;
+
+   wl_output = wl_resource_get_user_data(output_resource);
+   if (wl_output == NULL)
+	 return NULL;
+
+   if (wl_output->id == NULL)
+     return NULL;
+
+   return eina_stringshare_add(wl_output->id);
+}
+
 ////////////////////////////////////////////

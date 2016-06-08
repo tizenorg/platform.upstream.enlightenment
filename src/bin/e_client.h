@@ -231,6 +231,9 @@ typedef void (*E_Client_Layout_Cb)(void);
 
 #define E_CLIENT_TYPE (int)0xE0b01002
 
+/* e-mod-tize-eom related */
+#include "e_comp_wl.h"
+
 struct E_Event_Client
 {
    E_Client *ec;
@@ -796,6 +799,7 @@ struct E_Client
    Eina_Bool post_raise : 1;
    Eina_Bool post_lower : 1;
    Eina_Bool external_output_client : 1; //e-mod-tizen-eom related
+   const char *external_output_name; //Name of output the client is
 
    Eina_Bool on_post_updates : 1; // client is on the post update list
    uuid_t uuid;
@@ -1007,6 +1011,10 @@ E_API E_Pixmap *e_client_pixmap_change(E_Client *ec, E_Pixmap *newcp);
 E_API void e_client_external_output_client_set(E_Client *ec);
 E_API void e_client_external_output_client_unset(E_Client *ec);
 E_API Eina_Bool e_client_is_external_output_client(E_Client *ec);
+E_API void e_client_external_output_name_set(E_Client *ec, const char *name);
+E_API void e_client_external_output_name_unset(E_Client *ec);
+E_API const char *e_client_external_output_name_get(E_Client *ec);
+E_API const char *e_client_external_output_name_by_resorce_get(struct wl_resource *output_resource);
 
 /**
  * Move window to coordinates that do not account client decorations yet.
