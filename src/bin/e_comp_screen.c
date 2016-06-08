@@ -53,10 +53,10 @@ end:
 }
 
 static Eina_Bool
-_e_comp_screen_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
+_e_comp_screen_cb_output_drm(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
 {
    const Eina_List *l;
-   E_Output *eout;
+   E_Output *output;
    Ecore_Drm_Event_Output *e;
    E_Comp_Screen *e_comp_screen = NULL;
 
@@ -68,24 +68,24 @@ _e_comp_screen_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *eve
 
    DBG("WL_DRM OUTPUT CHANGE");
 
-   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
-        if ((!strcmp(eout->info.name, e->name)) &&
-            (!strcmp(eout->info.screen, e->model)))
+        if ((!strcmp(output->info.name, e->name)) &&
+            (!strcmp(output->info.screen, e->model)))
           {
              if (e->plug)
                {
-                  if (!e_comp_wl_output_init(eout->id, e->make, e->model,
+                  if (!e_comp_wl_output_init(output->id, e->make, e->model,
                                              e->x, e->y, e->w, e->h,
                                              e->phys_width, e->phys_height,
                                              e->refresh, e->subpixel_order,
                                              e->transform))
                     {
-                       ERR("Could not setup new output: %s", eout->id);
+                       ERR("Could not setup new output: %s", output->id);
                     }
                }
              else
-               e_comp_wl_output_remove(eout->id);
+               e_comp_wl_output_remove(output->id);
 
              break;
           }
@@ -100,6 +100,35 @@ _e_comp_screen_cb_output(void *data EINA_UNUSED, int type EINA_UNUSED, void *eve
 end:
    return ECORE_CALLBACK_PASS_ON;
 }
+
+#ifdef ENABLE_HWC_MULTI
+static Eina_Bool
+_e_comp_screen_commit_idle_cb(void *data EINA_UNUSED)
+{
+   Eina_List *l, *ll;
+   E_Comp_Screen *e_comp_screen = NULL;
+   E_Output *output = NULL;
+
+   if (!e_comp->e_comp_screen) goto end;
+
+   e_comp_screen = e_comp->e_comp_screen;
+
+   EINA_LIST_FOREACH_SAFE(e_comp_screen->outputs, l, ll, output)
+     {
+        if (!output) continue;
+        if (!output->config.enabled) continue;
+
+        if (!e_output_commit(output))
+          {
+             ERR("fail to e_comp_screen->outputs.");
+             continue;
+          }
+     }
+
+end:
+   return ECORE_CALLBACK_RENEW;
+}
+#endif
 
 static Eina_Bool
 _e_comp_screen_cb_input_device_add(void *data, int type, void *event)
@@ -164,17 +193,17 @@ _e_comp_screen_cb_ee_resize(Ecore_Evas *ee EINA_UNUSED)
 }
 
 static Ecore_Drm_Output_Mode *
-_e_comp_screen_mode_screen_find(E_Output *eout, Ecore_Drm_Output *output)
+_e_comp_screen_mode_screen_find(E_Output *output, Ecore_Drm_Output *drm_output)
 {
    Ecore_Drm_Output_Mode *mode, *m = NULL;
    const Eina_List *l;
    int diff, distance = 0x7fffffff;
 
-   EINA_LIST_FOREACH(ecore_drm_output_modes_get(output), l, mode)
+   EINA_LIST_FOREACH(ecore_drm_output_modes_get(drm_output), l, mode)
      {
-        diff = (100 * abs(eout->config.mode.w - mode->width)) +
-           (100 * abs(eout->config.mode.h - mode->height)) +
-           fabs((100 * eout->config.mode.refresh) - (100 * mode->refresh));
+        diff = (100 * abs(output->config.mode.w - mode->width)) +
+           (100 * abs(output->config.mode.h - mode->height)) +
+           fabs((100 * output->config.mode.refresh) - (100 * mode->refresh));
         if (diff < distance)
           {
              m = mode;
@@ -189,14 +218,27 @@ static E_Comp_Screen *
 _e_comp_screen_new(void)
 {
    E_Comp_Screen *e_comp_screen = NULL;
+   tdm_error error = TDM_ERROR_NONE;
 
    e_comp_screen = E_NEW(E_Comp_Screen, 1);
    if (!e_comp_screen) return NULL;
 
-   /* Ecore_Drm_Device list */
-   e_comp_screen->devices = ecore_drm_devices_get();
-
-   /* TODO: tdm display init */
+   if (e_comp_gl_get())
+     {
+        /* tdm display init */
+        e_comp_screen->tdisplay = tdm_display_init(&error);
+        if (!e_comp_screen->tdisplay)
+          {
+             ERR("fail to get tdm_display\n");
+             free(e_comp_screen);
+             return NULL;
+          }
+     }
+   else
+     {
+        /* Ecore_Drm_Device list */
+        e_comp_screen->devices = ecore_drm_devices_get();
+     }
 
    return e_comp_screen;
 }
@@ -206,11 +248,27 @@ _e_comp_screen_del(E_Comp_Screen *e_comp_screen)
 {
    if (!e_comp_screen) return;
 
+   if (e_comp_screen->tdisplay) tdm_display_deinit(e_comp_screen->tdisplay);
+
    free(e_comp_screen);
 }
 
+static void
+_e_comp_screen_deinit_outputs(E_Comp_Screen *e_comp_screen)
+{
+   E_Output *output;
+
+   // free up e_outputs
+   EINA_LIST_FREE(e_comp_screen->outputs, output)
+     {
+        e_output_del(output);
+     }
+
+   e_output_shutdown();
+}
+
 static Eina_Bool
-_e_comp_screen_init_outputs(E_Comp_Screen *e_comp_screen)
+_e_comp_screen_init_drm_outputs(E_Comp_Screen *e_comp_screen)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *output;
@@ -222,9 +280,9 @@ _e_comp_screen_init_outputs(E_Comp_Screen *e_comp_screen)
         EINA_LIST_FOREACH(dev->outputs, ll, output)
           {
              if (!output) continue;
-             eout = e_output_new(output);
+             eout = e_output_drm_new(output);
              if (!eout) continue;
-             if(!e_output_update(eout))
+             if(!e_output_drm_update(eout))
                {
                   ERR("fail to e_output_update.");
                }
@@ -237,24 +295,84 @@ _e_comp_screen_init_outputs(E_Comp_Screen *e_comp_screen)
    return EINA_TRUE;
 }
 
-static void
-_e_comp_screen_deinit_outputs(E_Comp_Screen *e_comp_screen)
+static Eina_Bool
+_e_comp_screen_init_outputs(E_Comp_Screen *e_comp_screen)
 {
-   E_Output *eout;
+   E_Output *output = NULL;
+   E_Output_Mode *mode = NULL;
+   tdm_display *tdisplay = e_comp_screen->tdisplay;
+   int num_outputs;
+   int i;
 
-   // free up e_outputs
-   EINA_LIST_FREE(e_comp_screen->outputs, eout)
+   /* init e_output */
+   if (!e_output_init())
      {
-        e_output_del(eout);
+        ERR("fail to e_output_init.");
+        return EINA_FALSE;
      }
+
+   /* get the num of outputs */
+   tdm_display_get_output_count(tdisplay, &num_outputs);
+   if (num_outputs < 1)
+     {
+        ERR("fail to get tdm_display_get_output_count\n");
+        return EINA_FALSE;
+     }
+   e_comp_screen->num_outputs = num_outputs;
+
+   INF("E_COMP_SCREEN: num_outputs = %i", e_comp_screen->num_outputs);
+
+   for (i = 0; i < num_outputs; i++)
+     {
+        output = e_output_new(e_comp_screen, i);
+        if (!output) goto fail;
+
+        if (!e_output_update(output))
+          {
+            ERR("fail to e_output_update.");
+            goto fail;
+          }
+
+        e_comp_screen->outputs = eina_list_append(e_comp_screen->outputs, output);
+
+        if (!e_output_connected(output)) continue;
+
+        /* setting with the best mode and enable the output */
+        mode = e_output_best_mode_find(output);
+        if (!mode)
+          {
+             ERR("fail to get best mode.");
+             goto fail;
+          }
+
+        if (!e_output_mode_apply(output, mode))
+          {
+             ERR("fail to e_output_mode_apply.");
+             goto fail;
+          }
+        if (!e_output_dpms_set(output, E_OUTPUT_DPMS_ON))
+          {
+             ERR("fail to e_output_dpms.");
+             goto fail;
+          }
+     }
+
+   //TODO: if there is no output connected, make the fake output which is connected.
+
+
+   return EINA_TRUE;
+fail:
+   _e_comp_screen_deinit_outputs(e_comp_screen);
+
+   return EINA_FALSE;
 }
 
-EINTERN void
+static void
 _e_comp_screen_apply(E_Comp_Screen *e_comp_screen)
 {
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *out;
-   E_Output *eout;
+   E_Output *output;
 
    const Eina_List *l, *ll;
    int nw, nh, pw, ph, ww, hh;
@@ -284,24 +402,24 @@ _e_comp_screen_apply(E_Comp_Screen *e_comp_screen)
 
         printf("COMP TDM: set vsize: %ix%i\n", ww, hh);
 
-        EINA_LIST_FOREACH(e_comp_screen->outputs, ll, eout)
+        EINA_LIST_FOREACH(e_comp_screen->outputs, ll, output)
           {
              Ecore_Drm_Output_Mode *mode = NULL;
-             printf("COMP TDM: find output for '%s'\n", eout->info.name);
+             printf("COMP TDM: find output for '%s'\n", output->info.name);
 
-             out = ecore_drm_device_output_name_find(dev, eout->info.name);
+             out = ecore_drm_device_output_name_find(dev, output->info.name);
              if (!out) continue;
 
-             mode = _e_comp_screen_mode_screen_find(eout, out);
+             mode = _e_comp_screen_mode_screen_find(output, out);
 
-             if (eout->config.priority > top_priority)
-               top_priority = eout->config.priority;
+             if (output->config.priority > top_priority)
+               top_priority = output->config.priority;
 
-             printf("\tCOMP TDM: Priority: %d\n", eout->config.priority);
+             printf("\tCOMP TDM: Priority: %d\n", output->config.priority);
 
              printf("\tCOMP TDM: Geom: %d %d %d %d\n",
-                    eout->config.geom.x, eout->config.geom.y,
-                    eout->config.geom.w, eout->config.geom.h);
+                    output->config.geom.x, output->config.geom.y,
+                    output->config.geom.w, output->config.geom.h);
 
              if (mode)
                {
@@ -312,18 +430,18 @@ _e_comp_screen_apply(E_Comp_Screen *e_comp_screen)
                printf("\tCOMP TDM: No Valid Drm Mode Found\n");
 
              ecore_drm_output_mode_set(out, mode,
-                                       eout->config.geom.x, eout->config.geom.y);
-             if (eout->config.priority == top_priority)
+                                       output->config.geom.x, output->config.geom.y);
+             if (output->config.priority == top_priority)
                ecore_drm_output_primary_set(out);
 
              ecore_drm_output_enable(out);
 
              printf("\tCOMP TDM: Mode\n");
              printf("\t\tCOMP TDM: Geom: %d %d\n",
-                    eout->config.mode.w, eout->config.mode.h);
-             printf("\t\tCOMP TDM: Refresh: %f\n", eout->config.mode.refresh);
+                    output->config.mode.w, output->config.mode.h);
+             printf("\t\tCOMP TDM: Refresh: %f\n", output->config.mode.refresh);
              printf("\t\tCOMP TDM: Preferred: %d\n",
-                    eout->config.mode.preferred);
+                    output->config.mode.preferred);
           }
      }
 }
@@ -414,7 +532,7 @@ static void
 _e_comp_screen_config_eval(E_Comp_Screen *e_comp_screen)
 {
    Eina_List *l;
-   E_Output *eout;
+   E_Output *output;
    int minx, miny, maxx, maxy;
 
    minx = 65535;
@@ -422,25 +540,25 @@ _e_comp_screen_config_eval(E_Comp_Screen *e_comp_screen)
    maxx = -65536;
    maxy = -65536;
 
-   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
-        if (!eout->config.enabled) continue;
-        if (eout->config.geom.x < minx) minx = eout->config.geom.x;
-        if (eout->config.geom.y < miny) miny = eout->config.geom.y;
-        if ((eout->config.geom.x + eout->config.geom.w) > maxx)
-          maxx = eout->config.geom.x + eout->config.geom.w;
-        if ((eout->config.geom.y + eout->config.geom.h) > maxy)
-          maxy = eout->config.geom.y + eout->config.geom.h;
+        if (!output->config.enabled) continue;
+        if (output->config.geom.x < minx) minx = output->config.geom.x;
+        if (output->config.geom.y < miny) miny = output->config.geom.y;
+        if ((output->config.geom.x + output->config.geom.w) > maxx)
+          maxx = output->config.geom.x + output->config.geom.w;
+        if ((output->config.geom.y + output->config.geom.h) > maxy)
+          maxy = output->config.geom.y + output->config.geom.h;
         printf("OUTPUT: s: '%s' @ %i %i - %ix%i\n",
-               eout->info.name,
-               eout->config.geom.x, eout->config.geom.y,
-               eout->config.geom.w, eout->config.geom.h);
+               output->info.name,
+               output->config.geom.x, output->config.geom.y,
+               output->config.geom.w, output->config.geom.h);
      }
    printf("OUTPUT:--- %i %i -> %i %i\n", minx, miny, maxx, maxy);
-   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
-        eout->config.geom.x -= minx;
-        eout->config.geom.y -= miny;
+        output->config.geom.x -= minx;
+        output->config.geom.y -= miny;
      }
    e_comp_screen->w = maxx - minx;
    e_comp_screen->h = maxy - miny;
@@ -450,22 +568,22 @@ static void
 _e_comp_screen_config_maxsize(E_Comp_Screen *e_comp_screen)
 {
    Eina_List *l;
-   E_Output *eout;
+   E_Output *output;
    int maxx, maxy;
 
    maxx = -65536;
    maxy = -65536;
-   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
-        if (!eout->config.enabled) continue;
-        if ((eout->config.geom.x + eout->config.geom.w) > maxx)
-          maxx = eout->config.geom.x + eout->config.geom.w;
-        if ((eout->config.geom.y + eout->config.geom.h) > maxy)
-          maxy = eout->config.geom.y + eout->config.geom.h;
+        if (!output->config.enabled) continue;
+        if ((output->config.geom.x + output->config.geom.w) > maxx)
+          maxx = output->config.geom.x + output->config.geom.w;
+        if ((output->config.geom.y + output->config.geom.h) > maxy)
+          maxy = output->config.geom.y + output->config.geom.h;
         printf("OUTPUT: '%s': %i %i %ix%i\n",
-               eout->info.name,
-               eout->config.geom.x, eout->config.geom.y,
-               eout->config.geom.w, eout->config.geom.h);
+               output->info.name,
+               output->config.geom.x, output->config.geom.y,
+               output->config.geom.w, output->config.geom.h);
      }
    printf("OUTPUT: result max: %ix%i\n", maxx, maxy);
    e_comp_screen->w = maxx;
@@ -510,18 +628,18 @@ e_comp_screen_e_screens_setup(E_Comp_Screen *e_comp_screen, int rw, int rh)
    Eina_List *outputs = NULL, *outputs_rem;
    Eina_List *e_screens = NULL;
    Eina_List *l, *ll;
-   E_Output *eout, *s2, *s_chosen;
+   E_Output *output, *s2, *s_chosen;
    Eina_Bool removed;
 
    if ((!e_comp_screen) || (!e_comp_screen->outputs)) goto out;
    // put screens in tmp list
-   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
-        if ((eout->config.enabled) &&
-            (eout->config.geom.w > 0) &&
-            (eout->config.geom.h > 0))
+        if ((output->config.enabled) &&
+            (output->config.geom.w > 0) &&
+            (output->config.geom.h > 0))
           {
-             outputs = eina_list_append(outputs, eout);
+             outputs = eina_list_append(outputs, output);
           }
      }
    // remove overlapping screens - if a set of screens overlap, keep the
@@ -530,19 +648,19 @@ e_comp_screen_e_screens_setup(E_Comp_Screen *e_comp_screen, int rw, int rh)
      {
         removed = EINA_FALSE;
 
-        EINA_LIST_FOREACH(outputs, l, eout)
+        EINA_LIST_FOREACH(outputs, l, output)
           {
              outputs_rem = NULL;
 
              EINA_LIST_FOREACH(l->next, ll, s2)
                {
-                  if (E_INTERSECTS(eout->config.geom.x, eout->config.geom.y,
-                                   eout->config.geom.w, eout->config.geom.h,
+                  if (E_INTERSECTS(output->config.geom.x, output->config.geom.y,
+                                   output->config.geom.w, output->config.geom.h,
                                    s2->config.geom.x, s2->config.geom.y,
                                    s2->config.geom.w, s2->config.geom.h))
                     {
                        if (!outputs_rem)
-                         outputs_rem = eina_list_append(outputs_rem, eout);
+                         outputs_rem = eina_list_append(outputs_rem, output);
                        outputs_rem = eina_list_append(outputs_rem, s2);
                     }
                }
@@ -579,15 +697,15 @@ e_comp_screen_e_screens_setup(E_Comp_Screen *e_comp_screen, int rw, int rh)
    // sort screens by priority etc.
    outputs = eina_list_sort(outputs, 0, _e_comp_screen_e_screen_sort_cb);
    i = 0;
-   EINA_LIST_FOREACH(outputs, l, eout)
+   EINA_LIST_FOREACH(outputs, l, output)
      {
         screen = E_NEW(E_Screen, 1);
         screen->escreen = screen->screen = i;
-        screen->x = eout->config.geom.x;
-        screen->y = eout->config.geom.y;
-        screen->w = eout->config.geom.w;
-        screen->h = eout->config.geom.h;
-        if (eout->id) screen->id = strdup(eout->id);
+        screen->x = output->config.geom.x;
+        screen->y = output->config.geom.y;
+        screen->w = output->config.geom.w;
+        screen->h = output->config.geom.h;
+        if (output->id) screen->id = strdup(output->id);
 
         e_screens = eina_list_append(e_screens, screen);
         INF("E INIT: SCREEN: [%i][%i], %ix%i+%i+%i",
@@ -739,23 +857,38 @@ e_comp_screen_init()
    e_comp->e_comp_screen = e_comp_screen;
 
    e_main_ts("\tE_Outputs Init");
-   if (!_e_comp_screen_init_outputs(e_comp_screen))
+   if (e_comp_gl_get())
      {
-        e_error_message_show(_("Enlightenment cannot initialize outputs!\n"));
-        _e_comp_screen_del(e_comp_screen);
-        e_comp->e_comp_screen = NULL;
-        TRACE_DS_END();
-        return EINA_FALSE;
+        if (!_e_comp_screen_init_outputs(e_comp_screen))
+          {
+             e_error_message_show(_("Enlightenment cannot initialize outputs!\n"));
+             _e_comp_screen_del(e_comp_screen);
+             e_comp->e_comp_screen = NULL;
+             TRACE_DS_END();
+             return EINA_FALSE;
+          }
      }
-   if (!E_EVENT_SCREEN_CHANGE) E_EVENT_SCREEN_CHANGE = ecore_event_type_new();
+   else
+     {
+        if (!_e_comp_screen_init_drm_outputs(e_comp_screen))
+          {
+             e_error_message_show(_("Enlightenment cannot initialize outputs!\n"));
+             _e_comp_screen_del(e_comp_screen);
+             e_comp->e_comp_screen = NULL;
+             TRACE_DS_END();
+             return EINA_FALSE;
+          }
 
-   // take current e_output config and apply it to the driver
-   _e_comp_screen_config_maxsize(e_comp_screen);
-   printf("OUTPUT: eval config...\n");
-   _e_comp_screen_config_eval(e_comp_screen);
-   printf("OUTPUT: really apply config...\n");
-   _e_comp_screen_apply(e_comp_screen);
-   printf("OUTPUT: done config...\n");
+        // take current e_output config and apply it to the driver
+        _e_comp_screen_config_maxsize(e_comp_screen);
+        printf("OUTPUT: eval config...\n");
+        _e_comp_screen_config_eval(e_comp_screen);
+        printf("OUTPUT: really apply config...\n");
+        _e_comp_screen_apply(e_comp_screen);
+        printf("OUTPUT: done config...\n");
+     }
+
+   if (!E_EVENT_SCREEN_CHANGE) E_EVENT_SCREEN_CHANGE = ecore_event_type_new();
 
    ecore_event_add(E_EVENT_SCREEN_CHANGE, NULL, NULL, NULL);
 
@@ -833,9 +966,13 @@ e_comp_screen_init()
    e_main_ts("\tE_Comp_WL Keymap Init Done");
 
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_ACTIVATE,         _e_comp_screen_cb_activate,         comp);
-   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_OUTPUT,           _e_comp_screen_cb_output,           comp);
+   E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_OUTPUT,           _e_comp_screen_cb_output_drm,       comp);
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_ADD, _e_comp_screen_cb_input_device_add, comp);
    E_LIST_HANDLER_APPEND(event_handlers, ECORE_DRM_EVENT_INPUT_DEVICE_DEL, _e_comp_screen_cb_input_device_del, comp);
+
+#ifdef ENABLE_HWC_MULTI
+   ecore_idle_enterer_add(_e_comp_screen_commit_idle_cb, comp);
+#endif
 
    TRACE_DS_END();
 
@@ -860,4 +997,27 @@ e_comp_screen_shutdown()
    /* delete e_comp_sreen */
    _e_comp_screen_del(e_comp->e_comp_screen);
    e_comp->e_comp_screen = NULL;
+}
+
+EINTERN Eina_Bool
+e_comp_screen_hwc_setup(E_Comp_Screen *e_comp_screen)
+{
+   Eina_List *l, *ll;
+   E_Output *output = NULL;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(e_comp_screen, EINA_FALSE);
+
+   EINA_LIST_FOREACH_SAFE(e_comp_screen->outputs, l, ll, output)
+     {
+        if (!output) continue;
+        if (!output->config.enabled) continue;
+
+        if (!e_output_hwc_setup(output))
+          {
+             ERR("fail to e_ouptut_hwc_setup.");
+             continue;
+          }
+     }
+
+   return EINA_TRUE;
 }

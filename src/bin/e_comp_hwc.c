@@ -1391,6 +1391,21 @@ _e_comp_hwc_remove(E_Comp_Hwc *hwc)
 EINTERN Eina_Bool
 e_comp_hwc_init(void)
 {
+#ifdef ENABLE_HWC_MULTI
+   if (!e_comp || !e_comp->e_comp_screen)
+     {
+        e_error_message_show(_("Enlightenment cannot has no e_comp at HWC(HardWare Composite)!\n"));
+        return EINA_FALSE;
+     }
+
+   if (!e_comp_screen_hwc_setup(e_comp->e_comp_screen))
+     {
+        ERR("fail to e_comp_screen_hwc_setup");
+        return EINA_FALSE;
+     }
+
+   return EINA_TRUE;
+#else
    E_Comp_Hwc *hwc = NULL;
    E_Comp_Hwc_Output *hwc_output = NULL;
    E_Comp_Hwc_Layer *hwc_layer = NULL;
@@ -1525,6 +1540,7 @@ fail:
    _e_comp_hwc_remove(hwc);
 
    return EINA_FALSE;
+#endif
 }
 
 EINTERN void
@@ -1532,7 +1548,10 @@ e_comp_hwc_shutdown(void)
 {
    if (!e_comp) return;
 
+#ifdef ENABLE_HWC_MULTI
+#else
    _e_comp_hwc_remove(g_hwc);
+#endif
 }
 
 
@@ -1803,6 +1822,9 @@ _e_comp_hwc_check_buffer_scanout(E_Client *ec)
 EINTERN Eina_Bool
 e_comp_hwc_native_surface_set(E_Client *ec)
 {
+#ifdef ENABLE_HWC_MULTI
+   return EINA_FALSE;
+#else
    EINA_SAFETY_ON_NULL_RETURN_VAL(ec, EINA_FALSE);
 
    E_Comp_Hwc_Client *hwc_client = NULL;
@@ -1839,6 +1861,7 @@ e_comp_hwc_native_surface_set(E_Client *ec)
 #endif
 
    return EINA_TRUE;
+#endif
 }
 
 EINTERN void

@@ -1,19 +1,85 @@
 #include "e.h"
 
-static char *
-_e_output_model_get(Ecore_Drm_Output *output)
+# include <Evas_Engine_GL_Drm.h>
+
+static void
+_e_output_commit_hanler(tdm_output *output, unsigned int sequence,
+                                  unsigned int tv_sec, unsigned int tv_usec,
+                                  void *user_data)
 {
-   const char *model;
+   Eina_List *data_list = user_data;
+   E_Plane_Commit_Data *data = NULL;
+   Eina_List *l;
 
-   model = ecore_drm_output_model_get(output);
-   if (!model) return NULL;
+   ELOGF("E_OUTPUT", "Commit handler", NULL, NULL);
 
-   return strdup(model);
+   EINA_LIST_REVERSE_FOREACH(data_list, l, data)
+     {
+        data_list = eina_list_remove_list(data_list, l);
+        e_plane_commit_data_release(data);
+        data = NULL;
+     }
 }
 
+static Eina_Bool
+_e_output_commit(E_Output *output)
+{
+   Eina_List *data_list = NULL;
+   E_Plane_Commit_Data *data = NULL;
+   E_Plane *plane = NULL;
+   Eina_List *l;
+   tdm_error error;
+
+   EINA_LIST_REVERSE_FOREACH(output->planes, l, plane)
+     {
+        data = e_plane_commit_data_aquire(plane);
+        if (!data) continue;
+        data_list = eina_list_append(data_list, data);
+     }
+
+   error = tdm_output_commit(output->toutput, 0, _e_output_commit_hanler, data_list);
+   if (error != TDM_ERROR_NONE)
+     {
+        ERR("fail to tdm_output_commit");
+        EINA_LIST_REVERSE_FOREACH(data_list, l, data)
+          {
+             data_list = eina_list_remove_list(data_list, l);
+             e_plane_commit_data_release(data);
+             data = NULL;
+          }
+        return EINA_FALSE;
+     }
+
+   return EINA_TRUE;
+}
+
+EINTERN Eina_Bool
+e_output_init(void)
+{
+#if 0
+   Evas_Engine_Info_GL_Drm *einfo;
+
+   /* TODO: enable hwc according to the conf->hwc */
+   if (e_comp_gl_get())
+     {
+        /* get the evas_engine_gl_drm information */
+        einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
+        if (!einfo) return EINA_FALSE;
+        /* enable hwc to evas engine gl_drm */
+        einfo->info.hwc_enable = EINA_TRUE;
+     }
+#endif
+   return EINA_TRUE;
+}
+
+EINTERN void
+e_output_shutdown(void)
+{
+   ;
+}
 
 EINTERN E_Output *
-e_output_new(Ecore_Drm_Output *output)
+e_output_drm_new(Ecore_Drm_Output *output)
 {
    E_Output *eout = NULL;
    int i;
@@ -32,11 +98,9 @@ e_output_new(Ecore_Drm_Output *output)
    for (i = 0; i < eout->plane_count; i++)
      {
         printf("COMP TDM: added plane %i\n", i);
-        Eina_Bool pri = EINA_FALSE;
         E_Plane *ep = NULL;
         // TODO: primary layer condition (0 is temp condition)
-        if (i == 0) pri = EINA_TRUE;
-        ep = e_plane_new(eout, i, pri);
+        ep = e_plane_new(eout, i);
         // TODO: fb target condition (0 is temp condition)
         if (i == 0) e_plane_fb_set(ep, EINA_TRUE);
      }
@@ -46,26 +110,409 @@ e_output_new(Ecore_Drm_Output *output)
    return eout;
 }
 
-EINTERN void
-e_output_del(E_Output *eout)
+EINTERN E_Output *
+e_output_new(E_Comp_Screen *e_comp_screen, int index)
 {
-   E_Plane *ep;
+   E_Output *output = NULL;
+   E_Plane *plane = NULL;
+   tdm_output *toutput = NULL;
+   tdm_error error;
+   char *id = NULL;
+   const char *name;
+   int num_layers;
+   int i;
+   int size = 0;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(e_comp_screen, NULL);
+
+   output = E_NEW(E_Output, 1);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, NULL);
+   output->index = index;
+
+   toutput = tdm_display_get_output(e_comp_screen->tdisplay, index, NULL);
+   if (!toutput) goto fail;
+   output->toutput = toutput;
+
+   error = tdm_output_get_model_info(toutput, NULL, NULL, &name);
+   if (error != TDM_ERROR_NONE) goto fail;
+
+   size = strlen(name) + 4;
+   id = calloc(1, size);
+   if (!id) return NULL;
+   snprintf(id, size, "%s-%d", name, index);
+
+   output->id = id;
+   INF("E_OUTPUT: (%d) output_id = %s", index, output->id);
+
+   tdm_output_get_layer_count(toutput, &num_layers);
+   if (num_layers < 1)
+     {
+        ERR("fail to get tdm_output_get_layer_count\n");
+        goto fail;
+     }
+   output->plane_count = num_layers;
+   INF("E_OUTPUT: num_planes %i", output->plane_count);
+
+   if (!e_plane_init())
+     {
+        ERR("fail to e_plane_init.");
+        goto fail;
+     }
+
+   for (i = 0; i < output->plane_count; i++)
+     {
+        plane = e_plane_new(output, i);
+        if (!plane)
+          {
+             ERR("fail to create the e_plane.");
+             goto fail;
+          }
+        output->planes = eina_list_append(output->planes, plane);
+     }
+
+   output->e_comp_screen = e_comp_screen;
+
+   return output;
+
+fail:
+   if (output) e_output_del(output);
+
+   return NULL;
+}
+
+EINTERN void
+e_output_del(E_Output *output)
+{
+   E_Plane *plane;
    E_Output_Mode *m;
 
-   if (!eout) return;
+   if (!output) return;
 
-   free(eout->id);
-   free(eout->info.screen);
-   free(eout->info.name);
-   free(eout->info.edid);
-   EINA_LIST_FREE(eout->info.modes, m) free(m);
+   e_plane_shutdown();
 
-   EINA_LIST_FREE(eout->planes, ep) e_plane_free(ep);
-   free(eout);
+   if (output->id) free(output->id);
+   if (output->info.screen) free(output->info.screen);
+   if (output->info.name) free(output->info.name);
+   if (output->info.edid) free(output->info.edid);
+   EINA_LIST_FREE(output->info.modes, m) free(m);
+
+   EINA_LIST_FREE(output->planes, plane) e_plane_free(plane);
+   free(output);
 }
 
 EINTERN Eina_Bool
-e_output_update(E_Output *eout)
+e_output_update(E_Output *output)
+{
+   Eina_List *m = NULL;
+   Eina_List *modes = NULL;
+   Eina_Bool connected = EINA_TRUE;
+   tdm_error error;
+   tdm_output_conn_status status;
+   int i;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, EINA_FALSE);
+
+   error = tdm_output_get_conn_status(output->toutput, &status);
+   if (error != TDM_ERROR_NONE)
+     {
+        ERR("failt to get conn status.");
+        return EINA_FALSE;
+     }
+
+   if (status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) connected = EINA_FALSE;
+
+   if (connected)
+     {
+        /* disconnect --> connect */
+        if (connected != output->info.connected)
+          {
+             char *name;
+             const char *screen;
+             const char *maker;
+             unsigned int phy_w, phy_h;
+             const tdm_output_mode *tmodes = NULL;
+             int num_tmodes = 0;
+             int size = 0;
+
+             error = tdm_output_get_model_info(output->toutput, &maker, &screen, NULL);
+             if (error != TDM_ERROR_NONE)
+               {
+                  ERR("fail to get model info.");
+                  return EINA_FALSE;
+               }
+
+             if (maker)
+               {
+                  size = strlen(output->id) + 1 + strlen(maker) + 1;
+                  name = calloc(1, size);
+                  if (!name) return EINA_FALSE;
+                  snprintf(name, size, "%s-%s", output->id, maker);
+               }
+             else
+               {
+                  size = strlen(output->id) + 1;
+                  name = calloc(1, size);
+                  if (!name) return EINA_FALSE;
+                  snprintf(name, size, "%s", output->id);
+               }
+             INF("E_OUTPUT: screen = %s, name = %s", screen, name);
+
+             error = tdm_output_get_physical_size(output->toutput, &phy_w, &phy_h);
+             if (error != TDM_ERROR_NONE)
+               {
+                  ERR("fail to get physical_size.");
+                  free(name);
+                  return EINA_FALSE;
+               }
+
+             error = tdm_output_get_available_modes(output->toutput, &tmodes, &num_tmodes);
+             if (error != TDM_ERROR_NONE || num_tmodes == 0)
+               {
+                  ERR("fail to get tmodes");
+                  free(name);
+                  return EINA_FALSE;
+               }
+
+             for (i = 0; i < num_tmodes; i++)
+               {
+                  E_Output_Mode *rmode;
+
+                  rmode = malloc(sizeof(E_Output_Mode));
+                  if (!rmode) continue;
+
+                  rmode->w = tmodes[i].hdisplay;
+                  rmode->h = tmodes[i].vdisplay;
+                  rmode->refresh = tmodes[i].vrefresh;
+                  rmode->preferred = (tmodes[i].flags & TDM_OUTPUT_MODE_TYPE_PREFERRED);
+                  rmode->tmode = &tmodes[i];
+
+                  modes = eina_list_append(modes, rmode);
+               }
+
+             /* resetting the output->info */
+             if (output->info.screen) free(output->info.screen);
+             if (output->info.name) free(output->info.name);
+             EINA_LIST_FREE(output->info.modes, m) free(m);
+
+             output->info.screen = strdup(screen);
+             output->info.name = name;
+             output->info.modes = modes;
+             output->info.size.w = phy_w;
+             output->info.size.h = phy_h;
+
+             output->info.connected = EINA_TRUE;
+
+             INF("E_OUTPUT: id(%s) connected..", output->id);
+          }
+
+#if 0
+        /* check the crtc setting */
+        if (status != TDM_OUTPUT_CONN_STATUS_MODE_SETTED)
+          {
+              const tdm_output_mode *mode = NULL;
+
+              error = tdm_output_get_mode(output->toutput, &mode);
+              if (error != TDM_ERROR_NONE || mode == NULL)
+                {
+                   ERR("fail to get mode.");
+                   return EINA_FALSE;
+                }
+
+              output->config.geom.x = 0;
+              output->config.geom.y = 0;
+              output->config.geom.w = mode->hdisplay;
+              output->config.geom.h = mode->vdisplay;
+
+              output->config.mode.w = mode->hdisplay;
+              output->config.mode.h = mode->vdisplay;
+              output->config.mode.refresh = mode->vrefresh;
+
+              output->config.enabled = 1;
+
+              INF("E_OUTPUT: '%s' %i %i %ix%i", output->info.name,
+                     output->config.geom.x, output->config.geom.y,
+                     output->config.geom.w, output->config.geom.h);
+          }
+#endif
+
+     }
+   else
+     {
+        output->info.connected = EINA_FALSE;
+
+        /* reset output info */
+        if (output->info.screen)
+          {
+             free(output->info.screen);
+             output->info.screen = NULL;
+          }
+        if (output->info.name)
+          {
+             free(output->info.name);
+             output->info.name = NULL;
+          }
+        EINA_LIST_FREE(output->info.modes, m) free(m);
+        output->info.modes = NULL;
+
+        output->info.size.w = 0;
+        output->info.size.h = 0;
+
+        /* reset output config */
+        output->config.geom.x = 0;
+        output->config.geom.y = 0;
+        output->config.geom.w = 0;
+        output->config.geom.h = 0;
+
+        output->config.mode.w = 0;
+        output->config.mode.h = 0;
+        output->config.mode.refresh = 0;
+
+        output->config.rotation = 0;
+        output->config.priority = 0;
+        output->config.enabled = 0;
+
+        INF("E_OUTPUT: disconnected.. id: %s", output->id);
+     }
+
+   return EINA_TRUE;
+}
+
+EINTERN Eina_Bool
+e_output_mode_apply(E_Output *output, E_Output_Mode *mode)
+{
+   tdm_error error;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, EINA_FALSE);
+
+   if (!output->info.connected)
+     {
+        ERR("output is not connected.");
+        return EINA_FALSE;
+     }
+
+   error = tdm_output_set_mode(output->toutput, mode->tmode);
+   if (error != TDM_ERROR_NONE)
+     {
+        ERR("fail to set tmode.");
+        return EINA_FALSE;
+     }
+
+   output->config.geom.x = 0;
+   output->config.geom.y = 0;
+   output->config.geom.w = mode->w;
+   output->config.geom.h = mode->h;
+
+   output->config.mode.w = mode->w;
+   output->config.mode.h = mode->h;
+   output->config.mode.refresh = mode->refresh;
+
+   output->config.enabled = 1;
+
+   INF("E_OUTPUT: '%s' %i %i %ix%i", output->info.name,
+       output->config.geom.x, output->config.geom.y,
+       output->config.geom.w, output->config.geom.h);
+
+   return EINA_TRUE;
+}
+
+EINTERN Eina_Bool
+e_output_hwc_setup(E_Output *output)
+{
+   Eina_List *l, *ll;
+   E_Plane *plane = NULL;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, EINA_FALSE);
+
+   EINA_LIST_FOREACH_SAFE(output->planes, l, ll, plane)
+     {
+        if (plane->is_primary)
+          {
+             if (!e_plane_hwc_setup(plane)) return EINA_FALSE;
+             else return EINA_TRUE;
+          }
+     }
+
+   return EINA_FALSE;
+}
+
+
+EINTERN E_Output_Mode *
+e_output_best_mode_find(E_Output *output)
+{
+   Eina_List *l = NULL;
+   E_Output_Mode *mode = NULL;
+   E_Output_Mode *best_mode = NULL;
+   int best_size = 0;
+   int size = 0;
+   double best_refresh = 0.0;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, NULL);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output->info.modes, NULL);
+
+  if (!output->info.connected)
+     {
+        ERR("output is not connected.");
+        return EINA_FALSE;
+     }
+
+   EINA_LIST_FOREACH(output->info.modes, l, mode)
+     {
+        size = mode->w + mode->h;
+        if (size > best_size) best_mode = mode;
+        if (size == best_size && mode->refresh > best_refresh) best_mode = mode;
+     }
+
+   return best_mode;
+}
+
+EINTERN Eina_Bool
+e_output_connected(E_Output *output)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, EINA_FALSE);
+
+   return output->info.connected;
+}
+
+EINTERN Eina_Bool
+e_output_dpms_set(E_Output *output, E_OUTPUT_DPMS val)
+{
+   tdm_output_dpms tval;
+   Eina_Bool ret = EINA_TRUE;
+   tdm_error error;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, EINA_FALSE);
+
+   if (val == E_OUTPUT_DPMS_OFF) tval = TDM_OUTPUT_DPMS_OFF;
+   else if (val == E_OUTPUT_DPMS_ON) tval = TDM_OUTPUT_DPMS_OFF;
+   else if (val == E_OUTPUT_DPMS_STANDBY) tval = TDM_OUTPUT_DPMS_STANDBY;
+   else if (val == E_OUTPUT_DPMS_SUSPEND) tval = TDM_OUTPUT_DPMS_SUSPEND;
+   else ret = EINA_FALSE;
+
+   if (!ret) return EINA_FALSE;
+
+   error = tdm_output_set_dpms(output->toutput, tval);
+   if (error != TDM_ERROR_NONE)
+     {
+        ERR("fail to set the dpms(value:%d).", tval);
+        return EINA_FALSE;
+     }
+
+   return EINA_TRUE;
+}
+
+static char *
+_e_output_drm_model_get(Ecore_Drm_Output *output)
+{
+   const char *model;
+
+   model = ecore_drm_output_model_get(output);
+   if (!model) return NULL;
+
+   return strdup(model);
+}
+
+EINTERN Eina_Bool
+e_output_drm_update(E_Output *eout)
 {
    Eina_List *m = NULL;
    Eina_List *modes = NULL;
@@ -91,7 +538,7 @@ e_output_update(E_Output *eout)
              int phy_w, phy_h;
              Ecore_Drm_Output_Mode *omode;
 
-             screen = _e_output_model_get(eout->output);
+             screen = _e_output_drm_model_get(eout->output);
              edid = ecore_drm_output_edid_get(eout->output);
              if (eout->info.edid)
                id = malloc(strlen(eout->info.name) + 1 + strlen(eout->info.edid) + 1);
@@ -198,10 +645,53 @@ e_output_update(E_Output *eout)
    return EINA_TRUE;
 }
 
+EINTERN Eina_Bool
+e_output_commit(E_Output *output)
+{
+   E_Plane *plane = NULL;
+   Eina_List *l;
+   Eina_Bool commitable = EINA_FALSE;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, EINA_FALSE);
+
+   if (!output->config.enabled)
+     {
+        WRN("E_Output disconnected");
+        return EINA_FALSE;
+     }
+
+   /* set planes */
+   EINA_LIST_REVERSE_FOREACH(output->planes, l, plane)
+     {
+        if (e_plane_set(plane))
+         {
+            if (!commitable) commitable = EINA_TRUE;
+         }
+     }
+
+   /* commit output */
+   if (commitable)
+     {
+        if (!_e_output_commit(output))
+          {
+             ERR("fail to _e_output_commit.");
+
+             /* unset planes */
+             EINA_LIST_REVERSE_FOREACH(output->planes, l, plane)
+               e_plane_unset(plane);
+
+             return EINA_FALSE;
+          }
+     }
+
+   return EINA_TRUE;
+}
+
+
 E_API E_Output *
 e_output_find(const char *id)
 {
-   E_Output *eout;
+   E_Output *output;
    E_Comp_Screen *e_comp_screen;
    Eina_List *l;
 
@@ -210,27 +700,27 @@ e_output_find(const char *id)
 
    e_comp_screen = e_comp->e_comp_screen;
 
-   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
-        if (!strcmp(eout->id, id)) return eout;
+        if (!strcmp(output->id, id)) return output;
      }
    return NULL;
 }
 
 E_API const Eina_List *
-e_output_planes_get(E_Output *eout)
+e_output_planes_get(E_Output *output)
 {
-   EINA_SAFETY_ON_NULL_RETURN_VAL(eout, NULL);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(eout->planes, NULL);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, NULL);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output->planes, NULL);
 
-   return eout->planes;
+   return output->planes;
 }
 
 E_API void
 e_output_util_planes_print(void)
 {
    Eina_List *l, *ll, *p_l;
-   E_Output * eout = NULL;
+   E_Output * output = NULL;
    E_Comp_Screen *e_comp_screen = NULL;
 
    EINA_SAFETY_ON_NULL_RETURN(e_comp);
@@ -238,25 +728,25 @@ e_output_util_planes_print(void)
 
    e_comp_screen = e_comp->e_comp_screen;
 
-   EINA_LIST_FOREACH_SAFE(e_comp_screen->outputs, l, ll, eout)
+   EINA_LIST_FOREACH_SAFE(e_comp_screen->outputs, l, ll, output)
      {
-        E_Plane *ep;
+        E_Plane *plane;
         E_Client *ec;
 
-        if (!eout && !eout->planes) continue;
+        if (!output && !output->planes) continue;
 
-        fprintf(stderr, "HWC in %s .. \n", eout->id);
+        fprintf(stderr, "HWC in %s .. \n", output->id);
         fprintf(stderr, "HWC \tzPos \t on_plane \t\t\t\t on_prepare \t \n");
 
-        EINA_LIST_REVERSE_FOREACH(eout->planes, p_l, ep)
+        EINA_LIST_REVERSE_FOREACH(output->planes, p_l, plane)
           {
-             ec = ep->ec;
+             ec = plane->ec;
              if (ec) fprintf(stderr, "HWC \t[%d]%s\t %s (0x%08x)",
-                             ep->zpos,
-                             ep->is_primary ? "--" : "  ",
+                             plane->zpos,
+                             plane->is_primary ? "--" : "  ",
                              ec->icccm.title, (unsigned int)ec->frame);
 
-             ec = ep->prepare_ec;
+             ec = plane->prepare_ec;
              if (ec) fprintf(stderr, "\t\t\t %s (0x%08x)",
                              ec->icccm.title, (unsigned int)ec->frame);
              fputc('\n', stderr);
