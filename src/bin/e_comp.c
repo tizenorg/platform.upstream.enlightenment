@@ -402,6 +402,8 @@ _hwc_set(E_Output * eout)
                     {
                        e_client_redirected_set(ep->prepare_ec, 0);
                        ep->ec = ep->prepare_ec;
+                       // FIXME: will remove out once tdm_output_commit thru e_output,e_plane
+                       e_comp_hwc_mode_nocomp(ep->ec);
                     }
                }
              continue;
@@ -409,7 +411,6 @@ _hwc_set(E_Output * eout)
         if (e_plane_is_cursor(ep)) continue;
         if (ep->zpos > ep_prime->zpos)
           {
-             ep_prime = ep;
              if (ep->prepare_ec)
                {
                   e_client_redirected_set(ep->prepare_ec, 0);
@@ -509,6 +510,8 @@ _e_comp_hwc_cancel(E_Output * eout)
         if (ep->ec) e_client_redirected_set(ep->ec, 1);
         ep->prepare_ec = NULL;
         ep->ec = NULL;
+        // FIXME: will remove out once tdm_output_commit thru e_output,e_plane
+        e_comp_hwc_mode_nocomp(NULL);
      }
 
    return EINA_TRUE;
@@ -738,7 +741,7 @@ _e_comp_hwc_cb_begin_timeout(void *data EINA_UNUSED)
    return EINA_FALSE;
 }
 
-void
+E_API void
 _e_comp_hwc_end(const char *location)
 {
    Eina_Bool mode_set = EINA_FALSE;
@@ -1339,6 +1342,55 @@ _e_comp_screensaver_off(void *data EINA_UNUSED, int type EINA_UNUSED, void *even
    return ECORE_CALLBACK_PASS_ON;
 }
 
+
+static Eina_Bool
+_e_comp_cb_idle(void)
+{
+   Eina_List *l, *ll;
+   E_Zone *zone;
+   E_Client *ec;
+
+   if (!e_comp->hwc) goto end;
+   if (!_e_comp_hwc_is_on()) goto end;
+   //if (evas_changed_get(ecore_evas_get(e_comp->ee))) return ECORE_CALLBACK_RENEW;
+
+   EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
+     {
+        E_Output *eout = NULL;
+        E_Plane *ep = NULL, *ep_prime = NULL;
+        const Eina_List *ep_l = NULL, *p_l, *p_ll;
+
+        if (!zone || !zone->output_id) continue;
+
+        eout = e_output_find(zone->output_id);
+        ep_l = e_output_planes_get(eout);
+        EINA_LIST_FOREACH_SAFE(ep_l, p_l, p_ll, ep)
+          {
+             E_Comp_Wl_Buffer *buffer;
+             if (!ep_prime)
+               {
+                  if (e_plane_is_primary(ep))
+                    {
+                       // FIXME: will remove out once tdm_output_commit thru e_output,e_plane
+                       ec = ep->ec;
+                       if (!ec)
+                         {
+                            if (!e_comp_object_hwc_update_exists(ec->frame)) goto end;
+                            e_comp_object_hwc_update_set(ec->frame, 0);
+                            buffer = e_pixmap_resource_get(ec->pixmap);
+                            if (buffer) e_comp_hwc_display_client(ec);
+                         }
+                        goto end;
+                    }
+                  continue;
+               }
+          }
+     }
+
+end:
+   return ECORE_CALLBACK_RENEW;
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 EINTERN Eina_Bool
@@ -1420,6 +1472,10 @@ e_comp_init(void)
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN,    _e_comp_key_down,        NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_SIGNAL_USER, _e_comp_signal_user,     NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_COMP_OBJECT_ADD, _e_comp_object_add,      NULL);
+
+#ifdef ENABLE_HWC_MULTI
+   ecore_idle_enterer_add(_e_comp_cb_idle, NULL);
+#endif
 
    return EINA_TRUE;
 }

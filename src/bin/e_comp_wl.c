@@ -2443,6 +2443,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    _e_comp_wl_subsurface_check_below_bg_rectangle(ec);
 
 #ifdef HAVE_HWC
+#ifndef MULTI_PLANE_HWC
    /* HWC: if the compositor fall into the nocomposite mode,
           the compositor display e_client on the hw layer directly */
    if (e_comp->hwc && buffer)
@@ -2451,6 +2452,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
      }
    if (e_comp->hwc)
      e_comp_hwc_client_commit(ec);
+#endif // end of MULTI_PLANE_HWC
 #endif
 
    if ((buffer && buffer->type == E_COMP_WL_BUFFER_TYPE_VIDEO) &&
