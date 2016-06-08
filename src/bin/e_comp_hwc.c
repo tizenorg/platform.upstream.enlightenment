@@ -1825,7 +1825,7 @@ e_comp_hwc_native_surface_set(E_Client *ec)
         HWC_DLOG("hwc_client,%p NEVER BE HEAR.\n", hwc_client);
 #endif
         _e_comp_hwc_client_destroy_backup_buffer(hwc_client->backup_buffer);
-        hwc_client->buffer = NULL;
+        hwc_client->backup_buffer = NULL;
      }
 
 #ifdef USE_DLOG_HWC
