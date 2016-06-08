@@ -910,7 +910,7 @@ _e_xdg_shell_surface_cb_maximized_unset(struct wl_client *client EINA_UNUSED, st
 }
 
 static void
-_e_xdg_shell_surface_cb_fullscreen_set(struct wl_client *client EINA_UNUSED, struct wl_resource *resource, struct wl_resource *output_resource EINA_UNUSED)
+_e_xdg_shell_surface_cb_fullscreen_set(struct wl_client *client EINA_UNUSED, struct wl_resource *resource, struct wl_resource *output_resource)
 {
    E_Client *ec;
 
@@ -922,6 +922,11 @@ _e_xdg_shell_surface_cb_fullscreen_set(struct wl_client *client EINA_UNUSED, str
                                "No Client For Shell Surface");
         return;
      }
+
+   /* TODO: e_eom_output_is_external() must be used, but I do not know is there
+   *a way to call a function from a loadable modules (e.g. e-mod-tizen-eom) */
+   if (output_resource != NULL /* && e_eom_output_is_external(output_resource) == EINA_TRUE */ )
+     e_client_external_output_client_set(ec);
 
    if (!ec->lock_user_fullscreen)
      e_client_fullscreen(ec, e_config->fullscreen_policy);
@@ -940,6 +945,9 @@ _e_xdg_shell_surface_cb_fullscreen_unset(struct wl_client *client EINA_UNUSED, s
                                "No Client For Shell Surface");
         return;
      }
+
+   if (e_client_is_external_output_client(ec) == EINA_TRUE)
+     e_client_external_output_client_unset(ec);
 
    if (!ec->lock_user_fullscreen)
      e_client_unfullscreen(ec);

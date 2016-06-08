@@ -795,6 +795,7 @@ struct E_Client
    Eina_Bool first_mapped : 1;
    Eina_Bool post_raise : 1;
    Eina_Bool post_lower : 1;
+   Eina_Bool external_output_client : 1; //e-mod-tizen-eom related
 
    Eina_Bool on_post_updates : 1; // client is on the post update list
    uuid_t uuid;
@@ -1001,6 +1002,11 @@ E_API int               e_client_transform_core_transform_count_get(E_Client *ec
 E_API E_Util_Transform *e_client_transform_core_transform_get(E_Client *ec, int index);
 
 E_API E_Pixmap *e_client_pixmap_change(E_Client *ec, E_Pixmap *newcp);
+
+/* e-mod-tizen-eom related */
+E_API void e_client_external_output_client_set(E_Client *ec);
+E_API void e_client_external_output_client_unset(E_Client *ec);
+E_API Eina_Bool e_client_is_external_output_client(E_Client *ec);
 
 /**
  * Move window to coordinates that do not account client decorations yet.
