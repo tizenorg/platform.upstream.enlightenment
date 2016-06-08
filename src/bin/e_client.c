@@ -5938,9 +5938,14 @@ e_client_transform_core_remove(E_Client *ec, E_Util_Transform *transform)
 E_API void
 e_client_transform_core_update(E_Client *ec)
 {
+   E_Comp_Wl_Client_Data *cdata;
+
    if (!ec) return;
    if (ec->new_client) return;
    if (!_e_client_transform_core_check_change(ec)) return;
+
+   cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+   if (cdata && cdata->scaler.viewport) return;
 
    if (ec->transform_core.transform_list || ec->transform_core.parent.enable)
      {
