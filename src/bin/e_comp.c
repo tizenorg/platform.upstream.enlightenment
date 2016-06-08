@@ -1352,7 +1352,7 @@ _e_comp_cb_idle(void)
 
    if (!e_comp->hwc) goto end;
    if (!_e_comp_hwc_is_on()) goto end;
-   //if (evas_changed_get(ecore_evas_get(e_comp->ee))) return ECORE_CALLBACK_RENEW;
+   if (evas_changed_get(ecore_evas_get(e_comp->ee))) goto end;
 
    EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
      {
