@@ -106,9 +106,17 @@ void *alloca (size_t);
 #  define TRACE_DS_END() traceEnd(TTRACE_TAG_WINDOW_MANAGER)
 #  define TRACE_INPUT_BEGIN(NAME, ...) traceBegin(TTRACE_TAG_INPUT, "INPUT:SERVER:"#NAME, ##__VA_ARGS__)
 #  define TRACE_INPUT_END() traceEnd(TTRACE_TAG_INPUT)
+#  define TRACE_DM_BEGIN(NAME, ...) traceBegin(TTRACE_TAG_GRAPHICS, "DM:"#NAME, ##__VA_ARGS__)
+#  define TRACE_DM_END() traceEnd(TTRACE_TAG_GRAPHICS)
+#  define TRACE_DM_ASYNC_BEGIN(KEY, NAME,...) traceAsyncBegin(TTRACE_TAG_GRAPHICS, KEY, "DM:"#NAME, ##__VA_ARGS__)
+#  define TRACE_DM_ASYNC_END(KEY, NAME,...) traceAsyncEnd(TTRACE_TAG_GRAPHICS, KEY, "DM:"#NAME, ##__VA_ARGS__)
 # else
 #  define TRACE_DS_BEGIN(NAME, ...)
 #  define TRACE_DS_END()
+#  define TRACE_DM_BEGIN(NAME, ...)
+#  define TRACE_DM_END()
+#  define TRACE_DM_ASYNC_BEGIN(KEY, NAME,...)
+#  define TRACE_DM_ASYNC_END(KEY, NAME,...)
 #  define TRACE_INPUT_BEGIN(NAME, ...)
 #  define TRACE_INPUT_END()
 # endif
