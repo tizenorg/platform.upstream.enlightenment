@@ -4583,6 +4583,8 @@ e_comp_wl_shutdown(void)
    e_comp_wl_tbm_shutdown();
 #endif
 
+   e_comp_wl_input_shutdown();
+
    // TODO: yigl
 #if 0
    E_Comp_Wl_Output *output;
