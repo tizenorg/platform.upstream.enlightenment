@@ -2190,6 +2190,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    Eina_Bool placed = EINA_TRUE;
    int x = 0, y = 0;
    E_Comp_Wl_Buffer *buffer;
+   E_Comp_Wl_Subsurf_Data *sdata;
 
    first = !e_pixmap_usable_get(ec->pixmap);
 
@@ -2233,6 +2234,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
                }
           }
      }
+
+   sdata = ec->comp_data->sub.data;
    if (!e_pixmap_usable_get(ec->pixmap))
      {
         if (ec->comp_data->mapped)
@@ -2240,7 +2243,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
              if ((ec->comp_data->shell.surface) && (ec->comp_data->shell.unmap))
                ec->comp_data->shell.unmap(ec->comp_data->shell.surface);
              else if (e_client_has_xwindow(ec) || ec->internal ||
-                      (ec->comp_data->sub.data && ec->comp_data->sub.data->parent->comp_data->mapped) ||
+                      (sdata && sdata->parent && sdata->parent->comp_data && sdata->parent->comp_data->mapped) ||
                       (ec == e_comp_wl->drag_client))
                {
                   ec->visible = EINA_FALSE;
@@ -2259,7 +2262,7 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
              if ((ec->comp_data->shell.surface) && (ec->comp_data->shell.map))
                ec->comp_data->shell.map(ec->comp_data->shell.surface);
              else if (e_client_has_xwindow(ec) || ec->internal ||
-                      (ec->comp_data->sub.data && ec->comp_data->sub.data->parent->comp_data->mapped) ||
+                      (sdata && sdata->parent && sdata->parent->comp_data && sdata->parent->comp_data->mapped) ||
                       (ec == e_comp_wl->drag_client))
                {
                   ec->visible = EINA_TRUE;
@@ -4684,6 +4687,7 @@ e_comp_wl_surface_attach(E_Client *ec, E_Comp_Wl_Buffer *buffer)
 E_API Eina_Bool
 e_comp_wl_surface_commit(E_Client *ec)
 {
+   E_Comp_Wl_Subsurf_Data *sdata;
    Eina_Bool ignored;
 
    _e_comp_wl_surface_state_commit(ec, &ec->comp_data->pending);
@@ -4699,6 +4703,7 @@ e_comp_wl_surface_commit(E_Client *ec)
         _e_comp_wl_subsurface_restack_bg_rectangle(topmost);
      }
 
+   sdata = ec->comp_data->sub.data;
    if (!e_pixmap_usable_get(ec->pixmap))
      {
         if (ec->comp_data->mapped)
@@ -4706,7 +4711,7 @@ e_comp_wl_surface_commit(E_Client *ec)
              if ((ec->comp_data->shell.surface) && (ec->comp_data->shell.unmap))
                ec->comp_data->shell.unmap(ec->comp_data->shell.surface);
              else if (e_client_has_xwindow(ec) || ec->internal ||
-                      (ec->comp_data->sub.data && ec->comp_data->sub.data->parent->comp_data->mapped) ||
+                      (sdata && sdata->parent && sdata->parent->comp_data && sdata->parent->comp_data->mapped) ||
                       (ec == e_comp_wl->drag_client))
                {
                   ec->visible = EINA_FALSE;
@@ -4725,7 +4730,7 @@ e_comp_wl_surface_commit(E_Client *ec)
              if ((ec->comp_data->shell.surface) && (ec->comp_data->shell.map))
                ec->comp_data->shell.map(ec->comp_data->shell.surface);
              else if (e_client_has_xwindow(ec) || ec->internal ||
-                      (ec->comp_data->sub.data && ec->comp_data->sub.data->parent->comp_data->mapped) ||
+                      (sdata && sdata->parent && sdata->parent->comp_data && sdata->parent->comp_data->mapped) ||
                       (ec == e_comp_wl->drag_client))
                {
                   ec->visible = EINA_TRUE;
