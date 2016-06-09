@@ -88,6 +88,7 @@ struct _E_Comp_Wl_Buffer_Ref
 {
    E_Comp_Wl_Buffer *buffer;
    struct wl_listener destroy_listener;
+   Eina_Bool          destroy_listener_usable;
 };
 
 struct _E_Comp_Wl_Buffer_Viewport {
