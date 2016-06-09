@@ -35,10 +35,11 @@ typedef struct _E_Win_Info
    int          iconic;
    int          focused;
    int          hwc;
+   int          pl_zpos;
    const char  *layer_name; // layer name
 } E_Win_Info;
 
-#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbis"
+#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbiis"
 #define VALUE_TYPE_REQUEST_RESLIST "ui"
 #define VALUE_TYPE_REPLY_RESLIST "ssi"
 #define VALUE_TYPE_FOR_INPUTDEV "ssi"
@@ -51,7 +52,7 @@ static Eina_Bool _e_info_client_eldbus_message(const char *method, E_Info_Messag
 static Eina_Bool _e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb, const char *signature, ...);
 
 static E_Win_Info *
-_e_win_info_new(Ecore_Window id, uint32_t res_id, int pid, Eina_Bool alpha, int opaque, const char *name, int x, int y, int w, int h, int layer, int visible, int visibility, int iconic, int focused, int hwc, const char *layer_name)
+_e_win_info_new(Ecore_Window id, uint32_t res_id, int pid, Eina_Bool alpha, int opaque, const char *name, int x, int y, int w, int h, int layer, int visible, int visibility, int iconic, int focused, int hwc, int pl_zpos, const char *layer_name)
 {
    E_Win_Info *win = NULL;
 
@@ -74,6 +75,7 @@ _e_win_info_new(Ecore_Window id, uint32_t res_id, int pid, Eina_Bool alpha, int 
    win->iconic = iconic;
    win->focused = focused;
    win->hwc = hwc;
+   win->pl_zpos = pl_zpos;
    win->layer_name = eina_stringshare_add(layer_name);
 
    return win;
@@ -110,7 +112,7 @@ _cb_window_info_get(const Eldbus_Message *msg)
      {
         const char *win_name;
         const char *layer_name;
-        int x, y, w, h, layer, visibility, opaque, hwc;
+        int x, y, w, h, layer, visibility, opaque, hwc, pl_zpos;
         Eina_Bool visible, alpha, iconic, focused;
         Ecore_Window id;
         uint32_t res_id;
@@ -134,6 +136,7 @@ _cb_window_info_get(const Eldbus_Message *msg)
                                                 &iconic,
                                                 &focused,
                                                 &hwc,
+                                                &pl_zpos,
                                                 &layer_name);
         if (!res)
           {
@@ -141,7 +144,7 @@ _cb_window_info_get(const Eldbus_Message *msg)
              continue;
           }
 
-        win = _e_win_info_new(id, res_id, pid, alpha, opaque, win_name, x, y, w, h, layer, visible, visibility, iconic, focused, hwc, layer_name);
+        win = _e_win_info_new(id, res_id, pid, alpha, opaque, win_name, x, y, w, h, layer, visible, visibility, iconic, focused, hwc, pl_zpos, layer_name);
         e_info_client.win_list = eina_list_append(e_info_client.win_list, win);
      }
 
@@ -392,15 +395,14 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
    int i = 0;
    int prev_layer = -1;
    const char *prev_layer_name = NULL;
-   E_Win_Info *nocomp_win = NULL;
 
    if (!_e_info_client_eldbus_message("get_window_info", _cb_window_info_get))
      return;
 
    printf("%d Top level windows\n", eina_list_count(e_info_client.win_list));
-   printf("--------------------------------------[ topvwins ]----------------------------------------------------------\n");
-   printf(" No   Win_ID    RcsID    PID     w     h     x      y   Focus Depth Opaq Visi Icon  Map_State    Title              \n");
-   printf("------------------------------------------------------------------------------------------------------------\n");
+   printf("--------------------------------------[ topvwins ]--------------------------------------------------------------\n");
+   printf(" No   Win_ID    RcsID    PID     w     h     x    y  Focus Depth Opaq Visi Icon  Map_State  PL@ZPos  Title   \n");
+   printf("----------------------------------------------------------------------------------------------------------------\n");
 
    if (!e_info_client.win_list)
      {
@@ -411,26 +413,34 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
    EINA_LIST_FOREACH(e_info_client.win_list, l, win)
      {
         if (!win) return;
+        char tmp[20];
         i++;
         if (win->layer != prev_layer)
           {
              if (prev_layer != -1)
-                printf("------------------------------------------------------------------------------------------------------------[%s]\n",
+                printf("--------------------------------------------------------------------------------------------------------------[%s]\n",
                        prev_layer_name ? prev_layer_name : " ");
              prev_layer = win->layer;
              prev_layer_name = win->layer_name;
           }
-        printf("%3d 0x%08x  %5d  %5d  %5d %5d %6d %6d   %c  %5d    %d   ", i, win->id, win->res_id, win->pid, win->w, win->h, win->x, win->y, win->focused ? 'O':' ', win->alpha? 32:24, win->opaque);
-        printf("%2d    %d   %-11s  %s\n", win->visibility, win->iconic, win->vis? "Viewable":"NotViewable", win->name?:"No Name");
-        if(win->hwc == 2) nocomp_win = win;
+
+        if (win->visibility == 0)
+          {
+             if (win->hwc) snprintf(tmp, sizeof(tmp), "hwc@%i", win->pl_zpos);
+             else snprintf(tmp, sizeof(tmp), "comp@%i", win->pl_zpos);
+          }
+        else
+          {
+             snprintf(tmp, sizeof(tmp), " - ");
+          }
+
+        printf("%3d 0x%08x  %5d  %5d  %5d %5d %4d %4d   %c  %5d    %d   ", i, win->id, win->res_id, win->pid, win->w, win->h, win->x, win->y, win->focused ? 'O':' ', win->alpha? 32:24, win->opaque);
+        printf("%2d    %d   %-11s %-8s %s\n", win->visibility, win->iconic, win->vis? "Viewable":"NotViewable", tmp, win->name?:"No Name");
      }
 
    if (prev_layer_name)
-      printf("------------------------------------------------------------------------------------------------------------[%s]\n",
+      printf("--------------------------------------------------------------------------------------------------------------[%s]\n",
              prev_layer_name ? prev_layer_name : " ");
-
-   if(nocomp_win)
-     printf("\nNocomp : %s(0x%08x)\n\n", nocomp_win->name?:"No Name", nocomp_win->id);
 
    E_FREE_LIST(e_info_client.win_list, _e_win_info_free);
 }

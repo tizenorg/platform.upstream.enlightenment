@@ -27,10 +27,6 @@ struct wl_resource
 
 void wl_map_for_each(struct wl_map *map, void *func, void *data);
 
-#ifdef HAVE_HWC
-#include "e_comp_hwc.h"
-#endif
-
 #define BUS "org.enlightenment.wm"
 #define PATH "/org/enlightenment/wm"
 #define IFACE "org.enlightenment.wm.info"
@@ -62,7 +58,7 @@ static int           e_info_dump_count;
 //FILE pointer for protocol_trace
 static FILE *log_fp_ptrace = NULL;
 
-#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbis"
+#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbiis"
 #define VALUE_TYPE_REQUEST_RESLIST "ui"
 #define VALUE_TYPE_REPLY_RESLIST "ssi"
 #define VALUE_TYPE_FOR_INPUTDEV "ssi"
@@ -90,7 +86,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
         uint32_t res_id = 0;
         pid_t pid = -1;
         char layer_name[32];
-        int hwc = -1;
+        int hwc = 0, pl_zpos = -999;
 
         ec = evas_object_data_get(o, "E_Client");
         if (!ec) continue;
@@ -115,15 +111,30 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
 
         if (e_comp->hwc)
           {
-             // TODO: print plane number
-             if (!e_comp->nocomp_ec)
-               hwc = 1; // comp mode
-             else if (e_comp->nocomp_ec == ec)
-               hwc = 2; // a client occupied scanout buff
-             else
-               hwc = 0;
+#ifdef ENABLE_HWC_MULTI
+             Eina_List *l, *ll;
+             E_Output * eout;
+             E_Plane *ep;
+             
+             eout = e_output_find(ec->zone->output_id);
+             EINA_LIST_FOREACH_SAFE(eout->planes, l, ll, ep)
+               {
+                  E_Client *overlay_ec = ep->ec;
+                  if (e_plane_is_primary(ep)) pl_zpos = ep->zpos;
+                  if (overlay_ec == ec)
+                    {
+                       hwc = 1;
+                       pl_zpos = ep->zpos;
+                    }
+               }
           }
-
+#else
+        if (e_comp->nocomp_ec == ec)
+          {
+             hwc = 1;
+             pl_zpos = 0;
+          }
+#endif
         eldbus_message_iter_arguments_append(array_of_ec, "("VALUE_TYPE_FOR_TOPVWINS")", &struct_of_ec);
 
         eldbus_message_iter_arguments_append
@@ -133,7 +144,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
             pid,
             e_client_util_name_get(ec) ?: "NO NAME",
             ec->x, ec->y, ec->w, ec->h, ec->layer,
-            ec->visible, ec->argb, ec->visibility.opaque, ec->visibility.obscured, ec->iconic, ec->focused, hwc, layer_name);
+            ec->visible, ec->argb, ec->visibility.opaque, ec->visibility.obscured, ec->iconic, ec->focused, hwc, pl_zpos, layer_name);
 
         eldbus_message_iter_container_close(array_of_ec, struct_of_ec);
      }
