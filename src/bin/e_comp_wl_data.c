@@ -467,9 +467,11 @@ _e_comp_wl_clipboard_offer_load(void *data, Ecore_Fd_Handler *handler)
    fd = ecore_main_fd_handler_fd_get(handler);
 
    size = offer->source->contents.size;
-   p = (char*)offer->source->contents.data;
+   p = (char *)offer->source->contents.data;
    len = write(fd, p + offer->offset, size - offer->offset);
    if (len > 0) offer->offset += len;
+   else if (len == -1)
+     ERR("Could not write for fd(%d) :%m", fd);
 
    if ((offer->offset == size) || (len <= 0))
      {
@@ -512,16 +514,29 @@ _e_comp_wl_clipboard_source_save(void *data EINA_UNUSED, Ecore_Fd_Handler *handl
    if (!(source = (E_Comp_Wl_Clipboard_Source*)e_comp_wl->clipboard.source))
      return ECORE_CALLBACK_CANCEL;
 
-   /* extend contents buffer */
-   if ((source->contents.alloc - source->contents.size) < CLIPBOARD_CHUNK)
-     {
-        wl_array_add(&source->contents, CLIPBOARD_CHUNK);
-        source->contents.size -= CLIPBOARD_CHUNK;
-     }
+   /* allocate contents of array */
+   if (source->contents.alloc < CLIPBOARD_CHUNK)
+     wl_array_add(&source->contents, CLIPBOARD_CHUNK);
 
-   p = (char*)source->contents.data + source->contents.size;
-   size = source->contents.alloc - source->contents.size;
-   len = read(source->fd[0], p, size);
+   source->contents.size = 0;
+   p = (char*)source->contents.data;
+   size = source->contents.alloc;
+
+   while ((len = read(source->fd[0], p, size)))
+     {
+        if (len == -1) break;
+
+        source->contents.size += len;
+
+        //if the array is full
+        if (len >= size)
+          wl_array_add(&source->contents, CLIPBOARD_CHUNK);
+        else
+          break;
+
+        p = (char *)source->contents.data + source->contents.size;
+        size = source->contents.alloc - source->contents.size;
+     }
 
    if (len == 0)
      {
@@ -530,14 +545,11 @@ _e_comp_wl_clipboard_source_save(void *data EINA_UNUSED, Ecore_Fd_Handler *handl
         close(source->fd[1]);
         source->fd_handler = NULL;
      }
-   else if (len < 0)
+   else if ((len < 0) && (source->contents.size == 0))
      {
+        ERR("Could not read fd(%d): %m", source->fd[0]);
         if (!(e_comp_wl_clipboard_source_unref(source)))
           e_comp_wl->clipboard.source = NULL;
-     }
-   else
-     {
-        source->contents.size += len;
      }
 
    return ECORE_CALLBACK_RENEW;
@@ -595,8 +607,18 @@ _e_comp_wl_clipboard_selection_set(struct wl_listener *listener EINA_UNUSED, voi
 
    if (!clip_source)
      {
-        if (pipe2(p, O_CLOEXEC) == -1)
-          return;
+        /* create unidirectional pipe for clipboard source with below flags.
+         * O_CLOEXEC : to avoid race condition
+         * O_DIRECT  : enable 'packet' mode, each write of write end pipe will
+         *             be read separately on read end pipe. It makes clipboard
+         *             avoid saving duplicated data.
+         * O_NONBLOCK: to avoid blocking of no data to read
+         */
+        if (pipe2(p, O_CLOEXEC|O_DIRECT|O_NONBLOCK) == -1)
+          {
+             ERR("Could not create unidirectional pipe for clipboard: %m");
+             return;
+          }
 
         sel_source->send(sel_source, mime_type, p[1]);
 
@@ -816,13 +838,22 @@ e_comp_wl_clipboard_source_create(const char *mime_type, uint32_t serial, int *f
         eina_array_push(source->data_source.mime_types, eina_stringshare_add(mime_type));
      }
 
-   if (fd > 0)
+   if ((fd[0] > 0) && (fd[1] > 0))
      {
         source->fd_handler =
            ecore_main_fd_handler_add(fd[0], ECORE_FD_READ,
                                      _e_comp_wl_clipboard_source_save,
                                      e_comp->wl_comp_data, NULL, NULL);
-        if (!source->fd_handler) return NULL;
+        if (!source->fd_handler)
+          {
+             E_FREE(source);
+             return NULL;
+          }
+     }
+   else
+     {
+        E_FREE(source);
+        return NULL;
      }
 
    source->fd[0] = fd[0];

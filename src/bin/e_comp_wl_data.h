@@ -5,7 +5,11 @@
 
 #  include "e_comp_wl.h"
 
-#  define CLIPBOARD_CHUNK 1024
+#  ifdef PIPE_BUF
+#   define CLIPBOARD_CHUNK PIPE_BUF
+#  else
+#   define CLIPBOARD_CHUNK 4096
+#  endif
 
 typedef struct _E_Comp_Wl_Data_Source E_Comp_Wl_Data_Source;
 typedef struct _E_Comp_Wl_Data_Offer E_Comp_Wl_Data_Offer;
