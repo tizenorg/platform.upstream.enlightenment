@@ -1672,6 +1672,7 @@ _e_comp_wl_buffer_reference_cb_destroy(struct wl_listener *listener, void *data)
    ref = container_of(listener, E_Comp_Wl_Buffer_Ref, destroy_listener);
    if ((E_Comp_Wl_Buffer *)data != ref->buffer) return;
    ref->buffer = NULL;
+   ref->destroy_listener_usable = EINA_FALSE;
 }
 
 static void
@@ -4782,13 +4783,19 @@ e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
                   wl_buffer_send_release(ref->buffer->resource);
                }
           }
-        wl_list_remove(&ref->destroy_listener.link);
+
+        if (ref->destroy_listener_usable)
+          {
+             wl_list_remove(&ref->destroy_listener.link);
+             ref->destroy_listener_usable = EINA_FALSE;
+          }
      }
 
    if ((buffer) && (buffer != ref->buffer))
      {
         buffer->busy++;
         wl_signal_add(&buffer->destroy_signal, &ref->destroy_listener);
+        ref->destroy_listener_usable = EINA_TRUE;
      }
 
    ref->buffer = buffer;
