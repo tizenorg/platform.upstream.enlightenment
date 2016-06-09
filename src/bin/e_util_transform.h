@@ -1,6 +1,7 @@
 #ifdef E_TYPEDEFS
 
 typedef struct _E_Util_Transform_Value       E_Util_Transform_Value;
+typedef struct _E_Util_Transform_Texcoord    E_Util_Transform_Texcoord;
 typedef struct _E_Util_Transform             E_Util_Transform;
 typedef struct _E_Util_Transform_Rect        E_Util_Transform_Rect;
 typedef struct _E_Util_Transform_Vertex      E_Util_Transform_Vertex;
@@ -16,14 +17,21 @@ struct _E_Util_Transform_Value
    double value[3];
 };
 
+struct _E_Util_Transform_Texcoord
+{
+	double value[4][2];
+};
+
 struct _E_Util_Transform
 {
-   E_Util_Transform_Value scale;
-   E_Util_Transform_Value move;
-   E_Util_Transform_Value rotation;
-   int                    ref_count;
-   Eina_Bool              keep_ratio;
-   Eina_Bool              changed;
+   E_Util_Transform_Value    scale;
+   E_Util_Transform_Value    move;
+   E_Util_Transform_Value    rotation;
+   E_Util_Transform_Texcoord tex_coord;
+   int                       ref_count;
+   Eina_Bool                 keep_ratio;
+   Eina_Bool                 changed;
+   Eina_Bool                 use_texcoord;
 };
 
 struct _E_Util_Transform_Rect
@@ -58,6 +66,9 @@ E_API void                         e_util_transform_init(E_Util_Transform *trans
 E_API void                         e_util_transform_move(E_Util_Transform *transform, double x, double y, double z);
 E_API void                         e_util_transform_scale(E_Util_Transform *transform, double sx, double sy, double sz);
 E_API void                         e_util_transform_rotation(E_Util_Transform *transform, double rx, double ry, double rz);
+E_API void                         e_util_transform_texcoord_set(E_Util_Transform *transform, int index, double x, double y);
+E_API void                         e_util_transform_texcoord_get(E_Util_Transform *transform, int index, double *x, double *y);
+E_API Eina_Bool                    e_util_transform_texcoord_flag_get(E_Util_Transform *transform);
 E_API void                         e_util_transform_source_to_target(E_Util_Transform *transform,
                                                                      E_Util_Transform_Rect *dest,
                                                                      E_Util_Transform_Rect *source);

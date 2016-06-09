@@ -2966,7 +2966,8 @@ _e_client_transform_core_boundary_update(E_Client *ec, E_Util_Transform_Rect_Ver
 }
 
 static void
-_e_client_transform_core_vertices_apply(E_Client *ec EINA_UNUSED, Evas_Object *obj, E_Util_Transform_Rect_Vertex *vertices)
+_e_client_transform_core_vertices_apply(E_Client *ec EINA_UNUSED, Evas_Object *obj,
+		                                E_Util_Transform_Rect_Vertex *vertices, E_Util_Transform *transform)
 {
    Evas_Map *map = NULL;
    int i, x, y;
@@ -2992,6 +2993,15 @@ _e_client_transform_core_vertices_apply(E_Client *ec EINA_UNUSED, Evas_Object *o
              y = (int)(dy + 0.5);
 
              evas_map_point_coord_set(map, i, x, y, 1.0);
+
+              if (transform && e_util_transform_texcoord_flag_get(transform))
+				{
+            	    double tu = 0.0;
+            	    double tv = 0.0;
+
+            	    e_util_transform_texcoord_get(transform, i, &tu, &tv);
+				    evas_map_point_image_uv_set(map, i, tu, tv);
+				}
           }
 
         evas_object_map_set(obj, map);
@@ -3016,7 +3026,7 @@ _e_client_transform_core_sub_update(E_Client *ec, E_Util_Transform_Rect_Vertex *
    cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
 
    if (cdata->sub.below_obj)
-      _e_client_transform_core_vertices_apply(ec, cdata->sub.below_obj, vertices);
+      _e_client_transform_core_vertices_apply(ec, cdata->sub.below_obj, vertices, NULL);
 
    EINA_LIST_FOREACH(cdata->sub.list, l, subc)
       e_client_transform_core_update(subc);
@@ -6008,7 +6018,8 @@ e_client_transform_core_update(E_Client *ec)
         // 5. apply vertices
         e_comp_object_transform_bg_vertices_set(ec->frame, &ec->transform_core.result.boundary.vertices);
         _e_client_transform_core_boundary_update(ec, &ec->transform_core.result.boundary.vertices);
-        _e_client_transform_core_vertices_apply(ec, ec->frame, &ec->transform_core.result.vertices);
+        _e_client_transform_core_vertices_apply(ec, ec->frame, &ec->transform_core.result.vertices,
+        		                                    &ec->transform_core.result.transform);
 
         // 6. subsurface update'
         _e_client_transform_core_sub_update(ec, &ec->transform_core.result.vertices);
@@ -6016,7 +6027,7 @@ e_client_transform_core_update(E_Client *ec)
    else
      {
         ec->transform_core.result.enable = EINA_FALSE;
-        _e_client_transform_core_vertices_apply(ec, ec->frame, NULL);
+        _e_client_transform_core_vertices_apply(ec, ec->frame, NULL, NULL);
         _e_client_transform_core_sub_update(ec, NULL);
      }
 

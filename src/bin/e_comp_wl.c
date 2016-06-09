@@ -386,11 +386,16 @@ _e_comp_wl_map_apply(E_Client *ec)
 {
    E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
    E_Comp_Wl_Subsurf_Data *sdata;
+   E_Comp_Wl_Client_Data *cdata;
    Evas_Map *map;
    int x1, y1, x2, y2, x, y;
    int dx, dy;
 
    sdata = ec->comp_data->sub.data;
+   cdata = ec->comp_data;
+
+   if (!cdata) return;
+
    if (sdata)
      {
         if (sdata->parent)
@@ -410,13 +415,23 @@ _e_comp_wl_map_apply(E_Client *ec)
         dy = ec->y;
      }
 
-   map = evas_map_new(4);
 
-   evas_map_util_points_populate_from_geometry(map,
-                                               dx, dy,
-                                               ec->comp_data->width_from_viewport,
-                                               ec->comp_data->height_from_viewport,
-                                               0);
+   if (!cdata->viewport_transform)
+     {
+  	   cdata->viewport_transform = e_util_transform_new();
+  	   e_client_transform_core_add(ec, cdata->viewport_transform);
+     }
+
+   e_util_transform_init(cdata->viewport_transform);
+   e_util_transform_move(cdata->viewport_transform, dx - ec->x, dy - ec->y, 0.0);
+   if (ec->w > 0 && ec->h > 0)
+   {
+	   e_util_transform_scale(cdata->viewport_transform,
+			                  ((float)ec->comp_data->width_from_viewport) / ec->w,
+							  ((float)ec->comp_data->height_from_viewport) / ec->h,
+							  1.0);
+   }
+
 
    if (vp->buffer.src_width == wl_fixed_from_int(-1))
      {
@@ -436,27 +451,26 @@ _e_comp_wl_map_apply(E_Client *ec)
    _e_comp_wl_map_transform(ec->comp_data->width_from_buffer, ec->comp_data->height_from_buffer,
                             vp->buffer.transform, vp->buffer.scale,
                             x1, y1, &x, &y);
-   evas_map_point_image_uv_set(map, 0, x, y);
+   e_util_transform_texcoord_set(cdata->viewport_transform, 0, x, y);
+
 
    _e_comp_wl_map_transform(ec->comp_data->width_from_buffer, ec->comp_data->height_from_buffer,
                             vp->buffer.transform, vp->buffer.scale,
                             x2, y1, &x, &y);
-   evas_map_point_image_uv_set(map, 1, x, y);
+   e_util_transform_texcoord_set(cdata->viewport_transform, 1, x, y);
 
    _e_comp_wl_map_transform(ec->comp_data->width_from_buffer, ec->comp_data->height_from_buffer,
                             vp->buffer.transform, vp->buffer.scale,
                             x2, y2, &x, &y);
-   evas_map_point_image_uv_set(map, 2, x, y);
+   e_util_transform_texcoord_set(cdata->viewport_transform, 2, x, y);
 
    _e_comp_wl_map_transform(ec->comp_data->width_from_buffer, ec->comp_data->height_from_buffer,
                             vp->buffer.transform, vp->buffer.scale,
                             x1, y2, &x, &y);
-   evas_map_point_image_uv_set(map, 3, x, y);
+   e_util_transform_texcoord_set(cdata->viewport_transform, 3, x, y);
 
-   evas_object_map_set(ec->frame, map);
-   evas_object_map_enable_set(ec->frame, map ? EINA_TRUE : EINA_FALSE);
+   e_client_transform_core_update(ec);
 
-   evas_map_free(map);
 }
 
 static void
@@ -1672,6 +1686,7 @@ _e_comp_wl_buffer_reference_cb_destroy(struct wl_listener *listener, void *data)
    ref = container_of(listener, E_Comp_Wl_Buffer_Ref, destroy_listener);
    if ((E_Comp_Wl_Buffer *)data != ref->buffer) return;
    ref->buffer = NULL;
+   ref->destroy_listener_usable = EINA_FALSE;
 }
 
 static void
@@ -3862,6 +3877,13 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
 
    e_pixmap_cdata_set(ec->pixmap, NULL);
 
+   if (ec->comp_data->viewport_transform)
+   {
+	   e_client_transform_core_remove(ec, ec->comp_data->viewport_transform);
+	   e_util_transform_del(ec->comp_data->viewport_transform);
+	   ec->comp_data->viewport_transform = NULL;
+   }
+
    E_FREE(ec->comp_data);
 
    _e_comp_wl_focus_check();
@@ -4782,13 +4804,19 @@ e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
                   wl_buffer_send_release(ref->buffer->resource);
                }
           }
-        wl_list_remove(&ref->destroy_listener.link);
+
+        if (ref->destroy_listener_usable)
+          {
+             wl_list_remove(&ref->destroy_listener.link);
+             ref->destroy_listener_usable = EINA_FALSE;
+          }
      }
 
    if ((buffer) && (buffer != ref->buffer))
      {
         buffer->busy++;
         wl_signal_add(&buffer->destroy_signal, &ref->destroy_listener);
+        ref->destroy_listener_usable = EINA_TRUE;
      }
 
    ref->buffer = buffer;

@@ -93,6 +93,35 @@ e_util_transform_rotation(E_Util_Transform *transform, double rx, double ry, dou
 }
 
 E_API void
+e_util_transform_texcoord_set(E_Util_Transform *transform, int index, double x, double y)
+{
+   if (!transform) return;
+   if (index < 0 || index > 3) return;
+
+   transform->tex_coord.value[index][0] = x;
+   transform->tex_coord.value[index][1] = y;
+   transform->use_texcoord = EINA_TRUE;
+   transform->changed = EINA_TRUE;
+}
+
+E_API void
+e_util_transform_texcoord_get(E_Util_Transform *transform, int index, double *x, double *y)
+{
+	if (!transform) return;
+	if (index < 0 || index > 3) return;
+
+	if (x) *x = transform->tex_coord.value[index][0];
+	if (y) *y = transform->tex_coord.value[index][1];
+}
+
+E_API Eina_Bool
+e_util_transform_texcoord_flag_get(E_Util_Transform *transform)
+{
+	if (!transform) return EINA_FALSE;
+	return transform->use_texcoord;
+}
+
+E_API void
 e_util_transform_source_to_target(E_Util_Transform *transform,
                                   E_Util_Transform_Rect *dest,
                                   E_Util_Transform_Rect *source)
@@ -140,6 +169,13 @@ e_util_transform_merge(E_Util_Transform *trans1, E_Util_Transform *trans2)
    if (trans1->keep_ratio || trans2->keep_ratio)
       result.keep_ratio = EINA_TRUE;
 
+   if (trans1->use_texcoord)
+	   memcpy(&result.tex_coord, &trans1->tex_coord, sizeof(trans1->tex_coord));
+
+   if (trans2->use_texcoord)
+	   memcpy(&result.tex_coord, &trans2->tex_coord, sizeof(trans2->tex_coord));
+
+   result.use_texcoord = trans1->use_texcoord || trans2->use_texcoord;
    result.changed = EINA_TRUE;
 
    return result;
