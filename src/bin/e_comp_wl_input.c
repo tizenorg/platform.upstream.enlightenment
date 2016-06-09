@@ -555,7 +555,6 @@ EINTERN void
 e_comp_wl_input_shutdown(void)
 {
    struct wl_resource *res;
-   E_Comp_Wl_Input_Device *dev;
 
    /* destroy pointer resources */
    EINA_LIST_FREE(e_comp_wl->ptr.resources, res)
@@ -595,22 +594,8 @@ e_comp_wl_input_shutdown(void)
      wl_global_destroy(e_comp_wl->seat.global);
    e_comp_wl->seat.global = NULL;
 
-   if (e_comp_wl->input_device_manager.global)
-     wl_global_destroy(e_comp_wl->input_device_manager.global);
-   e_comp_wl->input_device_manager.global = NULL;
-
-   if (e_comp_wl->input_device_manager.last_device_name)
-     eina_stringshare_del(e_comp_wl->input_device_manager.last_device_name);
-
    dont_set_ecore_drm_keymap = EINA_FALSE;
    dont_use_xkb_cache = EINA_FALSE;
-
-   EINA_LIST_FREE (e_comp_wl->input_device_manager.device_list, dev)
-     {
-        if (dev->name) eina_stringshare_del(dev->name);
-        if (dev->identifier) eina_stringshare_del(dev->identifier);
-        free(dev);
-     }
 }
 
 EINTERN Eina_Bool
