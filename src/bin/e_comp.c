@@ -1344,7 +1344,7 @@ _e_comp_screensaver_off(void *data EINA_UNUSED, int type EINA_UNUSED, void *even
 
 
 static Eina_Bool
-_e_comp_cb_idle(void)
+_e_comp_cb_idle(void *data EINA_UNUSED)
 {
    Eina_List *l, *ll;
    E_Zone *zone;
