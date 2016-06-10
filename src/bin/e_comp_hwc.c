@@ -1359,7 +1359,7 @@ _e_comp_hwc_remove(E_Comp_Hwc *hwc)
    E_Comp_Hwc_Layer *hwc_layer = NULL;
    Eina_List *l_o, *ll_o;
    Eina_List *l_l, *ll_l;
-   tdm_output *tdisplay = NULL;
+   tdm_display *tdisplay = NULL;
 
    if (!hwc) return;
 
@@ -1394,7 +1394,7 @@ e_comp_hwc_init(void)
    E_Comp_Hwc_Renderer *hwc_renderer = NULL;
 
 
-   tdm_output *tdisplay = NULL;
+   tdm_display *tdisplay = NULL;
    tdm_output *toutput = NULL;
    tdm_layer *tlayer = NULL;
    tdm_layer_capability layer_capabilities;
