@@ -367,6 +367,7 @@ struct _E_Comp_Wl_Client_Data
    /* regular surface resource (wl_compositor_create_surface) */
    struct wl_resource *surface;
    struct wl_signal destroy_signal;
+   struct wl_signal apply_viewport_signal;
 
    struct
      {

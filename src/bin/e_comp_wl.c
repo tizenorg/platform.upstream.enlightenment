@@ -3764,6 +3764,7 @@ _e_comp_wl_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
      }
 
    wl_signal_init(&ec->comp_data->destroy_signal);
+   wl_signal_init(&ec->comp_data->apply_viewport_signal);
 
    _e_comp_wl_surface_state_init(&ec->comp_data->pending, ec->w, ec->h);
 
