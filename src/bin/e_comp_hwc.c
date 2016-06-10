@@ -624,10 +624,10 @@ static void
 _e_comp_hwc_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
 {
    E_Comp_Hwc_Client *hwc_client = NULL;
-   Eina_List *l = NULL;
+   Eina_List *l, *ll;
 
    /* destroy the hwc_client */
-   EINA_LIST_FOREACH(g_hwc->hwc_clients, l, hwc_client)
+   EINA_LIST_FOREACH_SAFE(g_hwc->hwc_clients, l, ll, hwc_client)
      {
         if (!hwc_client) continue;
         if (hwc_client->ec == ec)
