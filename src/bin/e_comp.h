@@ -157,6 +157,7 @@ struct _E_Comp
    Eina_Bool       shape_queue_blocked : 1;
    Eina_Bool       calc_fps : 1;
    Eina_Bool       hwc : 1;
+   Eina_Bool       hwc_fs : 1; // active hwc policy
 
    Eina_List      *connected_clients;
    Eina_List      *launchscrns; // list of dummy clients for launchscreen image.

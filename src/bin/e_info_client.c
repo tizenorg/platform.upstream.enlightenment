@@ -394,6 +394,8 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
    Eina_List *l;
    int i = 0;
    int prev_layer = -1;
+   int hwc_off = 0;
+
    const char *prev_layer_name = NULL;
 
    if (!_e_info_client_eldbus_message("get_window_info", _cb_window_info_get))
@@ -424,13 +426,19 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
              prev_layer_name = win->layer_name;
           }
 
-        if (win->visibility == 0)
+        if (win->hwc >= 0)
           {
-             if (win->hwc) snprintf(tmp, sizeof(tmp), "hwc@%i", win->pl_zpos);
-             else snprintf(tmp, sizeof(tmp), "comp@%i", win->pl_zpos);
+             if (win->visibility == 0)
+               {
+                  if (win->hwc) snprintf(tmp, sizeof(tmp), "hwc@%i", win->pl_zpos);
+                  else snprintf(tmp, sizeof(tmp), "comp@%i", win->pl_zpos);
+               }
+             else
+               snprintf(tmp, sizeof(tmp), " - ");
           }
-        else
+        else // hwc is not initialized or hwc_fs deactivated
           {
+             hwc_off = 1;
              snprintf(tmp, sizeof(tmp), " - ");
           }
 
@@ -441,6 +449,9 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
    if (prev_layer_name)
       printf("--------------------------------------------------------------------------------------------------------------[%s]\n",
              prev_layer_name ? prev_layer_name : " ");
+
+   if(hwc_off)
+     printf("\nHWC is disabled\n\n");
 
    E_FREE_LIST(e_info_client.win_list, _e_win_info_free);
 }
@@ -1229,6 +1240,32 @@ _e_info_client_proc_effect_control(int argc, char **argv)
      printf("Error Check Args: enlightenment_info -effect [1: on, 0: off]\n");
 }
 
+static void
+_e_info_client_proc_hwc(int argc, char **argv)
+{
+   uint32_t onoff;
+
+   if (argc < 3)
+     {
+        printf("Error Check Args: enlightenment_info -hwc [1: on, 0: off]\n");
+        return;
+     }
+
+   onoff = atoi(argv[2]);
+
+   if (onoff == 1 || onoff == 0)
+     {
+        if (!_e_info_client_eldbus_message_with_args("hwc", NULL, "i", onoff))
+          {
+             printf("_e_info_client_eldbus_message_with_args error");
+             return;
+          }
+     }
+   else
+     printf("Error Check Args: enlightenment_info -hwc [1: on, 0: off]\n");
+
+}
+
 static struct
 {
    const char *option;
@@ -1337,6 +1374,12 @@ static struct
       "[on: 1, off: 0]",
       "On/Off the window effect",
       _e_info_client_proc_effect_control
+   },
+   {
+      "hwc",
+      "[on: 1, off: 0]",
+      "On/Off the hw composite",
+      _e_info_client_proc_hwc
    }
 };
 

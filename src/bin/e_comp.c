@@ -864,7 +864,7 @@ _e_comp_cb_update(void)
 setup_hwcompose:
    // TO DO :
    // query if selective HWC plane can be used
-   if (!e_comp_gl_get() && !e_comp->hwc)
+   if (!e_comp_gl_get() || !e_comp->hwc || !e_comp->hwc_fs)
      {
         goto end;
      }
@@ -1464,6 +1464,8 @@ e_comp_init(void)
         e_comp->hwc = e_comp_hwc_init();
         if (!e_comp->hwc)
           WRN("fail to init hwc.");
+        else 
+          e_comp->hwc_fs = EINA_TRUE; // 1: active hwc policy
      }
 #endif
 

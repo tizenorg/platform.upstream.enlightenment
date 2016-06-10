@@ -109,7 +109,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
                }
           }
 
-        if (e_comp->hwc)
+        if (e_comp->hwc && e_comp->hwc_fs)
           {
 #ifdef ENABLE_HWC_MULTI
              Eina_List *l, *ll;
@@ -127,14 +127,14 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
                        pl_zpos = ep->zpos;
                     }
                }
-          }
 #else
-        if (e_comp->nocomp_ec == ec)
-          {
-             hwc = 1;
+             if (e_comp->nocomp_ec == ec) hwc = 1;
              pl_zpos = 0;
-          }
 #endif
+          }
+        else
+           hwc = -1;
+
         eldbus_message_iter_arguments_append(array_of_ec, "("VALUE_TYPE_FOR_TOPVWINS")", &struct_of_ec);
 
         eldbus_message_iter_arguments_append
@@ -1303,6 +1303,42 @@ e_info_server_cb_effect_control(const Eldbus_Service_Interface *iface EINA_UNUSE
    return reply;
 }
 
+static int override = 0;
+static Eldbus_Message *
+e_info_server_cb_hwc(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   uint32_t onoff;
+
+   if (!eldbus_message_arguments_get(msg, "i", &onoff))
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   if (!e_comp->hwc)
+     {
+        ERR("Error HWC is not initialized.");
+        return reply;
+     }
+
+   if (onoff == 1)
+     {
+        e_comp->hwc_fs = EINA_TRUE;
+     }
+   else if (onoff == 0)
+     {
+#ifdef ENABLE_HWC_MULTI
+        _e_comp_hwc_end("in runtime by e_info..");
+#else
+        e_comp_nocomp_end("in runtime by e_info..");
+#endif  // end of ENABLE_HWC_MULTI
+        e_comp->hwc_fs = EINA_FALSE;
+     }
+
+   return reply;
+}
+
 static const Eldbus_Method methods[] = {
    { "get_window_info", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_TOPVWINS")", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, 0 },
@@ -1327,6 +1363,7 @@ static const Eldbus_Method methods[] = {
 #endif
    { "get_keymap", NULL, ELDBUS_ARGS({"hi", "keymap fd"}), _e_info_server_cb_keymap_info_get, 0},
    { "effect_control", ELDBUS_ARGS({"i", "effect_control"}), NULL, e_info_server_cb_effect_control, 0},
+   { "hwc", ELDBUS_ARGS({"i", "hwc"}), NULL, e_info_server_cb_hwc, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 
