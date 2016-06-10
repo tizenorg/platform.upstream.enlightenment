@@ -1501,9 +1501,9 @@ e_comp_hwc_init(void)
           }
 
         hwc_output->hwc = hwc;
-     }
 
-   _e_comp_hwc_output_update_geom(hwc_output);
+        _e_comp_hwc_output_update_geom(hwc_output);
+     }
 
    /* get the evas_engine_gl_drm information */
    einfo = _e_comp_hwc_get_evas_engine_info_gl_drm(hwc);
