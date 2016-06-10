@@ -1303,7 +1303,6 @@ e_info_server_cb_effect_control(const Eldbus_Service_Interface *iface EINA_UNUSE
    return reply;
 }
 
-static int override = 0;
 static Eldbus_Message *
 e_info_server_cb_hwc(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
 {

@@ -26,14 +26,19 @@ e_output_new(Ecore_Drm_Output *output)
    eout->info.name = ecore_drm_output_name_get(output);
    printf("E_OUTPUT: .... out %s\n", eout->info.name);
 
-   eout->plane_count = 1; // TODO: get proper value using libtdm
+    // TODO: get proper value using libtdm
+   eout->plane_count = 1;
    printf("COMP TDM: planes %i\n", eout->plane_count);
    for (i = 0; i < eout->plane_count; i++)
      {
         printf("COMP TDM: added plane %i\n", i);
         Eina_Bool pri = EINA_FALSE;
+        E_Plane *ep = NULL;
+        // TODO: primary layer condition (0 is temp condition)
         if (i == 0) pri = EINA_TRUE;
-        e_plane_new(eout, i, pri);
+        ep = e_plane_new(eout, i, pri);
+        // TODO: fb target condition (0 is temp condition)
+        if (i == 0) e_plane_fb_set(ep, EINA_TRUE);
      }
 
    eout->output = output;

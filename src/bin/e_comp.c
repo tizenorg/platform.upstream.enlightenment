@@ -402,6 +402,7 @@ _hwc_set(E_Output * eout)
                     {
                        e_client_redirected_set(ep->prepare_ec, 0);
                        ep->ec = ep->prepare_ec;
+                       e_plane_fb_set(ep, EINA_FALSE);
                        // FIXME: will remove out once tdm_output_commit thru e_output,e_plane
                        e_comp_hwc_mode_nocomp(ep->ec);
                     }
@@ -510,6 +511,7 @@ _e_comp_hwc_cancel(E_Output * eout)
         if (ep->ec) e_client_redirected_set(ep->ec, 1);
         ep->prepare_ec = NULL;
         ep->ec = NULL;
+        if(e_plane_is_primary(ep)) e_plane_fb_set(ep, EINA_TRUE);
         // FIXME: will remove out once tdm_output_commit thru e_output,e_plane
         e_comp_hwc_mode_nocomp(NULL);
      }

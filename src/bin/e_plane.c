@@ -206,3 +206,20 @@ e_plane_geom_get(E_Plane *plane,
    if (h) *y = plane->geometry.h;
 }
 
+E_API Eina_Bool
+e_plane_is_fb(E_Plane *plane)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
+   if (plane->is_FB) return EINA_TRUE;
+   return EINA_FALSE;
+}
+
+E_API Eina_Bool
+e_plane_fb_set(E_Plane *plane,
+                       Eina_Bool set)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
+
+   plane->is_FB = set;
+   return EINA_TRUE;
+}

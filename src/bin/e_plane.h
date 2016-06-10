@@ -40,6 +40,7 @@ struct _E_Plane
    E_Output           *eout;
 
    Eina_Bool           is_primary;
+   Eina_Bool           is_FB; // fb target
 };
 
 EINTERN int              e_plane_init(void);
@@ -57,6 +58,8 @@ E_API Eina_Bool          e_plane_is_primary(E_Plane *plane);
 E_API Eina_Bool          e_plane_is_cursor(E_Plane *plane);
 E_API E_Plane_Color      e_plane_color_val_get(E_Plane *plane);
 E_API void               e_plane_geom_get(E_Plane *plane, int *x, int *y, int *w, int *h);
+E_API Eina_Bool          e_plane_is_fb(E_Plane *plane);
+E_API Eina_Bool          e_plane_fb_set(E_Plane *plane, Eina_Bool set);
 
 #endif
 #endif
