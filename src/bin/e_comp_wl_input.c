@@ -144,9 +144,6 @@ static void
 _e_comp_wl_input_cb_pointer_get(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 {
    struct wl_resource *res;
-   E_Client *ec;
-   uint32_t serial;
-   int cx, cy;
 
    /* try to create pointer resource */
    res = wl_resource_create(client, &wl_pointer_interface,
@@ -164,21 +161,6 @@ _e_comp_wl_input_cb_pointer_get(struct wl_client *client, struct wl_resource *re
    wl_resource_set_implementation(res, &_e_pointer_interface,
                                   e_comp->wl_comp_data,
                                  _e_comp_wl_input_cb_pointer_unbind);
-
-   /* use_cursor_timer is on. Do not send enter to the focused client. */
-   if (e_config->use_cursor_timer) return;
-
-   if (!(ec = e_client_focused_get())) return;
-   if (e_object_is_del(E_OBJECT(ec))) return;
-   if (!ec->comp_data->surface) return;
-   if (client != wl_resource_get_client(ec->comp_data->surface)) return;
-
-   cx = wl_fixed_to_int(e_comp->wl_comp_data->ptr.x) - ec->client.x;
-   cy = wl_fixed_to_int(e_comp->wl_comp_data->ptr.y) - ec->client.y;
-
-   serial = wl_display_next_serial(e_comp->wl_comp_data->wl.disp);
-   wl_pointer_send_enter(res, serial, ec->comp_data->surface,
-                         wl_fixed_from_int(cx), wl_fixed_from_int(cy));
 }
 
 static void

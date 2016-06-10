@@ -849,6 +849,7 @@ struct E_Client
    } transform_core;
 
    Ecore_Timer *map_timer;
+   Eina_Bool pointer_enter_sent;
 };
 
 #define e_client_focus_policy_click(ec) \
