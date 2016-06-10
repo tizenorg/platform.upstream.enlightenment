@@ -1238,15 +1238,17 @@ _e_comp_hwc_output_display_client(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Laye
      }
 }
 
-Evas_Engine_Info_GL_Drm *
-_e_comp_hwc_get_evas_engine_info_gl_drm(E_Comp_Hwc *hwc)
+static Evas_Engine_Info_GL_Drm *
+_e_comp_hwc_engine_info_get(E_Comp_Hwc *hwc)
 {
+   Evas_Engine_Info_GL_Drm *einfo = NULL;
+
    if (hwc->einfo) return hwc->einfo;
 
-   hwc->einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(hwc->einfo, NULL);
+   einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(einfo, NULL);
 
-   return hwc->einfo;
+   return einfo;
 }
 
 static void
@@ -1264,7 +1266,7 @@ _e_comp_hwc_canvas_render_post(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void
    if (!hwc) return;
 
    /* get the evas_engine_gl_drm information */
-   einfo = _e_comp_hwc_get_evas_engine_info_gl_drm(hwc);
+   einfo = _e_comp_hwc_engine_info_get(hwc);
    if (!einfo) return;
 
    if (!einfo->info.surface)
@@ -1508,8 +1510,8 @@ e_comp_hwc_init(void)
    _e_comp_hwc_output_geom_update();
 
    /* get the evas_engine_gl_drm information */
-   einfo = _e_comp_hwc_get_evas_engine_info_gl_drm(hwc);
-   if (!einfo) return EINA_FALSE;
+   einfo = _e_comp_hwc_engine_info_get(hwc);
+   EINA_SAFETY_ON_NULL_GOTO(einfo, fail);
 
    /* enable hwc to evas engine gl_drm */
    einfo->info.hwc_enable = EINA_TRUE;
