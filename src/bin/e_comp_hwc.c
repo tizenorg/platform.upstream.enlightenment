@@ -813,7 +813,8 @@ done:
    return EINA_TRUE;
 }
 
-E_Comp_Hwc_Output *_e_comp_hwc_output_find(Ecore_Drm_Output *drm_output)
+static E_Comp_Hwc_Output *
+_e_comp_hwc_output_find(Ecore_Drm_Output *drm_output)
 {
    E_Comp_Hwc_Output * hwc_output = NULL;
    const Eina_List *l;
@@ -830,8 +831,9 @@ E_Comp_Hwc_Output *_e_comp_hwc_output_find(Ecore_Drm_Output *drm_output)
 }
 
 static void
-_e_comp_hwc_output_update_geom(E_Comp_Hwc_Output *hwc_output)
+_e_comp_hwc_output_geom_update(void)
 {
+   E_Comp_Hwc_Output *hwc_output;
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *drm_output;
    E_Output_Screen *s;
@@ -1503,7 +1505,7 @@ e_comp_hwc_init(void)
         hwc_output->hwc = hwc;
      }
 
-   _e_comp_hwc_output_update_geom(hwc_output);
+   _e_comp_hwc_output_geom_update();
 
    /* get the evas_engine_gl_drm information */
    einfo = _e_comp_hwc_get_evas_engine_info_gl_drm(hwc);
