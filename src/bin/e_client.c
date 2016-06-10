@@ -3357,6 +3357,8 @@ e_client_new(E_Pixmap *cp, int first_map, int internal)
    ec->transform.zoom = 1.0;
    ec->transform.angle = 0.0;
 
+   ec->pointer_enter_sent = EINA_FALSE;
+
    EC_CHANGED(ec);
 
    e_comp->clients = eina_list_append(e_comp->clients, ec);
