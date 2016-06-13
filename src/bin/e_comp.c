@@ -345,14 +345,16 @@ _e_comp_cb_nocomp_end(void)
 
    INF("COMP RESUME!");
 
+   e_comp->nocomp_ec = NULL;
+   e_comp->nocomp = 0;
+
    E_CLIENT_FOREACH(ec)
      {
         if (ec->visible && (!ec->input_only))
           e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
 
      }
-   e_comp->nocomp_ec = NULL;
-   e_comp->nocomp = 0;
+
    e_comp_render_queue();
    e_comp_shape_queue_block(0);
    ecore_event_add(E_EVENT_COMPOSITOR_ENABLE, NULL, NULL, NULL);
