@@ -981,6 +981,93 @@ _e_info_server_cb_keymap_info_get(const Eldbus_Service_Interface *iface EINA_UNU
    return reply;
 }
 
+Eina_List *module_hook;
+
+static void*
+_e_info_server_hook_call(const char *module_name, const char *log_path)
+{
+   Eina_List *l;
+   E_Info_Hook *data;
+
+   EINA_LIST_FOREACH(module_hook, l, data)
+     {
+        if (!strncmp(data->module_name, module_name, strlen(module_name)))
+          {
+             data->func(data->data, log_path);
+             break;
+          }
+     }
+}
+
+E_API void
+e_info_server_hook_set(const char *module_name, E_Info_Hook_Cb func, void *data)
+{
+   Eina_List *l, *l_next;
+   E_Info_Hook *hdata, *ndata;
+
+   EINA_SAFETY_ON_NULL_RETURN(module_name);
+
+   EINA_LIST_FOREACH_SAFE(module_hook, l, l_next, hdata)
+     {
+        if (!strncmp(hdata->module_name, module_name, strlen(module_name)))
+          {
+             if (!func)
+               {
+                  free((char *)hdata->module_name);
+                  E_FREE(hdata);
+                  module_hook = eina_list_remove_list(module_hook, l);
+               }
+             else
+               {
+                  hdata->func = func;
+                  hdata->data = data;
+               }
+             return;
+          }
+     }
+
+   ndata = E_NEW(E_Info_Hook, 1);
+   ndata->module_name = (const char *)strdup(module_name);
+   ndata->func = func;
+   ndata->data = data;
+
+   module_hook = eina_list_append(module_hook, ndata);
+}
+
+static Eldbus_Message *
+_e_info_server_cb_module_info_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   const char *path = NULL, *module_name = NULL;
+
+   if (!eldbus_message_arguments_get(msg, "ss", &module_name, &path) || !module_name || !path)
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   _e_info_server_hook_call(module_name, path);
+
+   return reply;
+}
+
+static Eldbus_Message *
+_e_info_server_cb_keygrab_status_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   const char *path = NULL;
+
+   if (!eldbus_message_arguments_get(msg, "s", &path) || !path)
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   _e_info_server_hook_call("keygrab", path);
+
+   return reply;
+}
+
 static Eldbus_Message *
 _e_info_server_cb_fps_info_get(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
 {
@@ -1316,6 +1403,8 @@ static const Eldbus_Method methods[] = {
 #endif
    { "get_keymap", NULL, ELDBUS_ARGS({"hi", "keymap fd"}), _e_info_server_cb_keymap_info_get, 0},
    { "effect_control", ELDBUS_ARGS({"i", "effect_control"}), NULL, e_info_server_cb_effect_control, 0},
+   { "get_keygrab_status", ELDBUS_ARGS({"s", "get_keygrab_status"}), NULL, _e_info_server_cb_keygrab_status_get, 0},
+   { "get_module_info", ELDBUS_ARGS({"ss", "get_module_info"}), NULL, _e_info_server_cb_module_info_get, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 

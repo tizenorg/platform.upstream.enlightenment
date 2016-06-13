@@ -475,6 +475,64 @@ _e_info_client_proc_keymap_info(int argc, char **argv)
       return;
 }
 
+static void
+_e_info_client_proc_module_info(int argc, char **argv)
+{
+   char fd_name[PATH_MAX];
+   int pid;
+
+   if (argc != 3 || !argv[2])
+     {
+        printf("Usage> enlightenment_info -module_info [module name]\n");
+        return;
+     }
+
+   pid = getpid();
+
+   snprintf(fd_name, PATH_MAX, "/proc/%d/fd/1", pid);
+
+   if (!_e_info_client_eldbus_message_with_args("get_module_info", NULL, "ss", argv[2], fd_name))
+     return;
+}
+
+static void
+_e_info_client_proc_keygrab_status(int argc, char **argv)
+{
+   char fd_name[PATH_MAX];
+   int pid;
+   char cwd[PATH_MAX];
+
+   if (argc != 3 || !argv[2])
+     {
+        printf("Usage> enlightenment_info -keygrab_status [console | file path]\n");
+        return;
+     }
+
+   pid = getpid();
+
+   cwd[0] = '\0';
+   if (!getcwd(cwd, sizeof(cwd)))
+     snprintf(cwd, sizeof(cwd), "/tmp");
+
+   if (!strncmp(argv[2], "console", sizeof("console")))
+     snprintf(fd_name, PATH_MAX, "/proc/%d/fd/1", pid);
+   else
+     {
+        if (argv[2][0] == '/')
+          snprintf(fd_name, PATH_MAX, "%s", argv[2]);
+        else
+          {
+             if (strlen(cwd) > 0)
+               snprintf(fd_name, PATH_MAX, "%s/%s", cwd, argv[2]);
+             else
+               snprintf(fd_name, PATH_MAX, "%s", argv[2]);
+          }
+     }
+
+   if (!_e_info_client_eldbus_message_with_args("get_keygrab_status", NULL, "s", fd_name))
+     return;
+}
+
 static char *
 _directory_make(char *path)
 {
@@ -1327,6 +1385,16 @@ static struct
       "[on: 1, off: 0]",
       "On/Off the window effect",
       _e_info_client_proc_effect_control
+   },
+   {
+      "keygrab_status", NULL,
+      "Print a keygrab status",
+      _e_info_client_proc_keygrab_status
+   },
+   {
+      "module_info", NULL,
+      "Print information maintained by extra modules",
+      _e_info_client_proc_module_info
    }
 };
 

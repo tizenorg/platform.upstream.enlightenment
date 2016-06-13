@@ -16,6 +16,12 @@ struct E_Event_Info_Rotation_Message
 
 E_API extern int E_EVENT_INFO_ROTATION_MESSAGE;
 
+typedef void (*E_Info_Hook_Cb)(void *data, const char *log_path);
+typedef struct _E_Info_Hook E_Info_Hook;
+
+
+E_API void e_info_server_hook_set(const char *module_name, E_Info_Hook_Cb func, void *data);
+
 EINTERN int e_info_server_init(void);
 EINTERN int e_info_server_shutdown(void);
 
@@ -44,6 +50,13 @@ struct wl_closure
 struct argument_details {
    char type;
    int nullable;
+};
+
+struct _E_Info_Hook
+{
+   const char *module_name;
+   E_Info_Hook_Cb func;
+   void *data;
 };
 
 #endif
