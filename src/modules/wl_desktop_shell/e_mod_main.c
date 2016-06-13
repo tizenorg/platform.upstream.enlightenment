@@ -1291,7 +1291,8 @@ _e_xdg_shell_cb_surface_get(struct wl_client *client, struct wl_resource *resour
    ec->lock_border = EINA_TRUE;
    if ((!ec->internal) || (!ec->borderless))
      ec->border.changed = ec->changes.border = !ec->borderless;
-   ec->netwm.type = E_WINDOW_TYPE_NORMAL;
+   if (ec->netwm.type == E_WINDOW_TYPE_UNKNOWN)
+     ec->netwm.type = E_WINDOW_TYPE_NORMAL;
    ec->comp_data->set_win_type = EINA_TRUE;
 
    e_comp_wl_shell_surface_ready(ec);
