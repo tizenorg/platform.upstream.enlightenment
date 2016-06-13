@@ -1,5 +1,9 @@
 #include "e.h"
 
+/* e-mod-tizen-eom realted */
+#include "e_comp_wl.h"
+#include "e_log.h"
+
 static int _e_client_hooks_delete = 0;
 static int _e_client_hooks_walking = 0;
 
@@ -6019,3 +6023,25 @@ e_client_transform_core_transform_get(E_Client *ec, int index)
 
    return (E_Util_Transform*)eina_list_nth(ec->transform_core.transform_list, index);
 }
+
+////////////////////////////////////////////
+
+E_API void
+e_client_external_output_client_set(E_Client *ec)
+{
+   ec->external_output_client = EINA_TRUE;
+}
+
+E_API void
+e_client_external_output_client_unset(E_Client *ec)
+{
+   ec->external_output_client = EINA_FALSE;
+}
+
+E_API Eina_Bool
+e_client_is_external_output_client(E_Client *ec)
+{
+   return ec->external_output_client;
+}
+
+////////////////////////////////////////////

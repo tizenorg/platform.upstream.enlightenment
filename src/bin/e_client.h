@@ -810,6 +810,7 @@ struct E_Client
    Eina_Bool keyboard_resizing : 1;
    Eina_Bool gesture_disable : 1;
    Eina_Bool floating : 1; //client is set as floating mode
+   Eina_Bool external_output_client : 1; //e-mod-tizen-eom related
 
    Eina_Bool on_post_updates : 1; // client is on the post update list
 #ifdef HAVE_WAYLAND
@@ -1015,6 +1016,11 @@ E_API void              e_client_transform_core_remove(E_Client *ec, E_Util_Tran
 E_API void              e_client_transform_core_update(E_Client *ec);
 E_API int               e_client_transform_core_transform_count_get(E_Client *ec);
 E_API E_Util_Transform *e_client_transform_core_transform_get(E_Client *ec, int index);
+
+/* e-mod-tizen-eom related */
+E_API void e_client_external_output_client_set(E_Client *ec);
+E_API void e_client_external_output_client_unset(E_Client *ec);
+E_API Eina_Bool e_client_is_external_output_client(E_Client *ec);
 
 /**
  * Move window to coordinates that do not account client decorations yet.
