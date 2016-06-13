@@ -303,8 +303,10 @@ _e_info_client_proc_protocol_trace(int argc, char **argv)
 
    if (!strncmp(argv[2], "console", 7))
      snprintf(fd_name, PATH_MAX, "/proc/%d/fd/1", pid);
+   else if (!strncmp(argv[2], "elog", 4))
+     snprintf(fd_name, PATH_MAX, "elog");
    else if (!strncmp(argv[2], "disable", 7))
-     disable = EINA_TRUE;
+     snprintf(fd_name, PATH_MAX, "disable");
    else
      {
         if (argv[2][0] == '/')
@@ -318,9 +320,9 @@ _e_info_client_proc_protocol_trace(int argc, char **argv)
           }
      }
 
-   printf("protocol-trace: %s\n", disable ? "disable" : fd_name);
+   printf("protocol-trace: %s\n", fd_name);
 
-   if (!_e_info_client_eldbus_message_with_args("protocol_trace", NULL, "s", disable ? "disable" : fd_name))
+   if (!_e_info_client_eldbus_message_with_args("protocol_trace", NULL, "s", fd_name))
      return;
 }
 
