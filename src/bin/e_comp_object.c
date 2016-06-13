@@ -3300,7 +3300,7 @@ e_comp_object_damage(Evas_Object *obj, int x, int y, int w, int h)
    rect.x = x, rect.y = y;
    rect.w = w, rect.h = h;
    evas_object_smart_callback_call(obj, "damage", &rect);
-   if (e_comp->nocomp)
+   if (e_comp->nocomp_ec == cw->ec)
      {
         cw->nocomp_need_update = EINA_TRUE;
         return;
