@@ -7,11 +7,17 @@ typedef struct _E_Module_Api E_Module_Api;
 
 typedef struct _E_Event_Module_Update E_Event_Module_Update;
 
+/* e-mod-tizen-eom related */
+typedef struct _E_Module_EOM_Data E_Module_EOM_Data;
+
 #else
 #ifndef E_MODULE_H
 #define E_MODULE_H
 
 #define E_MODULE_TYPE 0xE0b0100b
+
+/* e-mod-tize-eom related */
+#include "e_comp_wl.h"
 
 extern E_API int E_EVENT_MODULE_UPDATE;
 extern E_API int E_EVENT_MODULE_INIT_END;
@@ -50,6 +56,12 @@ struct _E_Module_Api
 {
    int         version;
    const char *name;
+};
+
+/* e-mod-tize-eom related */
+struct _E_Module_EOM_Data
+{
+   Eina_Bool (*output_is_external)(struct wl_resource *output_resource);
 };
 
 EINTERN int          e_module_init(void);
