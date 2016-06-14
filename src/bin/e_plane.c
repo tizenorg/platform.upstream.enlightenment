@@ -1187,8 +1187,10 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
 
    plane = data->plane;
    tsurface = data->tsurface;
+   ec = data->ec;
+   renderer = plane->renderer;
 
-   if (plane->is_primary && !data->ec)
+   if (plane->is_primary && !ec)
      {
         /* debug */
         if (plane->trace_debug)
@@ -1197,7 +1199,6 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
 
         if (plane->reserved_memory)
           {
-             renderer = plane->renderer;
              if (!renderer->activated_ec)
                {
                   einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
@@ -1222,8 +1223,6 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
           }
         else
           {
-             ec = data->ec;
-
              einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
              if (!einfo)
                einfo->info.wait_for_showup = EINA_FALSE;
@@ -1311,13 +1310,13 @@ e_plane_ec_set(E_Plane *plane, E_Client *ec)
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
 
+   renderer = plane->renderer;
+
    /* activate/deactivate the client if the plane is the reserved memory */
    if (plane->reserved_memory)
      {
         if (ec)
           {
-             renderer = plane->renderer;
-
              if (!_e_plane_renderer_can_activate(renderer, ec))
                {
                   ERR("fail to _e_plane_renderer_can_activate.");
