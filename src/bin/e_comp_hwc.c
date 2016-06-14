@@ -1,6 +1,79 @@
 #include "e.h"
 
 #ifdef HAVE_HWC
+#ifdef ENABLE_HWC_MULTI
+EINTERN Eina_Bool
+e_comp_hwc_init(void)
+{
+   if (!e_comp || !e_comp->e_comp_screen)
+     {
+        e_error_message_show(_("Enlightenment cannot has no e_comp at HWC(HardWare Composite)!\n"));
+        return EINA_FALSE;
+     }
+
+   if (!e_comp_screen_hwc_setup(e_comp->e_comp_screen))
+     {
+        ERR("fail to e_comp_screen_hwc_setup");
+        return EINA_FALSE;
+     }
+
+   return EINA_TRUE;
+}
+
+EINTERN void
+e_comp_hwc_shutdown(void)
+{
+   ;
+}
+
+EINTERN Eina_Bool
+e_comp_hwc_mode_nocomp(E_Client *ec)
+{
+   return EINA_FALSE;
+}
+
+EINTERN void
+e_comp_hwc_display_client(E_Client *ec)
+{
+   ;
+}
+
+EINTERN void
+e_comp_hwc_trace_debug(Eina_Bool onoff)
+{
+   ;
+}
+
+EINTERN void
+e_comp_hwc_info_debug(void)
+{
+   ;
+}
+
+EINTERN Eina_Bool
+e_comp_hwc_native_surface_set(E_Client *ec)
+{
+   return EINA_FALSE;
+}
+
+EINTERN void
+e_comp_hwc_client_commit(E_Client *ec)
+{
+   ;
+}
+
+E_API Eina_Bool
+e_comp_hwc_client_set_layer(E_Client *ec, int zorder)
+{
+   return EINA_FALSE;
+}
+
+E_API void
+e_comp_hwc_client_unset_layer(int zorder)
+{
+   ;
+}
+#else
 # include "e_comp_wl.h"
 # include "e_comp_hwc.h"
 
@@ -1950,6 +2023,7 @@ e_comp_hwc_client_unset_layer(int zorder)
           }
      }
 }
+#endif
 #else /* HAVE_HWC */
 EINTERN Eina_Bool
 e_comp_hwc_init(void)
