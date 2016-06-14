@@ -913,19 +913,22 @@ _e_xdg_shell_surface_cb_fullscreen_set(struct wl_client *client EINA_UNUSED, str
 
    if (output_resource != NULL)
      {
-   	    m = e_module_find("EOM Module");
+   	    m = e_module_find("e-mod-tizen-eom");
         if (m == NULL)
           goto finish;
 
-        eom_data = (E_Module_EOM_Data *)m->data;
+        eom_data = (E_Module_EOM_Data *)m->private_data;
         if (eom_data == NULL)
           goto finish;
 
         if (eom_data->output_is_external == NULL)
           goto finish;
 
-        if ((output_name = e_client_external_output_name_by_resorce_get(output_resource)) &&
-             eom_data->output_is_external(output_resource) == EINA_TRUE )
+        output_name = e_client_external_output_name_by_resorce_get(output_resource);
+        if (output_name == NULL)
+          goto finish;
+
+        if (eom_data->output_is_external(output_resource) == EINA_TRUE )
           {
              e_client_external_output_name_set(ec, output_name);
              e_client_external_output_client_set(ec);
