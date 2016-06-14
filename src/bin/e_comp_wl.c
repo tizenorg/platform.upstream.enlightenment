@@ -3268,7 +3268,12 @@ _e_comp_wl_subsurface_commit_to_cache(E_Client *ec)
    eina_iterator_free(itr);
 
    EINA_LIST_FOREACH_SAFE(cdata->pending.frames, l, ll, cb)
-     eina_list_move_list(&sdata->cached.frames, &cdata->pending.frames, l);
+     {
+        if (cb)
+          eina_list_move_list(&sdata->cached.frames,
+                              &cdata->pending.frames,
+                              l);
+     }
 
    sdata->cached.has_data = EINA_TRUE;
 }

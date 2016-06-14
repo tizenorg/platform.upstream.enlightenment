@@ -286,7 +286,6 @@ _e_info_client_proc_protocol_trace(int argc, char **argv)
 {
    char fd_name[PATH_MAX];
    int pid;
-   Eina_Bool disable = EINA_FALSE;
    char cwd[PATH_MAX];
 
    if (argc != 3 || !argv[2])
