@@ -1710,10 +1710,17 @@ _e_comp_wl_buffer_cb_destroy(struct wl_listener *listener, void *data EINA_UNUSE
         eina_hash_del_by_key(clients_buffer_hash, &buffer->resource);
         if (e_object_is_del(E_OBJECT(ec)))
           {
-             /* clear comp object immediately */
-             e_comp_object_redirected_set(ec->frame, 0);
-             evas_object_del(ec->frame);
-             ec->frame = NULL;
+             if (buffer->type != E_COMP_WL_BUFFER_TYPE_SHM)
+               {
+                  if ((e_comp_object_is_animating(ec->frame)) ||
+                      (evas_object_data_get(ec->frame, "effect_running")))
+                    e_comp_object_effect_set(ec->frame, NULL);
+
+                  /* clear comp object immediately */
+                  e_comp_object_redirected_set(ec->frame, 0);
+                  evas_object_del(ec->frame);
+                  ec->frame = NULL;
+               }
           }
         e_object_unref(E_OBJECT(ec));
 
@@ -2771,6 +2778,12 @@ _e_comp_wl_surface_render_stop(E_Client *ec)
    /* FIXME: this may be fine after e_pixmap can create textures for wl clients? */
    //if ((!ec->internal) && (!e_comp_gl_get()))
      ec->dead = ec->hidden = 1;
+
+   /* check if internal animation is running */
+   if (e_comp_object_is_animating(ec->frame)) return;
+   /* check if external animation is running */
+   if (evas_object_data_get(ec->frame, "effect_running")) return;
+
    evas_object_hide(ec->frame);
 }
 
