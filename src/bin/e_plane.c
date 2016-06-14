@@ -561,9 +561,6 @@ _e_plane_renderer_activate(E_Plane_Renderer *renderer, E_Client *ec)
 
    _e_plane_renderer_export_all_disp_surfaces(renderer, ec);
 
-   /* wl_buffer release */
-   e_pixmap_image_clear(ec->pixmap, 1);
-
    renderer->activated_ec = ec;
 
    /* register the plane client */
