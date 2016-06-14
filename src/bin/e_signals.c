@@ -4,10 +4,7 @@
  * to add backtrace support.
  */
 #include "e.h"
-
-#ifdef HAVE_WL_DRM
-# include <Ecore_Drm.h>
-#endif
+#include <Ecore_Drm.h>
 
 #ifdef HAVE_EXECINFO_H
 # include <execinfo.h>
@@ -20,7 +17,6 @@ _e_crash(void)
 {
    if (e_comp->comp_type == E_PIXMAP_TYPE_WL)
      {
-#ifdef HAVE_WL_DRM
         const Eina_List *list, *l, *ll;
         Ecore_Drm_Device *dev;
 
@@ -36,7 +32,6 @@ _e_crash(void)
           }
 
         ecore_drm_shutdown();
-#endif
         return;
      }
 }
