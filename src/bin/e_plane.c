@@ -191,10 +191,10 @@ static void
 _e_plane_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
 {
    E_Plane_Client *plane_client = NULL;
-   Eina_List *l = NULL;
+   Eina_List *l, *ll;
 
    /* destroy the plane_client */
-   EINA_LIST_FOREACH(plane_clients, l, plane_client)
+   EINA_LIST_FOREACH_SAFE(plane_clients, l, ll, plane_client)
      {
         if (!plane_client) continue;
         if (plane_client->ec == ec)
@@ -212,9 +212,9 @@ E_Plane_Client *
 _e_plane_client_find(E_Client *ec)
 {
    E_Plane_Client *plane_client = NULL;
-   const Eina_List *l;
+   Eina_List *l, *ll;
 
-   EINA_LIST_FOREACH(plane_clients, l, plane_client)
+   EINA_LIST_FOREACH_SAFE(plane_clients, l, ll, plane_client)
      {
         if (!plane_client) continue;
         if (plane_client->ec == ec) return plane_client;

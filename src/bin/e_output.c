@@ -9,14 +9,12 @@ _e_output_commit_hanler(tdm_output *output, unsigned int sequence,
 {
    Eina_List *data_list = user_data;
    E_Plane_Commit_Data *data = NULL;
-   Eina_List *l;
+   Eina_List *l, *ll;
 
-   ELOGF("E_OUTPUT", "Commit handler", NULL, NULL);
-
-   EINA_LIST_REVERSE_FOREACH(data_list, l, data)
+   EINA_LIST_FOREACH_SAFE(data_list, l, ll, data)
      {
-        data_list = eina_list_remove_list(data_list, l);
         e_plane_commit_data_release(data);
+        data_list = eina_list_remove_list(data_list, l);
         data = NULL;
      }
 }
@@ -27,7 +25,7 @@ _e_output_commit(E_Output *output)
    Eina_List *data_list = NULL;
    E_Plane_Commit_Data *data = NULL;
    E_Plane *plane = NULL;
-   Eina_List *l;
+   Eina_List *l, *ll;
    tdm_error error;
 
    EINA_LIST_REVERSE_FOREACH(output->planes, l, plane)
@@ -41,7 +39,7 @@ _e_output_commit(E_Output *output)
    if (error != TDM_ERROR_NONE)
      {
         ERR("fail to tdm_output_commit");
-        EINA_LIST_REVERSE_FOREACH(data_list, l, data)
+        EINA_LIST_FOREACH_SAFE(data_list, l, ll, data)
           {
              data_list = eina_list_remove_list(data_list, l);
              e_plane_commit_data_release(data);
