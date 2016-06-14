@@ -2280,9 +2280,9 @@ _e_comp_smart_show(Evas_Object *obj)
      e_comp_object_signal_emit(cw->smart_obj, "e,action,uniconify", "e");
    else if (!cw->showing) /* if set, client was ec->hidden during show animation */
      {
+        cw->showing = 1;
         e_comp_object_signal_emit(cw->smart_obj, "e,state,visible", "e");
         _e_comp_object_animating_begin(cw);
-        cw->showing = 1;
         if (!_e_comp_object_effect_visibility_start(cw, 1))
           {
              TRACE_DS_END();
