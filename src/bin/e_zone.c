@@ -685,8 +685,6 @@ e_zone_desk_linear_flip_by(E_Zone *zone,
      (zone->desk_y_current * zone->desk_x_count) + dx;
    if (((dx < 0) || (dx >= zone->desk_x_count * zone->desk_y_count))) return;
    dx = dx % (zone->desk_x_count * zone->desk_y_count);
-   while (dx < 0)
-     dx += (zone->desk_x_count * zone->desk_y_count);
    e_zone_desk_linear_flip_to(zone, dx);
 }
 

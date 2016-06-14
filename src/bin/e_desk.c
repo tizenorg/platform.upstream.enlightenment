@@ -292,6 +292,8 @@ e_desk_deskshow(E_Zone *zone)
    E_OBJECT_TYPE_CHECK(zone, E_ZONE_TYPE);
 
    desk = e_desk_current_get(zone);
+   EINA_SAFETY_ON_NULL_RETURN(desk);
+
    if (desk->deskshow_toggle)
      {
         /* uniconify raises windows and changes stacking order

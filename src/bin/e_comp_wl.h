@@ -327,7 +327,7 @@ struct _E_Comp_Wl_Data
      {
         struct wl_global *global;
         struct wl_client *client;
-        void (*read_pixels)(E_Comp_Wl_Output *output, void *pixels);
+        Eina_Bool (*read_pixels)(E_Comp_Wl_Output *output, void *pixels);
      } screenshooter;
 
    Eina_List *outputs;

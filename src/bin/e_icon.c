@@ -425,8 +425,6 @@ E_API Eina_Bool
 e_icon_fdo_icon_set(Evas_Object *obj, const char *icon)
 {
    E_Smart_Data *sd;
-   const char *path = NULL;
-   int len;
 
    if (!icon) return EINA_FALSE;
    if (evas_object_smart_smart_get(obj) != _e_smart) SMARTERR(0);
@@ -446,36 +444,7 @@ e_icon_fdo_icon_set(Evas_Object *obj, const char *icon)
    eina_stringshare_replace(&sd->fdo, icon);
    if (!sd->fdo) return EINA_FALSE;
 
-   //path = efreet_icon_path_find(e_config->icon_theme, sd->fdo, sd->size);
-   //if (!path)
-   //  {
-   //     if (e_util_strcmp(e_config->icon_theme, "hicolor"))
-   //       path = efreet_icon_path_find("hicolor", sd->fdo, sd->size);
-        if (!path) return EINA_FALSE;
-   //  }
-
-   len = strlen(icon);
-   if ((len > 4) && (!strcasecmp(icon + len - 4, ".edj")))
-     return e_icon_file_edje_set(obj, path, "icon");
-
-   /* smart code here */
-   _e_icon_obj_prepare(obj, sd);
-   sd->loading = 0;
-   if (sd->size != 0)
-     evas_object_image_load_size_set(sd->obj, sd->size, sd->size);
-   if (sd->preload) evas_object_hide(sd->obj);
-   evas_object_image_file_set(sd->obj, path, NULL);
-   if (evas_object_image_load_error_get(sd->obj) != EVAS_LOAD_ERROR_NONE)
-     return EINA_FALSE;
-   if (sd->preload)
-     {
-        sd->loading = 1;
-        evas_object_image_preload(sd->obj, 0);
-     }
-   else if (evas_object_visible_get(obj))
-     evas_object_show(sd->obj);
-   _e_icon_smart_reconfigure(sd);
-   return EINA_TRUE;
+   return EINA_FALSE;
 }
 
 E_API void
@@ -908,27 +877,10 @@ static Eina_Bool
 _e_icon_fdo_reload(void *data)
 {
    E_Smart_Data *sd = data;
-   const char *path = NULL;
 
    sd->fdo_reload_timer = NULL;
    sd->size = MAX(sd->w, sd->h);
-   //path = efreet_icon_path_find(e_config->icon_theme, sd->fdo, sd->size);
-   //if (!path)
-   //  {
-   //     if (e_util_strcmp(e_config->icon_theme, "hicolor"))
-   //       path = efreet_icon_path_find("hicolor", sd->fdo, sd->size);
-        if (!path) return EINA_FALSE;
-   //  }
 
-
-   /* smart code here */
-   evas_object_image_load_size_set(sd->obj, sd->size, sd->size);
-   evas_object_image_file_set(sd->obj, path, NULL);
-   if (sd->preload)
-     {
-        sd->loading = 1;
-        evas_object_image_preload(sd->obj, 0);
-     }
    return EINA_FALSE;
 }
 

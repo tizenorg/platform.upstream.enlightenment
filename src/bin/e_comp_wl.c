@@ -3685,15 +3685,20 @@ _e_comp_wl_screenshooter_cb_shoot(struct wl_client *client EINA_UNUSED, struct w
    struct wl_shm_buffer *shm_buffer;
    int stride;
    void *pixels = NULL, *d;
+   Eina_Bool res;
 
    output = wl_resource_get_user_data(output_resource);
    buffer = e_comp_wl_buffer_get(buffer_resource, NULL);
+
+   if (!output) return;
 
    if (!buffer)
      {
         wl_resource_post_no_memory(resource);
         return;
      }
+
+   EINA_SAFETY_ON_NULL_RETURN(e_comp_wl->screenshooter.read_pixels);
 
    if ((buffer->w < output->w) || (buffer->h < output->h))
      {
@@ -3712,8 +3717,12 @@ _e_comp_wl_screenshooter_cb_shoot(struct wl_client *client EINA_UNUSED, struct w
         return;
      }
 
-   if (e_comp_wl->screenshooter.read_pixels)
-     e_comp_wl->screenshooter.read_pixels(output, pixels);
+   res = e_comp_wl->screenshooter.read_pixels(output, pixels);
+   if (!res)
+     {
+        free(pixels);
+        return;
+     }
 
    shm_buffer = wl_shm_buffer_get(buffer->resource);
    if (!shm_buffer)

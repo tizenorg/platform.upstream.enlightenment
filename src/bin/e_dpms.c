@@ -21,16 +21,8 @@ static int _e_dpms_enabled = EINA_FALSE;
 E_API void
 e_dpms_update(void)
 {
-   unsigned int standby = 0, suspend = 0, off = 0;
-   int enabled;
-
-   enabled = 0;
-   if (_e_dpms_enabled != enabled) _e_dpms_enabled = enabled;
-   if (!enabled) return;
-
-   if (_e_dpms_timeout_standby != standby) _e_dpms_timeout_standby = standby;
-   if (_e_dpms_timeout_suspend != suspend) _e_dpms_timeout_suspend = suspend;
-   if (_e_dpms_timeout_off != off) _e_dpms_timeout_off = off;
+   /* do nothing */
+   ;
 }
 
 E_API void

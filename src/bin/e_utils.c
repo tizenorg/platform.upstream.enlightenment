@@ -455,32 +455,11 @@ e_util_icon_add(const char *path, Evas *evas)
    return _e_util_icon_add(path, evas, 64);
 }
 
-#if 0
-E_API Evas_Object *
-e_util_desktop_icon_add(Efreet_Desktop *desktop, unsigned int size, Evas *evas)
-{
-   if ((!desktop) || (!desktop->icon)) return NULL;
-   return e_util_icon_theme_icon_add(desktop->icon, size, evas);
-}
-#endif
-
 E_API Evas_Object *
 e_util_icon_theme_icon_add(const char *icon_name, unsigned int size, Evas *evas)
 {
    if (!icon_name) return NULL;
    if (icon_name[0] == '/') return _e_util_icon_add(icon_name, evas, size);
-   else
-     {
-        Evas_Object *obj;
-        const char *path = NULL;
-
-        //path = efreet_icon_path_find(e_config->icon_theme, icon_name, size);
-        if (path)
-          {
-             obj = _e_util_icon_add(path, evas, size);
-             return obj;
-          }
-     }
    return NULL;
 }
 
