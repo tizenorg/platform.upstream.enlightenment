@@ -3615,9 +3615,6 @@ e_client_mouse_wheel(E_Client *ec, Evas_Point *output, E_Binding_Event_Wheel *ev
 E_API void
 e_client_mouse_down(E_Client *ec, int button, Evas_Point *output, E_Binding_Event_Mouse_Button *ev)
 {
-   E_Client *pfocus;
-   int player;
-
    EINA_SAFETY_ON_NULL_RETURN(ec);
    if (action_client || ec->iconic || e_client_util_ignored_get(ec)) return;
    if ((button >= 1) && (button <= 3))
@@ -3638,8 +3635,6 @@ e_client_mouse_down(E_Client *ec, int button, Evas_Point *output, E_Binding_Even
      }
    ec->mouse.current.mx = output->x;
    ec->mouse.current.my = output->y;
-   pfocus = e_client_focused_get();
-   player = ec->layer;
    if ((button >= 1) && (button <= 3))
      {
         ec->mouse.last_down[button - 1].mx = output->x;

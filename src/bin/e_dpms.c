@@ -9,11 +9,6 @@ static Ecore_Event_Handler *_e_dpms_handler_border_uniconify = NULL;
 static Ecore_Event_Handler *_e_dpms_handler_border_desk_set = NULL;
 static Ecore_Event_Handler *_e_dpms_handler_desk_show = NULL;
 
-static unsigned int _e_dpms_timeout_standby = 0;
-static unsigned int _e_dpms_timeout_suspend = 0;
-static unsigned int _e_dpms_timeout_off = 0;
-static int _e_dpms_enabled = EINA_FALSE;
-
 #define STANDBY 5
 #define SUSPEND 6
 #define OFF 7
