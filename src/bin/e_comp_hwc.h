@@ -1,9 +1,5 @@
 #ifdef E_TYPEDEFS
 
-#else
-# ifndef E_COMP_HWC_H
-#  define E_COMP_HWC_H
-
 typedef enum _E_Hwc_Mode
 {
    E_HWC_MODE_INVALID,
@@ -12,6 +8,10 @@ typedef enum _E_Hwc_Mode
    E_HWC_MODE_HWC_COMPOSITE = 3,    /* display one or more surfaces and a canvas */
    E_HWC_MODE_HWC_NO_COMPOSITE = 4  /* display multi surfaces */
 } E_Hwc_Mode;
+
+#else
+# ifndef E_COMP_HWC_H
+#  define E_COMP_HWC_H
 
 EINTERN Eina_Bool e_comp_hwc_init(void);
 EINTERN void      e_comp_hwc_shutdown(void);
