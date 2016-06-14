@@ -1668,11 +1668,11 @@ e_comp_override_add()
    e_comp->hwc_override++;
    if ((e_comp->hwc_override > 0) && (e_comp->nocomp))
      {
-#ifdef MULTI_PLANE_HWC
+#ifdef ENABLE_HWC_MULTI
         _e_comp_hwc_end(__FUNCTION__);
 #else
         e_comp_nocomp_end(__FUNCTION__);
-#endif // end of MULTI_PLANE_HWC
+#endif // end of ENABLE_HWC_MULTI
      }
 }
 
