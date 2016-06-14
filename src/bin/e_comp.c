@@ -382,7 +382,7 @@ static Eina_Bool
 _hwc_set(E_Output * eout)
 {
    const Eina_List *ep_l = NULL, *l, *ll;
-   E_Plane *ep = NULL;
+   E_Plane *ep = NULL, *ep_prime = NULL;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(eout, EINA_FALSE);
    EINA_SAFETY_ON_NULL_RETURN_VAL(eout->planes, EINA_FALSE);
@@ -395,11 +395,28 @@ _hwc_set(E_Output * eout)
    ep_l = e_output_planes_get(eout);
    EINA_LIST_FOREACH_SAFE(ep_l, l, ll, ep)
      {
-        if (e_plane_is_cursor(ep)) continue;
-        if (ep->prepare_ec)
+        if (!ep_prime)
           {
-             e_client_redirected_set(ep->prepare_ec, 0);
-             e_plane_ec_set(ep, ep->prepare_ec);
+             if (e_plane_is_primary(ep))
+               {
+                  ep_prime = ep;
+                  if (ep->prepare_ec)
+                    {
+                       e_client_redirected_set(ep->prepare_ec, 0);
+                       ep->ec = ep->prepare_ec;
+                       e_plane_fb_set(ep, EINA_FALSE);
+                    }
+               }
+             continue;
+          }
+        if (e_plane_is_cursor(ep)) continue;
+        if (ep->zpos > ep_prime->zpos)
+          {
+             if (ep->prepare_ec)
+               {
+                  e_client_redirected_set(ep->prepare_ec, 0);
+                  e_plane_ec_set(ep, ep->prepare_ec);
+               }
           }
      }
 
@@ -493,6 +510,7 @@ _e_comp_hwc_cancel(E_Output * eout)
         if (ep->ec) e_client_redirected_set(ep->ec, 1);
         e_plane_ec_prepare_set(ep, NULL);
         e_plane_ec_set(ep, NULL);
+        if(e_plane_is_primary(ep)) e_plane_fb_set(ep, EINA_TRUE);
      }
 
    return EINA_TRUE;
@@ -641,6 +659,9 @@ fullcomp:
 static Eina_Bool
 _e_comp_hwc_usable(void)
 {
+   Eina_List *l, *ll;
+   E_Zone *zone;
+
    if (!e_comp->hwc) return EINA_FALSE;
 
    // check whether to use hwc
@@ -649,10 +670,6 @@ _e_comp_hwc_usable(void)
 
    // extra policy can replace core policy
    _e_comp_hook_call(E_COMP_HOOK_PREPARE_PLANE, NULL);
-
-#if 0
-   Eina_List *l, *ll;
-   E_Zone *zone;
 
    EINA_LIST_FOREACH_SAFE(e_comp->zones, l, ll, zone)
      {
@@ -680,7 +697,6 @@ _e_comp_hwc_usable(void)
                if (ep->prepare_ec != NULL) return EINA_TRUE;
           }
      }
-#endif
 
    return EINA_FALSE;
 }
