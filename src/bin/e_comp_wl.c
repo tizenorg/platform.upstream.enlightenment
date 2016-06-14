@@ -3220,11 +3220,11 @@ _e_comp_wl_subsurface_commit_to_cache(E_Client *ec)
    DBG("Subsurface Commit to Cache");
 
    /* move pending damage to cached */
-   EINA_LIST_FOREACH(cdata->pending.damages, l, rect)
-     eina_list_move(&sdata->cached.damages, &cdata->pending.damages, rect);
+   EINA_LIST_FOREACH_SAFE(cdata->pending.damages, l, ll, rect)
+     eina_list_move_list(&sdata->cached.damages, &cdata->pending.damages, l);
 
    EINA_LIST_FOREACH_SAFE(cdata->pending.buffer_damages, l, ll, rect)
-     eina_list_move(&sdata->cached.buffer_damages, &cdata->pending.buffer_damages, rect);
+     eina_list_move_list(&sdata->cached.buffer_damages, &cdata->pending.buffer_damages, l);
 
    if (cdata->pending.new_attach)
      {
@@ -3267,8 +3267,8 @@ _e_comp_wl_subsurface_commit_to_cache(E_Client *ec)
      eina_tiler_rect_add(sdata->cached.input, rect);
    eina_iterator_free(itr);
 
-   EINA_LIST_FOREACH(cdata->pending.frames, l, cb)
-     eina_list_move(&sdata->cached.frames, &cdata->pending.frames, cb);
+   EINA_LIST_FOREACH_SAFE(cdata->pending.frames, l, ll, cb)
+     eina_list_move_list(&sdata->cached.frames, &cdata->pending.frames, l);
 
    sdata->cached.has_data = EINA_TRUE;
 }
