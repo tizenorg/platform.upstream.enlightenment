@@ -1165,8 +1165,7 @@ e_plane_commit_data_aquire(E_Plane *plane)
              data->tsurface = plane->tsurface;
              tbm_surface_internal_ref(data->tsurface);
              data->ec = plane->ec;
-             if (plane->reserved_memory)
-               e_comp_wl_buffer_reference(&data->buffer_ref, e_pixmap_resource_get(plane->ec->pixmap));
+
              return data;
           }
      }
@@ -1199,7 +1198,6 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
         if (plane->reserved_memory)
           {
              renderer = plane->renderer;
-
              if (!renderer->activated_ec)
                {
                   einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
@@ -1210,11 +1208,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
              if (plane->tsurface == NULL)
                plane->tsurface = tsurface;
              else
-               {
-                  _e_plane_surface_queue_release(plane, plane->tsurface);
-                  e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, NULL);
-                  plane->tsurface = tsurface;
-               }
+               _e_plane_surface_queue_release(plane, plane->tsurface);
 
              /* send the done surface to the client,
                 only when the renderer state is active(no composite) */
@@ -1259,12 +1253,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
         if (plane->reserved_memory)
           {
              /* release */
-             if (plane->tsurface)
-               {
-                  _e_plane_surface_queue_release(plane, plane->tsurface);
-                  e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, data->buffer_ref.buffer);
-                  plane->tsurface = tsurface;
-               }
+             if (plane->tsurface) _e_plane_surface_queue_release(plane, plane->tsurface);
 
              /* send the done surface to the client,
                 only when the renderer state is active(no composite) */
