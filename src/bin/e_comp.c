@@ -403,7 +403,7 @@ _hwc_set(E_Output * eout)
                   if (ep->prepare_ec)
                     {
                        e_client_redirected_set(ep->prepare_ec, 0);
-                       ep->ec = ep->prepare_ec;
+                       e_plane_ec_set(ep, ep->prepare_ec);
                        e_plane_fb_set(ep, EINA_FALSE);
                     }
                }
