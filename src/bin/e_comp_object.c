@@ -17,6 +17,7 @@
    - comp_object_skip: object has a name which prohibits theme shadows
    - comp_object-to_del: list of objects which will be deleted when this object is deleted
    - comp_mirror: object is the result of e_comp_object_util_mirror_add()
+   - effect_running: object is animating by external module
 */
 
 #define UPDATE_MAX 512 // same as evas
