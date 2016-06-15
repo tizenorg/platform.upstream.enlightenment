@@ -198,6 +198,7 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, wm_win_rotation, UCHAR);
 #endif
    E_CONFIG_VAL(D, T, use_cursor_timer, INT);
+   E_CONFIG_VAL(D, T, use_cursor_state, INT);
    E_CONFIG_VAL(D, T, cursor_timer_interval, INT);
    E_CONFIG_LIST(D, T, client_types, _e_config_client_type_edd);
    E_CONFIG_VAL(D, T, comp_shadow_file, STR);
@@ -393,6 +394,7 @@ e_config_load(void)
    E_CONFIG_LIMIT(e_config->keyboard.repeat_delay, -1, 1000); // 1 second
    E_CONFIG_LIMIT(e_config->keyboard.repeat_rate, -1, 1000); // 1 second
    E_CONFIG_LIMIT(e_config->use_cursor_timer, 0, 1);
+   E_CONFIG_LIMIT(e_config->use_cursor_state, 0, 1);
    E_CONFIG_LIMIT(e_config->sleep_for_dri, 0, 1);
    E_CONFIG_LIMIT(e_config->create_wm_ready, 0, 1);
    E_CONFIG_LIMIT(e_config->comp_canvas_bg.r, 0, 255);

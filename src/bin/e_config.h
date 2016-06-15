@@ -131,6 +131,7 @@ struct _E_Config
    unsigned char wm_win_rotation;
 #endif
    int use_cursor_timer;
+   int use_cursor_state;
    int cursor_timer_interval;
    Eina_List *client_types;
    const char *comp_shadow_file;

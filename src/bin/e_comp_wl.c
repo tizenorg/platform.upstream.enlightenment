@@ -813,6 +813,17 @@ _e_comp_wl_cursor_timer(void *data)
 }
 
 static void
+_e_comp_wl_evas_cb_send_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
+{
+   E_Client *ec;
+   ec = data ;
+
+   if (e_comp_wl->screenshooter.cursor_in)
+     e_comp_wl->screenshooter.cursor_in(ec);
+}
+
+
+static void
 _e_comp_wl_evas_cb_mouse_in(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
 {
    E_Client *ec;
@@ -1738,6 +1749,9 @@ _e_comp_wl_client_evas_init(E_Client *ec)
    evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_MOVE,        _e_comp_wl_evas_cb_move,        ec);
    evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_RESTACK,     _e_comp_wl_evas_cb_restack,     ec);
 
+
+   if(e_config->use_cursor_state)
+     evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_IN,    EVAS_CALLBACK_PRIORITY_DEFAULT, _e_comp_wl_evas_cb_send_mouse_in, ec);
 
    evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_IN,    EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_mouse_in,    ec);
    evas_object_event_callback_priority_add(ec->frame, EVAS_CALLBACK_MOUSE_OUT,   EVAS_CALLBACK_PRIORITY_AFTER, _e_comp_wl_evas_cb_mouse_out,   ec);
