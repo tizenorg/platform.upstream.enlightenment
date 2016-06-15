@@ -447,6 +447,8 @@ struct _E_Comp_Wl_Client_Data
       unsigned char win_type : 1;
       unsigned char layer : 1;
    } fetch;
+
+   E_Util_Transform *viewport_transform;
 };
 
 struct _E_Comp_Wl_Output
@@ -508,8 +510,6 @@ E_API Eina_Bool e_comp_wl_video_client_has(E_Client *ec);
 E_API void e_comp_wl_map_size_cal_from_buffer(E_Client *ec);
 E_API void e_comp_wl_map_size_cal_from_viewport(E_Client *ec);
 E_API void e_comp_wl_map_apply(E_Client *ec);
-
-E_API void e_comp_wl_input_cursor_timer_enable_set(Eina_Bool enabled);
 
 E_API extern int E_EVENT_WAYLAND_GLOBAL_ADD;
 
