@@ -93,6 +93,31 @@ e_util_transform_rotation(E_Util_Transform *transform, double rx, double ry, dou
 }
 
 E_API void
+e_util_transform_texcoord_set(E_Util_Transform *transform, int index, double tu, double tv)
+{
+   if (!transform) return;
+   if (index < 0 || index > 3) return;
+
+   transform->texcoord.value[index][0] = tu;
+   transform->texcoord.value[index][1] = tv;
+   transform->use_texcoord = EINA_TRUE;
+   transform->changed = EINA_TRUE;
+}
+
+E_API void
+e_util_transform_viewport_set(E_Util_Transform *transform, int x, int y, int w, int h)
+{
+   if (!transform) return;
+
+   transform->viewport.x = x;
+   transform->viewport.y = y;
+   transform->viewport.w = w;
+   transform->viewport.h = h;
+   transform->use_viewport = EINA_TRUE;
+   transform->changed = EINA_TRUE;
+}
+
+E_API void
 e_util_transform_source_to_target(E_Util_Transform *transform,
                                   E_Util_Transform_Rect *dest,
                                   E_Util_Transform_Rect *source)
@@ -117,32 +142,32 @@ e_util_transform_source_to_target(E_Util_Transform *transform,
    transform->changed = EINA_TRUE;
 }
 
-E_API E_Util_Transform
-e_util_transform_merge(E_Util_Transform *trans1, E_Util_Transform *trans2)
+E_API void
+e_util_transform_merge(E_Util_Transform *in_out, E_Util_Transform *input)
 {
-   E_Util_Transform result;
    int i;
 
-   e_util_transform_init(&result);
-
-   if (!trans1) return result;
-   if (!trans2) return result;
+   if (!in_out) return;
+   if (!input) return;
 
    for (i = 0 ; i < 3 ; ++i)
-      result.move.value[i] = trans1->move.value[i] + trans2->move.value[i];
+     {
+        in_out->move.value[i] += input->move.value[i];
+        in_out->scale.value[i] *= input->scale.value[i];
+        in_out->rotation.value[i] += input->rotation.value[i];
+     }
 
-   for (i = 0 ; i < 3 ; ++i)
-      result.scale.value[i] = trans1->scale.value[i] * trans2->scale.value[i];
+   // texcoord and viewport just one setting.
+   if (input->use_texcoord)
+     memcpy(&in_out->texcoord, &input->texcoord, sizeof(input->texcoord));
+   if (input->use_viewport)
+     memcpy(&in_out->viewport, &input->viewport, sizeof(input->viewport));
 
-   for (i = 0 ; i < 3 ; ++i)
-      result.rotation.value[i] = trans1->rotation.value[i] + trans2->rotation.value[i];
+   in_out->keep_ratio |= input->keep_ratio;
+   in_out->use_texcoord |= input->use_texcoord;
+   in_out->use_viewport |= input->use_viewport;
 
-   if (trans1->keep_ratio || trans2->keep_ratio)
-      result.keep_ratio = EINA_TRUE;
-
-   result.changed = EINA_TRUE;
-
-   return result;
+   in_out->changed = EINA_TRUE;
 }
 
 E_API E_Util_Transform_Matrix
@@ -257,6 +282,41 @@ e_util_transform_rotation_get(E_Util_Transform *transform, double *x, double *y,
    if (x) *x = transform->rotation.value[0];
    if (y) *y = transform->rotation.value[1];
    if (z) *z = transform->rotation.value[2];
+}
+
+E_API void
+e_util_transform_texcoord_get(E_Util_Transform *transform,int index, double *tu, double *tv)
+{
+   if (!transform) return;
+   if (index < 0 || index > 3) return;
+
+   if (tu) *tu = transform->texcoord.value[index][0];
+   if (tv) *tv = transform->texcoord.value[index][1];
+}
+
+E_API void
+e_util_transform_viewport_get(E_Util_Transform *transform, int *x, int *y, int *w, int *h)
+{
+   if (!transform) return;
+
+   if (x) *x = transform->viewport.x;
+   if (y) *y = transform->viewport.y;
+   if (w) *w = transform->viewport.w;
+   if (h) *h = transform->viewport.h;
+}
+
+E_API Eina_Bool
+e_util_transform_texcoord_flag_get(E_Util_Transform *transform)
+{
+   if (!transform) return EINA_FALSE;
+   return transform->use_texcoord;
+}
+
+E_API Eina_Bool
+e_util_transform_viewport_flag_get(E_Util_Transform *transform)
+{
+   if (!transform) return EINA_FALSE;
+   return transform->use_viewport;
 }
 
 E_API void
