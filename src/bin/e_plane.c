@@ -644,9 +644,6 @@ _e_plane_renderer_deactivate(E_Plane_Renderer *renderer)
         /* set the backup buffer resource to the pixmap */
         e_pixmap_resource_set(ec->pixmap, plane_client->backup_buffer);
 
-        e_comp->nocomp = 0;
-        e_comp->nocomp_ec = NULL;
-
         /* force update */
         e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
         e_comp_object_dirty(ec->frame);
@@ -1065,7 +1062,11 @@ e_plane_set(E_Plane *plane)
         ecore_evas_manual_render(plane->ee);
 
         /* check the post_render is called */
-        if (!plane->update_ee) return EINA_FALSE;
+        if (!plane->update_ee)
+        {
+          ELOGF("E_PLANE", "Post Render callback does not called. Nothing Display.", NULL, NULL);
+          return EINA_FALSE;
+        }
         plane->update_ee = EINA_FALSE;
 
         einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
@@ -1074,7 +1075,7 @@ e_plane_set(E_Plane *plane)
         if (!einfo->info.outbuf_flushed)
           {
              if (plane->trace_debug)
-               ELOGF("HWC", "Commit Canvas outbuf flush nothing!. Nothing Display.", NULL, NULL);
+               ELOGF("E_PLANE", "Commit Canvas outbuf flush nothing!. Nothing Display.", NULL, NULL);
              if (plane->update_ee) plane->update_ee = EINA_FALSE;
              return EINA_FALSE;
           }
@@ -1086,7 +1087,20 @@ e_plane_set(E_Plane *plane)
      }
    else
      {
+        E_Comp_Wl_Buffer *buffer = NULL;
+
         if (!plane->ec) return EINA_FALSE;
+
+        if (!e_comp_object_hwc_update_exists(plane->ec->frame)) return EINA_FALSE;
+        e_comp_object_hwc_update_set(plane->ec->frame, 0);
+
+        buffer = e_pixmap_resource_get(plane->ec->pixmap);
+        if (!buffer)
+          {
+            ERR("buffer is null.");
+            return EINA_FALSE;
+          }
+
         if (plane->reserved_memory)
           tsurface = _e_plane_aquire_surface_from_client_reserved(plane);
         else
@@ -1307,10 +1321,12 @@ E_API Eina_Bool
 e_plane_ec_set(E_Plane *plane, E_Client *ec)
 {
    E_Plane_Renderer *renderer = NULL;
+   Evas_Engine_Info_GL_Drm *einfo = NULL;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
 
    renderer = plane->renderer;
+   einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
 
    /* activate/deactivate the client if the plane is the reserved memory */
    if (plane->reserved_memory)
@@ -1327,6 +1343,8 @@ e_plane_ec_set(E_Plane *plane, E_Client *ec)
                   ERR("fail to _e_plane_renderer_activate.");
                   return EINA_FALSE;
                }
+
+             einfo->info.wait_for_showup = EINA_TRUE;
           }
         else
           {
@@ -1335,6 +1353,8 @@ e_plane_ec_set(E_Plane *plane, E_Client *ec)
                   ERR("fail to _e_plane_renderer_deactivate.");
                   return EINA_FALSE;
                }
+
+             einfo->info.wait_for_showup = EINA_FALSE;
           }
      }
 
