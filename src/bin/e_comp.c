@@ -383,6 +383,7 @@ _hwc_set(E_Output * eout)
 {
    const Eina_List *ep_l = NULL, *l, *ll;
    E_Plane *ep = NULL, *ep_prime = NULL;
+   Eina_Bool ret = EINA_FALSE;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(eout, EINA_FALSE);
    EINA_SAFETY_ON_NULL_RETURN_VAL(eout->planes, EINA_FALSE);
@@ -395,6 +396,7 @@ _hwc_set(E_Output * eout)
    ep_l = e_output_planes_get(eout);
    EINA_LIST_FOREACH_SAFE(ep_l, l, ll, ep)
      {
+        Eina_Bool set = EINA_FALSE;
         if (!ep_prime)
           {
              if (e_plane_is_primary(ep))
@@ -402,9 +404,16 @@ _hwc_set(E_Output * eout)
                   ep_prime = ep;
                   if (ep->prepare_ec)
                     {
-                       e_client_redirected_set(ep->prepare_ec, 0);
-                       e_plane_ec_set(ep, ep->prepare_ec);
-                       e_plane_fb_set(ep, EINA_FALSE);
+
+                       set = e_plane_ec_set(ep, ep->prepare_ec);
+                       if (set)
+                         {
+                            e_client_redirected_set(ep->prepare_ec, 0);
+                            e_plane_fb_set(ep, EINA_FALSE);
+                            ret |= EINA_TRUE;
+                         }
+                       else
+                         return EINA_FALSE;
                     }
                }
              continue;
@@ -414,13 +423,19 @@ _hwc_set(E_Output * eout)
           {
              if (ep->prepare_ec)
                {
-                  e_client_redirected_set(ep->prepare_ec, 0);
-                  e_plane_ec_set(ep, ep->prepare_ec);
+                  set = e_plane_ec_set(ep, ep->prepare_ec);
+                  if (set)
+                    {
+                       e_client_redirected_set(ep->prepare_ec, 0);
+                       ret |= EINA_TRUE;
+                    }
+                  else
+                    break;
                }
           }
      }
 
-   return EINA_TRUE;
+   return ret;
 }
 
 static Eina_Bool
@@ -495,7 +510,7 @@ _hwc_prepare_set(E_Output * eout, int n_vis, Eina_List* clist)
 }
 
 static Eina_Bool
-_e_comp_hwc_cancel(E_Output * eout)
+_hwc_cancel(E_Output * eout)
 {
    Eina_List *l, *ll;
    E_Plane *ep;
@@ -521,6 +536,7 @@ _e_comp_hwc_apply(E_Output * eout)
 {
    const Eina_List *ep_l = NULL, *l, *ll;
    E_Plane *ep = NULL, *ep_prime = NULL;
+   Eina_Bool ret = EINA_FALSE;
 
    ep_l = e_output_planes_get(eout);
    EINA_LIST_FOREACH_SAFE(ep_l, l, ll, ep)
@@ -539,13 +555,18 @@ _e_comp_hwc_apply(E_Output * eout)
           if (ep->prepare_ec != NULL) goto hwcompose;
      }
 
-   _e_comp_hwc_cancel(eout);
-   return EINA_FALSE;
+   goto compose;
 
 hwcompose:
-   e_comp->hwc_mode = 1;
-   _hwc_set(eout);
-   return EINA_TRUE;
+   ret = _hwc_set(eout);
+
+compose:
+   if (ret) e_comp->hwc_mode = 1;
+   else
+     {
+        _hwc_cancel(eout);
+     }
+   return ret;
 }
 
 static Eina_Bool
@@ -760,7 +781,7 @@ _e_comp_hwc_end(const char *location)
         E_Output * eout;
         if (!zone->output_id) continue;
         eout = e_output_find(zone->output_id);
-        if (eout) mode_set |= _e_comp_hwc_cancel(eout);
+        if (eout) mode_set |= _hwc_cancel(eout);
      }
 
    if (!mode_set) return;
