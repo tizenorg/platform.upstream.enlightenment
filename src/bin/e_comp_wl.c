@@ -5412,3 +5412,21 @@ e_comp_wl_shell_surface_ready(E_Client *ec)
 
    _e_comp_wl_hook_call(E_COMP_WL_HOOK_SHELL_SURFACE_READY, ec);
 }
+
+E_API void
+e_comp_wl_input_cursor_timer_enable_set(Eina_Bool enabled)
+{
+   e_config->use_cursor_timer = !!enabled;
+
+   if (e_config->use_cursor_timer == EINA_FALSE && e_pointer_is_hidden(e_comp->pointer))
+     {
+        _e_comp_wl_cursor_reload(e_client_focused_get());
+     }
+   else if (e_config->use_cursor_timer == EINA_FALSE && !e_pointer_is_hidden(e_comp->pointer))
+     {
+        if(e_comp_wl->ptr.hide_tmr)
+          ecore_timer_del(e_comp_wl->ptr.hide_tmr);
+        e_comp_wl->ptr.hide_tmr = NULL;
+        cursor_timer_ec = NULL;
+     }
+}
