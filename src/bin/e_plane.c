@@ -1067,7 +1067,7 @@ e_plane_set(E_Plane *plane)
           tsurface = _e_plane_aquire_surface_from_client(plane);
      }
 
-   plane->previous_tsurface = plane->tsurface;
+   plane->prepare_tsurface = tsurface;
 
    /* set plane info and set tsurface to the plane */
    if (!_e_plane_surface_set(plane, tsurface))
@@ -1077,32 +1077,26 @@ e_plane_set(E_Plane *plane)
         return EINA_FALSE;
      }
 
-   plane->tsurface = tsurface;
-
    return EINA_TRUE;
 }
 
 EINTERN void
 e_plane_unset(E_Plane *plane)
 {
-   tbm_surface_h tsurface = NULL;
-
    EINA_SAFETY_ON_NULL_RETURN(plane);
-   EINA_SAFETY_ON_NULL_RETURN(plane->tsurface);
-
-   tsurface = plane->tsurface;
+   EINA_SAFETY_ON_NULL_RETURN(plane->prepare_tsurface);
 
    if (plane->is_primary && !plane->ec)
-     _e_plane_release_surface_on_ecore_evas(plane, tsurface);
+     _e_plane_release_surface_on_ecore_evas(plane, plane->prepare_tsurface);
    else
      {
         if (!plane->ec) return;
-        if (plane->reserved_memory) _e_plane_release_surface_on_client_reserved(plane, tsurface);
-        else _e_plane_release_surface_on_client(plane, tsurface);
+        if (plane->reserved_memory) _e_plane_release_surface_on_client_reserved(plane, plane->prepare_tsurface);
+        else _e_plane_release_surface_on_client(plane, plane->prepare_tsurface);
      }
 
    /* set plane info and set prevous tsurface to the plane */
-   if (!_e_plane_surface_set(plane, plane->previous_tsurface))
+   if (!_e_plane_surface_set(plane, plane->tsurface))
      {
         ERR("fail: _e_plane_set_info.");
         return;
@@ -1121,7 +1115,7 @@ e_plane_commit_data_aquire(E_Plane *plane)
      {
         data = E_NEW(E_Plane_Commit_Data, 1);
         data->plane = plane;
-        data->tsurface = plane->tsurface;
+        data->tsurface = plane->prepare_tsurface;
         tbm_surface_internal_ref(data->tsurface);
         data->ec = NULL;
 
@@ -1136,7 +1130,7 @@ e_plane_commit_data_aquire(E_Plane *plane)
           {
              data = E_NEW(E_Plane_Commit_Data, 1);
              data->plane = plane;
-             data->tsurface = plane->tsurface;
+             data->tsurface = plane->prepare_tsurface;
              tbm_surface_internal_ref(data->tsurface);
              data->ec = plane->ec;
 
@@ -1183,7 +1177,10 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
              if (plane->tsurface == NULL)
                plane->tsurface = tsurface;
              else
-               _e_plane_surface_queue_release(plane, plane->tsurface);
+               {
+                  _e_plane_surface_queue_release(plane, plane->tsurface);
+                  plane->tsurface = tsurface;
+               }
 
              /* send the done surface to the client,
                 only when the renderer state is active(no composite) */
@@ -1226,7 +1223,11 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
         if (plane->reserved_memory)
           {
              /* release */
-             if (plane->tsurface) _e_plane_surface_queue_release(plane, plane->tsurface);
+             if (plane->tsurface)
+               {
+                  _e_plane_surface_queue_release(plane, plane->tsurface);
+                  plane->tsurface = tsurface;
+               }
 
              /* send the done surface to the client,
                 only when the renderer state is active(no composite) */
