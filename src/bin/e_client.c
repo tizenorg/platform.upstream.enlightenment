@@ -3280,6 +3280,7 @@ e_client_new(E_Pixmap *cp, int first_map, int internal)
    ec->first_mapped = EINA_FALSE;
    ec->post_raise = EINA_TRUE;
    ec->post_lower = EINA_FALSE;
+   ec->animatable = EINA_TRUE;
 
    /* FIXME: if first_map is 1 then we should ignore the first hide event
     * or ensure the window is already hidden and events flushed before we
