@@ -912,7 +912,7 @@ e_plane_new(E_Output *output, int index)
    tdm_layer_capability layer_capabilities;
    char name[40];
    E_Plane_Renderer *renderer = NULL;
-   unsigned int zpos;
+   int zpos;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(output, NULL);
 
