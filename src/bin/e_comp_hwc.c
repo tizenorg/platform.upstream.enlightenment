@@ -1408,7 +1408,7 @@ e_comp_hwc_init(void)
 
    int i, j;
    int num_outputs, num_layers;
-   unsigned int zpos;
+   int zpos;
 
    if (!e_comp)
      {
