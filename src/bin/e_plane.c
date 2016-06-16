@@ -493,34 +493,6 @@ _e_plane_renderer_send_surface(E_Plane_Renderer *renderer, E_Client *ec, tbm_sur
 }
 
 static Eina_Bool
-_e_plane_renderer_can_activate(E_Plane_Renderer *renderer, E_Client *ec)
-{
-   struct wayland_tbm_client_queue * cqueue = NULL;
-   struct wl_resource *wl_surface = NULL;
-   E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
-
-   if (renderer->plane->trace_debug)
-     ELOGF("E_PLANE", "Check Activate", ec->pixmap, ec);
-
-   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_comp_data, EINA_FALSE);
-
-   wl_surface = _e_plane_wl_surface_get(ec);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(wl_surface, EINA_FALSE);
-
-   cqueue = wayland_tbm_server_client_queue_get(wl_comp_data->tbm.server, wl_surface);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(cqueue, EINA_FALSE);
-
-   /* check if the layer queue is dequeueable */
-   if(!tbm_surface_queue_can_dequeue(renderer->tqueue, 0))
-     {
-        WRN("fail to tbm_surface_queue_can_dequeue");
-        return EINA_FALSE;
-     }
-
-   return EINA_TRUE;
-}
-
-static Eina_Bool
 _e_plane_renderer_activate(E_Plane_Renderer *renderer, E_Client *ec)
 {
    struct wayland_tbm_client_queue * cqueue = NULL;
@@ -1333,11 +1305,6 @@ e_plane_ec_set(E_Plane *plane, E_Client *ec)
      {
         if (ec)
           {
-             if (!_e_plane_renderer_can_activate(renderer, ec))
-               {
-                  ERR("fail to _e_plane_renderer_can_activate.");
-                  return EINA_FALSE;
-               }
              if (!_e_plane_renderer_activate(renderer, ec))
                {
                   ERR("fail to _e_plane_renderer_activate.");
