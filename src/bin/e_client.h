@@ -795,6 +795,7 @@ struct E_Client
    Eina_Bool first_mapped : 1;
    Eina_Bool post_raise : 1;
    Eina_Bool post_lower : 1;
+   Eina_Bool animatable : 1; //client is animatable (can apply animation)
 
    Eina_Bool on_post_updates : 1; // client is on the post update list
    uuid_t uuid;
