@@ -1019,6 +1019,7 @@ e_plane_set(E_Plane *plane)
 
    if (plane->is_primary && !plane->ec)
      {
+        ERR("#######soolim update ee.");
         ecore_evas_manual_render(plane->ee);
 
         /* check the post_render is called */
@@ -1060,6 +1061,8 @@ e_plane_set(E_Plane *plane)
             ERR("buffer is null.");
             return EINA_FALSE;
           }
+
+        ERR("#######soolim update client.");
 
         if (plane->reserved_memory)
           tsurface = _e_plane_aquire_surface_from_client_reserved(plane);
@@ -1133,6 +1136,7 @@ e_plane_commit_data_aquire(E_Plane *plane)
              data->tsurface = plane->prepare_tsurface;
              tbm_surface_internal_ref(data->tsurface);
              data->ec = plane->ec;
+             e_comp_wl_buffer_reference(&data->buffer_ref, e_pixmap_resource_get(plane->ec->pixmap));
 
              return data;
           }
@@ -1179,6 +1183,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
              else
                {
                   _e_plane_surface_queue_release(plane, plane->tsurface);
+                  e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, NULL);
                   plane->tsurface = tsurface;
                }
 
@@ -1226,6 +1231,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
              if (plane->tsurface)
                {
                   _e_plane_surface_queue_release(plane, plane->tsurface);
+                  e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, data->buffer_ref.buffer);
                   plane->tsurface = tsurface;
                }
 
@@ -1246,6 +1252,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
           }
 
         tbm_surface_internal_unref(tsurface);
+        e_comp_wl_buffer_reference(&data->buffer_ref, NULL);
         free(data);
      }
 }
