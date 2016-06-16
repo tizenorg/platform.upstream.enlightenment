@@ -967,16 +967,6 @@ e_plane_new(E_Output *output, int index)
    // soolim debug
    plane->trace_debug = EINA_TRUE;
 
-#if 0
-   if (plane->is_primary)
-     {
-        plane->ee = e_comp->ee;
-        plane->evas = ecore_evas_get(plane->ee);
-        evas_event_callback_add(plane->evas, EVAS_CALLBACK_RENDER_POST, _e_plane_ee_post_render_cb, plane);
-        ecore_evas_manual_render_set(plane->ee, 1);
-     }
-#endif
-
    INF("E_PLANE: (%d) name:%s zpos:%d capa:%s %s",
        index, plane->name, plane->zpos,plane->is_primary?"primary":"", plane->reserved_memory?"reserved_memory":"");
 
@@ -1011,12 +1001,10 @@ e_plane_hwc_setup(E_Plane *plane)
    /* enable hwc to evas engine gl_drm */
    einfo->info.hwc_enable = EINA_TRUE;
 
-#if 1
    plane->ee = e_comp->ee;
    plane->evas = ecore_evas_get(plane->ee);
    evas_event_callback_add(plane->evas, EVAS_CALLBACK_RENDER_POST, _e_plane_ee_post_render_cb, plane);
    ecore_evas_manual_render_set(plane->ee, 1);
-#endif
 
    return EINA_TRUE;
 }
