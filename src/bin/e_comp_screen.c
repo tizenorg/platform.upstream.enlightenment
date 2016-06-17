@@ -446,7 +446,7 @@ _e_comp_screen_apply(E_Comp_Screen *e_comp_screen)
      }
 }
 
-static void
+static Eina_Bool
 _drm_read_pixels(E_Comp_Wl_Output *output, void *pixels)
 {
    Ecore_Drm_Device *dev;
@@ -463,7 +463,7 @@ _drm_read_pixels(E_Comp_Wl_Output *output, void *pixels)
         if (fb) break;
      }
 
-   if (!fb) return;
+   if (!fb) return EINA_FALSE;
 
    bstride = output->w * sizeof(int);
 
@@ -474,6 +474,8 @@ _drm_read_pixels(E_Comp_Wl_Output *output, void *pixels)
         memcpy(d, s, (output->w * sizeof(int)));
         d += bstride;
      }
+
+   return EINA_TRUE;
 }
 
 E_API void
