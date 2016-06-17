@@ -86,7 +86,7 @@ E_API int E_EVENT_COMPOSITOR_FPS_UPDATE = -1;
 #define CRI(f, x ...)
 #endif
 
-#ifdef MULTI_PLANE_HWC
+#ifdef ENABLE_HWC_MULTI
 static void
 _e_comp_hooks_clean(void)
 {
@@ -119,7 +119,7 @@ _e_comp_hook_call(E_Comp_Hook_Point hookpoint, void *data EINA_UNUSED)
    if ((_e_comp_hooks_walking == 0) && (_e_comp_hooks_delete > 0))
      _e_comp_hooks_clean();
 }
-#endif
+#endif  // end of ENABLE_HWC_MULTI
 
 static E_Client *
 _e_comp_fullscreen_check(void)
@@ -354,7 +354,7 @@ _e_comp_cb_nocomp_end(void)
    ecore_event_add(E_EVENT_COMPOSITOR_ENABLE, NULL, NULL, NULL);
 }
 
-#ifndef MULTI_PLANE_HWC
+#ifndef ENABLE_HWC_MULTI
 static Eina_Bool
 _e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
 {
@@ -367,7 +367,7 @@ _e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
      }
    return EINA_FALSE;
 }
-#endif
+#endif  // end of ENABLE_HWC_MULTI
 E_API void
 e_comp_nocomp_end(const char *location)
 {
@@ -377,7 +377,7 @@ e_comp_nocomp_end(const char *location)
    INF("HWC : NOCOMP_END at %s\n", location);
    _e_comp_cb_nocomp_end();
 }
-#ifdef MULTI_PLANE_HWC
+#ifdef ENABLE_HWC_MULTI
 static Eina_Bool
 _hwc_set(E_Output *eout)
 {
@@ -778,7 +778,7 @@ _e_comp_hwc_end(const char *location)
 
    e_comp_render_queue();
 }
-#endif
+#endif  // end of ENABLE_HWC_MULTI
 
 static void
 _e_comp_client_update(E_Client *ec)
@@ -877,7 +877,7 @@ setup_hwcompose:
      {
         goto end;
      }
-#ifdef MULTI_PLANE_HWC
+#ifdef ENABLE_HWC_MULTI
    if(_e_comp_hwc_usable())
      {
         if (_e_comp_hwc_is_on())
@@ -944,7 +944,7 @@ setup_hwcompose:
         if (e_comp->nocomp && e_comp->nocomp_ec)
           e_comp_nocomp_end("_e_comp_cb_update : ec is not fullscreen");
      }
-#endif
+#endif  // end of ENABLE_HWC_MULTI
 
 end:
 
