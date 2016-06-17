@@ -316,22 +316,33 @@ e_output_planes_get(E_Output *eout)
 E_API void
 e_output_util_planes_print(void)
 {
-   Eina_List *l, *ll;
+   Eina_List *l;
    E_Output * eout = NULL;
 
-   EINA_LIST_FOREACH_SAFE(e_comp_screen->outputs, l, ll, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
      {
+        Eina_List *p_l;
         E_Plane *ep;
         E_Client *ec;
 
         if (!eout || !eout->planes) continue;
 
-        EINA_LIST_FOREACH_SAFE(eout->planes, l, ll, ep)
+        fprintf(stderr, "HWC in %s .. \n", eout->id);
+        fprintf(stderr, "HWC \tzPos \t on_plane \t\t\t\t on_prepare \t \n");
+
+        EINA_LIST_FOREACH(eout->planes, p_l, ep)
           {
              ec = ep->ec;
-             if (ec) INF("HWC:\t|---\t %s 0x%08x\n", ec->icccm.title, (unsigned int)ec->frame);
+             if (ec) fprintf(stderr, "HWC \t[%d]%s\t %s (0x%08x)",
+                             ep->zpos,
+                             ep->is_primary ? "--" : "  ",
+                             ec->icccm.title, (unsigned int)ec->frame);
+
+             ec = ep->prepare_ec;
+             if (ec) fprintf(stderr, "\t\t\t %s (0x%08x)",
+                             ec->icccm.title, (unsigned int)ec->frame);
+             fputc('\n', stderr);
           }
+        fputc('\n', stderr);
      }
-
 }
-
