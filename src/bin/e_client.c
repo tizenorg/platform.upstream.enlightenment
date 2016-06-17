@@ -2702,7 +2702,8 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
           }
         else
           {
-             if (!evas_object_visible_get(ec->frame))
+             if ((!evas_object_visible_get(ec->frame)) &&
+                 (!ec->e.state.rot.pending_show))
                {
                   if (cdata && !cdata->mapped)
                     {
