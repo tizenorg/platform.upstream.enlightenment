@@ -383,6 +383,7 @@ _hwc_set(E_Output *eout)
    const Eina_List *ep_l = NULL, *l;
    E_Plane *ep = NULL, *ep_prime = NULL;
    Eina_Bool ret = EINA_FALSE;
+   Eina_Bool set = EINA_FALSE;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(eout, EINA_FALSE);
    EINA_SAFETY_ON_NULL_RETURN_VAL(eout->planes, EINA_FALSE);
