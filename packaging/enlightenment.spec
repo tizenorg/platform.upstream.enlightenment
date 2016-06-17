@@ -59,7 +59,8 @@ export LDFLAGS+=" -pie "
 %autogen \
       --enable-function-trace \
       --enable-wayland \
-      --enable-quick-init
+      --enable-quick-init \
+      --enable-hwc-multi
 
 make %{?_smp_mflags}
 
