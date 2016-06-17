@@ -1431,6 +1431,8 @@ _e_comp_intercept_stack_helper(E_Comp_Object *cw, Evas_Object *stack, E_Comp_Obj
         if (o) cw2 = evas_object_data_get(o, "comp_obj");
      }
 
+   if (cw2 && cw->layer != cw2->layer)
+     return;
 
    /* remove existing layers */
    _e_comp_object_layers_remove(cw);
