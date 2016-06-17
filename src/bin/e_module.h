@@ -50,6 +50,7 @@ struct _E_Module
 
    /* the module is allowed to modify these */
    void                *data;
+   void                *private_data;
 };
 
 struct _E_Module_Api
@@ -62,6 +63,7 @@ struct _E_Module_Api
 struct _E_Module_EOM_Data
 {
    Eina_Bool (*output_is_external)(struct wl_resource *output_resource);
+   Eina_Bool (*output_get_geometry)(const char *output_name, int *width, int *height);
 };
 
 EINTERN int          e_module_init(void);

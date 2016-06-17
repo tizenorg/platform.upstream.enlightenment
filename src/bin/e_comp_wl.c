@@ -4952,13 +4952,13 @@ e_comp_wl_output_remove(const char *id)
      {
         e_comp_wl->outputs = eina_list_remove(e_comp_wl->outputs, output);
 
-        /* wl_global_destroy(output->global); */
+        wl_global_destroy(output->global);
 
-        /* eina_stringshare_del(output->id); */
-        /* eina_stringshare_del(output->make); */
-        /* eina_stringshare_del(output->model); */
+        eina_stringshare_del(output->id);
+        eina_stringshare_del(output->make);
+        eina_stringshare_del(output->model);
 
-        /* free(output); */
+        free(output);
      }
 }
 

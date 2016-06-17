@@ -411,25 +411,7 @@ e_module_new(const char *name)
         goto init_done;
      }
 
-   /* e-mod-tize-eom related */
-   if (strcmp(m->api->name, "EOM Module") == 0)
-   {
-       E_Module_EOM_Data *eom_data = E_NEW(E_Module_EOM_Data, 1);
-       if (!eom_data)
-         goto init_done;
-
-       eom_data->output_is_external = dlsym(m->handle, "e_eom_output_is_external");
-       if (!eom_data->output_is_external)
-         {
-            free(eom_data);
-            goto init_done;
-         }
-
-       m->data = (void *) eom_data;
-   }
-
 init_done:
-
    _e_modules = eina_list_append(_e_modules, m);
    if (!_e_modules_hash)
      {
@@ -482,6 +464,32 @@ init_done:
         e_config_save_queue();
      }
    if (modpath) eina_stringshare_del(modpath);
+
+   /* e-mod-tize-eom related */
+      if (strcmp(m->name, "e-mod-tizen-eom") == 0)
+      {
+          E_Module_EOM_Data *eom_data = E_NEW(E_Module_EOM_Data, 1);
+          if (!eom_data)
+            goto init_done_2;
+
+          eom_data->output_is_external = dlsym(m->handle, "e_eom_output_is_external");
+          if (!eom_data->output_is_external)
+            {
+               free(eom_data);
+               goto init_done_2;
+            }
+
+          eom_data->output_get_geometry = dlsym(m->handle, "e_eom_output_get_geometry");
+          if (!eom_data->output_get_geometry)
+            {
+               free(eom_data);
+               goto init_done_2;
+            }
+
+          m->private_data = (void *) eom_data;
+      }
+
+init_done_2:
 
    snprintf(str, sizeof(str), "\t%s Module Open Done m:%p", name, m);
    e_main_ts(str);
@@ -585,6 +593,16 @@ e_module_disable(E_Module *m)
              break;
           }
      }
+
+   if (strcmp(m->name, "e-mod-tizen-eom") == 0)
+     {
+        if (m->private_data)
+          {
+             E_Module_EOM_Data *eom_data = (E_Module_EOM_Data *)m->private_data;
+             free(eom_data);
+          }
+     }
+
    return ret;
 }
 
