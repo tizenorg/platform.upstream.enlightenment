@@ -75,6 +75,7 @@ export LDFLAGS+=" -pie "
       --enable-memcpy_swc \
 %endif
       --enable-quick-init
+      --enable-hwc-multi
 
 make %{?_smp_mflags}
 
