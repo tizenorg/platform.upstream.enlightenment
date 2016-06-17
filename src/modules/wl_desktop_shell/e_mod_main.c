@@ -604,6 +604,10 @@ _e_xdg_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges
    E_Client *ec;
    struct wl_array states;
    uint32_t serial;
+   E_Module *m = NULL;
+   E_Module_EOM_Data *eom_data = NULL;
+   const char *output_name = NULL;
+   int ret = 0;
 
    if (!resource) return;
 
@@ -623,6 +627,34 @@ _e_xdg_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges
         _e_xdg_surface_state_add(resource, &states, XDG_SURFACE_STATE_FULLSCREEN);
 
         // send fullscreen size
+        if (e_client_is_external_output_client(ec) == EINA_TRUE)
+          {
+             m = e_module_find("e-mod-tizen-eom");
+             if (m == NULL)
+               goto eom_err;
+
+             eom_data = (E_Module_EOM_Data *)m->private_data;
+             if (eom_data == NULL)
+               goto eom_err;
+
+             if (eom_data->output_get_geometry == NULL)
+               goto eom_err;
+
+             output_name = e_client_external_output_name_get(ec);
+             if (output_name == NULL)
+               goto eom_err;
+
+             ret = eom_data->output_get_geometry(output_name, &width, &height);
+             if (ret == EINA_FALSE)
+               goto eom_err;
+
+             INF("eom: enlightenment: fullscreen configure_send  %dx%d", width, height);
+
+             if (output_name)
+                eina_stringshare_del(output_name);
+          }
+
+eom_err:
         if ((width == 0) && (height == 0))
           {
              width = ec->client.w && ec->client.h? ec->client.w : ec->w;
@@ -634,6 +666,34 @@ _e_xdg_shell_surface_configure_send(struct wl_resource *resource, uint32_t edges
         _e_xdg_surface_state_add(resource, &states, XDG_SURFACE_STATE_MAXIMIZED);
 
         // send maximized size
+        if (e_client_is_external_output_client(ec) == EINA_TRUE)
+          {
+             m = e_module_find("e-mod-tizen-eom");
+             if (m == NULL)
+               goto eom_err_2;
+
+             eom_data = (E_Module_EOM_Data *)m->private_data;
+             if (eom_data == NULL)
+               goto eom_err_2;
+
+             if (eom_data->output_get_geometry == NULL)
+               goto eom_err_2;
+
+             output_name = e_client_external_output_name_get(ec);
+             if (output_name == NULL)
+               goto eom_err;
+
+             ret = eom_data->output_get_geometry(output_name, &width, &height);
+             if (ret == EINA_FALSE)
+               goto eom_err_2;
+
+             INF("eom: enlightenment: maximized configure_send  %dx%d", width, height);
+
+             if (output_name)
+                eina_stringshare_del(output_name);
+          }
+
+eom_err_2:
         if ((width == 0) && (height == 0))
           {
              width = ec->client.w && ec->client.h? ec->client.w : ec->w;
