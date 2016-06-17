@@ -67,6 +67,7 @@ struct _E_Plane_Renderer {
    tbm_surface_queue_h tqueue;
 
    E_Client           *activated_ec;
+   E_Client           *candidate_ec;
 
    struct gbm_surface *gsurface;
    Eina_List          *disp_surfaces;
