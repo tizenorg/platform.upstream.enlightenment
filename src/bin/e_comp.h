@@ -129,7 +129,6 @@ struct _E_Comp
    int             frameskip;
    double          fps;
 
-   int             nocomp_override; //number of times nocomp override has been requested
    Ecore_Window    block_win;
    int             block_count; //number of times block window has been requested
 

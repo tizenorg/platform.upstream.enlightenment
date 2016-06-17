@@ -289,9 +289,8 @@ _e_comp_fps_update(void)
 static Eina_Bool
 _e_comp_hwc_is_on(void)
 {
-   if ((e_comp->hwc_override <= 0) &&
-       (e_comp->hwc_mode))
-     return EINA_TRUE;
+   if (e_comp->hwc_mode)
+      return EINA_TRUE;
 
    return EINA_FALSE;
 }
@@ -360,7 +359,7 @@ _e_comp_cb_nocomp_begin_timeout(void *data EINA_UNUSED)
 {
    e_comp->nocomp_delay_timer = NULL;
 
-   if (e_comp->nocomp_override == 0)
+   if (e_comp->hwc_override == 0)
      {
         if (_e_comp_fullscreen_check()) e_comp->nocomp_want = 1;
         _e_comp_cb_nocomp_begin();
@@ -717,10 +716,10 @@ _e_comp_hwc_begin(void)
    E_Zone *zone;
    Eina_Bool mode_set = EINA_FALSE;
 
-   if (!e_comp->hwc) return;
    E_FREE_FUNC(e_comp->selcomp_delay_timer, ecore_timer_del);
 
-   e_comp->selcomp_want = 1;
+   if (!e_comp->hwc) return;
+   if (e_comp->hwc_override > 0) return;
 
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
@@ -745,6 +744,7 @@ _e_comp_hwc_cb_begin_timeout(void *data EINA_UNUSED)
 
    if (e_comp->hwc_override == 0 && _e_comp_hwc_usable())
      {
+        e_comp->selcomp_want = 1;
         _e_comp_hwc_begin();
      }
    return EINA_FALSE;
@@ -759,13 +759,12 @@ e_comp_hwc_end(const char *location)
    E_Zone *zone;
    Eina_List *l;
 
-   if (!e_comp->hwc) return;
-   if (!_e_comp_hwc_is_on()) return;
-
    e_comp->selcomp_want = 0;
    E_FREE_FUNC(e_comp->selcomp_delay_timer, ecore_timer_del);
 
-   // e_comp->canvases will be replace e_comp->zones
+   if (!e_comp->hwc) return;
+   if (!_e_comp_hwc_is_on()) return;
+
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
         E_Output * eout;
@@ -903,6 +902,7 @@ setup_hwcompose:
                }
              else
                {
+                  e_comp->selcomp_want = 1;
                   _e_comp_hwc_begin();
                }
           }
@@ -922,7 +922,7 @@ setup_hwcompose:
                   if (!e_comp_is_on_overlay(ec))
                     e_comp_nocomp_end("_e_comp_cb_update : nocomp_ec != ec");
                }
-             else if ((!e_comp->nocomp) && (!e_comp->nocomp_override))
+             else if ((!e_comp->nocomp) && (!e_comp->hwc_override))
                {
                   if (conf->nocomp_use_timer)
                     {
@@ -1289,11 +1289,11 @@ static Eina_Bool
 _e_comp_override_expire(void *data EINA_UNUSED)
 {
    e_comp->nocomp_override_timer = NULL;
-   e_comp->nocomp_override--;
+   e_comp->hwc_override--;
 
-   if (e_comp->nocomp_override <= 0)
+   if (e_comp->hwc_override <= 0)
      {
-        e_comp->nocomp_override = 0;
+        e_comp->hwc_override = 0;
         if (e_comp->nocomp_want) _e_comp_cb_nocomp_begin();
      }
    return EINA_FALSE;
@@ -1665,19 +1665,28 @@ e_comp_ignore_win_find(Ecore_Window win)
 E_API void
 e_comp_override_del()
 {
-   e_comp->nocomp_override--;
-   if (e_comp->nocomp_override <= 0)
+   e_comp->hwc_override--;
+   if (e_comp->hwc_override <= 0)
      {
-        e_comp->nocomp_override = 0;
+        e_comp->hwc_override = 0;
+#ifdef ENABLE_HWC_MULTI
+        if (e_comp->selcomp_want) _e_comp_hwc_begin();
+#else
         if (e_comp->nocomp_want) _e_comp_cb_nocomp_begin();
+#endif
      }
 }
 
 E_API void
 e_comp_override_add()
 {
-   e_comp->nocomp_override++;
-   if ((e_comp->nocomp_override > 0) && (e_comp->nocomp))
+   e_comp->hwc_override++;
+   if ((e_comp->hwc_override > 0) &&
+#ifdef ENABLE_HWC_MULTI
+       (_e_comp_hwc_is_on())
+#else
+       (e_comp->nocomp))
+#endif
      {
         e_comp_hwc_end(__FUNCTION__);
      }
@@ -1693,9 +1702,9 @@ e_comp_find_by_window(Ecore_Window win)
 E_API void
 e_comp_override_timed_pop(void)
 {
-   if (e_comp->nocomp_override <= 0) return;
+   if (e_comp->hwc_override <= 0) return;
    if (e_comp->nocomp_override_timer)
-     e_comp->nocomp_override--;
+     e_comp->hwc_override--;
    else
      e_comp->nocomp_override_timer = ecore_timer_add(1.0, _e_comp_override_expire, NULL);
 }
