@@ -109,6 +109,8 @@ struct _E_Comp
       void *data;
    } autoclose;
 
+   E_Comp_Screen *e_comp_screen;
+
    Eina_List *debug_rects;
    Eina_List *ignore_wins;
 

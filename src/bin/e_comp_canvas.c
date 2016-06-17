@@ -124,7 +124,7 @@ _e_comp_canvas_cb_zone_sort(const void *data1, const void *data2)
 static void
 _e_comp_canvas_resize(Ecore_Evas *ee EINA_UNUSED)
 {
-   e_output_screens_setup(e_comp->w, e_comp->h);
+   e_comp_screen_e_screens_setup(e_comp->e_comp_screen, e_comp->w, e_comp->h);
    e_comp_canvas_update();
 }
 
@@ -193,7 +193,7 @@ e_comp_canvas_init(int w, int h)
 
    e_comp->ee_win = ecore_evas_window_get(e_comp->ee);
 
-   screens = (Eina_List *)e_output_screens_get();
+   screens = (Eina_List *)e_comp_screen_e_screens_get(e_comp->e_comp_screen);
    if (screens)
      {
         E_Screen *scr;
@@ -375,7 +375,7 @@ e_comp_canvas_update(void)
    int i;
    Eina_Bool changed = EINA_FALSE;
 
-   screens = (Eina_List *)e_output_screens_get();
+   screens = (Eina_List *)e_comp_screen_e_screens_get(e_comp->e_comp_screen);
 
    if (screens)
      {

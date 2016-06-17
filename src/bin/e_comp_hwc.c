@@ -1,6 +1,79 @@
 #include "e.h"
 
 #ifdef HAVE_HWC
+#ifdef ENABLE_HWC_MULTI
+EINTERN Eina_Bool
+e_comp_hwc_init(void)
+{
+   if (!e_comp || !e_comp->e_comp_screen)
+     {
+        e_error_message_show(_("Enlightenment cannot has no e_comp at HWC(HardWare Composite)!\n"));
+        return EINA_FALSE;
+     }
+
+   if (!e_comp_screen_hwc_setup(e_comp->e_comp_screen))
+     {
+        ERR("fail to e_comp_screen_hwc_setup");
+        return EINA_FALSE;
+     }
+
+   return EINA_TRUE;
+}
+
+EINTERN void
+e_comp_hwc_shutdown(void)
+{
+   ;
+}
+
+EINTERN Eina_Bool
+e_comp_hwc_mode_nocomp(E_Client *ec)
+{
+   return EINA_FALSE;
+}
+
+EINTERN void
+e_comp_hwc_display_client(E_Client *ec)
+{
+   ;
+}
+
+EINTERN void
+e_comp_hwc_trace_debug(Eina_Bool onoff)
+{
+   ;
+}
+
+EINTERN void
+e_comp_hwc_info_debug(void)
+{
+   ;
+}
+
+EINTERN Eina_Bool
+e_comp_hwc_native_surface_set(E_Client *ec)
+{
+   return EINA_FALSE;
+}
+
+EINTERN void
+e_comp_hwc_client_commit(E_Client *ec)
+{
+   ;
+}
+
+E_API Eina_Bool
+e_comp_hwc_client_set_layer(E_Client *ec, int zorder)
+{
+   return EINA_FALSE;
+}
+
+E_API void
+e_comp_hwc_client_unset_layer(int zorder)
+{
+   ;
+}
+#else
 # include "e_comp_wl.h"
 # include "e_comp_hwc.h"
 
@@ -922,8 +995,11 @@ _e_comp_hwc_output_geom_update(void)
    Ecore_Drm_Device *dev;
    Ecore_Drm_Output *drm_output;
    E_Output *eout;
+   E_Comp_Screen *e_comp_screen;
    const Eina_List *l, *ll;
    int x, y, w, h;
+
+   e_comp_screen = e_comp->e_comp_screen;
 
    EINA_LIST_FOREACH(ecore_drm_devices_get(), l, dev)
      {
@@ -1472,6 +1548,21 @@ _e_comp_hwc_remove(E_Comp_Hwc *hwc)
 EINTERN Eina_Bool
 e_comp_hwc_init(void)
 {
+#ifdef ENABLE_HWC_MULTI
+   if (!e_comp || !e_comp->e_comp_screen)
+     {
+        e_error_message_show(_("Enlightenment cannot has no e_comp at HWC(HardWare Composite)!\n"));
+        return EINA_FALSE;
+     }
+
+   if (!e_comp_screen_hwc_setup(e_comp->e_comp_screen))
+     {
+        ERR("fail to e_comp_screen_hwc_setup");
+        return EINA_FALSE;
+     }
+
+   return EINA_TRUE;
+#else
    E_Comp_Hwc *hwc = NULL;
    E_Comp_Hwc_Output *hwc_output = NULL;
    E_Comp_Hwc_Layer *hwc_layer = NULL;
@@ -1607,6 +1698,7 @@ fail:
    _e_comp_hwc_remove(hwc);
 
    return EINA_FALSE;
+#endif
 }
 
 EINTERN void
@@ -1614,7 +1706,10 @@ e_comp_hwc_shutdown(void)
 {
    if (!e_comp) return;
 
+#ifdef ENABLE_HWC_MULTI
+#else
    _e_comp_hwc_remove(g_hwc);
+#endif
 }
 
 
@@ -1668,7 +1763,13 @@ e_comp_hwc_display_client(E_Client *ec)
                   if (cdata->sub.below_list || cdata->sub.below_list_pending)
                     {
                        if (!e_comp_wl_video_client_has(ec))
-                         e_comp_hwc_end(__FUNCTION__);
+                         {
+#ifdef ENABLE_HWC_MULTI
+                            _e_comp_hwc_end(__FUNCTION__);
+#else 
+                            e_comp_nocomp_end(__FUNCTION__);
+#endif
+                         }
                     }
                }
              else
@@ -1881,6 +1982,9 @@ _e_comp_hwc_check_buffer_scanout(E_Client *ec)
 EINTERN Eina_Bool
 e_comp_hwc_native_surface_set(E_Client *ec)
 {
+#ifdef ENABLE_HWC_MULTI
+   return EINA_FALSE;
+#else
    EINA_SAFETY_ON_NULL_RETURN_VAL(ec, EINA_FALSE);
 
    E_Comp_Hwc_Client *hwc_client = NULL;
@@ -1910,6 +2014,7 @@ e_comp_hwc_native_surface_set(E_Client *ec)
 #endif
 
    return EINA_TRUE;
+#endif
 }
 
 EINTERN void
@@ -2031,7 +2136,7 @@ e_comp_hwc_disable_output_hwc_rendering(int index, int onoff)
      }
    return;
 }
-
+#endif
 #else /* HAVE_HWC */
 EINTERN Eina_Bool
 e_comp_hwc_init(void)

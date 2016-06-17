@@ -3318,9 +3318,11 @@ e_comp_object_damage(Evas_Object *obj, int x, int y, int w, int h)
         return;
      }
 
+   // FIXME: will remove out once tdm_output_commit thru e_output,e_plane
    if (e_comp_is_on_overlay(cw->ec))
      {
-        cw->hwc_need_update = EINA_TRUE;
+        e_comp_object_hwc_update_set(obj, 1);
+        //return;
      }
 
    /* ignore overdraw */
@@ -3382,6 +3384,20 @@ e_comp_object_damage_exists(Evas_Object *obj)
 {
    API_ENTRY EINA_FALSE;
    return cw->updates_exist;
+}
+
+E_API Eina_Bool
+e_comp_object_hwc_update_exists(Evas_Object *obj)
+{
+   API_ENTRY EINA_FALSE;
+   return cw->hwc_need_update;
+}
+
+E_API void
+e_comp_object_hwc_update_set(Evas_Object *obj, Eina_Bool set)
+{
+   API_ENTRY;
+   cw->hwc_need_update = set;
 }
 
 E_API void
@@ -3683,6 +3699,9 @@ e_comp_object_dirty(Evas_Object *obj)
      }
 
 #ifdef HAVE_HWC
+#ifdef ENABLE_HWC_MULTI
+   e_comp_object_native_surface_set(obj, e_comp->gl);
+#else
    if (e_comp->hwc)
      {
         if (!e_comp_hwc_native_surface_set(cw->ec))
@@ -3690,6 +3709,7 @@ e_comp_object_dirty(Evas_Object *obj)
      }
    else
      e_comp_object_native_surface_set(obj, e_comp->gl);
+#endif
 #else
    e_comp_object_native_surface_set(obj, e_comp->gl);
 #endif
