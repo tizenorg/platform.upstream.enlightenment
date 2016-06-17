@@ -898,6 +898,9 @@ static void
 _e_xdg_shell_surface_cb_fullscreen_set(struct wl_client *client EINA_UNUSED, struct wl_resource *resource, struct wl_resource *output_resource)
 {
    E_Client *ec;
+   E_Module *m;
+   E_Module_EOM_Data *eom_data;
+   const char *output_name = NULL;
 
    /* get the client for this resource */
    if (!(ec = wl_resource_get_user_data(resource)))
@@ -908,10 +911,31 @@ _e_xdg_shell_surface_cb_fullscreen_set(struct wl_client *client EINA_UNUSED, str
         return;
      }
 
-   /* TODO: e_eom_output_is_external() must be used, but I do not know is there
-   *a way to call a function from a loadable modules (e.g. e-mod-tizen-eom) */
-   if (output_resource != NULL /* && e_eom_output_is_external(output_resource) == EINA_TRUE */ )
-     e_client_external_output_client_set(ec);
+   if (output_resource != NULL)
+     {
+        m = e_module_find("EOM Module");
+        if (m == NULL)
+          goto finish;
+
+        eom_data = (E_Module_EOM_Data *)m->data;
+        if (eom_data == NULL)
+          goto finish;
+
+        if (eom_data->output_is_external == NULL)
+          goto finish;
+
+        if ((output_name = e_client_external_output_name_by_resorce_get(output_resource)) &&
+             eom_data->output_is_external(output_resource) == EINA_TRUE )
+          {
+             e_client_external_output_name_set(ec, output_name);
+             e_client_external_output_client_set(ec);
+          }
+
+        if (output_name)
+          eina_stringshare_del(output_name);
+     }
+
+finish:
 
    if (!ec->lock_user_fullscreen)
      e_client_fullscreen(ec, e_config->fullscreen_policy);
@@ -932,7 +956,10 @@ _e_xdg_shell_surface_cb_fullscreen_unset(struct wl_client *client EINA_UNUSED, s
      }
 
    if (e_client_is_external_output_client(ec) == EINA_TRUE)
-     e_client_external_output_client_unset(ec);
+     {
+        e_client_external_output_name_unset(ec);
+        e_client_external_output_client_unset(ec);
+     }
 
    if (!ec->lock_user_fullscreen)
      e_client_unfullscreen(ec);
