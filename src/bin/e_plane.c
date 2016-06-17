@@ -1293,6 +1293,8 @@ e_plane_ec_set(E_Plane *plane, E_Client *ec)
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
 
+   if (!ec &&  !plane->ec) return EINA_FALSE;
+
    renderer = plane->renderer;
    einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
 

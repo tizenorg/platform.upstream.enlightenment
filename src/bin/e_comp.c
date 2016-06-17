@@ -522,7 +522,11 @@ _hwc_cancel(E_Output * eout)
 
    EINA_LIST_FOREACH_SAFE(eout->planes, l, ll, ep)
      {
-        if (ep->ec) e_client_redirected_set(ep->ec, 1);
+        if (ep->ec)
+          {
+             e_client_redirected_set(ep->ec, 1);
+             e_plane_ec_set(ep, NULL);
+          }
         e_plane_ec_prepare_set(ep, NULL);
         e_plane_ec_set(ep, NULL);
         if(e_plane_is_primary(ep)) e_plane_fb_set(ep, EINA_TRUE);
