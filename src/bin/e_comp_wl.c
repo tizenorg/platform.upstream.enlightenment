@@ -386,19 +386,12 @@ e_comp_wl_map_apply(E_Client *ec)
 {
    E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
    E_Comp_Wl_Subsurf_Data *sdata;
-   E_Comp_Wl_Client_Data *cdata;
+   const Evas_Map *m;
+   Evas_Map *map;
    int x1, y1, x2, y2, x, y;
    int dx, dy;
 
-   cdata = ec->comp_data;
    sdata = ec->comp_data->sub.data;
-
-   if (!cdata->viewport_transform)
-     {
-        cdata->viewport_transform = e_util_transform_new();
-        e_client_transform_core_add(ec, cdata->viewport_transform);
-     }
-
    if (sdata)
      {
         if (sdata->parent)
@@ -422,9 +415,21 @@ e_comp_wl_map_apply(E_Client *ec)
    if (x != dx || y != dy)
      evas_object_move(ec->frame, dx, dy);
 
-   e_util_transform_viewport_set(cdata->viewport_transform, dx, dy,
-                                 ec->comp_data->width_from_viewport,
-                                 ec->comp_data->height_from_viewport);
+   m = evas_object_map_get(ec->frame);
+   evas_map_point_coord_get(m, 0, &x1, &y1, NULL);
+   evas_map_point_coord_get(m, 2, &x2, &y2, NULL);
+
+   if (x1 == dx && (x2 - x1) == ec->comp_data->width_from_viewport &&
+       y1 == dy && (y2 - y1) == ec->comp_data->height_from_viewport)
+     return;
+
+   map = evas_map_new(4);
+
+   evas_map_util_points_populate_from_geometry(map,
+                                               dx, dy,
+                                               ec->comp_data->width_from_viewport,
+                                               ec->comp_data->height_from_viewport,
+                                               0);
 
    if (vp->buffer.src_width == wl_fixed_from_int(-1))
      {
@@ -444,24 +449,27 @@ e_comp_wl_map_apply(E_Client *ec)
    _e_comp_wl_map_transform(ec->comp_data->width_from_buffer, ec->comp_data->height_from_buffer,
                             vp->buffer.transform, vp->buffer.scale,
                             x1, y1, &x, &y);
-   e_util_transform_texcoord_set(cdata->viewport_transform, 0, x, y);
+   evas_map_point_image_uv_set(map, 0, x, y);
 
    _e_comp_wl_map_transform(ec->comp_data->width_from_buffer, ec->comp_data->height_from_buffer,
                             vp->buffer.transform, vp->buffer.scale,
                             x2, y1, &x, &y);
-   e_util_transform_texcoord_set(cdata->viewport_transform, 1, x, y);
+   evas_map_point_image_uv_set(map, 1, x, y);
 
    _e_comp_wl_map_transform(ec->comp_data->width_from_buffer, ec->comp_data->height_from_buffer,
                             vp->buffer.transform, vp->buffer.scale,
                             x2, y2, &x, &y);
-   e_util_transform_texcoord_set(cdata->viewport_transform, 2, x, y);
+   evas_map_point_image_uv_set(map, 2, x, y);
 
    _e_comp_wl_map_transform(ec->comp_data->width_from_buffer, ec->comp_data->height_from_buffer,
                             vp->buffer.transform, vp->buffer.scale,
                             x1, y2, &x, &y);
-   e_util_transform_texcoord_set(cdata->viewport_transform, 3, x, y);
+   evas_map_point_image_uv_set(map, 3, x, y);
 
-   e_client_transform_core_update(ec);
+   evas_object_map_set(ec->frame, map);
+   evas_object_map_enable_set(ec->frame, map ? EINA_TRUE : EINA_FALSE);
+
+   evas_map_free(map);
 }
 
 static void
@@ -538,36 +546,25 @@ _e_comp_wl_evas_cb_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
    E_Client *subc;
    Eina_List *l;
    int x, y;
+   const Evas_Map *m;
 
    if (!(ec = data)) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
 
    EINA_LIST_FOREACH(ec->comp_data->sub.list, l, subc)
      {
-        if (subc->comp_data->scaler.viewport)
-          {
-             e_comp_wl_map_apply(subc);
-          }
-        else
-          {
-             x = ec->x + subc->comp_data->sub.data->position.x;
-             y = ec->y + subc->comp_data->sub.data->position.y;
-             evas_object_move(subc->frame, x, y);
-          }
+        if ((m = evas_object_map_get(subc->frame))) continue;
+        x = ec->x + subc->comp_data->sub.data->position.x;
+        y = ec->y + subc->comp_data->sub.data->position.y;
+        evas_object_move(subc->frame, x, y);
      }
 
    EINA_LIST_FOREACH(ec->comp_data->sub.below_list, l, subc)
      {
-        if (subc->comp_data->scaler.viewport)
-          {
-             e_comp_wl_map_apply(subc);
-          }
-        else
-          {
-             x = ec->x + subc->comp_data->sub.data->position.x;
-             y = ec->y + subc->comp_data->sub.data->position.y;
-             evas_object_move(subc->frame, x, y);
-          }
+        if ((m = evas_object_map_get(subc->frame))) continue;
+        x = ec->x + subc->comp_data->sub.data->position.x;
+        y = ec->y + subc->comp_data->sub.data->position.y;
+        evas_object_move(subc->frame, x, y);
      }
 
    if (ec->comp_data->sub.below_obj)
@@ -3951,13 +3948,6 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
      {
         E_FREE_FUNC(e_comp_wl->ptr.hide_tmr, ecore_timer_del);
         cursor_timer_ec = NULL;
-     }
-
-   if (ec->comp_data->viewport_transform)
-     {
-        e_client_transform_core_remove(ec, ec->comp_data->viewport_transform);
-        e_util_transform_del(ec->comp_data->viewport_transform);
-        ec->comp_data->viewport_transform = NULL;
      }
 
    e_pixmap_cdata_set(ec->pixmap, NULL);
