@@ -156,6 +156,7 @@ struct _E_Comp
    Eina_Bool       shape_queue_blocked : 1;
    Eina_Bool       calc_fps : 1;
    Eina_Bool       hwc : 1;
+   Eina_Bool       hwc_fs : 1; // active hwc policy
 
    Eina_List      *connected_clients;
    Eina_List      *launchscrns; // list of dummy clients for launchscreen image.
@@ -235,6 +236,7 @@ E_API void e_comp_post_update_purge(E_Client *ec);
 E_API E_Comp_Hook *e_comp_hook_add(E_Comp_Hook_Point hookpoint, E_Comp_Hook_Cb func, const void *data);
 E_API void e_comp_hook_del(E_Comp_Hook *ph);
 EINTERN Eina_Bool e_comp_is_on_overlay(E_Client *ec);
+E_API void e_comp_hwc_end(const char *location);
 
 #endif
 #endif
