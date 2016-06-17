@@ -115,7 +115,8 @@ typedef struct _E_Comp_Object
    Eina_Bool            native : 1;  // native
 
    Eina_Bool            nocomp : 1;  // nocomp applied
-   Eina_Bool            hwc_need_update : 1;  // this window updated while on e_plane to do hw composite
+   Eina_Bool            nocomp_need_update : 1;  // nocomp in effect, but this window updated while in nocomp mode
+   Eina_Bool            hwc_need_update : 1;  // this window updated while on e_plane to use hwc
    Eina_Bool            real_hid : 1;  // last hide was a real window unmap
 
    Eina_Bool            effect_set : 1; //effect_obj has a valid group
