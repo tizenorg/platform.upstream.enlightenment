@@ -27,10 +27,6 @@ struct wl_resource
 
 void wl_map_for_each(struct wl_map *map, void *func, void *data);
 
-#ifdef HAVE_HWC
-#include "e_comp_hwc.h"
-#endif
-
 #define BUS "org.enlightenment.wm"
 #define PATH "/org/enlightenment/wm"
 #define IFACE "org.enlightenment.wm.info"
@@ -71,7 +67,7 @@ static Eina_List *module_hook = NULL;
    str_r -= str_l; \
 } while(0)
 
-#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbis"
+#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbiis"
 #define VALUE_TYPE_REQUEST_RESLIST "ui"
 #define VALUE_TYPE_REPLY_RESLIST "ssi"
 #define VALUE_TYPE_FOR_INPUTDEV "ssi"
@@ -99,7 +95,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
         uint32_t res_id = 0;
         pid_t pid = -1;
         char layer_name[32];
-        int hwc = -1;
+        int hwc = 0, pl_zpos = -999;
 
         ec = evas_object_data_get(o, "E_Client");
         if (!ec) continue;
@@ -122,16 +118,31 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
                }
           }
 
-        if (e_comp->hwc)
+        if (e_comp->hwc && e_comp->hwc_fs)
           {
-             // TODO: print plane number
-             if (!e_comp->nocomp_ec)
-               hwc = 1; // comp mode
-             else if (e_comp->nocomp_ec == ec)
-               hwc = 2; // a client occupied scanout buff
-             else
-               hwc = 0;
+#ifdef ENABLE_HWC_MULTI
+             Eina_List *l, *ll;
+             E_Output * eout;
+             E_Plane *ep;
+             
+             eout = e_output_find(ec->zone->output_id);
+             EINA_LIST_FOREACH_SAFE(eout->planes, l, ll, ep)
+               {
+                  E_Client *overlay_ec = ep->ec;
+                  if (e_plane_is_primary(ep)) pl_zpos = ep->zpos;
+                  if (overlay_ec == ec)
+                    {
+                       hwc = 1;
+                       pl_zpos = ep->zpos;
+                    }
+               }
+#else
+             if (e_comp->nocomp_ec == ec) hwc = 1;
+             pl_zpos = 0;
+#endif
           }
+        else
+           hwc = -1;
 
         eldbus_message_iter_arguments_append(array_of_ec, "("VALUE_TYPE_FOR_TOPVWINS")", &struct_of_ec);
 
@@ -142,7 +153,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
             pid,
             e_client_util_name_get(ec) ?: "NO NAME",
             ec->x, ec->y, ec->w, ec->h, ec->layer,
-            ec->visible, ec->argb, ec->visibility.opaque, ec->visibility.obscured, ec->iconic, ec->focused, hwc, layer_name);
+            ec->visible, ec->argb, ec->visibility.opaque, ec->visibility.obscured, ec->iconic, ec->focused, hwc, pl_zpos, layer_name);
 
         eldbus_message_iter_container_close(array_of_ec, struct_of_ec);
      }
@@ -1483,6 +1494,37 @@ e_info_server_cb_effect_control(const Eldbus_Service_Interface *iface EINA_UNUSE
    return reply;
 }
 
+static Eldbus_Message *
+e_info_server_cb_hwc(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   uint32_t onoff;
+
+   if (!eldbus_message_arguments_get(msg, "i", &onoff))
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   if (!e_comp->hwc)
+     {
+        ERR("Error HWC is not initialized.");
+        return reply;
+     }
+
+   if (onoff == 1)
+     {
+        e_comp->hwc_fs = EINA_TRUE;
+     }
+   else if (onoff == 0)
+     {
+        e_comp_hwc_end("in runtime by e_info..");
+        e_comp->hwc_fs = EINA_FALSE;
+     }
+
+   return reply;
+}
+
 static const Eldbus_Method methods[] = {
    { "get_window_info", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_TOPVWINS")", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, 0 },
@@ -1509,6 +1551,7 @@ static const Eldbus_Method methods[] = {
    { "effect_control", ELDBUS_ARGS({"i", "effect_control"}), NULL, e_info_server_cb_effect_control, 0},
    { "get_keygrab_status", ELDBUS_ARGS({"s", "get_keygrab_status"}), NULL, _e_info_server_cb_keygrab_status_get, 0},
    { "get_module_info", ELDBUS_ARGS({"ss", "get_module_info"}), NULL, _e_info_server_cb_module_info_get, 0},
+   { "hwc", ELDBUS_ARGS({"i", "hwc"}), NULL, e_info_server_cb_hwc, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 

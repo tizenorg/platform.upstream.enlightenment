@@ -749,10 +749,12 @@ _e_comp_hwc_cb_begin_timeout(void *data EINA_UNUSED)
      }
    return EINA_FALSE;
 }
+#endif  // end of ENABLE_HWC_MULTI
 
-void
-_e_comp_hwc_end(const char *location)
+E_API void
+e_comp_hwc_end(const char *location)
 {
+#ifdef ENABLE_HWC_MULTI
    Eina_Bool mode_set = EINA_FALSE;
    E_Zone *zone;
    Eina_List *l;
@@ -774,11 +776,11 @@ _e_comp_hwc_end(const char *location)
 
    if (!mode_set) return;
 
-   INF("HWC : End...  at %s", location);
-
-   e_comp_render_queue();
+   INF("HWC : End...  at %s", location); 
+#else
+   e_comp_nocomp_end(__FUNCTION__);
+#endif // end of ENABLE_HWC_MULTI 
 }
-#endif  // end of ENABLE_HWC_MULTI
 
 static void
 _e_comp_client_update(E_Client *ec)
@@ -873,7 +875,7 @@ _e_comp_cb_update(void)
 setup_hwcompose:
    // TO DO :
    // query if selective HWC plane can be used
-   if (!e_comp_gl_get() && !e_comp->hwc)
+   if (!e_comp_gl_get() || !e_comp->hwc || !e_comp->hwc_fs)
      {
         goto end;
      }
@@ -885,7 +887,7 @@ setup_hwcompose:
              // FIXME : will remove out this condition
              // new(ec at prepared list) and current(ec on e_plane)
              if (_e_comp_hwc_changed())
-                _e_comp_hwc_end("overlay surface changed");
+                e_comp_hwc_end("overlay surface changed");
           }
         else
           {
@@ -907,7 +909,7 @@ setup_hwcompose:
      }
    else
      {
-        if (_e_comp_hwc_is_on()) _e_comp_hwc_end(__FUNCTION__);
+        if (_e_comp_hwc_is_on()) e_comp_hwc_end(__FUNCTION__);
      }
 #else
    ec = _e_comp_fullscreen_check();
@@ -1424,6 +1426,8 @@ e_comp_init(void)
         e_comp->hwc = e_comp_hwc_init();
         if (!e_comp->hwc)
           WRN("fail to init hwc.");
+        else 
+          e_comp->hwc_fs = EINA_TRUE; // 1: active hwc policy
      }
 #endif
 
@@ -1673,7 +1677,10 @@ E_API void
 e_comp_override_add()
 {
    e_comp->nocomp_override++;
-   if ((e_comp->nocomp_override > 0) && (e_comp->nocomp)) e_comp_nocomp_end(__FUNCTION__);
+   if ((e_comp->nocomp_override > 0) && (e_comp->nocomp))
+     {
+        e_comp_hwc_end(__FUNCTION__);
+     }
 }
 
 E_API E_Comp *
