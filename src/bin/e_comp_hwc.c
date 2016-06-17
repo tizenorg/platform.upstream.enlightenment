@@ -286,8 +286,6 @@ _get_wl_buffer_ref(E_Client *ec)
    if (!cdata) return NULL;
 
    E_Comp_Wl_Buffer_Ref *buffer_ref = &cdata->buffer_ref;
-   if (!buffer_ref) return NULL;
-
    if (!buffer_ref->buffer) return NULL;
 
    return buffer_ref->buffer->resource;
