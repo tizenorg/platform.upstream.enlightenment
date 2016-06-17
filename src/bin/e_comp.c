@@ -382,6 +382,7 @@ _hwc_set(E_Output *eout)
 {
    const Eina_List *ep_l = NULL, *l;
    E_Plane *ep = NULL, *ep_prime = NULL;
+   Eina_Bool ret = EINA_FALSE;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(eout, EINA_FALSE);
    EINA_SAFETY_ON_NULL_RETURN_VAL(eout->planes, EINA_FALSE);
@@ -401,8 +402,16 @@ _hwc_set(E_Output *eout)
                   ep_prime = ep;
                   if (ep->prepare_ec)
                     {
-                       e_client_redirected_set(ep->prepare_ec, 0);
-                       ep->ec = ep->prepare_ec;
+
+                       set = e_plane_ec_set(ep, ep->prepare_ec);
+                       if (set)
+                         {
+                            e_client_redirected_set(ep->prepare_ec, 0);
+                            e_plane_fb_set(ep, EINA_FALSE);
+                            ret |= EINA_TRUE;
+                         }
+                       else
+                         return EINA_FALSE;
                     }
                }
              continue;
@@ -410,16 +419,21 @@ _hwc_set(E_Output *eout)
         if (e_plane_is_cursor(ep)) continue;
         if (ep->zpos > ep_prime->zpos)
           {
-             ep_prime = ep;
              if (ep->prepare_ec)
                {
-                  e_client_redirected_set(ep->prepare_ec, 0);
-                  ep->ec = ep->prepare_ec;
+                  set = e_plane_ec_set(ep, ep->prepare_ec);
+                  if (set)
+                    {
+                       e_client_redirected_set(ep->prepare_ec, 0);
+                       ret |= EINA_TRUE;
+                    }
+                  else
+                    break;
                }
           }
      }
 
-   return EINA_TRUE;
+   return ret;
 }
 
 static Eina_Bool
@@ -467,12 +481,12 @@ _hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
              ec = NULL;
              if (del > 0)
                {
-                  ep->prepare_ec = NULL;
+                  e_plane_ec_prepare_set(ep, NULL);
                   del--;
                   continue;
                }
              if (clist) ec = eina_list_data_get(clist);
-             if (ec) ep->prepare_ec = ec;
+             if (ec) e_plane_ec_prepare_set(ep, ec);
              clist = eina_list_next(clist);
           }
         ret = EINA_TRUE;
@@ -487,13 +501,13 @@ _hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
              ec = NULL;
              if (del > 0)
                {
-                  ep->prepare_ec = NULL;
+                  e_plane_ec_prepare_set(ep, NULL);
                   del--;
                   continue;
                }
              if (clist2) ec = eina_list_data_get(clist2);
-             if (ec) ep->prepare_ec = ec;
-             if (e_plane_is_primary(ep)) ep->prepare_ec = NULL;
+             if (ec) e_plane_ec_prepare_set(ep, ec);
+             if (e_plane_is_primary(ep)) e_plane_ec_prepare_set(ep, NULL);
              clist2 = eina_list_next(clist2);
           }
         ret = EINA_TRUE;
@@ -516,9 +530,14 @@ _hwc_cancel(E_Output *eout)
 
    EINA_LIST_FOREACH(eout->planes, l, ep)
      {
-        if (ep->ec) e_client_redirected_set(ep->ec, 1);
-        ep->prepare_ec = NULL;
-        ep->ec = NULL;
+        if (ep->ec)
+          {
+             e_client_redirected_set(ep->ec, 1);
+             e_plane_ec_set(ep, NULL);
+          }
+        e_plane_ec_prepare_set(ep, NULL);
+        e_plane_ec_set(ep, NULL);
+        if(e_plane_is_primary(ep)) e_plane_fb_set(ep, EINA_TRUE);
      }
 
    return EINA_TRUE;
@@ -529,6 +548,7 @@ _e_comp_hwc_apply(E_Output * eout)
 {
    const Eina_List *ep_l = NULL, *l;
    E_Plane *ep = NULL, *ep_prime = NULL;
+   Eina_Bool ret = EINA_FALSE;
 
    ep_l = e_output_planes_get(eout);
    EINA_LIST_FOREACH(ep_l, l, ep)
@@ -547,13 +567,18 @@ _e_comp_hwc_apply(E_Output * eout)
           if (ep->prepare_ec != NULL) goto hwcompose;
      }
 
-   _hwc_cancel(eout);
-   return EINA_FALSE;
+   goto compose;
 
 hwcompose:
-   e_comp->hwc_mode = 1;
-   _hwc_set(eout);
-   return EINA_TRUE;
+   ret = _hwc_set(eout);
+
+compose:
+   if (ret) e_comp->hwc_mode = 1;
+   else
+     {
+        _hwc_cancel(eout);
+     }
+   return ret;
 }
 
 static Eina_Bool
