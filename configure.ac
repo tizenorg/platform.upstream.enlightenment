@@ -396,7 +396,7 @@ if test "x${have_wayland}" = "xyes"; then
   AC_ARG_ENABLE([hwc],
     AS_HELP_STRING([--enable-hwc],[enable hwc @<:@default=enabled@:>@]),
     [e_cv_want_hwc=$enableval],
-    [e_cv_want_hwc=yes])
+    [e_cv_want_hwc=no])
   AC_MSG_CHECKING([whether HWC support is enabled])
   AC_MSG_RESULT([${e_cv_want_hwc}])
 
