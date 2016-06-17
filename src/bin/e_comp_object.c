@@ -3714,6 +3714,9 @@ e_comp_object_dirty(Evas_Object *obj)
      }
 
 #ifdef HAVE_HWC
+#ifdef ENABLE_HWC_MULTI
+   e_comp_object_native_surface_set(obj, e_comp->gl);
+#else
    if (e_comp->hwc)
      {
         if (!e_comp_hwc_native_surface_set(cw->ec))
@@ -3721,6 +3724,7 @@ e_comp_object_dirty(Evas_Object *obj)
      }
    else
      e_comp_object_native_surface_set(obj, e_comp->gl);
+#endif
 #else
    e_comp_object_native_surface_set(obj, e_comp->gl);
 #endif
@@ -4670,4 +4674,12 @@ e_comp_object_hwc_update_exists(Evas_Object *obj)
 {
    API_ENTRY EINA_FALSE;
    return cw->hwc_need_update;
+}
+
+// will remove out
+E_API void
+e_comp_object_hwc_update_set(Evas_Object *obj, Eina_Bool set)
+{
+   API_ENTRY;
+   cw->hwc_need_update = set;
 }
