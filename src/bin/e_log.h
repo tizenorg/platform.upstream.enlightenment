@@ -84,9 +84,9 @@
           INF("EWL|%20.20s|             |             |",  \
               (t));                                        \
         else                                               \
-          INF("EWL|%20.20s|cp:0x%08x|ec:0x%08x|",          \
+          INF("EWL|%20.20s|win:0x%08x|ec:0x%08x|",         \
               (t),                                         \
-              (unsigned int)(cp),                          \
+              (unsigned int)(cp ? e_pixmap_window_get(cp) : 0), \
               (unsigned int)(ec));                         \
      }                                                     \
    while (0)
@@ -98,9 +98,9 @@
           INF("EWL|%20.20s|             |             |"f, \
               (t), ##x);                                   \
         else                                               \
-          INF("EWL|%20.20s|cp:0x%08x|ec:0x%08x|"f,         \
+          INF("EWL|%20.20s|win:0x%08x|ec:0x%08x|"f,        \
               (t),                                         \
-              (unsigned int)(cp),                          \
+              (unsigned int)(cp ? e_pixmap_window_get(cp) : 0), \
               (unsigned int)(ec),                          \
               ##x);                                        \
      }                                                     \
