@@ -1046,6 +1046,39 @@ _e_info_server_cb_protocol_trace(const Eldbus_Service_Interface *iface EINA_UNUS
         return reply;
      }
 
+   if (!strncmp(path, "global_lists", 12))
+     {
+        struct wl_global *global;
+        struct wl_list *global_list;
+        int i, j, c = 1;
+        FILE *log_path = log_fp_ptrace;
+        if (!log_path) log_path = stderr;
+
+        global_list = wl_display_get_global_list(e_comp_wl->wl.disp);
+
+        fprintf(log_path, "[JEON] call global list. length: %d\n", wl_list_length(global_list));
+
+        for (i=0; i<wl_list_length(global_list); i++)
+          {
+             global = wl_global_list_get_global(global_list, i);
+             struct wl_interface *iface = wl_global_get_interface(global);
+             fprintf(log_path, "[%d] interface: %s\n", c++, wl_interface_get_name(iface));
+             fprintf(log_path, "   -- Method List --\n");
+             const struct wl_message *method_msg = wl_interface_get_methods(iface);
+             const struct wl_message *event_msg = wl_interface_get_events(iface);
+             for (j=0; j<wl_interface_get_method_count(iface); j++)
+               {
+                  fprintf(log_path, "    [%d] name: %s\n", j, wl_message_get_name(&method_msg[j]));
+               }
+             fprintf(stderr, "   -- Event List --\n");
+             for (j=0; j<wl_interface_get_event_count(iface); j++)
+               {
+                  fprintf(log_path, "    [%d] name: %s\n", j, wl_message_get_name(&event_msg[j]));
+               }
+          }
+        return reply;
+     }
+
    log_fp_ptrace = fopen(path, "a");
 
    if (!log_fp_ptrace)
@@ -1059,6 +1092,66 @@ _e_info_server_cb_protocol_trace(const Eldbus_Service_Interface *iface EINA_UNUS
 
    return reply;
 }
+
+static Eldbus_Message *
+_e_info_server_cb_protocol_list(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   const char *path = NULL;
+   struct wl_global *global;
+   struct wl_list *global_list;
+   struct wl_interface *giface;
+   int i, j, c = 1;
+   FILE *fp_out;
+
+   if (!eldbus_message_arguments_get(msg, "s", &path) || !path)
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   fp_out = fopen(path, "a");
+   if (!fp_out)
+     {
+        ERR("Failed to open %s\n", path);
+        return reply;
+     }
+
+   setvbuf(fp_out, NULL, _IOLBF, 512);
+
+   global_list = wl_display_get_global_list(e_comp_wl->wl.disp);
+
+    fprintf(fp_out, "Num of supported global list: %d\n\n", wl_list_length(global_list));
+
+    for (i=0; i<wl_list_length(global_list); i++)
+      {
+         const struct wl_message *method_msg;
+         const struct wl_message *event_msg;
+
+         global = wl_global_list_get_global(global_list, i);
+         giface = wl_global_get_interface(global);
+         method_msg = wl_interface_get_methods(giface);
+         event_msg = wl_interface_get_events(giface);
+
+         fprintf(fp_out, "[%d] %s\n", c++, wl_interface_get_name(giface));
+         fprintf(fp_out, "   -- Request List --\n");
+         for (j=0; j<wl_interface_get_method_count(giface); j++)
+           {
+              fprintf(fp_out, "      %d) %s\n", j, wl_message_get_name(&method_msg[j]));
+           }
+         fprintf(fp_out, "   -- Event List --\n");
+         for (j=0; j<wl_interface_get_event_count(giface); j++)
+           {
+              fprintf(fp_out, "      %d) %s\n", j, wl_message_get_name(&event_msg[j]));
+           }
+         fprintf(fp_out, "\n");
+      }
+
+    fclose(fp_out);
+    return reply;
+}
+
+
 
 static Eldbus_Message *
 _e_info_server_cb_protocol_rule(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
@@ -1558,6 +1651,7 @@ static const Eldbus_Method methods[] = {
    { "get_res_lists", ELDBUS_ARGS({VALUE_TYPE_REQUEST_RESLIST, "client resource"}), ELDBUS_ARGS({"a("VALUE_TYPE_REPLY_RESLIST")", "array of client resources"}), _e_info_server_cb_res_lists_get, 0 },
    { "get_input_devices", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_INPUTDEV")", "array of input"}), _e_info_server_cb_input_device_info_get, 0},
    { "protocol_trace", ELDBUS_ARGS({"s", "protocol_trace"}), NULL, _e_info_server_cb_protocol_trace, 0},
+   { "protocol_list", ELDBUS_ARGS({"s", "protocol_list"}), NULL, _e_info_server_cb_protocol_list, 0},
    { "protocol_rule", ELDBUS_ARGS({"sss", "protocol_rule"}), ELDBUS_ARGS({"s", "rule request"}), _e_info_server_cb_protocol_rule, 0},
    { "get_fps_info", NULL, ELDBUS_ARGS({"s", "fps request"}), _e_info_server_cb_fps_info_get, 0},
    { "transform_message", ELDBUS_ARGS({"siiiiiiii", "transform_message"}), NULL, e_info_server_cb_transform_message, 0},
