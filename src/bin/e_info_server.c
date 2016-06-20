@@ -129,7 +129,7 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
              EINA_LIST_FOREACH_SAFE(eout->planes, l, ll, ep)
                {
                   E_Client *overlay_ec = ep->ec;
-                  if (e_plane_is_primary(ep)) pl_zpos = ep->zpos;
+                  if (e_plane_is_fb_target(ep)) pl_zpos = ep->zpos;
                   if (overlay_ec == ec)
                     {
                        hwc = 1;
