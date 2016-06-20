@@ -749,3 +749,23 @@ e_output_util_planes_print(void)
         fputc('\n', stderr);
      }
 }
+
+E_API Eina_Bool
+e_output_is_fb_composing(E_Output *output)
+{
+   Eina_List *p_l;
+   E_Plane *ep;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, EINA_FALSE);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output->planes, EINA_FALSE);
+
+   EINA_LIST_FOREACH(output->planes, p_l, ep)
+     {
+        if (e_plane_is_fb_target(ep))
+          {
+             if(ep->ec == NULL) return EINA_TRUE;
+          }
+     }
+
+   return EINA_FALSE;
+}
