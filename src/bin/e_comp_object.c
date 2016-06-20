@@ -115,8 +115,7 @@ typedef struct _E_Comp_Object
    Eina_Bool            native : 1;  // native
 
    Eina_Bool            nocomp : 1;  // nocomp applied
-   Eina_Bool            nocomp_need_update : 1;  // nocomp in effect, but this window updated while in nocomp mode
-   Eina_Bool            hwc_need_update : 1;  // this window updated while on e_plane to use hwc
+   Eina_Bool            hwc_need_update : 1;  // this window updated while on e_plane to do hw composite
    Eina_Bool            real_hid : 1;  // last hide was a real window unmap
 
    Eina_Bool            effect_set : 1; //effect_obj has a valid group
@@ -3319,11 +3318,9 @@ e_comp_object_damage(Evas_Object *obj, int x, int y, int w, int h)
         return;
      }
 
-   // FIXME: will remove out once tdm_output_commit thru e_output,e_plane
    if (e_comp_is_on_overlay(cw->ec))
      {
-        e_comp_object_hwc_update_set(obj, 1);
-        //return;
+        cw->hwc_need_update = EINA_TRUE;
      }
 
    /* ignore overdraw */
@@ -3385,20 +3382,6 @@ e_comp_object_damage_exists(Evas_Object *obj)
 {
    API_ENTRY EINA_FALSE;
    return cw->updates_exist;
-}
-
-E_API Eina_Bool
-e_comp_object_hwc_update_exists(Evas_Object *obj)
-{
-   API_ENTRY EINA_FALSE;
-   return cw->hwc_need_update;
-}
-
-E_API void
-e_comp_object_hwc_update_set(Evas_Object *obj, Eina_Bool set)
-{
-   API_ENTRY;
-   cw->hwc_need_update = set;
 }
 
 E_API void
