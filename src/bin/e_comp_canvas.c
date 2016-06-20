@@ -701,3 +701,28 @@ e_comp_canvas_feed_mouse_up(unsigned int activate_time)
          evas_event_feed_mouse_up(e_comp->evas, i + 1, EVAS_BUTTON_NONE, activate_time, NULL);
      }
 }
+
+E_API void
+e_comp_canvas_norender_push(void)
+{
+   e_comp->norender++;
+   if (e_comp->norender == 1)
+     ecore_evas_manual_render_set(e_comp->ee, EINA_TRUE);
+}
+
+E_API void
+e_comp_canvas_norender_pop(void)
+{
+   if (e_comp->norender <= 0)
+     return;
+
+   e_comp->norender--;
+   if (e_comp->norender == 0)
+     ecore_evas_manual_render_set(e_comp->ee, EINA_FALSE);
+}
+
+E_API int
+e_comp_canvas_norender_get(void)
+{
+   return e_comp->norender;
+}
