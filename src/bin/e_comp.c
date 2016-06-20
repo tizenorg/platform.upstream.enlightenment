@@ -168,9 +168,12 @@ _e_comp_fullscreen_check(void)
         vw = cdata->width_from_viewport;
         vh = cdata->height_from_viewport;
 
-        if ((ec->client.x == 0) && (ec->client.y == 0) &&
-            ((ec->client.w) >= e_comp->w) &&
-            ((ec->client.h) >= e_comp->h) &&
+        int x, y, w, h;
+        e_client_geometry_get(ec, &x, &y, &w, &h);
+
+        if ((x == 0) && (y == 0) &&
+            (w >= e_comp->w) &&
+            (h >= e_comp->h) &&
             (ow >= e_comp->w) &&
             (oh >= e_comp->h) &&
             (vw == ow) &&

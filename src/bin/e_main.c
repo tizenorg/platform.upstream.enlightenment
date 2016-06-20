@@ -287,6 +287,10 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
    e_module_deferred_job();
    TS("[DEFERRED] E_Module's deferred job Done");
 
+   TS("[DEFERRED] E_Slot Init");
+   e_slot_init();
+   _e_main_shutdown_push(e_slot_shutdown);
+   TS("[DEFERRED] E_Slot Init done");
    TRACE_DS_END();
    TRACE_DS_END();
 
