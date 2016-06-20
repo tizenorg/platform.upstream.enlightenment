@@ -1967,7 +1967,7 @@ e_comp_is_on_overlay(E_Client *ec)
         E_Output * eout;
         E_Plane *ep;
 
-        if (!ec->zone) return EINA_FALSE;
+        if (!ec->zone || !ec->zone->output_id) return EINA_FALSE;
         eout = e_output_find(ec->zone->output_id);
         EINA_LIST_FOREACH_SAFE(eout->planes, l, ll, ep)
           {
