@@ -944,6 +944,9 @@ e_plane_new(E_Output *output, int index)
         plane->is_fb = EINA_TRUE;
      }
 
+   if (plane->is_primary)
+       plane->is_fb = EINA_TRUE; // TODO: query from libtdm if it is fb target plane
+
    /* check that the layer uses the reserved memory */
    if (layer_capabilities&TDM_LAYER_CAPABILITY_RESEVED_MEMORY)
        plane->reserved_memory = EINA_TRUE;
@@ -1261,11 +1264,12 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
 }
 
 E_API Eina_Bool
-e_plane_type_set(E_Plane *plane, E_Plane_Type_State type)
+e_plane_type_set(E_Plane *plane,
+                 E_Plane_Type_State type)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
 
-   if ((type == E_PLANE_TYPE_VIDEO) &&
+   if ((type == E_PLANE_TYPE_VIDEO) ||
        (type == E_PLANE_TYPE_CURSOR))
      {
         if (plane->ec || plane->prepare_ec) return EINA_FALSE;
@@ -1378,10 +1382,10 @@ e_plane_color_val_get(E_Plane *plane)
 }
 
 E_API Eina_Bool
-e_plane_is_fb(E_Plane *plane)
+e_plane_is_fb_target(E_Plane *plane)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
-   if (plane->is_FB) return EINA_TRUE;
+   if (plane->is_fb) return EINA_TRUE;
    return EINA_FALSE;
 }
 
@@ -1392,3 +1396,4 @@ e_plane_is_fb_target(E_Plane *plane)
    if (plane->is_fb) return EINA_TRUE;
    return EINA_FALSE;
 }
+

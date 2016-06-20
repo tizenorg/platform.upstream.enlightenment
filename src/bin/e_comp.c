@@ -408,7 +408,6 @@ _hwc_set(E_Output *eout)
                        if (set)
                          {
                             e_client_redirected_set(ep->prepare_ec, 0);
-                            e_plane_fb_set(ep, EINA_FALSE);
                             ret |= EINA_TRUE;
                          }
                        else
@@ -508,7 +507,7 @@ _hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
                }
              if (clist2) ec = eina_list_data_get(clist2);
              if (ec) e_plane_ec_prepare_set(ep, ec);
-             if (e_plane_is_primary(ep)) e_plane_ec_prepare_set(ep, NULL);
+             if (e_plane_is_fb_target(ep)) e_plane_ec_prepare_set(ep, NULL);
              clist2 = eina_list_next(clist2);
           }
         ret = EINA_TRUE;
@@ -538,7 +537,6 @@ _hwc_cancel(E_Output *eout)
           }
         e_plane_ec_prepare_set(ep, NULL);
         e_plane_ec_set(ep, NULL);
-        if(e_plane_is_primary(ep)) e_plane_fb_set(ep, EINA_TRUE);
      }
 
    return EINA_TRUE;
