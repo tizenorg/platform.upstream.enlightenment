@@ -159,6 +159,8 @@ struct _E_Comp
 
    Eina_List      *connected_clients;
    Eina_List      *launchscrns; // list of dummy clients for launchscreen image.
+
+   int norender;
 };
 
 struct _E_Comp_Connected_Client_Info
