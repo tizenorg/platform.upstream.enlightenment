@@ -85,7 +85,8 @@ src/bin/e_info_protocol.h \
 src/bin/e_uuid_store.h \
 src/bin/e_comp_wl_data.h \
 src/bin/e_comp_wl_input.h \
-src/bin/e_comp_wl.h
+src/bin/e_comp_wl.h \
+src/bin/e_slot.h
 
 if HAVE_WAYLAND_TBM
 ENLIGHTENMENTHEADERS += \
@@ -157,6 +158,7 @@ src/bin/e_comp_wl_data.c \
 src/bin/e_comp_wl_input.c \
 src/bin/e_comp_wl.c \
 src/bin/tizen-surface-protocol.c \
+src/bin/e_slot.c \
 $(ENLIGHTENMENTHEADERS)
 
 if HAVE_WAYLAND_TBM
