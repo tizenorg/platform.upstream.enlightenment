@@ -1274,6 +1274,192 @@ e_info_server_cb_transform_message(const Eldbus_Service_Interface *iface EINA_UN
    return reply;
 }
 
+static Eldbus_Message *
+e_info_server_cb_slot_message(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   uint32_t slot_id;
+   uint32_t x, y, w, h, mode;
+   int32_t win_id;
+   Evas_Object *o;
+   E_Client *ec;
+   Ecore_Window win;
+
+   const static int SLOT_LIST_MODE = 0;
+   const static int SLOT_CREATE_MODE = 1;
+   const static int SLOT_MODIFY_MODE = 2;
+   const static int SLOT_DEL_MODE = 3;
+   const static int SLOT_RAISE_MODE = 4;
+   const static int SLOT_LOWER_MODE = 5;
+   const static int SLOT_ADD_EC_TRANSFORM_MODE = 6;
+   const static int SLOT_ADD_EC_RESIZE_MODE = 7;
+   const static int SLOT_DEL_EC_MODE = 8;
+   const static int SLOT_FOCUS_MODE = 9;
+   int32_t param[5];
+
+   Eldbus_Message_Iter* struct_of_ec;
+   Eldbus_Message_Iter *array_of_ec;
+   Eldbus_Message_Iter *iter;
+
+   if (!eldbus_message_arguments_get(msg, "iiiiii", &mode, &param[0], &param[1], &param[2], &param[3], &param[4]))
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   if (mode == SLOT_CREATE_MODE)
+     {
+        x = param[0];
+        y = param[1];
+        w = param[2];
+        h = param[3];
+     }
+   else if (mode == SLOT_MODIFY_MODE)
+     {
+        slot_id = param[0];
+        x = param[0];
+        y = param[1];
+        w = param[2];
+        h = param[3];
+     }
+   else if (mode == SLOT_ADD_EC_TRANSFORM_MODE ||
+            mode == SLOT_ADD_EC_RESIZE_MODE ||
+            mode == SLOT_DEL_EC_MODE)
+     {
+        slot_id = param[0];
+        win_id = param[1];
+     }
+   else
+     {
+        slot_id = param[0];
+     }
+
+   iter = eldbus_message_iter_get(reply);
+   eldbus_message_iter_arguments_append(iter, "a(ss)", &array_of_ec);
+#define __SLOT_ARG_APPEND_TYPE(title, str, x...) ({                           \
+                                                  char __temp[128] = {0,};                                                     \
+                                                  snprintf(__temp, sizeof(__temp), str, ##x);                                  \
+                                                  eldbus_message_iter_arguments_append(array_of_ec, "(ss)", &struct_of_ec);    \
+                                                  eldbus_message_iter_arguments_append(struct_of_ec, "ss", (title), (__temp)); \
+                                                  eldbus_message_iter_container_close(array_of_ec, struct_of_ec);})
+
+   if (mode == SLOT_LIST_MODE)
+     {
+        Eina_List *slot_list;
+        slot_list = e_slot_list_get();
+
+        if (slot_list)
+          {
+             Eina_List *l;
+             E_Slot *slot;
+             EINA_LIST_FOREACH(slot_list, l, slot)
+               {
+                  if (slot)
+                    {
+                       __SLOT_ARG_APPEND_TYPE("[SLOT LIST]", "slot_id:%02d (%04d,%04d,%04dx%04d) \n", slot->id, slot->rect.x, slot->rect.y, slot->rect.w, slot->rect.h);
+
+                       if (slot->id)
+                         {
+                            Eina_List *ll;
+                            E_Slot_Client *slot_client = NULL;
+                            EINA_LIST_FOREACH(slot->client_list, ll, slot_client)
+                              {
+                                 if (slot_client->ec)
+                                   __SLOT_ARG_APPEND_TYPE("[SLOT CLIENT]", "slot_client win:%08x name:%s \n", e_client_util_win_get(slot_client->ec), e_client_util_name_get(slot_client->ec) ?: "NO NAME");
+                              }
+                         }
+                    }
+               }
+          }
+        else
+          {
+             __SLOT_ARG_APPEND_TYPE("[SLOT INFO]", "No slot.....\n");
+          }
+     }
+   else if (mode == SLOT_CREATE_MODE)
+     {
+        int get_slot_id = e_slot_new();
+        e_slot_move(get_slot_id, x, y);
+        e_slot_resize(get_slot_id, w, h);
+        __SLOT_ARG_APPEND_TYPE("[SLOT INFO]", "[SLOT CREATE]  slot_id:%02d (%04d,%04d,%04dx%04d)\n", get_slot_id, x, y, w, h );
+     }
+   else if (mode == SLOT_MODIFY_MODE)
+     {
+        e_slot_move(slot_id, x, y);
+        e_slot_resize(slot_id, w, h);
+        __SLOT_ARG_APPEND_TYPE("[SLOT INFO]", "[SLOT MODIFY]  slot_id:%02d (%04d,%04d,%04dx%04d)\n", slot_id, x, y, w, h );
+     }
+   else if (mode == SLOT_DEL_MODE)
+     {
+        e_slot_del(slot_id);
+        __SLOT_ARG_APPEND_TYPE("[SLOT INFO]","[SLOT DEL]  slot_id:%02d\n", slot_id);
+     }
+   else if (mode == SLOT_RAISE_MODE)
+     {
+        e_slot_raise(slot_id);
+        __SLOT_ARG_APPEND_TYPE("[SLOT INFO]","[SLOT RAISE]  slot_id:%02d\n", slot_id);
+     }
+   else if (mode == SLOT_LOWER_MODE)
+     {
+        e_slot_lower(slot_id);
+        __SLOT_ARG_APPEND_TYPE("[SLOT INFO]","[SLOT LOWER]  slot_id:%02d\n", slot_id);
+     }
+   else if (mode == SLOT_ADD_EC_TRANSFORM_MODE)
+     {
+        for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
+          {
+             ec = evas_object_data_get(o, "E_Client");
+             if (!ec) continue;
+             win = e_client_util_win_get(ec);
+             if (win != win_id) continue;
+             break;
+          }
+
+        e_slot_client_add(slot_id, ec, 1);
+        __SLOT_ARG_APPEND_TYPE("[SLOT INFO]", "[SLOT ADD EC as transform] slot_id:%02d (%08x)\n", slot_id, win);
+     }
+   else if (mode == SLOT_DEL_EC_MODE)
+     {
+        for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
+          {
+             ec = evas_object_data_get(o, "E_Client");
+             if (!ec) continue;
+             win = e_client_util_win_get(ec);
+             if (win != win_id) continue;
+             break;
+          }
+
+        e_slot_client_remove(slot_id, ec);
+        __SLOT_ARG_APPEND_TYPE("[SLOT INFO]", "[SLOT DEL EC] slot_id:%02d (%08x)\n", slot_id, win);
+     }
+   else if (mode ==  SLOT_ADD_EC_RESIZE_MODE)
+     {
+        for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
+          {
+             ec = evas_object_data_get(o, "E_Client");
+             if (!ec) continue;
+             win = e_client_util_win_get(ec);
+             if (win != win_id) continue;
+             break;
+          }
+
+        e_slot_client_add(slot_id, ec, 0);
+        __SLOT_ARG_APPEND_TYPE("[SLOT INFO]", "[SLOT ADD EC as resize] slot_id:%02d (%08x)\n", slot_id, win);
+     }
+   else if (mode ==  SLOT_FOCUS_MODE)
+     {
+        e_slot_focus_set(slot_id);
+        __SLOT_ARG_APPEND_TYPE("[SLOT INFO]", "[SLOT FOCUS SET]  slot_id:%02d\n", slot_id);
+     }
+   else
+     {
+        __SLOT_ARG_APPEND_TYPE("[SLOT INFO]", "Wrong command........\n");
+     }
+
+   eldbus_message_iter_container_close(iter, array_of_ec);
+   return reply;
+}
+
 static Eina_Bool
 _e_info_server_cb_buffer_change(void *data, int type, void *event)
 {
@@ -1572,6 +1758,7 @@ static const Eldbus_Method methods[] = {
    { "get_keygrab_status", ELDBUS_ARGS({"s", "get_keygrab_status"}), NULL, _e_info_server_cb_keygrab_status_get, 0},
    { "get_module_info", ELDBUS_ARGS({"ss", "get_module_info"}), NULL, _e_info_server_cb_module_info_get, 0},
    { "hwc", ELDBUS_ARGS({"i", "hwc"}), NULL, e_info_server_cb_hwc, 0},
+   { "slot_message", ELDBUS_ARGS({"iiiiii", "slot_message"}), ELDBUS_ARGS({"a(ss)", "array of ec"}), e_info_server_cb_slot_message, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 

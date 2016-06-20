@@ -851,6 +851,7 @@ struct E_Client
 
    Ecore_Timer *map_timer;
    Eina_Bool pointer_enter_sent;
+   int slot_id;
 };
 
 #define e_client_focus_policy_click(ec) \

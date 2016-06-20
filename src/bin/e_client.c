@@ -2493,6 +2493,12 @@ _e_client_eval(E_Client *ec)
    _e_client_aux_hint_eval(ec);
 
    e_client_transform_core_update(ec);
+
+   if (ec->slot_id)
+     {
+        e_slot_update(ec->slot_id);
+     }
+
    _e_client_hook_call(E_CLIENT_HOOK_EVAL_END, ec);
 
    TRACE_DS_END();
