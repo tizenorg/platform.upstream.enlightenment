@@ -1,18 +1,5 @@
 #ifdef E_TYPEDEFS
 
-typedef struct _E_Plane                      E_Plane;
-typedef struct _E_Plane_Renderer             E_Plane_Renderer;
-typedef struct _E_Plane_Commit_Data          E_Plane_Commit_Data;
-#else
-#ifndef E_PLANE_H
-#define E_PLANE_H
-
-#define E_PLANE_TYPE (int)0xE0b11001
-
-#include "e_comp_screen.h"
-#include "e_output.h"
-# include "e_comp_wl.h"
-
 typedef enum _E_Plane_Type_State
 {
    E_PLANE_TYPE_INVALID,
@@ -28,6 +15,19 @@ typedef enum _E_Plane_Color
    E_PLANE_COLOR_RGB
 } E_Plane_Color;
 
+typedef struct _E_Plane                      E_Plane;
+typedef struct _E_Plane_Renderer             E_Plane_Renderer;
+typedef struct _E_Plane_Commit_Data          E_Plane_Commit_Data;
+#else
+#ifndef E_PLANE_H
+#define E_PLANE_H
+
+#define E_PLANE_TYPE (int)0xE0b11001
+
+#include "e_comp_screen.h"
+#include "e_output.h"
+# include "e_comp_wl.h"
+
 struct _E_Plane
 {
    int                   index;
@@ -36,7 +36,7 @@ struct _E_Plane
    E_Plane_Type_State    type;
    E_Plane_Color         color;
    Eina_Bool             is_primary;
-   Eina_Bool             is_FB; // fb target
+   Eina_Bool             is_fb; // fb target
 
    E_Client             *ec;
    E_Client             *prepare_ec;
@@ -101,8 +101,7 @@ E_API const char            *e_plane_ec_prepare_set_last_error_get(E_Plane *plan
 E_API Eina_Bool              e_plane_is_primary(E_Plane *plane);
 E_API Eina_Bool              e_plane_is_cursor(E_Plane *plane);
 E_API E_Plane_Color          e_plane_color_val_get(E_Plane *plane);
-E_API Eina_Bool              e_plane_is_fb(E_Plane *plane);
-E_API Eina_Bool              e_plane_fb_set(E_Plane *plane, Eina_Bool set);
+E_API Eina_Bool              e_plane_is_fb_target(E_Plane *plane);
 
 #endif
 #endif

@@ -96,11 +96,8 @@ e_output_drm_new(Ecore_Drm_Output *output)
    for (i = 0; i < eout->plane_count; i++)
      {
         printf("COMP TDM: added plane %i\n", i);
-        E_Plane *ep = NULL;
         // TODO: primary layer condition (0 is temp condition)
-        ep = e_plane_new(eout, i);
-        // TODO: fb target condition (0 is temp condition)
-        if (i == 0) e_plane_fb_set(ep, EINA_TRUE);
+        e_plane_new(eout, i);
      }
 
    eout->output = output;
