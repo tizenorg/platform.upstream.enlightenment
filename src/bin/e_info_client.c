@@ -1279,6 +1279,136 @@ _buffer_shot_directory_check(char *path)
 }
 
 static void
+_cb_window_proc_slot_get(const Eldbus_Message *msg)
+{
+   const char *name = NULL, *text = NULL;
+   Eina_Bool res;
+   Eldbus_Message_Iter *array, *ec;
+
+   res = eldbus_message_error_get(msg, &name, &text);
+   EINA_SAFETY_ON_TRUE_GOTO(res, finish);
+
+   res = eldbus_message_arguments_get(msg, "a(ss)", &array);
+   EINA_SAFETY_ON_FALSE_GOTO(res, finish);
+
+   printf("--------------------------------------[ slot info ]-----------------------------------------------------\n");
+   int cnt = 0;
+   int client_cnt = 0;
+   while (eldbus_message_iter_get_and_next(array, 'r', &ec))
+     {
+        const char *title;
+        const char *value;
+        res = eldbus_message_iter_arguments_get(ec,
+                                                "ss",
+                                                &title,
+                                                &value);
+        if (!res)
+          {
+             printf("Failed to get slot info\n");
+             continue;
+          }
+
+        if (!strcmp(title, "[SLOT LIST]"))
+          {
+             printf("[%02d] %s\n", ++cnt, value ? value : " ");
+             client_cnt = 0;
+          }
+        else if (!strcmp(title, "[SLOT CLIENT]"))
+          {
+             printf("\t\t|---[%02d] %s\n", ++client_cnt, value ? value : " ");
+          }
+        else if (!strcmp(title, "[SLOT INFO]"))
+          {
+             printf("::: %s\n", value ? value : " ");
+          }
+     }
+finish:
+   if ((name) || (text ))
+     {
+        printf("errname:%s errmsg:%s\n", name, text);
+     }
+}
+
+
+static void
+_e_info_client_proc_slot_set(int argc, char **argv)
+{
+   int32_t param[5];
+   int i;
+   int mode = 0;
+   const char *value = NULL;
+
+   if (argc < 3)
+     {
+        printf("Error Check Args: enlightenment_info -slot list\n");
+        printf("Error Check Args: enlightenment_info -slot create [x][y][w][h]\n");
+        printf("Error Check Args: enlightenment_info -slot modify [slot_id][x][y][w][h]\n");
+        printf("Error Check Args: enlightenment_info -slot del [slot_id]\n");
+        printf("Error Check Args: enlightenment_info -slot raise [slot_id]\n");
+        printf("Error Check Args: enlightenment_info -slot lower [slot_id]\n");
+        printf("Error Check Args: enlightenment_info -slot focus [slot_id]\n");
+        printf("Error Check Args: enlightenment_info -slot add_ec_t [slot_id] [win_id]\n");
+        printf("Error Check Args: enlightenment_info -slot add_ec_r [slot_id] [win_id]\n");
+        printf("Error Check Args: enlightenment_info -slot del_ec [slot_id] [win_id]\n");
+        return;
+     }
+
+   /* check mode */
+   if (strlen(argv[2]) > 2)
+     {
+        mode = -1;
+        if (!strncmp(argv[2], "list", strlen("list"))) mode = E_INFO_SLOT_MESSAGE_LIST;
+        if (!strncmp(argv[2], "create", strlen("create"))) mode = E_INFO_SLOT_MESSAGE_CREATE;
+        if (!strncmp(argv[2], "modify", strlen("modify"))) mode = E_INFO_SLOT_MESSAGE_MODIFY;
+        if (!strncmp(argv[2], "del", strlen("del"))) mode = E_INFO_SLOT_MESSAGE_DEL;
+        if (!strncmp(argv[2], "raise", strlen("raise"))) mode = E_INFO_SLOT_MESSAGE_RAISE;
+        if (!strncmp(argv[2], "lower", strlen("lower"))) mode = E_INFO_SLOT_MESSAGE_LOWER;
+        if (!strncmp(argv[2], "add_ec_t", strlen("add_ec_t"))) mode = E_INFO_SLOT_MESSAGE_ADD_EC_TRANSFORM;
+        if (!strncmp(argv[2], "add_ec_r", strlen("add_ec_r"))) mode = E_INFO_SLOT_MESSAGE_ADD_EC_RESIZE;
+        if (!strncmp(argv[2], "del_ec", strlen("del_ec"))) mode = E_INFO_SLOT_MESSAGE_DEL_EC;
+        if (!strncmp(argv[2], "focus", strlen("focus"))) mode = E_INFO_SLOT_MESSAGE_FOCUS;
+     }
+   else
+     {
+        printf("Error Check Args!\n");
+        return;
+     }
+
+   param[0] = 0;
+   param[1] = 0;
+   param[2] = 0;
+   param[3] = 0;
+   param[4] = 0;
+
+   for (i = 0; (i < 5) && ((i+3) < argc); ++i)
+     {
+        param[i] = atoi(argv[i+3]);
+     }
+
+   if (mode == E_INFO_SLOT_MESSAGE_ADD_EC_TRANSFORM ||
+       mode == E_INFO_SLOT_MESSAGE_ADD_EC_RESIZE ||
+       mode == E_INFO_SLOT_MESSAGE_DEL_EC)
+     {
+        value = argv[4];
+        int32_t value_number;
+        if (strlen(value) >= 2 && value[0] == '0' && value[1] == 'x')
+          sscanf(value, "%x", &value_number);
+        else
+          sscanf(value, "%d", &value_number);
+
+        param[1] = value_number;
+     }
+
+   if (!_e_info_client_eldbus_message_with_args("slot_message", _cb_window_proc_slot_get, "iiiiii",
+                                                mode, param[0] , param[1], param[2],
+                                                param[3], param[4]))
+     {
+        printf("_e_info_client_eldbus_message_with_args error");
+        return;
+     }
+}
+
+static void
 _e_info_client_proc_buffer_shot(int argc, char **argv)
 {
    int dumprun = 0;
@@ -1606,6 +1736,12 @@ static struct
       "[on: 1, off: 0]",
       "On/Off the hw composite",
       _e_info_client_proc_hwc
+   },
+   {
+      "slot",
+      "[menu id x y w h]",
+      "Set slot in runtime",
+      _e_info_client_proc_slot_set
    }
 };
 
