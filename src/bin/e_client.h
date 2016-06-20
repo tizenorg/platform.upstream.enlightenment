@@ -855,6 +855,8 @@ struct E_Client
 
    Eina_Bool launching : 1;
    Eina_Bool extra_animating : 1;
+
+   int slot_id;
 };
 
 #define e_client_focus_policy_click(ec) \
