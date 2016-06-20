@@ -25,38 +25,40 @@ typedef struct _E_Plane                      E_Plane;
 
 struct _E_Plane
 {
-   int                 zpos;
+   int                   zpos;
    struct
      {
-        int          x, y, w, h; // FIXME
+        int          x, y, w, h;
      } geometry;
 
-   const char         *name;
-   E_Plane_Type_State  type;
-   E_Plane_Color       color;
+   const char           *name;
+   E_Plane_Type_State    type;
+   E_Plane_Color         color;
 
-   E_Client           *ec;
-   E_Client           *prepare_ec;
-   E_Output           *eout;
+   E_Client             *ec;
+   E_Client             *prepare_ec;
+   E_Output             *eout;
 
-   Eina_Bool           is_primary;
+   Eina_Bool             is_primary;
+   Eina_Bool             is_fb; // fb target
 };
 
-EINTERN int              e_plane_init(void);
-EINTERN int              e_plane_shutdown(void);
-EINTERN E_Plane         *e_plane_new(E_Output *eout, int zpos, Eina_Bool is_pri);
-EINTERN void             e_plane_free(E_Plane *plane);
-E_API Eina_Bool          e_plane_resolution_set(E_Plane *plane, int w, int h);
-E_API Eina_Bool          e_plane_type_set(E_Plane *plane, E_Plane_Type_State type);
-E_API E_Plane_Type_State e_plane_type_get(E_Plane *plane);
-E_API E_Client          *e_plane_ec_get(E_Plane *plane);
-E_API E_Client          *e_plane_ec_prepare_get(E_Plane *plane);
-E_API Eina_Bool          e_plane_ec_prepare_set(E_Plane *plane, E_Client *ec);
-E_API const char        *e_plane_ec_prepare_set_last_error_get(E_Plane *plane);
-E_API Eina_Bool          e_plane_is_primary(E_Plane *plane);
-E_API Eina_Bool          e_plane_is_cursor(E_Plane *plane);
-E_API E_Plane_Color      e_plane_color_val_get(E_Plane *plane);
-E_API void               e_plane_geom_get(E_Plane *plane, int *x, int *y, int *w, int *h);
+EINTERN int                  e_plane_init(void);
+EINTERN int                  e_plane_shutdown(void);
+EINTERN E_Plane             *e_plane_new(E_Output *eout, int zpos, Eina_Bool is_pri);
+EINTERN void                 e_plane_free(E_Plane *plane);
+E_API Eina_Bool              e_plane_resolution_set(E_Plane *plane, int w, int h);
+E_API Eina_Bool              e_plane_type_set(E_Plane *plane, E_Plane_Type_State type);
+E_API E_Plane_Type_State     e_plane_type_get(E_Plane *plane);
+E_API E_Client              *e_plane_ec_get(E_Plane *plane);
+E_API E_Client              *e_plane_ec_prepare_get(E_Plane *plane);
+E_API Eina_Bool              e_plane_ec_prepare_set(E_Plane *plane, E_Client *ec);
+E_API const char            *e_plane_ec_prepare_set_last_error_get(E_Plane *plane);
+E_API Eina_Bool              e_plane_is_primary(E_Plane *plane);
+E_API Eina_Bool              e_plane_is_cursor(E_Plane *plane);
+E_API E_Plane_Color          e_plane_color_val_get(E_Plane *plane);
+E_API void                   e_plane_geom_get(E_Plane *plane, int *x, int *y, int *w, int *h);
+E_API Eina_Bool              e_plane_is_fb_target(E_Plane *plane);
 
 #endif
 #endif
