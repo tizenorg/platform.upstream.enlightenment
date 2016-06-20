@@ -25,5 +25,6 @@ EINTERN void      e_comp_hwc_client_commit(E_Client *ec);
 /* temp api */
 E_API Eina_Bool   e_comp_hwc_client_set_layer(E_Client *ec, int zorder);
 E_API void        e_comp_hwc_client_unset_layer(int zorder);
+E_API void        e_comp_hwc_disable_output_hwc_rendering(int index, int onoff);
 # endif
 #endif
