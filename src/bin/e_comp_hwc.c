@@ -111,6 +111,8 @@ struct _E_Comp_Hwc_Output {
    E_Comp_Hwc_Layer *primary_layer;
 
    E_Comp_Hwc *hwc;
+
+   Eina_Bool disable_hwc;
 };
 
 struct _E_Comp_Hwc {
@@ -905,6 +907,7 @@ _e_comp_hwc_output_find(Ecore_Drm_Output *drm_output)
    EINA_LIST_FOREACH(g_hwc->hwc_outputs, l, hwc_output)
      {
         if (!hwc_output) continue;
+        if (hwc_output->disable_hwc) continue;
         toutput = ecore_drm_output_hal_private_get(drm_output);
         if (toutput == hwc_output->toutput) return hwc_output;
      }
@@ -1365,6 +1368,7 @@ _e_comp_hwc_canvas_render_post(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void
    EINA_LIST_FOREACH_SAFE(hwc->hwc_outputs, l_o, ll_o, hwc_output)
      {
         if (!hwc_output) continue;
+        if (hwc_output->disable_hwc) continue;
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
         if (conn_status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) continue;
 
@@ -1635,6 +1639,7 @@ e_comp_hwc_display_client(E_Client *ec)
    EINA_LIST_FOREACH_SAFE(hwc->hwc_outputs, l_o, ll_o, hwc_output)
      {
         if (!hwc_output) continue;
+        if (hwc_output->disable_hwc) continue;
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
         if (conn_status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) continue;
 
@@ -1710,6 +1715,7 @@ e_comp_hwc_mode_nocomp(E_Client *ec)
    EINA_LIST_FOREACH_SAFE(hwc->hwc_outputs, l_o, ll_o, hwc_output)
      {
         if (!hwc_output) continue;
+        if (hwc_output->disable_hwc) continue;
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
         if (conn_status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) continue;
 
@@ -1823,8 +1829,8 @@ e_comp_hwc_info_debug(void)
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
         if (conn_status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) continue;
 
-        INF("HWC: HWC Output(%d):(x, y, w, h)=(%d, %d, %d, %d) Information.",
-            ++output_idx, hwc_output->x, hwc_output->y, hwc_output->w, hwc_output->h);
+        INF("HWC: HWC Output(%d):(x, y, w, h)=(%d, %d, %d, %d) disable(%d) Information.",
+            ++output_idx, hwc_output->x, hwc_output->y, hwc_output->w, hwc_output->h, hwc_output->disable_hwc);
         INF("HWC:  num_layers=%d", hwc_output->num_layers);
         EINA_LIST_FOREACH_SAFE(hwc_output->hwc_layers, l_l, ll_l, hwc_layer)
           {
@@ -1943,6 +1949,7 @@ e_comp_hwc_client_set_layer(E_Client *ec, int zorder)
    EINA_LIST_FOREACH_SAFE(g_hwc->hwc_outputs, l_o, ll_o, hwc_output)
      {
         if (!hwc_output) continue;
+        if (hwc_output->disable_hwc) continue;
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
         if (conn_status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) continue;
 
@@ -1977,6 +1984,7 @@ e_comp_hwc_client_unset_layer(int zorder)
    EINA_LIST_FOREACH_SAFE(g_hwc->hwc_outputs, l_o, ll_o, hwc_output)
      {
         if (!hwc_output) continue;
+        if (hwc_output->disable_hwc) continue;
         tdm_output_get_conn_status(hwc_output->toutput, &conn_status);
         if (conn_status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) continue;
 
@@ -1992,6 +2000,38 @@ e_comp_hwc_client_unset_layer(int zorder)
           }
      }
 }
+
+E_API void
+e_comp_hwc_disable_output_hwc_rendering(int index, int onoff)
+{
+   E_Comp_Hwc_Output *hwc_output = NULL;
+   tdm_output *output = NULL;
+   tdm_error error = TDM_ERROR_NONE;
+   Eina_List *l, *ll;
+
+   output = tdm_display_get_output(g_hwc->tdisplay, index, &error);
+   if (error != TDM_ERROR_NONE || !output)
+     {
+        ERR("fail tdm_display_get_output(index:%d)(err:%d)", index, error);
+        return;
+     }
+
+   EINA_LIST_FOREACH_SAFE(g_hwc->hwc_outputs, l, ll, hwc_output)
+     {
+        if (!hwc_output) continue;
+        if (output == hwc_output->toutput)
+          {
+             if (onoff == 0)
+                hwc_output->disable_hwc = EINA_TRUE;
+             else
+                hwc_output->disable_hwc = EINA_FALSE;
+
+             INF("e_comp_hwc_disable_output_hwc_rendering set index:%d, onoof:%d\n", index, onoff);
+          }
+     }
+   return;
+}
+
 #else /* HAVE_HWC */
 EINTERN Eina_Bool
 e_comp_hwc_init(void)
@@ -2049,6 +2089,12 @@ e_comp_hwc_client_set_layer(E_Client *ec, int zorder)
 
 E_API void
 e_comp_hwc_client_unset_layer(int zorder)
+{
+   ;
+}
+
+E_API void
+e_comp_hwc_disable_output_hwc_rendering(int index, int onoff)
 {
    ;
 }
