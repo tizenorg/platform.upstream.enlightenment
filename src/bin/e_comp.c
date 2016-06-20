@@ -1683,7 +1683,7 @@ e_comp_override_add()
    e_comp->hwc_override++;
    if ((e_comp->hwc_override > 0) &&
 #ifdef ENABLE_HWC_MULTI
-       (_e_comp_hwc_is_on())
+       (_e_comp_hwc_is_on()))
 #else
        (e_comp->nocomp))
 #endif
