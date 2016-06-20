@@ -284,6 +284,21 @@ finish:
   "\tprint   : print current rules\n" \
   "\thelp\n" \
 
+
+static void
+_e_info_client_proc_protocol_list(int argc, char **argv)
+{
+   char fd_name[PATH_MAX];
+   int pid;
+
+   pid = getpid();
+
+   snprintf(fd_name, PATH_MAX, "/proc/%d/fd/1", pid);
+
+   if (!_e_info_client_eldbus_message_with_args("protocol_list", NULL, "s", fd_name))
+     return;
+}
+
 static void
 _e_info_client_proc_protocol_trace(int argc, char **argv)
 {
@@ -1337,6 +1352,12 @@ static struct
       "protocol_trace", "[console|file_path|disable]",
       "Enable/disable wayland protocol trace",
       _e_info_client_proc_protocol_trace
+   },
+   {
+      "protocol_list",
+      NULL,
+      "Print supported protocol list",
+      _e_info_client_proc_protocol_list
    },
    {
       "protocol_rule",
