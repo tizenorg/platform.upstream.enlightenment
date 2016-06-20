@@ -58,21 +58,21 @@ _do_apply(void)
 static void
 _info_free(E_Comp_Screen *r)
 {
-   E_Output *eout;
+   E_Output *output;
    E_Output_Mode *m;
    E_Plane *ep;
 
    if (!r) return;
    // free up our output screen data
-   EINA_LIST_FREE(r->outputs, eout)
+   EINA_LIST_FREE(r->outputs, output)
      {
-        free(eout->id);
-        free(eout->info.screen);
-        free(eout->info.name);
-        free(eout->info.edid);
-        EINA_LIST_FREE(eout->info.modes, m) free(m);
-        EINA_LIST_FREE(eout->planes, ep) e_plane_free(ep);
-        free(eout);
+        free(output->id);
+        free(output->info.screen);
+        free(output->info.name);
+        free(output->info.edid);
+        EINA_LIST_FREE(output->info.modes, m) free(m);
+        EINA_LIST_FREE(output->planes, ep) e_plane_free(ep);
+        free(output);
      }
    free(r);
 }
@@ -81,7 +81,7 @@ static void
 _screen_config_eval(void)
 {
    Eina_List *l;
-   E_Output *eout;
+   E_Output *output;
    int minx, miny, maxx, maxy;
 
    minx = 65535;
@@ -89,25 +89,25 @@ _screen_config_eval(void)
    maxx = -65536;
    maxy = -65536;
 
-   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
-        if (!eout->config.enabled) continue;
-        if (eout->config.geom.x < minx) minx = eout->config.geom.x;
-        if (eout->config.geom.y < miny) miny = eout->config.geom.y;
-        if ((eout->config.geom.x + eout->config.geom.w) > maxx)
-          maxx = eout->config.geom.x + eout->config.geom.w;
-        if ((eout->config.geom.y + eout->config.geom.h) > maxy)
-          maxy = eout->config.geom.y + eout->config.geom.h;
+        if (!output->config.enabled) continue;
+        if (output->config.geom.x < minx) minx = output->config.geom.x;
+        if (output->config.geom.y < miny) miny = output->config.geom.y;
+        if ((output->config.geom.x + output->config.geom.w) > maxx)
+          maxx = output->config.geom.x + output->config.geom.w;
+        if ((output->config.geom.y + output->config.geom.h) > maxy)
+          maxy = output->config.geom.y + output->config.geom.h;
         printf("OUTPUT: s: '%s' @ %i %i - %ix%i\n",
-               eout->info.name,
-               eout->config.geom.x, eout->config.geom.y,
-               eout->config.geom.w, eout->config.geom.h);
+               output->info.name,
+               output->config.geom.x, output->config.geom.y,
+               output->config.geom.w, output->config.geom.h);
      }
    printf("OUTPUT:--- %i %i -> %i %i\n", minx, miny, maxx, maxy);
-   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
-        eout->config.geom.x -= minx;
-        eout->config.geom.y -= miny;
+        output->config.geom.x -= minx;
+        output->config.geom.y -= miny;
      }
    e_comp_screen->w = maxx - minx;
    e_comp_screen->h = maxy - miny;
@@ -117,22 +117,22 @@ static void
 _screen_config_maxsize(void)
 {
    Eina_List *l;
-   E_Output *eout;
+   E_Output *output;
    int maxx, maxy;
 
    maxx = -65536;
    maxy = -65536;
-   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
-        if (!eout->config.enabled) continue;
-        if ((eout->config.geom.x + eout->config.geom.w) > maxx)
-          maxx = eout->config.geom.x + eout->config.geom.w;
-        if ((eout->config.geom.y + eout->config.geom.h) > maxy)
-          maxy = eout->config.geom.y + eout->config.geom.h;
+        if (!output->config.enabled) continue;
+        if ((output->config.geom.x + output->config.geom.w) > maxx)
+          maxx = output->config.geom.x + output->config.geom.w;
+        if ((output->config.geom.y + output->config.geom.h) > maxy)
+          maxy = output->config.geom.y + output->config.geom.h;
         printf("OUTPUT: '%s': %i %i %ix%i\n",
-               eout->info.name,
-               eout->config.geom.x, eout->config.geom.y,
-               eout->config.geom.w, eout->config.geom.h);
+               output->info.name,
+               output->config.geom.x, output->config.geom.y,
+               output->config.geom.w, output->config.geom.h);
      }
    printf("OUTPUT: result max: %ix%i\n", maxx, maxy);
    e_comp_screen->w = maxx;
@@ -177,18 +177,18 @@ e_output_screens_setup(int rw, int rh)
    Eina_List *outputs = NULL, *outputs_rem;
    Eina_List *e_screens = NULL;
    Eina_List *l, *ll;
-   E_Output *eout, *s2, *s_chosen;
+   E_Output *output, *s2, *s_chosen;
    Eina_Bool removed;
 
    if ((!e_comp_screen) || (!e_comp_screen->outputs)) goto out;
    // put screens in tmp list
-   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
-        if ((eout->config.enabled) &&
-            (eout->config.geom.w > 0) &&
-            (eout->config.geom.h > 0))
+        if ((output->config.enabled) &&
+            (output->config.geom.w > 0) &&
+            (output->config.geom.h > 0))
           {
-             outputs = eina_list_append(outputs, eout);
+             outputs = eina_list_append(outputs, output);
           }
      }
    // remove overlapping screens - if a set of screens overlap, keep the
@@ -197,19 +197,19 @@ e_output_screens_setup(int rw, int rh)
      {
         removed = EINA_FALSE;
 
-        EINA_LIST_FOREACH(outputs, l, eout)
+        EINA_LIST_FOREACH(outputs, l, output)
           {
              outputs_rem = NULL;
 
              EINA_LIST_FOREACH(l->next, ll, s2)
                {
-                  if (E_INTERSECTS(eout->config.geom.x, eout->config.geom.y,
-                                   eout->config.geom.w, eout->config.geom.h,
+                  if (E_INTERSECTS(output->config.geom.x, output->config.geom.y,
+                                   output->config.geom.w, output->config.geom.h,
                                    s2->config.geom.x, s2->config.geom.y,
                                    s2->config.geom.w, s2->config.geom.h))
                     {
                        if (!outputs_rem)
-                         outputs_rem = eina_list_append(outputs_rem, eout);
+                         outputs_rem = eina_list_append(outputs_rem, output);
                        outputs_rem = eina_list_append(outputs_rem, s2);
                     }
                }
@@ -246,15 +246,15 @@ e_output_screens_setup(int rw, int rh)
    // sort screens by priority etc.
    outputs = eina_list_sort(outputs, 0, _screen_sort_cb);
    i = 0;
-   EINA_LIST_FOREACH(outputs, l, eout)
+   EINA_LIST_FOREACH(outputs, l, output)
      {
         screen = E_NEW(E_Screen, 1);
         screen->escreen = screen->screen = i;
-        screen->x = eout->config.geom.x;
-        screen->y = eout->config.geom.y;
-        screen->w = eout->config.geom.w;
-        screen->h = eout->config.geom.h;
-        if (eout->id) screen->id = strdup(eout->id);
+        screen->x = output->config.geom.x;
+        screen->y = output->config.geom.y;
+        screen->w = output->config.geom.w;
+        screen->h = output->config.geom.h;
+        if (output->id) screen->id = strdup(output->id);
 
         e_screens = eina_list_append(e_screens, screen);
         INF("E INIT: SCREEN: [%i][%i], %ix%i+%i+%i",
@@ -295,42 +295,42 @@ e_output_screens_get(void)
 E_API E_Output *
 e_output_find(const char *id)
 {
-   E_Output *eout;
+   E_Output *output;
    Eina_List *l;
-   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
-        if (!strcmp(eout->id, id)) return eout;
+        if (!strcmp(output->id, id)) return output;
      }
    return NULL;
 }
 
 E_API const Eina_List *
-e_output_planes_get(E_Output *eout)
+e_output_planes_get(E_Output *output)
 {
-   EINA_SAFETY_ON_NULL_RETURN_VAL(eout, NULL);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(eout->planes, NULL);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output, NULL);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(output->planes, NULL);
 
-   return eout->planes;
+   return output->planes;
 }
 
 E_API void
 e_output_util_planes_print(void)
 {
    Eina_List *l;
-   E_Output * eout = NULL;
+   E_Output * output = NULL;
 
-   EINA_LIST_FOREACH(e_comp_screen->outputs, l, eout)
+   EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
         Eina_List *p_l;
         E_Plane *ep;
         E_Client *ec;
 
-        if (!eout || !eout->planes) continue;
+        if (!output || !output->planes) continue;
 
-        fprintf(stderr, "HWC in %s .. \n", eout->id);
+        fprintf(stderr, "HWC in %s .. \n", output->id);
         fprintf(stderr, "HWC \tzPos \t on_plane \t\t\t\t on_prepare \t \n");
 
-        EINA_LIST_FOREACH(eout->planes, p_l, ep)
+        EINA_LIST_FOREACH(output->planes, p_l, ep)
           {
              ec = ep->ec;
              if (ec) fprintf(stderr, "HWC \t[%d]%s\t %s (0x%08x)",
