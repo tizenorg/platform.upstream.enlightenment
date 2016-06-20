@@ -68,6 +68,7 @@ e_plane_new(E_Output *eout,
 
    plane->zpos = zpos;
    plane->is_primary = is_pri;
+   if (plane->is_primary) plane->is_fb = EINA_TRUE; // FIXME: query from libtdm
 
    /* config default resolution with output size*/
    plane->geometry.x = eout->config.geom.x;
@@ -205,3 +206,10 @@ e_plane_geom_get(E_Plane *plane,
    if (h) *h = plane->geometry.h;
 }
 
+E_API Eina_Bool
+e_plane_is_fb_target(E_Plane *plane)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
+   if (plane->is_fb) return EINA_TRUE;
+   return EINA_FALSE;
+}

@@ -381,7 +381,7 @@ static Eina_Bool
 _hwc_set(E_Output *eout)
 {
    const Eina_List *ep_l = NULL, *l;
-   E_Plane *ep = NULL, *ep_prime = NULL;
+   E_Plane *ep = NULL, *ep_fb = NULL;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(eout, EINA_FALSE);
    EINA_SAFETY_ON_NULL_RETURN_VAL(eout->planes, EINA_FALSE);
@@ -394,11 +394,11 @@ _hwc_set(E_Output *eout)
    ep_l = e_output_planes_get(eout);
    EINA_LIST_FOREACH(ep_l, l , ep)
      {
-        if (!ep_prime)
+        if (!ep_fb)
           {
-             if (e_plane_is_primary(ep))
+             if (e_plane_is_fb_target(ep))
                {
-                  ep_prime = ep;
+                  ep_fb = ep;
                   if (ep->prepare_ec)
                     {
                        e_client_redirected_set(ep->prepare_ec, 0);
@@ -408,9 +408,8 @@ _hwc_set(E_Output *eout)
              continue;
           }
         if (e_plane_is_cursor(ep)) continue;
-        if (ep->zpos > ep_prime->zpos)
+        if (ep->zpos > ep_fb->zpos)
           {
-             ep_prime = ep;
              if (ep->prepare_ec)
                {
                   e_client_redirected_set(ep->prepare_ec, 0);
@@ -427,7 +426,7 @@ _hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
 {
    const Eina_List *ep_l = NULL, *l ;
    Eina_List *hwc_l = NULL, *clist2;
-   E_Plane *ep = NULL, *ep_prime = NULL;
+   E_Plane *ep = NULL, *ep_fb = NULL;
    int n_ly = 0, n_ec = 0;
    E_Client *ec = NULL;
    Eina_Bool ret = EINA_FALSE;
@@ -438,17 +437,17 @@ _hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
    ep_l = e_output_planes_get(eout);
    EINA_LIST_FOREACH(ep_l, l, ep)
      {
-        if (!ep_prime)
+        if (!ep_fb)
           {
-             if (e_plane_is_primary(ep))
+             if (e_plane_is_fb_target(ep))
                {
-                  ep_prime = ep;
+                  ep_fb = ep;
                   hwc_l = eina_list_append(hwc_l, ep);
                }
              continue;
           }
         if (e_plane_is_cursor(ep)) continue;
-        if (ep->zpos > ep_prime->zpos)
+        if (ep->zpos > ep_fb->zpos)
           hwc_l = eina_list_append(hwc_l, ep);
      }
 
@@ -493,7 +492,7 @@ _hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
                }
              if (clist2) ec = eina_list_data_get(clist2);
              if (ec) ep->prepare_ec = ec;
-             if (e_plane_is_primary(ep)) ep->prepare_ec = NULL;
+             if (e_plane_is_fb_target(ep)) ep->prepare_ec = NULL;
              clist2 = eina_list_next(clist2);
           }
         ret = EINA_TRUE;
@@ -528,22 +527,22 @@ static Eina_Bool
 _e_comp_hwc_apply(E_Output * eout)
 {
    const Eina_List *ep_l = NULL, *l;
-   E_Plane *ep = NULL, *ep_prime = NULL;
+   E_Plane *ep = NULL, *ep_fb = NULL;
 
    ep_l = e_output_planes_get(eout);
    EINA_LIST_FOREACH(ep_l, l, ep)
      {
-        if (!ep_prime)
+        if (!ep_fb)
           {
-             if (e_plane_is_primary(ep))
+             if (e_plane_is_fb_target(ep))
                {
-                  ep_prime = ep;
+                  ep_fb = ep;
                   if (ep->prepare_ec != NULL) goto hwcompose;
                }
              continue;
           }
         if (e_plane_is_cursor(ep)) continue;
-        if (ep->zpos > ep_prime->zpos)
+        if (ep->zpos > ep_fb->zpos)
           if (ep->prepare_ec != NULL) goto hwcompose;
      }
 
@@ -565,7 +564,7 @@ _e_comp_hwc_changed(void)
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
         E_Output *eout = NULL;
-        E_Plane *ep = NULL, *ep_prime = NULL;
+        E_Plane *ep = NULL, *ep_fb = NULL;
         const Eina_List *ep_l = NULL, *p_l ;
 
         if (!zone || !zone->output_id) continue;
@@ -574,17 +573,17 @@ _e_comp_hwc_changed(void)
         ep_l = e_output_planes_get(eout);
         EINA_LIST_FOREACH(ep_l, p_l, ep)
           {
-             if (!ep_prime)
+             if (!ep_fb)
                {
-                  if (e_plane_is_primary(ep))
+                  if (e_plane_is_fb_target(ep))
                     {
-                       ep_prime = ep;
+                       ep_fb = ep;
                        if (ep->ec != ep->prepare_ec) return EINA_TRUE;
                     }
                   continue;
                }
              if (e_plane_is_cursor(ep)) continue;
-             if ((ep->zpos > ep_prime->zpos) &&
+             if ((ep->zpos > ep_fb->zpos) &&
                  (ep->ec != ep->prepare_ec))
                return EINA_TRUE;
           }
@@ -683,7 +682,7 @@ _e_comp_hwc_usable(void)
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
         E_Output *eout = NULL;
-        E_Plane *ep = NULL, *ep_prime = NULL;
+        E_Plane *ep = NULL, *ep_fb = NULL;
         const Eina_List *ep_l = NULL, *p_l;
 
         if (!zone || !zone->output_id) continue;
@@ -692,17 +691,17 @@ _e_comp_hwc_usable(void)
         ep_l = e_output_planes_get(eout);
         EINA_LIST_FOREACH(ep_l, p_l, ep)
           {
-             if (!ep_prime)
+             if (!ep_fb)
                {
-                  if (e_plane_is_primary(ep))
+                  if (e_plane_is_fb_target(ep))
                     {
-                       ep_prime = ep;
+                       ep_fb = ep;
                        if (ep->prepare_ec != NULL) return EINA_TRUE;
                     }
                   continue;
                }
              if (e_plane_is_cursor(ep)) continue;
-             if (ep->zpos > ep_prime->zpos)
+             if (ep->zpos > ep_fb->zpos)
                if (ep->prepare_ec != NULL) return EINA_TRUE;
           }
      }
