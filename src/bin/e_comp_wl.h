@@ -204,8 +204,9 @@ struct _E_Comp_Wl_Data
         struct wl_global *global;
         Eina_List *resources;
         Eina_List *device_list;
-        const char *last_device_name;
-        Ecore_Device_Class last_device_clas;
+        Evas_Device *last_device_ptr;
+        Evas_Device *last_device_touch;
+        Ecore_Device *last_device_kbd;
         struct
           {
              double radius_x;
@@ -454,6 +455,10 @@ struct _E_Comp_Wl_Client_Data
       unsigned char win_type : 1;
       unsigned char layer : 1;
    } fetch;
+
+   Evas_Device *last_device_ptr;
+   Evas_Device *last_device_touch;
+   Ecore_Device *last_device_kbd;
 };
 
 struct _E_Comp_Wl_Output
