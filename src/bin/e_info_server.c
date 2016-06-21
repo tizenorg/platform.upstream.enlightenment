@@ -1303,11 +1303,29 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
         ERR("%s: e_client_util_ignored_get(ec) true. return\n", __func__);
         return ECORE_CALLBACK_PASS_ON;
      }
-   event_win = e_client_util_win_get(ec);
-   snprintf(fname, sizeof(fname), "buffer_commit_shm_0x%08x", event_win);
 
    buffer = e_pixmap_resource_get(ec->pixmap);
    if (!buffer) return ECORE_CALLBACK_PASS_ON;
+
+   event_win = e_client_util_win_get(ec);
+   switch (buffer->type)
+     {
+      case E_COMP_WL_BUFFER_TYPE_SHM:
+        snprintf(fname, sizeof(fname), "buffer_commit_shm_0x%08x", event_win);
+        break;
+      case E_COMP_WL_BUFFER_TYPE_NATIVE:
+        snprintf(fname, sizeof(fname), "buffer_commit_native_0x%08x", event_win);
+        break;
+      case E_COMP_WL_BUFFER_TYPE_VIDEO:
+        snprintf(fname, sizeof(fname), "buffer_commit_video_0x%08x", event_win);
+        break;
+      case E_COMP_WL_BUFFER_TYPE_TBM:
+        snprintf(fname, sizeof(fname), "buffer_commit_tbm_0x%08x", event_win);
+        break;
+      default:
+        snprintf(fname, sizeof(fname), "buffer_commit_none_0x%08x", event_win);
+        break;
+     }
 
    switch (buffer->type)
      {
