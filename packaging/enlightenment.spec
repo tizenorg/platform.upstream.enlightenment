@@ -1,3 +1,11 @@
+%ifarch %{arm}
+%if "%{?profile}" == "wearable"
+%define MEMCPY_SWC use
+%endif
+%if "%{?profile}" == "mobile"
+%define MEMCPY_SWC use
+%endif
+%endif
 Name:           enlightenment
 Version:        0.20.0
 Release:        0
@@ -56,6 +64,11 @@ cp %{SOURCE1001} .
 export CFLAGS+=" -fPIE "
 export LDFLAGS+=" -pie "
 
+#temporary use of memcpy_swc
+%if %{?MEMCPY_SWC} == use
+export CFLAGS+=" -D_USE_MEMCPY_SWC_ "
+%endif
+
 %autogen \
       --enable-function-trace \
       --enable-wayland \
@@ -65,12 +78,18 @@ make %{?_smp_mflags}
 
 %install
 %make_install
+%if %{?MEMCPY_SWC} == use
+cp -af %{_builddir}/%{buildsubdir}/src/bin/libmemcpy*.so* %{buildroot}/%{_libdir}/
+%endif
 
 %files
 %manifest %{name}.manifest
 %defattr(-,root,root,-)
 %license COPYING
 %attr(750,root,root) %{_bindir}/enlightenment*
+%if %{?MEMCPY_SWC} == use
+%{_libdir}/*
+%endif
 %{_libdir}/enlightenment/*
 %{_datadir}/enlightenment/*
 %{_sysconfdir}/dbus-1/system.d/org.enlightenment.wm.conf
