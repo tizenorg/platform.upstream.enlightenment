@@ -133,6 +133,10 @@ static Eina_Bool _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp
 
 /* local subsystem functions */
 
+#if HAVE_MEMCPY_SWC
+extern void *memcpy_swc(void *dest, const void *src, size_t n);
+#endif
+
 static tbm_surface_h
 _e_comp_hwc_create_copied_surface(E_Client *ec, Eina_Bool refresh)
 {
@@ -162,7 +166,11 @@ _e_comp_hwc_create_copied_surface(E_Client *ec, Eina_Bool refresh)
    tbm_surface_unmap(new_tsurface);
 
    /* copy from src to dst */
+#if HAVE_MEMCPY_SWC
+   memcpy_swc(dst_info.planes[0].ptr, src_info.planes[0].ptr, src_info.planes[0].size);
+#else
    memcpy(dst_info.planes[0].ptr, src_info.planes[0].ptr, src_info.planes[0].size);
+#endif
 
    return new_tsurface;
 }
