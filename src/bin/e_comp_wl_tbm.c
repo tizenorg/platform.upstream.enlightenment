@@ -2,6 +2,7 @@
 #include <Ecore_Drm.h>
 #include <wayland-tbm-server.h>
 #include <tbm_bufmgr.h>
+#include <tbm_surface_internal.h>
 
 static int
 _e_comp_wl_tbm_bind_wl_display(struct wayland_tbm_server *tbm_server, struct wl_display *display)
@@ -83,3 +84,38 @@ e_comp_wl_tbm_shutdown(void)
    e_comp->wl_comp_data->tbm.server = NULL;
 }
 
+E_API void
+e_comp_wl_tbm_buffer_destroy(E_Comp_Wl_Buffer *buffer)
+{
+   if (!buffer) return;
+
+   if (buffer->tbm_surface)
+     {
+        tbm_surface_internal_unref(buffer->tbm_surface);
+        buffer->tbm_surface = NULL;
+     }
+
+   wl_signal_emit(&buffer->destroy_signal, buffer);
+   free(buffer);
+}
+
+E_API E_Comp_Wl_Buffer*
+e_comp_wl_tbm_buffer_get(tbm_surface_h tsurface)
+{
+   E_Comp_Wl_Buffer *buffer = NULL;
+
+   if (!tsurface) return NULL;
+
+   if (!(buffer = E_NEW(E_Comp_Wl_Buffer, 1)))
+      return NULL;
+
+   buffer->type = E_COMP_WL_BUFFER_TYPE_TBM;
+   buffer->w = tbm_surface_get_width(tsurface);
+   buffer->h = tbm_surface_get_height(tsurface);
+   buffer->tbm_surface = tsurface;
+   buffer->resource = NULL;
+   buffer->shm_buffer = NULL;
+   wl_signal_init(&buffer->destroy_signal);
+
+   return buffer;
+}
