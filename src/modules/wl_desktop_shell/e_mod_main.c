@@ -1200,7 +1200,9 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
         e_pixmap_size_get(ec->pixmap, &pw, &ph);
         e_client_geometry_get(ec, NULL, NULL, &cw, &ch);
 
-        if (pw != cw || ph != ch)
+        /* e-mod-tizen-eom related
+         * If ec is related to 'external output' show it immediately without timer's delay */
+        if (e_client_is_external_output_client(ec) != EINA_TRUE && (pw != cw || ph != ch))
           {
              if ((ec->changes.need_maximize) ||
                  ((ec->maximized & E_MAXIMIZE_BOTH) == E_MAXIMIZE_BOTH))

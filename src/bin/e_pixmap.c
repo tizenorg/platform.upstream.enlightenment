@@ -407,6 +407,15 @@ e_pixmap_size_get(E_Pixmap *cp, int *w, int *h)
    if (w) *w = 0;
    if (h) *h = 0;
    EINA_SAFETY_ON_NULL_RETURN_VAL(cp, EINA_FALSE);
+
+   /* TODO: dirty way of hidning the client*/
+   if (e_client_is_external_output_client(cp->client))
+     {
+        if (w) *w = 1;
+        if (h) *h = 1;
+        return 1;
+     }
+
    if (w) *w = cp->w;
    if (h) *h = cp->h;
    return (cp->w > 0) && (cp->h > 0);
