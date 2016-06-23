@@ -2650,6 +2650,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
    E_Comp_Wl_Client_Data *cdata;
    Eina_List *changed_list = NULL;
    Eina_List *l = NULL;
+   Eina_Bool effect_running = EINA_FALSE;
 
    if (!zone) return;
 
@@ -2682,12 +2683,14 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
 
         /* TODO: need to check whether window intersects with entire screen, not zone. */
         /* if (!E_INTERSECTS(ec->x, ec->y, ec->w, ec->h, zone->x, zone->y, zone->w, zone->h)) continue; */
-#if 0 // TODO: How do we handle the window when it is running animation & effect
-        /* check if internal animation is running */
-        if (e_comp_object_is_animating(ec->frame)) continue;
-        /* check if external animation is running */
-        if (evas_object_data_get(ec->frame, "effect_running")) continue;
-#endif
+
+        if ((e_comp_object_is_animating(ec->frame)) ||
+            (evas_object_data_get(ec->frame, "effect_running")))
+          {
+             effect_running = EINA_TRUE;
+             continue;
+          }
+
         e_client_geometry_get(ec, &x, &y, &w, &h);
         ec_vis = ec_opaque = changed = EINA_FALSE;
         calc_region = EINA_TRUE;
@@ -2827,7 +2830,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
 
    eina_tiler_free(t);
 
-   if (focus_ec)
+   if (focus_ec && !effect_running)
      {
         ec = e_client_focused_get();
         if (ec != focus_ec)
