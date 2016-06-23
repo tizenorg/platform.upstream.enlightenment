@@ -5313,6 +5313,15 @@ e_client_cursor_map_apply(E_Client *ec, int rotation, int x, int y)
    double awh = ((double)zone_w / (double)zone_h);
    double ahw = ((double)zone_h / (double)zone_w);
 
+   if (rotation != 90 && rotation != 180 && rotation != 270)
+     {
+        evas_object_map_set(ec->frame, NULL);
+        evas_object_map_enable_set(ec->frame, EINA_FALSE);
+        evas_object_move(ec->frame, x, y);
+
+        return;
+     }
+
    evas_object_geometry_get(ec->frame, NULL, NULL, &cursor_w, &cursor_h);
    width = cursor_w;
    height = cursor_h;
