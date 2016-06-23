@@ -56,8 +56,6 @@ Development files for enlightenment
 %if "%{?profile}" == "mobile"
 %define MEMCPY_SWC use
 %endif
-%else
-%define MEMCPY_SWC nouse
 %endif
 
 %prep
@@ -71,7 +69,7 @@ export LDFLAGS+=" -pie "
 %autogen \
       --enable-function-trace \
       --enable-wayland \
-%if %{?MEMCPY_SWC} == use
+%if "%{MEMCPY_SWC}" == "use"
       --enable-memcpy_swc \
 %endif
       --enable-quick-init
@@ -80,7 +78,7 @@ make %{?_smp_mflags}
 
 %install
 %make_install
-%if %{?MEMCPY_SWC} == use
+%if "%{MEMCPY_SWC}" == "use"
 cp -af %{_builddir}/%{buildsubdir}/src/bin/libmemcpy_swc.so* %{buildroot}/%{_libdir}/
 %endif
 
@@ -89,7 +87,7 @@ cp -af %{_builddir}/%{buildsubdir}/src/bin/libmemcpy_swc.so* %{buildroot}/%{_lib
 %defattr(-,root,root,-)
 %license COPYING
 %attr(750,root,root) %{_bindir}/enlightenment*
-%if %{?MEMCPY_SWC} == use
+%if "%{MEMCPY_SWC}" == "use"
 %{_libdir}/libmemcpy_swc.so*
 %endif
 %{_libdir}/enlightenment/*
