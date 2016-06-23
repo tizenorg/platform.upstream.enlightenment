@@ -238,6 +238,7 @@ E_API E_Comp_Hook *e_comp_hook_add(E_Comp_Hook_Point hookpoint, E_Comp_Hook_Cb f
 E_API void e_comp_hook_del(E_Comp_Hook *ph);
 EINTERN Eina_Bool e_comp_is_on_overlay(E_Client *ec);
 E_API void e_comp_hwc_end(const char *location);
+E_API Eina_List *e_comp_vis_ec_list_get(E_Zone *zone); // visible ec list sorted by z order
 
 #endif
 #endif

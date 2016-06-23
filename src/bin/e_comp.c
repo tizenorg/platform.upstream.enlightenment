@@ -1950,3 +1950,37 @@ e_comp_is_on_overlay(E_Client *ec)
      }
    return EINA_FALSE;
 }
+
+E_API Eina_List *
+e_comp_vis_ec_list_get(E_Zone *zone)
+{
+   Eina_List *ec_list = NULL;
+   E_Client  *ec;
+
+   E_OBJECT_CHECK_RETURN(zone, NULL);
+   E_OBJECT_TYPE_CHECK_RETURN(zone, E_ZONE_TYPE, NULL);
+
+   if (!zone->output_id) return NULL; // no hw layer
+
+   // TODO: check if eout is available to use hwc policy
+   E_CLIENT_REVERSE_FOREACH(ec)
+     {
+        if (ec->zone != zone) continue;
+
+        // check clients to skip composite
+        if (e_client_util_ignored_get() || (!evas_object_visible_get(ec->frame)))
+          continue;
+
+        // check geometry if located out of screen such as quick panel
+        if (!E_INTERSECTS(0, 0, e_comp->w, e_comp->h,
+                          ec->client.x, ec->client.y, ec->client.w, ec->client.h))
+             continue;
+
+        if (evas_object_data_get(ec->frame, "comp_skip"))
+          continue;
+
+        ec_list = eina_list_append(ec_list, ec);
+     }
+
+   return ec_list;
+}
