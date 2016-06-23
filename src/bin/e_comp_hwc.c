@@ -66,6 +66,7 @@ struct _E_Comp_Hwc_Renderer {
    struct gbm_surface *gsurface;
    Eina_List *disp_surfaces;
    Eina_List *sent_surfaces;
+   Eina_List *export_surfaces;
 
    E_Comp_Hwc_Layer *hwc_layer;
 };
@@ -84,6 +85,7 @@ struct _E_Comp_Hwc_Layer {
    Eina_Bool pending;
    Eina_List *pending_tsurfaces;
    tbm_surface_h pending_tsurface;
+   tbm_surface_h previous_tsurface;
    tbm_surface_h tsurface;
 
    E_Comp_Wl_Buffer_Ref displaying_buffer_ref;
@@ -330,12 +332,12 @@ _get_wl_buffer_ref(E_Client *ec)
 }
 
 static Eina_Bool
-_e_comp_hwc_renderer_find_disp_surface(E_Comp_Hwc_Renderer *hwc_renderer, tbm_surface_h tsurface)
+_e_comp_hwc_renderer_disp_surface_find(E_Comp_Hwc_Renderer *hwc_renderer, tbm_surface_h tsurface)
 {
-   Eina_List *l_s, *ll_s;
+   Eina_List *l_s;
    tbm_surface_h tmp_tsurface = NULL;
 
-   EINA_LIST_FOREACH_SAFE(hwc_renderer->disp_surfaces, l_s, ll_s, tmp_tsurface)
+   EINA_LIST_FOREACH(hwc_renderer->disp_surfaces, l_s, tmp_tsurface)
      {
         if (!tmp_tsurface) continue;
         if (tmp_tsurface == tsurface) return EINA_TRUE;
@@ -345,12 +347,27 @@ _e_comp_hwc_renderer_find_disp_surface(E_Comp_Hwc_Renderer *hwc_renderer, tbm_su
 }
 
 static Eina_Bool
-_e_comp_hwc_renderer_find_sent_surface(E_Comp_Hwc_Renderer *hwc_renderer, tbm_surface_h tsurface)
+_e_comp_hwc_renderer_sent_surface_find(E_Comp_Hwc_Renderer *hwc_renderer, tbm_surface_h tsurface)
 {
-   Eina_List *l_s, *ll_s;
+   Eina_List *l_s;
    tbm_surface_h tmp_tsurface = NULL;
 
-   EINA_LIST_FOREACH_SAFE(hwc_renderer->sent_surfaces, l_s, ll_s, tmp_tsurface)
+   EINA_LIST_FOREACH(hwc_renderer->sent_surfaces, l_s, tmp_tsurface)
+     {
+        if (!tmp_tsurface) continue;
+        if (tmp_tsurface == tsurface) return EINA_TRUE;
+     }
+
+   return EINA_FALSE;
+}
+
+static Eina_Bool
+_e_comp_hwc_renderer_export_surface_find(E_Comp_Hwc_Renderer *hwc_renderer, tbm_surface_h tsurface)
+{
+   Eina_List *l_s;
+   tbm_surface_h tmp_tsurface = NULL;
+
+   EINA_LIST_FOREACH(hwc_renderer->export_surfaces, l_s, tmp_tsurface)
      {
         if (!tmp_tsurface) continue;
         if (tmp_tsurface == tsurface) return EINA_TRUE;
@@ -379,7 +396,7 @@ _e_comp_hwc_layer_queue_acquire(E_Comp_Hwc_Layer *hwc_layer)
      }
 
    /* if not exist, add the surface to the renderer */
-   if (!_e_comp_hwc_renderer_find_disp_surface(hwc_renderer, tsurface))
+   if (!_e_comp_hwc_renderer_disp_surface_find(hwc_renderer, tsurface))
      hwc_renderer->disp_surfaces = eina_list_append(hwc_renderer->disp_surfaces, tsurface);
 
    /* debug */
@@ -509,7 +526,52 @@ _e_comp_hwc_renderer_dequeue(E_Comp_Hwc_Renderer *hwc_renderer)
 }
 
 static void
-_e_comp_hwc_renderer_release_all_disp_surfaces(E_Comp_Hwc_Renderer *hwc_renderer)
+_e_comp_hwc_renderer_export_surfaces_release(E_Comp_Hwc_Renderer *hwc_renderer)
+{
+   Eina_List *l_s, *ll_s;
+   tbm_surface_h tsurface = NULL;
+   E_Comp_Hwc_Layer *hwc_layer = NULL;
+
+   hwc_layer = hwc_renderer->hwc_layer;
+   EINA_SAFETY_ON_NULL_RETURN(hwc_layer);
+
+   EINA_LIST_FOREACH_SAFE(hwc_renderer->export_surfaces, l_s, ll_s, tsurface)
+     {
+        if (!tsurface) continue;
+
+        if (tsurface == hwc_layer->previous_tsurface)
+          {
+             _e_comp_hwc_layer_queue_release(hwc_renderer->hwc_layer, tsurface);
+             hwc_renderer->export_surfaces = eina_list_remove(hwc_renderer->export_surfaces, l_s);
+             break;
+          }
+
+     }
+
+   EINA_LIST_FOREACH_SAFE(hwc_renderer->export_surfaces, l_s, ll_s, tsurface)
+     {
+        if (!tsurface) continue;
+
+        if (tsurface == hwc_layer->tsurface)
+          {
+             _e_comp_hwc_layer_queue_release(hwc_renderer->hwc_layer, tsurface);
+             hwc_renderer->export_surfaces = eina_list_remove(hwc_renderer->export_surfaces, l_s);
+             break;
+          }
+
+     }
+
+   EINA_LIST_FOREACH_SAFE(hwc_renderer->export_surfaces, l_s, ll_s, tsurface)
+     {
+        if (!tsurface) continue;
+
+        _e_comp_hwc_layer_queue_release(hwc_renderer->hwc_layer, tsurface);
+        hwc_renderer->export_surfaces = eina_list_remove(hwc_renderer->export_surfaces, l_s);
+     }
+}
+
+static void
+_e_comp_hwc_renderer_all_disp_surfaces_release(E_Comp_Hwc_Renderer *hwc_renderer)
 {
    Eina_List *l_s, *ll_s;
    tbm_surface_h tsurface = NULL;
@@ -559,8 +621,11 @@ _e_comp_hwc_renderer_export_all_disp_surfaces(E_Comp_Hwc_Renderer *hwc_renderer,
                                (void *)hwc_renderer);
 
         /* add a sent surface to the sent list in renderer if it is not in the list */
-        if (!_e_comp_hwc_renderer_find_sent_surface(hwc_renderer, tsurface))
+        if (!_e_comp_hwc_renderer_sent_surface_find(hwc_renderer, tsurface))
            hwc_renderer->sent_surfaces = eina_list_append(hwc_renderer->sent_surfaces, tsurface);
+
+        if (!_e_comp_hwc_renderer_export_surface_find(hwc_renderer, tsurface))
+           hwc_renderer->export_surfaces = eina_list_append(hwc_renderer->export_surfaces, tsurface);
 
         if (wl_buffer && hwc_renderer->hwc_layer->hwc->trace_debug)
           ELOGF("HWC", "Export  Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p)",
@@ -624,7 +689,7 @@ _e_comp_hwc_renderer_send_surface(E_Comp_Hwc_Renderer *hwc_renderer, E_Client *e
    e_pixmap_image_clear(ec->pixmap, 1);
 
    /* add a sent surface to the sent list in renderer if it is not in the list */
-   if (!_e_comp_hwc_renderer_find_sent_surface(hwc_renderer, tsurface))
+   if (!_e_comp_hwc_renderer_sent_surface_find(hwc_renderer, tsurface))
      hwc_renderer->sent_surfaces = eina_list_append(hwc_renderer->sent_surfaces, tsurface);
 }
 
@@ -728,7 +793,7 @@ _e_comp_hwc_renderer_activate(E_Comp_Hwc_Renderer *hwc_renderer, E_Client *ec)
             return EINA_FALSE;
           }
         /* if not exist, add the surface to the renderer */
-        if (!_e_comp_hwc_renderer_find_disp_surface(hwc_renderer, tsurface))
+        if (!_e_comp_hwc_renderer_disp_surface_find(hwc_renderer, tsurface))
           hwc_renderer->disp_surfaces = eina_list_append(hwc_renderer->disp_surfaces, tsurface);
      }
 
@@ -818,7 +883,7 @@ done:
    hwc_renderer->activated_ec = NULL;
 
    /* enqueue the tsurfaces to the layer queue */
-   _e_comp_hwc_renderer_release_all_disp_surfaces(hwc_renderer);
+   _e_comp_hwc_renderer_export_surfaces_release(hwc_renderer);
 
    return EINA_TRUE;
 }
@@ -1143,6 +1208,9 @@ _e_comp_hwc_output_commit(E_Comp_Hwc_Output *hwc_output, E_Comp_Hwc_Layer *hwc_l
           }
      }
 
+   hwc_layer->previous_tsurface = hwc_layer->pending_tsurface;
+   hwc_layer->pending_tsurface = tsurface;
+
 #if HWC_DUMP
    if (is_canvas)
      snprintf(fname, sizeof(fname), "hwc_output_commit_canvas");
@@ -1323,10 +1391,10 @@ _e_comp_hwc_canvas_render_post(void *data EINA_UNUSED, Evas *e EINA_UNUSED, void
                        continue;
                     }
                   /* if not exist, add the surface to the renderer */
-                  if (!_e_comp_hwc_renderer_find_disp_surface(hwc_renderer, tsurface))
+                  if (!_e_comp_hwc_renderer_disp_surface_find(hwc_renderer, tsurface))
                   hwc_renderer->disp_surfaces = eina_list_append(hwc_renderer->disp_surfaces, tsurface);
                }
-               _e_comp_hwc_renderer_release_all_disp_surfaces(hwc_renderer);
+               _e_comp_hwc_renderer_all_disp_surfaces_release(hwc_renderer);
 
                /* dpms on at the first */
                if (tdm_output_set_dpms(hwc_output->toutput, TDM_OUTPUT_DPMS_ON) != TDM_ERROR_NONE)
