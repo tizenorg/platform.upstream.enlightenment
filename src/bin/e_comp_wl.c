@@ -3907,6 +3907,9 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
           }
      }
 
+   if (ec->comp_data->sub.below_obj)
+     evas_object_del(ec->comp_data->sub.below_obj);
+
    /* remove sub list */
    EINA_LIST_FREE(ec->comp_data->sub.list, subc)
      if (subc->comp_data && subc->comp_data->sub.data) subc->comp_data->sub.data->parent = NULL;
