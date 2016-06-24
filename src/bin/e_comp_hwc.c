@@ -593,6 +593,7 @@ _e_comp_hwc_renderer_surface_destroy_cb(tbm_surface_h tsurface, void *data)
 {
    E_Comp_Hwc_Renderer *hwc_renderer = NULL;
 
+   EINA_SAFETY_ON_NULL_RETURN(g_hwc);
    EINA_SAFETY_ON_NULL_RETURN(tsurface);
    EINA_SAFETY_ON_NULL_RETURN(data);
 
