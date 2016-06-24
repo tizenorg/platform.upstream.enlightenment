@@ -2697,42 +2697,33 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
 
         if (!ec->visible)
           {
-
-             if (ec->visibility.obscured == E_VISIBILITY_UNOBSCURED)
-               calc_region = EINA_FALSE;
-             else
-               continue;
+             if (ec->visibility.obscured != E_VISIBILITY_UNOBSCURED) continue;
+             calc_region = EINA_FALSE;
           }
-        else
+        else if (!evas_object_visible_get(ec->frame))
           {
-             if ((!evas_object_visible_get(ec->frame)) &&
-                 (!ec->e.state.rot.pending_show))
+             if (ec->e.state.rot.pending_show)
+               {
+                  calc_region = EINA_FALSE;
+               }
+             else
                {
                   if (cdata && !cdata->mapped)
                     {
+                       if (ec->visibility.obscured != E_VISIBILITY_UNOBSCURED) continue;
                        calc_region = EINA_FALSE;
-                       if (ec->visibility.obscured == E_VISIBILITY_UNOBSCURED)
-                         calc_region = EINA_FALSE;
-                       else
-                         continue;
                     }
 
                   if (!ec->iconic)
                     {
+                       if (ec->visibility.obscured != E_VISIBILITY_UNOBSCURED) continue;
                        calc_region = EINA_FALSE;
-                       if (ec->visibility.obscured == E_VISIBILITY_UNOBSCURED)
-                         calc_region = EINA_FALSE;
-                       else
-                         continue;
                     }
                   else
                     {
                        if (ec->exp_iconify.by_client)
                          {
-                            if (ec->visibility.obscured == E_VISIBILITY_UNOBSCURED)
-                              calc_region = EINA_FALSE;
-                            else
-                              continue;
+                            if (ec->visibility.obscured != E_VISIBILITY_UNOBSCURED) continue;
                          }
                     }
                }
@@ -2789,14 +2780,17 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
           }
         else
           {
-             /* obscured case */
-             if (ec->visibility.obscured != E_VISIBILITY_FULLY_OBSCURED)
+             if (!ec->e.state.rot.pending_show)
                {
-                  /* previous state is unobscured: -1 or 0 */
-                  ec->visibility.obscured = E_VISIBILITY_FULLY_OBSCURED;
-                  ec->visibility.changed = 1;
-                  changed = EINA_TRUE;
-                  ELOG("CLIENT VIS OFF", ec->pixmap, ec);
+                  /* obscured case */
+                  if (ec->visibility.obscured != E_VISIBILITY_FULLY_OBSCURED)
+                    {
+                       /* previous state is unobscured: -1 or 0 */
+                       ec->visibility.obscured = E_VISIBILITY_FULLY_OBSCURED;
+                       ec->visibility.changed = 1;
+                       changed = EINA_TRUE;
+                       ELOG("CLIENT VIS OFF", ec->pixmap, ec);
+                    }
                }
           }
 
@@ -2811,7 +2805,8 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
                }
           }
 
-        changed_list = eina_list_append(changed_list, ec);
+        if (changed)
+          changed_list = eina_list_append(changed_list, ec);
      }
 
    if (changed_list)
