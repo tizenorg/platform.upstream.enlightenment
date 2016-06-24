@@ -392,6 +392,8 @@ _e_plane_renderer_surface_destroy_cb(tbm_surface_h tsurface, void *data)
 {
    E_Plane_Renderer *renderer = NULL;
 
+   EINA_SAFETY_ON_NULL_RETURN(e_comp);
+   EINA_SAFETY_ON_NULL_RETURN(e_comp->e_comp_screen);
    EINA_SAFETY_ON_NULL_RETURN(tsurface);
    EINA_SAFETY_ON_NULL_RETURN(data);
 
