@@ -2631,6 +2631,11 @@ _e_client_transform_sub_apply(E_Client *ec, E_Client *epc, double zoom)
    evas_map_free(map);
 }
 
+#ifdef EC_IS_NOT_VISIBLE
+# undef EC_IS_NOT_VISIBLE
+#endif
+#define EC_IS_NOT_VISIBLE if (ec->visibility.obscured != E_VISIBILITY_UNOBSCURED)
+
 static void
 _e_client_visibility_zone_calculate(E_Zone *zone)
 {
@@ -2641,11 +2646,9 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
    Eina_Rectangle r, *_r;
    Eina_Iterator *it;
    Eina_Bool canvas_vis = EINA_TRUE;
-   Eina_Bool ec_vis, ec_opaque, changed, calc_region;
-   int x = 0;
-   int y = 0;
-   int w = 0;
-   int h = 0;
+   Eina_Bool ec_vis, ec_opaque, calc_region;
+   Eina_Bool skip_rot_pending_show;
+   int x = 0, y = 0, w = 0, h = 0;
    const int edge = 1;
    E_Comp_Wl_Client_Data *cdata;
    Eina_List *changed_list = NULL;
@@ -2692,48 +2695,38 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
           }
 
         e_client_geometry_get(ec, &x, &y, &w, &h);
-        ec_vis = ec_opaque = changed = EINA_FALSE;
+        ec_vis = ec_opaque = skip_rot_pending_show = EINA_FALSE;
         calc_region = EINA_TRUE;
 
         if (!ec->visible)
           {
-
-             if (ec->visibility.obscured == E_VISIBILITY_UNOBSCURED)
-               calc_region = EINA_FALSE;
-             else
-               continue;
+             EC_IS_NOT_VISIBLE continue;
+             calc_region = EINA_FALSE;
           }
-        else
+        else if (!evas_object_visible_get(ec->frame))
           {
-             if ((!evas_object_visible_get(ec->frame)) &&
-                 (!ec->e.state.rot.pending_show))
+             if (ec->e.state.rot.pending_show)
+               {
+                  calc_region = EINA_FALSE;
+                  skip_rot_pending_show = EINA_TRUE;
+               }
+             else
                {
                   if (cdata && !cdata->mapped)
                     {
+                       EC_IS_NOT_VISIBLE continue;
                        calc_region = EINA_FALSE;
-                       if (ec->visibility.obscured == E_VISIBILITY_UNOBSCURED)
-                         calc_region = EINA_FALSE;
-                       else
-                         continue;
                     }
 
                   if (!ec->iconic)
                     {
+                       EC_IS_NOT_VISIBLE continue;
                        calc_region = EINA_FALSE;
-                       if (ec->visibility.obscured == E_VISIBILITY_UNOBSCURED)
-                         calc_region = EINA_FALSE;
-                       else
-                         continue;
                     }
                   else
                     {
                        if (ec->exp_iconify.by_client)
-                         {
-                            if (ec->visibility.obscured == E_VISIBILITY_UNOBSCURED)
-                              calc_region = EINA_FALSE;
-                            else
-                              continue;
-                         }
+                         EC_IS_NOT_VISIBLE continue;
                     }
                }
           }
@@ -2756,12 +2749,11 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
         if (ec_vis)
           {
              /* unobscured case */
-             if (ec->visibility.obscured != E_VISIBILITY_UNOBSCURED)
+             EC_IS_NOT_VISIBLE
                {
                   /* previous state is obscured: -1 or 1 */
                   ec->visibility.obscured = E_VISIBILITY_UNOBSCURED;
                   ec->visibility.changed = 1;
-                  changed = EINA_TRUE;
                   ELOG("CLIENT VIS ON", ec->pixmap, ec);
                }
 
@@ -2789,14 +2781,19 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
           }
         else
           {
-             /* obscured case */
-             if (ec->visibility.obscured != E_VISIBILITY_FULLY_OBSCURED)
+             /* It prevents unwanted iconification of the top visible window
+              * while showing an window with rotation mode.
+              */
+             if (!skip_rot_pending_show)
                {
-                  /* previous state is unobscured: -1 or 0 */
-                  ec->visibility.obscured = E_VISIBILITY_FULLY_OBSCURED;
-                  ec->visibility.changed = 1;
-                  changed = EINA_TRUE;
-                  ELOG("CLIENT VIS OFF", ec->pixmap, ec);
+                  /* obscured case */
+                  if (ec->visibility.obscured != E_VISIBILITY_FULLY_OBSCURED)
+                    {
+                       /* previous state is unobscured: -1 or 0 */
+                       ec->visibility.obscured = E_VISIBILITY_FULLY_OBSCURED;
+                       ec->visibility.changed = 1;
+                       ELOG("CLIENT VIS OFF", ec->pixmap, ec);
+                    }
                }
           }
 
