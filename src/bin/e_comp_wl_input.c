@@ -434,6 +434,8 @@ _e_comp_wl_input_keymap_update(struct xkb_keymap *keymap, const char *keymap_pat
    /* create a new xkb state */
    e_comp_wl->xkb.state = xkb_state_new(keymap);
 
+   if (!e_comp_wl->xkb.state) return;
+
    if ((latched) || (locked) || (group))
      xkb_state_update_mask(e_comp_wl->xkb.state, 0,
                            latched, locked, 0, 0, group);
