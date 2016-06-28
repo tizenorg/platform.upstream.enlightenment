@@ -514,7 +514,7 @@ E_API void e_comp_wl_map_size_cal_from_buffer(E_Client *ec);
 E_API void e_comp_wl_map_size_cal_from_viewport(E_Client *ec);
 E_API void e_comp_wl_map_apply(E_Client *ec);
 
-E_API void e_comp_wl_input_cursor_timer_enable_set(Eina_Bool enabled);
+E_API void e_comp_wl_input_cursor_timer_enable_set(E_Client *ec, Eina_Bool enabled);
 
 E_API extern int E_EVENT_WAYLAND_GLOBAL_ADD;
 
