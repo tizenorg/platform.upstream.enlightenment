@@ -1968,7 +1968,7 @@ e_comp_vis_ec_list_get(E_Zone *zone)
         if (ec->zone != zone) continue;
 
         // check clients to skip composite
-        if (e_client_util_ignored_get() || (!evas_object_visible_get(ec->frame)))
+        if (e_client_util_ignored_get(ec) || (!evas_object_visible_get(ec->frame)))
           continue;
 
         // check geometry if located out of screen such as quick panel
