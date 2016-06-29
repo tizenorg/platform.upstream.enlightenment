@@ -1359,7 +1359,7 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
 }
 
 static char *
-_e_info_server_dump_directory_make(void)
+_e_info_server_dump_directory_make(const char *path)
 {
    char *fullpath;
    time_t timer;
@@ -1385,7 +1385,7 @@ _e_info_server_dump_directory_make(void)
         return NULL;
      }
 
-   snprintf(fullpath, PATH_MAX, "/tmp/dump_%04d%02d%02d.%02d%02d%02d",
+   snprintf(fullpath, PATH_MAX, "%s/dump_%04d%02d%02d.%02d%02d%02d", path,
             t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
 
    free(buf);
@@ -1405,8 +1405,10 @@ _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED,
 {
    Eldbus_Message *reply = eldbus_message_method_return_new(msg);
    int start = 0;
+   int count = 0;
+   const char *path = NULL;
 
-   if (!eldbus_message_arguments_get(msg, "i", &start))
+   if (!eldbus_message_arguments_get(msg, "iis", &start, &count, &path))
      {
         ERR("Error getting arguments.");
         return reply;
@@ -1418,7 +1420,7 @@ _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED,
           return reply;
         e_info_dump_running = 1;
         e_info_dump_count = 1;
-        e_info_dump_path = _e_info_server_dump_directory_make();
+        e_info_dump_path = _e_info_server_dump_directory_make(path);
         if (e_info_dump_path == NULL)
           {
              e_info_dump_running = 0;
@@ -1428,7 +1430,7 @@ _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED,
         else
           {
              /* start dump */
-             tbm_surface_internal_dump_start(e_info_dump_path, e_comp->w, e_comp->h, 100);
+             tbm_surface_internal_dump_start(e_info_dump_path, e_comp->w, e_comp->h, count);
              tdm_helper_dump_start(e_info_dump_path, &e_info_dump_count);
              E_LIST_HANDLER_APPEND(e_info_dump_hdlrs, E_EVENT_CLIENT_BUFFER_CHANGE,
                                _e_info_server_cb_buffer_change, NULL);
@@ -1561,7 +1563,7 @@ static const Eldbus_Method methods[] = {
    { "protocol_rule", ELDBUS_ARGS({"sss", "protocol_rule"}), ELDBUS_ARGS({"s", "rule request"}), _e_info_server_cb_protocol_rule, 0},
    { "get_fps_info", NULL, ELDBUS_ARGS({"s", "fps request"}), _e_info_server_cb_fps_info_get, 0},
    { "transform_message", ELDBUS_ARGS({"siiiiiiii", "transform_message"}), NULL, e_info_server_cb_transform_message, 0},
-   { "dump_buffers", ELDBUS_ARGS({"i", "start"}), NULL, _e_info_server_cb_buffer_dump, 0 },
+   { "dump_buffers", ELDBUS_ARGS({"iis", "start"}), NULL, _e_info_server_cb_buffer_dump, 0 },
 #ifdef HAVE_HWC
    { "hwc_trace_message", ELDBUS_ARGS({"i", "hwc_trace_message"}), NULL, e_info_server_cb_hwc_trace_message, 0},
 #endif
