@@ -3960,6 +3960,9 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
         cursor_timer_ec = NULL;
      }
 
+   if (e_comp_wl->selection.cbhm == ec->comp_data->surface)
+     e_comp_wl->selection.cbhm = NULL;
+
    e_pixmap_cdata_set(ec->pixmap, NULL);
 
    E_FREE(ec->comp_data);

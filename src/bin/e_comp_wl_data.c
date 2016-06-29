@@ -219,10 +219,19 @@ _e_comp_wl_data_device_selection_set(void *data EINA_UNUSED, E_Comp_Wl_Data_Sour
 {
    E_Comp_Wl_Data_Source *sel_source;
    struct wl_resource *offer_res, *data_device_res, *focus = NULL;
+   struct wl_client *source_client = NULL, *sel_client = NULL, *cbhm_client = NULL;
 
    sel_source = (E_Comp_Wl_Data_Source*)e_comp_wl->selection.data_source;
 
+   if ((source) && (source->resource))
+     source_client = wl_resource_get_client(source->resource);
+   if ((sel_source) && (sel_source->resource))
+     sel_client = wl_resource_get_client(sel_source->resource);
+   if (e_comp_wl->selection.cbhm)
+     cbhm_client = wl_resource_get_client(e_comp_wl->selection.cbhm);
+
    if ((sel_source) &&
+       (sel_client == source_client) &&
        (e_comp_wl->selection.serial - serial < UINT32_MAX / 2))
      {
         /* TODO: elm_entry is sending too many request on now,
@@ -251,10 +260,22 @@ _e_comp_wl_data_device_selection_set(void *data EINA_UNUSED, E_Comp_Wl_Data_Sour
    if (e_comp_wl->kbd.enabled)
      focus = e_comp_wl->kbd.focus;
 
-   if (focus)
+   //if source is from cbhm_client do not crate data offer for cbhm
+   if ((cbhm_client) && (source_client != cbhm_client))
      {
         data_device_res =
-           e_comp_wl_data_find_for_client(wl_resource_get_client(focus));
+           e_comp_wl_data_find_for_client(wl_resource_get_client(e_comp_wl->selection.cbhm));
+        if ((data_device_res) && (source))
+          {
+             offer_res =
+                _e_comp_wl_data_device_data_offer_create(source,
+                                                         data_device_res);
+             wl_data_device_send_selection(data_device_res, offer_res);
+          }
+     }
+   else if (focus)
+     {
+        data_device_res =  e_comp_wl_data_find_for_client(wl_resource_get_client(focus));
         if ((data_device_res) && (source))
           {
              offer_res =
