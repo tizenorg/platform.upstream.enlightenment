@@ -2726,8 +2726,10 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
                   else
                     {
                        if (ec->exp_iconify.by_client)
-                         EC_IS_NOT_VISIBLE continue;
-                       calc_region = EINA_FALSE;
+                         {
+                            EC_IS_NOT_VISIBLE continue;
+                            calc_region = EINA_FALSE;
+                         }
                     }
                }
           }
