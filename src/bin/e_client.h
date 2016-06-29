@@ -1091,6 +1091,7 @@ e_client_util_desk_visible(const E_Client *ec, const E_Desk *desk)
 static inline Ecore_Window
 e_client_util_pwin_get(const E_Client *ec)
 {
+   if (!ec) return 0;
    if (!ec->pixmap) return 0;
    return e_pixmap_parent_window_get(ec->pixmap);
 }
@@ -1098,6 +1099,7 @@ e_client_util_pwin_get(const E_Client *ec)
 static inline Ecore_Window
 e_client_util_win_get(const E_Client *ec)
 {
+   if (!ec) return 0;
    if (!ec->pixmap) return 0;
    return e_pixmap_window_get(ec->pixmap);
 }
@@ -1120,6 +1122,7 @@ static inline Eina_Bool
 e_client_util_shadow_state_get(const E_Client *ec)
 {
    Eina_Bool on;
+   if (!ec) return EINA_FALSE;
    if (ec->shaped) return EINA_FALSE;
    if (ec->argb)
      {
