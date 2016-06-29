@@ -1359,7 +1359,7 @@ _e_info_server_cb_buffer_change(void *data, int type, void *event)
 }
 
 static char *
-_e_info_server_dump_directory_make(void)
+_e_info_server_dump_directory_make(const char *path)
 {
    char *fullpath;
    time_t timer;
@@ -1385,8 +1385,8 @@ _e_info_server_dump_directory_make(void)
         return NULL;
      }
 
-   snprintf(fullpath, PATH_MAX, "/tmp/dump_%04d%02d%02d.%02d%02d%02d",
-            t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
+     snprintf(fullpath, PATH_MAX, "%s/dump_%04d%02d%02d.%02d%02d%02d", path,
+              t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
 
    free(buf);
 
@@ -1405,8 +1405,10 @@ _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED,
 {
    Eldbus_Message *reply = eldbus_message_method_return_new(msg);
    int start = 0;
+   int count = 0;
+   const char *path = NULL;
 
-   if (!eldbus_message_arguments_get(msg, "i", &start))
+   if (!eldbus_message_arguments_get(msg, "iis", &start, &count, &path))
      {
         ERR("Error getting arguments.");
         return reply;
@@ -1418,7 +1420,7 @@ _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED,
           return reply;
         e_info_dump_running = 1;
         e_info_dump_count = 1;
-        e_info_dump_path = _e_info_server_dump_directory_make();
+        e_info_dump_path = _e_info_server_dump_directory_make(path);
         if (e_info_dump_path == NULL)
           {
              e_info_dump_running = 0;
@@ -1428,7 +1430,7 @@ _e_info_server_cb_buffer_dump(const Eldbus_Service_Interface *iface EINA_UNUSED,
         else
           {
              /* start dump */
-             tbm_surface_internal_dump_start(e_info_dump_path, e_comp->w, e_comp->h, 100);
+             tbm_surface_internal_dump_start(e_info_dump_path, e_comp->w, e_comp->h, count);
              tdm_helper_dump_start(e_info_dump_path, &e_info_dump_count);
              E_LIST_HANDLER_APPEND(e_info_dump_hdlrs, E_EVENT_CLIENT_BUFFER_CHANGE,
                                _e_info_server_cb_buffer_change, NULL);
