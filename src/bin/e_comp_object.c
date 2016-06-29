@@ -1555,7 +1555,8 @@ _e_comp_intercept_raise(void *data, Evas_Object *obj)
              E_Client *ec;
 
              ec = e_comp_object_client_get(o);
-             if (ec && (!ec->override)) break;
+             if (ec && (!e_client_util_ignored_get(ec)))
+               break;
           }
         evas_object_stack_below(obj, op);
         if (e_client_focus_track_enabled())
