@@ -776,7 +776,7 @@ e_comp_hwc_end(const char *location)
 
    INF("HWC : End...  at %s", location);
 #else
-   e_comp_nocomp_end(__FUNCTION__);
+   e_comp_nocomp_end(location);
 #endif // end of ENABLE_HWC_MULTI
 }
 
