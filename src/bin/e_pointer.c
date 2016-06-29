@@ -724,7 +724,10 @@ e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
           }
         ec = e_comp_object_client_get(o);
         if (ec)
-          ec->hidden = 1;
+          {
+             ec->hidden = 1;
+             ec->visible = EINA_FALSE;
+          }
      }
    ecore_evas_cursor_unset(ptr->ee);
 
@@ -732,7 +735,10 @@ e_pointer_object_set(E_Pointer *ptr, Evas_Object *obj, int x, int y)
      {
         ec = e_comp_object_client_get(obj);
         if (ec)
-          ec->hidden = 1;
+          {
+             ec->hidden = 1;
+             ec->visible = EINA_FALSE;
+          }
         ecore_evas_object_cursor_set(ptr->ee, obj, E_LAYER_MAX - 1, x, y);
      }
    else if (ptr->o_ptr)
