@@ -1221,30 +1221,187 @@ _e_info_client_proc_transform_set(int argc, char **argv)
      }
 }
 
+#define DUMP_BUFFERS_USAGE \
+  "  enlightenment_info -dump_buffers [ARG]...\n" \
+  "  enlightenment_info -dump_buffers 1                : start dump buffer (default - buffer_count:100, path:/tmp/dump_xxxx/\n" \
+  "  enlightenment_info -dump_buffers 1 -c 50          : start dump buffer with 50 buffers\n" \
+  "  enlightenment_info -dump_buffers 1 -p /tmp/test   : start dump buffer - the dump path is '/tmp/test/dump_xxxx'\n" \
+  "  enlightenment_info -dump_buffers 1 -c 60 -p /test : start dump buffer with 60 buffers to '/test/dump_xxxx' folder\n" \
+  "  enlightenment_info -dump_buffers 0                : stop dump buffer (store dump files to dump path)\n" \
+
+static char *
+_buffer_shot_directory_check(char *path)
+{
+   char dir[PATH_MAX], curdir[PATH_MAX];
+   char *fullpath;
+   DIR *dp;
+
+   fullpath = (char*)calloc(1, PATH_MAX * sizeof(char));
+   if (!fullpath)
+     {
+        printf("fail to alloc pathname memory\n");
+        return NULL;
+     }
+
+   if (path && path[0] == '/')
+     snprintf(dir, PATH_MAX, "%s", path);
+   else
+     {
+        char *temp = getcwd(curdir, PATH_MAX);
+        if (!temp)
+          {
+             free(fullpath);
+             return NULL;
+          }
+        if (path)
+          {
+             if (strlen(curdir) == 1 && curdir[0] == '/')
+               snprintf(dir, PATH_MAX, "/%s", path);
+             else
+               snprintf(dir, PATH_MAX, "%s/%s", curdir, path);
+          }
+        else
+          snprintf(dir, PATH_MAX, "%s", curdir);
+     }
+
+   if (!(dp = opendir(dir)))
+     {
+        free(fullpath);
+        printf("not exist: %s\n", dir);
+        return NULL;
+     }
+   else
+      closedir (dp);
+
+   snprintf(fullpath, PATH_MAX, "%s", dir);
+
+   return fullpath;
+}
+
 static void
 _e_info_client_proc_buffer_shot(int argc, char **argv)
 {
+   int dumprun = 0;
+   int count = 100;
+   char path[PATH_MAX];
+
+   strncpy(path, "/tmp", PATH_MAX);
    if (argc == 3)
      {
-        int dumprun = atoi(argv[2]);
+        dumprun = atoi(argv[2]);
 
-        if (dumprun < 0 || dumprun > 1)
-          {
-             printf("Error Check Args : enlightenment_info -dump_buffers [1: start, 0: stop]\n");
-             return;
-          }
+        if (dumprun < 0 || dumprun > 1) goto err;
 
-        if (!_e_info_client_eldbus_message_with_args("dump_buffers", NULL, "i", dumprun))
+        if (!_e_info_client_eldbus_message_with_args("dump_buffers", NULL, "iis", dumprun, count, path))
           {
              printf("_e_info_client_proc_buffer_shot fail (%d)\n", dumprun);
              return;
           }
         printf("_e_info_client_proc_buffer_shot %s\n", (dumprun == 1 ? "start" : "stop"));
      }
-   else
+   else if (argc == 5)
      {
-        printf("Error Check Args : enlightenment_info -dump_buffers [1: start, 0: stop]\n");
+        dumprun = atoi(argv[2]);
+
+        if (dumprun < 0 || dumprun > 1) goto err;
+
+        if (eina_streq(argv[3], "-c"))
+          {
+             count = atoi(argv[4]);
+             if (count < 0) goto err;
+
+             if (!_e_info_client_eldbus_message_with_args("dump_buffers", NULL, "iis", dumprun, count, path))
+               {
+                  printf("_e_info_client_proc_buffer_shot fail (%d)\n", dumprun);
+                  return;
+               }
+             printf("_e_info_client_proc_buffer_shot %s\n", (dumprun == 1 ? "start" : "stop"));
+          }
+        else if (eina_streq(argv[3], "-p"))
+          {
+             char *tmp_path = _buffer_shot_directory_check(argv[4]);
+             if (tmp_path == NULL)
+               {
+                  printf("cannot find directory: %s\n", argv[4]);
+                  goto err;
+               }
+
+             if (!_e_info_client_eldbus_message_with_args("dump_buffers", NULL, "iis", dumprun, count, tmp_path))
+               {
+                  printf("_e_info_client_proc_buffer_shot fail (%d)\n", dumprun);
+                  free(tmp_path);
+                  return;
+               }
+             free(tmp_path);
+          }
+        else
+          goto err;
      }
+   else if (argc == 7)
+     {
+        dumprun = atoi(argv[2]);
+
+        if (dumprun < 0 || dumprun > 1) goto err;
+
+        if (eina_streq(argv[3], "-c"))
+          {
+             char *tmp_path = NULL;
+
+             if (!eina_streq(argv[5], "-p")) goto err;
+
+             count = atoi(argv[4]);
+             if (count < 0) goto err;
+
+             tmp_path = _buffer_shot_directory_check(argv[6]);
+             if (tmp_path == NULL)
+               {
+                  printf("cannot find directory: %s\n", argv[6]);
+                  goto err;
+               }
+
+             if (!_e_info_client_eldbus_message_with_args("dump_buffers", NULL, "iis", dumprun, count, tmp_path))
+               {
+                  printf("_e_info_client_proc_buffer_shot fail (%d)\n", dumprun);
+                  return;
+               }
+             printf("_e_info_client_proc_buffer_shot %s\n", (dumprun == 1 ? "start" : "stop"));
+          }
+        else if (eina_streq(argv[3], "-p"))
+          {
+             char *tmp_path = NULL;
+
+             if (!eina_streq(argv[5], "-c")) goto err;
+
+             count = atoi(argv[6]);
+             if (count < 0) goto err;
+
+             tmp_path = _buffer_shot_directory_check(argv[4]);
+             if (tmp_path == NULL)
+               {
+                  printf("cannot find directory: %s\n", argv[4]);
+                  goto err;
+               }
+
+             if (!_e_info_client_eldbus_message_with_args("dump_buffers", NULL, "iis", dumprun, count, tmp_path))
+               {
+                  printf("_e_info_client_proc_buffer_shot fail (%d)\n", dumprun);
+                  free(tmp_path);
+                  return;
+               }
+             free(tmp_path);
+          }
+        else
+          goto err;
+     }
+   else
+     goto err;
+
+   return;
+
+err:
+   printf("Error Check Args\n%s\n", DUMP_BUFFERS_USAGE);
+return;
+
 }
 
 #ifdef HAVE_HWC
@@ -1411,8 +1568,8 @@ static struct
       _e_info_client_proc_transform_set
    },
    {
-      "dump_buffers", "[start:1,stop:0]",
-      "Dump attach buffers (start:1,stop:0, path:/tmp/dump_xxx/)",
+      "dump_buffers", DUMP_BUFFERS_USAGE,
+      "Dump attach buffers [on:1,off:0] (default path:/tmp/dump_xxx/)",
       _e_info_client_proc_buffer_shot
    },
 #ifdef HAVE_HWC
