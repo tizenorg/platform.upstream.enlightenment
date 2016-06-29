@@ -251,6 +251,27 @@ _e_comp_wl_data_device_selection_set(void *data EINA_UNUSED, E_Comp_Wl_Data_Sour
    if (e_comp_wl->kbd.enabled)
      focus = e_comp_wl->kbd.focus;
 
+   if (e_comp_wl->selection.cbhm)
+     {
+        struct wl_client *source_client, *cbhm_client;
+        source_client = wl_resource_get_client(source->resource);
+        cbhm_client = wl_resource_get_client(e_comp_wl->selection.cbhm);
+
+        //if source is from cbhm_client do not crate data offer fore cbhm
+        if (source_client != cbhm_client)
+          {
+             data_device_res =
+                e_comp_wl_data_find_for_client(wl_resource_get_client(e_comp_wl->selection.cbhm));
+             if ((data_device_res) && (source))
+               {
+                  offer_res =
+                     _e_comp_wl_data_device_data_offer_create(source,
+                                                              data_device_res);
+                  wl_data_device_send_selection(data_device_res, offer_res);
+               }
+          }
+     }
+
    if (focus)
      {
         data_device_res =

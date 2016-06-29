@@ -280,6 +280,8 @@ struct _E_Comp_Wl_Data
         struct wl_signal signal;
         struct wl_listener data_source_listener;
         E_Client *target;
+
+        struct wl_resource *cbhm;
      } selection;
 
    struct
