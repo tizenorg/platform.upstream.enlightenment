@@ -2310,7 +2310,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
                }
           }
 
-        if (ec->comp_data->sub.below_obj && !evas_object_visible_get(ec->comp_data->sub.below_obj))
+        if (ec->comp_data->sub.below_obj && !evas_object_visible_get(ec->comp_data->sub.below_obj)
+            && evas_object_visible_get(ec->frame))
           evas_object_show(ec->comp_data->sub.below_obj);
      }
 
@@ -4811,7 +4812,8 @@ e_comp_wl_surface_commit(E_Client *ec)
                }
           }
 
-        if (ec->comp_data->sub.below_obj && !evas_object_visible_get(ec->comp_data->sub.below_obj))
+        if (ec->comp_data->sub.below_obj && !evas_object_visible_get(ec->comp_data->sub.below_obj)
+            && evas_object_visible_get(ec->frame))
           evas_object_show(ec->comp_data->sub.below_obj);
      }
    ec->ignored = ignored;
