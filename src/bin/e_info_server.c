@@ -1599,13 +1599,19 @@ e_info_server_protocol_rule_path_init(char *rule_path)
     return EINA_TRUE;
 }
 
-EINTERN int
-e_info_server_init(void)
+static Eina_Bool
+_e_info_server_dbus_init(void)
 {
-   eldbus_init();
+   if (e_info_server.conn) return ECORE_CALLBACK_CANCEL;
 
-   e_info_server.conn = eldbus_connection_get(ELDBUS_CONNECTION_TYPE_SYSTEM);
-   EINA_SAFETY_ON_NULL_GOTO(e_info_server.conn, err);
+   if (!e_info_server.conn)
+     e_info_server.conn = eldbus_connection_get(ELDBUS_CONNECTION_TYPE_SYSTEM);
+
+   if(!e_info_server.conn)
+     {
+        ecore_timer_add(1, _e_info_server_dbus_init, NULL);
+        return ECORE_CALLBACK_CANCEL;
+     }
 
    e_info_server.iface = eldbus_service_interface_register(e_info_server.conn,
                                                            PATH,
@@ -1617,11 +1623,29 @@ e_info_server_init(void)
    e_info_protocol_init();
    e_info_server_protocol_rule_path_init(getenv("E_INFO_RULE_FILE"));
 
-   return 1;
+   return ECORE_CALLBACK_CANCEL;
 
 err:
    e_info_server_shutdown();
-   return 0;
+
+   if (e_info_server.conn)
+     {
+        eldbus_name_release(e_info_server.conn, BUS, NULL, NULL);
+        eldbus_connection_unref(e_info_server.conn);
+        e_info_server.conn = NULL;
+     }
+
+   return ECORE_CALLBACK_CANCEL;
+}
+
+EINTERN int
+e_info_server_init(void)
+{
+   if (eldbus_init() == 0) return 0;
+
+   _e_info_server_dbus_init();
+
+   return 1;
 }
 
 EINTERN int
