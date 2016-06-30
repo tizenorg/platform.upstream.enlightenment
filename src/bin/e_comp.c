@@ -636,7 +636,8 @@ _e_comp_hwc_prepare(void)
              if ((!cdata->buffer_ref.buffer) ||
                  (cdata->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_NATIVE) ||
                  (cdata->width_from_buffer != cdata->width_from_viewport) ||
-                 (cdata->height_from_buffer != cdata->height_from_viewport))
+                 (cdata->height_from_buffer != cdata->height_from_viewport) ||
+                 e_client_transform_core_enable_get(ec))
                {
                   if (!n_visible) goto fullcomp;
                   n_visible++;
