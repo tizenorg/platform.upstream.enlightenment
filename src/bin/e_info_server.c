@@ -1602,7 +1602,7 @@ e_info_server_protocol_rule_path_init(char *rule_path)
 }
 
 static Eina_Bool
-_e_info_server_dbus_init(void)
+_e_info_server_dbus_init(void *data EINA_UNUSED)
 {
    if (e_info_server.conn) return ECORE_CALLBACK_CANCEL;
 
@@ -1645,7 +1645,7 @@ e_info_server_init(void)
 {
    if (eldbus_init() == 0) return 0;
 
-   _e_info_server_dbus_init();
+   _e_info_server_dbus_init(NULL);
 
    return 1;
 }
