@@ -533,7 +533,6 @@ _hwc_cancel(E_Output *eout)
         if (ep->ec)
           {
              e_client_redirected_set(ep->ec, 1);
-             e_plane_ec_set(ep, NULL);
           }
         e_plane_ec_prepare_set(ep, NULL);
         e_plane_ec_set(ep, NULL);
@@ -945,8 +944,8 @@ setup_hwcompose:
                   eout = e_output_find(zone->output_id);
                   if (eout) _hwc_cancel(eout);
                }
-             }
           }
+     }
 #else
    ec = _e_comp_fullscreen_check();
    if (ec)
