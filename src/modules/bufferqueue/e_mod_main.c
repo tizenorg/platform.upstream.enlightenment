@@ -434,6 +434,7 @@ _e_bq_mgr_consumer_side_buffer_create(E_Bq_Consumer *consumer, E_Bq_Buffer *buff
 
    buffer->consumer = wl_resource_create(wl_resource_get_client(resource),
                                         &bq_buffer_interface, 1, 0);
+   EINA_SAFETY_ON_NULL_RETURN(buffer->consumer);
 
    wl_resource_set_implementation(buffer->consumer, NULL, buffer, _e_bq_mgr_buffer_destroy);
    e_object_ref(E_OBJECT(buffer));

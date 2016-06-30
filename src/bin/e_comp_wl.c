@@ -1868,8 +1868,9 @@ _e_comp_wl_cb_mouse_move(void *d EINA_UNUSED, int t EINA_UNUSED, Ecore_Event_Mou
         struct wl_resource *res;
         int x, y;
 
-
         res = e_comp_wl_data_find_for_client(wl_resource_get_client(e_comp_wl->selection.target->comp_data->surface));
+        EINA_SAFETY_ON_TRUE_RETURN_VAL(res, ECORE_CALLBACK_RENEW);
+
         x = ev->x - e_comp_wl->selection.target->client.x;
         y = ev->y - e_comp_wl->selection.target->client.y;
 
