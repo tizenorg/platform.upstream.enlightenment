@@ -1763,13 +1763,7 @@ e_comp_hwc_display_client(E_Client *ec)
                   if (cdata->sub.below_list || cdata->sub.below_list_pending)
                     {
                        if (!e_comp_wl_video_client_has(ec))
-                         {
-#ifdef ENABLE_HWC_MULTI
-                            _e_comp_hwc_end(__FUNCTION__);
-#else 
-                            e_comp_nocomp_end(__FUNCTION__);
-#endif
-                         }
+                         e_comp_hwc_end(__FUNCTION__);
                     }
                }
              else
