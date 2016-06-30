@@ -935,7 +935,18 @@ setup_hwcompose:
    else
      {
         if (_e_comp_hwc_is_on()) e_comp_hwc_end(__FUNCTION__);
-     }
+        else
+          {
+             E_Zone *zone = NULL;
+             EINA_LIST_FOREACH(e_comp->zones, l, zone)
+               {
+                  E_Output * eout;
+                  if (!zone->output_id) continue;
+                  eout = e_output_find(zone->output_id);
+                  if (eout) _hwc_cancel(eout);
+               }
+             }
+          }
 #else
    ec = _e_comp_fullscreen_check();
    if (ec)
