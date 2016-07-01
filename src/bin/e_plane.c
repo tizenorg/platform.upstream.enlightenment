@@ -107,7 +107,7 @@ e_plane_resolution_set(E_Plane *plane,
 
 E_API Eina_Bool
 e_plane_type_set(E_Plane *plane,
-                 E_Plane_Type_State type)
+                 E_Plane_Type type)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
 
@@ -120,7 +120,7 @@ e_plane_type_set(E_Plane *plane,
    return EINA_TRUE;
 }
 
-E_API E_Plane_Type_State
+E_API E_Plane_Type
 e_plane_type_get(E_Plane *plane)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, E_PLANE_TYPE_INVALID);

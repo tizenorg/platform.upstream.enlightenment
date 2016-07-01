@@ -6,7 +6,7 @@ typedef enum _E_Plane_Type_State
    E_PLANE_TYPE_VIDEO,
    E_PLANE_TYPE_OVERLAY,
    E_PLANE_TYPE_CURSOR
-} E_Plane_Type_State;
+} E_Plane_Type;
 
 typedef enum _E_Plane_Color
 {
@@ -32,7 +32,7 @@ struct _E_Plane
      } geometry;
 
    const char           *name;
-   E_Plane_Type_State    type;
+   E_Plane_Type          type;
    E_Plane_Color         color;
 
    E_Client             *ec;
@@ -48,8 +48,8 @@ EINTERN int                  e_plane_shutdown(void);
 EINTERN E_Plane             *e_plane_new(E_Output *eout, int zpos, Eina_Bool is_pri);
 EINTERN void                 e_plane_free(E_Plane *plane);
 E_API Eina_Bool              e_plane_resolution_set(E_Plane *plane, int w, int h);
-E_API Eina_Bool              e_plane_type_set(E_Plane *plane, E_Plane_Type_State type);
-E_API E_Plane_Type_State     e_plane_type_get(E_Plane *plane);
+E_API Eina_Bool              e_plane_type_set(E_Plane *plane, E_Plane_Type type);
+E_API E_Plane_Type           e_plane_type_get(E_Plane *plane);
 E_API E_Client              *e_plane_ec_get(E_Plane *plane);
 E_API E_Client              *e_plane_ec_prepare_get(E_Plane *plane);
 E_API Eina_Bool              e_plane_ec_prepare_set(E_Plane *plane, E_Client *ec);
