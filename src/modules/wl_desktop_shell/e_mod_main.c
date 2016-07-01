@@ -1105,6 +1105,7 @@ _e_xdg_shell_surface_map_cb_timer(void *data)
           }
 
         ec->first_mapped = 1;
+        EC_CHANGED(ec);
      }
    ec->map_timer = NULL;
    return ECORE_CALLBACK_CANCEL;
@@ -1191,6 +1192,7 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
           }
 
         ec->first_mapped = 1;
+        EC_CHANGED(ec);
      }
 
    TRACE_DS_END();
