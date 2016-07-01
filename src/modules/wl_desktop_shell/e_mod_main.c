@@ -1191,6 +1191,7 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
           }
 
         ec->first_mapped = 1;
+        EC_CHANGED(ec);
      }
 
    TRACE_DS_END();
