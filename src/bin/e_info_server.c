@@ -362,6 +362,18 @@ _e_info_server_cb_res_lists_get(const Eldbus_Service_Interface *iface EINA_UNUSE
    return reply;
 }
 
+#define __WINDOW_PROP_ARG_APPEND(title, value) ({                                    \
+                                                eldbus_message_iter_arguments_append(iter, "(ss)", &struct_of_ec);    \
+                                                eldbus_message_iter_arguments_append(struct_of_ec, "ss", (title), (value));  \
+                                                eldbus_message_iter_container_close(iter, struct_of_ec);})
+
+#define __WINDOW_PROP_ARG_APPEND_TYPE(title, str, x...) ({                           \
+                                                         char __temp[128] = {0,};                                                     \
+                                                         snprintf(__temp, sizeof(__temp), str, ##x);                                  \
+                                                         eldbus_message_iter_arguments_append(iter, "(ss)", &struct_of_ec);    \
+                                                         eldbus_message_iter_arguments_append(struct_of_ec, "ss", (title), (__temp)); \
+                                                         eldbus_message_iter_container_close(iter, struct_of_ec);})
+
 static void
 _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
 {
@@ -430,18 +442,6 @@ _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
              wl_client_get_credentials(wl_resource_get_client(cdata->surface), &pid, NULL, NULL);
           }
      }
-
-#define __WINDOW_PROP_ARG_APPEND(title, value) ({                                    \
-                                                eldbus_message_iter_arguments_append(iter, "(ss)", &struct_of_ec);    \
-                                                eldbus_message_iter_arguments_append(struct_of_ec, "ss", (title), (value));  \
-                                                eldbus_message_iter_container_close(iter, struct_of_ec);})
-
-#define __WINDOW_PROP_ARG_APPEND_TYPE(title, str, x...) ({                           \
-                                                         char __temp[128] = {0,};                                                     \
-                                                         snprintf(__temp, sizeof(__temp), str, ##x);                                  \
-                                                         eldbus_message_iter_arguments_append(iter, "(ss)", &struct_of_ec);    \
-                                                         eldbus_message_iter_arguments_append(struct_of_ec, "ss", (title), (__temp)); \
-                                                         eldbus_message_iter_container_close(iter, struct_of_ec);})
 
    __WINDOW_PROP_ARG_APPEND("[WINDOW PROP]", "[WINDOW PROP]");
    __WINDOW_PROP_ARG_APPEND_TYPE("Window_ID", "0x%x", e_client_util_win_get(target_ec));
