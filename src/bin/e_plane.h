@@ -1,6 +1,6 @@
 #ifdef E_TYPEDEFS
 
-typedef enum _E_Plane_Type_State
+typedef enum _E_Plane_Type
 {
    E_PLANE_TYPE_INVALID,
    E_PLANE_TYPE_VIDEO,
@@ -33,7 +33,7 @@ struct _E_Plane
    int                   index;
    int                   zpos;
    const char           *name;
-   E_Plane_Type_State    type;
+   E_Plane_Type          type;
    E_Plane_Color         color;
    Eina_Bool             is_primary;
    Eina_Bool             is_fb; // fb target
@@ -91,8 +91,8 @@ EINTERN Eina_Bool            e_plane_set(E_Plane *plane);
 EINTERN void                 e_plane_unset(E_Plane *plane);
 EINTERN E_Plane_Commit_Data *e_plane_commit_data_aquire(E_Plane *plane);
 EINTERN void                 e_plane_commit_data_release(E_Plane_Commit_Data *data);
-E_API Eina_Bool              e_plane_type_set(E_Plane *plane, E_Plane_Type_State type);
-E_API E_Plane_Type_State     e_plane_type_get(E_Plane *plane);
+E_API Eina_Bool              e_plane_type_set(E_Plane *plane, E_Plane_Type type);
+E_API E_Plane_Type           e_plane_type_get(E_Plane *plane);
 E_API E_Client              *e_plane_ec_get(E_Plane *plane);
 E_API Eina_Bool              e_plane_ec_set(E_Plane *plane, E_Client *ec);
 E_API E_Client              *e_plane_ec_prepare_get(E_Plane *plane);

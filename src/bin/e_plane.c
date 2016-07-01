@@ -1266,7 +1266,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
 
 E_API Eina_Bool
 e_plane_type_set(E_Plane *plane,
-                 E_Plane_Type_State type)
+                 E_Plane_Type type)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
 
