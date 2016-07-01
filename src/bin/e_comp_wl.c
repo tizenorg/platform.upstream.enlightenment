@@ -2228,6 +2228,8 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    int x = 0, y = 0;
    E_Comp_Wl_Buffer *buffer;
    E_Comp_Wl_Subsurf_Data *sdata;
+   struct wl_resource *cb;
+   Eina_List *l, *ll;
 
    first = !e_pixmap_usable_get(ec->pixmap);
 
@@ -2380,6 +2382,12 @@ _e_comp_wl_surface_state_commit(E_Client *ec, E_Comp_Wl_Surface_State *state)
    state->sx = 0;
    state->sy = 0;
    state->new_attach = EINA_FALSE;
+
+   EINA_LIST_FOREACH_SAFE(ec->comp_data->frames, l, ll, cb)
+     {
+         wl_callback_send_done(cb, ecore_time_unix_get() * 1000);
+         wl_resource_destroy(cb);
+     }
 
    /* insert state frame callbacks into comp_data->frames
     * NB: This clears state->frames list */
