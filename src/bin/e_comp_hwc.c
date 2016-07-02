@@ -2134,7 +2134,7 @@ e_comp_hwc_disable_output_hwc_rendering(int index, int onoff)
      }
    return;
 }
-#endif
+#endif /* end of ENABLE_HWC_MULTI */
 #else /* HAVE_HWC */
 EINTERN Eina_Bool
 e_comp_hwc_init(void)

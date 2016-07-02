@@ -212,7 +212,6 @@ e_output_update(E_Output *output)
      {
         ERR("failt to get conn status.");
         return EINA_FALSE;
->>>>>>> redesign the e_comp_screen/e_output/e_plane for multi plane hwc
      }
 
    if (status == TDM_OUTPUT_CONN_STATUS_DISCONNECTED) connected = EINA_FALSE;

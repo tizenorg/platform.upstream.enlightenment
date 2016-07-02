@@ -1389,12 +1389,3 @@ e_plane_is_fb_target(E_Plane *plane)
    if (plane->is_fb) return EINA_TRUE;
    return EINA_FALSE;
 }
-
-E_API Eina_Bool
-e_plane_is_fb_target(E_Plane *plane)
-{
-   EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
-   if (plane->is_fb) return EINA_TRUE;
-   return EINA_FALSE;
-}
-
