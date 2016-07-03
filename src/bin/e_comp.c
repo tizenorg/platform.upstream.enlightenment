@@ -574,7 +574,15 @@ compose:
    if (ret) e_comp->hwc_mode = 1;
    else
      {
-        _hwc_cancel(eout);
+        e_comp->hwc_mode = 0;
+
+        EINA_LIST_FOREACH(ep_l, l, ep)
+          {
+             if (ep->ec)
+               e_client_redirected_set(ep->ec, 1);
+
+             e_plane_ec_prepare_set(ep, NULL);
+          }
      }
    return ret;
 }
@@ -639,9 +647,11 @@ _e_comp_hwc_prepare(void)
 
         E_CLIENT_REVERSE_FOREACH(ec)
           {
-             E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+             if (!ec) continue;
 
              if (ec->zone != zone) continue;
+
+             E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
 
              // check clients to skip composite
              if (ec->ignored || ec->input_only || (!evas_object_visible_get(ec->frame)))

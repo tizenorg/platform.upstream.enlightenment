@@ -633,7 +633,7 @@ e_comp_screen_e_screens_setup(E_Comp_Screen *e_comp_screen, int rw, int rh)
    E_Output *output, *s2, *s_chosen;
    Eina_Bool removed;
 
-   if ((!e_comp_screen) || (!e_comp_screen->outputs)) goto out;
+   if (!e_comp_screen->outputs) goto out;
    // put screens in tmp list
    EINA_LIST_FOREACH(e_comp_screen->outputs, l, output)
      {
