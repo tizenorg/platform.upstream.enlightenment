@@ -728,7 +728,7 @@ e_output_util_planes_print(void)
         E_Plane *plane;
         E_Client *ec;
 
-        if (!output || !output->planes) continue;
+        if (!output && !output->planes) continue;
 
         fprintf(stderr, "HWC in %s .. \n", output->id);
         fprintf(stderr, "HWC \tzPos \t on_plane \t\t\t\t on_prepare \t \n");

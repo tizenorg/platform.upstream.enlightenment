@@ -574,7 +574,15 @@ compose:
    if (ret) e_comp->hwc_mode = 1;
    else
      {
-        _hwc_cancel(eout);
+        e_comp->hwc_mode = 0;
+
+        EINA_LIST_FOREACH(ep_l, l, ep)
+          {
+             if (ep->ec)
+               e_client_redirected_set(ep->ec, 1);
+
+             e_plane_ec_prepare_set(ep, NULL);
+          }
      }
    return ret;
 }
