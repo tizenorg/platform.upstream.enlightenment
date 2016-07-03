@@ -45,7 +45,6 @@ struct _E_Plane
 
    tdm_layer            *tlayer;
    tdm_info_layer        info;
-   tbm_surface_queue_h   tqueue;
    tbm_surface_h         tsurface;
    tbm_surface_h         previous_tsurface;
    tbm_surface_h         prepare_tsurface;
@@ -67,10 +66,12 @@ struct _E_Plane_Renderer {
    tbm_surface_queue_h tqueue;
 
    E_Client           *activated_ec;
+   E_Client           *candidate_ec;
 
    struct gbm_surface *gsurface;
    Eina_List          *disp_surfaces;
    Eina_List          *sent_surfaces;
+   Eina_List          *exported_surfaces;
 
    E_Plane            *plane;
 };
