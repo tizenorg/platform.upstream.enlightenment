@@ -65,9 +65,8 @@ cp %{SOURCE1001} .
 %build
 %if "%{TIZEN_PRODUCT_TV}" != "1"
 export CFLAGS+=" -fPIE "
-%endif
 export LDFLAGS+=" -pie "
-
+%endif
 %autogen \
       --enable-function-trace \
       --enable-wayland \
