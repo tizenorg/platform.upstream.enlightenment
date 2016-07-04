@@ -163,6 +163,7 @@ struct _E_Config
    } wl_sock_symlink_access;
    int                       sleep_for_dri;
    int                       create_wm_ready;
+   int                       create_wm_start;
    struct
    {
       unsigned char r, g, b, a;
