@@ -218,6 +218,7 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, wl_sock_symlink_access.smack.flags, INT);
    E_CONFIG_VAL(D, T, sleep_for_dri, INT);
    E_CONFIG_VAL(D, T, create_wm_ready, INT);
+   E_CONFIG_VAL(D, T, create_wm_start, INT);
    E_CONFIG_VAL(D, T, comp_canvas_bg.r, UCHAR);
    E_CONFIG_VAL(D, T, comp_canvas_bg.g, UCHAR);
    E_CONFIG_VAL(D, T, comp_canvas_bg.b, UCHAR);
@@ -396,6 +397,7 @@ e_config_load(void)
    E_CONFIG_LIMIT(e_config->use_cursor_timer, 0, 1);
    E_CONFIG_LIMIT(e_config->sleep_for_dri, 0, 1);
    E_CONFIG_LIMIT(e_config->create_wm_ready, 0, 1);
+   E_CONFIG_LIMIT(e_config->create_wm_start, 0, 1);
    E_CONFIG_LIMIT(e_config->comp_canvas_bg.r, 0, 255);
    E_CONFIG_LIMIT(e_config->comp_canvas_bg.g, 0, 255);
    E_CONFIG_LIMIT(e_config->comp_canvas_bg.b, 0, 255);

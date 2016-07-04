@@ -13,6 +13,7 @@ static void _e_module_dialog_disable_defer(const char *title, const char *body, 
 static void _e_module_dialog_disable_create(const char *title, const char *body, E_Module *m);
 static void _e_module_cb_dialog_disable(void *data, E_Dialog *dia);
 static void _e_module_event_update_free(void *data, void *event);
+static void _e_module_create_wm_start(void);
 static int  _e_module_sort_priority(const void *d1, const void *d2);
 static Eina_Bool _e_module_cb_idler(void *data);
 
@@ -285,6 +286,10 @@ e_module_all_load(void)
                }
           }
      }
+   PRCTL("[Winsys] Non-delayed modules loaded");
+
+   if (e_config->create_wm_start)
+     _e_module_create_wm_start();
 
    if (!_e_modules_delayed)
      {
@@ -876,3 +881,30 @@ _e_module_cb_idler(void *data EINA_UNUSED)
    return ECORE_CALLBACK_DONE;
 }
 
+static void
+_e_module_create_wm_start(void)
+{
+   FILE *_wm_start_checker = NULL;
+
+   _wm_start_checker = fopen("/run/.wm_start", "wb");
+   if (_wm_start_checker)
+     {
+        PRCTL("[Winsys] /run/.wm_start is created");
+        fclose(_wm_start_checker);
+     }
+   else
+     {
+        PRCTL("[Winsys] Failed to create /run/.wm_start");
+     }
+
+   _wm_start_checker = fopen("/tmp/.wm_start", "wb");
+   if (_wm_start_checker)
+     {
+        PRCTL("[Winsys] /tmp/.wm_start is created");
+        fclose(_wm_start_checker);
+     }
+   else
+     {
+        PRCTL("[Winsys] Failed to create /tmp/.wm_start");
+     }
+}
