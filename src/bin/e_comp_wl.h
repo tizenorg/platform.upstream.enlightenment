@@ -204,8 +204,9 @@ struct _E_Comp_Wl_Data
         struct wl_global *global;
         Eina_List *resources;
         Eina_List *device_list;
-        const char *last_device_name;
-        Ecore_Device_Class last_device_clas;
+        const char *last_ptr_name;
+        const char *last_kbd_name;
+        const char *last_touch_name;
         struct
           {
              double radius_x;
