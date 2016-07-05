@@ -67,7 +67,7 @@ static Eina_List *module_hook = NULL;
    str_r -= str_l; \
 } while(0)
 
-#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbiis"
+#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbbiis"
 #define VALUE_TYPE_REQUEST_RESLIST "ui"
 #define VALUE_TYPE_REPLY_RESLIST "ssi"
 #define VALUE_TYPE_FOR_INPUTDEV "ssi"
@@ -153,7 +153,8 @@ _msg_clients_append(Eldbus_Message_Iter *iter)
             pid,
             e_client_util_name_get(ec) ?: "NO NAME",
             ec->x, ec->y, ec->w, ec->h, ec->layer,
-            ec->visible, ec->argb, ec->visibility.opaque, ec->visibility.obscured, ec->iconic, ec->focused, hwc, pl_zpos, layer_name);
+            ec->visible, ec->argb, ec->visibility.opaque, ec->visibility.obscured, ec->iconic,
+            evas_object_visible_get(ec->frame), ec->focused, hwc, pl_zpos, layer_name);
 
         eldbus_message_iter_container_close(array_of_ec, struct_of_ec);
      }
