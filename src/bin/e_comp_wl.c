@@ -3134,18 +3134,13 @@ _e_comp_wl_compositor_cb_bind(struct wl_client *client, void *data EINA_UNUSED, 
 }
 
 static void
-_e_comp_wl_subsurface_destroy(struct wl_resource *resource)
+_e_comp_wl_subsurface_destroy_sdata(E_Client *ec)
 {
-   E_Client *ec;
    E_Comp_Wl_Subsurf_Data *sdata;
 
-   /* try to get the client from resource data */
-   if (!(ec = wl_resource_get_user_data(resource))) return;
+   if (!ec || !ec->comp_data || !ec->comp_data->sub.data) return;
 
-   if (!ec->comp_data) return;
-
-   if (!(sdata = ec->comp_data->sub.data)) return;
-
+   sdata = ec->comp_data->sub.data;
    if (sdata->parent)
      {
         /* remove this client from parents sub list */
@@ -3169,6 +3164,17 @@ _e_comp_wl_subsurface_destroy(struct wl_resource *resource)
    E_FREE(sdata);
 
    ec->comp_data->sub.data = NULL;
+}
+
+static void
+_e_comp_wl_subsurface_destroy(struct wl_resource *resource)
+{
+   E_Client *ec;
+
+   /* try to get the client from resource data */
+   if (!(ec = wl_resource_get_user_data(resource))) return;
+
+   _e_comp_wl_subsurface_destroy_sdata(ec);
 }
 
 static Eina_Bool
@@ -3902,21 +3908,7 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
      }
 
    if (ec->comp_data->sub.data)
-     {
-        E_Comp_Wl_Subsurf_Data *sdata = ec->comp_data->sub.data;
-        if (sdata->parent && sdata->parent->comp_data)
-          {
-             /* remove this client from parents sub list */
-             sdata->parent->comp_data->sub.list =
-               eina_list_remove(sdata->parent->comp_data->sub.list, ec);
-             sdata->parent->comp_data->sub.list_pending =
-               eina_list_remove(sdata->parent->comp_data->sub.list_pending, ec);
-             sdata->parent->comp_data->sub.below_list =
-               eina_list_remove(sdata->parent->comp_data->sub.below_list, ec);
-             sdata->parent->comp_data->sub.below_list_pending =
-               eina_list_remove(sdata->parent->comp_data->sub.below_list_pending, ec);
-          }
-     }
+     _e_comp_wl_subsurface_destroy_sdata(ec);
 
    if (ec->comp_data->sub.below_obj)
      evas_object_del(ec->comp_data->sub.below_obj);
