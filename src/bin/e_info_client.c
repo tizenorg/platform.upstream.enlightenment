@@ -33,13 +33,14 @@ typedef struct _E_Win_Info
    int          opaque;
    int          visibility;
    int          iconic;
+   int          frame_visible;  //ec->frame obj visible get
    int          focused;
    int          hwc;
    int          pl_zpos;
    const char  *layer_name; // layer name
 } E_Win_Info;
 
-#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbiis"
+#define VALUE_TYPE_FOR_TOPVWINS "uuisiiiiibbiibbbiis"
 #define VALUE_TYPE_REQUEST_RESLIST "ui"
 #define VALUE_TYPE_REPLY_RESLIST "ssi"
 #define VALUE_TYPE_FOR_INPUTDEV "ssi"
@@ -52,7 +53,7 @@ static Eina_Bool _e_info_client_eldbus_message(const char *method, E_Info_Messag
 static Eina_Bool _e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb, const char *signature, ...);
 
 static E_Win_Info *
-_e_win_info_new(Ecore_Window id, uint32_t res_id, int pid, Eina_Bool alpha, int opaque, const char *name, int x, int y, int w, int h, int layer, int visible, int visibility, int iconic, int focused, int hwc, int pl_zpos, const char *layer_name)
+_e_win_info_new(Ecore_Window id, uint32_t res_id, int pid, Eina_Bool alpha, int opaque, const char *name, int x, int y, int w, int h, int layer, int visible, int visibility, int iconic, int frame_visible, int focused, int hwc, int pl_zpos, const char *layer_name)
 {
    E_Win_Info *win = NULL;
 
@@ -72,6 +73,7 @@ _e_win_info_new(Ecore_Window id, uint32_t res_id, int pid, Eina_Bool alpha, int 
    win->opaque = opaque;
    win->vis = visible;
    win->visibility = visibility;
+   win->frame_visible = frame_visible;
    win->iconic = iconic;
    win->focused = focused;
    win->hwc = hwc;
@@ -113,7 +115,7 @@ _cb_window_info_get(const Eldbus_Message *msg)
         const char *win_name;
         const char *layer_name;
         int x, y, w, h, layer, visibility, opaque, hwc, pl_zpos;
-        Eina_Bool visible, alpha, iconic, focused;
+        Eina_Bool visible, alpha, iconic, focused, frame_visible;
         Ecore_Window id;
         uint32_t res_id;
         int pid;
@@ -134,6 +136,7 @@ _cb_window_info_get(const Eldbus_Message *msg)
                                                 &opaque,
                                                 &visibility,
                                                 &iconic,
+                                                &frame_visible,
                                                 &focused,
                                                 &hwc,
                                                 &pl_zpos,
@@ -144,7 +147,7 @@ _cb_window_info_get(const Eldbus_Message *msg)
              continue;
           }
 
-        win = _e_win_info_new(id, res_id, pid, alpha, opaque, win_name, x, y, w, h, layer, visible, visibility, iconic, focused, hwc, pl_zpos, layer_name);
+        win = _e_win_info_new(id, res_id, pid, alpha, opaque, win_name, x, y, w, h, layer, visible, visibility, iconic, frame_visible, focused, hwc, pl_zpos, layer_name);
         e_info_client.win_list = eina_list_append(e_info_client.win_list, win);
      }
 
@@ -403,9 +406,9 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
      return;
 
    printf("%d Top level windows\n", eina_list_count(e_info_client.win_list));
-   printf("--------------------------------------[ topvwins ]--------------------------------------------------------------\n");
-   printf(" No   Win_ID    RcsID    PID     w     h     x    y  Focus Depth Opaq Visi Icon  Map_State  PL@ZPos  Title   \n");
-   printf("----------------------------------------------------------------------------------------------------------------\n");
+   printf("--------------------------------------[ topvwins ]-----------------------------------------------------------------\n");
+   printf(" No   Win_ID    RcsID    PID     w     h     x    y  Focus Depth Opaq Visi Icon  Map_State   Frame  PL@ZPos  Title   \n");
+   printf("-------------------------------------------------------------------------------------------------------------------\n");
 
    if (!e_info_client.win_list)
      {
@@ -429,7 +432,7 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
 
         if (win->hwc >= 0)
           {
-             if ((win->visibility == 0) && win->vis)
+             if (win->frame_visible)
                {
                   if (win->hwc) snprintf(tmp, sizeof(tmp), "hwc@%i", win->pl_zpos);
                   else snprintf(tmp, sizeof(tmp), "comp@%i", win->pl_zpos);
@@ -444,7 +447,7 @@ _e_info_client_proc_topvwins_info(int argc, char **argv)
           }
 
         printf("%3d 0x%08x  %5d  %5d  %5d %5d %4d %4d   %c  %5d    %d   ", i, win->id, win->res_id, win->pid, win->w, win->h, win->x, win->y, win->focused ? 'O':' ', win->alpha? 32:24, win->opaque);
-        printf("%2d    %d   %-11s %-8s %s\n", win->visibility, win->iconic, win->vis? "Viewable":"NotViewable", tmp, win->name?:"No Name");
+        printf("%2d    %d   %-11s %3d    %-8s %s\n", win->visibility, win->iconic, win->vis? "Viewable":"NotViewable", win->frame_visible, tmp, win->name?:"No Name");
      }
 
    if (prev_layer_name)
