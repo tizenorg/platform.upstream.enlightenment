@@ -3916,6 +3916,10 @@ _e_comp_wl_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
              sdata->parent->comp_data->sub.below_list_pending =
                eina_list_remove(sdata->parent->comp_data->sub.below_list_pending, ec);
           }
+        _e_comp_wl_surface_state_finish(&sdata->cached);
+        e_comp_wl_buffer_reference(&sdata->cached_buffer_ref, NULL);
+        E_FREE(sdata);
+        ec->comp_data->sub.data = NULL;
      }
 
    if (ec->comp_data->sub.below_obj)
