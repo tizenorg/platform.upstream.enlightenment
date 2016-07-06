@@ -1167,12 +1167,13 @@ _e_comp_wl_evas_cb_mouse_down(void *data, Evas *evas EINA_UNUSED, Evas_Object *o
 }
 
 static void
-_e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event)
+_e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas, Evas_Object *obj EINA_UNUSED, void *event)
 {
    E_Client *ec = data;
    Evas_Event_Mouse_Up *ev = event;
    Evas_Device *dev = NULL;
    const char *dev_name;
+   Evas_Event_Flags flags;
 
    if (!ec) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
@@ -1181,6 +1182,9 @@ _e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
      {
         need_send_motion = EINA_TRUE;
      }
+
+   flags = evas_event_default_flags_get(evas);
+   if (flags & EVAS_EVENT_FLAG_ON_HOLD) goto finish;
 
    dev = ev->dev;
    dev_name = evas_device_description_get(dev);
@@ -1198,6 +1202,8 @@ _e_comp_wl_evas_cb_mouse_up(void *data, Evas *evas EINA_UNUSED, Evas_Object *obj
    else
      e_comp_wl_evas_handle_mouse_button(ec, ev->timestamp, ev->button,
                                         WL_POINTER_BUTTON_STATE_RELEASED);
+
+finish:
    need_send_released = EINA_FALSE;
 }
 
