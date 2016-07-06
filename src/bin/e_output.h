@@ -59,6 +59,7 @@ struct _E_Output
    Ecore_Drm_Output     *output;  // for evas drm engine.
 
    E_Comp_Screen        *e_comp_screen;
+   E_OUTPUT_DPMS        dpms;
 };
 
 EINTERN Eina_Bool         e_output_init(void);
