@@ -256,12 +256,8 @@ _e_plane_client_backup_buffer_set(E_Plane_Client *plane_client)
 
    /* set the backup buffer resource to the pixmap */
    e_pixmap_resource_set(ec->pixmap, backup_buffer);
-   e_pixmap_image_refresh(ec->pixmap);
-
-   /* force update */
-   e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
-   e_comp_object_dirty(ec->frame);
-   e_comp_object_render(ec->frame);
+   e_pixmap_dirty(ec->pixmap);
+   e_pixmap_refresh(ec->pixmap);
 
    return EINA_TRUE;
 
@@ -851,6 +847,12 @@ _e_plane_renderer_deactivate(E_Plane_Renderer *renderer)
 
         if (!_e_plane_client_backup_buffer_set(plane_client))
            ERR("fail to _e_comp_hwc_set_backup_buffer");
+
+        /* force update */
+        e_pixmap_image_refresh(ec->pixmap);
+        e_comp_object_damage(ec->frame, 0, 0, ec->w, ec->h);
+        e_comp_object_dirty(ec->frame);
+        e_comp_object_render(ec->frame);
      }
 
 done:
