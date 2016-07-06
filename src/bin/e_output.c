@@ -3,6 +3,38 @@
 # include <Evas_Engine_GL_Drm.h>
 
 static void
+_e_output_cb_output_change(tdm_output *toutput,
+                                  tdm_output_change_type type,
+                                  tdm_value value,
+                                  void *user_data)
+{
+   E_Output *e_output = NULL;
+   E_OUTPUT_DPMS edpms;
+   tdm_output_dpms tdpms = (tdm_output_dpms)value.u32;
+
+   EINA_SAFETY_ON_NULL_RETURN(toutput);
+   EINA_SAFETY_ON_NULL_RETURN(user_data);
+
+   e_output = (E_Output *)user_data;
+
+   switch (type)
+     {
+       case TDM_OUTPUT_CHANGE_DPMS:
+          if (tdpms == TDM_OUTPUT_DPMS_OFF) edpms = E_OUTPUT_DPMS_OFF;
+          else if (tdpms == E_OUTPUT_DPMS_ON) edpms = E_OUTPUT_DPMS_ON;
+          else if (tdpms == TDM_OUTPUT_DPMS_STANDBY) edpms = E_OUTPUT_DPMS_STANDBY;
+          else if (tdpms == TDM_OUTPUT_DPMS_SUSPEND) edpms = E_OUTPUT_DPMS_SUSPEND;
+          else edpms = e_output->dpms;
+
+          ERR("[cyeon] dpms change:%d", edpms);
+          e_output->dpms = edpms;
+          break;
+       default:
+          break;
+     }
+}
+
+static void
 _e_output_commit_hanler(tdm_output *output, unsigned int sequence,
                                   unsigned int tv_sec, unsigned int tv_usec,
                                   void *user_data)
@@ -131,6 +163,9 @@ e_output_new(E_Comp_Screen *e_comp_screen, int index)
    error = tdm_output_get_model_info(toutput, NULL, NULL, &name);
    if (error != TDM_ERROR_NONE) goto fail;
 
+   error = tdm_output_add_change_handler(toutput, _e_output_cb_output_change, output);
+   EINA_SAFETY_ON_FALSE_GOTO(error == TDM_ERROR_NONE, fail);
+
    size = strlen(name) + 4;
    id = calloc(1, size);
    if (!id) return NULL;
@@ -167,6 +202,7 @@ e_output_new(E_Comp_Screen *e_comp_screen, int index)
 
    output->e_comp_screen = e_comp_screen;
 
+
    return output;
 
 fail:
@@ -189,6 +225,9 @@ e_output_del(E_Output *output)
    if (output->info.screen) free(output->info.screen);
    if (output->info.name) free(output->info.name);
    if (output->info.edid) free(output->info.edid);
+
+   tdm_output_remove_change_handler(output->toutput, _e_output_cb_output_change, output);
+
    EINA_LIST_FREE(output->info.modes, m) free(m);
 
    EINA_LIST_FREE(output->planes, plane) e_plane_free(plane);
@@ -478,7 +517,7 @@ e_output_dpms_set(E_Output *output, E_OUTPUT_DPMS val)
    EINA_SAFETY_ON_NULL_RETURN_VAL(output, EINA_FALSE);
 
    if (val == E_OUTPUT_DPMS_OFF) tval = TDM_OUTPUT_DPMS_OFF;
-   else if (val == E_OUTPUT_DPMS_ON) tval = TDM_OUTPUT_DPMS_OFF;
+   else if (val == E_OUTPUT_DPMS_ON) tval = TDM_OUTPUT_DPMS_ON;
    else if (val == E_OUTPUT_DPMS_STANDBY) tval = TDM_OUTPUT_DPMS_STANDBY;
    else if (val == E_OUTPUT_DPMS_SUSPEND) tval = TDM_OUTPUT_DPMS_SUSPEND;
    else ret = EINA_FALSE;
@@ -491,6 +530,8 @@ e_output_dpms_set(E_Output *output, E_OUTPUT_DPMS val)
         ERR("fail to set the dpms(value:%d).", tval);
         return EINA_FALSE;
      }
+
+   output->dpms = val;
 
    return EINA_TRUE;
 }
@@ -654,6 +695,9 @@ e_output_commit(E_Output *output)
         WRN("E_Output disconnected");
         return EINA_FALSE;
      }
+
+   if (output->dpms == E_OUTPUT_DPMS_OFF)
+      return EINA_TRUE;
 
    /* set planes */
    EINA_LIST_REVERSE_FOREACH(output->planes, l, plane)

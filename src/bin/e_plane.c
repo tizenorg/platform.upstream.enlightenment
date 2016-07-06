@@ -442,7 +442,7 @@ _e_plane_client_surface_flags_get(E_Plane_Client *plane_client)
    E_Comp_Wl_Buffer *buffer = NULL;
 
    buffer = e_pixmap_resource_get(pixmap);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(buffer, 0);
+   if (!buffer) return 0;
 
    switch (buffer->type)
      {
@@ -1334,7 +1334,7 @@ _e_plane_surface_from_ecore_evas_acquire(E_Plane *plane)
           }
 
         /* dpms on at the first */
-        if (tdm_output_set_dpms(output->toutput, TDM_OUTPUT_DPMS_ON) != TDM_ERROR_NONE)
+        if (!e_output_dpms_set(output, E_OUTPUT_DPMS_ON))
            WRN("fail to set the dpms on.");
      }
 
