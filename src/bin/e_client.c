@@ -2430,7 +2430,9 @@ _e_client_eval(E_Client *ec)
         if ((e_config->focus_setting == E_FOCUS_NEW_WINDOW) || (ec->want_focus))
           {
              ec->want_focus = 0;
+#if 0 // focus should be set to the top window
              e_client_focus_set_with_pointer(ec);
+#endif
           }
         else if (ec->dialog)
           {
@@ -4864,8 +4866,10 @@ e_client_uniconify(E_Client *ec)
    e_client_comp_hidden_set(ec, 0);
    ec->deskshow = ec->iconic = 0;
 
+#if 0 // focus should be set to the top window not uniconify window
    if (ec->pixmap && e_pixmap_usable_get(ec->pixmap))
       evas_object_focus_set(ec->frame, 1);
+#endif
 
    _e_client_event_simple(ec, E_EVENT_CLIENT_UNICONIFY);
 
