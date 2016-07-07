@@ -1284,9 +1284,15 @@ _e_comp_intercept_layer_set(void *data, Evas_Object *obj, int layer)
                   e_comp_render_queue();
                }
              ec = e_client_above_get(cw->ec);
+             /* skip subsurface: stacking subsurface is handled by e_comp_wl */
+             while ((ec) && (ec->comp_data) && (ec->comp_data->sub.data))
+               ec = e_client_above_get(ec);
              if (ec && (evas_object_layer_get(ec->frame) != evas_object_layer_get(obj)))
                {
                   ec = e_client_below_get(cw->ec);
+                  /* skip subsurface: stacking subsurface is handled by e_comp_wl */
+                  while ((ec) && (ec->comp_data) && (ec->comp_data->sub.data))
+                    ec = e_client_below_get(ec);
                   if (ec && (evas_object_layer_get(ec->frame) == evas_object_layer_get(cw->smart_obj)))
                     {
                        evas_object_stack_above(obj, ec->frame);
