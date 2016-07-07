@@ -169,7 +169,7 @@ _e_comp_hwc_create_copied_surface(E_Client *ec, Eina_Bool refresh)
    new_tsurface = tbm_surface_create(src_info.width, src_info.height, src_info.format);
 
    tbm_surface_map(new_tsurface, TBM_SURF_OPTION_WRITE, &dst_info);
-   tbm_surface_unmap(new_tsurface);
+
    EINA_SAFETY_ON_NULL_RETURN_VAL(dst_info.planes[0].ptr, NULL);
 
    /* copy from src to dst */
@@ -178,6 +178,7 @@ _e_comp_hwc_create_copied_surface(E_Client *ec, Eina_Bool refresh)
 #else
    memcpy(dst_info.planes[0].ptr, src_info.planes[0].ptr, src_info.planes[0].size);
 #endif
+   tbm_surface_unmap(new_tsurface);
 
    return new_tsurface;
 }
