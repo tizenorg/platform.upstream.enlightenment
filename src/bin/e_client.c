@@ -4798,7 +4798,7 @@ e_client_iconify(E_Client *ec)
 
    if (!ec->zone) return;
    if (ec->shading || ec->iconic) return;
-   if (ec->exp_iconify.skip_iconify) return;
+   if (ec->exp_iconify.skip_iconify && !ec->exp_iconify.by_client) return;
 
    TRACE_DS_BEGIN(CLIENT:ICONIFY);
 
