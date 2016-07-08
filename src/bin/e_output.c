@@ -1,6 +1,6 @@
 #include "e.h"
 
-# include <Evas_Engine_GL_Drm.h>
+#include <Evas_Engine_GL_Drm.h>
 
 static void
 _e_output_cb_output_change(tdm_output *toutput,
@@ -21,12 +21,11 @@ _e_output_cb_output_change(tdm_output *toutput,
      {
        case TDM_OUTPUT_CHANGE_DPMS:
           if (tdpms == TDM_OUTPUT_DPMS_OFF) edpms = E_OUTPUT_DPMS_OFF;
-          else if (tdpms == E_OUTPUT_DPMS_ON) edpms = E_OUTPUT_DPMS_ON;
+          else if (tdpms == TDM_OUTPUT_DPMS_ON) edpms = E_OUTPUT_DPMS_ON;
           else if (tdpms == TDM_OUTPUT_DPMS_STANDBY) edpms = E_OUTPUT_DPMS_STANDBY;
           else if (tdpms == TDM_OUTPUT_DPMS_SUSPEND) edpms = E_OUTPUT_DPMS_SUSPEND;
           else edpms = e_output->dpms;
 
-          ERR("[cyeon] dpms change:%d", edpms);
           e_output->dpms = edpms;
           break;
        default:
@@ -45,8 +44,8 @@ _e_output_commit_hanler(tdm_output *output, unsigned int sequence,
 
    EINA_LIST_FOREACH_SAFE(data_list, l, ll, data)
      {
-        e_plane_commit_data_release(data);
         data_list = eina_list_remove_list(data_list, l);
+        e_plane_commit_data_release(data);
         data = NULL;
      }
 }
@@ -164,7 +163,8 @@ e_output_new(E_Comp_Screen *e_comp_screen, int index)
    if (error != TDM_ERROR_NONE) goto fail;
 
    error = tdm_output_add_change_handler(toutput, _e_output_cb_output_change, output);
-   EINA_SAFETY_ON_FALSE_GOTO(error == TDM_ERROR_NONE, fail);
+   if (error != TDM_ERROR_NONE)
+        WRN("fail to tdm_output_add_change_handler");
 
    size = strlen(name) + 4;
    id = calloc(1, size);

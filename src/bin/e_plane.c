@@ -16,12 +16,19 @@
 
 typedef struct _E_Plane_Client E_Plane_Client;
 
+typedef enum _E_Plane_Client_State
+{
+   E_PLANE_CLIENT_STATE_NONE,
+   E_PLANE_CLIENT_STATE_CANDIDATED,
+   E_PLANE_CLIENT_STATE_ACTIVATED,
+} E_Plane_Client_State;
+
 struct _E_Plane_Client
 {
    E_Client *ec;
 
+   E_Plane_Client_State state;
    E_Plane *plane;
-   Eina_Bool activated;
 
    E_Comp_Wl_Buffer *buffer;
    struct wl_listener buffer_destroy_listener;
@@ -102,6 +109,17 @@ _e_plane_wayland_tbm_client_queue_get(E_Client *ec)
    return cqueue;
 }
 
+static void
+_e_plane_wait_for_showup_set(Eina_Bool set)
+{
+   Evas_Engine_Info_GL_Drm *einfo = NULL;
+
+   einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
+   EINA_SAFETY_ON_NULL_RETURN(einfo);
+
+   einfo->info.wait_for_showup = set;
+}
+
 static E_Plane_Client *
 _e_plane_client_new(E_Client *ec)
 {
@@ -111,8 +129,6 @@ _e_plane_client_new(E_Client *ec)
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane_client, NULL);
 
    plane_client->ec = ec;
-   plane_client->plane = NULL;
-   plane_client->exported_surfaces = NULL;
 
    return plane_client;
 }
@@ -141,19 +157,6 @@ _e_plane_client_cb_new(void *data EINA_UNUSED, E_Client *ec)
      }
 }
 
-static void
-_e_plane_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
-{
-   E_Plane_Client *plane_client = NULL;
-
-   plane_client = _e_plane_client_get(ec);
-   if (plane_client)
-     {
-        /* destroy the plane_client */
-        eina_hash_del_by_key(plane_clients, &ec);
-     }
-}
-
 static tbm_surface_h
 _e_plane_copied_surface_create(E_Client *ec, Eina_Bool refresh)
 {
@@ -176,14 +179,16 @@ _e_plane_copied_surface_create(E_Client *ec, Eina_Bool refresh)
    EINA_SAFETY_ON_NULL_RETURN_VAL(tsurface, NULL);
 
    tbm_surface_map(tsurface, TBM_SURF_OPTION_READ, &src_info);
-   tbm_surface_unmap(tsurface);
    EINA_SAFETY_ON_NULL_RETURN_VAL(src_info.planes[0].ptr, NULL);
 
    new_tsurface = tbm_surface_create(src_info.width, src_info.height, src_info.format);
 
    tbm_surface_map(new_tsurface, TBM_SURF_OPTION_WRITE, &dst_info);
-   tbm_surface_unmap(new_tsurface);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(dst_info.planes[0].ptr, NULL);
+   if (!dst_info.planes[0].ptr)
+     {
+        tbm_surface_unmap(tsurface);
+        return NULL;
+     }
 
    /* copy from src to dst */
 #if HAVE_MEMCPY_SWC
@@ -191,6 +196,9 @@ _e_plane_copied_surface_create(E_Client *ec, Eina_Bool refresh)
 #else
    memcpy(dst_info.planes[0].ptr, src_info.planes[0].ptr, src_info.planes[0].size);
 #endif
+
+   tbm_surface_unmap(new_tsurface);
+   tbm_surface_unmap(tsurface);
 
    return new_tsurface;
 }
@@ -300,12 +308,12 @@ _e_plane_surface_queue_release(E_Plane *plane, tbm_surface_h tsurface)
    /* debug */
    if (plane_trace_debug)
      {
-        E_Client *ec = renderer->activated_ec;
+        E_Client *ec = renderer->ec;
         if (ec)
-          ELOGF("E_PLANE", "Release Layer(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
+          ELOGF("E_PLANE", "Release Plane(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
                 ec->pixmap, ec, plane, _get_wl_buffer(ec), tsurface, renderer->tqueue, _get_wl_buffer_ref(ec));
         else
-          ELOGF("E_PLANE", "Release Layer(%p)  tsurface(%p) tqueue(%p)",
+          ELOGF("E_PLANE", "Release Plane(%p)  tsurface(%p) tqueue(%p)",
                 NULL, NULL, plane, tsurface, renderer->tqueue);
      }
 
@@ -414,19 +422,11 @@ static void
 _e_plane_client_del(void *data)
 {
    E_Plane_Client *plane_client = data;
-   E_Plane_Renderer *renderer = NULL;
 
    if (!plane_client) return;
 
    if (plane_client->buffer)
       wl_list_remove(&plane_client->buffer_destroy_listener.link);
-
-   if (plane_client->activated && plane_client->plane)
-     {
-        renderer = plane_client->plane->renderer;
-        if (renderer)
-           _e_plane_client_exported_surfaces_release(plane_client, renderer);
-     }
 
    free(plane_client);
 }
@@ -492,12 +492,12 @@ _e_plane_surface_queue_acquire(E_Plane *plane)
    /* debug */
    if (plane_trace_debug)
      {
-        E_Client *ec = renderer->activated_ec;
+        E_Client *ec = renderer->ec;
         if (ec)
-          ELOGF("E_PLANE", "Acquire Layer(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
+          ELOGF("E_PLANE", "Acquire Plane(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
                 ec->pixmap, ec, plane, _get_wl_buffer(ec), tsurface, tqueue, _get_wl_buffer_ref(ec));
         else
-          ELOGF("E_PLANE", "Acquire Layer(%p)  tsurface(%p) tqueue(%p)",
+          ELOGF("E_PLANE", "Acquire Plane(%p)  tsurface(%p) tqueue(%p)",
                 NULL, NULL, plane, tsurface, tqueue);
      }
 
@@ -521,7 +521,7 @@ _e_plane_surface_queue_enqueue(E_Plane *plane, tbm_surface_h tsurface)
    if (plane_trace_debug)
     {
         E_Plane_Renderer *renderer = plane->renderer;
-        E_Client *ec = renderer->activated_ec;
+        E_Client *ec = renderer->ec;
         ELOGF("E_PLANE", "Enqueue Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
               ec->pixmap, ec, renderer, _get_wl_buffer(ec), tsurface, renderer->tqueue, _get_wl_buffer_ref(ec));
     }
@@ -579,7 +579,7 @@ _e_plane_surface_queue_dequeue(E_Plane *plane)
    if (plane_trace_debug)
      {
          E_Plane_Renderer *renderer = plane->renderer;
-         E_Client *ec = renderer->activated_ec;
+         E_Client *ec = renderer->ec;
          if (ec)
            ELOGF("E_PLANE", "Dequeue Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
                  ec->pixmap, ec, renderer, _get_wl_buffer(ec), tsurface, renderer->tqueue, _get_wl_buffer_ref(ec));
@@ -666,7 +666,7 @@ _e_plane_renderer_all_disp_surfaces_release(E_Plane_Renderer *renderer)
 }
 
 static void
-_e_plane_renderer_surface_export(E_Plane_Renderer *renderer, tbm_surface_h tsurface, E_Client *ec)
+_e_plane_renderer_surface_send(E_Plane_Renderer *renderer, E_Client *ec, tbm_surface_h tsurface)
 {
    struct wayland_tbm_client_queue * cqueue = NULL;
    struct wl_resource *wl_buffer = NULL;
@@ -678,48 +678,35 @@ _e_plane_renderer_surface_export(E_Plane_Renderer *renderer, tbm_surface_h tsurf
    cqueue = _e_plane_wayland_tbm_client_queue_get(ec);
    EINA_SAFETY_ON_NULL_RETURN(cqueue);
 
-   if (_e_plane_renderer_exported_surface_find(renderer, tsurface)) return;
+   if (!_e_plane_renderer_exported_surface_find(renderer, tsurface))
+     {
+        /* export the tbm_surface(wl_buffer) to the client_queue */
+        wl_buffer = wayland_tbm_server_client_queue_export_buffer(cqueue, tsurface,
+                E_PLANE_CLIENT_SURFACE_FLAGS_RESERVED, _e_plane_renderer_exported_surface_destroy_cb,
+                (void *)renderer);
 
-   /* export the tbm_surface(wl_buffer) to the client_queue */
-   wl_buffer = wayland_tbm_server_client_queue_export_buffer(cqueue, tsurface,
-           E_PLANE_CLIENT_SURFACE_FLAGS_RESERVED, _e_plane_renderer_exported_surface_destroy_cb,
-           (void *)renderer);
+        renderer->exported_surfaces = eina_list_append(renderer->exported_surfaces, tsurface);
 
-   renderer->exported_surfaces = eina_list_append(renderer->exported_surfaces, tsurface);
+        if (!_e_plane_client_exported_surface_find(plane_client, tsurface))
+           plane_client->exported_surfaces = eina_list_append(plane_client->exported_surfaces, tsurface);
+
+        if (wl_buffer && plane_trace_debug)
+           ELOGF("E_PLANE", "Export  Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p)",
+                 ec->pixmap, ec, renderer, wl_buffer, tsurface, renderer->tqueue);
+     }
+
+   /* debug */
+   if (plane_trace_debug)
+     ELOGF("E_PLANE", "Send    Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
+           ec->pixmap, ec, renderer, _get_wl_buffer(ec), tsurface, renderer->tqueue, _get_wl_buffer_ref(ec));
 
    /* add a sent surface to the sent list in renderer if it is not in the list */
    if (!_e_plane_renderer_sent_surface_find(renderer, tsurface))
-       renderer->sent_surfaces = eina_list_append(renderer->sent_surfaces, tsurface);
-
-   if (!_e_plane_client_exported_surface_find(plane_client, tsurface))
-       plane_client->exported_surfaces = eina_list_append(plane_client->exported_surfaces, tsurface);
-
-   if (wl_buffer && plane_trace_debug)
-       ELOGF("E_PLANE", "Export  Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p)",
-               ec->pixmap, ec, renderer, wl_buffer, tsurface, renderer->tqueue);
-}
-
-
-static void
-_e_plane_renderer_all_disp_surfaces_export(E_Plane_Renderer *renderer, E_Client *ec)
-{
-   struct wayland_tbm_client_queue * cqueue = NULL;
-   Eina_List *l_s, *ll_s;
-   tbm_surface_h tsurface = NULL;
-
-   cqueue = _e_plane_wayland_tbm_client_queue_get(ec);
-   EINA_SAFETY_ON_NULL_RETURN(cqueue);
-
-   EINA_LIST_FOREACH_SAFE(renderer->disp_surfaces, l_s, ll_s, tsurface)
-     {
-        if (!tsurface) continue;
-
-        _e_plane_renderer_surface_export(renderer, tsurface, ec);
-     }
+     renderer->sent_surfaces = eina_list_append(renderer->sent_surfaces, tsurface);
 }
 
 static void
-_e_plane_renderer_dequeuable_surfaces_export(E_Plane_Renderer *renderer, E_Client *ec)
+_e_plane_renderer_dequeuable_surfaces_send(E_Plane_Renderer *renderer, E_Client *ec)
 {
    E_Plane *plane = NULL;
    tbm_surface_h tsurface = NULL;
@@ -732,11 +719,13 @@ _e_plane_renderer_dequeuable_surfaces_export(E_Plane_Renderer *renderer, E_Clien
      {
         /* dequeue */
         tsurface = _e_plane_surface_queue_dequeue(plane);
-        if (!tsurface) ERR("fail to dequeue surface");
+        if (!tsurface)
+          {
+             ERR("fail to dequeue surface");
+             continue;
+          }
 
-        /* export the surface */
-        if (!_e_plane_renderer_exported_surface_find(renderer, tsurface))
-           _e_plane_renderer_surface_export(renderer, tsurface, ec);
+        _e_plane_renderer_surface_send(renderer, ec, tsurface);
     }
 }
 
@@ -749,9 +738,9 @@ _e_plane_renderer_surface_revice(E_Plane_Renderer *renderer, E_Client *ec)
    uint32_t flags = 0;
    E_Comp_Wl_Buffer *buffer = NULL;
 
-   if (renderer->activated_ec != ec)
+   if (renderer->ec != ec)
      {
-        ERR("Renderer(%p)  activated_ec(%p) != ec(%p)", renderer, renderer->activated_ec, ec);
+        ERR("Renderer(%p)  activated_ec(%p) != ec(%p)", renderer, renderer->ec, ec);
         return NULL;
      }
 
@@ -765,11 +754,11 @@ _e_plane_renderer_surface_revice(E_Plane_Renderer *renderer, E_Client *ec)
 
    if (plane_trace_debug)
      {
-        E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)renderer->activated_ec->comp_data;
+        E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)renderer->ec->comp_data;
         E_Comp_Wl_Buffer_Ref *buffer_ref = &cdata ->buffer_ref;
 
         ELOGF("E_PLANE", "Receive Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p) flags(%d)",
-        ec->pixmap, ec, renderer, buffer->resource, tsurface, renderer->tqueue, buffer_ref->buffer->resource, flags);
+              ec->pixmap, ec, renderer, buffer->resource, tsurface, renderer->tqueue, buffer_ref->buffer->resource, flags);
      }
    if (flags != E_PLANE_CLIENT_SURFACE_FLAGS_RESERVED)
      {
@@ -783,22 +772,6 @@ _e_plane_renderer_surface_revice(E_Plane_Renderer *renderer, E_Client *ec)
    return tsurface;
 }
 
-static void
-_e_plane_renderer_surface_send(E_Plane_Renderer *renderer, E_Client *ec, tbm_surface_h tsurface)
-{
-   /* debug */
-   if (plane_trace_debug)
-     ELOGF("E_PLANE", "Send    Renderer(%p)  wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
-           ec->pixmap, ec, renderer, _get_wl_buffer(ec), tsurface, renderer->tqueue, _get_wl_buffer_ref(ec));
-
-   /* wl_buffer release */
-   e_pixmap_image_clear(ec->pixmap, 1);
-
-   /* add a sent surface to the sent list in renderer if it is not in the list */
-   if (!_e_plane_renderer_sent_surface_find(renderer, tsurface))
-     renderer->sent_surfaces = eina_list_append(renderer->sent_surfaces, tsurface);
-}
-
 static Eina_Bool
 _e_plane_renderer_deactivate(E_Plane_Renderer *renderer)
 {
@@ -807,26 +780,14 @@ _e_plane_renderer_deactivate(E_Plane_Renderer *renderer)
    E_Comp_Wl_Data *wl_comp_data = (E_Comp_Wl_Data *)e_comp->wl_comp_data;
    E_Client *ec = NULL;
    E_Plane_Client *plane_client = NULL;
-   E_Plane_Client *candidate_plane_client = NULL;
 
-   if (renderer->activated_ec)
-     {
-        ec = renderer->activated_ec;
-     }
-   else if (renderer->candidate_ec)
-     {
-        ec = renderer->candidate_ec;
-     }
-   else
-     {
-         ERR("NEVER HERE.");
-         goto done;
-     }
+   ec = renderer->ec;
+   if (!ec) return EINA_TRUE;
 
    EINA_SAFETY_ON_NULL_GOTO(wl_comp_data, done);
 
    if (plane_trace_debug)
-     ELOGF("E_PLANE", "Deactivate", ec->pixmap, ec);
+     ELOGF("E_PLANE", "Deactivate Plane(%p)", ec->pixmap, ec, renderer->plane);
 
    plane_client = _e_plane_client_get(ec);
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane_client, EINA_FALSE);
@@ -856,28 +817,18 @@ _e_plane_renderer_deactivate(E_Plane_Renderer *renderer)
      }
 
 done:
-   if (renderer->candidate_ec)
-     {
-        candidate_plane_client = _e_plane_client_get(renderer->candidate_ec);
-        if (candidate_plane_client)
-           _e_plane_client_exported_surfaces_release(candidate_plane_client, renderer);
+   _e_plane_client_exported_surfaces_release(plane_client, renderer);
+   renderer->state = E_PLANE_RENDERER_STATE_NONE;
+   renderer->ec = NULL;
 
-        renderer->candidate_ec = NULL;
-     }
-
-   if (renderer->activated_ec)
-     {
-        _e_plane_client_exported_surfaces_release(plane_client, renderer);
-        renderer->activated_ec = NULL;
-     }
-
-   plane_client->activated = EINA_FALSE;
+   plane_client->state = E_PLANE_CLIENT_STATE_NONE;
+   plane_client->plane = NULL;
 
    return EINA_TRUE;
 }
 
 static void
-_e_plane_renderer_queue_del(E_Plane_Renderer *renderer)
+_e_plane_renderer_surface_queue_del(E_Plane_Renderer *renderer)
 {
    tbm_surface_queue_h tqueue = NULL;
 
@@ -888,12 +839,14 @@ _e_plane_renderer_queue_del(E_Plane_Renderer *renderer)
 
    tbm_surface_queue_destroy(tqueue);
    renderer->tqueue = NULL;
+   renderer->tqueue_width = 0;
+   renderer->tqueue_height = 0;
 
    renderer->disp_surfaces = eina_list_free(renderer->disp_surfaces);
 }
 
 static Eina_Bool
-_e_plane_renderer_queue_create(E_Plane_Renderer *renderer, int width, int height)
+_e_plane_renderer_surface_queue_create(E_Plane_Renderer *renderer, int width, int height)
 {
    E_Plane *plane = NULL;
    tbm_surface_queue_h tqueue = NULL;
@@ -905,11 +858,7 @@ _e_plane_renderer_queue_create(E_Plane_Renderer *renderer, int width, int height
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(renderer, EINA_FALSE);
 
-   if (renderer->tqueue)
-     {
-        ERR("already create queue in renderer");
-        return EINA_FALSE;
-     }
+   if (renderer->tqueue) return EINA_TRUE;
 
    plane = renderer->plane;
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
@@ -921,6 +870,8 @@ _e_plane_renderer_queue_create(E_Plane_Renderer *renderer, int width, int height
    EINA_SAFETY_ON_FALSE_RETURN_VAL(tqueue, EINA_FALSE);
 
    renderer->tqueue = tqueue;
+   renderer->tqueue_width = width;
+   renderer->tqueue_height = height;
 
    /* dequeue the surfaces if the qeueue is available */
    /* add the surface to the disp_surfaces list, if it is not in the disp_surfaces */
@@ -945,7 +896,7 @@ _e_plane_renderer_queue_create(E_Plane_Renderer *renderer, int width, int height
 }
 
 static Eina_Bool
-_e_plane_renderer_queue_set(E_Plane_Renderer *renderer, tbm_surface_queue_h tqueue)
+_e_plane_renderer_surface_queue_set(E_Plane_Renderer *renderer, tbm_surface_queue_h tqueue)
 {
    tbm_surface_h tsurface = NULL;
    E_Plane *plane = NULL;
@@ -957,6 +908,8 @@ _e_plane_renderer_queue_set(E_Plane_Renderer *renderer, tbm_surface_queue_h tque
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
 
    renderer->tqueue = tqueue;
+   renderer->tqueue_width = tbm_surface_queue_get_width(tqueue);
+   renderer->tqueue_height = tbm_surface_queue_get_height(tqueue);
 
    if (renderer->disp_surfaces)
       renderer->disp_surfaces = eina_list_free(renderer->disp_surfaces);
@@ -1005,8 +958,11 @@ _e_plane_renderer_del(E_Plane_Renderer *renderer)
    plane = renderer->plane;
    EINA_SAFETY_ON_NULL_RETURN(plane);
 
+   if (renderer->state != E_PLANE_RENDERER_STATE_NONE)
+      _e_plane_renderer_deactivate(renderer);
+
    if (!plane->is_primary)
-      _e_plane_renderer_queue_del(renderer);
+      _e_plane_renderer_surface_queue_del(renderer);
 
    free(renderer);
 }
@@ -1023,7 +979,7 @@ _e_plane_renderer_activate(E_Plane_Renderer *renderer, E_Client *ec)
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
 
    /* deactivate the client of the layer before this call*/
-   if (renderer->activated_ec)
+   if (renderer->ec && renderer->state == E_PLANE_RENDERER_STATE_ACTIVATE)
      {
         ERR("Previous activated client must be decativated.");
         return EINA_FALSE;
@@ -1036,101 +992,113 @@ _e_plane_renderer_activate(E_Plane_Renderer *renderer, E_Client *ec)
    plane_client = _e_plane_client_get(ec);
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane_client, EINA_FALSE);
 
-   if (renderer->candidate_ec)
+   if (_e_plane_client_surface_flags_get(plane_client) != E_PLANE_CLIENT_SURFACE_FLAGS_RESERVED)
      {
-        if (renderer->candidate_ec != ec)
-          {
+        if (renderer->state == E_PLANE_RENDERER_STATE_NONE)
+           {
+              wayland_tbm_server_client_queue_activate(cqueue, 0);
+              plane->is_reserved = EINA_TRUE;
+           }
+        else if ((renderer->state == E_PLANE_RENDERER_STATE_CANDIDATE) && (renderer->ec != ec))
+           {
               /* deactive the candidate_ec */
               _e_plane_renderer_deactivate(renderer);
 
               /* activate the client queue */
               wayland_tbm_server_client_queue_activate(cqueue, 0);
-              plane_client->activated = EINA_TRUE;
-
-              if (_e_plane_client_surface_flags_get(plane_client) != E_PLANE_CLIENT_SURFACE_FLAGS_RESERVED)
-                {
-                   /* check dequeuable */
-                   if (!_e_plane_surface_queue_can_dequeue(renderer->plane))
-                     {
-                        INF("There is any dequeuable surface.");
-                        return EINA_FALSE;
-                     }
-
-                    /* dequeue */
-                    tsurface = _e_plane_surface_queue_dequeue(renderer->plane);
-                    if (!tsurface)
-                      {
-                        ERR("fail to dequeue surface");
-                        return EINA_FALSE;
-                      }/* export the surface */
-
-                    /* export */
-                    _e_plane_renderer_surface_export(renderer, tsurface, ec);
-
-                    if (plane_trace_debug)
-                       ELOGF("E_PLANE", "Candidate Plane(%p)", ec->pixmap, ec, renderer->plane);
-
-                    renderer->candidate_ec = ec;
-
-                    return EINA_FALSE;
-                }
-          }
+              plane->is_reserved = EINA_TRUE;
+           }
+        else if ((renderer->state == E_PLANE_RENDERER_STATE_CANDIDATE) && (renderer->ec == ec))
+           {
+              INF("ec does not have the scanout surface yet.");
+              return EINA_FALSE;
+           }
         else
+           {
+              ERR("NEVER HERE.");
+              return EINA_FALSE;
+           }
+
+        /* check dequeuable */
+        if (!_e_plane_surface_queue_can_dequeue(renderer->plane))
           {
-             if (_e_plane_client_surface_flags_get(plane_client) != E_PLANE_CLIENT_SURFACE_FLAGS_RESERVED)
-               {
-                  INF("ec does not have the scanout surface yet.");
-                  return EINA_FALSE;
-               }
+             INF("There is any dequeuable surface.");
+             return EINA_FALSE;
           }
+
+        /* dequeue */
+        tsurface = _e_plane_surface_queue_dequeue(renderer->plane);
+        if (!tsurface)
+          {
+             ERR("fail to dequeue surface");
+             return EINA_FALSE;
+          }
+
+        /* export */
+        _e_plane_renderer_surface_send(renderer, ec, tsurface);
+
+        if (plane_trace_debug)
+           ELOGF("E_PLANE", "Candidate Plane(%p)", ec->pixmap, ec, renderer->plane);
+
+        renderer->state = E_PLANE_RENDERER_STATE_CANDIDATE;
+        renderer->ec = ec;
+
+        plane_client->state = E_PLANE_CLIENT_STATE_CANDIDATED;
+        plane_client->plane = plane;
+
+        if (!_e_plane_surface_queue_can_dequeue(renderer->plane))
+           _e_plane_wait_for_showup_set(EINA_TRUE);
+
+        INF("ec does not have the scanout surface.");
+
+        return EINA_FALSE;
      }
    else
      {
-         wayland_tbm_server_client_queue_activate(cqueue, 0);
-         plane_client->activated = EINA_TRUE;
-
-         if (_e_plane_client_surface_flags_get(plane_client) != E_PLANE_CLIENT_SURFACE_FLAGS_RESERVED)
-           {
-               /* check dequeuable */
-               if (!_e_plane_surface_queue_can_dequeue(renderer->plane))
-                 {
-                   INF("There is any dequeuable surface.");
-                   return EINA_FALSE;
-                 }
-
-               /* dequeue */
-               tsurface = _e_plane_surface_queue_dequeue(renderer->plane);
-               if (!tsurface)
-                 {
-                    ERR("fail to dequeue surface");
-                    return EINA_FALSE;
-                 }
-
-              /* export */
-              _e_plane_renderer_surface_export(renderer, tsurface, ec);
-
-              if (plane_trace_debug)
-                  ELOGF("E_PLANE", "Candidate Plane(%p)", ec->pixmap, ec, renderer->plane);
-
-              renderer->candidate_ec = ec;
-
-              INF("ec does not have the scanout surface.");
-
-              return EINA_FALSE;
+        if(renderer->state == E_PLANE_RENDERER_STATE_NONE)
+          {
+             ERR("renderer state is E_PLANE_RENDERER_STATE_NONE but client has scanout surface");
+             return EINA_FALSE;
           }
      }
 
    if (plane_trace_debug)
      ELOGF("E_PLANE", "Activate Plane(%p)", ec->pixmap, ec, plane);
 
-   renderer->activated_ec = ec;
-   renderer->candidate_ec = NULL;
+   renderer->ec = ec;
+   renderer->state = E_PLANE_RENDERER_STATE_ACTIVATE;
 
-   _e_plane_renderer_dequeuable_surfaces_export(renderer, ec);
+   plane_client->plane = plane;
+   plane_client->state = E_PLANE_CLIENT_STATE_ACTIVATED;
+
+   _e_plane_renderer_dequeuable_surfaces_send(renderer, ec);
 
    return EINA_TRUE;
 }
 
+static Eina_Bool
+_e_plane_surface_unset(E_Plane *plane)
+{
+   tdm_layer *tlayer = plane->tlayer;
+   tdm_error error;
+
+   if (plane_trace_debug)
+       ELOGF("E_PLANE", "Unset  Plane(%p)", NULL, NULL, plane);
+
+   error = tdm_layer_unset_buffer(tlayer);
+   if (error != TDM_ERROR_NONE)
+     {
+         ERR("fail to tdm_layer_unset_buffer");
+         return EINA_FALSE;
+     }
+
+   plane->tsurface = NULL;
+   plane->prepare_tsurface = NULL;
+   plane->update_exist = EINA_FALSE;
+   e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, NULL);
+
+   return EINA_TRUE;
+}
 
 static Eina_Bool
 _e_plane_surface_set(E_Plane *plane, tbm_surface_h tsurface)
@@ -1176,7 +1144,7 @@ _e_plane_surface_set(E_Plane *plane, tbm_surface_h tsurface)
 
    if (plane_trace_debug)
      {
-        ELOGF("E_PLANE", "Commit  Layer(%p)  tsurface(%p) (%dx%d,[%d,%d,%d,%d]=>[%d,%d,%d,%d])",
+        ELOGF("E_PLANE", "Set  Plane(%p)  tsurface(%p) (%dx%d,[%d,%d,%d,%d]=>[%d,%d,%d,%d])",
               NULL, NULL, plane, tsurface,
               plane->info.src_config.size.h, plane->info.src_config.size.h,
               plane->info.src_config.pos.x, plane->info.src_config.pos.y,
@@ -1193,6 +1161,34 @@ _e_plane_surface_set(E_Plane *plane, tbm_surface_h tsurface)
      }
 
    return EINA_TRUE;
+}
+
+static void
+_e_plane_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
+{
+   E_Plane_Client *plane_client = NULL;
+   E_Plane *plane = NULL;
+
+   plane_client = _e_plane_client_get(ec);
+
+   if (plane_client)
+     {
+        plane = plane_client->plane;
+        if (plane)
+          {
+             _e_plane_renderer_deactivate(plane->renderer);
+
+             if (plane->is_primary)
+                _e_plane_wait_for_showup_set(EINA_FALSE);
+             else
+                _e_plane_surface_unset(plane);
+
+             if (plane->ec == ec)
+                plane->ec = NULL;
+          }
+        /* destroy the plane_client */
+        eina_hash_del_by_key(plane_clients, &ec);
+     }
 }
 
 static void
@@ -1215,7 +1211,6 @@ static tbm_surface_h
 _e_plane_surface_from_client_acquire_reserved(E_Plane *plane)
 {
    E_Client *ec = plane->ec;
-   E_Pixmap *pixmap = ec->pixmap;
    tbm_surface_h tsurface = NULL;
    E_Plane_Client *plane_client = NULL;
    E_Plane_Renderer *renderer = plane->renderer;
@@ -1230,7 +1225,6 @@ _e_plane_surface_from_client_acquire_reserved(E_Plane *plane)
    tsurface = _e_plane_renderer_surface_revice(renderer, ec);
    if (!tsurface)
      {
-        e_pixmap_image_clear(pixmap, 1);
         ERR("fail to _e_plane_renderer_surface_revice");
         return NULL;
      }
@@ -1265,9 +1259,6 @@ _e_plane_surface_on_client_release(E_Plane *plane, tbm_surface_h tsurface)
         ERR("no ec at plane.");
         return;
      }
-
-   /* release the tsurface */
-   e_pixmap_image_clear(ec->pixmap, 1);
 }
 
 static tbm_surface_h
@@ -1280,7 +1271,7 @@ _e_plane_surface_from_client_acquire(E_Plane *plane)
    tbm_surface_h tsurface = NULL;
 
    if (plane_trace_debug)
-     ELOGF("E_PLANE", "Display Client", pixmap, ec);
+     ELOGF("E_PLANE", "Display Client Plane(%p)", pixmap, ec, plane);
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(buffer, NULL);
 
@@ -1288,7 +1279,6 @@ _e_plane_surface_from_client_acquire(E_Plane *plane)
    if (!tsurface)
      {
         ERR("fail to _e_plane_renderer_surface_revice");
-        e_pixmap_image_clear(pixmap, 1);
         return NULL;
      }
 
@@ -1327,7 +1317,7 @@ _e_plane_surface_from_ecore_evas_acquire(E_Plane *plane)
              return NULL;
           }
 
-        if (!_e_plane_renderer_queue_set(renderer, tqueue))
+        if (!_e_plane_renderer_surface_queue_set(renderer, tqueue))
           {
              ERR("fail to _e_plane_renderer_queue_set");
              return NULL;
@@ -1339,7 +1329,7 @@ _e_plane_surface_from_ecore_evas_acquire(E_Plane *plane)
      }
 
    if (plane_trace_debug)
-      ELOGF("E_PLANE", "Display Canvas Layer(%p)", NULL, NULL, plane);
+      ELOGF("E_PLANE", "Display Canvas Plane(%p)", NULL, NULL, plane);
 
    /* aquire */
    tsurface = _e_plane_surface_queue_acquire(plane);
@@ -1369,7 +1359,7 @@ _e_plane_cb_ec_buffer_change(void *data, int type, void *event)
    plane_client = _e_plane_client_get(ec);
    if (!plane_client) return ECORE_CALLBACK_PASS_ON;
 
-   if (plane_client->activated) return ECORE_CALLBACK_PASS_ON;
+   if (plane_client->state != E_PLANE_CLIENT_STATE_NONE) return ECORE_CALLBACK_PASS_ON;
 
    if (_e_plane_client_surface_flags_get(plane_client) != E_PLANE_CLIENT_SURFACE_FLAGS_RESERVED)
       return ECORE_CALLBACK_PASS_ON;
@@ -1481,8 +1471,8 @@ e_plane_new(E_Output *output, int index)
    plane->renderer = renderer;
    plane->output = output;
 
-   INF("E_PLANE: (%d) name:%s zpos:%d capa:%s %s",
-       index, plane->name, plane->zpos,plane->is_primary?"primary":"", plane->reserved_memory?"reserved_memory":"");
+   INF("E_PLANE: (%d) plane:%p name:%s zpos:%d capa:%s %s",
+       index, plane, plane->name, plane->zpos,plane->is_primary?"primary":"", plane->reserved_memory?"reserved_memory":"");
 
    return plane;
 }
@@ -1494,6 +1484,7 @@ e_plane_free(E_Plane *plane)
 
    if (plane->name) eina_stringshare_del(plane->name);
    if (plane->renderer) _e_plane_renderer_del(plane->renderer);
+   if (plane->ec) e_plane_ec_set(plane, NULL);
 
    free(plane);
 }
@@ -1549,7 +1540,8 @@ e_plane_set(E_Plane *plane)
         if (!einfo->info.outbuf_flushed)
           {
              if (plane_trace_debug)
-               ELOGF("E_PLANE", "Commit Canvas outbuf flush nothing!. Nothing Display.", NULL, NULL);
+                ELOGF("E_PLANE", "Commit Canvas outbuf flush nothing!. Nothing Display.", NULL, NULL);
+
              if (plane->update_ee) plane->update_ee = EINA_FALSE;
              return EINA_FALSE;
           }
@@ -1593,6 +1585,8 @@ e_plane_set(E_Plane *plane)
         return EINA_FALSE;
      }
 
+   plane->update_exist = EINA_TRUE;
+
    return EINA_TRUE;
 }
 
@@ -1623,9 +1617,10 @@ EINTERN E_Plane_Commit_Data *
 e_plane_commit_data_aquire(E_Plane *plane)
 {
    E_Plane_Commit_Data *data = NULL;
-   Evas_Engine_Info_GL_Drm *einfo = NULL;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, NULL);
+
+   if (!plane->update_exist) return NULL;
 
    if (plane->is_primary && !plane->ec)
      {
@@ -1635,9 +1630,9 @@ e_plane_commit_data_aquire(E_Plane *plane)
         tbm_surface_internal_ref(data->tsurface);
         data->ec = NULL;
 
-        einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
-        einfo->info.wait_for_showup = EINA_TRUE;
+        plane->update_exist = EINA_FALSE;
 
+        _e_plane_wait_for_showup_set(EINA_TRUE);
         return data;
      }
    else
@@ -1650,6 +1645,8 @@ e_plane_commit_data_aquire(E_Plane *plane)
              tbm_surface_internal_ref(data->tsurface);
              data->ec = plane->ec;
              e_comp_wl_buffer_reference(&data->buffer_ref, e_pixmap_resource_get(plane->ec->pixmap));
+
+             plane->update_exist = EINA_FALSE;
 
              /* send frame event enlightenment dosen't send frame evnet in nocomp */
              e_pixmap_image_clear(plane->ec->pixmap, 1);
@@ -1665,7 +1662,6 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
 {
    E_Plane *plane = NULL;
    E_Plane_Renderer *renderer = NULL;
-   Evas_Engine_Info_GL_Drm *einfo = NULL;
    tbm_surface_h tsurface = NULL;
    E_Client *ec = NULL;
 
@@ -1681,56 +1677,42 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
         /* composite */
         /* debug */
         if (plane_trace_debug)
-          ELOGF("E_PLANE", "Done    Layer(%p)  tsurface(%p) tqueue(%p) data(%p)::Canvas",
+          ELOGF("E_PLANE", "Done    Plane(%p)  tsurface(%p) tqueue(%p) data(%p)::Canvas",
                NULL, NULL, plane, tsurface, renderer->tqueue, data);
 
-        if (plane->reserved_memory)
+        /* initial setting of tsurface to the layer */
+        if (plane->tsurface == NULL)
           {
-             if (!renderer->activated_ec)
-               {
-                  einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
-                  einfo->info.wait_for_showup = EINA_FALSE;
-               }
-
-             /* initial setting of tsurface to the layer */
-             if (plane->tsurface == NULL)
-               plane->tsurface = tsurface;
-             else
-               {
-                  _e_plane_surface_queue_release(plane, plane->tsurface);
-                  e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, NULL);
-                  plane->tsurface = tsurface;
-               }
-
-             /* send the done surface to the client,
-                only when the renderer state is active(no composite) */
-             if (renderer->activated_ec)
-                _e_plane_renderer_dequeuable_surfaces_export(renderer, renderer->activated_ec);
+             plane->tsurface = tsurface;
           }
         else
           {
-             einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
-             einfo->info.wait_for_showup = EINA_FALSE;
-
-             /* initial setting of tsurface to the layer */
-             if (plane->tsurface == NULL)
-               plane->tsurface = tsurface;
-             else
-               {
-                  _e_plane_surface_queue_release(plane, plane->tsurface);
-                  plane->tsurface = tsurface;
-               }
+             _e_plane_surface_queue_release(plane, plane->tsurface);
+             e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, NULL);
+             plane->tsurface = tsurface;
           }
 
-        tbm_surface_internal_unref(tsurface);
-        free(data);
+        if (plane->reserved_memory)
+          {
+             if (renderer->state != E_PLANE_RENDERER_STATE_ACTIVATE)
+                _e_plane_wait_for_showup_set(EINA_FALSE);
+
+             /* send the done surface to the client,
+                only when the renderer state is active(no composite) */
+             if (renderer->state == E_PLANE_RENDERER_STATE_ACTIVATE)
+                _e_plane_renderer_dequeuable_surfaces_send(renderer, renderer->ec);
+          }
+        else
+          {
+             _e_plane_wait_for_showup_set(EINA_FALSE);
+          }
      }
    else
      {
         /* no composite */
         /* debug */
         if (plane_trace_debug)
-           ELOGF("E_PLANE", "Done    Layer(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) data(%p) wl_buffer_ref(%p) ::Client",
+           ELOGF("E_PLANE", "Done    Plane(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) data(%p) wl_buffer_ref(%p) ::Client",
              ec->pixmap, ec, plane, _get_wl_buffer(ec), tsurface, renderer->tqueue, data, _get_wl_buffer_ref(ec));
 
         if (plane->reserved_memory)
@@ -1739,26 +1721,33 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
              if (plane->tsurface)
                {
                   _e_plane_surface_queue_release(plane, plane->tsurface);
-                  e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, data->buffer_ref.buffer);
                   _e_plane_surface_on_client_reserved_release(plane, plane->tsurface);
-                  plane->tsurface = tsurface;
                }
 
              /* send the done surface to the client,
                 only when the renderer state is active(no composite) */
-             if (renderer->activated_ec)
-                _e_plane_renderer_dequeuable_surfaces_export(renderer, renderer->activated_ec);
+             if (renderer->state == E_PLANE_RENDERER_STATE_ACTIVATE)
+                _e_plane_renderer_dequeuable_surfaces_send(renderer, renderer->ec);
           }
         else
           {
-             /* release wl_buffer */
-             e_pixmap_image_clear(ec->pixmap, 1);
+             /* release */
+             if (plane->tsurface)
+                _e_plane_surface_on_client_release(plane, plane->tsurface);
           }
 
-        tbm_surface_internal_unref(tsurface);
+        /* release */
+        if (plane->tsurface)
+          {
+            e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, data->buffer_ref.buffer);
+            plane->tsurface = tsurface;
+          }
+
         e_comp_wl_buffer_reference(&data->buffer_ref, NULL);
-        free(data);
      }
+
+   tbm_surface_internal_unref(tsurface);
+   free(data);
 }
 
 EINTERN Eina_Bool
@@ -1770,6 +1759,15 @@ e_plane_is_reserved(E_Plane *plane)
 EINTERN void
 e_plane_reserved_set(E_Plane *plane, Eina_Bool set)
 {
+   E_Plane_Renderer *renderer = NULL;
+
+   if (!set && plane->is_reserved)
+     {
+        renderer = plane->renderer;
+        if ((renderer) && (renderer->state != E_PLANE_RENDERER_STATE_NONE))
+           _e_plane_renderer_deactivate(renderer);
+     }
+
    plane->is_reserved = set;
 }
 
@@ -1806,70 +1804,67 @@ E_API Eina_Bool
 e_plane_ec_set(E_Plane *plane, E_Client *ec)
 {
    E_Plane_Renderer *renderer = NULL;
-   Evas_Engine_Info_GL_Drm *einfo = NULL;
-   E_Plane_Client *plane_client = NULL;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
+
+   if (plane_trace_debug)
+      ELOGF("E_PLANE", "Request Plane(%p) ec Set", (ec ? ec->pixmap : NULL), ec, plane);
 
    renderer = plane->renderer;
    EINA_SAFETY_ON_NULL_RETURN_VAL(renderer, EINA_FALSE);
 
-   einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
-
-   if (!ec && renderer->candidate_ec)
-     {
-        if (!plane->is_primary)
-           _e_plane_renderer_queue_del(renderer);
-
-        if (!_e_plane_renderer_deactivate(renderer))
-          {
-             ERR("fail to _e_plane_renderer_deactivate.");
-             return EINA_FALSE;
-          }
-     }
-
    if (!ec && !plane->ec) return EINA_FALSE;
 
-   /* activate/deactivate the client if the plane is the reserved memory */
-   if (plane->reserved_memory)
+   if (ec)
      {
-        if (ec)
+        /* activate/deactivate the client if the plane is the reserved memory */
+        if (plane->reserved_memory)
           {
              if (!plane->is_primary)
-                _e_plane_renderer_queue_create(renderer, ec->client.w, ec->client.h);
+               {
+                  if (!_e_plane_renderer_surface_queue_create(renderer, ec->w, ec->h))
+                     return EINA_FALSE;
+               }
 
              if (!_e_plane_renderer_activate(renderer, ec))
                {
                   INF("can't activate ec:%p.", ec);
 
-                  if (!_e_plane_surface_queue_can_dequeue(renderer->plane))
-                     einfo->info.wait_for_showup = EINA_TRUE;
-
                   return EINA_FALSE;
                }
+          }
 
-             einfo->info.wait_for_showup = EINA_TRUE;
-             e_comp_object_hwc_update_set(ec->frame, EINA_TRUE);
+        if (plane->is_primary)
+           _e_plane_wait_for_showup_set(EINA_TRUE);
+
+        e_comp_object_hwc_update_set(ec->frame, EINA_TRUE);
+     }
+   else
+     {
+        if (plane->reserved_memory)
+          {
+             if (!plane->is_primary)
+                _e_plane_renderer_surface_queue_del(renderer);
+
+             if (!_e_plane_renderer_deactivate(renderer))
+               {
+                   ERR("fail to _e_plane_renderer_deactivate.");
+                   return EINA_FALSE;
+               }
+          }
+
+        if (plane->is_primary)
+          {
+             _e_plane_wait_for_showup_set(EINA_FALSE);
           }
         else
           {
-              if (!plane->is_primary)
-                 _e_plane_renderer_queue_del(renderer);
-
-              if (!_e_plane_renderer_deactivate(renderer))
-                {
-                   ERR("fail to _e_plane_renderer_deactivate.");
-                   return EINA_FALSE;
-                }
-
-             einfo->info.wait_for_showup = EINA_FALSE;
+             if(!_e_plane_surface_unset(plane))
+               {
+                  ERR("fail to _e_plane_surface_unset NULL.");
+                  return EINA_FALSE;
+               }
           }
-     }
-
-   if (ec)
-     {
-        plane_client = _e_plane_client_get(ec);
-        if (plane_client) plane_client->plane = plane;
      }
 
    plane->ec = ec;
