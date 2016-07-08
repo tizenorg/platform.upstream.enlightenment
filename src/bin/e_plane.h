@@ -1,5 +1,12 @@
 #ifdef E_TYPEDEFS
 
+typedef enum _E_Plane_Renderer_State
+{
+   E_PLANE_RENDERER_STATE_NONE,
+   E_PLANE_RENDERER_STATE_CANDIDATE,
+   E_PLANE_RENDERER_STATE_ACTIVATE,
+} E_Plane_Renderer_State;
+
 typedef enum _E_Plane_Type
 {
    E_PLANE_TYPE_INVALID,
@@ -26,7 +33,7 @@ typedef struct _E_Plane_Commit_Data          E_Plane_Commit_Data;
 
 #include "e_comp_screen.h"
 #include "e_output.h"
-# include "e_comp_wl.h"
+#include "e_comp_wl.h"
 
 struct _E_Plane
 {
@@ -50,7 +57,6 @@ struct _E_Plane
    tbm_surface_h         previous_tsurface;
    tbm_surface_h         prepare_tsurface;
 
-   unsigned int          last_sequence;
    E_Comp_Wl_Buffer_Ref  displaying_buffer_ref;
 
    E_Plane_Renderer     *renderer;
@@ -59,15 +65,16 @@ struct _E_Plane
    Ecore_Evas           *ee;
    Evas                 *evas;
    Eina_Bool             update_ee;
-
-   Eina_Bool             trace_debug;
+   Eina_Bool             update_exist;
 };
 
 struct _E_Plane_Renderer {
    tbm_surface_queue_h tqueue;
+   int tqueue_width;
+   int tqueue_height;
 
-   E_Client           *activated_ec;
-   E_Client           *candidate_ec;
+   E_Client           *ec;
+   E_Plane_Renderer_State state;
 
    struct gbm_surface *gsurface;
    Eina_List          *disp_surfaces;

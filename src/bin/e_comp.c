@@ -594,18 +594,7 @@ hwcompose:
 
 compose:
    if (ret) e_comp->hwc_mode = 1;
-   else
-     {
-        e_comp->hwc_mode = 0;
 
-        EINA_LIST_FOREACH(ep_l, l, ep)
-          {
-             if (ep->ec)
-               e_client_redirected_set(ep->ec, 1);
-
-             e_plane_ec_prepare_set(ep, NULL);
-          }
-     }
    return ret;
 }
 
@@ -727,21 +716,6 @@ _e_comp_hwc_usable(void)
    Eina_Bool ret = EINA_FALSE;
 
    if (!e_comp->hwc) return EINA_FALSE;
-
-
-   if ((ec->pixmap) && (e_pixmap_type_get(ec->pixmap) == E_PIXMAP_TYPE_EXT_OBJECT))
-     break;
-   
-   if ((!cdata) ||
-       (!cdata->buffer_ref.buffer) ||
-       (cdata->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_NATIVE))
-     break;
-   
-   if (cdata->sub.below_list || cdata->sub.below_list_pending)
-     {
-        if (!e_comp_wl_video_client_has(ec))
-           break;
-     }
 
    // check whether to use hwc
    // core assignment policy
