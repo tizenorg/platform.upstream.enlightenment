@@ -461,6 +461,7 @@ _hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
                }
              continue;
           }
+        if (conf->hwc_single_plane) continue;
         if (e_plane_is_cursor(ep)) continue;
         if (ep->zpos > ep_fb->zpos)
           hwc_l = eina_list_append(hwc_l, ep);
@@ -728,6 +729,21 @@ _e_comp_hwc_usable(void)
    E_Zone *zone;
 
    if (!e_comp->hwc) return EINA_FALSE;
+
+
+   if ((ec->pixmap) && (e_pixmap_type_get(ec->pixmap) == E_PIXMAP_TYPE_EXT_OBJECT))
+     break;
+   
+   if ((!cdata) ||
+       (!cdata->buffer_ref.buffer) ||
+       (cdata->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_NATIVE))
+     break;
+   
+   if (cdata->sub.below_list || cdata->sub.below_list_pending)
+     {
+        if (!e_comp_wl_video_client_has(ec))
+           break;
+     }
 
    // check whether to use hwc
    // core assignment policy
