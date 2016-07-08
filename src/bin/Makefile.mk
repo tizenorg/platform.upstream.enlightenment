@@ -59,6 +59,7 @@ src/bin/e_mouse.h \
 src/bin/e_msgbus.h \
 src/bin/e_obj_dialog.h \
 src/bin/e_object.h \
+src/bin/e_obj.h \
 src/bin/e_output.h \
 src/bin/e_path.h \
 src/bin/e_pixmap.h \
@@ -126,6 +127,7 @@ src/bin/e_mouse.c \
 src/bin/e_msgbus.c \
 src/bin/e_obj_dialog.c \
 src/bin/e_object.c \
+src/bin/e_obj.c \
 src/bin/e_path.c \
 src/bin/e_pixmap.c \
 src/bin/e_place.c \
