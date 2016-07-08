@@ -542,6 +542,28 @@ _hwc_cancel(E_Output *eout)
 }
 
 static Eina_Bool
+_hwc_plane_reserved_clean()
+{
+   Eina_List *l, *ll;
+   E_Zone *zone;
+   E_Plane *ep;
+
+   EINA_LIST_FOREACH(e_comp->zones, l, zone)
+     {
+        E_Output * eout;
+        if (!zone->output_id) continue;
+        eout = e_output_find(zone->output_id);
+        EINA_LIST_FOREACH(eout->planes, ll, ep)
+          {
+             if (e_plane_is_reserved(ep))
+                e_plane_reserved_set(ep, 0);
+          }
+     }
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
 _e_comp_hwc_apply(E_Output * eout)
 {
    const Eina_List *ep_l = NULL, *l;
@@ -795,6 +817,7 @@ e_comp_hwc_end(const char *location)
 
    e_comp->selcomp_want = 0;
    E_FREE_FUNC(e_comp->selcomp_delay_timer, ecore_timer_del);
+   _hwc_plane_reserved_clean();
 
    if (!e_comp->hwc) return;
    if (!_e_comp_hwc_is_on()) return;
@@ -811,6 +834,9 @@ e_comp_hwc_end(const char *location)
 
    INF("HWC : End...  at %s", location);
 #else
+   if (!e_comp->hwc) return;
+   if (!e_comp->nocomp) return;
+
    e_comp_nocomp_end(location);
 #endif // end of ENABLE_HWC_MULTI
 }
@@ -943,18 +969,7 @@ setup_hwcompose:
      }
    else
      {
-        if (_e_comp_hwc_is_on()) e_comp_hwc_end(__FUNCTION__);
-        else
-          {
-             E_Zone *zone = NULL;
-             EINA_LIST_FOREACH(e_comp->zones, l, zone)
-               {
-                  E_Output * eout;
-                  if (!zone->output_id) continue;
-                  eout = e_output_find(zone->output_id);
-                  if (eout) _hwc_cancel(eout);
-               }
-          }
+        e_comp_hwc_end(__FUNCTION__);
      }
 #else
    ec = _e_comp_fullscreen_check();
@@ -1726,13 +1741,9 @@ E_API void
 e_comp_override_add()
 {
    e_comp->hwc_override++;
-   if ((e_comp->hwc_override > 0) &&
-#ifdef ENABLE_HWC_MULTI
-       (_e_comp_hwc_is_on()))
-#else
-       (e_comp->nocomp))
-#endif
+   if (e_comp->hwc_override > 0)
      {
+        // go full compositing
         e_comp_hwc_end(__FUNCTION__);
      }
 }

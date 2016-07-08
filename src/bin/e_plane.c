@@ -1761,6 +1761,18 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
      }
 }
 
+EINTERN Eina_Bool
+e_plane_is_reserved(E_Plane *plane)
+{
+   return plane->is_reserved;
+}
+
+EINTERN void
+e_plane_reserved_set(E_Plane *plane, Eina_Bool set)
+{
+   plane->is_reserved = set;
+}
+
 E_API Eina_Bool
 e_plane_type_set(E_Plane *plane,
                  E_Plane_Type type)
