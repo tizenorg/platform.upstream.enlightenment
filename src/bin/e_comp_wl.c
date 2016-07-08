@@ -384,12 +384,14 @@ _e_comp_wl_extern_parent_commit(E_Client *ec)
 E_API void
 e_comp_wl_map_apply(E_Client *ec)
 {
-   E_Comp_Wl_Buffer_Viewport *vp = &ec->comp_data->scaler.buffer_viewport;
+   E_Comp_Wl_Buffer_Viewport *vp;
    E_Comp_Wl_Subsurf_Data *sdata;
    const Evas_Map *m;
    Evas_Map *map;
    int x1, y1, x2, y2, x, y;
    int dx, dy;
+
+   if (!ec || !ec->comp_data) return;
 
    sdata = ec->comp_data->sub.data;
    if (sdata)
@@ -431,6 +433,7 @@ e_comp_wl_map_apply(E_Client *ec)
                                                ec->comp_data->height_from_viewport,
                                                0);
 
+   vp = &ec->comp_data->scaler.buffer_viewport;
    if (vp->buffer.src_width == wl_fixed_from_int(-1))
      {
         x1 = 0.0;
@@ -615,7 +618,7 @@ _e_comp_wl_evas_cb_restack(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
    E_Client *ec;
    E_Client *topmost;
 
-   if (!(ec = data)) return;
+   if (!(ec = data) || !ec->comp_data) return;
    if (e_object_is_del(E_OBJECT(ec))) return;
    if (ec->comp_data->sub.restacking) return;
 
@@ -2092,6 +2095,8 @@ _e_comp_wl_surface_subsurface_order_commit(E_Client *ec)
    Eina_List *l;
    Eina_Bool need_restack = EINA_FALSE;
 
+   if (!ec->comp_data) return EINA_FALSE;
+
    if (ec->comp_data->sub.data && (epc = ec->comp_data->sub.data->parent))
      if (epc->comp_data->sub.list_changed)
        need_restack = _e_comp_wl_surface_subsurface_order_commit(epc);
@@ -3352,6 +3357,7 @@ _e_comp_wl_subsurface_parent_commit(E_Client *ec, Eina_Bool parent_synchronized)
    E_Client *parent;
    E_Comp_Wl_Subsurf_Data *sdata;
 
+   if (!ec || e_object_is_del(E_OBJECT(ec)) || !ec->comp_data) return;
    if (!(sdata = ec->comp_data->sub.data)) return;
    if (!(parent = sdata->parent)) return;
 
@@ -3399,7 +3405,7 @@ _e_comp_wl_subsurface_cb_position_set(struct wl_client *client EINA_UNUSED, stru
 
    /* try to get the client from resource data */
    if (!(ec = wl_resource_get_user_data(resource))) return;
-
+   if (e_object_is_del(E_OBJECT(ec)) || !ec->comp_data)) return;
    if (!(sdata = ec->comp_data->sub.data)) return;
 
    sdata->position.x = x;
@@ -3417,7 +3423,7 @@ _e_comp_wl_subsurface_cb_place_above(struct wl_client *client EINA_UNUSED, struc
 
    /* try to get the client from resource data */
    if (!(ec = wl_resource_get_user_data(resource))) return;
-
+   if (e_object_is_del(E_OBJECT(ec)) || !ec->comp_data)) return;
    if (!ec->comp_data->sub.data) return;
 
    /* try to get the client from the sibling resource */
@@ -3426,6 +3432,7 @@ _e_comp_wl_subsurface_cb_place_above(struct wl_client *client EINA_UNUSED, struc
    if (!ecs->comp_data->sub.data) return;
 
    if (!(parent = ec->comp_data->sub.data->parent)) return;
+   if (e_object_is_del(E_OBJECT(parent)) || !parent->comp_data) return;
 
    parent->comp_data->sub.list_pending =
      eina_list_remove(parent->comp_data->sub.list_pending, ec);
@@ -3446,7 +3453,7 @@ _e_comp_wl_subsurface_cb_place_below(struct wl_client *client EINA_UNUSED, struc
 
    /* try to get the client from resource data */
    if (!(ec = wl_resource_get_user_data(resource))) return;
-
+   if (e_object_is_del(E_OBJECT(ec)) || !ec->comp_data)) return;
    if (!ec->comp_data->sub.data) return;
 
    /* try to get the client from the sibling resource */
@@ -3455,6 +3462,7 @@ _e_comp_wl_subsurface_cb_place_below(struct wl_client *client EINA_UNUSED, struc
    if (!ecs->comp_data->sub.data) return;
 
    if (!(parent = ec->comp_data->sub.data->parent)) return;
+   if (e_object_is_del(E_OBJECT(parent)) || !parent->comp_data) return;
 
    parent->comp_data->sub.list_pending =
      eina_list_remove(parent->comp_data->sub.list_pending, ec);
@@ -3475,7 +3483,7 @@ _e_comp_wl_subsurface_cb_sync_set(struct wl_client *client EINA_UNUSED, struct w
 
    /* try to get the client from resource data */
    if (!(ec = wl_resource_get_user_data(resource))) return;
-
+   if (e_object_is_del(E_OBJECT(ec)) || !ec->comp_data)) return;
    if (!(sdata = ec->comp_data->sub.data)) return;
 
    sdata->synchronized = EINA_TRUE;
@@ -3491,7 +3499,7 @@ _e_comp_wl_subsurface_cb_desync_set(struct wl_client *client EINA_UNUSED, struct
 
    /* try to get the client from resource data */
    if (!(ec = wl_resource_get_user_data(resource))) return;
-
+   if (e_object_is_del(E_OBJECT(ec)) || !ec->comp_data)) return;
    if (!(sdata = ec->comp_data->sub.data)) return;
 
    sdata->synchronized = EINA_FALSE;
@@ -4838,6 +4846,7 @@ e_comp_wl_subsurface_commit(E_Client *ec)
    E_Client *invisible_parent;
 
    /* check for valid subcompositor data */
+   if (e_object_is_del(E_OBJECT(ec)) || !ec->comp_data)) return EINA_FALSE;
    if (!(sdata = ec->comp_data->sub.data)) return EINA_FALSE;
 
    invisible_parent = _e_comp_wl_subsurface_invisible_parent_get(ec);
