@@ -1,5 +1,12 @@
 #ifdef E_TYPEDEFS
 
+typedef enum _E_Plane_Renderer_State
+{
+   E_PLANE_RENDERER_STATE_NONE,
+   E_PLANE_RENDERER_STATE_CANDIDATE,
+   E_PLANE_RENDERER_STATE_ACTIVATE,
+} E_Plane_Renderer_State;
+
 typedef enum _E_Plane_Type
 {
    E_PLANE_TYPE_INVALID,
@@ -59,15 +66,13 @@ struct _E_Plane
    Ecore_Evas           *ee;
    Evas                 *evas;
    Eina_Bool             update_ee;
-
-   Eina_Bool             trace_debug;
 };
 
 struct _E_Plane_Renderer {
    tbm_surface_queue_h tqueue;
 
-   E_Client           *activated_ec;
-   E_Client           *candidate_ec;
+   E_Client           *ec;
+   E_Plane_Renderer_State state;
 
    struct gbm_surface *gsurface;
    Eina_List          *disp_surfaces;
