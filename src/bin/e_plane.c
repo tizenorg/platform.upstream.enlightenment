@@ -1262,7 +1262,7 @@ _e_plane_surface_from_client_acquire(E_Plane *plane)
    tbm_surface_h tsurface = NULL;
 
    if (plane_trace_debug)
-     ELOGF("E_PLANE", "Display Client", pixmap, ec);
+     ELOGF("E_PLANE", "Display Client Plane(%p)", pixmap, ec, plane);
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(buffer, NULL);
 
