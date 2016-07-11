@@ -840,7 +840,7 @@ _e_plane_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
 }
 
 static void
-_e_plane_renderer_queue_del(E_Plane_Renderer *renderer)
+_e_plane_renderer_surface_queue_del(E_Plane_Renderer *renderer)
 {
    tbm_surface_queue_h tqueue = NULL;
 
@@ -856,7 +856,7 @@ _e_plane_renderer_queue_del(E_Plane_Renderer *renderer)
 }
 
 static Eina_Bool
-_e_plane_renderer_queue_create(E_Plane_Renderer *renderer, int width, int height)
+_e_plane_renderer_surface_queue_create(E_Plane_Renderer *renderer, int width, int height)
 {
    E_Plane *plane = NULL;
    tbm_surface_queue_h tqueue = NULL;
@@ -904,7 +904,7 @@ _e_plane_renderer_queue_create(E_Plane_Renderer *renderer, int width, int height
 }
 
 static Eina_Bool
-_e_plane_renderer_queue_set(E_Plane_Renderer *renderer, tbm_surface_queue_h tqueue)
+_e_plane_renderer_surface_queue_set(E_Plane_Renderer *renderer, tbm_surface_queue_h tqueue)
 {
    tbm_surface_h tsurface = NULL;
    E_Plane *plane = NULL;
@@ -968,7 +968,7 @@ _e_plane_renderer_del(E_Plane_Renderer *renderer)
       _e_plane_renderer_deactivate(renderer);
 
    if (!plane->is_primary)
-      _e_plane_renderer_queue_del(renderer);
+      _e_plane_renderer_surface_queue_del(renderer);
 
    free(renderer);
 }
@@ -1279,7 +1279,7 @@ _e_plane_surface_from_ecore_evas_acquire(E_Plane *plane)
              return NULL;
           }
 
-        if (!_e_plane_renderer_queue_set(renderer, tqueue))
+        if (!_e_plane_renderer_surface_queue_set(renderer, tqueue))
           {
              ERR("fail to _e_plane_renderer_queue_set");
              return NULL;
@@ -1787,7 +1787,7 @@ e_plane_ec_set(E_Plane *plane, E_Client *ec)
           {
              if (!plane->is_primary)
                {
-                  if (!_e_plane_renderer_queue_create(renderer, ec->client.w, ec->client.h))
+                  if (!_e_plane_renderer_surface_queue_create(renderer, ec->client.w, ec->client.h))
                      return EINA_FALSE;
                }
 
@@ -1804,7 +1804,7 @@ e_plane_ec_set(E_Plane *plane, E_Client *ec)
         else
           {
               if (!plane->is_primary)
-                 _e_plane_renderer_queue_del(renderer);
+                 _e_plane_renderer_surface_queue_del(renderer);
 
               if (!_e_plane_renderer_deactivate(renderer))
                 {
