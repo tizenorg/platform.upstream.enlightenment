@@ -1187,7 +1187,6 @@ _e_plane_surface_from_client_acquire_reserved(E_Plane *plane)
    tsurface = _e_plane_renderer_surface_revice(renderer, ec);
    if (!tsurface)
      {
-        e_pixmap_image_clear(pixmap, 1);
         ERR("fail to _e_plane_renderer_surface_revice");
         return NULL;
      }
@@ -1222,9 +1221,6 @@ _e_plane_surface_on_client_release(E_Plane *plane, tbm_surface_h tsurface)
         ERR("no ec at plane.");
         return;
      }
-
-   /* release the tsurface */
-   e_pixmap_image_clear(ec->pixmap, 1);
 }
 
 static tbm_surface_h
@@ -1245,7 +1241,6 @@ _e_plane_surface_from_client_acquire(E_Plane *plane)
    if (!tsurface)
      {
         ERR("fail to _e_plane_renderer_surface_revice");
-        e_pixmap_image_clear(pixmap, 1);
         return NULL;
      }
 
@@ -1643,22 +1638,24 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
           ELOGF("E_PLANE", "Done    Layer(%p)  tsurface(%p) tqueue(%p) data(%p)::Canvas",
                NULL, NULL, plane, tsurface, renderer->tqueue, data);
 
+        /* initial setting of tsurface to the layer */
+        if (plane->tsurface == NULL)
+          {
+             plane->tsurface = tsurface;
+          }
+        else
+          {
+             _e_plane_surface_queue_release(plane, plane->tsurface);
+             e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, NULL);
+             plane->tsurface = tsurface;
+          }
+
         if (plane->reserved_memory)
           {
              if (renderer->state != E_PLANE_RENDERER_STATE_ACTIVATE)
                {
                   einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
                   einfo->info.wait_for_showup = EINA_FALSE;
-               }
-
-             /* initial setting of tsurface to the layer */
-             if (plane->tsurface == NULL)
-               plane->tsurface = tsurface;
-             else
-               {
-                  _e_plane_surface_queue_release(plane, plane->tsurface);
-                  e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, NULL);
-                  plane->tsurface = tsurface;
                }
 
              /* send the done surface to the client,
@@ -1670,19 +1667,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
           {
              einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
              einfo->info.wait_for_showup = EINA_FALSE;
-
-             /* initial setting of tsurface to the layer */
-             if (plane->tsurface == NULL)
-               plane->tsurface = tsurface;
-             else
-               {
-                  _e_plane_surface_queue_release(plane, plane->tsurface);
-                  plane->tsurface = tsurface;
-               }
           }
-
-        tbm_surface_internal_unref(tsurface);
-        free(data);
      }
    else
      {
@@ -1698,9 +1683,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
              if (plane->tsurface)
                {
                   _e_plane_surface_queue_release(plane, plane->tsurface);
-                  e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, data->buffer_ref.buffer);
                   _e_plane_surface_on_client_reserved_release(plane, plane->tsurface);
-                  plane->tsurface = tsurface;
                }
 
              /* send the done surface to the client,
@@ -1710,14 +1693,23 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
           }
         else
           {
-             /* release wl_buffer */
-             e_pixmap_image_clear(ec->pixmap, 1);
+             /* release */
+             if (plane->tsurface)
+                _e_plane_surface_on_client_release(plane, plane->tsurface);
           }
 
-        tbm_surface_internal_unref(tsurface);
+        /* release */
+        if (plane->tsurface)
+          {
+            e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, data->buffer_ref.buffer);
+            plane->tsurface = tsurface;
+          }
+
         e_comp_wl_buffer_reference(&data->buffer_ref, NULL);
-        free(data);
      }
+
+   tbm_surface_internal_unref(tsurface);
+   free(data);
 }
 
 EINTERN Eina_Bool
