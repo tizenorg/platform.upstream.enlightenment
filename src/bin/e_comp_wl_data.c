@@ -443,18 +443,6 @@ static const struct wl_data_device_manager_interface _e_manager_interface =
    _e_comp_wl_data_manager_cb_device_get
 };
 
-/* static void  */
-/* _e_comp_wl_data_cb_unbind_manager(struct wl_resource *resource) */
-/* { */
-/*    E_Comp_Data *e_comp->wl_comp_data; */
-
-/*    DBG("Comp_Wl_Data: Unbind Manager"); */
-
-/*    if (!(e_comp->wl_comp_data = wl_resource_get_user_data(resource))) return; */
-
-/*    e_comp_wl->mgr.resource = NULL; */
-/* } */
-
 static void 
 _e_comp_wl_data_cb_bind_manager(struct wl_client *client, void *data EINA_UNUSED, uint32_t version EINA_UNUSED, uint32_t id)
 {
@@ -565,6 +553,7 @@ _e_comp_wl_clipboard_source_save(void *data EINA_UNUSED, Ecore_Fd_Handler *handl
         close(source->fd[0]);
         close(source->fd[1]);
         source->fd_handler = NULL;
+        source->fd[0] = source->fd[1] = NULL;
      }
    else if ((len < 0) && (source->contents.size == 0))
      {
@@ -654,6 +643,22 @@ _e_comp_wl_clipboard_selection_set(struct wl_listener *listener EINA_UNUSED, voi
      }
    else
      {
+        if (!clip_source->fd[1])
+          {
+             if (pipe2(p, O_CLOEXEC|O_DIRECT|O_NONBLOCK) == -1)
+               {
+                  ERR("Could not create unidirectional pipe for clipboard: %m");
+                  return;
+               }
+
+             clip_source->fd_handler =
+                ecore_main_fd_handler_add(p[0], ECORE_FD_READ,
+                                          _e_comp_wl_clipboard_source_save,
+                                          e_comp->wl_comp_data, NULL, NULL);
+             clip_source->fd[0] = p[0];
+             clip_source->fd[1] = p[1];
+          }
+
         sel_source->send(sel_source, mime_type, clip_source->fd[1]);
      }
 }
