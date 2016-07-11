@@ -109,6 +109,17 @@ _e_plane_wayland_tbm_client_queue_get(E_Client *ec)
    return cqueue;
 }
 
+static void
+_e_plane_wait_for_showup_set(Eina_Bool set)
+{
+   Evas_Engine_Info_GL_Drm *einfo = NULL;
+
+   einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
+   EINA_SAFETY_ON_NULL_RETURN(einfo);
+
+   einfo->info.wait_for_showup = set;
+}
+
 static E_Plane_Client *
 _e_plane_client_new(E_Client *ec)
 {
@@ -829,6 +840,9 @@ _e_plane_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
         plane = plane_client->plane;
         if (plane)
           {
+             if (plane->is_primary)
+                _e_plane_wait_for_showup_set(EINA_FALSE);
+
              _e_plane_renderer_deactivate(plane->renderer);
 
              if (plane->ec == ec)
@@ -980,7 +994,6 @@ _e_plane_renderer_activate(E_Plane_Renderer *renderer, E_Client *ec)
    tbm_surface_h tsurface = NULL;
    E_Plane_Client *plane_client = NULL;
    E_Plane *plane = NULL;
-   Evas_Engine_Info_GL_Drm *einfo = NULL;
 
    plane = renderer->plane;
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
@@ -1054,12 +1067,7 @@ _e_plane_renderer_activate(E_Plane_Renderer *renderer, E_Client *ec)
         plane_client->plane = plane;
 
         if (!_e_plane_surface_queue_can_dequeue(renderer->plane))
-          {
-             einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
-
-             if (einfo)
-                einfo->info.wait_for_showup = EINA_TRUE;
-          }
+           _e_plane_wait_for_showup_set(EINA_TRUE);
 
         INF("ec does not have the scanout surface.");
 
@@ -1172,7 +1180,6 @@ static tbm_surface_h
 _e_plane_surface_from_client_acquire_reserved(E_Plane *plane)
 {
    E_Client *ec = plane->ec;
-   E_Pixmap *pixmap = ec->pixmap;
    tbm_surface_h tsurface = NULL;
    E_Plane_Client *plane_client = NULL;
    E_Plane_Renderer *renderer = plane->renderer;
@@ -1577,7 +1584,6 @@ EINTERN E_Plane_Commit_Data *
 e_plane_commit_data_aquire(E_Plane *plane)
 {
    E_Plane_Commit_Data *data = NULL;
-   Evas_Engine_Info_GL_Drm *einfo = NULL;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, NULL);
 
@@ -1589,9 +1595,7 @@ e_plane_commit_data_aquire(E_Plane *plane)
         tbm_surface_internal_ref(data->tsurface);
         data->ec = NULL;
 
-        einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
-        einfo->info.wait_for_showup = EINA_TRUE;
-
+        _e_plane_wait_for_showup_set(EINA_TRUE);
         return data;
      }
    else
@@ -1619,7 +1623,6 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
 {
    E_Plane *plane = NULL;
    E_Plane_Renderer *renderer = NULL;
-   Evas_Engine_Info_GL_Drm *einfo = NULL;
    tbm_surface_h tsurface = NULL;
    E_Client *ec = NULL;
 
@@ -1653,10 +1656,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
         if (plane->reserved_memory)
           {
              if (renderer->state != E_PLANE_RENDERER_STATE_ACTIVATE)
-               {
-                  einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
-                  einfo->info.wait_for_showup = EINA_FALSE;
-               }
+                _e_plane_wait_for_showup_set(EINA_FALSE);
 
              /* send the done surface to the client,
                 only when the renderer state is active(no composite) */
@@ -1665,8 +1665,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
           }
         else
           {
-             einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
-             einfo->info.wait_for_showup = EINA_FALSE;
+             _e_plane_wait_for_showup_set(EINA_FALSE);
           }
      }
    else
@@ -1766,7 +1765,6 @@ E_API Eina_Bool
 e_plane_ec_set(E_Plane *plane, E_Client *ec)
 {
    E_Plane_Renderer *renderer = NULL;
-   Evas_Engine_Info_GL_Drm *einfo = NULL;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
 
@@ -1776,14 +1774,12 @@ e_plane_ec_set(E_Plane *plane, E_Client *ec)
    renderer = plane->renderer;
    EINA_SAFETY_ON_NULL_RETURN_VAL(renderer, EINA_FALSE);
 
-   einfo = (Evas_Engine_Info_GL_Drm *)evas_engine_info_get(e_comp->evas);
-
    if (!ec && !plane->ec) return EINA_FALSE;
 
-   /* activate/deactivate the client if the plane is the reserved memory */
-   if (plane->reserved_memory)
+   if (ec)
      {
-        if (ec)
+        /* activate/deactivate the client if the plane is the reserved memory */
+        if (plane->reserved_memory)
           {
              if (!plane->is_primary)
                {
@@ -1797,23 +1793,30 @@ e_plane_ec_set(E_Plane *plane, E_Client *ec)
 
                   return EINA_FALSE;
                }
-
-             einfo->info.wait_for_showup = EINA_TRUE;
-             e_comp_object_hwc_update_set(ec->frame, EINA_TRUE);
           }
-        else
-          {
-              if (!plane->is_primary)
-                 _e_plane_renderer_surface_queue_del(renderer);
 
-              if (!_e_plane_renderer_deactivate(renderer))
-                {
+        if (plane->is_primary)
+           _e_plane_wait_for_showup_set(EINA_TRUE);
+
+        e_comp_object_hwc_update_set(ec->frame, EINA_TRUE);
+     }
+   else
+     {
+        if (plane->reserved_memory)
+          {
+             if (!plane->is_primary)
+                _e_plane_renderer_surface_queue_del(renderer);
+
+
+             if (!_e_plane_renderer_deactivate(renderer))
+               {
                    ERR("fail to _e_plane_renderer_deactivate.");
                    return EINA_FALSE;
-                }
-
-             einfo->info.wait_for_showup = EINA_FALSE;
+               }
           }
+
+        if (plane->is_primary)
+           _e_plane_wait_for_showup_set(EINA_FALSE);
      }
 
    plane->ec = ec;
