@@ -34,6 +34,40 @@ _e_output_cb_output_change(tdm_output *toutput,
 }
 
 static void
+_e_output_update_fps()
+{
+   static double time = 0.0;
+   static double lapse = 0.0;
+   static int cframes = 0;
+   static int flapse = 0;
+
+   if (e_comp->calc_fps)
+     {
+        double dt;
+        double tim = ecore_time_get();
+
+        dt = tim - e_comp->frametimes[0];
+        e_comp->frametimes[0] = tim;
+
+        time += dt;
+        cframes++;
+
+        if (lapse == 0.0)
+          {
+             lapse = tim;
+             flapse = cframes;
+          }
+        else if ((tim - lapse) >= 1.0)
+          {
+             e_comp->fps = (cframes - flapse) / (tim - lapse);
+             lapse = tim;
+             flapse = cframes;
+             time = 0.0;
+          }
+     }
+}
+
+static void
 _e_output_commit_hanler(tdm_output *output, unsigned int sequence,
                                   unsigned int tv_sec, unsigned int tv_usec,
                                   void *user_data)
@@ -41,6 +75,8 @@ _e_output_commit_hanler(tdm_output *output, unsigned int sequence,
    Eina_List *data_list = user_data;
    E_Plane_Commit_Data *data = NULL;
    Eina_List *l, *ll;
+
+   _e_output_update_fps();
 
    EINA_LIST_FOREACH_SAFE(data_list, l, ll, data)
      {

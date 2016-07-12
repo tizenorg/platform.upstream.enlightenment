@@ -902,10 +902,12 @@ _e_comp_cb_update(void)
         _e_comp_client_update(ec);
      }
 
+#ifndef ENABLE_HWC_MULTI
    if (conf->fps_show || e_comp->calc_fps)
      {
         _e_comp_fps_update();
      }
+#endif // end of ENABLE_HWC_MULTI
 
    if (conf->lock_fps)
      {
