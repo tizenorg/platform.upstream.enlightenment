@@ -787,7 +787,7 @@ _e_plane_renderer_deactivate(E_Plane_Renderer *renderer)
    EINA_SAFETY_ON_NULL_GOTO(wl_comp_data, done);
 
    if (plane_trace_debug)
-     ELOGF("E_PLANE", "Deactivate", ec->pixmap, ec);
+     ELOGF("E_PLANE", "Deactivate Plane(%p)", ec->pixmap, ec, renderer->plane);
 
    plane_client = _e_plane_client_get(ec);
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane_client, EINA_FALSE);
