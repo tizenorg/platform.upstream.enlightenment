@@ -486,7 +486,11 @@ _e_comp_wl_clipboard_offer_load(void *data, Ecore_Fd_Handler *handler)
      {
         close(fd);
         ecore_main_fd_handler_del(handler);
-        e_comp_wl_clipboard_source_unref(offer->source);
+        if (!e_comp_wl_clipboard_source_unref(offer->source))
+          {
+             if (e_comp_wl->clipboard.source == offer->source)
+               e_comp_wl->clipboard.source = NULL;
+          }
         free(offer);
      }
 
@@ -547,15 +551,7 @@ _e_comp_wl_clipboard_source_save(void *data EINA_UNUSED, Ecore_Fd_Handler *handl
         size = source->contents.alloc - source->contents.size;
      }
 
-   if (len == 0)
-     {
-        ecore_main_fd_handler_del(handler);
-        close(source->fd[0]);
-        close(source->fd[1]);
-        source->fd_handler = NULL;
-        source->fd[0] = source->fd[1] = NULL;
-     }
-   else if ((len < 0) && (source->contents.size == 0))
+   if ((len < 0) && (source->contents.size == 0))
      {
         ERR("Could not read fd(%d): %m", source->fd[0]);
         if (!(e_comp_wl_clipboard_source_unref(source)))
@@ -645,20 +641,9 @@ _e_comp_wl_clipboard_selection_set(struct wl_listener *listener EINA_UNUSED, voi
      {
         if (!clip_source->fd[1])
           {
-             if (pipe2(p, O_CLOEXEC|O_DIRECT|O_NONBLOCK) == -1)
-               {
-                  ERR("Could not create unidirectional pipe for clipboard: %m");
-                  return;
-               }
-
-             clip_source->fd_handler =
-                ecore_main_fd_handler_add(p[0], ECORE_FD_READ,
-                                          _e_comp_wl_clipboard_source_save,
-                                          e_comp->wl_comp_data, NULL, NULL);
-             clip_source->fd[0] = p[0];
-             clip_source->fd[1] = p[1];
+             ERR("clipboard fd is invalid");
+             return;
           }
-
         sel_source->send(sel_source, mime_type, clip_source->fd[1]);
      }
 }
