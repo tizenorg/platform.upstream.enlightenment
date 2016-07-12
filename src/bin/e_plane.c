@@ -865,8 +865,8 @@ _e_plane_renderer_surface_queue_del(E_Plane_Renderer *renderer)
 
    tbm_surface_queue_destroy(tqueue);
    renderer->tqueue = NULL;
-   renderer->queue_width = 0;
-   renderer->queue_height = 0;
+   renderer->tqueue_width = 0;
+   renderer->tqueue_height = 0;
 
    renderer->disp_surfaces = eina_list_free(renderer->disp_surfaces);
 }
@@ -896,8 +896,8 @@ _e_plane_renderer_surface_queue_create(E_Plane_Renderer *renderer, int width, in
    EINA_SAFETY_ON_FALSE_RETURN_VAL(tqueue, EINA_FALSE);
 
    renderer->tqueue = tqueue;
-   renderer->queue_width = width;
-   renderer->queue_height = height;
+   renderer->tqueue_width = width;
+   renderer->tqueue_height = height;
 
    /* dequeue the surfaces if the qeueue is available */
    /* add the surface to the disp_surfaces list, if it is not in the disp_surfaces */
@@ -934,8 +934,8 @@ _e_plane_renderer_surface_queue_set(E_Plane_Renderer *renderer, tbm_surface_queu
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
 
    renderer->tqueue = tqueue;
-   renderer->queue_width = tbm_surface_queue_get_width(tqueue);
-   renderer->queue_height = tbm_surface_queue_get_height(tqueue);
+   renderer->tqueue_width = tbm_surface_queue_get_width(tqueue);
+   renderer->tqueue_height = tbm_surface_queue_get_height(tqueue);
 
    if (renderer->disp_surfaces)
       renderer->disp_surfaces = eina_list_free(renderer->disp_surfaces);

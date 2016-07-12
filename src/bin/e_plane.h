@@ -66,10 +66,13 @@ struct _E_Plane
    Ecore_Evas           *ee;
    Evas                 *evas;
    Eina_Bool             update_ee;
+   Eina_Bool             update_exist;
 };
 
 struct _E_Plane_Renderer {
    tbm_surface_queue_h tqueue;
+   int tqueue_width;
+   int tqueue_height;
 
    E_Client           *ec;
    E_Plane_Renderer_State state;
