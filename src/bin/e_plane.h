@@ -33,7 +33,7 @@ typedef struct _E_Plane_Commit_Data          E_Plane_Commit_Data;
 
 #include "e_comp_screen.h"
 #include "e_output.h"
-# include "e_comp_wl.h"
+#include "e_comp_wl.h"
 
 struct _E_Plane
 {
@@ -57,7 +57,6 @@ struct _E_Plane
    tbm_surface_h         previous_tsurface;
    tbm_surface_h         prepare_tsurface;
 
-   unsigned int          last_sequence;
    E_Comp_Wl_Buffer_Ref  displaying_buffer_ref;
 
    E_Plane_Renderer     *renderer;
