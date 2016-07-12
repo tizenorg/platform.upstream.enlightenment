@@ -26,7 +26,6 @@ _e_output_cb_output_change(tdm_output *toutput,
           else if (tdpms == TDM_OUTPUT_DPMS_SUSPEND) edpms = E_OUTPUT_DPMS_SUSPEND;
           else edpms = e_output->dpms;
 
-          ERR("[cyeon] dpms change:%d", edpms);
           e_output->dpms = edpms;
           break;
        default:

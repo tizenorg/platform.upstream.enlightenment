@@ -310,10 +310,10 @@ _e_plane_surface_queue_release(E_Plane *plane, tbm_surface_h tsurface)
      {
         E_Client *ec = renderer->ec;
         if (ec)
-          ELOGF("E_PLANE", "Release Layer(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
+          ELOGF("E_PLANE", "Release Plane(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
                 ec->pixmap, ec, plane, _get_wl_buffer(ec), tsurface, renderer->tqueue, _get_wl_buffer_ref(ec));
         else
-          ELOGF("E_PLANE", "Release Layer(%p)  tsurface(%p) tqueue(%p)",
+          ELOGF("E_PLANE", "Release Plane(%p)  tsurface(%p) tqueue(%p)",
                 NULL, NULL, plane, tsurface, renderer->tqueue);
      }
 
@@ -494,10 +494,10 @@ _e_plane_surface_queue_acquire(E_Plane *plane)
      {
         E_Client *ec = renderer->ec;
         if (ec)
-          ELOGF("E_PLANE", "Acquire Layer(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
+          ELOGF("E_PLANE", "Acquire Plane(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) wl_buffer_ref(%p)",
                 ec->pixmap, ec, plane, _get_wl_buffer(ec), tsurface, tqueue, _get_wl_buffer_ref(ec));
         else
-          ELOGF("E_PLANE", "Acquire Layer(%p)  tsurface(%p) tqueue(%p)",
+          ELOGF("E_PLANE", "Acquire Plane(%p)  tsurface(%p) tqueue(%p)",
                 NULL, NULL, plane, tsurface, tqueue);
      }
 
@@ -828,32 +828,6 @@ done:
 }
 
 static void
-_e_plane_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
-{
-   E_Plane_Client *plane_client = NULL;
-   E_Plane *plane = NULL;
-
-   plane_client = _e_plane_client_get(ec);
-
-   if (plane_client)
-     {
-        plane = plane_client->plane;
-        if (plane)
-          {
-             if (plane->is_primary)
-                _e_plane_wait_for_showup_set(EINA_FALSE);
-
-             _e_plane_renderer_deactivate(plane->renderer);
-
-             if (plane->ec == ec)
-                plane->ec = NULL;
-          }
-        /* destroy the plane_client */
-        eina_hash_del_by_key(plane_clients, &ec);
-     }
-}
-
-static void
 _e_plane_renderer_surface_queue_del(E_Plane_Renderer *renderer)
 {
    tbm_surface_queue_h tqueue = NULL;
@@ -1103,6 +1077,30 @@ _e_plane_renderer_activate(E_Plane_Renderer *renderer, E_Client *ec)
 }
 
 static Eina_Bool
+_e_plane_surface_unset(E_Plane *plane)
+{
+   tdm_layer *tlayer = plane->tlayer;
+   tdm_error error;
+
+   if (plane_trace_debug)
+       ELOGF("E_PLANE", "Unset  Plane(%p)", NULL, NULL, plane);
+
+   error = tdm_layer_unset_buffer(tlayer);
+   if (error != TDM_ERROR_NONE)
+     {
+         ERR("fail to tdm_layer_unset_buffer");
+         return EINA_FALSE;
+     }
+
+   plane->tsurface = NULL;
+   plane->prepare_tsurface = NULL;
+   plane->update_exist = EINA_FALSE;
+   e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, NULL);
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
 _e_plane_surface_set(E_Plane *plane, tbm_surface_h tsurface)
 {
    tbm_surface_info_s surf_info;
@@ -1146,7 +1144,7 @@ _e_plane_surface_set(E_Plane *plane, tbm_surface_h tsurface)
 
    if (plane_trace_debug)
      {
-        ELOGF("E_PLANE", "Commit  Layer(%p)  tsurface(%p) (%dx%d,[%d,%d,%d,%d]=>[%d,%d,%d,%d])",
+        ELOGF("E_PLANE", "Set  Plane(%p)  tsurface(%p) (%dx%d,[%d,%d,%d,%d]=>[%d,%d,%d,%d])",
               NULL, NULL, plane, tsurface,
               plane->info.src_config.size.h, plane->info.src_config.size.h,
               plane->info.src_config.pos.x, plane->info.src_config.pos.y,
@@ -1163,6 +1161,34 @@ _e_plane_surface_set(E_Plane *plane, tbm_surface_h tsurface)
      }
 
    return EINA_TRUE;
+}
+
+static void
+_e_plane_client_cb_del(void *data EINA_UNUSED, E_Client *ec)
+{
+   E_Plane_Client *plane_client = NULL;
+   E_Plane *plane = NULL;
+
+   plane_client = _e_plane_client_get(ec);
+
+   if (plane_client)
+     {
+        plane = plane_client->plane;
+        if (plane)
+          {
+             _e_plane_renderer_deactivate(plane->renderer);
+
+             if (plane->is_primary)
+                _e_plane_wait_for_showup_set(EINA_FALSE);
+             else
+                _e_plane_surface_unset(plane);
+
+             if (plane->ec == ec)
+                plane->ec = NULL;
+          }
+        /* destroy the plane_client */
+        eina_hash_del_by_key(plane_clients, &ec);
+     }
 }
 
 static void
@@ -1303,7 +1329,7 @@ _e_plane_surface_from_ecore_evas_acquire(E_Plane *plane)
      }
 
    if (plane_trace_debug)
-      ELOGF("E_PLANE", "Display Canvas Layer(%p)", NULL, NULL, plane);
+      ELOGF("E_PLANE", "Display Canvas Plane(%p)", NULL, NULL, plane);
 
    /* aquire */
    tsurface = _e_plane_surface_queue_acquire(plane);
@@ -1651,7 +1677,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
         /* composite */
         /* debug */
         if (plane_trace_debug)
-          ELOGF("E_PLANE", "Done    Layer(%p)  tsurface(%p) tqueue(%p) data(%p)::Canvas",
+          ELOGF("E_PLANE", "Done    Plane(%p)  tsurface(%p) tqueue(%p) data(%p)::Canvas",
                NULL, NULL, plane, tsurface, renderer->tqueue, data);
 
         /* initial setting of tsurface to the layer */
@@ -1686,7 +1712,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
         /* no composite */
         /* debug */
         if (plane_trace_debug)
-           ELOGF("E_PLANE", "Done    Layer(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) data(%p) wl_buffer_ref(%p) ::Client",
+           ELOGF("E_PLANE", "Done    Plane(%p)     wl_buffer(%p) tsurface(%p) tqueue(%p) data(%p) wl_buffer_ref(%p) ::Client",
              ec->pixmap, ec, plane, _get_wl_buffer(ec), tsurface, renderer->tqueue, data, _get_wl_buffer_ref(ec));
 
         if (plane->reserved_memory)
@@ -1828,7 +1854,17 @@ e_plane_ec_set(E_Plane *plane, E_Client *ec)
           }
 
         if (plane->is_primary)
-           _e_plane_wait_for_showup_set(EINA_FALSE);
+          {
+             _e_plane_wait_for_showup_set(EINA_FALSE);
+          }
+        else
+          {
+             if(!_e_plane_surface_unset(plane))
+               {
+                  ERR("fail to _e_plane_surface_unset NULL.");
+                  return EINA_FALSE;
+               }
+          }
      }
 
    plane->ec = ec;
