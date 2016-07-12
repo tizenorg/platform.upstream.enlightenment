@@ -886,25 +886,25 @@ _e_module_create_wm_start(void)
 {
    FILE *_wm_start_checker = NULL;
 
-   _wm_start_checker = fopen("/run/.wm_start", "wb");
+   _wm_start_checker = fopen("/run/wm_start", "wb");
    if (_wm_start_checker)
      {
-        PRCTL("[Winsys] /run/.wm_start is created");
+        PRCTL("[Winsys] /run/wm_start is created");
         fclose(_wm_start_checker);
      }
    else
      {
-        PRCTL("[Winsys] Failed to create /run/.wm_start");
+        PRCTL("[Winsys] Failed to create /run/wm_start");
      }
 
-   _wm_start_checker = fopen("/tmp/.wm_start", "wb");
+   _wm_start_checker = fopen("/tmp/wm_start", "wb");
    if (_wm_start_checker)
      {
-        PRCTL("[Winsys] /tmp/.wm_start is created");
+        PRCTL("[Winsys] /tmp/wm_start is created");
         fclose(_wm_start_checker);
      }
    else
      {
-        PRCTL("[Winsys] Failed to create /tmp/.wm_start");
+        PRCTL("[Winsys] Failed to create /tmp/wm_start");
      }
 }
