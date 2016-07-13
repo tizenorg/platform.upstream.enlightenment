@@ -71,6 +71,7 @@ E_API Eina_Bool e_pixmap_image_refresh(E_Pixmap *cp);
 E_API Eina_Bool e_pixmap_image_exists(const E_Pixmap *cp);
 E_API Eina_Bool e_pixmap_image_is_argb(const E_Pixmap *cp);
 E_API void *e_pixmap_image_data_get(E_Pixmap *cp);
+E_API void e_pixmap_image_data_ref(E_Pixmap *cp);
 E_API Eina_Bool e_pixmap_image_data_argb_convert(E_Pixmap *cp, void *pix, void *ipix, Eina_Rectangle *r, int stride);
 
 E_API void e_pixmap_image_opaque_set(E_Pixmap *cp, int x, int y, int w, int h);
