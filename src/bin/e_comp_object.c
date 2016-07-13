@@ -3762,6 +3762,9 @@ e_comp_object_render(Evas_Object *obj)
         pix = e_pixmap_image_data_get(cw->ec->pixmap);
      }
 
+   if ((pix) && ((!cw->blanked) || (cw->obj_mirror)))
+     e_pixmap_image_data_ref(cw->ec->pixmap);
+
    /* set pixel data */
    evas_object_image_data_set(cw->obj, cw->blanked ? NULL : pix);
    _e_comp_object_alpha_set(cw);

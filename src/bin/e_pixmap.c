@@ -35,6 +35,7 @@ struct _E_Pixmap
    E_Comp_Wl_Buffer_Ref buffer_ref;
    struct wl_listener buffer_destroy_listener;
    void *data;
+   struct wl_shm_buffer *shm_buffer;
    struct wl_shm_pool *data_pool;
    Eina_Rectangle opaque;
    uuid_t uuid;
@@ -100,6 +101,7 @@ _e_pixmap_cb_buffer_destroy(struct wl_listener *listener, void *data EINA_UNUSED
 
    cp = container_of(listener, E_Pixmap, buffer_destroy_listener);
    cp->data = NULL;
+   cp->shm_buffer = NULL;
    cp->buffer_destroy_listener.notify = NULL;
 }
 
@@ -673,6 +675,7 @@ e_pixmap_image_clear(E_Pixmap *cp, Eina_Bool cache)
      }
    e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
    cp->data = NULL;
+   cp->shm_buffer = NULL;
 }
 
 E_API Eina_Bool
@@ -734,9 +737,7 @@ e_pixmap_image_refresh(E_Pixmap *cp)
           }
 
         cp->data = wl_shm_buffer_get_data(shm_buffer);
-
-        if (cp->data_pool) wl_shm_pool_unref(cp->data_pool);
-        cp->data_pool = wl_shm_buffer_ref_pool(shm_buffer);
+        cp->shm_buffer = shm_buffer;
      }
    else if (buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
      {
@@ -772,6 +773,7 @@ e_pixmap_image_refresh(E_Pixmap *cp)
         cp->h = buffer->h;
         cp->image_argb = EINA_FALSE; /* TODO: format */
         cp->data = NULL;
+        cp->shm_buffer = NULL;
 
         /* TODO: Current buffer management process doesn't ensure
          * to render all committed buffer, it means there are buffers
@@ -803,6 +805,7 @@ e_pixmap_image_refresh(E_Pixmap *cp)
               break;
           }
         cp->data = NULL;
+        cp->shm_buffer = NULL;
      }
    else
      {
@@ -835,6 +838,26 @@ e_pixmap_image_is_argb(const E_Pixmap *cp)
         default: break;
      }
    return EINA_FALSE;
+}
+
+E_API void
+e_pixmap_image_data_ref(E_Pixmap *cp)
+{
+   EINA_SAFETY_ON_NULL_RETURN(cp);
+
+   switch (cp->type)
+     {
+      case E_PIXMAP_TYPE_WL:
+         if (cp->shm_buffer)
+           {
+              if (cp->data_pool) wl_shm_pool_unref(cp->data_pool);
+              cp->data_pool = wl_shm_buffer_ref_pool(cp->shm_buffer);
+           }
+         break;
+      default:
+         break;
+     }
+   return;
 }
 
 E_API void *
