@@ -553,7 +553,7 @@ _e_comp_wl_clipboard_source_save(void *data EINA_UNUSED, Ecore_Fd_Handler *handl
         close(source->fd[0]);
         close(source->fd[1]);
         source->fd_handler = NULL;
-        source->fd[0] = source->fd[1] = NULL;
+        source->fd[0] = source->fd[1] = 0;
      }
    else if ((len < 0) && (source->contents.size == 0))
      {
