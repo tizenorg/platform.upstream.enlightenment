@@ -783,6 +783,17 @@ _e_comp_object_animating_end(E_Comp_Object *cw)
         cw->animating--;
         if (!cw->animating)
           {
+             if (cw->ec)
+               {
+                  if (cw->ec->launching)
+                    {
+                       if (!cw->ec->extra_animating)
+                         {
+                            cw->ec->launching = EINA_FALSE;
+                            e_comp_object_signal_emit(cw->ec->frame, "e,action,launch,done", "e");
+                         }
+                    }
+               }
              e_comp->animating--;
              cw->showing = 0;
              UNREFD(cw->ec, 2);
@@ -1588,6 +1599,12 @@ _e_comp_intercept_hide(void *data, Evas_Object *obj)
    if( !_e_comp_object_intercept_hook_call(E_COMP_OBJECT_INTERCEPT_HOOK_HIDE, cw->ec)) return;
 #endif
 
+   if (cw->ec->launching == EINA_TRUE)
+     {
+        ELOG("Hide. Cancel launching flag", cw->ec->pixmap, cw->ec);
+        cw->ec->launching = EINA_FALSE;
+     }
+
    if (cw->ec->hidden)
      {
         /* hidden flag = just do it */
@@ -2286,10 +2303,18 @@ _e_comp_smart_show(Evas_Object *obj)
         return;
      }
    if (cw->ec->iconic && (!cw->ec->new_client))
-     e_comp_object_signal_emit(cw->smart_obj, "e,action,uniconify", "e");
+     {
+        ELOG("Set launching flag..", cw->ec->pixmap, cw->ec);
+        cw->ec->launching = EINA_TRUE;
+
+        e_comp_object_signal_emit(cw->smart_obj, "e,action,uniconify", "e");
+     }
    else if (!cw->showing) /* if set, client was ec->hidden during show animation */
      {
         cw->showing = 1;
+        ELOG("Set launching flag..", cw->ec->pixmap, cw->ec);
+        cw->ec->launching = EINA_TRUE;
+
         e_comp_object_signal_emit(cw->smart_obj, "e,state,visible", "e");
         _e_comp_object_animating_begin(cw);
         if (!_e_comp_object_effect_visibility_start(cw, 1))

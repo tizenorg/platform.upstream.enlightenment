@@ -851,6 +851,9 @@ struct E_Client
 
    Ecore_Timer *map_timer;
    Eina_Bool pointer_enter_sent;
+
+   Eina_Bool launching : 1;
+   Eina_Bool extra_animating : 1;
 };
 
 #define e_client_focus_policy_click(ec) \
