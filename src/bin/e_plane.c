@@ -1376,6 +1376,7 @@ _e_plane_cb_ec_buffer_change(void *data, int type, void *event)
 EINTERN Eina_Bool
 e_plane_init(void)
 {
+#ifdef ENABLE_HWC_MULTI
    if (client_hook_new) return EINA_TRUE;
    if (client_hook_del) return EINA_TRUE;
 
@@ -1386,16 +1387,14 @@ e_plane_init(void)
 
    E_LIST_HANDLER_APPEND(plane_hdlrs, E_EVENT_CLIENT_BUFFER_CHANGE,
                          _e_plane_cb_ec_buffer_change, NULL);
-
-   // soolim debug
-   plane_trace_debug = EINA_TRUE;
-
+#endif
    return EINA_TRUE;
 }
 
 EINTERN void
 e_plane_shutdown(void)
 {
+#ifdef ENABLE_HWC_MULTI
    if (client_hook_new)
      {
         e_client_hook_del(client_hook_new);
@@ -1407,6 +1406,7 @@ e_plane_shutdown(void)
         e_client_hook_del(client_hook_del);
         client_hook_del = NULL;
      }
+#endif
 }
 
 EINTERN E_Plane *
@@ -1927,4 +1927,12 @@ e_plane_is_fb_target(E_Plane *plane)
    EINA_SAFETY_ON_NULL_RETURN_VAL(plane, EINA_FALSE);
    if (plane->is_fb) return EINA_TRUE;
    return EINA_FALSE;
+}
+
+EINTERN void
+e_plane_hwc_trace_debug(Eina_Bool onoff)
+{
+   if (onoff == plane_trace_debug) return;
+   plane_trace_debug = onoff;
+   INF("Plane: hwc trace_debug is %s", onoff?"ON":"OFF");
 }
