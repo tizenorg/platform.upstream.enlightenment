@@ -2857,20 +2857,39 @@ static Eina_Bool
 _e_client_transform_core_check_change(E_Client *ec)
 {
    Eina_Bool check = EINA_FALSE;
+   int w = 0;
+   int h = 0;
 
    if (!ec) return EINA_FALSE;
+
+   if (ec->frame)
+     evas_object_geometry_get(ec->frame, 0, 0, &w, &h);
 
    // check client position or size change
    if (ec->x != ec->transform_core.backup.client_x ||
        ec->y != ec->transform_core.backup.client_y ||
        ec->w != ec->transform_core.backup.client_w ||
-       ec->h != ec->transform_core.backup.client_h)
+       ec->h != ec->transform_core.backup.client_h ||
+           w != ec->transform_core.backup.frame_w  ||
+           h != ec->transform_core.backup.frame_h)
      {
         check = EINA_TRUE;
         ec->transform_core.backup.client_x = ec->x;
         ec->transform_core.backup.client_y = ec->y;
         ec->transform_core.backup.client_w = ec->w;
         ec->transform_core.backup.client_h = ec->h;
+
+        if (ec->frame)
+          {
+             evas_object_geometry_get(ec->frame, 0, 0,
+                                      &ec->transform_core.backup.frame_w,
+                                      &ec->transform_core.backup.frame_h);
+          }
+        else
+          {
+             ec->transform_core.backup.frame_w = 0;
+             ec->transform_core.backup.frame_h = 0;
+          }
      }
 
    // check new transform or del transform
