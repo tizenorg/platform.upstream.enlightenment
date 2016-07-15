@@ -1515,7 +1515,7 @@ e_plane_hwc_setup(E_Plane *plane)
 }
 
 EINTERN Eina_Bool
-e_plane_set(E_Plane *plane)
+e_plane_fetch(E_Plane *plane)
 {
    tbm_surface_h tsurface = NULL;
    Evas_Engine_Info_GL_Drm *einfo;
@@ -1581,7 +1581,7 @@ e_plane_set(E_Plane *plane)
    if (!_e_plane_surface_set(plane, tsurface))
      {
         ERR("fail: _e_plane_set_info.");
-        e_plane_unset(plane);
+        e_plane_unfetch(plane);
         return EINA_FALSE;
      }
 
@@ -1591,7 +1591,7 @@ e_plane_set(E_Plane *plane)
 }
 
 EINTERN void
-e_plane_unset(E_Plane *plane)
+e_plane_unfetch(E_Plane *plane)
 {
    EINA_SAFETY_ON_NULL_RETURN(plane);
    EINA_SAFETY_ON_NULL_RETURN(plane->prepare_tsurface);

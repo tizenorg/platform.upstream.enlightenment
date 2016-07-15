@@ -738,7 +738,7 @@ e_output_commit(E_Output *output)
    /* set planes */
    EINA_LIST_REVERSE_FOREACH(output->planes, l, plane)
      {
-        if (e_plane_set(plane))
+        if (e_plane_fetch(plane))
          {
             if (!commitable) commitable = EINA_TRUE;
          }
@@ -753,7 +753,7 @@ e_output_commit(E_Output *output)
 
              /* unset planes */
              EINA_LIST_REVERSE_FOREACH(output->planes, l, plane)
-               e_plane_unset(plane);
+               e_plane_unfetch(plane);
 
              return EINA_FALSE;
           }
