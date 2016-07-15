@@ -217,13 +217,11 @@ _e_test_helper_cb_deregister_window(const Eldbus_Service_Interface *iface EINA_U
         return reply;
      }
    eldbus_message_arguments_append(reply, "b", ((!th_data->registrant.win) ||
-                                                ((th_data->registrant.win == id) &&
-                                                 (th_data->registrant.vis != 1))));
+                                                (th_data->registrant.win == id)));
 
    if (th_data->registrant.win == id)
      {
-        th_data->registrant.disuse = EINA_TRUE;
-        if (th_data->registrant.vis != 1) _e_test_helper_registrant_clear();
+        _e_test_helper_registrant_clear();
      }
 
    return reply;
