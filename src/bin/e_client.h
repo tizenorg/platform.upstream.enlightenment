@@ -825,6 +825,7 @@ struct E_Client
        struct
        {
            int client_x, client_y, client_w, client_h;
+           int frame_w, frame_h;
        } backup;
 
        struct
