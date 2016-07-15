@@ -1137,7 +1137,14 @@ _e_xdg_shell_surface_map(struct wl_resource *resource)
         int cw = ec->w;
         int ch = ec->h;
         e_pixmap_size_get(ec->pixmap, &pw, &ph);
-        e_client_geometry_get(ec, NULL, NULL, &cw, &ch);
+        evas_object_geometry_get(ec->frame, NULL, NULL, &cw, &ch);
+        if (cw == 0 && ch == 0)
+          {
+             cw = ec->w;
+             ch = ec->h;
+          }
+
+
 
         if (pw != cw || ph != ch)
           {
