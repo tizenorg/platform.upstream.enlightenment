@@ -4652,7 +4652,7 @@ _e_comp_object_dim_update(E_Comp_Object *cw)
    if (!cw->effect_obj) return;
    if (cw->dim_enable)
      {
-        edje_object_signal_emit(cw->effect_obj, (cw->dim_enable ? "e,state,vd,dim,on,noeffect" : "e,state,vd,dim,off,noeffect"), "e");
+        edje_object_signal_emit(cw->effect_obj, (cw->dim_enable ? "e,state,dim,on,noeffect" : "e,state,dim,off,noeffect"), "e");
         INF("[DIM] Applied on Client[%p] enable[%d]\n",cw->ec, cw->dim_enable);
      }
 }
