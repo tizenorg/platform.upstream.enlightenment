@@ -74,8 +74,6 @@ e_screensaver_preinit(void)
 EINTERN int
 e_screensaver_init(void)
 {
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_DOWN,          _e_scrsaver_cb_input, NULL);
-   E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_KEY_UP,            _e_scrsaver_cb_input, NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_MOVE,        _e_scrsaver_cb_input, NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_DOWN, _e_scrsaver_cb_input, NULL);
    E_LIST_HANDLER_APPEND(handlers, ECORE_EVENT_MOUSE_BUTTON_UP,   _e_scrsaver_cb_input, NULL);
@@ -113,4 +111,10 @@ E_API double
 e_screensaver_timeout_get(void)
 {
    return _idle_time;
+}
+
+E_API void
+e_screensaver_notidle(void)
+{
+   _ev_update = EINA_TRUE;
 }

@@ -93,12 +93,14 @@ _e_comp_canvas_cb_mouse_wheel(void *d EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Obj
 static Eina_Bool
 _e_comp_cb_key_down(void *data EINA_UNUSED, int ev_type EINA_UNUSED, Ecore_Event_Key *ev)
 {
+   e_screensaver_notidle();
    return !e_comp_wl_key_down(ev);
 }
 
 static Eina_Bool
 _e_comp_cb_key_up(void *data EINA_UNUSED, int ev_type EINA_UNUSED, Ecore_Event_Key *ev)
 {
+   e_screensaver_notidle();
    return !e_comp_wl_key_up(ev);
 }
 
