@@ -176,7 +176,9 @@ _e_comp_fullscreen_check(void)
             (vw == ow) &&
             (vh == oh) &&
             (!ec->argb) &&
-            (!ec->shaped))
+            (!ec->shaped) &&
+            (!e_client_transform_core_enable_get(ec))
+            )
           {
              return ec;
           }
