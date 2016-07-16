@@ -2736,19 +2736,22 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
                }
           }
 
-        if (canvas_vis && calc_region)
+        if (canvas_vis)
           {
-             it = eina_tiler_iterator_new(t);
-             EINA_ITERATOR_FOREACH(it, _r)
+             if (calc_region || skip_rot_pending_show)
                {
-                  if (E_INTERSECTS(x, y, w, h,
-                                   _r->x, _r->y, _r->w, _r->h))
+                  it = eina_tiler_iterator_new(t);
+                  EINA_ITERATOR_FOREACH(it, _r)
                     {
-                       ec_vis = EINA_TRUE;
-                       break;
+                       if (E_INTERSECTS(x, y, w, h,
+                                        _r->x, _r->y, _r->w, _r->h))
+                         {
+                            ec_vis = EINA_TRUE;
+                            break;
+                         }
                     }
+                  eina_iterator_free(it);
                }
-             eina_iterator_free(it);
           }
 
         if (ec_vis)
@@ -2763,7 +2766,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
                }
 
              /* subtract window region from canvas region */
-             if (canvas_vis)
+             if (canvas_vis && !skip_rot_pending_show)
                {
                   /* check alpha window is opaque or not. */
                   if ((ec->visibility.opaque > 0) && (ec->argb))
