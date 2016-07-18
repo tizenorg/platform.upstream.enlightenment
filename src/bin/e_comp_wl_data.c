@@ -352,6 +352,7 @@ _e_comp_wl_data_device_cb_drag_start(struct wl_client *client, struct wl_resourc
         if (!ec->re_manage)
           {
              ec->re_manage = 1;
+             ec->new_client = 1;
 
              ec->lock_focus_out = ec->override = 1;
              ec->icccm.title = eina_stringshare_add("noshadow");
