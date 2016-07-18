@@ -459,9 +459,9 @@ _e_info_client_proc_input_device_info(int argc, char **argv)
      {
         i++;
         printf("%3d %50s %20s         ", i, dev->name, dev->identifier);
-        if (dev->capability & ECORE_DEVICE_POINTER) printf("Pointer | ");
-        if (dev->capability & ECORE_DEVICE_KEYBOARD) printf("Keyboard | ");
-        if (dev->capability & ECORE_DEVICE_TOUCH) printf("Touch | ");
+        if (dev->capability & ECORE_DEVICE_CLASS_POINTER) printf("Pointer | ");
+        if (dev->capability & ECORE_DEVICE_CLASS_KEYBOARD) printf("Keyboard | ");
+        if (dev->capability & ECORE_DEVICE_CLASS_TOUCH) printf("Touch | ");
         printf("(0x%x)\n", dev->capability);
      }
 

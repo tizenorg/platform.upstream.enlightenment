@@ -649,11 +649,11 @@ _e_comp_wl_device_cap_to_class(int cap)
 {
    switch(cap)
      {
-      case ECORE_DEVICE_POINTER:
+      case ECORE_DEVICE_CLASS_POINTER:
          return EVAS_DEVICE_CLASS_MOUSE;
-      case ECORE_DEVICE_KEYBOARD:
+      case ECORE_DEVICE_CLASS_KEYBOARD:
          return EVAS_DEVICE_CLASS_KEYBOARD;
-      case ECORE_DEVICE_TOUCH:
+      case ECORE_DEVICE_CLASS_TOUCH:
          return EVAS_DEVICE_CLASS_TOUCH;
       default:
          return EVAS_DEVICE_CLASS_NONE;
@@ -5029,7 +5029,7 @@ _e_comp_wl_send_event_device(struct wl_client *wc, uint32_t timestamp, const cha
         EINA_LIST_FOREACH(e_comp_wl->input_device_manager.device_list, l, input_dev)
           {
              if ((strcmp(input_dev->identifier, dev_name)) ||
-                 (input_dev->capability != ECORE_DEVICE_KEYBOARD))
+                 (input_dev->capability != ECORE_DEVICE_CLASS_KEYBOARD))
                continue;
              e_comp_wl->input_device_manager.last_device_cap = input_dev->capability;
              EINA_LIST_FOREACH(input_dev->resources, ll, dev_res)
