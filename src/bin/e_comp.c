@@ -828,6 +828,7 @@ e_comp_hwc_end(const char *location)
 #else
    if (!e_comp->hwc) return;
    if (!e_comp->nocomp) return;
+   if (!e_comp->nocomp_ec) return;
 
    e_comp_nocomp_end(location);
 #endif // end of ENABLE_HWC_MULTI
