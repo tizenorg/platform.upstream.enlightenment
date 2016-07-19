@@ -3225,6 +3225,11 @@ _e_comp_wl_subsurface_check_below_bg_rectangle(E_Client *ec)
    if (!ec->comp_data->sub.below_list && !ec->comp_data->sub.below_list_pending) return;
    if (ec->argb) return;
 
+   has_video_client = e_comp_wl_video_client_has(ec);
+   if (has_video_client) return;
+
+   ELOGF("COMP", "         |bg_rectangle|video_client:%d", NULL, ec, has_video_client);
+
    /* create a bg rectangle if topmost window is 24 depth window */
    ec->comp_data->sub.below_obj = evas_object_rectangle_add(e_comp->evas);
    EINA_SAFETY_ON_NULL_RETURN(ec->comp_data->sub.below_obj);
@@ -3240,12 +3245,8 @@ _e_comp_wl_subsurface_check_below_bg_rectangle(E_Client *ec)
    evas_object_event_callback_add(ec->frame, EVAS_CALLBACK_RESIZE,
                                   _e_comp_wl_subsurface_bg_evas_cb_resize, ec);
 
-   has_video_client = e_comp_wl_video_client_has(ec);
-   ELOGF("COMP", "         |bg_rectangle|video_client:%d", NULL, ec, has_video_client);
-
    /* set alpha only if SW path */
-   if (!has_video_client)
-     e_comp_object_alpha_set(ec->frame, EINA_TRUE);
+   e_comp_object_alpha_set(ec->frame, EINA_TRUE);
 
    _e_comp_wl_subsurface_restack(ec);
    _e_comp_wl_subsurface_restack_bg_rectangle(ec);
