@@ -76,11 +76,29 @@ _e_log_cb(const Eina_Log_Domain *d, Eina_Log_Level level, const char *file, cons
 }
 
 #ifdef HAVE_DLOG
+static void
+_e_log_wayland_dlog(const char *format, va_list args)
+{
+   dlog_vprint(DLOG_INFO, LOG_TAG, format, args);
+}
+
+static void
+_e_log_wayland_stderr(const char *format, va_list args)
+{
+   vfprintf(stderr, format, args);
+}
+
 EINTERN void
 e_log_dlog_enable(Eina_Bool enable)
 {
-   if (_dlog_enabled != enable)
-     _dlog_enabled = enable;
+   if (_dlog_enabled == enable) return;
+
+   _dlog_enabled = enable;
+
+   if (_dlog_enabled)
+     wl_log_set_handler_server(_e_log_wayland_dlog);
+   else
+     wl_log_set_handler_server(_e_log_wayland_stderr);
 }
 #endif
 
@@ -93,7 +111,7 @@ e_log_init(void)
 
 #ifdef HAVE_DLOG
    if (getenv("E_LOG_DLOG_ENABLE"))
-     _dlog_enabled = EINA_TRUE;
+     e_log_dlog_enable(EINA_TRUE);
 #endif
 
    return 1;
