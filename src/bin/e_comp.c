@@ -407,6 +407,7 @@ _hwc_set(E_Output *eout)
                        set = e_plane_ec_set(ep, ep->prepare_ec);
                        if (set)
                          {
+                            INF("HWC : ec(0x%08x, %s) is set on fb_target( %d)\n", ep->prepare_ec, ep->prepare_ec->icccm.title, ep->zpos);
                             e_client_redirected_set(ep->prepare_ec, 0);
                             ret |= EINA_TRUE;
                          }
@@ -424,6 +425,7 @@ _hwc_set(E_Output *eout)
                   set = e_plane_ec_set(ep, ep->prepare_ec);
                   if (set)
                     {
+                       INF("HWC : ec(0x%08x, %s) is set on %d\n", ep->prepare_ec, ep->prepare_ec->icccm.title, ep->zpos);
                        e_client_redirected_set(ep->prepare_ec, 0);
                        ret |= EINA_TRUE;
                     }
@@ -449,6 +451,7 @@ _hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
    EINA_SAFETY_ON_NULL_RETURN_VAL(eout, EINA_FALSE);
    EINA_SAFETY_ON_NULL_RETURN_VAL(clist, EINA_FALSE);
 
+   // list up available_hw layers E_Client can be set
    ep_l = e_output_planes_get(eout);
    EINA_LIST_FOREACH(ep_l, l, ep)
      {
@@ -476,7 +479,6 @@ _hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
        (n_ec <= n_ly)) // full hwc including nocomp
      {
         int del = n_ly - n_ec;
-        INF("HWC : \t fully hwc \t n_ec(%d), n_vis(%d), n_ly(%d), hwc_mode(%d) \n", n_ec, n_vis, n_ly, e_comp->hwc_mode);
         EINA_LIST_REVERSE_FOREACH(hwc_l, l, ep)
           {
              ec = NULL;
@@ -496,7 +498,6 @@ _hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
             (n_ec < n_vis))
      {
         int del = n_ly - n_ec;
-        INF("HWC : \t hybrid \t n_ec(%d), n_vis(%d), n_ly(%d), hwc_mode(%d) \n", n_ec, n_vis, n_ly, e_comp->hwc_mode);
         EINA_LIST_REVERSE_FOREACH(hwc_l, l, ep)
           {
              ec = NULL;
@@ -592,6 +593,7 @@ _e_comp_hwc_apply(E_Output * eout)
 
 hwcompose:
    ret = _hwc_set(eout);
+   if (!ret) INF("HWC : it is failed to assign surface on plane\n");
 
 compose:
    if (ret) e_comp->hwc_mode = 1;
@@ -639,76 +641,74 @@ _e_comp_hwc_changed(void)
 static Eina_Bool
 _e_comp_hwc_prepare(void)
 {
-   Eina_List *l;
+   Eina_List *l, *vl;
    E_Zone *zone;
    Eina_Bool ret = EINA_FALSE;
 
-   if (!e_comp->hwc) return EINA_FALSE;
+   EINA_SAFETY_ON_FALSE_RETURN_VAL(e_comp->hwc, EINA_FALSE);
 
-   // TODO: e_comp->canvases
    EINA_LIST_FOREACH(e_comp->zones, l, zone)
      {
         E_Client *ec;
-        E_Output *eout;
-        int n_visible = 0, n_ec = 0;
-        Eina_List *clist = NULL;
+        E_Output *output;
+        int n_vis = 0, n_ec = 0;
+        Eina_List *clist = NULL, *vis_clist = NULL;
 
         if (!zone || !zone->output_id) continue;
 
-        eout = e_output_find(zone->output_id);
+        output = e_output_find(zone->output_id);
+        if (!output) continue;
 
-        E_CLIENT_REVERSE_FOREACH(ec)
+        vis_clist = e_comp_vis_ec_list_get(zone);
+        if (!vis_clist) continue;
+
+        EINA_LIST_FOREACH(vis_clist, vl, ec)
           {
-             if (!ec) continue;
-
-             if (ec->zone != zone) continue;
-
              E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
-
-             // check clients to skip composite
-             if (ec->ignored || ec->input_only || (!evas_object_visible_get(ec->frame)))
-               continue;
-
-             if (!E_INTERSECTS(0, 0, e_comp->w, e_comp->h,
-                               ec->client.x, ec->client.y, ec->client.w, ec->client.h))
-               {// check quick panel
-                  continue;
-               }
-
-             if (evas_object_data_get(ec->frame, "comp_skip"))
-               continue;
+             int cnt = 0;
 
              // check clients not able to use hwc
-             if ((!cdata->buffer_ref.buffer) ||
+             // if pixmap is launch screen image
+             if ((ec->pixmap) && (e_pixmap_type_get(ec->pixmap) == E_PIXMAP_TYPE_EXT_OBJECT))
+                goto composite;
+
+             // if video client could not draw it on video hw layer
+             if (cdata->sub.below_list || cdata->sub.below_list_pending)
+               {
+                  if (!e_comp_wl_video_client_has(ec))
+                     goto composite;
+               }
+
+             // if ec has invalid buffer or scaled( transformed )
+             if ((!cdata) ||
+                 (!cdata->buffer_ref.buffer) ||
                  (cdata->buffer_ref.buffer->type != E_COMP_WL_BUFFER_TYPE_NATIVE) ||
                  (cdata->width_from_buffer != cdata->width_from_viewport) ||
                  (cdata->height_from_buffer != cdata->height_from_viewport) ||
                  e_client_transform_core_enable_get(ec))
                {
-                  if (!n_visible) goto fullcomp;
-                  n_visible++;
+                  if (!n_vis) goto composite;
+                  cnt++;
                   break;
                }
 
-             n_visible++;
+             cnt++;
              clist = eina_list_append(clist, ec);
           }
 
+        n_vis = eina_list_count(vis_clist);
         n_ec = eina_list_count(clist);
-        if ((n_visible < 1) || (n_ec < 1))
-          {
-             eina_list_free(clist);
-             goto fullcomp;
-          }
+        if ((n_vis < 1) || (n_ec < 1))
+          goto composite;
 
-        ret = _hwc_prepare_set(eout, n_visible, clist);
-        eina_list_free(clist);
+        ret |= _hwc_prepare_set(output, n_vis, clist);
+
+        composite:
+        if (clist) eina_list_free(clist);
+        if (vis_clist) eina_list_free(vis_clist);
      }
 
    return ret;
-
-fullcomp:
-   return EINA_FALSE;
 }
 
 static Eina_Bool
@@ -716,12 +716,14 @@ _e_comp_hwc_usable(void)
 {
    Eina_List *l;
    E_Zone *zone;
+   Eina_Bool ret = EINA_FALSE;
 
    if (!e_comp->hwc) return EINA_FALSE;
 
    // check whether to use hwc
    // core assignment policy
-   _e_comp_hwc_prepare();
+   ret = _e_comp_hwc_prepare();
+   EINA_SAFETY_ON_FALSE_RETURN_VAL(ret, EINA_FALSE);
 
    // extra policy can replace core policy
    _e_comp_hook_call(E_COMP_HOOK_PREPARE_PLANE, NULL);
