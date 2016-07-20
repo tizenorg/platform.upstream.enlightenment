@@ -83,6 +83,18 @@ e_plane_new(E_Output *eout,
    return plane;
 }
 
+EINTERN Eina_Bool
+e_plane_is_reserved(E_Plane *plane)
+{
+   return plane->is_reserved;
+}
+
+EINTERN void
+e_plane_reserved_set(E_Plane *plane, Eina_Bool set)
+{
+   plane->is_reserved = set;
+}
+
 E_API Eina_Bool
 e_plane_resolution_set(E_Plane *plane,
                        int w,

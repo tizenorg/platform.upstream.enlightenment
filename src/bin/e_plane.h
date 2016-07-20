@@ -1,6 +1,6 @@
 #ifdef E_TYPEDEFS
 
-typedef enum _E_Plane_Type_State
+typedef enum _E_Plane_Type
 {
    E_PLANE_TYPE_INVALID,
    E_PLANE_TYPE_VIDEO,
@@ -40,13 +40,16 @@ struct _E_Plane
    E_Output             *eout;
 
    Eina_Bool             is_primary;
-   Eina_Bool             is_fb; // fb target
+   Eina_Bool             is_fb;        // fb target
+   Eina_Bool             is_reserved;  // surface assignment reserved
 };
 
 EINTERN int                  e_plane_init(void);
 EINTERN int                  e_plane_shutdown(void);
 EINTERN E_Plane             *e_plane_new(E_Output *eout, int zpos, Eina_Bool is_pri);
 EINTERN void                 e_plane_free(E_Plane *plane);
+EINTERN Eina_Bool            e_plane_is_reserved(E_Plane *plane);
+EINTERN void                 e_plane_reserved_set(E_Plane *plane, Eina_Bool set);
 E_API Eina_Bool              e_plane_resolution_set(E_Plane *plane, int w, int h);
 E_API Eina_Bool              e_plane_type_set(E_Plane *plane, E_Plane_Type type);
 E_API E_Plane_Type           e_plane_type_get(E_Plane *plane);
