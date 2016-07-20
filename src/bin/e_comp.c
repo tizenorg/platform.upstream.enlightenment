@@ -657,6 +657,7 @@ _e_comp_hwc_prepare(void)
         EINA_LIST_FOREACH(vis_clist, vl, ec)
           {
              E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+             int cnt = 0;
 
              // check clients not able to use hwc
              // if pixmap is launch screen image
