@@ -601,7 +601,7 @@ _e_comp_hwc_changed(void)
 static Eina_Bool
 _e_comp_hwc_prepare(void)
 {
-   Eina_List *l;
+   Eina_List *l, *vl;
    E_Zone *zone;
    Eina_Bool ret = EINA_FALSE;
 
@@ -611,32 +611,33 @@ _e_comp_hwc_prepare(void)
      {
         E_Client *ec;
         E_Output *output;
-        int n_visible = 0, n_ec = 0;
-        Eina_List *clist = NULL;
+        int n_vis = 0, n_ec = 0;
+        Eina_List *clist = NULL, *vis_clist = NULL;
 
         if (!zone || !zone->output_id) continue;
 
         output = e_output_find(zone->output_id);
         if (!output) continue;
 
-        E_CLIENT_REVERSE_FOREACH(ec)
+        vis_clist = e_comp_vis_ec_list_get(zone);
+        if (!vis_clist) continue;
+
+        EINA_LIST_FOREACH(vis_clist, vl, ec)
           {
              E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
+             int cnt = 0;
 
-             if (ec->zone != zone) continue;
+             // check clients not able to use hwc
+             // if pixmap is launch screen image
+             if ((ec->pixmap) && (e_pixmap_type_get(ec->pixmap) == E_PIXMAP_TYPE_EXT_OBJECT))
+                goto composite;
 
-             // check clients to skip composite
-             if (ec->ignored || ec->input_only || (!evas_object_visible_get(ec->frame)))
-               continue;
-
-             if (!E_INTERSECTS(0, 0, e_comp->w, e_comp->h,
-                               ec->client.x, ec->client.y, ec->client.w, ec->client.h))
+             // if video client could not draw it on video hw layer
+             if (cdata->sub.below_list || cdata->sub.below_list_pending)
                {
-                  continue;
+                  if (!e_comp_wl_video_client_has(ec))
+                     goto composite;
                }
-
-             if (evas_object_data_get(ec->frame, "comp_skip"))
-               continue;
 
              // if ec has invalid buffer or scaled( transformed )
              if ((!cdata) ||
@@ -646,30 +647,28 @@ _e_comp_hwc_prepare(void)
                  (cdata->height_from_buffer != cdata->height_from_viewport) ||
                  e_client_transform_core_enable_get(ec))
                {
-                  if (!n_visible) goto fullcomp;
-                  n_visible++;
+                  if (!n_vis) goto composite;
+                  cnt++;
                   break;
                }
 
-             n_visible++;
+             cnt++;
              clist = eina_list_append(clist, ec);
           }
 
+        n_vis = eina_list_count(vis_clist);
         n_ec = eina_list_count(clist);
-        if ((n_visible < 1) || (n_ec < 1))
-          {
-             eina_list_free(clist);
-             goto fullcomp;
-          }
+        if ((n_vis < 1) || (n_ec < 1))
+          goto composite;
 
-        ret = _hwc_prepare_set(output, n_visible, clist);
+        ret |= _hwc_prepare_set(output, n_vis, clist);
+
+        composite:
         eina_list_free(clist);
+        eina_list_free(vis_clist);
      }
 
    return ret;
-
-fullcomp:
-   return EINA_FALSE;
 }
 
 static Eina_Bool
@@ -677,12 +676,14 @@ _e_comp_hwc_usable(void)
 {
    Eina_List *l;
    E_Zone *zone;
+   Eina_Bool ret = EINA_FALSE;
 
    if (!e_comp->hwc) return EINA_FALSE;
 
    // check whether to use hwc
    // core assignment policy
-   _e_comp_hwc_prepare();
+   ret = _e_comp_hwc_prepare();
+   EINA_SAFETY_ON_FALSE_RETURN_VAL(ret, EINA_FALSE);
 
    // extra policy can replace core policy
    _e_comp_hook_call(E_COMP_HOOK_PREPARE_PLANE, NULL);
