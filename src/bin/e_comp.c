@@ -701,8 +701,8 @@ _e_comp_hwc_prepare(void)
         ret |= _hwc_prepare_set(output, n_vis, clist);
 
         composite:
-        if (clist) eina_list_free(clist);
-        if (vis_clist) eina_list_free(vis_clist);
+        eina_list_free(clist);
+        eina_list_free(vis_clist);
      }
 
    return ret;
