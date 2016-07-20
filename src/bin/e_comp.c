@@ -449,6 +449,7 @@ _hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
                }
              continue;
           }
+        if (conf->hwc_use_single_plane) continue;
         if (e_plane_is_cursor(ep)) continue;
         if (ep->zpos > ep_fb->zpos)
           hwc_l = eina_list_append(hwc_l, ep);
