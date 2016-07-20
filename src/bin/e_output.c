@@ -172,6 +172,27 @@ e_output_drm_new(Ecore_Drm_Output *output)
    return eout;
 }
 
+static char *
+_output_type_to_str(tdm_output_type output_type)
+{
+   if (output_type == TDM_OUTPUT_TYPE_Unknown) return "Unknown";
+   else if (output_type == TDM_OUTPUT_TYPE_VGA) return "VGA";
+   else if (output_type == TDM_OUTPUT_TYPE_DVII) return "DVII";
+   else if (output_type == TDM_OUTPUT_TYPE_DVID) return "DVID";
+   else if (output_type == TDM_OUTPUT_TYPE_DVIA) return "DVIA";
+   else if (output_type == TDM_OUTPUT_TYPE_SVIDEO) return "SVIDEO";
+   else if (output_type == TDM_OUTPUT_TYPE_LVDS) return "LVDS";
+   else if (output_type == TDM_OUTPUT_TYPE_Component) return "Component";
+   else if (output_type == TDM_OUTPUT_TYPE_9PinDIN) return "9PinDIN";
+   else if (output_type == TDM_OUTPUT_TYPE_DisplayPort) return "DisplayPort";
+   else if (output_type == TDM_OUTPUT_TYPE_HDMIA) return "HDMIA";
+   else if (output_type == TDM_OUTPUT_TYPE_HDMIB) return "HDMIB";
+   else if (output_type == TDM_OUTPUT_TYPE_TV) return "TV";
+   else if (output_type == TDM_OUTPUT_TYPE_eDP) return "eDP";
+   else if (output_type == TDM_OUTPUT_TYPE_DSI) return "DSI";
+   else return "Unknown";
+}
+
 EINTERN E_Output *
 e_output_new(E_Comp_Screen *e_comp_screen, int index)
 {
@@ -180,10 +201,11 @@ e_output_new(E_Comp_Screen *e_comp_screen, int index)
    tdm_output *toutput = NULL;
    tdm_error error;
    char *id = NULL;
-   const char *name;
+   char *name;
    int num_layers;
    int i;
    int size = 0;
+   tdm_output_type output_type;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(e_comp_screen, NULL);
 
@@ -195,14 +217,16 @@ e_output_new(E_Comp_Screen *e_comp_screen, int index)
    if (!toutput) goto fail;
    output->toutput = toutput;
 
-   error = tdm_output_get_model_info(toutput, NULL, NULL, &name);
-   if (error != TDM_ERROR_NONE) goto fail;
-
    error = tdm_output_add_change_handler(toutput, _e_output_cb_output_change, output);
    if (error != TDM_ERROR_NONE)
         WRN("fail to tdm_output_add_change_handler");
 
+   error = tdm_output_get_output_type(toutput, &output_type);
+   if (error != TDM_ERROR_NONE) goto fail;
+
+   name = _output_type_to_str(output_type);
    size = strlen(name) + 4;
+
    id = calloc(1, size);
    if (!id) return NULL;
    snprintf(id, size, "%s-%d", name, index);
