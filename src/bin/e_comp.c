@@ -464,7 +464,7 @@ _hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
                }
              continue;
           }
-        if (conf->hwc_single_plane) continue;
+        if (conf->hwc_use_single_plane) continue;
         if (e_plane_is_cursor(ep)) continue;
         if (ep->zpos > ep_fb->zpos)
           hwc_l = eina_list_append(hwc_l, ep);
@@ -1472,8 +1472,8 @@ e_comp_init(void)
    e_comp_canvas_fake_layers_init();
 
 #ifdef HAVE_HWC
-   // TO DO : check hwc init condition
-   if (conf->hwc && e_comp_gl_get())
+   if (conf->hwc &&
+       e_comp_gl_get()) // TODO: check hwc init condition
      {
         e_comp->hwc = e_comp_hwc_init();
         if (!e_comp->hwc)
@@ -1481,6 +1481,7 @@ e_comp_init(void)
         else
           e_comp->hwc_fs = EINA_TRUE; // 1: active hwc policy
      }
+   conf->hwc_use_single_plane = 1; // TODO: 0 if multi plane is working.
 #endif
 
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_SCREENSAVER_ON,  _e_comp_screensaver_on,  NULL);
