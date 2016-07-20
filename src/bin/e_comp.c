@@ -558,6 +558,28 @@ _hwc_plane_reserved_clean()
 }
 
 static Eina_Bool
+_hwc_plane_reserved_clean()
+{
+   Eina_List *l, *ll;
+   E_Zone *zone;
+   E_Plane *ep;
+
+   EINA_LIST_FOREACH(e_comp->zones, l, zone)
+     {
+        E_Output * eout;
+        if (!zone->output_id) continue;
+        eout = e_output_find(zone->output_id);
+        EINA_LIST_FOREACH(eout->planes, ll, ep)
+          {
+             if (e_plane_is_reserved(ep))
+                e_plane_reserved_set(ep, 0);
+          }
+     }
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
 _e_comp_hwc_apply(E_Output * eout)
 {
    const Eina_List *ep_l = NULL, *l;
