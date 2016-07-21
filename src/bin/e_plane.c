@@ -1680,20 +1680,11 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
           ELOGF("E_PLANE", "Done    Plane(%p)  tsurface(%p) tqueue(%p) data(%p)::Canvas",
                NULL, NULL, plane, tsurface, renderer->tqueue, data);
 
-        /* initial setting of tsurface to the layer */
-        if (plane->tsurface == NULL)
-          {
-             plane->tsurface = tsurface;
-          }
-        else
-          {
-             _e_plane_surface_queue_release(plane, plane->tsurface);
-             e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, NULL);
-             plane->tsurface = tsurface;
-          }
-
         if (plane->reserved_memory)
           {
+             if (plane->tsurface)
+                _e_plane_surface_queue_release(plane, plane->tsurface);
+
              if (renderer->state != E_PLANE_RENDERER_STATE_ACTIVATE)
                 _e_plane_wait_for_showup_set(EINA_FALSE);
 
@@ -1704,8 +1695,15 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
           }
         else
           {
-             _e_plane_wait_for_showup_set(EINA_FALSE);
+             if (plane->tsurface && !plane->displaying_buffer_ref.buffer)
+                _e_plane_surface_queue_release(plane, plane->tsurface);
+
+             if (!plane->ec)
+                _e_plane_wait_for_showup_set(EINA_FALSE);
           }
+
+        e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, NULL);
+        plane->tsurface = tsurface;
      }
    else
      {
@@ -1733,15 +1731,16 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
           {
              /* release */
              if (plane->tsurface)
-                _e_plane_surface_on_client_release(plane, plane->tsurface);
+               {
+                  _e_plane_surface_on_client_release(plane, plane->tsurface);
+
+                  if (!plane->displaying_buffer_ref.buffer)
+                     _e_plane_surface_queue_release(plane, plane->tsurface);
+               }
           }
 
-        /* release */
-        if (plane->tsurface)
-          {
-            e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, data->buffer_ref.buffer);
-            plane->tsurface = tsurface;
-          }
+        e_comp_wl_buffer_reference(&plane->displaying_buffer_ref, data->buffer_ref.buffer);
+        plane->tsurface = tsurface;
 
         e_comp_wl_buffer_reference(&data->buffer_ref, NULL);
      }
