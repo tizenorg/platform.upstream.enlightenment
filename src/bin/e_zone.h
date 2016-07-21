@@ -41,6 +41,10 @@ typedef struct _E_Event_Zone_Display_State_Change   E_Event_Zone_Display_State_C
 #ifndef E_ZONE_H
 #define E_ZONE_H
 
+typedef Eina_Bool (*E_Zone_Cb_Orientation_Block_Set)(E_Zone *zone, const char* name_hint, Eina_Bool set);
+typedef void      (*E_Zone_Cb_Orientation_Force_Update_Add)(E_Zone *zone, E_Client *client);
+typedef void      (*E_Zone_Cb_Orientation_Force_Update_Del)(E_Zone *zone, E_Client *client);
+
 #define E_ZONE_TYPE (int)0xE0b0100d
 
 struct _E_Zone
@@ -107,6 +111,13 @@ struct _E_Zone
       Eina_Bool unknown_state : 1;
    } rot;
 #endif
+
+   struct
+   {
+      E_Zone_Cb_Orientation_Block_Set block_set;
+      E_Zone_Cb_Orientation_Force_Update_Add force_update_add;
+      E_Zone_Cb_Orientation_Force_Update_Del force_update_del;
+   } orientation;
 
    E_Zone_Display_State display_state;
    char                 *output_id; // same id we get from e_comp_screen so look it up there
@@ -195,6 +206,11 @@ E_API void      e_zone_fade_handle(E_Zone *zone, int out, double tim);
 
 E_API void                 e_zone_display_state_set(E_Zone *zone, E_Zone_Display_State state);
 E_API E_Zone_Display_State e_zone_display_state_get(E_Zone *zone);
+
+E_API void      e_zone_orientation_callback_set(E_Zone *zone, E_Zone_Cb_Orientation_Block_Set block_set, E_Zone_Cb_Orientation_Force_Update_Add force_update_add, E_Zone_Cb_Orientation_Force_Update_Del force_update_del);
+E_API Eina_Bool e_zone_orientation_block_set(E_Zone *zone, const char *name_hint, Eina_Bool set);
+E_API void      e_zone_orientation_force_update_add(E_Zone *zone, E_Client *client);
+E_API void      e_zone_orientation_force_update_del(E_Zone *zone, E_Client *client);
 
 extern E_API int E_EVENT_ZONE_DESK_COUNT_SET;
 extern E_API int E_EVENT_ZONE_MOVE_RESIZE;
