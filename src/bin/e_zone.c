@@ -1154,6 +1154,51 @@ e_zone_display_state_get(E_Zone *zone)
    return zone->display_state;
 }
 
+E_API void
+e_zone_orientation_callback_set(E_Zone *zone,
+                                E_Zone_Cb_Orientation_Block_Set block_set,
+                                E_Zone_Cb_Orientation_Force_Update_Add force_update_add,
+                                E_Zone_Cb_Orientation_Force_Update_Del force_update_del)
+{
+   E_OBJECT_CHECK(zone);
+   E_OBJECT_TYPE_CHECK(zone, E_ZONE_TYPE);
+
+   zone->orientation.block_set = block_set;
+   zone->orientation.force_update_add = force_update_add;
+   zone->orientation.force_update_del = force_update_del;
+}
+
+E_API Eina_Bool
+e_zone_orientation_block_set(E_Zone *zone, const char* name_hint,  Eina_Bool set)
+{
+   E_OBJECT_CHECK_RETURN(zone, EINA_FALSE);
+   E_OBJECT_TYPE_CHECK_RETURN(zone, E_ZONE_TYPE, EINA_FALSE);
+
+   if (zone->orientation.block_set)
+     return zone->orientation.block_set(zone, name_hint, set);
+
+   return EINA_FALSE;
+}
+
+E_API void
+e_zone_orientation_force_update_add(E_Zone *zone, E_Client *client)
+{
+   E_OBJECT_CHECK(zone);
+   E_OBJECT_TYPE_CHECK(zone, E_ZONE_TYPE);
+
+   if (zone->orientation.force_update_add)
+     zone->orientation.force_update_add(zone, (void*)client);
+}
+
+E_API void
+e_zone_orientation_force_update_del(E_Zone *zone, E_Client *client)
+{
+   E_OBJECT_CHECK(zone);
+   E_OBJECT_TYPE_CHECK(zone, E_ZONE_TYPE);
+
+   if (zone->orientation.force_update_del)
+     zone->orientation.force_update_del(zone, (void*)client);
+}
 
 /* local subsystem functions */
 static void
