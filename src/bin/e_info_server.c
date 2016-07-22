@@ -490,12 +490,14 @@ _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
         int i;
         int count = e_client_transform_core_transform_count_get(target_ec);
 
-        __WINDOW_PROP_ARG_APPEND(" ", "[id] [move] [scale] [rotation] [keep_ratio]");
+        __WINDOW_PROP_ARG_APPEND(" ", "[id] [move] [scale] [rotation] [keep_ratio] [viewport]");
         for (i = 0 ; i < count ; ++i)
           {
              double dx, dy, dsx, dsy, drz;
              int x, y, rz;
              int keep_ratio;
+             int view_port;
+             int vx, vy, vw, vh;
 
              E_Util_Transform *transform = e_client_transform_core_transform_get(target_ec, i);
              if (!transform) continue;
@@ -504,12 +506,26 @@ _msg_window_prop_client_append(Eldbus_Message_Iter *iter, E_Client *target_ec)
              e_util_transform_scale_get(transform, &dsx, &dsy, NULL);
              e_util_transform_rotation_get(transform, NULL, NULL, &drz);
              keep_ratio = e_util_transform_keep_ratio_get(transform);
+             view_port = e_util_transform_viewport_flag_get(transform);
 
              x = (int)(dx + 0.5);
              y = (int)(dy + 0.5);
              rz = (int)(drz + 0.5);
 
-             __WINDOW_PROP_ARG_APPEND_TYPE("Transform", "[%d] [%d, %d] [%2.1f, %2.1f] [%d] [%d]", i, x, y, dsx, dsy, rz, keep_ratio);
+             if (view_port)
+               {
+                  e_util_transform_viewport_get(transform, &vx, &vy, &vw, &vh);
+               }
+             else
+               {
+                  vx = 0;
+                  vy = 0;
+                  vw = 0;
+                  vh = 0;
+               }
+
+             __WINDOW_PROP_ARG_APPEND_TYPE("Transform", "[%d] [%d, %d] [%2.1f, %2.1f] [%d] [%d] [%d :%d, %d, %d, %d]",
+                                           i, x, y, dsx, dsy, rz, keep_ratio, view_port, vx, vy, vw, vh);
           }
      }
 #undef __WINDOW_PROP_ARG_APPEND

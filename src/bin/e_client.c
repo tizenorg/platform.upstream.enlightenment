@@ -1753,6 +1753,7 @@ _e_client_cb_evas_resize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_
    e_remember_update(ec);
    ec->pre_cb.w = w; ec->pre_cb.h = h;
 
+   e_client_transform_core_update(ec);
    e_client_visibility_calculate();
 }
 
@@ -2874,11 +2875,17 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
 static Eina_Bool
 _e_client_transform_core_check_change(E_Client *ec)
 {
-   Eina_Bool check = EINA_FALSE;
    int w = 0;
    int h = 0;
-
+   Eina_Bool check = EINA_FALSE;
    if (!ec) return EINA_FALSE;
+
+   // wait viewport setting
+   if (!ec->transform_core.transform_list)
+     {
+        if (ec->comp_data && ec->comp_data->scaler.viewport)
+          return EINA_FALSE;
+     }
 
    if (ec->frame)
      evas_object_geometry_get(ec->frame, 0, 0, &w, &h);
@@ -2888,26 +2895,16 @@ _e_client_transform_core_check_change(E_Client *ec)
        ec->y != ec->transform_core.backup.client_y ||
        ec->w != ec->transform_core.backup.client_w ||
        ec->h != ec->transform_core.backup.client_h ||
-           w != ec->transform_core.backup.frame_w  ||
-           h != ec->transform_core.backup.frame_h)
+       w     != ec->transform_core.backup.frame_w ||
+       h     != ec->transform_core.backup.frame_h)
      {
         check = EINA_TRUE;
         ec->transform_core.backup.client_x = ec->x;
         ec->transform_core.backup.client_y = ec->y;
         ec->transform_core.backup.client_w = ec->w;
         ec->transform_core.backup.client_h = ec->h;
-
-        if (ec->frame)
-          {
-             evas_object_geometry_get(ec->frame, 0, 0,
-                                      &ec->transform_core.backup.frame_w,
-                                      &ec->transform_core.backup.frame_h);
-          }
-        else
-          {
-             ec->transform_core.backup.frame_w = 0;
-             ec->transform_core.backup.frame_h = 0;
-          }
+        ec->transform_core.backup.frame_w = w;
+        ec->transform_core.backup.frame_h = h;
      }
 
    // check new transform or del transform
@@ -3015,7 +3012,10 @@ _e_client_transform_core_boundary_update(E_Client *ec, E_Util_Transform_Rect_Ver
 }
 
 static void
-_e_client_transform_core_vertices_apply(E_Client *ec EINA_UNUSED, Evas_Object *obj, E_Util_Transform_Rect_Vertex *vertices)
+_e_client_transform_core_vertices_apply(E_Client *ec EINA_UNUSED,
+                                        Evas_Object *obj,
+                                        E_Util_Transform_Rect_Vertex *vertices,
+                                        E_Util_Transform *transform)
 {
    Evas_Map *map = NULL;
    int i, x, y;
@@ -3041,6 +3041,13 @@ _e_client_transform_core_vertices_apply(E_Client *ec EINA_UNUSED, Evas_Object *o
              y = (int)(dy + 0.5);
 
              evas_map_point_coord_set(map, i, x, y, 1.0);
+
+             if (transform && e_util_transform_texcoord_flag_get(transform))
+               {
+                  double u = 0.0; double v = 0.0;
+                  e_util_transform_texcoord_get(transform, i, &u, &v);
+                  evas_map_point_image_uv_set(map, i, u, v);
+               }
           }
 
         evas_object_map_set(obj, map);
@@ -3065,7 +3072,7 @@ _e_client_transform_core_sub_update(E_Client *ec, E_Util_Transform_Rect_Vertex *
    cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
 
    if (cdata->sub.below_obj)
-      _e_client_transform_core_vertices_apply(ec, cdata->sub.below_obj, vertices);
+     _e_client_transform_core_vertices_apply(ec, cdata->sub.below_obj, vertices, NULL);
 
    EINA_LIST_FOREACH(cdata->sub.list, l, subc)
       e_client_transform_core_update(subc);
@@ -5977,7 +5984,7 @@ e_client_transform_core_add(E_Client *ec, E_Util_Transform *transform)
    ec->transform_core.transform_list = eina_list_append(ec->transform_core.transform_list, transform);
    ec->transform_core.changed = EINA_TRUE;
    e_util_transform_ref(transform);
-   e_client_transform_core_update(ec);
+  // e_client_transform_core_update(ec);
 }
 
 E_API void
@@ -6000,14 +6007,9 @@ e_client_transform_core_remove(E_Client *ec, E_Util_Transform *transform)
 E_API void
 e_client_transform_core_update(E_Client *ec)
 {
-   E_Comp_Wl_Client_Data *cdata;
-
    if (!ec) return;
    if (ec->new_client) return;
    if (!_e_client_transform_core_check_change(ec)) return;
-
-   cdata = (E_Comp_Wl_Client_Data *)ec->comp_data;
-   if (cdata && cdata->scaler.viewport) return;
 
    if (ec->transform_core.transform_list || ec->transform_core.parent.enable)
      {
@@ -6025,7 +6027,15 @@ e_client_transform_core_update(E_Client *ec)
         // 2. merge transform
         EINA_LIST_FOREACH(ec->transform_core.transform_list, l, temp_trans)
           {
-             ec->transform_core.result.transform = e_util_transform_merge(&ec->transform_core.result.transform, temp_trans);
+             e_util_transform_merge(&ec->transform_core.result.transform, temp_trans);
+          }
+
+        // 2.5 check viewport
+        if (e_util_transform_viewport_flag_get(&ec->transform_core.result.transform))
+          {
+             int vx = 0, vy = 0, vw = 0, vh = 0;
+             e_util_transform_viewport_get(&ec->transform_core.result.transform, &vx, &vy, &vw, &vh);
+             e_util_transform_rect_init(&source_rect, vx, vy, vw, vh);
           }
 
         // 3. covert to matrix and apply keep_ratio
@@ -6054,6 +6064,24 @@ e_client_transform_core_update(E_Client *ec)
              ec->transform_core.keep_ratio = keep_ratio;
           }
 
+        // 3.1 if 24bit window then set transp rect
+        if (!ec->argb)
+          {
+             int angle = 0;
+             double dangle = 0.0;
+             e_util_transform_rotation_get(&ec->transform_core.result.transform, 0, 0, &dangle);
+
+             angle = (int)(dangle + 0.5);
+             angle %= 90;
+
+             if (angle == 0) // when transform angle is 0, 90, 180, 270, 360. then set transp rect
+               e_comp_object_transform_transp_set(ec->frame, EINA_TRUE);
+             else
+               e_comp_object_transform_transp_set(ec->frame, EINA_FALSE);
+          }
+        else
+          e_comp_object_transform_transp_set(ec->frame, EINA_FALSE);
+
         // 3.5 parent matrix multiply
         if (ec->transform_core.parent.enable)
           {
@@ -6073,18 +6101,24 @@ e_client_transform_core_update(E_Client *ec)
                                                                                                    &ec->transform_core.result.boundary.vertices);
 
         // 5. apply vertices
+        e_comp_object_transform_transp_vertices_set(ec->frame, &ec->transform_core.result.vertices);
         e_comp_object_transform_bg_vertices_set(ec->frame, &ec->transform_core.result.boundary.vertices);
         _e_client_transform_core_boundary_update(ec, &ec->transform_core.result.boundary.vertices);
-        _e_client_transform_core_vertices_apply(ec, ec->frame, &ec->transform_core.result.vertices);
+        _e_client_transform_core_vertices_apply(ec, ec->frame, &ec->transform_core.result.vertices, &ec->transform_core.result.transform);
 
         // 6. subsurface update'
         _e_client_transform_core_sub_update(ec, &ec->transform_core.result.vertices);
      }
    else
      {
-        ec->transform_core.result.enable = EINA_FALSE;
-        _e_client_transform_core_vertices_apply(ec, ec->frame, NULL);
-        _e_client_transform_core_sub_update(ec, NULL);
+        if (ec->transform_core.result.enable)
+          {
+             ec->transform_core.result.enable = EINA_FALSE;
+             _e_client_transform_core_vertices_apply(ec, ec->frame, NULL, NULL);
+             e_comp_object_transform_bg_set(ec->frame, EINA_FALSE);
+             e_comp_object_transform_transp_set(ec->frame, EINA_FALSE);
+             _e_client_transform_core_sub_update(ec, NULL);
+          }
      }
 
    e_client_visibility_calculate();

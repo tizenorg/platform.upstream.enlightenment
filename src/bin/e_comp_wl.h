@@ -459,6 +459,8 @@ struct _E_Comp_Wl_Client_Data
    E_Comp_Wl_Input_Device *last_device_ptr;
    E_Comp_Wl_Input_Device *last_device_touch;
    E_Comp_Wl_Input_Device *last_device_kbd;
+
+   E_Util_Transform *viewport_transform;
 };
 
 struct _E_Comp_Wl_Output
