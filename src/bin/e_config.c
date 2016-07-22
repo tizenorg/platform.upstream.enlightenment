@@ -21,6 +21,7 @@ static E_Config_DD *_e_config_desktop_name_edd = NULL;
 static E_Config_DD *_e_config_desktop_window_profile_edd = NULL;
 static E_Config_DD *_e_config_env_var_edd = NULL;
 static E_Config_DD *_e_config_client_type_edd = NULL;
+static E_Config_DD *_e_config_policy_desk_edd = NULL;
 
 E_API int E_EVENT_CONFIG_MODE_CHANGED = 0;
 
@@ -47,6 +48,7 @@ _e_config_edd_shutdown(void)
    E_CONFIG_DD_FREE(_e_config_desktop_window_profile_edd);
    E_CONFIG_DD_FREE(_e_config_env_var_edd);
    E_CONFIG_DD_FREE(_e_config_client_type_edd);
+   E_CONFIG_DD_FREE(_e_config_policy_desk_edd);
 }
 
 static void
@@ -111,6 +113,16 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, window_type, INT);
    E_CONFIG_VAL(D, T, client_type, INT);
 
+   _e_config_policy_desk_edd = E_CONFIG_DD_NEW("E_Config_Policy_Desk", E_Config_Policy_Desk);
+#undef T
+#undef D
+#define T E_Config_Policy_Desk
+#define D _e_config_policy_desk_edd
+   E_CONFIG_VAL(D, T, zone_num, UINT);
+   E_CONFIG_VAL(D, T, x, INT);
+   E_CONFIG_VAL(D, T, y, INT);
+   E_CONFIG_VAL(D, T, enable, INT);
+
    _e_config_edd = E_CONFIG_DD_NEW("E_Config", E_Config);
 #undef T
 #undef D
@@ -130,6 +142,13 @@ _e_config_edd_init(Eina_Bool old)
    E_CONFIG_VAL(D, T, zone_desks_y_count, INT);
    E_CONFIG_LIST(D, T, modules, _e_config_module_edd);
    E_CONFIG_VAL(D, T, window_placement_policy, INT);
+   E_CONFIG_VAL(D, T, use_e_policy, INT);
+   E_CONFIG_VAL(D, T, launcher.title, STR);
+   E_CONFIG_VAL(D, T, launcher.clas, STR);
+   E_CONFIG_VAL(D, T, launcher.type, UINT);
+   E_CONFIG_LIST(D, T, policy_desks, _e_config_policy_desk_edd);
+   E_CONFIG_VAL(D, T, use_softkey, INT);
+   E_CONFIG_VAL(D, T, softkey_size, INT);
    E_CONFIG_VAL(D, T, focus_policy, INT);
    E_CONFIG_VAL(D, T, focus_policy_ext, INT);
    E_CONFIG_VAL(D, T, focus_setting, INT);
@@ -358,6 +377,9 @@ e_config_load(void)
    E_CONFIG_LIMIT(e_config->priority, 0, 19);
    E_CONFIG_LIMIT(e_config->zone_desks_x_count, 1, 64);
    E_CONFIG_LIMIT(e_config->zone_desks_y_count, 1, 64);
+   E_CONFIG_LIMIT(e_config->use_e_policy, 0, 1);
+   E_CONFIG_LIMIT(e_config->use_softkey, 0, 1);
+   E_CONFIG_LIMIT(e_config->softkey_size, 0, 42);
    E_CONFIG_LIMIT(e_config->window_placement_policy, E_WINDOW_PLACEMENT_SMART, E_WINDOW_PLACEMENT_MANUAL);
    E_CONFIG_LIMIT(e_config->focus_policy, 0, 2);
    E_CONFIG_LIMIT(e_config->focus_policy_ext, 0, 1);
@@ -795,6 +817,7 @@ _e_config_free(E_Config *ecf)
    E_Config_Module *em;
    E_Config_Env_Var *evr;
    E_Config_Desktop_Window_Profile *wp;
+   E_Config_Policy_Desk *pd;
 
    if (!ecf) return;
 
@@ -838,6 +861,12 @@ _e_config_free(E_Config *ecf)
         if (evr->val) eina_stringshare_del(evr->val);
         E_FREE(evr);
      }
+
+   EINA_LIST_FREE(ecf->policy_desks, pd)
+      E_FREE(pd);
+
+   eina_stringshare_del(ecf->launcher.title);
+   eina_stringshare_del(ecf->launcher.clas);
 
    E_FREE(ecf);
 }

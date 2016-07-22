@@ -9,6 +9,7 @@ typedef struct _E_Config_Desktop_Window_Profile E_Config_Desktop_Window_Profile;
 typedef struct _E_Config_Desktop_Background     E_Config_Desktop_Background;
 typedef struct _E_Config_Env_Var                E_Config_Env_Var;
 typedef struct _E_Config_Client_Type            E_Config_Client_Type;
+typedef struct _E_Config_Policy_Desk            E_Config_Policy_Desk;
 
 #else
 #ifndef E_CONFIG_H
@@ -38,6 +39,16 @@ struct _E_Config
    int         zone_desks_x_count;
    int         zone_desks_y_count;
    Eina_List  *modules;
+   int         use_e_policy;
+   struct
+     {
+        const char   *title;
+        const char   *clas;
+        unsigned int  type;
+     } launcher;
+   Eina_List  *policy_desks;
+   int         use_softkey;
+   int         softkey_size;
    int         window_placement_policy;
    int         focus_policy;
    int         focus_policy_ext;
@@ -238,6 +249,13 @@ struct _E_Config_Client_Type
    const char     *clas; /* icccm.class */
    E_Window_Type   window_type; /* Ecore_X_Window_Type / E_Window_Type */
    int             client_type; /* E_Client_Type */
+};
+
+struct _E_Config_Policy_Desk
+{
+   unsigned int zone_num;
+   int x, y;
+   int enable;
 };
 
 EINTERN int                   e_config_init(void);
