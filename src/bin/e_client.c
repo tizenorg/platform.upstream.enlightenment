@@ -2649,7 +2649,10 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
    Eina_Iterator *it;
    Eina_Bool canvas_vis = EINA_TRUE;
    Eina_Bool ec_vis, ec_opaque, calc_region;
-   Eina_Bool skip_rot_pending_show;
+   Eina_Bool skip_rot_pending_show = EINA_FALSE;
+   Eina_Bool is_above_rot_pending = EINA_FALSE;
+   Eina_Bool is_launching_effect = EINA_FALSE;
+
    int x = 0, y = 0, w = 0, h = 0;
    const int edge = 1;
    E_Comp_Wl_Client_Data *cdata;
@@ -2693,10 +2696,13 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
             (evas_object_data_get(ec->frame, "effect_running")))
           {
              effect_running = EINA_TRUE;
+             if (ec->launching)
+               is_launching_effect = EINA_TRUE;
              continue;
           }
 
         e_client_geometry_get(ec, &x, &y, &w, &h);
+        is_above_rot_pending = skip_rot_pending_show;
         ec_vis = ec_opaque = skip_rot_pending_show = EINA_FALSE;
         calc_region = EINA_TRUE;
 
@@ -2759,10 +2765,19 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
              /* unobscured case */
              EC_IS_NOT_VISIBLE
                {
-                  /* previous state is obscured: -1 or 1 */
-                  ec->visibility.obscured = E_VISIBILITY_UNOBSCURED;
-                  ec->visibility.changed = 1;
-                  ELOG("CLIENT VIS ON", ec->pixmap, ec);
+                  if ((!is_above_rot_pending) &&
+                      ((!effect_running) ||
+                       ((effect_running) && (!is_launching_effect))))
+                    {
+                       /* previous state is obscured: -1 or 1 */
+                       ec->visibility.obscured = E_VISIBILITY_UNOBSCURED;
+                       ec->visibility.changed = 1;
+                       ELOG("CLIENT VIS ON", ec->pixmap, ec);
+                    }
+                  else
+                    {
+                       ELOG("CLIENT VIS ON-SKIP", ec->pixmap, ec);
+                    }
                }
 
              /* subtract window region from canvas region */
