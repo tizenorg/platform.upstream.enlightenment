@@ -34,6 +34,10 @@ BuildRequires:  pkgconfig(wayland-tbm-server)
 BuildRequires:  pkgconfig(ecore-drm)
 BuildRequires:  pkgconfig(libtdm)
 BuildRequires:  pkgconfig(gbm)
+BuildRequires:  pkgconfig(capi-system-device)
+BuildRequires:  pkgconfig(tzsh-server)
+BuildRequires:  pkgconfig(cynara-client)
+BuildRequires:  pkgconfig(cynara-creds-socket)
 Requires:       libwayland-extension-server
 
 %description

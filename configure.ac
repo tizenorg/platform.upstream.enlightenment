@@ -460,6 +460,27 @@ AM_CONDITIONAL([HAVE_WAYLAND], [test "x${have_wayland}" = "xyes"])
 AM_CONDITIONAL([HAVE_WAYLAND_TBM], [test "x${have_wayland_tbm}" = "xyes"])
 AM_CONDITIONAL([HAVE_HWC], [test "x${have_hwc}" = "xyes"])
 
+#capi-system-device
+PKG_CHECK_MODULES([CAPI_SYSTEM_DEVICE],
+                  [capi-system-device])
+#cynara
+PKG_CHECK_MODULES(CYNARA,
+                  [cynara-client, cynara-creds-socket, cynara-session],
+                  [have_cynara="yes"], [have_cynara="no"])
+if test "x${have_cynara}" = "xyes"; then
+    AC_DEFINE([HAVE_CYNARA], [1], [Define to 1 if you have cynara])
+fi
+
+#tzsh-server
+PKG_CHECK_MODULES(TZSH,
+                  [tzsh-server],
+                  [have_tzsh="yes"])
+
+POLICY_CFLAGS="${CAPI_SYSTEM_DEVICE_CFLAGS} ${CYNARA_CFLAGS} ${TZSH_CFLAGS}"
+POLICY_LIBS="${CAPI_SYSTEM_DEVICE_LIBS} ${CYNARA_LIBS} ${TZSH_LIBS}"
+AC_SUBST(POLICY_CFLAGS)
+AC_SUBST(POLICY_LIBS)
+
 WL_DESKTOP_SHELL=false
 define([CHECK_MODULE_WL_DESKTOP_SHELL],
 [
