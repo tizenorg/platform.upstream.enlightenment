@@ -454,6 +454,8 @@ struct _E_Comp_Wl_Client_Data
       unsigned char win_type : 1;
       unsigned char layer : 1;
    } fetch;
+
+   E_Util_Transform *viewport_transform;
 };
 
 struct _E_Comp_Wl_Output
