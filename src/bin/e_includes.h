@@ -59,3 +59,4 @@
 #ifdef HAVE_WAYLAND_TBM
 # include "e_comp_wl_tbm.h"
 #endif
+#include "e_policy.h"

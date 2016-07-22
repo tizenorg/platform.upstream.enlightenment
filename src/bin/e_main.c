@@ -281,6 +281,16 @@ _e_main_subsystem_defer(void *data EINA_UNUSED)
    TS("[DEFERRED] Compositor's deferred job Done");
 
    TRACE_DS_END();
+   if (e_config->use_e_policy)
+     {
+        TRACE_DS_BEGIN(MAIN:DEFERRED POLICY JOB);
+
+        TS("[DEFERRED] E_Policy's deferred job");
+        e_policy_deferred_job();
+        TS("[DEFERRED] E_Policy's deferred job Done");
+
+        TRACE_DS_END();
+     }
    TRACE_DS_BEGIN(MAIN:DEFERRED MODULE JOB);
 
    TS("[DEFERRED] E_Module's deferred job");
@@ -660,6 +670,18 @@ main(int argc, char **argv)
      }
    TS("E_Icon Init Done");
    _e_main_shutdown_push(e_icon_shutdown);
+
+   if (e_config->use_e_policy)
+     {
+        TS("E_Policy Init");
+        if (!e_policy_init())
+          {
+             e_error_message_show(_("Enlightenment cannot setup policy system!\n"));
+             _e_main_shutdown(-1);
+          }
+        TS("E_Policy Init Done");
+        _e_main_shutdown_push(e_policy_shutdown);
+     }
 
    TS("Load Modules");
    _e_main_modules_load(safe_mode);

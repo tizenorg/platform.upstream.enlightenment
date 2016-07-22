@@ -92,6 +92,19 @@ ENLIGHTENMENTHEADERS += \
 src/bin/e_comp_wl_tbm.h
 endif
 
+ENLIGHTENMENTHEADERS += \
+src/bin/services/e_service_gesture.h \
+src/bin/services/e_service_lockscreen.h \
+src/bin/services/e_service_quickpanel.h \
+src/bin/services/e_service_region.h \
+src/bin/services/e_service_volume.h \
+src/bin/e_policy.h \
+src/bin/e_policy_keyboard.h \
+src/bin/e_policy_private_data.h \
+src/bin/e_policy_transform_mode.h \
+src/bin/e_policy_wl.h \
+src/bin/e_policy_wl_display.h
+
 enlightenment_src = \
 src/bin/e_actions.c \
 src/bin/e_bg.c \
@@ -164,7 +177,23 @@ enlightenment_src += \
 src/bin/e_comp_wl_tbm.c
 endif
 
-src_bin_enlightenment_CPPFLAGS = $(E_CPPFLAGS) -DEFL_BETA_API_SUPPORT -DEFL_EO_API_SUPPORT -DE_LOGGING=1 @WAYLAND_CFLAGS@ $(TTRACE_CFLAGS) $(DLOG_CFLAGS)
+enlightenment_src += \
+src/bin/services/e_service_gesture.c \
+src/bin/services/e_service_lockscreen.c \
+src/bin/services/e_service_quickpanel.c \
+src/bin/services/e_service_region.c \
+src/bin/services/e_service_volume.c \
+src/bin/e_policy.c \
+src/bin/e_policy_conformant.c \
+src/bin/e_policy_keyboard.c \
+src/bin/e_policy_softkey.c \
+src/bin/e_policy_stack.c  \
+src/bin/e_policy_transform_mode.c \
+src/bin/e_policy_visibility.c \
+src/bin/e_policy_wl.c \
+src/bin/e_policy_wl_display.c
+
+src_bin_enlightenment_CPPFLAGS = $(E_CPPFLAGS) -DEFL_BETA_API_SUPPORT -DEFL_EO_API_SUPPORT -DE_LOGGING=1 @WAYLAND_CFLAGS@ $(TTRACE_CFLAGS) $(DLOG_CFLAGS) $(POLICY_CFLAGS)
 if HAVE_WAYLAND_TBM
 src_bin_enlightenment_CPPFLAGS += @WAYLAND_TBM_CFLAGS@ @ECORE_DRM_CFLAGS@
 endif
@@ -177,7 +206,7 @@ src/bin/e_main.c \
 $(enlightenment_src)
 
 src_bin_enlightenment_LDFLAGS = -export-dynamic
-src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ -lm @SHM_OPEN_LIBS@ $(TTRACE_LIBS) $(DLOG_LIBS)
+src_bin_enlightenment_LDADD = @e_libs@ @dlopen_libs@ @cf_libs@ @VALGRIND_LIBS@ @WAYLAND_LIBS@ -lm @SHM_OPEN_LIBS@ $(TTRACE_LIBS) $(DLOG_LIBS) $(POLICY_LIBS)
 if HAVE_WAYLAND_TBM
 src_bin_enlightenment_LDADD += @WAYLAND_TBM_LIBS@ @ECORE_DRM_LIBS@
 endif
