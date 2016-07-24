@@ -2702,7 +2702,6 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
           }
 
         e_client_geometry_get(ec, &x, &y, &w, &h);
-        is_above_rot_pending = skip_rot_pending_show;
         ec_vis = ec_opaque = skip_rot_pending_show = EINA_FALSE;
         calc_region = EINA_TRUE;
 
@@ -2832,6 +2831,7 @@ _e_client_visibility_zone_calculate(E_Zone *zone)
           }
 
         changed_list = eina_list_append(changed_list, ec);
+        is_above_rot_pending = skip_rot_pending_show;
      }
 
    if (changed_list)
