@@ -66,6 +66,7 @@ struct _E_Plane
    Evas                 *evas;
    Eina_Bool             update_ee;
    Eina_Bool             update_exist;
+   Eina_Bool             pending;
 };
 
 struct _E_Plane_Renderer {
