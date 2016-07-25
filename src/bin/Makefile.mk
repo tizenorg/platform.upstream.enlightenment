@@ -102,7 +102,6 @@ src/bin/services/e_service_volume.h \
 src/bin/e_policy.h \
 src/bin/e_policy_keyboard.h \
 src/bin/e_policy_private_data.h \
-src/bin/e_policy_transform_mode.h \
 src/bin/e_policy_wl.h \
 src/bin/e_policy_wl_display.h
 
@@ -190,7 +189,6 @@ src/bin/e_policy_conformant.c \
 src/bin/e_policy_keyboard.c \
 src/bin/e_policy_softkey.c \
 src/bin/e_policy_stack.c  \
-src/bin/e_policy_transform_mode.c \
 src/bin/e_policy_visibility.c \
 src/bin/e_policy_wl.c \
 src/bin/e_policy_wl_display.c
