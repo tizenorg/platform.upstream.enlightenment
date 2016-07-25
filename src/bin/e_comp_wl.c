@@ -5253,7 +5253,7 @@ e_comp_wl_output_remove(const char *id)
 static void
 _e_comp_wl_send_event_device(struct wl_client *wc, uint32_t timestamp, Ecore_Device *dev, uint32_t serial)
 {
-   E_Comp_Wl_Input_Device *last_device, *input_dev;
+   E_Comp_Wl_Input_Device *input_dev;
    struct wl_resource *dev_res;
    const char *dev_name;
    Eina_List *l, *ll;
@@ -5261,7 +5261,6 @@ _e_comp_wl_send_event_device(struct wl_client *wc, uint32_t timestamp, Ecore_Dev
    EINA_SAFETY_ON_NULL_RETURN(dev);
 
    dev_name = ecore_device_identifier_get(dev);
-   last_device = _e_comp_wl_device_last_device_get(ECORE_DEVICE_CLASS_KEYBOARD);
    EINA_LIST_FOREACH(e_comp_wl->input_device_manager.device_list, l, input_dev)
      {
         if (!eina_streq(input_dev->identifier, dev_name) || (input_dev->clas != ECORE_DEVICE_CLASS_KEYBOARD)) continue;
