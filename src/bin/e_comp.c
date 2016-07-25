@@ -558,28 +558,6 @@ _hwc_plane_reserved_clean()
 }
 
 static Eina_Bool
-_hwc_plane_reserved_clean()
-{
-   Eina_List *l, *ll;
-   E_Zone *zone;
-   E_Plane *ep;
-
-   EINA_LIST_FOREACH(e_comp->zones, l, zone)
-     {
-        E_Output * eout;
-        if (!zone->output_id) continue;
-        eout = e_output_find(zone->output_id);
-        EINA_LIST_FOREACH(eout->planes, ll, ep)
-          {
-             if (e_plane_is_reserved(ep))
-                e_plane_reserved_set(ep, 0);
-          }
-     }
-
-   return EINA_TRUE;
-}
-
-static Eina_Bool
 _e_comp_hwc_apply(E_Output * eout)
 {
    const Eina_List *ep_l = NULL, *l;
@@ -679,7 +657,6 @@ _e_comp_hwc_prepare(void)
         EINA_LIST_FOREACH(vis_clist, vl, ec)
           {
              E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
-             int cnt = 0;
 
              // check clients not able to use hwc
              // if pixmap is launch screen image
