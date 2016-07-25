@@ -439,7 +439,7 @@ _hwc_set(E_Output *eout)
 }
 
 static Eina_Bool
-_hwc_prepare_set(E_Output *eout, int n_vis, Eina_List *clist)
+_hwc_plane_prepare(E_Output *eout, int n_vis, Eina_List *clist)
 {
    const Eina_List *ep_l = NULL, *l ;
    Eina_List *hwc_l = NULL, *clist2;
@@ -662,18 +662,17 @@ _e_comp_hwc_prepare(void)
         EINA_LIST_FOREACH(vis_clist, vl, ec)
           {
              E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data*)ec->comp_data;
-             int cnt = 0;
 
              // check clients not able to use hwc
              // if pixmap is launch screen image
              if ((ec->pixmap) && (e_pixmap_type_get(ec->pixmap) == E_PIXMAP_TYPE_EXT_OBJECT))
-                goto composite;
+                goto nextzone;
 
              // if video client could not draw it on video hw layer
              if (cdata->sub.below_list || cdata->sub.below_list_pending)
                {
                   if (!e_comp_wl_video_client_has(ec))
-                     goto composite;
+                     goto nextzone;
                }
 
              // if ec has invalid buffer or scaled( transformed )
@@ -684,23 +683,22 @@ _e_comp_hwc_prepare(void)
                  (cdata->height_from_buffer != cdata->height_from_viewport) ||
                  e_client_transform_core_enable_get(ec))
                {
-                  if (!n_vis) goto composite;
-                  cnt++;
+                  if (!n_ec) goto nextzone;
                   break;
                }
 
-             cnt++;
+             // listup as many as possible from the top most order
+             n_ec++;
              clist = eina_list_append(clist, ec);
           }
 
         n_vis = eina_list_count(vis_clist);
-        n_ec = eina_list_count(clist);
         if ((n_vis < 1) || (n_ec < 1))
-          goto composite;
+          goto nextzone;
 
-        ret |= _hwc_prepare_set(output, n_vis, clist);
+        ret |= _hwc_plane_prepare(output, n_vis, clist);
 
-        composite:
+        nextzone:
         eina_list_free(clist);
         eina_list_free(vis_clist);
      }
