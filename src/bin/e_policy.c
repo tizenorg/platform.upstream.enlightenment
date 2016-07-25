@@ -1,6 +1,5 @@
 #include "e.h"
 #include "e_policy_keyboard.h"
-#include "e_policy_transform_mode.h"
 #include "e_policy_conformant.h"
 #include "e_policy_wl.h"
 
@@ -1372,7 +1371,6 @@ e_policy_init(void)
    E_PIXMAP_HOOK_APPEND(hooks_cp,  E_PIXMAP_HOOK_DEL,                 _e_policy_cb_hook_pixmap_del,                 NULL);
    E_PIXMAP_HOOK_APPEND(hooks_cp,  E_PIXMAP_HOOK_UNUSABLE,            _e_policy_cb_hook_pixmap_unusable,            NULL);
 
-   e_policy_transform_mode_init();
    e_policy_conformant_init();
 
    return EINA_TRUE;
@@ -1398,7 +1396,6 @@ e_policy_shutdown(void)
    e_policy_stack_shutdonw();
    e_policy_wl_shutdown();
 
-   e_policy_transform_mode_shutdown();
    e_policy_conformant_shutdown();
 
    E_FREE(pol);
