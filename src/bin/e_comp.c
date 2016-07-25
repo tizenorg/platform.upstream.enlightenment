@@ -393,29 +393,25 @@ _hwc_set(E_Output *eout)
      }
 
    ep_l = e_output_planes_get(eout);
-   EINA_LIST_FOREACH(ep_l, l , ep)
+   EINA_LIST_REVERSE_FOREACH(ep_l, l , ep)
      {
         Eina_Bool set = EINA_FALSE;
-        if (!ep_fb)
+        if (e_plane_is_fb_target(ep))
           {
-             if (e_plane_is_fb_target(ep))
+             ep_fb = ep;
+             if (ep->prepare_ec)
                {
-                  ep_fb = ep;
-                  if (ep->prepare_ec)
+        
+                  set = e_plane_ec_set(ep, ep->prepare_ec);
+                  if (set)
                     {
-
-                       set = e_plane_ec_set(ep, ep->prepare_ec);
-                       if (set)
-                         {
-                            INF("HWC : ec(0x%08x, %s) is set on fb_target( %d)\n", ep->prepare_ec, ep->prepare_ec->icccm.title, ep->zpos);
-                            e_client_redirected_set(ep->prepare_ec, 0);
-                            ret |= EINA_TRUE;
-                         }
-                       else
-                         return EINA_FALSE;
+                       INF("HWC : ec(0x%08x, %s) is set on fb_target( %d)\n", ep->prepare_ec, ep->prepare_ec->icccm.title, ep->zpos);
+                       e_client_redirected_set(ep->prepare_ec, 0);
+                       ret |= EINA_TRUE;
                     }
+                  else
+                    return EINA_FALSE;
                }
-             continue;
           }
         if (e_plane_is_cursor(ep)) continue;
         if (ep->zpos > ep_fb->zpos)
