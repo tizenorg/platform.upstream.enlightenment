@@ -1529,7 +1529,9 @@ e_plane_fetch(E_Plane *plane)
         /* check the post_render is called */
         if (!plane->update_ee)
         {
-          ELOGF("E_PLANE", "Post Render callback does not called. Nothing Display.", NULL, NULL);
+          if (plane_trace_debug)
+             ELOGF("E_PLANE", "Post Render callback does not called. Nothing Display.", NULL, NULL);
+
           return EINA_FALSE;
         }
         plane->update_ee = EINA_FALSE;
@@ -1558,6 +1560,14 @@ e_plane_fetch(E_Plane *plane)
         if (!plane->ec) return EINA_FALSE;
 
         if (!e_comp_object_hwc_update_exists(plane->ec->frame)) return EINA_FALSE;
+
+        if (plane->pending)
+          {
+             if (plane_trace_debug)
+               ELOGF("E_PLANE", "HWC update exist but plane is pending.", NULL, NULL);
+
+             return EINA_FALSE;
+          }
 
         e_comp_object_hwc_update_set(plane->ec->frame, EINA_FALSE);
 
@@ -1631,6 +1641,7 @@ e_plane_commit_data_aquire(E_Plane *plane)
         data->ec = NULL;
 
         plane->update_exist = EINA_FALSE;
+        plane->pending = EINA_TRUE;
 
         _e_plane_wait_for_showup_set(EINA_TRUE);
         return data;
@@ -1647,6 +1658,7 @@ e_plane_commit_data_aquire(E_Plane *plane)
              e_comp_wl_buffer_reference(&data->buffer_ref, e_pixmap_resource_get(plane->ec->pixmap));
 
              plane->update_exist = EINA_FALSE;
+             plane->pending = EINA_TRUE;
 
              /* send frame event enlightenment dosen't send frame evnet in nocomp */
              e_pixmap_image_clear(plane->ec->pixmap, 1);
@@ -1745,6 +1757,7 @@ e_plane_commit_data_release(E_Plane_Commit_Data *data)
         e_comp_wl_buffer_reference(&data->buffer_ref, NULL);
      }
 
+   plane->pending = EINA_FALSE;
    tbm_surface_internal_unref(tsurface);
    free(data);
 }
