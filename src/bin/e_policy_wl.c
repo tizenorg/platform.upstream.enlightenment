@@ -3012,6 +3012,33 @@ _tzsh_srv_scrsaver_mng_cb_destroy(struct wl_client *client EINA_UNUSED, struct w
 {
    _scrsaver_mng_res = NULL;
    wl_resource_destroy(resource);
+   e_screensaver_disable();
+}
+
+static void
+_tzsh_srv_scrsaver_mng_cb_enable(struct wl_client *client EINA_UNUSED, struct wl_resource *resource)
+{
+   Pol_Wl_Tzsh_Srv *tzsh_srv;
+
+   tzsh_srv = wl_resource_get_user_data(resource);
+
+   EINA_SAFETY_ON_NULL_RETURN(tzsh_srv);
+   EINA_SAFETY_ON_NULL_RETURN(tzsh_srv->tzsh);
+
+   e_screensaver_enable();
+}
+
+static void
+_tzsh_srv_scrsaver_mng_cb_disable(struct wl_client *client EINA_UNUSED, struct wl_resource *resource)
+{
+   Pol_Wl_Tzsh_Srv *tzsh_srv;
+
+   tzsh_srv = wl_resource_get_user_data(resource);
+
+   EINA_SAFETY_ON_NULL_RETURN(tzsh_srv);
+   EINA_SAFETY_ON_NULL_RETURN(tzsh_srv->tzsh);
+
+   e_screensaver_disable();
 }
 
 static void
@@ -3034,6 +3061,8 @@ _tzsh_srv_scrsaver_mng_cb_idle_time_set(struct wl_client *client EINA_UNUSED, st
 static const struct tws_service_screensaver_manager_interface _tzsh_srv_scrsaver_mng_iface =
 {
    _tzsh_srv_scrsaver_mng_cb_destroy,
+   _tzsh_srv_scrsaver_mng_cb_enable,
+   _tzsh_srv_scrsaver_mng_cb_disable,
    _tzsh_srv_scrsaver_mng_cb_idle_time_set
 };
 
