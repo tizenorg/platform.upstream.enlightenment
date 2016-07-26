@@ -51,6 +51,7 @@ static int keepRunning = 1;
 static void end_program(int sig);
 static Eina_Bool _e_info_client_eldbus_message(const char *method, E_Info_Message_Cb cb);
 static Eina_Bool _e_info_client_eldbus_message_with_args(const char *method, E_Info_Message_Cb cb, const char *signature, ...);
+static void _e_info_client_eldbus_message_cb(void *data, const Eldbus_Message *msg, Eldbus_Pending *p);
 
 static E_Win_Info *
 _e_win_info_new(Ecore_Window id, uint32_t res_id, int pid, Eina_Bool alpha, int opaque, const char *name, int x, int y, int w, int h, int layer, int visible, int visibility, int iconic, int frame_visible, int focused, int hwc, int pl_zpos, const char *layer_name)
@@ -1485,6 +1486,48 @@ _e_info_client_proc_hwc(int argc, char **argv)
 
 }
 
+static void
+_e_info_client_proc_aux_message(int argc, char **argv)
+{
+   const char *win, *key, *val;
+   Eldbus_Message *msg;
+   Eldbus_Message_Iter *itr, *opt_itr;
+   Eldbus_Pending *p;
+   int i;
+
+   if (argc < 5)
+     {
+        printf("Error Check Args: enlightenment_info -aux_msg [window] [key] [val] [options]\n");
+        return;
+     }
+
+   win = argv[2];
+   key = argv[3];
+   val = argv[4];
+
+   msg = eldbus_proxy_method_call_new(e_info_client.proxy, "aux_msg");
+   itr = eldbus_message_iter_get(msg);
+   eldbus_message_iter_basic_append(itr, 's', win);
+   eldbus_message_iter_basic_append(itr, 's', key);
+   eldbus_message_iter_basic_append(itr, 's', val);
+
+   opt_itr = eldbus_message_iter_container_new(itr, 'a', "s");
+   for (i = 5; i < argc; i++)
+     eldbus_message_iter_basic_append(opt_itr, 's', argv[i]);
+   eldbus_message_iter_container_close(itr, opt_itr);
+
+   p = eldbus_proxy_send(e_info_client.proxy, msg,
+                        _e_info_client_eldbus_message_cb,
+                         NULL, -1);
+   if (!p)
+     {
+        printf("\"aux_msg\" proxy_send error");
+        return;
+     }
+
+   ecore_main_loop_begin();
+}
+
 static struct
 {
    const char *option;
@@ -1609,6 +1652,12 @@ static struct
       "[on: 1, off: 0]",
       "On/Off the hw composite",
       _e_info_client_proc_hwc
+   },
+   {
+      "aux_msg",
+      "[window] [key] [value] [options]",
+      "send aux message to client",
+      _e_info_client_proc_aux_message
    }
 };
 
