@@ -141,8 +141,11 @@ EINTERN Eina_Bool        e_policy_stack_check_above_lockscreen(E_Client *ec, E_L
 
 EINTERN Eina_Bool        e_policy_conf_rot_enable_get(int angle);
 
+E_API Eina_Bool e_policy_aux_message_use_get(E_Client *ec);
+E_API void      e_policy_aux_message_send(E_Client *ec, const char *key, const char *val, Eina_List *options);
+
 E_API void e_policy_deferred_job(void);
-E_API int e_policy_init(void);
-E_API int e_policy_shutdown(void);
+E_API int  e_policy_init(void);
+E_API int  e_policy_shutdown(void);
 #endif
 #endif

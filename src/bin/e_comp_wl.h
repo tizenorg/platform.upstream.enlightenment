@@ -420,6 +420,7 @@ struct _E_Comp_Wl_Client_Data
      {
         Eina_Bool  changed : 1;
         Eina_List *hints;
+        Eina_Bool  use_msg : 1;
      } aux_hint;
 
    /* before applying viewport */
