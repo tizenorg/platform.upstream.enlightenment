@@ -756,14 +756,17 @@ e_output_commit(E_Output *output)
         return EINA_FALSE;
      }
 
-   if (output->dpms == E_OUTPUT_DPMS_OFF)
-      return EINA_TRUE;
-
    /* set planes */
    EINA_LIST_REVERSE_FOREACH(output->planes, l, plane)
      {
         if (e_plane_fetch(plane))
          {
+            if (output->dpms == E_OUTPUT_DPMS_OFF)
+              {
+                 e_plane_unfetch(plane);
+                 continue;
+              }
+
             if (!commitable) commitable = EINA_TRUE;
          }
      }
