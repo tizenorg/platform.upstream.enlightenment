@@ -195,6 +195,7 @@ enum _E_Policy_Hint_Type
    E_POLICY_HINT_ABOVE_LOCKSCREEN = 4,
    E_POLICY_HINT_GESTURE_DISABLE = 5,
    E_POLICY_HINT_EFFECT_DISABLE = 6,
+   E_POLICY_HINT_MSG_USE = 7,
 };
 
 static const char *hint_names[] =
@@ -206,6 +207,7 @@ static const char *hint_names[] =
    "wm.policy.win.above.lock",
    "wm.policy.win.gesture.disable",
    "wm.policy.win.effect.disable",
+   "wm.policy.win.msg.use",
 };
 
 static void                _e_policy_wl_surf_del(E_Policy_Wl_Surface *psurf);
@@ -2138,6 +2140,13 @@ _e_policy_wl_aux_hint_apply(E_Client *ec)
                {
                   ec->animatable = 0;
                }
+          }
+        else if (!strcmp(hint->hint, hint_names[E_POLICY_HINT_MSG_USE]))
+          {
+             if ((hint->deleted) || (!strcmp(hint->val, "0")))
+               ec->comp_data->aux_hint.use_msg = EINA_FALSE;
+             else if (!strcmp(hint->val, "1"))
+               ec->comp_data->aux_hint.use_msg = EINA_TRUE;
           }
 
         if (send)
@@ -4687,6 +4696,52 @@ e_policy_wl_pixmap_del(E_Pixmap *cp)
           _e_policy_wl_surf_del(psurf);
        }
    eina_iterator_free(it);
+}
+
+void
+e_policy_wl_aux_message_send(E_Client *ec,
+                             const char *key,
+                             const char *val,
+                             Eina_List *options)
+{
+   E_Policy_Wl_Tzpol *tzpol;
+   E_Policy_Wl_Surface *psurf;
+   Eina_List *l;
+   Eina_Iterator *it;
+   struct wl_array opt_array;
+   const char *option;
+   int len;
+   char *p;
+
+   if (!ec->comp_data->aux_hint.use_msg) return;
+
+   wl_array_init(&opt_array);
+   EINA_LIST_FOREACH(options, l, option)
+     {
+        len = strlen(option) + 1;
+        p = wl_array_add(&opt_array, len);
+
+        if (p == NULL)
+          break;
+        strncpy(p, option, len);
+     }
+
+   it = eina_hash_iterator_data_new(polwl->tzpols);
+   EINA_ITERATOR_FOREACH(it, tzpol)
+      EINA_LIST_FOREACH(tzpol->psurfs, l, psurf)
+        {
+           if (e_pixmap_client_get(psurf->cp) != ec) continue;
+           tizen_policy_send_aux_message(tzpol->res_tzpol,
+                                         psurf->surf,
+                                         key, val, &opt_array);
+          ELOGF("TZPOL",
+                "SEND     |res_tzpol:0x%08x|aux message key:%s val:%s opt_count:%d",
+                ec->pixmap, ec,
+                (unsigned int)tzpol->res_tzpol,
+                key, val, eina_list_count(options));
+        }
+   eina_iterator_free(it);
+   wl_array_release(&opt_array);
 }
 
 void

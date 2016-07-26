@@ -1323,6 +1323,30 @@ e_policy_client_is_cursor(E_Client *ec)
    return EINA_FALSE;
 }
 
+E_API Eina_Bool
+e_policy_aux_message_use_get(E_Client *ec)
+{
+   E_OBJECT_CHECK_RETURN(ec, EINA_FALSE);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ec->comp_data, EINA_FALSE);
+
+   E_Comp_Wl_Client_Data *cdata = (E_Comp_Wl_Client_Data *)ec->comp_data;
+   if (cdata->aux_hint.use_msg)
+     {
+        return EINA_TRUE;
+     }
+
+   return EINA_FALSE;
+}
+
+E_API void
+e_policy_aux_message_send(E_Client *ec, const char *key, const char *val, Eina_List *options)
+{
+   E_OBJECT_CHECK(ec);
+   E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
+
+   e_policy_wl_aux_message_send(ec, key, val, options);
+}
+
 E_API void
 e_policy_deferred_job(void)
 {
