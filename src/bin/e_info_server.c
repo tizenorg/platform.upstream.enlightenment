@@ -1566,6 +1566,58 @@ e_info_server_cb_hwc(const Eldbus_Service_Interface *iface EINA_UNUSED, const El
    return reply;
 }
 
+static Eldbus_Message *
+e_info_server_cb_aux_message(const Eldbus_Service_Interface *iface EINA_UNUSED, const Eldbus_Message *msg)
+{
+   Eldbus_Message *reply = eldbus_message_method_return_new(msg);
+   Eldbus_Message_Iter *opt_iter;
+   const char *win_str, *key, *val, *opt;
+   Eina_List *options = NULL;
+   int32_t win_id = 0;
+   E_Client *ec;
+   Evas_Object *o;
+
+   if (!e_policy)
+     {
+        ERR("e_policy is not initialized!");
+        return reply;
+     }
+
+   if (!eldbus_message_arguments_get(msg, "sssa(s)", &win_str, &key, &val, &opt_iter))
+     {
+        ERR("Error getting arguments.");
+        return reply;
+     }
+
+   while (eldbus_message_iter_get_and_next(opt_iter, 's', &opt))
+     {
+        const char *str;
+
+        str = eina_stringshare_add(opt);
+        options = eina_list_append(options, str);
+     }
+
+   sscanf(win_str, "%x", &win_id);
+   for (o = evas_object_top_get(e_comp->evas); o; o = evas_object_below_get(o))
+     {
+        ec = evas_object_data_get(o, "E_Client");
+        if (!ec) continue;
+
+        Ecore_Window win = e_client_util_win_get(ec);
+
+        if (win == win_id)
+          {
+             e_policy_aux_message_send(ec, key, val, options);
+             break;
+          }
+     }
+
+   EINA_LIST_FREE(options, opt)
+      eina_stringshare_del(opt);
+
+   return reply;
+}
+
 static const Eldbus_Method methods[] = {
    { "get_window_info", NULL, ELDBUS_ARGS({"a("VALUE_TYPE_FOR_TOPVWINS")", "array of ec"}), _e_info_server_cb_window_info_get, 0 },
    { "dump_topvwins", ELDBUS_ARGS({"s", "directory"}), NULL, _e_info_server_cb_topvwins_dump, 0 },
@@ -1593,6 +1645,7 @@ static const Eldbus_Method methods[] = {
    { "get_keygrab_status", ELDBUS_ARGS({"s", "get_keygrab_status"}), NULL, _e_info_server_cb_keygrab_status_get, 0},
    { "get_module_info", ELDBUS_ARGS({"ss", "get_module_info"}), NULL, _e_info_server_cb_module_info_get, 0},
    { "hwc", ELDBUS_ARGS({"i", "hwc"}), NULL, e_info_server_cb_hwc, 0},
+   { "aux_msg", ELDBUS_ARGS({"s","window id" }, {"s", "key"}, {"s", "value"}, {"as", "options"}), NULL, e_info_server_cb_aux_message, 0},
    { NULL, NULL, NULL, NULL, 0 }
 };
 
