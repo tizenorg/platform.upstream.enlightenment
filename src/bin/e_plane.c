@@ -1524,6 +1524,14 @@ e_plane_fetch(E_Plane *plane)
 
    if (plane->is_primary && !plane->ec)
      {
+        if (e_comp_canvas_norender_get() > 0)
+          {
+             if (plane_trace_debug)
+               ELOGF("E_PLANE", "Canvas norender is set. No Display.", NULL, NULL);
+
+             return EINA_FALSE;
+          }
+
         ecore_evas_manual_render(plane->ee);
 
         /* check the post_render is called */
