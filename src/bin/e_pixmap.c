@@ -467,16 +467,21 @@ e_pixmap_refresh(E_Pixmap *cp)
 
    if (shm_buffer)
      format = wl_shm_buffer_get_format(shm_buffer);
-   else
+   else if (e_comp->gl)
      e_comp_wl->wl.glapi->evasglQueryWaylandBuffer(e_comp_wl->wl.gl,
                                                    buffer->resource,
                                                    EVAS_GL_TEXTURE_FORMAT,
                                                    &format);
+   else if (buffer->tbm_surface)
+      format = tbm_surface_get_format(buffer->tbm_surface);
+   else
+      return EINA_FALSE;
 
    switch (format)
      {
       case WL_SHM_FORMAT_ARGB8888:
       case EGL_TEXTURE_RGBA:
+      case TBM_FORMAT_ABGR8888:
          cp->image_argb = EINA_TRUE;
          break;
       default:
@@ -741,30 +746,20 @@ e_pixmap_image_refresh(E_Pixmap *cp)
      }
    else if (buffer->type == E_COMP_WL_BUFFER_TYPE_NATIVE)
      {
-        if (e_comp->gl)
-          {
-             buffer->shm_buffer = NULL;
-             cp->w = buffer->w;
-             cp->h = buffer->h;
-             cp->image_argb = EINA_FALSE; /* TODO: format */
-             cp->data = NULL;
+        buffer->shm_buffer = NULL;
+        cp->w = buffer->w;
+        cp->h = buffer->h;
+        cp->image_argb = EINA_FALSE; /* TODO: format */
+        cp->data = NULL;
 
-             /* TODO: Current buffer management process doesn't ensure
-              * to render all committed buffer, it means there are buffers
-              * never rendered. New attached buffer resources should be
-              * managed and be pending if previous buffer is not rendered yet. */
-             /* set size of image object to new buffer size */
-             e_comp_object_size_update(cp->client->frame,
-                                       buffer->w,
-                                       buffer->h);
-          }
-        else
-          {
-             ERR("Invalid native buffer resource:%u", wl_resource_get_id(buffer->resource));
-             e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
-             return EINA_FALSE;
-          }
-
+        /* TODO: Current buffer management process doesn't ensure
+         * to render all committed buffer, it means there are buffers
+         * never rendered. New attached buffer resources should be
+         * managed and be pending if previous buffer is not rendered yet. */
+        /* set size of image object to new buffer size */
+        e_comp_object_size_update(cp->client->frame,
+                                  buffer->w,
+                                  buffer->h);
      }
    else if (buffer->type == E_COMP_WL_BUFFER_TYPE_TBM)
      {
