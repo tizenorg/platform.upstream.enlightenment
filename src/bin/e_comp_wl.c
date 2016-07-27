@@ -5129,7 +5129,16 @@ e_comp_wl_buffer_get(struct wl_resource *resource, E_Client *ec)
              EINA_SAFETY_ON_FALSE_GOTO(res, err);
           }
         else
-          goto err;
+          {
+             tbm_surf = wayland_tbm_server_get_surface(e_comp_wl->tbm.server, resource);
+             if (!tbm_surf)
+               goto err;
+
+             buffer->type = E_COMP_WL_BUFFER_TYPE_NATIVE;
+             buffer->w = tbm_surface_get_width(tbm_surf);
+             buffer->h = tbm_surface_get_height(tbm_surf);
+             buffer->tbm_surface = tbm_surf;
+          }
      }
    buffer->shm_buffer = shmbuff;
 
