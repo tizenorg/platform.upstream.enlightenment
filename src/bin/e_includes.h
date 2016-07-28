@@ -37,7 +37,6 @@
 #include "e_screensaver.h"
 #include "e_dpms.h"
 #include "e_obj_dialog.h"
-#include "e_deskmirror.h"
 #include "e_mouse.h"
 #include "e_msgbus.h"
 #include "e_scale.h"
