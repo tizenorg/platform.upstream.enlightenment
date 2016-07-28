@@ -36,7 +36,6 @@ src/bin/e_config_data.h \
 src/bin/e_config.h \
 src/bin/e_dbusmenu.h \
 src/bin/e_desk.h \
-src/bin/e_deskmirror.h \
 src/bin/e_dialog.h \
 src/bin/e_dnd.h \
 src/bin/e_dpms.h \
@@ -119,7 +118,6 @@ src/bin/e_config.c \
 src/bin/e_config_data.c \
 src/bin/e_dbusmenu.c \
 src/bin/e_desk.c \
-src/bin/e_deskmirror.c \
 src/bin/e_dialog.c \
 src/bin/e_dpms.c \
 src/bin/e_dnd.c \
