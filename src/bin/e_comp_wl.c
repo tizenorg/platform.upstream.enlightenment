@@ -24,6 +24,8 @@ E_API int E_EVENT_WAYLAND_GLOBAL_ADD = -1;
 # include "e_comp_hwc.h"
 #endif
 
+#include <tbm_sync.h>
+
 /* Resource Data Mapping: (wl_resource_get_user_data)
  *
  * wl_surface == e_pixmap
@@ -4911,8 +4913,14 @@ e_comp_wl_buffer_reference(E_Comp_Wl_Buffer_Ref *ref, E_Comp_Wl_Buffer *buffer)
                }
              else
                {
+                  int32_t sync_timeline = -1;
                   if (!wl_resource_get_client(ref->buffer->resource)) return;
                   wl_buffer_send_release(ref->buffer->resource);
+                  sync_timeline =
+                    wayland_tbm_server_get_buffer_sync_timeline(e_comp_wl->tbm.server,
+                                                                ref->buffer->resource);
+                  if (sync_timeline != -1)
+                    tbm_sync_timeline_inc(sync_timeline, 1);
                }
           }
 
