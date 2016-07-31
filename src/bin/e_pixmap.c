@@ -100,9 +100,9 @@ _e_pixmap_cb_buffer_destroy(struct wl_listener *listener, void *data EINA_UNUSED
    E_Pixmap *cp;
 
    cp = container_of(listener, E_Pixmap, buffer_destroy_listener);
+   cp->buffer = NULL;
    cp->data = NULL;
    cp->shm_buffer = NULL;
-   cp->buffer_destroy_listener.notify = NULL;
 }
 
 static void
@@ -149,6 +149,7 @@ _e_pixmap_new(E_Pixmap_Type type)
    cp->refcount = 1;
    cp->dirty = 1;
    cp->cdata = E_NEW(E_Comp_Wl_Client_Data, 1);
+   cp->buffer_destroy_listener.notify = _e_pixmap_cb_buffer_destroy;
    if (!cp->cdata)
      {
         E_FREE(cp);
@@ -598,7 +599,13 @@ E_API void
 e_pixmap_resource_set(E_Pixmap *cp, void *resource)
 {
    if ((!cp) || (cp->type != E_PIXMAP_TYPE_WL)) return;
+
+   if (cp->buffer)
+     wl_list_remove(&cp->buffer_destroy_listener.link);
+
    cp->buffer = resource;
+   if (cp->buffer)
+     wl_signal_add(&cp->buffer->destroy_signal, &cp->buffer_destroy_listener);
 }
 
 E_API Ecore_Window
@@ -668,11 +675,6 @@ e_pixmap_image_clear(E_Pixmap *cp, Eina_Bool cache)
              wl_resource_destroy(cb);
           }
      }
-   if (cp->buffer_destroy_listener.notify)
-     {
-        wl_list_remove(&cp->buffer_destroy_listener.link);
-        cp->buffer_destroy_listener.notify = NULL;
-     }
    e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
    cp->data = NULL;
    cp->shm_buffer = NULL;
@@ -702,12 +704,6 @@ e_pixmap_image_refresh(E_Pixmap *cp)
      }
 
    e_comp_wl_buffer_reference(&cp->buffer_ref, buffer);
-
-   if (cp->buffer_destroy_listener.notify)
-     {
-        wl_list_remove(&cp->buffer_destroy_listener.link);
-        cp->buffer_destroy_listener.notify = NULL;
-     }
 
    cp->w = cp->h = 0;
    cp->image_argb = EINA_FALSE;
@@ -813,9 +809,6 @@ e_pixmap_image_refresh(E_Pixmap *cp)
         e_comp_wl_buffer_reference(&cp->buffer_ref, NULL);
         return EINA_FALSE;
      }
-
-   cp->buffer_destroy_listener.notify = _e_pixmap_cb_buffer_destroy;
-   wl_signal_add(&buffer->destroy_signal, &cp->buffer_destroy_listener);
 
    return EINA_TRUE;
 }
