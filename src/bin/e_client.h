@@ -855,6 +855,13 @@ struct E_Client
 
    Eina_Bool launching : 1;
    Eina_Bool extra_animating : 1;
+
+   struct
+   {
+      int state;
+      int opacity_mode;
+      int visible_type;
+   } indicator;
 };
 
 #define e_client_focus_policy_click(ec) \
