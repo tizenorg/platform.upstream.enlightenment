@@ -36,6 +36,7 @@ _region_rotation_set(E_Policy_Region *region, int angle)
      return;
 
    region->rotation = e_policy_angle_map(angle);
+   e_service_gesture_angle_set(region->gesture, angle);
 }
 
 static void

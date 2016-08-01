@@ -39,5 +39,8 @@ EINTERN void e_tzsh_qp_state_visible_update(E_Client *ec, Eina_Bool vis);
 EINTERN void e_tzsh_qp_state_orientation_update(E_Client *ec, int ridx);
 EINTERN void e_tzsh_qp_state_scrollable_update(E_Client *ec, Eina_Bool scrollable);
 
+/* indicator */
+void         e_policy_wl_indicator_flick_send(E_Client *ec);
+
 #endif /* HAVE_WAYLAND_ONLY */
 #endif /* E_MOD_WL_H */

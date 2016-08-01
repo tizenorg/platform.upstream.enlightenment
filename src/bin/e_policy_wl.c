@@ -136,6 +136,12 @@ typedef struct _E_Policy_Wl_Tzlaunch_Img
    Eina_Bool           valid;
 } E_Policy_Wl_Tzlaunch_Img;
 
+typedef struct _E_Policy_Wl_Tz_Indicator
+{
+   struct wl_resource *res_tz_indicator;
+   E_Client           *ec;
+} E_Policy_Wl_Tz_Indicator;
+
 typedef enum _E_Launch_Img_File_type
 {
    E_LAUNCH_FILE_TYPE_ERROR = -1,
@@ -157,6 +163,7 @@ typedef struct _E_Policy_Wl
    Eina_List       *tzsh_clients;            /* list of E_Policy_Wl_Tzsh_Client */
    E_Policy_Wl_Tzsh_Srv *srvs[TZSH_SRV_ROLE_MAX]; /* list of registered E_Policy_Wl_Tzsh_Srv */
    Eina_List       *tvsrv_bind_list;         /* list of activated E_Policy_Wl_Tzsh_Client */
+   Eina_List       *tz_indicators;
 
    /* tizen_launchscreen_interface */
    Eina_List       *tzlaunchs;                   /* list of E_Policy_Wl_Tzlaunch */
@@ -4243,6 +4250,221 @@ _e_policy_wl_cb_scrsaver_off(void *data EINA_UNUSED, int type EINA_UNUSED, void 
    return ECORE_CALLBACK_PASS_ON;
 }
 
+// --------------------------------------------------------
+// E_Policy_Wl_Tz_Indicator
+// --------------------------------------------------------
+static E_Policy_Wl_Tz_Indicator *
+_e_policy_wl_tz_indicator_add(struct wl_resource *res_tz_indicator)
+{
+   E_Policy_Wl_Tz_Indicator *tz_indicator;
+
+   tz_indicator = E_NEW(E_Policy_Wl_Tz_Indicator, 1);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(tz_indicator, NULL);
+
+   tz_indicator->res_tz_indicator = res_tz_indicator;
+
+   polwl->tz_indicators = eina_list_append(polwl->tz_indicators, tz_indicator);
+
+   return tz_indicator;
+}
+
+static void
+_e_policy_wl_tz_indicator_del(E_Policy_Wl_Tz_Indicator *tz_indicator)
+{
+   EINA_SAFETY_ON_NULL_RETURN(tz_indicator);
+
+   polwl->tz_indicators = eina_list_remove(polwl->tz_indicators, tz_indicator);
+   E_FREE(tz_indicator);
+}
+
+static E_Policy_Wl_Tz_Indicator *
+_e_policy_wl_tz_indicator_get(struct wl_resource *res_tz_indicator)
+{
+   Eina_List *l;
+   E_Policy_Wl_Tz_Indicator *tz_indicator;
+
+   EINA_LIST_FOREACH(polwl->tz_indicators, l, tz_indicator)
+     {
+        if (tz_indicator->res_tz_indicator == res_tz_indicator)
+          return tz_indicator;
+     }
+   return NULL;
+}
+
+static E_Policy_Wl_Tz_Indicator *
+_e_policy_wl_tz_indicator_get_from_client(E_Client *ec)
+{
+   Eina_List *l;
+   E_Policy_Wl_Tz_Indicator *tz_indicator;
+
+   EINA_LIST_FOREACH(polwl->tz_indicators, l, tz_indicator)
+     {
+        if (tz_indicator->ec == ec)
+          {
+             return tz_indicator;
+          }
+     }
+
+   return NULL;
+}
+
+static Eina_Bool
+_e_policy_wl_tz_indicator_set_client(struct wl_resource *res_tz_indicator, E_Client *ec)
+{
+   E_Policy_Wl_Tz_Indicator *tz_indicator = NULL;
+
+   tz_indicator = _e_policy_wl_tz_indicator_get(res_tz_indicator);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(tz_indicator, EINA_FALSE);
+
+   if (!tz_indicator->ec)
+     {
+        tz_indicator->ec = ec;
+        return EINA_TRUE;
+     }
+   else
+     {
+        if (tz_indicator->ec == ec)
+          {
+             return EINA_TRUE;
+          }
+        else
+          {
+             return EINA_FALSE;
+          }
+     }
+}
+
+static void
+_e_policy_wl_tz_indicator_unset_client(E_Client *ec)
+{
+   Eina_List *l;
+   E_Policy_Wl_Tz_Indicator *tz_indicator;
+
+   EINA_SAFETY_ON_NULL_RETURN(ec);
+
+   EINA_LIST_FOREACH(polwl->tz_indicators, l, tz_indicator)
+     {
+        if (tz_indicator->ec == ec)
+          tz_indicator->ec = NULL;
+     }
+}
+
+static void
+_tz_indicator_cb_destroy(struct wl_client *client EINA_UNUSED, struct wl_resource *res_tz_indicator)
+{
+   wl_resource_destroy(res_tz_indicator);
+}
+
+static void
+_tz_indicator_cb_state_set(struct wl_client *client EINA_UNUSED, struct wl_resource *res_tz_indicator, struct wl_resource *surf, int32_t state)
+{
+   E_Client *ec;
+
+   ec = wl_resource_get_user_data(surf);
+   EINA_SAFETY_ON_NULL_RETURN(ec);
+   EINA_SAFETY_ON_NULL_RETURN(ec->frame);
+
+   ELOGF("TZ_IND", "STATE:%d", ec->pixmap, ec, state);
+   _e_policy_wl_tz_indicator_set_client(res_tz_indicator, ec);
+   ec->indicator.state = state;
+}
+
+static void
+_tz_indicator_cb_opacity_mode_set(struct wl_client *client EINA_UNUSED, struct wl_resource *res_tz_indicator, struct wl_resource *surf, int32_t mode)
+{
+   E_Client *ec;
+
+   ec = wl_resource_get_user_data(surf);
+   EINA_SAFETY_ON_NULL_RETURN(ec);
+   EINA_SAFETY_ON_NULL_RETURN(ec->frame);
+
+   ELOGF("TZ_IND", "OPACITY_MODE:%d", ec->pixmap, ec, mode);
+   _e_policy_wl_tz_indicator_set_client(res_tz_indicator, ec);
+   ec->indicator.opacity_mode = mode;
+}
+
+static void
+_tz_indicator_cb_visible_type_set(struct wl_client *client EINA_UNUSED, struct wl_resource *res_tz_indicator, struct wl_resource *surf, int32_t vtype)
+{
+   E_Client *ec;
+
+   ec = wl_resource_get_user_data(surf);
+   EINA_SAFETY_ON_NULL_RETURN(ec);
+   EINA_SAFETY_ON_NULL_RETURN(ec->frame);
+
+   ELOGF("TZ_IND", "VIS_TYPE:%d", ec->pixmap, ec, vtype);
+   _e_policy_wl_tz_indicator_set_client(res_tz_indicator, ec);
+   ec->indicator.visible_type = vtype;
+}
+
+// --------------------------------------------------------
+// tizen_indicator_interface
+// --------------------------------------------------------
+static const struct tizen_indicator_interface _tz_indicator_iface =
+{
+   _tz_indicator_cb_destroy,
+   _tz_indicator_cb_state_set,
+   _tz_indicator_cb_opacity_mode_set,
+   _tz_indicator_cb_visible_type_set,
+};
+
+static void
+_tz_indicator_cb_unbind(struct wl_resource *res_tz_indicator)
+{
+   E_Policy_Wl_Tz_Indicator *tz_indicator;
+
+   tz_indicator = _e_policy_wl_tz_indicator_get(res_tz_indicator);
+   EINA_SAFETY_ON_NULL_RETURN(tz_indicator);
+
+   _e_policy_wl_tz_indicator_del(tz_indicator);
+}
+
+static void
+_tz_indicator_cb_bind(struct wl_client *client, void *data EINA_UNUSED, uint32_t ver, uint32_t id)
+{
+   E_Policy_Wl_Tz_Indicator *tz_indicator_pol;
+   struct wl_resource *res_tz_indicator;
+
+   EINA_SAFETY_ON_NULL_GOTO(polwl, err);
+
+   res_tz_indicator = wl_resource_create(client,
+                                         &tizen_indicator_interface,
+                                         ver,
+                                         id);
+   EINA_SAFETY_ON_NULL_GOTO(res_tz_indicator, err);
+
+   tz_indicator_pol = _e_policy_wl_tz_indicator_add(res_tz_indicator);
+   EINA_SAFETY_ON_NULL_GOTO(tz_indicator_pol, err);
+
+   wl_resource_set_implementation(res_tz_indicator,
+                                  &_tz_indicator_iface,
+                                  NULL,
+                                  _tz_indicator_cb_unbind);
+   return;
+
+err:
+   ERR("Could not create tizen_indicator_interface res: %m");
+   wl_client_post_no_memory(client);
+}
+
+void
+e_policy_wl_indicator_flick_send(E_Client *ec)
+{
+   E_Policy_Wl_Tz_Indicator *tz_indicator;
+   struct wl_resource *surf;
+
+   tz_indicator = _e_policy_wl_tz_indicator_get_from_client(ec);
+   EINA_SAFETY_ON_NULL_RETURN(tz_indicator);
+
+   if (ec->comp_data)
+     surf = ec->comp_data->surface;
+   else
+     surf = NULL;
+
+   ELOGF("TZ_IND", "SEND FLICK EVENT", ec->pixmap, ec);
+   tizen_indicator_send_flick(tz_indicator->res_tz_indicator, surf, 0);
+}
+
 static void
 _e_policy_wl_cb_hook_shell_surface_ready(void *d, E_Client *ec)
 {
@@ -4288,6 +4510,7 @@ e_policy_wl_client_del(E_Client *ec)
    e_policy_wl_pixmap_del(ec->pixmap);
    _e_policy_wl_tzsh_client_unset(ec);
    _e_policy_wl_dpy_surf_del(ec);
+   _e_policy_wl_tz_indicator_unset_client(ec);
 
    polwl->pending_vis = eina_list_remove(polwl->pending_vis, ec);
 }
@@ -4392,6 +4615,14 @@ e_policy_wl_init(void)
    EINA_SAFETY_ON_NULL_GOTO(global, err);
    polwl->globals = eina_list_append(polwl->globals, global);
 
+   global = wl_global_create(e_comp_wl->wl.disp,
+                             &tizen_indicator_interface,
+                             1,
+                             NULL,
+                             _tz_indicator_cb_bind);
+   EINA_SAFETY_ON_NULL_GOTO(global, err);
+   polwl->globals = eina_list_append(polwl->globals, global);
+
    polwl->tzpols = eina_hash_pointer_new(_e_policy_wl_tzpol_del);
 
 #ifdef HAVE_CYNARA
@@ -4426,6 +4657,7 @@ e_policy_wl_shutdown(void)
    E_Policy_Wl_Tzsh_Srv *tzsh_srv;
    E_Policy_Wl_Tzlaunch *tzlaunch;
    E_Policy_Wl_Tz_Dpy_Pol *tz_dpy_pol;
+   E_Policy_Wl_Tz_Indicator *tz_indicator;
    struct wl_global *global;
    int i;
 
@@ -4462,6 +4694,9 @@ e_policy_wl_shutdown(void)
 
    EINA_LIST_FREE(polwl->tzlaunchs, tzlaunch)
      wl_resource_destroy(tzlaunch->res_tzlaunch);
+
+   EINA_LIST_FREE(polwl->tz_indicators, tz_indicator)
+     wl_resource_destroy(tz_indicator->res_tz_indicator);
 
    EINA_LIST_FREE(polwl->globals, global)
      wl_global_destroy(global);

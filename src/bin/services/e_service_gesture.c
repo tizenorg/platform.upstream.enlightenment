@@ -7,6 +7,7 @@ struct _E_Policy_Gesture
    E_Policy_Gesture_Type type;
 
    Eina_Bool active;
+   int angle;
 
    struct
    {
@@ -50,9 +51,23 @@ _gesture_line_check(E_Policy_Gesture *gesture, int x, int y)
 
    dx = x - gesture->mouse_info.x;
    dy = y - gesture->mouse_info.y;
-   if ((abs(dy) < sensitivity) &&
-       (abs(dx) < sensitivity))
-     return EINA_FALSE;
+
+   if (gesture->angle == 0 || gesture->angle == 180)
+     {
+        if (abs(dy) < sensitivity)
+          return EINA_FALSE;
+     }
+   else if (gesture->angle == 90 || gesture->angle == 270)
+     {
+        if (abs(dx) < sensitivity)
+          return EINA_FALSE;
+     }
+   else
+     {
+        if ((abs(dy) < sensitivity) &&
+            (abs(dx) < sensitivity))
+          return EINA_FALSE;
+     }
 
    return EINA_TRUE;
 }
@@ -214,4 +229,11 @@ e_service_gesture_cb_set(E_Policy_Gesture *gesture, E_Policy_Gesture_Start_Cb cb
    gesture->cb.move = cb_move;
    gesture->cb.end = cb_end;
    gesture->cb.data = data;
+}
+
+EINTERN void
+e_service_gesture_angle_set(E_Policy_Gesture *gesture, int angle)
+{
+   EINA_SAFETY_ON_NULL_RETURN(gesture);
+   gesture->angle = angle;
 }
