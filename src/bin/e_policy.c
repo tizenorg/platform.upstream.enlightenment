@@ -15,6 +15,9 @@ E_Policy_System_Info e_policy_system_info =
 static Eina_List *handlers = NULL;
 static Eina_List *hooks_ec = NULL;
 static Eina_List *hooks_cp = NULL;
+static Ecore_Idle_Enterer *_e_pol_idle_enterer = NULL;
+static Eina_Bool _e_pol_changed_vis = EINA_FALSE;
+static Eina_List *_e_pol_changed_zone = NULL;
 
 static E_Policy_Client *_e_policy_client_add(E_Client *ec);
 static void        _e_policy_client_del(E_Policy_Client *pc);
@@ -50,6 +53,9 @@ static Eina_Bool   _e_policy_cb_client_resize(void *data EINA_UNUSED, int type, 
 static Eina_Bool   _e_policy_cb_client_stack(void *data EINA_UNUSED, int type, void *event);
 static Eina_Bool   _e_policy_cb_client_property(void *data EINA_UNUSED, int type EINA_UNUSED, void *event);
 static Eina_Bool   _e_policy_cb_client_vis_change(void *data EINA_UNUSED, int type EINA_UNUSED, void *event EINA_UNUSED);
+static Eina_Bool   _e_policy_cb_client_hide(void *data EINA_UNUSED, int type EINA_UNUSED, void *event);
+
+static Eina_Bool   _e_policy_cb_idle_enterer(void *data EINA_UNUSED);
 
 static void
 _e_policy_client_launcher_set(E_Policy_Client *pc)
@@ -440,6 +446,7 @@ _e_policy_cb_hook_client_del(void *d EINA_UNUSED, E_Client *ec)
    if (EINA_UNLIKELY(!ec))
      return;
 
+   e_tzsh_indicator_srv_ower_win_update(ec->zone);
    e_policy_wl_win_brightness_apply(ec);
    e_policy_wl_client_del(ec);
 
@@ -625,6 +632,10 @@ _e_policy_cb_hook_client_visibility(void *d EINA_UNUSED, E_Client *ec)
           }
 
         e_policy_wl_win_brightness_apply(ec);
+
+        _e_pol_changed_vis = EINA_TRUE;
+        if (!eina_list_data_find(_e_pol_changed_zone, ec->zone))
+          _e_pol_changed_zone = eina_list_append(_e_pol_changed_zone, ec->zone);
      }
    else
      {
@@ -955,6 +966,39 @@ _e_policy_cb_client_vis_change(void *data EINA_UNUSED, int type EINA_UNUSED, voi
 {
    e_policy_wl_win_scrmode_apply();
    return ECORE_CALLBACK_PASS_ON;
+}
+
+static Eina_Bool
+_e_policy_cb_client_hide(void *data EINA_UNUSED, int type EINA_UNUSED, void *event)
+{
+   E_Event_Client *ev;
+   E_Client *ec;
+
+   ev = event;
+   if (!ev) return ECORE_CALLBACK_PASS_ON;
+
+   ec = ev->ec;
+   e_tzsh_indicator_srv_ower_win_update(ec->zone);
+
+   return ECORE_CALLBACK_PASS_ON;
+}
+
+static Eina_Bool
+_e_policy_cb_idle_enterer(void *data EINA_UNUSED)
+{
+   E_Zone *zone;
+
+   if (_e_pol_changed_vis)
+     {
+        EINA_LIST_FREE(_e_pol_changed_zone, zone)
+          {
+             e_tzsh_indicator_srv_ower_win_update(zone);
+          }
+        _e_pol_changed_zone = NULL;
+     }
+   _e_pol_changed_vis = EINA_FALSE;
+
+   return ECORE_CALLBACK_RENEW;
 }
 
 void
@@ -1356,6 +1400,7 @@ e_policy_init(void)
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_CLIENT_STACK,              _e_policy_cb_client_stack,                    NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_CLIENT_PROPERTY,           _e_policy_cb_client_property,                 NULL);
    E_LIST_HANDLER_APPEND(handlers, E_EVENT_CLIENT_VISIBILITY_CHANGE,  _e_policy_cb_client_vis_change,               NULL);
+   E_LIST_HANDLER_APPEND(handlers, E_EVENT_CLIENT_HIDE,               _e_policy_cb_client_hide,                     NULL);
 
    E_CLIENT_HOOK_APPEND(hooks_ec,  E_CLIENT_HOOK_NEW_CLIENT,          _e_policy_cb_hook_client_new,                 NULL);
    E_CLIENT_HOOK_APPEND(hooks_ec,  E_CLIENT_HOOK_DEL,                 _e_policy_cb_hook_client_del,                 NULL);
@@ -1371,6 +1416,8 @@ e_policy_init(void)
    E_PIXMAP_HOOK_APPEND(hooks_cp,  E_PIXMAP_HOOK_DEL,                 _e_policy_cb_hook_pixmap_del,                 NULL);
    E_PIXMAP_HOOK_APPEND(hooks_cp,  E_PIXMAP_HOOK_UNUSABLE,            _e_policy_cb_hook_pixmap_unusable,            NULL);
 
+   _e_pol_idle_enterer = ecore_idle_enterer_add(_e_policy_cb_idle_enterer, NULL);
+
    e_policy_conformant_init();
 
    return EINA_TRUE;
@@ -1383,6 +1430,7 @@ e_policy_shutdown(void)
    Eina_Inlist *l;
    E_Policy_Softkey *softkey;
 
+   eina_list_free(_e_pol_changed_zone);
    eina_list_free(pol->launchers);
    EINA_INLIST_FOREACH_SAFE(pol->softkeys, l, softkey)
      e_policy_softkey_del(softkey);

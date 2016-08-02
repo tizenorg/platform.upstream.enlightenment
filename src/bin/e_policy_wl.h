@@ -39,6 +39,10 @@ EINTERN void e_tzsh_qp_state_visible_update(E_Client *ec, Eina_Bool vis);
 EINTERN void e_tzsh_qp_state_orientation_update(E_Client *ec, int ridx);
 EINTERN void e_tzsh_qp_state_scrollable_update(E_Client *ec, Eina_Bool scrollable);
 
+/* tzsh indicator */
+EINTERN void e_tzsh_indicator_srv_property_update(E_Client *ec);
+EINTERN void e_tzsh_indicator_srv_ower_win_update(E_Zone *zone);
+
 /* indicator */
 void         e_policy_wl_indicator_flick_send(E_Client *ec);
 

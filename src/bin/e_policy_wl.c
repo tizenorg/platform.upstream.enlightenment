@@ -3,6 +3,7 @@
 #include "services/e_service_quickpanel.h"
 #include "services/e_service_volume.h"
 #include "services/e_service_lockscreen.h"
+#include "services/e_service_indicator.h"
 #include "e_policy_wl_display.h"
 #include "e_policy_conformant.h"
 
@@ -183,6 +184,7 @@ static E_Policy_Wl *polwl = NULL;
 static Eina_List *handlers = NULL;
 static Eina_List *hooks_cw = NULL;
 static struct wl_resource *_scrsaver_mng_res = NULL; // TODO
+static struct wl_resource *_indicator_srv_res = NULL;
 
 enum _E_Policy_Hint_Type
 {
@@ -561,6 +563,20 @@ _e_policy_wl_tzsh_srv_del(E_Policy_Wl_Tzsh_Srv *tzsh_srv)
 
    if (tzsh_srv->name)
      eina_stringshare_del(tzsh_srv->name);
+
+   if (tzsh_srv->role == TZSH_SRV_ROLE_INDICATOR)
+     {
+        E_Client *ec;
+        ec = tzsh_srv->tzsh->ec;
+
+        if (ec && ec->internal)
+          {
+             e_pixmap_del(tzsh_srv->tzsh->cp);
+             e_object_del(E_OBJECT(ec));
+          }
+
+        _indicator_srv_res = NULL;
+     }
 
    memset(tzsh_srv, 0x0, sizeof(E_Policy_Wl_Tzsh_Srv));
    E_FREE(tzsh_srv);
@@ -2906,16 +2922,38 @@ _tzsh_srv_iface_cb_region_set(struct wl_client *client, struct wl_resource *res_
 }
 
 static void
+_tzsh_srv_indicator_cb_destroy(struct wl_client *client EINA_UNUSED, struct wl_resource *resource)
+{
+   _indicator_srv_res = NULL;
+   wl_resource_destroy(resource);
+}
+
+static const struct tws_service_indicator_interface _tzsh_srv_indicator_iface =
+{
+   _tzsh_srv_indicator_cb_destroy,
+};
+
+static void
 _tzsh_srv_iface_cb_indicator_get(struct wl_client *client, struct wl_resource *res_tzsh_srv, uint32_t id)
 {
    E_Policy_Wl_Tzsh_Srv *tzsh_srv;
+   struct wl_resource *res;
 
    tzsh_srv = wl_resource_get_user_data(res_tzsh_srv);
+   EINA_SAFETY_ON_NULL_RETURN(tzsh_srv);
 
    if (!eina_list_data_find(polwl->tzsh_srvs, tzsh_srv))
      return;
 
-   /* TODO: create tws_indicator_service resource. */
+   res = wl_resource_create(client, &tws_service_indicator_interface, 1, id);
+   if (!res)
+     {
+        wl_client_post_no_memory(client);
+        return;
+     }
+   _indicator_srv_res = res;
+
+   wl_resource_set_implementation(res, &_tzsh_srv_indicator_iface, tzsh_srv, NULL);
 }
 
 static void
@@ -3154,14 +3192,29 @@ _tzsh_iface_cb_srv_create(struct wl_client *client, struct wl_resource *res_tzsh
    cp = _e_policy_wl_e_pixmap_get_from_id(client, surf_id);
    if (!cp)
      {
-        wl_resource_post_error
-          (res_tzsh,
-           WL_DISPLAY_ERROR_INVALID_OBJECT,
-           "Invalid surface id");
-        return;
+        if (role == TZSH_SRV_ROLE_INDICATOR)
+          cp = e_pixmap_new(E_PIXMAP_TYPE_NONE, 0);
+
+        if (!cp)
+          {
+             wl_resource_post_error
+               (res_tzsh,
+                WL_DISPLAY_ERROR_INVALID_OBJECT,
+                "Invalid surface id");
+             return;
+          }
      }
 
    ec = e_pixmap_client_get(cp);
+   if (!ec)
+     {
+        if (role == TZSH_SRV_ROLE_INDICATOR)
+          {
+             ec = e_client_new(cp, 0, 1);
+             if (ec) ec->ignored = 1;
+          }
+     }
+
    if (ec)
      {
         if (!_e_policy_wl_e_client_is_valid(ec))
@@ -3214,6 +3267,8 @@ _tzsh_iface_cb_srv_create(struct wl_client *client, struct wl_resource *res_tzsh
      e_service_lockscreen_client_set(tzsh->ec);
    else if (role == TZSH_SRV_ROLE_SCREENSAVER)
      e_service_lockscreen_client_set(tzsh->ec);
+   else if (role == TZSH_SRV_ROLE_INDICATOR)
+     e_mod_indicator_client_set(tzsh->ec);
 }
 
 // --------------------------------------------------------
@@ -3355,6 +3410,101 @@ _tzsh_iface_cb_reg_create(struct wl_client *client, struct wl_resource *res_tzsh
 err:
    if (tzsh_reg->tiler) eina_tiler_free(tzsh_reg->tiler);
    E_FREE(tzsh_reg);
+}
+
+// --------------------------------------------------------
+// tizen_ws_shell_interface::indicator
+// --------------------------------------------------------
+static E_Client *
+_e_tzsh_indicator_find_topvisible_client(E_Zone *zone)
+{
+   E_Client *ec;
+   Evas_Object *o;
+   E_Comp_Wl_Client_Data *cdata;
+
+   o = evas_object_top_get(e_comp->evas);
+   for (; o; o = evas_object_below_get(o))
+     {
+        ec = evas_object_data_get(o, "E_Client");
+
+        /* check e_client and skip e_clients not intersects with zone */
+        if (!ec) continue;
+        if (e_object_is_del(E_OBJECT(ec))) continue;
+        if (e_client_util_ignored_get(ec)) continue;
+        if (ec->zone != zone) continue;
+        if (!ec->frame) continue;
+        if (!ec->visible) continue;
+        if (ec->visibility.skip) continue;
+        if ((ec->visibility.obscured != E_VISIBILITY_UNOBSCURED) &&
+            (ec->visibility.obscured != E_VISIBILITY_PARTIALLY_OBSCURED))
+          continue;
+
+        /* if ec is subsurface, skip this */
+        cdata = (E_Comp_Wl_Client_Data *)ec->comp_data;
+        if (cdata && cdata->sub.data) continue;
+
+        if (!E_CONTAINS(ec->x, ec->y, ec->w, ec->h, zone->x, zone->y, zone->w, zone->h))
+          continue;
+
+        return ec;
+
+     }
+
+   return NULL;
+}
+
+static void
+_e_tzsh_indicator_srv_property_change_send(E_Client *ec)
+{
+   int angle;
+   int opacity;
+
+   if (!ec) return;
+   if (!_indicator_srv_res)
+     {
+        ELOGF("TZ_IND", "NO indicator service", NULL, NULL);
+        return;
+     }
+
+   angle = ec->e.state.rot.ang.curr;
+   opacity = ec->indicator.opacity_mode;
+
+   ELOGF("TZ_IND", "SEND indicator info. angle:%d, opacity:%d", ec->pixmap, ec, angle, opacity);
+   tws_service_indicator_send_property_change(_indicator_srv_res, angle, opacity);
+}
+
+EINTERN void
+e_tzsh_indicator_srv_property_update(E_Client *ec)
+{
+   E_Client *ec_ind_owner;
+   if (!_indicator_srv_res) return;
+
+   ec_ind_owner = e_mod_indicator_owner_get();
+   if (ec != ec_ind_owner) return;
+
+   _e_tzsh_indicator_srv_property_change_send(ec);
+}
+
+EINTERN void
+e_tzsh_indicator_srv_ower_win_update(E_Zone *zone)
+{
+   E_Client *ec = NULL;
+   E_Client *ec_cur_owner = NULL;
+
+   if (!zone) return;
+   if (!_indicator_srv_res) return;
+
+   ec_cur_owner = e_mod_indicator_owner_get();
+   ec = _e_tzsh_indicator_find_topvisible_client(zone);
+
+   if (ec != ec_cur_owner)
+     {
+        ELOGF("TZ_IND", "Changed OWNER. win:%x, state:%d, opacity:%d, vtype:%d", NULL, NULL, e_client_util_win_get(ec),
+              ec ? ec->indicator.state:-1, ec ? ec->indicator.opacity_mode:-1, ec ? ec->indicator.visible_type:-1);
+        e_mod_indicator_owner_set(ec);
+
+        e_tzsh_indicator_srv_property_update(ec);
+     }
 }
 
 // --------------------------------------------------------
@@ -4380,7 +4530,12 @@ _tz_indicator_cb_opacity_mode_set(struct wl_client *client EINA_UNUSED, struct w
 
    ELOGF("TZ_IND", "OPACITY_MODE:%d", ec->pixmap, ec, mode);
    _e_policy_wl_tz_indicator_set_client(res_tz_indicator, ec);
+
+   if (ec->indicator.opacity_mode == mode) return;
+
    ec->indicator.opacity_mode = mode;
+   if (ec == e_mod_indicator_owner_get())
+     _e_tzsh_indicator_srv_property_change_send(ec);
 }
 
 static void
