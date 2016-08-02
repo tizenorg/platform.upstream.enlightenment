@@ -4,7 +4,6 @@ typedef struct _E_Policy_Client   E_Policy_Client;
 typedef struct _E_Policy_Softkey  E_Policy_Softkey;
 typedef struct _E_Policy_Config_Match E_Policy_Config_Match;
 typedef struct _E_Policy_Config_Desk  E_Policy_Config_Desk;
-typedef struct _E_Policy_Config_Rot   E_Policy_Config_Rot;
 typedef struct _E_Policy_Config       E_Policy_Config;
 typedef struct _E_Policy          E_Policy;
 typedef struct _E_Policy_System_Info E_Policy_System_Info;
@@ -12,14 +11,6 @@ typedef struct _E_Policy_System_Info E_Policy_System_Info;
 # else
 # ifndef E_POLICY_H
 # define E_POLICY_H
-#  ifndef _
-#    ifdef HAVE_GETTEXT
-#  define _(str) gettext(str)
-#    else
-#  define _(str) (str)
-#    endif
-#  endif
-
 struct _E_Policy_Desk
 {
    E_Desk          *desk;
@@ -139,7 +130,6 @@ EINTERN void             e_policy_stack_below(E_Client *ec, E_Client *below_ec);
 EINTERN void             e_policy_stack_clients_restack_above_lockscreen(E_Client *ec_lock, Eina_Bool show);
 EINTERN Eina_Bool        e_policy_stack_check_above_lockscreen(E_Client *ec, E_Layer layer, E_Layer *new_layer, Eina_Bool set_layer);
 
-EINTERN Eina_Bool        e_policy_conf_rot_enable_get(int angle);
 
 E_API Eina_Bool e_policy_aux_message_use_get(E_Client *ec);
 E_API void      e_policy_aux_message_send(E_Client *ec, const char *key, const char *val, Eina_List *options);
