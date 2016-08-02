@@ -2,7 +2,6 @@
 #define E_MOD_WL_H
 
 #include "config.h"
-#ifdef HAVE_WAYLAND_ONLY
 #include <e.h>
 
 Eina_Bool e_policy_wl_init(void);
@@ -47,5 +46,4 @@ EINTERN void e_tzsh_indicator_srv_ower_win_update(E_Zone *zone);
 /* indicator */
 void         e_policy_wl_indicator_flick_send(E_Client *ec);
 
-#endif /* HAVE_WAYLAND_ONLY */
 #endif /* E_MOD_WL_H */
