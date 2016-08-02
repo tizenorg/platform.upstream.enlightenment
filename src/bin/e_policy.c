@@ -12,6 +12,13 @@ E_Policy_System_Info e_policy_system_info =
    { -1, -1, EINA_FALSE}
 };
 
+static int _e_policy_interceptors_walking = 0;
+static int _e_policy_interceptors_delete = 0;
+
+E_Policy_Interceptor *_e_policy_interceptors[] =
+{
+};
+
 static Eina_List *handlers = NULL;
 static Eina_List *hooks_ec = NULL;
 static Eina_List *hooks_cp = NULL;
@@ -1323,6 +1330,57 @@ e_policy_client_is_cursor(E_Client *ec)
    return EINA_FALSE;
 }
 
+void
+e_policy_interceptors_clean(void)
+{
+   E_Policy_Interceptor *pi;
+   unsigned int x;
+
+   for (x = 0; x < E_POLICY_INTERCEPT_LAST; x++)
+     {
+        pi = _e_policy_interceptors[x];
+        if (!pi->delete_me) continue;
+        _e_policy_interceptors[x] = NULL;
+        free(pi);
+     }
+}
+
+/*
+ * It returns
+ * EINA_TRUE,
+ *  if interceptor process something successfully at its intercept point,
+ * EINA_FALSE,
+ *  if interceptor failed or there is no interceptor.
+ */
+Eina_Bool
+e_policy_interceptor_call(E_Policy_Intercept_Point ipoint, E_Client *ec, ...)
+{
+   va_list list;
+   E_Policy_Interceptor *pi;
+   Eina_Bool ret = EINA_TRUE;
+
+   if (e_object_is_del(E_OBJECT(ec))) return EINA_FALSE;
+   pi = _e_policy_interceptors[ipoint];
+   if (!pi) return EINA_FALSE;
+
+   va_start(list, ec);
+
+   e_object_ref(E_OBJECT(ec));
+   _e_policy_interceptors_walking++;
+   if (!pi->delete_me)
+     {
+        if (!(pi->func(pi->data, ec, list)))
+          ret = EINA_FALSE;
+     }
+   _e_policy_interceptors_walking--;
+   if ((_e_policy_interceptors_walking == 0) && (_e_policy_interceptors_delete > 0))
+     e_policy_interceptors_clean();
+
+   va_end(list);
+   e_object_unref(E_OBJECT(ec));
+   return ret;
+}
+
 E_API Eina_Bool
 e_policy_aux_message_use_get(E_Client *ec)
 {
@@ -1345,6 +1403,35 @@ e_policy_aux_message_send(E_Client *ec, const char *key, const char *val, Eina_L
    E_OBJECT_TYPE_CHECK(ec, E_CLIENT_TYPE);
 
    e_policy_wl_aux_message_send(ec, key, val, options);
+}
+
+E_API E_Policy_Interceptor *
+e_policy_interceptor_add(E_Policy_Intercept_Point ipoint, E_Policy_Intercept_Cb func, const void *data)
+{
+   E_Policy_Interceptor *pi;
+
+   EINA_SAFETY_ON_TRUE_RETURN_VAL(ipoint >= E_POLICY_INTERCEPT_LAST, NULL);
+   EINA_SAFETY_ON_TRUE_RETURN_VAL(!!_e_policy_interceptors[ipoint], NULL);
+   pi = E_NEW(E_Policy_Interceptor, 1);
+   if (!pi) return NULL;
+   pi->ipoint = ipoint;
+   pi->func = func;
+   pi->data = (void*)data;
+   _e_policy_interceptors[ipoint] = pi;
+   return pi;
+}
+
+E_API void
+e_policy_interceptor_del(E_Policy_Interceptor *pi)
+{
+   pi->delete_me = 1;
+   if (_e_policy_interceptors_walking == 0)
+     {
+        _e_policy_interceptors[pi->ipoint] = NULL;
+        free(pi);
+     }
+   else
+     _e_policy_interceptors_delete++;
 }
 
 E_API void
