@@ -4013,7 +4013,11 @@ _launchscreen_hide(uint32_t pid)
         EINA_LIST_FOREACH(plauncher->imglist, ll, pimg)
            if (pimg->pid == pid)
              {
-                DBG("Launch Screen hide | pid %d", pid);
+                ELOGF("TZPOL",
+                      "Launchscreen hide | pid %d",
+                      (pimg->ec ? pimg->ec->pixmap : NULL),
+                      pimg->ec,
+                      pid);
                 _launch_img_off(pimg);
              }
      }
@@ -4092,6 +4096,7 @@ _tzlaunchimg_iface_cb_launch(struct wl_client *client EINA_UNUSED, struct wl_res
    Evas_Load_Error err;
    E_Client *ec = NULL;
    E_Comp_Object_Content_Type content_type = 0;
+   Eina_Bool intercepted = EINA_FALSE;
 
    tzlaunchimg = wl_resource_get_user_data(res_tzlaunchimg);
    EINA_SAFETY_ON_NULL_RETURN(tzlaunchimg);
@@ -4102,48 +4107,64 @@ _tzlaunchimg_iface_cb_launch(struct wl_client *client EINA_UNUSED, struct wl_res
 
    // TO DO
    // invaid parameter handle
-   DBG("%s | path %s(%d), indicator(%d), angle(%d)", __FUNCTION__, pfname, ftype, indicator, angle);
+   ELOGF("TZPOL",
+         "Launchscreen launch | path %s(%d), indicator(%d), angle(%d)",
+         ec->pixmap, ec, pfname, ftype, indicator, angle);
+
    tzlaunchimg->path = pfname;
    tzlaunchimg->type = ftype;
    tzlaunchimg->indicator = indicator;
    tzlaunchimg->angle = angle;
 
-   if (tzlaunchimg->type == E_LAUNCH_FILE_TYPE_IMAGE)
+   intercepted = e_policy_interceptor_call(E_POLICY_INTERCEPT_LAUNCHSCREEN_OBJECT_SETUP,
+                                           ec,
+                                           pfname, ftype, depth,
+                                           angle, indicator, options);
+   if (intercepted)
      {
-        content_type = E_COMP_OBJECT_CONTENT_TYPE_EXT_IMAGE;
-        tzlaunchimg->obj = evas_object_image_add(e_comp->evas);
-        EINA_SAFETY_ON_NULL_GOTO(tzlaunchimg->obj, error);
-        evas_object_image_file_set(tzlaunchimg->obj, tzlaunchimg->path, NULL);
-
-        err = evas_object_image_load_error_get(tzlaunchimg->obj);
-        EINA_SAFETY_ON_FALSE_GOTO(err == EVAS_LOAD_ERROR_NONE, error);
-
-        evas_object_image_fill_set(tzlaunchimg->obj, 0, 0,  e_comp->w, e_comp->h);
-        evas_object_image_filled_set(tzlaunchimg->obj, EINA_TRUE);
+        ELOGF("TZPOL",
+              "Launchscreen object setup was successfully intercepted",
+              ec->pixmap, ec);
      }
    else
      {
-        content_type = E_COMP_OBJECT_CONTENT_TYPE_EXT_EDJE;
-        tzlaunchimg->obj = edje_object_add(e_comp->evas);
-        EINA_SAFETY_ON_NULL_GOTO(tzlaunchimg->obj, error);
-        edje_object_file_set (tzlaunchimg->obj, tzlaunchimg->path, APP_DEFINE_GROUP_NAME);
+        if (tzlaunchimg->type == E_LAUNCH_FILE_TYPE_IMAGE)
+          {
+             content_type = E_COMP_OBJECT_CONTENT_TYPE_EXT_IMAGE;
+             tzlaunchimg->obj = evas_object_image_add(e_comp->evas);
+             EINA_SAFETY_ON_NULL_GOTO(tzlaunchimg->obj, error);
+             evas_object_image_file_set(tzlaunchimg->obj, tzlaunchimg->path, NULL);
 
-        evas_object_move(tzlaunchimg->obj, 0, 0);
-        evas_object_resize(tzlaunchimg->obj, e_comp->w, e_comp->h);
+             err = evas_object_image_load_error_get(tzlaunchimg->obj);
+             EINA_SAFETY_ON_FALSE_GOTO(err == EVAS_LOAD_ERROR_NONE, error);
+
+             evas_object_image_fill_set(tzlaunchimg->obj, 0, 0,  e_comp->w, e_comp->h);
+             evas_object_image_filled_set(tzlaunchimg->obj, EINA_TRUE);
+          }
+        else
+          {
+             content_type = E_COMP_OBJECT_CONTENT_TYPE_EXT_EDJE;
+             tzlaunchimg->obj = edje_object_add(e_comp->evas);
+             EINA_SAFETY_ON_NULL_GOTO(tzlaunchimg->obj, error);
+             edje_object_file_set (tzlaunchimg->obj, tzlaunchimg->path, APP_DEFINE_GROUP_NAME);
+
+             evas_object_move(tzlaunchimg->obj, 0, 0);
+             evas_object_resize(tzlaunchimg->obj, e_comp->w, e_comp->h);
+          }
+
+        if (depth == 32) ec->argb = EINA_TRUE;
+        else ec->argb = EINA_FALSE;
+
+        if (!e_comp_object_content_set(ec->frame, tzlaunchimg->obj, content_type))
+          {
+             ERR("Setting comp object content for %p failed!", ec);
+             goto error;
+          }
+
+        evas_object_event_callback_add(tzlaunchimg->obj,
+                                       EVAS_CALLBACK_DEL,
+                                       _launch_img_cb_del, tzlaunchimg);
      }
-
-   if (depth == 32) ec->argb = EINA_TRUE;
-   else ec->argb = EINA_FALSE;
-
-   if (!e_comp_object_content_set(ec->frame, tzlaunchimg->obj, content_type))
-     {
-        ERR("Setting comp object content for %p failed!", ec);
-        goto error;
-     }
-
-   evas_object_event_callback_add(tzlaunchimg->obj,
-                                  EVAS_CALLBACK_DEL,
-                                  _launch_img_cb_del, tzlaunchimg);
 
    tzlaunchimg->valid = EINA_TRUE;
 
@@ -4187,10 +4208,14 @@ _tzlaunchimg_iface_cb_owner(struct wl_client *client EINA_UNUSED, struct wl_reso
 {
    E_Policy_Wl_Tzlaunch_Img *tzlaunchimg;
 
-   DBG("Launch img(%d) pid: %d", wl_resource_get_id(res_tzlaunchimg), pid);
-
    tzlaunchimg = wl_resource_get_user_data(res_tzlaunchimg);
    EINA_SAFETY_ON_NULL_RETURN(tzlaunchimg);
+
+   ELOGF("TZPOL", "Launchscreen img(%d) set owner pid: %d",
+         (tzlaunchimg->ec? tzlaunchimg->ec->pixmap : NULL),
+         tzlaunchimg->ec,
+         wl_resource_get_id(res_tzlaunchimg), pid);
+
 
    tzlaunchimg->pid = pid;
    tzlaunchimg->ec->netwm.pid = pid;
