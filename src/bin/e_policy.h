@@ -7,6 +7,14 @@ typedef struct _E_Policy_Config_Desk  E_Policy_Config_Desk;
 typedef struct _E_Policy_Config       E_Policy_Config;
 typedef struct _E_Policy          E_Policy;
 typedef struct _E_Policy_System_Info E_Policy_System_Info;
+typedef struct _E_Policy_Interceptor E_Policy_Interceptor;
+
+typedef enum _E_Policy_Intercept_Point
+{
+   E_POLICY_INTERCEPT_LAST,
+} E_Policy_Intercept_Point;
+
+typedef Eina_Bool (*E_Policy_Intercept_Cb)(void *data, E_Client *ec, va_list list);
 
 # else
 # ifndef E_POLICY_H
@@ -82,6 +90,14 @@ struct _E_Policy_System_Info
    } brightness;
 };
 
+struct _E_Policy_Interceptor
+{
+   E_Policy_Intercept_Point ipoint;
+   E_Policy_Intercept_Cb    func;
+   void                    *data;
+   unsigned int             delete_me : 1;
+};
+
 extern E_Policy *e_policy;
 extern E_Policy_System_Info e_policy_system_info;
 
@@ -131,8 +147,14 @@ EINTERN void             e_policy_stack_clients_restack_above_lockscreen(E_Clien
 EINTERN Eina_Bool        e_policy_stack_check_above_lockscreen(E_Client *ec, E_Layer layer, E_Layer *new_layer, Eina_Bool set_layer);
 
 
+EINTERN void             e_policy_interceptors_clean(void);
+EINTERN Eina_Bool        e_policy_interceptor_call(E_Policy_Intercept_Point ipoint, E_Client *ec, ...);
+
 E_API Eina_Bool e_policy_aux_message_use_get(E_Client *ec);
 E_API void      e_policy_aux_message_send(E_Client *ec, const char *key, const char *val, Eina_List *options);
+
+E_API E_Policy_Interceptor *e_policy_interceptor_add(E_Policy_Intercept_Point ipoint, E_Policy_Intercept_Cb func, const void *data);
+E_API void                  e_policy_interceptor_del(E_Policy_Interceptor *pi);
 
 E_API void e_policy_deferred_job(void);
 E_API int  e_policy_init(void);
