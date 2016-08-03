@@ -74,7 +74,7 @@ static const Eldbus_Method methods[] ={
        {
           "GetWindowInfo",
           NULL,
-          ELDBUS_ARGS({"ua(usiiiiibb)", "array of ec"}),
+          ELDBUS_ARGS({"ua(usiiiiibbb)", "array of ec"}),
           _e_test_helper_cb_get_clients, 0
        },
        { }
@@ -112,7 +112,7 @@ _e_test_helper_message_append_clients(Eldbus_Message_Iter *iter)
 
    if (!(comp = e_comp)) return;
 
-   eldbus_message_iter_arguments_append(iter, "ua(usiiiiibb)", th_data->registrant.win, &array_of_ec);
+   eldbus_message_iter_arguments_append(iter, "ua(usiiiiibbb)", th_data->registrant.win, &array_of_ec);
 
    // append clients.
    for (o = evas_object_top_get(comp->evas); o; o = evas_object_below_get(o))
@@ -126,12 +126,13 @@ _e_test_helper_message_append_clients(Eldbus_Message_Iter *iter)
 
         win = e_pixmap_res_id_get(ec->pixmap);
 
-        eldbus_message_iter_arguments_append(array_of_ec, "(usiiiiibb)", &struct_of_ec);
+        eldbus_message_iter_arguments_append(array_of_ec, "(usiiiiibbb)", &struct_of_ec);
         eldbus_message_iter_arguments_append
-           (struct_of_ec, "usiiiiibb",
+           (struct_of_ec, "usiiiiibbb",
             win,
             e_client_util_name_get(ec) ?: "NO NAME",
-            ec->x, ec->y, ec->w, ec->h, ec->layer,
+            ec->x, ec->y, ec->w, ec->h, evas_object_layer_get(o),
+            evas_object_data_get(o, "effect_running"),
             ec->visible, ec->argb);
         eldbus_message_iter_container_close(array_of_ec, struct_of_ec);
      }
