@@ -710,6 +710,9 @@ _e_comp_hwc_usable(void)
 
    if (!e_comp->hwc) return EINA_FALSE;
 
+   // will be removed once hwc cursor is supported
+   if (!e_pointer_is_hidden(e_comp->pointer)) return EINA_FALSE;
+
    // check whether to use hwc
    // core assignment policy
    ret = _e_comp_hwc_prepare();
