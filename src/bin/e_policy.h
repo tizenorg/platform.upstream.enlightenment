@@ -104,7 +104,6 @@ extern E_Policy_System_Info e_policy_system_info;
 
 EINTERN E_Policy_Config_Desk *e_policy_conf_desk_get_by_nums(E_Policy_Config *conf, unsigned int zone_num, int x, int y);
 EINTERN E_Policy_Client      *e_policy_client_get(E_Client *ec);
-EINTERN void                  e_policy_allow_user_geometry_set(E_Client *ec, Eina_Bool set);
 EINTERN void                  e_policy_desk_add(E_Desk *desk);
 EINTERN void                  e_policy_desk_del(E_Policy_Desk *pd);
 EINTERN E_Policy_Client      *e_policy_client_launcher_get(E_Zone *zone);
@@ -157,6 +156,7 @@ E_API void      e_policy_aux_message_send(E_Client *ec, const char *key, const c
 E_API E_Policy_Interceptor *e_policy_interceptor_add(E_Policy_Intercept_Point ipoint, E_Policy_Intercept_Cb func, const void *data);
 E_API void                  e_policy_interceptor_del(E_Policy_Interceptor *pi);
 
+E_API void e_policy_allow_user_geometry_set(E_Client *ec, Eina_Bool set);
 E_API void e_policy_deferred_job(void);
 E_API int  e_policy_init(void);
 E_API int  e_policy_shutdown(void);

@@ -1010,47 +1010,6 @@ _e_policy_cb_idle_enterer(void *data EINA_UNUSED)
 }
 
 void
-e_policy_allow_user_geometry_set(E_Client *ec, Eina_Bool set)
-{
-   E_Policy_Client *pc;
-
-   if (EINA_UNLIKELY(!ec))
-     return;
-
-   pc = eina_hash_find(hash_policy_clients, &ec);
-   if (EINA_UNLIKELY(!pc))
-     return;
-
-   if (set) pc->user_geom_ref++;
-   else     pc->user_geom_ref--;
-
-   if (pc->user_geom_ref == 1 && !pc->allow_user_geom)
-     {
-        pc->allow_user_geom = EINA_TRUE;
-
-        if (!e_policy_client_is_noti(ec))
-          {
-             ec->netwm.type = E_WINDOW_TYPE_UTILITY;
-             ec->lock_client_location = EINA_FALSE;
-          }
-
-        ec->lock_client_size = EINA_FALSE;
-        ec->placed = 1;
-        EC_CHANGED(ec);
-     }
-   else if (pc->user_geom_ref == 0 && pc->allow_user_geom)
-     {
-        pc->allow_user_geom = EINA_FALSE;
-
-        ec->lock_client_location = EINA_TRUE;
-        ec->lock_client_size = EINA_TRUE;
-        ec->placed = 0;
-        ec->netwm.type = E_WINDOW_TYPE_NORMAL;
-        EC_CHANGED(ec);
-     }
-}
-
-void
 e_policy_desk_add(E_Desk *desk)
 {
    E_Policy_Desk *pd;
@@ -1433,6 +1392,47 @@ e_policy_interceptor_del(E_Policy_Interceptor *pi)
      }
    else
      _e_policy_interceptors_delete++;
+}
+
+E_API void
+e_policy_allow_user_geometry_set(E_Client *ec, Eina_Bool set)
+{
+   E_Policy_Client *pc;
+
+   if (EINA_UNLIKELY(!ec))
+     return;
+
+   pc = eina_hash_find(hash_policy_clients, &ec);
+   if (EINA_UNLIKELY(!pc))
+     return;
+
+   if (set) pc->user_geom_ref++;
+   else     pc->user_geom_ref--;
+
+   if (pc->user_geom_ref == 1 && !pc->allow_user_geom)
+     {
+        pc->allow_user_geom = EINA_TRUE;
+
+        if (!e_policy_client_is_noti(ec))
+          {
+             ec->netwm.type = E_WINDOW_TYPE_UTILITY;
+             ec->lock_client_location = EINA_FALSE;
+          }
+
+        ec->lock_client_size = EINA_FALSE;
+        ec->placed = 1;
+        EC_CHANGED(ec);
+     }
+   else if (pc->user_geom_ref == 0 && pc->allow_user_geom)
+     {
+        pc->allow_user_geom = EINA_FALSE;
+
+        ec->lock_client_location = EINA_TRUE;
+        ec->lock_client_size = EINA_TRUE;
+        ec->placed = 0;
+        ec->netwm.type = E_WINDOW_TYPE_NORMAL;
+        EC_CHANGED(ec);
+     }
 }
 
 E_API void
